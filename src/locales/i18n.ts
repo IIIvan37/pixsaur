@@ -1,6 +1,5 @@
 import { i18n } from '@lingui/core'
 import { en, fr } from 'make-plural/plurals'
-import { create } from 'zustand'
 
 // Définir les messages directement dans le code
 const messages = {
@@ -78,30 +77,5 @@ i18n.loadLocaleData({
   en: { plurals: en },
   fr: { plurals: fr }
 })
-
-// Store pour gérer l'état de la langue
-interface LanguageState {
-  locale: string
-  setLocale: (locale: string) => void
-}
-
-export const useLanguageStore = create<LanguageState>((set) => ({
-  locale: 'fr',
-  setLocale: (locale: string) => {
-    loadMessages(locale)
-    set({ locale })
-  }
-}))
-
-// Fonction pour charger les messages d'une langue
-export function loadMessages(locale: string) {
-  i18n.load(locale, messages[locale as keyof typeof messages])
-  i18n.activate(locale)
-}
-
-// Fonction pour obtenir la langue actuelle ou par défaut
-export function getLocale() {
-  return 'fr'
-}
 
 export { i18n }
