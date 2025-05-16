@@ -25,7 +25,14 @@ const PreviewPanel = () => {
             Aperçu
           </Heading>
         </Flex>
-        <Box pt='2'>
+        <Box
+          pt='2'
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
           <ImagePreview />
         </Box>
         {/* Color Palette below preview */}
