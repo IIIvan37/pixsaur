@@ -1,0 +1,172 @@
+.container {
+  width: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.compact {
+  margin-bottom: var(--space-1);
+}
+
+.small {
+  --slider-height: 16px;
+  --thumb-size: 12px;
+  --track-height: 3px;
+}
+
+.medium {
+  --slider-height: 20px;
+  --thumb-size: 16px;
+  --track-height: 4px;
+}
+
+.large {
+  --slider-height: 24px;
+  --thumb-size: 20px;
+  --track-height: 5px;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-1);
+}
+
+.label {
+  color: var(--color-green-400);
+  font-size: var(--font-size-sm);
+}
+
+.valueText {
+  font-size: var(--font-size-xs);
+  color: var(--color-green-600);
+}
+
+.sliderWrapper {
+  position: relative;
+  padding-top: var(--space-4);
+}
+
+.small .sliderWrapper {
+  padding-top: var(--space-4);
+}
+
+.tooltip {
+  position: absolute;
+  top: -20px;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: var(--color-green-400);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  border: 1px solid var(--color-green-800);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tooltipVisible {
+  opacity: 1;
+}
+
+.tooltipArrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(0, 0, 0, 0.8);
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Custom slider styles */
+.sliderRoot {
+  position: relative;
+  height: var(--slider-height);
+  width: 100%;
+  padding: var(--space-1) 0;
+}
+
+.sliderTrack {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: var(--track-height);
+  width: 100%;
+  background-color: var(--color-green-800);
+  border-radius: 9999px;
+}
+
+.sliderRange {
+  position: absolute;
+  height: 100%;
+  background-color: var(--color-green-500);
+  border-radius: 9999px;
+}
+
+.sliderInput {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+}
+
+/* Thumb styles */
+.sliderThumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  background-color: var(--color-green-500);
+  border: 1px solid var(--color-green-400);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 1;
+  transition: transform 0.1s;
+}
+
+.sliderRoot:hover .sliderThumb {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Compact styles */
+.compact .sliderWrapper {
+  padding-top: var(--space-0);
+}
+
+
+/* Appliqué quand le wrapper reçoit la classe disabled */
+.disabled .sliderThumb {
+  background-color: var(--color-green-900);
+  border-color: var(--color-green-700);
+  transform: translate(-50%, -50%) scale(1); /* plus d’effet au hover */
+}
+
+.disabled .sliderRange {
+  background-color: var(--color-green-900);
+}
+
+.disabled .sliderTrack {
+  background-color: var(--color-green-900);
+}
+
+.disabled .sliderInput {
+  cursor: not-allowed;
+}
+
+.disabled .label{
+  color: var(--color-green-900);
+}

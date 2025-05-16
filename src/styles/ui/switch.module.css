@@ -1,0 +1,54 @@
+.switchContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.switchRoot {
+  width: 36px;
+  height: 20px;
+  background-color: var(--color-green-950);
+  border: 1px solid var(--color-green-800);
+  border-radius: 9999px;
+  position: relative;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  cursor: pointer;
+}
+
+.switchRoot:focus {
+  box-shadow: 0 0 0 2px rgba(0, 255, 65, 0.3);
+}
+
+.switchRoot[data-state="checked"] {
+  background-color: var(--color-green-700);
+}
+
+.switchThumb {
+  display: block;
+  width: 14px;
+  height: 14px;
+  background-color: white;
+  border-radius: 9999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(3px);
+  will-change: transform;
+}
+
+.switchRoot[data-state="checked"] .switchThumb {
+  transform: translateX(19px);
+}
+
+.switchLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-green-500);
+}
+
+/* Hover effects */
+.switchRoot:hover {
+  background-color: var(--color-green-900);
+}
+
+.switchRoot[data-state="checked"]:hover {
+  background-color: var(--color-green-600);
+}

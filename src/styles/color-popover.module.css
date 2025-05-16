@@ -1,0 +1,82 @@
+.popoverContainer {
+  position: relative;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+}
+
+.popover {
+  position: absolute;
+  z-index: 50;
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 1px solid var(--color-green-700);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+  max-width: 300px;
+  max-height: 200px;
+  overflow-y: auto;
+  transform-origin: top center;
+  animation: popoverAppear 0.2s ease-out;
+}
+
+.popoverTop {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.popoverBottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.popoverLeft {
+  right: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.popoverRight {
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
+}
+
+.colorOption {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-green-800);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.colorOption:hover {
+  transform: scale(1.1);
+  border-color: var(--color-green-400);
+  z-index: 1;
+}
+
+@keyframes popoverAppear {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}

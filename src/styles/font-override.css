@@ -1,0 +1,27 @@
+/* Surcharge des polices Radix pour revenir à monospace */
+:root {
+  --font-sans: monospace;
+  --font-mono: monospace;
+}
+
+body,
+.rt-Text,
+.rt-Heading,
+.rt-Button,
+.rt-DialogTitle,
+.rt-DialogDescription,
+.rt-TabsTrigger,
+.rt-Select,
+.rt-TextArea,
+.rt-TextField,
+.rt-Checkbox,
+.rt-RadioGroup,
+.rt-Slider,
+.rt-Switch {
+  font-family: monospace !important;
+}
+
+/* Assurer que tous les éléments utilisent la police monospace */
+* {
+  font-family: monospace;
+}

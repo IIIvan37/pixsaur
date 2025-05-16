@@ -1,0 +1,113 @@
+.container {
+  margin-top: var(--space-2);
+}
+
+.paletteGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1);
+}
+
+.colorSquare {
+  position: relative;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-green-800);
+  overflow: visible;
+  cursor: pointer;
+}
+
+.colorFill {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.lockOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+}
+
+.lockIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+  color: white;
+}
+
+.emptySlotContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.emptySlot {
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.plusIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+  color: var(--color-green-700);
+}
+
+.helpText {
+  font-size: var(--font-size-xs);
+  color: var(--color-green-700);
+  margin-top: var(--space-2);
+}
+
+.colorPopover {
+  position: absolute;
+  z-index: 100;
+ 
+  max-width: 220px;
+  padding: var(--space-2);
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 1px solid var(--color-green-700);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--space-1);
+}
+
+.colorOption {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-green-800);
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.colorOption:hover {
+  border-color: var(--color-green-400);
+  transform: scale(1.15);
+  z-index: 1;
+}
+
+.colorOptionActive {
+  border: 2px solid var(--color-white);
+  box-shadow: 0 0 0 1px var(--color-green-400);
+}

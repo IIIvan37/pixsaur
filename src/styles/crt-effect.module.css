@@ -1,0 +1,62 @@
+.container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.8) 100%);
+  opacity: 0.95;
+  animation: flicker 0.05s infinite alternate;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 255, 65, 0.3) 0px,
+    rgba(0, 255, 65, 0.3) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  background-size: 100% 2px;
+  pointer-events: none;
+}
+
+.glitch {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: rgba(0, 255, 65, 0.5);
+  transform: translateX(-10px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes glitch {
+  0% {
+    opacity: 0;
+    top: -100%;
+  }
+  10% {
+    opacity: 0.5;
+    top: 50%;
+  }
+  12% {
+    opacity: 0;
+    top: 50%;
+  }
+  100% {
+    opacity: 0;
+    top: 110%;
+  }
+}

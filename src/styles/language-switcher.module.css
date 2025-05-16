@@ -1,0 +1,30 @@
+.container {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.button {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  background-color: var(--color-green-950);
+  color: var(--color-green-500);
+  border: 1px solid var(--color-green-800);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  background-color: var(--color-green-900);
+  color: var(--color-green-400);
+}
+
+.active {
+  background-color: var(--color-green-700);
+  color: var(--color-white);
+}
+
+.active:hover {
+  background-color: var(--color-green-600);
+  color: var(--color-white);
+}

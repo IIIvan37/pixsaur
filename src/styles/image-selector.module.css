@@ -1,0 +1,25 @@
+.containerWrapper {
+    position: relative;
+    width: 400px;
+    height: 100%;
+  }
+  
+  .containerHeader {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    padding: var(--space-2);
+  }
+
+  .changeButton {
+    background-color: rgba(0, 0, 0, 0.7);
+    font-size: var(--font-size-xs);
+    padding: var(--space-1) var(--space-2);
+  }
+  
+  .buttonIcon {
+    width: 14px;
+    height: 14px;
+    margin-right: var(--space-1);
+  }
