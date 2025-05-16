@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/react/macro'
 import { Box, Flex, Heading } from '@radix-ui/themes'
 import { ImageUpload } from '@/components/image-upload'
 import Button from '@/components/ui/button'
@@ -32,7 +31,7 @@ export default function SourceSection({
       <Box className={styles.flexColumn} style={{ minWidth: '400px' }}>
         <Flex justify='between' align='center' mb='2'>
           <Heading size='1' className={styles.sectionTitle} mb='2'>
-            <Trans id='Image Source'>Image Source</Trans>
+            Image Source
           </Heading>
           {!!downscaled && (
             <Button
@@ -45,7 +44,7 @@ export default function SourceSection({
               }}
             >
               <Icon name='UploadIcon' className={styles.buttonIcon} />
-              <Trans id="Changer d'image">Changer d'image</Trans>
+              Changer d'image
             </Button>
           )}
         </Flex>

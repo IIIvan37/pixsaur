@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/react/macro'
 import Slider from './ui/slider'
 import styles from '../styles/image-converter.module.css'
 import animStyles from '../styles/animations.module.css'
@@ -23,7 +22,7 @@ export default function ImageControls() {
     <div className={styles.controlsContainer}>
       <Flex justify='between' align='center' mb='2'>
         <Heading size='2' className={styles.sectionTitle}>
-          <Trans id='Mode'>Mode</Trans>
+          Mode
         </Heading>
         <div className={styles.modeButtonsRow}>
           {Object.entries(CPC_MODE_CONFIG).map(([key, modeConfig]) => (
@@ -50,7 +49,7 @@ export default function ImageControls() {
           step={0.01}
           value={dithering.intensity}
           onChange={(intensity) => onDitheringChange({ intensity })}
-          label={<Trans id='Tramage'>Tramage</Trans>}
+          label='Tramage'
           compact
           size='small'
         />

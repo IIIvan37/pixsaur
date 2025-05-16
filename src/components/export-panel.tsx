@@ -1,5 +1,3 @@
-import { Trans } from '@lingui/react/macro'
-
 import styles from '@/styles/image-converter.module.css'
 import animStyles from '@/styles/animations.module.css'
 import Icon from './ui/icon'
@@ -31,7 +29,7 @@ export default function ExportPanel() {
         aria-disabled={!image?.data}
       >
         <Icon name='DownloadIcon' className={styles.buttonIcon} />
-        <Trans id='Exporter en PNG'>Exporter en PNG</Trans>
+        Exporter en PNG
       </Button>
     </div>
   )

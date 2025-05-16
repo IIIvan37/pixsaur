@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/react/macro'
 import { Box, Flex, Heading } from '@radix-ui/themes'
 import ImagePreview from '@/components/image-preview'
 
@@ -23,7 +22,7 @@ const PreviewPanel = () => {
       <Box className={styles.flexColumn}>
         <Flex justify='between' align='center' mb='2'>
           <Heading size='2' className={styles.sectionTitle}>
-            <Trans id='Aperçu'>Aperçu</Trans>
+            Aperçu
           </Heading>
         </Flex>
         <Box pt='2'>

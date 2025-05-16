@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/react/macro'
 import Button from '@/components/ui/button'
 import Icon from '@/components/ui/icon'
 import Slider from '@/components/ui/slider'
@@ -43,7 +42,7 @@ export const AdjustementsView = ({
           title='Réinitialiser les ajustements'
         >
           <Icon name='ResetIcon' className={styles.buttonIcon} />
-          <Trans id='Réinitialiser'>Réinitialiser</Trans>
+          Réinitialiser
         </Button>
       </div>
 
@@ -61,7 +60,7 @@ export const AdjustementsView = ({
               step={settings[3]}
               showTooltip={false}
               onChange={(value) => onChange({ key: adj.key, value })}
-              label={<Trans id={adj.label}>{adj.label}</Trans>}
+              label={adj.label}
               compact
               size='small'
             />
