@@ -1,6 +1,11 @@
 import { buildHistogram } from '../histogram'
 import { mapAndDither } from '../map'
-import { DistanceFn, DistanceMetric, getDistanceFn } from '../metric/distance'
+import {
+  ColorSpaceDistanceMetric,
+  DistanceFn,
+  DistanceMetric,
+  getDistanceFn
+} from '../metric/distance'
 import { getRgbToColorSpaceFn, getColorSpaceToRgbFn } from '../space'
 import { ColorSpace, Vector } from '../type'
 import { selectTopIndices } from './select-to-indices'
@@ -63,13 +68,14 @@ export function createQuantizer({
   quantConfig
 }: CreateQuantizerInput) {
   console.log('Quantizer created with config:', quantConfig)
-  const { colorSpace, distanceMetric } = quantConfig
+  const { colorSpace } = quantConfig
 
   const toW: (c: Vector<'RGB'>) => Vector<typeof colorSpace> =
     getRgbToColorSpaceFn(colorSpace)
   const fromW: (c: Vector<typeof colorSpace>) => Vector<'RGB'> =
     getColorSpaceToRgbFn(colorSpace)
-  const distFn: DistanceFn = getDistanceFn(colorSpace, distanceMetric)
+  const choosenMetric = ColorSpaceDistanceMetric[colorSpace][0]
+  const distFn: DistanceFn = getDistanceFn(colorSpace, choosenMetric)
 
   const vecs = bufferToVectors(buf)
   // conversion de la palette et indices pré‑sélectionnés
@@ -88,7 +94,6 @@ export function createQuantizer({
     )
 
     const idxs = selectTopIndices(counts, preIdx, limit)
-    console.log('idxs', idxs)
     return idxs.map((i) => fromW(workingPal[i]))
   }
 
