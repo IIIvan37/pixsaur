@@ -60,7 +60,7 @@ export default function ImageControls() {
       </div>
       <Flex justify='between' align='center' mb='2'>
         <Heading size='2' className={styles.sectionTitle}>
-          Mode
+          Espace de couleur
         </Heading>
         <div className={styles.modeButtonsRow}>
           {['RGB', 'XYZ', 'Lab'].map((space) => (
