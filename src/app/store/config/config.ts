@@ -62,3 +62,11 @@ export const setModeAtom = atom(null, (get, set, payload: CpcModeKey) => {
     set(configAtom, { ...defaultConfig })
   }
 })
+
+export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
+  const prev = get(colorSpaceAtom)
+  set(colorSpaceAtom, payload)
+  if (prev !== payload) {
+    set(configAtom, { ...defaultConfig })
+  }
+})

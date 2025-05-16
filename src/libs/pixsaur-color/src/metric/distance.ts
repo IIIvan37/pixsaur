@@ -100,10 +100,10 @@ export type DistanceFn = (a: Vector, b: Vector) => number
 
 export type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
 
-const ColorSpaceDistanceMetric: Record<ColorSpace, DistanceMetric[]> = {
+export const ColorSpaceDistanceMetric: Record<ColorSpace, DistanceMetric[]> = {
   RGB: ['euclidean'],
   XYZ: ['euclidean'],
-  Lab: ['cie76', 'deltaE2000']
+  Lab: ['deltaE2000']
 }
 
 const distanceFnFromMetric: Record<DistanceMetric, DistanceFn> = {
