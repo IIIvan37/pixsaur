@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'bun:test'
 import { renderPreviewBuffer } from '../../src/render/render-preview-buffer'
 
 describe('renderPreviewBuffer', () => {

@@ -1,5 +1,4 @@
 import { adjustContrast } from '@/libs/pixsaur-color/src/transform/color-transform/adjust-contrast'
-import { describe, it, expect } from 'bun:test'
 
 describe('adjustContrast', () => {
   it('réduit le contraste', () => {

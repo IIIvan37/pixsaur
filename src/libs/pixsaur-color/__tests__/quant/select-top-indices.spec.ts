@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'bun:test'
 import { selectTopIndices } from '../../src/quant/select-to-indices'
 
 describe('selectTopIndices', () => {

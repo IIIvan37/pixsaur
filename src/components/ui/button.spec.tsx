@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import Button from './button'
-import { describe, it, expect, jest } from 'bun:test'
 
 describe('Button Component', () => {
   it('renders the button with the correct children', () => {
@@ -10,7 +9,7 @@ describe('Button Component', () => {
   })
 
   it('calls the onClick handler when clicked', () => {
-    const handleClick = jest.fn()
+    const handleClick = vi.fn()
     render(<Button onClick={handleClick}>Click Me</Button>)
     fireEvent.click(screen.getByText('Click Me'))
     expect(handleClick).toHaveBeenCalledTimes(1)
