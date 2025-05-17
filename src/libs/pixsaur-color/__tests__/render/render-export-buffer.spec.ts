@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'bun:test'
 import { renderExportBuffer } from '../../src/render/render-export-buffer'
 
 describe('renderExportBuffer', () => {

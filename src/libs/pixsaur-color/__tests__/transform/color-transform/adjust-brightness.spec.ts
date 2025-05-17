@@ -1,5 +1,4 @@
 import { adjustLightness } from '@/libs/pixsaur-color/src/transform/color-transform/adjust-brighteness'
-import { describe, it, expect } from 'bun:test'
 
 describe('adjustLightnessLab', () => {
   it('éclaircit un gris moyen', () => {

@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'bun:test'
 import { Vector } from '../../src/type'
 import { euclideanDistance } from '../../src/metric/distance'
 import { buildHistogram } from '../../src/histogram/build-histogram'
