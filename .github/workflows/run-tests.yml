@@ -10,22 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Check out the source code
+      # Checkout code (built-in)
       - name: Checkout code
-        uses: actions/checkout@v3
+        run: |
+          git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY .
+          git checkout $GITHUB_SHA
 
       # Install pnpm
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.0.0 --activate
 
-      # Setup Node.js (recommended for compatibility)
+      # Setup Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'pnpm'
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+          sudo apt-get install -y nodejs
+          node --version
+          npm --version
 
       # Install dependencies
       - name: Install dependencies
