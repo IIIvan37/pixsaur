@@ -21,7 +21,9 @@ export function downscaleImage(
   selection?: Selection
 ): ImageData {
   // 1. calcul du scale pour limiter la largeur
-  const scale = Math.min(1, maxWidth / img.width)
+
+  const scale = maxWidth / img.width
+
   const w = Math.floor(img.width * scale)
   const h = Math.floor(img.height * scale)
 
@@ -30,6 +32,7 @@ export function downscaleImage(
   off.width = w
   off.height = h
   const ctx = off.getContext('2d')!
+  ctx.imageSmoothingEnabled = false // pas de lissage
   ctx.drawImage(
     img,
     0,
