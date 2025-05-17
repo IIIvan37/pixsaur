@@ -1,5 +1,5 @@
 import { Box, Flex, Heading } from '@radix-ui/themes'
-import { ImageUpload } from '@/components/image-upload'
+import { ImageUpload } from '@/components/image-upload/image-upload'
 import Button from '@/components/ui/button'
 import { downscaleImage } from '@/libs/pixsaur-adapter/io/downscale-image'
 import styles from '@/styles/image-converter.module.css'
