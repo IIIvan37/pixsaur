@@ -43,7 +43,12 @@ export const croppedImageAtom = atom((get) => {
   if (!src || !selection) return null
 
   // 1) On récupère la région visuelle brute
-  const fullImageData = getVisualRegion(src, selection, targetWidth)
+  const fullImageData = getVisualRegion(
+    src,
+    selection,
+    targetWidth,
+    CPC_MODE_CONFIG[mode].mode
+  )
 
   // on utilise putImageData + drawImage pour combiner scaling & data
   // d’abord on colle l’ImageData brute sur un petit canvas,
