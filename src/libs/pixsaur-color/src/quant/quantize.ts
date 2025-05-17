@@ -87,7 +87,7 @@ export function createQuantizer({
       )
     )
     .filter((i) => i >= 0)
-  console.log(preIdx)
+
   const reducePalette = (limit: number): Vector<'RGB'>[] => {
     const counts = new Uint32Array(
       buildHistogram(vecs.map(toW), workingPal, distFn)
