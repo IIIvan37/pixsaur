@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "types": [
-      "bun-types"
+      "bun-types",
+      "@testing-library/react", // if with react
+      "@testing-library/jest-dom",
+      "./src/matcher.d.ts",
   ],
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "ES2020",
