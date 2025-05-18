@@ -74,7 +74,9 @@ export function ColorPalette() {
           // Retrouver l'objet CPCColor pour affichage
           const colorObj = slot.color
             ? fullPalette.find((c) =>
-                c.vector.every((v, i) => v === slot.color![i])
+                Array.from(c.vector).every(
+                  (v, i) => v === Array.from(slot.color!)[i]
+                )
               ) || null
             : null
 
@@ -130,8 +132,9 @@ export function ColorPalette() {
                           const isUsed = slots.some((s, i) => {
                             if (i === idx) return false
                             return (
-                              s.color?.every((v, j) => v === pc.vector[j]) ??
-                              false
+                              Array.from(s.color ?? []).every(
+                                (v, j) => v === pc.vector[j]
+                              ) ?? false
                             )
                           })
                           return (

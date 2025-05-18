@@ -39,7 +39,8 @@ export const setReducedPaletteAtom = atom(
 
     // 2.2 – filtrer reduced pour ôter toute couleur déjà lockée
     const queue = reduced.filter(
-      (vec) => !lockedVecs.some((lv) => lv.every((c, i) => c === vec[i]))
+      (vec) =>
+        !lockedVecs.some((lv) => Array.from(lv).every((c, i) => c === vec[i]))
     )
 
     // 2.3 – reconstruire la nouvelle palette
