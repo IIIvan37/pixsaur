@@ -53,3 +53,23 @@ export function hexToVector(hex: string): Vector {
   const b = Number.parseInt(hex.substring(4, 6), 16)
   return [r, g, b]
 }
+
+export function injectPaletteDataIntoSCR(scr: Uint8Array, palette: number[]) {
+  const firmwareToHardware = [
+    0x54, 0x44, 0x58, 0x5c, 0x4c, 0x40, 0x45, 0x41, 0x59, 0x5d, 0x49, 0x4d,
+    0x55, 0x51, 0x5a, 0x5e, 0x4a, 0x42, 0x46, 0x52, 0x56, 0x4e, 0x43, 0x47,
+    0x53, 0x57, 0x5f
+  ]
+
+  const borderIndex = palette[0] // index firmware
+  const borderHw = firmwareToHardware[borderIndex]
+
+  scr[2000] = borderIndex
+  scr[2001 + 16] = borderHw
+
+  for (let i = 0; i < 16; i++) {
+    const fw = palette[i]
+    scr[2001 + i] = fw
+    scr[2018 + i] = firmwareToHardware[fw]
+  }
+}

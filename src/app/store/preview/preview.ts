@@ -8,32 +8,6 @@ import { CPC_MODE_CONFIG } from '../config/types'
 import { srcAtom, selectionAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 
-function cropTopLines(image: ImageData, maxLines = 200): ImageData {
-  const { width, height, data } = image
-  const finalHeight = Math.min(height, maxLines)
-
-  // Canvas de sortie, toujours 200 lignes
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = maxLines
-  const ctx = canvas.getContext('2d')!
-
-  const output = ctx.createImageData(width, maxLines)
-  const out = output.data
-
-  for (let y = 0; y < finalHeight; y++) {
-    const srcOffset = y * width * 4
-    const dstOffset = y * width * 4
-    for (let x = 0; x < width * 4; x++) {
-      out[dstOffset + x] = data[srcOffset + x]
-    }
-  }
-
-  // Les lignes restantes (si < 200) restent noires (0)
-  ctx.putImageData(output, 0, 0)
-  return ctx.getImageData(0, 0, width, maxLines)
-}
-
 // 1. Zone sélectionnée réduite à la largeur du mode
 export const croppedImageAtom = atom((get) => {
   const src = get(srcAtom)
@@ -54,7 +28,7 @@ export const croppedImageAtom = atom((get) => {
   // d’abord on colle l’ImageData brute sur un petit canvas,
   // puis on le redessine à l’échelle sur tempCanvas
 
-  return cropTopLines(fullImageData, 200)
+  return fullImageData
 })
 
 // 2. Extraction des données RGBA (sans effets visuels pour l'instant)
