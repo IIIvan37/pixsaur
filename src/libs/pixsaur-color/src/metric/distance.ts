@@ -8,7 +8,11 @@ import { ColorSpace, Vector } from '../type'
  * @returns {number} - The Euclidean distance between the two vectors.
  */
 export function euclideanDistance(a: Vector, b: Vector): number {
-  return a.reduce((sum, value, i) => sum + (value - b[i]) ** 2, 0)
+  let sum = 0
+  for (let i = 0; i < a.length; i++) {
+    sum += (a[i] - b[i]) ** 2
+  }
+  return sum
 }
 
 /**
@@ -103,13 +107,13 @@ export type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
 export const ColorSpaceDistanceMetric: Record<ColorSpace, DistanceMetric[]> = {
   RGB: ['euclidean'],
   XYZ: ['euclidean'],
-  Lab: ['deltaE2000']
+  Lab: ['cie76']
 }
 
 const distanceFnFromMetric: Record<DistanceMetric, DistanceFn> = {
   euclidean: euclideanDistance,
   cie76: cie76Distance,
-  deltaE2000: deltaE2000
+  deltaE2000: cie76Distance
 }
 
 /**
