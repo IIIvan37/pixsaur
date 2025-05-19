@@ -42,7 +42,7 @@ const mockPalette = [
 
 const hex_rouge = vectorToHex(mockPalette[0].vector)
 const hex_vert = vectorToHex(mockPalette[1].vector)
-const hex_bleu = vectorToHex(mockPalette[2].vector)
+
 // Mock slots for palette view
 const filledSlot = { color: new Float32Array([1, 2, 3]), locked: false }
 const lockedSlot = { color: new Float32Array([4, 5, 6]), locked: true }
