@@ -3,7 +3,6 @@ import {
   onToggleLockAtom,
   onSetColorAtom
 } from '@/app/store/palette/palette'
-
 import { ColorPaletteView } from './color-palette-view'
 import { getCPCPalette } from '@/libs/cpc-palette'
 import { useAtomValue, useSetAtom } from 'jotai'

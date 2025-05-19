@@ -1,38 +1,18 @@
-import { useState, useRef, useEffect } from 'react'
-
-import type { CPCColor } from '@/libs/types'
-
+import React, { useRef, useState, useEffect } from 'react'
 import styles from './color-palette.module.css'
 import animStyles from '@/styles/animations.module.css'
-
-import Icon from '../ui/icon'
+import { ColorPopover } from './color-popover/color-popover'
 import { PaletteSlot } from '@/app/store/palette/types'
-import { ColorPopover } from './color-popover'
+import { CPCColor } from '@/libs/types'
+import { vectorToHex } from '@/libs/cpc-palette'
+import Icon from '../ui/icon'
 
-/**
- * Props for the ColorPaletteView component.
- */
 export type ColorPaletteViewProps = {
-  /** The palette slots to display (filled or empty). */
   slots: PaletteSlot[]
-  /** Handler to toggle lock state for a slot. */
-  onToggleLock: (index: number) => void
-  /** Handler to set a color for a slot. */
-  onSetColor: ({ index, color }: { index: number; color: CPCColor }) => void
-  /** The full list of available CPC colors. */
+  onToggleLock: (idx: number) => void
+  onSetColor: (params: { index: number; color: CPCColor }) => void
   fullPalette: CPCColor[]
 }
-
-// Threshold in pixels to determine if the popover should open upwards
-const POPOVER_BOTTOM_THRESHOLD = 200
-
-/**
- * Presentational component for displaying and interacting with the color palette.
- * Handles rendering of slots, lock/unlock, color selection popover, and accessibility.
- *
- * @param {ColorPaletteViewProps} props - The component props.
- * @returns {JSX.Element} The color palette UI.
- */
 
 export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
   slots,
@@ -42,91 +22,107 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
 }) => {
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null)
   const [focusedColorIdx, setFocusedColorIdx] = useState<number>(0)
-  const popoverRef = useRef<HTMLDivElement>(null)
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const colorOptionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
   // Keep buttonRefs in sync with slots length to avoid stale refs
   useEffect(() => {
     buttonRefs.current.length = slots.length
   }, [slots.length])
 
-  // Close the popover when clicking outside of it
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(event.target as Node)
-      ) {
-        setOpenPopoverIndex(null)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
-
   // Reset focused color index when popover opens/closes
   useEffect(() => {
     if (openPopoverIndex !== null) setFocusedColorIdx(0)
   }, [openPopoverIndex])
 
-  const colorOptionRefs = useRef<(HTMLButtonElement | null)[]>([])
-
   // Imperatively focus the correct color option when focusedColorIdx changes
   useEffect(() => {
-    if (openPopoverIndex !== null && colorOptionRefs.current[focusedColorIdx]) {
-      colorOptionRefs.current[focusedColorIdx]?.focus()
-    }
+    const btn = colorOptionRefs.current[focusedColorIdx]
+    if (btn) setTimeout(() => btn.focus(), 0)
   }, [focusedColorIdx, openPopoverIndex])
 
   // When opening the popover, set focusedColorIdx to the first enabled color
   useEffect(() => {
     if (openPopoverIndex !== null) {
-      // Find the first not-used color
-      const firstEnabledIdx = fullPalette.findIndex((pc, idx) => {
+      const firstEnabledIdx = fullPalette.findIndex((pc) => {
         return !slots.some((slot, i) => {
           if (i === openPopoverIndex) return false
           if (!slot.color) return false
           return Array.from(slot.color).every((v, j) => v === pc.vector[j])
         })
       })
-      setFocusedColorIdx(firstEnabledIdx === -1 ? 0 : firstEnabledIdx)
+      if (firstEnabledIdx !== -1) setFocusedColorIdx(firstEnabledIdx)
     }
   }, [openPopoverIndex, fullPalette, slots])
 
-  /**
-   * Keyboard navigation for the color popover.
-   */
+  const handleColorSelect = (color: CPCColor, idx: number) => {
+    onSetColor({ index: idx, color })
+    setOpenPopoverIndex(null)
+  }
+
   const handlePopoverKeyDown = (
     e: React.KeyboardEvent<HTMLDivElement>,
     optionsCount: number,
     slotIdx: number
   ) => {
-    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-      e.preventDefault()
-      setFocusedColorIdx((prev) => (prev + 1) % optionsCount)
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-      e.preventDefault()
-      setFocusedColorIdx((prev) => (prev - 1 + optionsCount) % optionsCount)
-    } else if (e.key === 'Escape') {
+    if (e.key === 'Escape') {
       setOpenPopoverIndex(null)
-    } else if (e.key === 'Enter' || e.key === ' ') {
-      // Simulate click on the focused color if not disabled
-      const pc = fullPalette[focusedColorIdx]
-      // Check if the selected color is already used in another slot
-      const isUsed = slots.some((slot, i) => {
-        if (i === slotIdx) return false
-        if (!slot.color) return false
-        return Array.from(slot.color).every((v, j) => v === pc.vector[j])
-      })
+      return
+    }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      let nextIdx = focusedColorIdx
+      do {
+        nextIdx = (nextIdx + 1) % optionsCount
+      } while (
+        slots.some(
+          (slot, i) =>
+            i !== slotIdx &&
+            slot.color &&
+            Array.from(slot.color).every(
+              (v, j) => v === fullPalette[nextIdx].vector[j]
+            )
+        ) &&
+        nextIdx !== focusedColorIdx
+      )
+      setFocusedColorIdx(nextIdx)
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      let prevIdx = focusedColorIdx
+      do {
+        prevIdx = (prevIdx - 1 + optionsCount) % optionsCount
+      } while (
+        slots.some(
+          (slot, i) =>
+            i !== slotIdx &&
+            slot.color &&
+            Array.from(slot.color).every(
+              (v, j) => v === fullPalette[prevIdx].vector[j]
+            )
+        ) &&
+        prevIdx !== focusedColorIdx
+      )
+      setFocusedColorIdx(prevIdx)
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      const color = fullPalette[focusedColorIdx]
+      const isUsed = slots.some(
+        (slot, i) =>
+          i !== slotIdx &&
+          slot.color &&
+          Array.from(slot.color).every((v, j) => v === color.vector[j])
+      )
       if (!isUsed) {
-        onSetColor({ index: slotIdx, color: pc })
-        setOpenPopoverIndex(null)
+        handleColorSelect(color, slotIdx)
       }
     }
   }
 
+  const POPOVER_BOTTOM_THRESHOLD = 200
+  /**
+   * Compute the popover position relative to the slot button.
+   * @param {number} index - The slot index.
+   * @returns {React.CSSProperties} The style object for popover positioning.
+   */
   const getPopoverStyle = (index: number) => {
     const btn = buttonRefs.current[index]
     if (!btn) return {}
@@ -141,11 +137,6 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
     }
   }
 
-  const handleColorSelect = (paletteColor: CPCColor, slotIndex: number) => {
-    onSetColor({ index: slotIndex, color: paletteColor })
-    setOpenPopoverIndex(null)
-  }
-
   return (
     <div
       className={styles.container}
@@ -155,13 +146,7 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
       <div className={styles.paletteGrid}>
         {slots.map((slot, idx) => {
           const colorObj = slot.color
-            ? fullPalette.find((c) =>
-                Array.from(c.vector).every(
-                  (v, i) => v === Array.from(slot.color!)[i]
-                )
-              ) || null
-            : null
-
+          const hex = colorObj ? vectorToHex(colorObj) : null
           return (
             <div
               key={idx}
@@ -169,19 +154,22 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
             >
               {colorObj ? (
                 <button
+                  ref={(el) => {
+                    buttonRefs.current[idx] = el
+                  }}
                   className={styles.colorFill}
-                  style={{ backgroundColor: `#${colorObj.hex}` }}
-                  title={`${colorObj.name} : R:${colorObj.vector[0]}, V:${colorObj.vector[1]}, B:${colorObj.vector[2]}`}
-                  onClick={() => onToggleLock(idx)}
-                  aria-label={`${colorObj.name} ${
+                  style={{ backgroundColor: `#${hex}` }}
+                  aria-label={`#${hex} ${
                     slot.locked ? 'verrouillée' : 'déverrouillée'
                   }`}
                   aria-pressed={slot.locked}
+                  title={`R:${colorObj[0]}, V:${colorObj[1]}, B:${colorObj[2]}`}
+                  onClick={() => onToggleLock(idx)}
                 >
                   {slot.locked && (
-                    <div className={styles.lockOverlay} aria-hidden='true'>
+                    <span className={styles.lockOverlay} aria-hidden='true'>
                       <Icon name='LockClosedIcon' className={styles.lockIcon} />
-                    </div>
+                    </span>
                   )}
                 </button>
               ) : (
@@ -192,16 +180,12 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
                     }}
                     className={styles.emptySlot}
                     aria-label='Ajouter une couleur'
-                    onClick={() =>
-                      setOpenPopoverIndex((prev) => (prev === idx ? null : idx))
-                    }
+                    onClick={() => setOpenPopoverIndex(idx)}
                   >
                     <Icon name='PlusIcon' className={styles.plusIcon} />
                   </button>
-
                   {openPopoverIndex === idx && (
                     <ColorPopover
-                      colorOptionRefs={colorOptionRefs}
                       fullPalette={fullPalette}
                       slots={slots}
                       slotIdx={idx}
@@ -211,9 +195,8 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
                         handlePopoverKeyDown(e, fullPalette.length, idx)
                       }
                       getPopoverStyle={getPopoverStyle}
-                      onClose={function (): void {
-                        setOpenPopoverIndex(null)
-                      }}
+                      onClose={() => setOpenPopoverIndex(null)}
+                      colorOptionRefs={colorOptionRefs}
                     />
                   )}
                 </div>

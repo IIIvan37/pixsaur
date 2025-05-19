@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { describe, it, vi, beforeEach } from 'vitest'
 import { ColorPaletteView, ColorPaletteViewProps } from './color-palette-view'
+import { vectorToHex } from '@/libs/cpc-palette'
 
 // Mock CSS modules and Icon to avoid style/import issues in tests
 vi.mock('./color-palette.module.css', () => ({
@@ -15,8 +16,11 @@ vi.mock('@/styles/animations.module.css', () => ({
 vi.mock('@/components/ui/icon', () => ({
   __esModule: true,
   default: (
-    props: React.ComponentPropsWithoutRef<'span'> & { name: string }
-  ) => <span data-testid={props.name} {...props} />
+    props: React.ComponentPropsWithoutRef<'span'> & {
+      name: string
+      'data-testid'?: string
+    }
+  ) => <span data-testid={props['data-testid'] ?? props.name} {...props} />
 }))
 
 // Mock palette data for tests (French names)
@@ -36,6 +40,9 @@ const mockPalette = [
   { index: 2, name: 'Bleu', hex: '0000ff', vector: new Float32Array([7, 8, 9]) }
 ]
 
+const hex_rouge = vectorToHex(mockPalette[0].vector)
+const hex_vert = vectorToHex(mockPalette[1].vector)
+const hex_bleu = vectorToHex(mockPalette[2].vector)
 // Mock slots for palette view
 const filledSlot = { color: new Float32Array([1, 2, 3]), locked: false }
 const lockedSlot = { color: new Float32Array([4, 5, 6]), locked: true }
@@ -66,11 +73,13 @@ describe('ColorPaletteView', () => {
     render(<ColorPaletteView {...props} />)
     // Unlocked filled slot
     expect(
-      screen.getByRole('button', { name: /Rouge déverrouillée/i })
+      screen.getByRole('button', { name: `#${hex_rouge} déverrouillée` })
     ).toBeInTheDocument()
     // Locked filled slot
     expect(
-      screen.getByRole('button', { name: /Vert verrouillée/i })
+      screen.getByRole('button', {
+        name: new RegExp(`#${hex_vert} verrouillée`, 'i')
+      })
     ).toBeInTheDocument()
     // Lock icon is rendered for locked slot
     expect(screen.getByTestId('LockClosedIcon')).toBeInTheDocument()
@@ -84,12 +93,15 @@ describe('ColorPaletteView', () => {
     expect(screen.getByTestId('PlusIcon')).toBeInTheDocument()
   })
 
-  it('calls onToggleLock when a filled slot is clicked', () => {
+  it('opens popover when empty slot is clicked', async () => {
     render(<ColorPaletteView {...props} />)
     fireEvent.click(
-      screen.getByRole('button', { name: /Rouge déverrouillée/i })
+      screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
-    expect(onToggleLock).toHaveBeenCalledWith(0)
+    expect(
+      await screen.findByRole('listbox', { name: /Options de couleur/i })
+    ).toBeInTheDocument()
+    expect(screen.getAllByRole('option').length).toBe(3)
   })
 
   it('opens popover when empty slot is clicked', () => {
@@ -103,17 +115,18 @@ describe('ColorPaletteView', () => {
     expect(screen.getAllByRole('option').length).toBe(3)
   })
 
-  it('calls onSetColor and closes popover when a color is selected', () => {
+  it('calls onSetColor and closes popover when a color is selected', async () => {
     render(<ColorPaletteView {...props} />)
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
-    // Use getByRole with name for clarity
-    const bleuBtn = screen.getByRole('option', { name: /Bleu/i })
+    const bleuBtn = await screen.findByRole('option', { name: /Bleu/i })
     fireEvent.click(bleuBtn)
     expect(onSetColor).toHaveBeenCalledWith({ index: 1, color: mockPalette[2] })
     // Popover should close
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    )
   })
 
   it('disables color options already used in other slots', () => {

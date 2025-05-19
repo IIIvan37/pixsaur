@@ -16,16 +16,5 @@
 .colorOption:hover {
   transform: scale(1.1);
   border-color: var(--color-green-400);
-  z-index: 1;
-}
-
-@keyframes popoverAppear {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-  }
+  z-index: 10;
 }

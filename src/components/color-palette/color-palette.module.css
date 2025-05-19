@@ -99,3 +99,9 @@
   border: 2px solid var(--color-white);
   box-shadow: 0 0 0 1px var(--color-green-400);
 }
+
+.colorOption:focus {
+  outline: 2px solid var(--color-green-400);
+  outline-offset: 2px;
+  z-index: 2;
+}
