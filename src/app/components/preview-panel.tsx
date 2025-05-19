@@ -2,12 +2,12 @@ import { Box, Flex, Heading } from '@radix-ui/themes'
 import ImagePreview from '@/components/image-preview'
 
 import styles from '@/styles/image-converter.module.css'
-import { ColorPalette } from '@/components/color-palette'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useEffect } from 'react'
 import { setReducedPaletteAtom } from '../store/palette/palette'
 import { reducedPaletteAtom } from '../store/preview/preview'
 import ImageControls from '@/components/image-controls'
+import { ColorPalette } from '@/components/color-palette/color-palette'
 
 const PreviewPanel = () => {
   const reduced = useAtomValue(reducedPaletteAtom)

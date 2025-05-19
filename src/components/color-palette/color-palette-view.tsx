@@ -1,33 +1,55 @@
 import { useState, useRef, useEffect } from 'react'
-import { useAtomValue, useSetAtom } from 'jotai'
-import { getCPCPalette } from '@/libs/cpc-palette'
 
 import type { CPCColor } from '@/libs/types'
 
-import styles from '../styles/color-palette.module.css'
-import animStyles from '../styles/animations.module.css'
-import Icon from './ui/icon'
-import {
-  userPaletteAtom,
-  onToggleLockAtom,
-  onSetColorAtom
-} from '@/app/store/palette/palette'
+import styles from './color-palette.module.css'
+import animStyles from '@/styles/animations.module.css'
 
-export function ColorPalette() {
-  // Lecture de la palette fusionnée (reduced + locked)
-  const slots = useAtomValue(userPaletteAtom)
-  const toggleLock = useSetAtom(onToggleLockAtom)
-  const setColor = useSetAtom(onSetColorAtom)
+import Icon from '../ui/icon'
+import { PaletteSlot } from '@/app/store/palette/types'
 
-  // Palette complète CPC pour lookup
-  const fullPalette = getCPCPalette()
+/**
+ * Props for the ColorPaletteView component.
+ */
+export type ColorPaletteViewProps = {
+  /** The palette slots to display (filled or empty). */
+  slots: PaletteSlot[]
+  /** Handler to toggle lock state for a slot. */
+  onToggleLock: (index: number) => void
+  /** Handler to set a color for a slot. */
+  onSetColor: ({ index, color }: { index: number; color: CPCColor }) => void
+  /** The full list of available CPC colors. */
+  fullPalette: CPCColor[]
+}
 
-  // État du popover
+// Threshold in pixels to determine if the popover should open upwards
+const POPOVER_BOTTOM_THRESHOLD = 200
+
+/**
+ * Presentational component for displaying and interacting with the color palette.
+ * Handles rendering of slots, lock/unlock, color selection popover, and accessibility.
+ *
+ * @param {ColorPaletteViewProps} props - The component props.
+ * @returns {JSX.Element} The color palette UI.
+ */
+
+export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
+  slots,
+  onToggleLock,
+  onSetColor,
+  fullPalette
+}) => {
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null)
+  const [focusedColorIdx, setFocusedColorIdx] = useState<number>(0)
   const popoverRef = useRef<HTMLDivElement>(null)
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([])
 
-  // Fermer le popover quand on clique à l'extérieur
+  // Keep buttonRefs in sync with slots length to avoid stale refs
+  useEffect(() => {
+    buttonRefs.current.length = slots.length
+  }, [slots.length])
+
+  // Close the popover when clicking outside of it
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -43,12 +65,49 @@ export function ColorPalette() {
     }
   }, [])
 
-  // Calcul de la position du popover
+  // Reset focused color index when popover opens/closes
+  useEffect(() => {
+    if (openPopoverIndex !== null) setFocusedColorIdx(0)
+  }, [openPopoverIndex])
+
+  /**
+   * Keyboard navigation for the color popover.
+   */
+  const handlePopoverKeyDown = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    optionsCount: number,
+    slotIdx: number
+  ) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+      e.preventDefault()
+      setFocusedColorIdx((prev) => (prev + 1) % optionsCount)
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      setFocusedColorIdx((prev) => (prev - 1 + optionsCount) % optionsCount)
+    } else if (e.key === 'Escape') {
+      setOpenPopoverIndex(null)
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      // Simulate click on the focused color if not disabled
+      const pc = fullPalette[focusedColorIdx]
+      const isUsed = slots.some((s, i) => {
+        if (i === slotIdx) return false
+        return (
+          Array.from(s.color ?? []).every((v, j) => v === pc.vector[j]) ?? false
+        )
+      })
+      if (!isUsed) {
+        onSetColor({ index: slotIdx, color: pc })
+        setOpenPopoverIndex(null)
+      }
+    }
+  }
+
   const getPopoverStyle = (index: number) => {
     const btn = buttonRefs.current[index]
     if (!btn) return {}
     const rect = btn.getBoundingClientRect()
-    const isNearBottom = window.innerHeight - rect.bottom < 200
+    const isNearBottom =
+      window.innerHeight - rect.bottom < POPOVER_BOTTOM_THRESHOLD
     return {
       top: isNearBottom ? 'auto' : `${rect.height + 5}px`,
       bottom: isNearBottom ? `${rect.height + 5}px` : 'auto',
@@ -57,9 +116,8 @@ export function ColorPalette() {
     }
   }
 
-  // Au clic sur une couleur dans le popover
   const handleColorSelect = (paletteColor: CPCColor, slotIndex: number) => {
-    setColor({ index: slotIndex, color: paletteColor })
+    onSetColor({ index: slotIndex, color: paletteColor })
     setOpenPopoverIndex(null)
   }
 
@@ -71,7 +129,6 @@ export function ColorPalette() {
     >
       <div className={styles.paletteGrid}>
         {slots.map((slot, idx) => {
-          // Retrouver l'objet CPCColor pour affichage
           const colorObj = slot.color
             ? fullPalette.find((c) =>
                 Array.from(c.vector).every(
@@ -89,10 +146,10 @@ export function ColorPalette() {
                 <button
                   className={styles.colorFill}
                   style={{ backgroundColor: `#${colorObj.hex}` }}
-                  title={`${colorObj.name}: R:${colorObj.vector[0]}, G:${colorObj.vector[1]}, B:${colorObj.vector[2]}`}
-                  onClick={() => toggleLock(idx)}
+                  title={`${colorObj.name} : R:${colorObj.vector[0]}, V:${colorObj.vector[1]}, B:${colorObj.vector[2]}`}
+                  onClick={() => onToggleLock(idx)}
                   aria-label={`${colorObj.name} ${
-                    slot.locked ? 'verrouillé' : 'déverrouillé'
+                    slot.locked ? 'verrouillée' : 'déverrouillée'
                   }`}
                   aria-pressed={slot.locked}
                 >
@@ -116,19 +173,23 @@ export function ColorPalette() {
                   >
                     <Icon name='PlusIcon' className={styles.plusIcon} />
                   </button>
+
                   {openPopoverIndex === idx && (
                     <div
                       className={styles.colorPopover}
                       ref={popoverRef}
                       style={getPopoverStyle(idx)}
+                      tabIndex={-1}
+                      onKeyDown={(e) =>
+                        handlePopoverKeyDown(e, fullPalette.length, idx)
+                      }
                     >
                       <div
                         className={styles.colorGrid}
                         role='listbox'
-                        aria-label='Options de couleurs'
+                        aria-label='Options de couleur'
                       >
-                        {fullPalette.map((pc) => {
-                          // Désactiver si déjà utilisée sur un autre slot
+                        {fullPalette.map((pc, optionIdx) => {
                           const isUsed = slots.some((s, i) => {
                             if (i === idx) return false
                             return (
@@ -148,6 +209,8 @@ export function ColorPalette() {
                               role='option'
                               aria-selected={isUsed}
                               disabled={isUsed}
+                              tabIndex={focusedColorIdx === optionIdx ? 0 : -1}
+                              autoFocus={focusedColorIdx === optionIdx}
                               onClick={() => handleColorSelect(pc, idx)}
                             />
                           )
