@@ -8,10 +8,7 @@ import {
 } from '@/app/store/preview/preview'
 import { useAtomValue } from 'jotai'
 import { exportZip } from '@/utils/exports/export-zip'
-import {
-  remapImageDataToPalette,
-  rgbToIndexBufferExact
-} from '@/utils/exports/rgb-to-indexes'
+import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import { modeAtom } from '@/app/store/config/config'
@@ -35,9 +32,7 @@ export default function ExportPanel() {
       return index
     })
 
-    const remappedImage = remapImageDataToPalette(image, reducedPalette)
-
-    const indexBuf = rgbToIndexBufferExact(remappedImage.data, reducedPalette)
+    const indexBuf = rgbToIndexBufferExact(image.data, reducedPalette)
     const canvas = document.createElement('canvas')
 
     canvas.width = image.width

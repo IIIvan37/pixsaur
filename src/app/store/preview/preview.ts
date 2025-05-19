@@ -7,6 +7,7 @@ import { modeAtom, colorSpaceAtom, ditheringAtom } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { srcAtom, selectionAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
+import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
 
 // 1. Zone sélectionnée réduite à la largeur du mode
 export const croppedImageAtom = atom((get) => {
@@ -80,5 +81,8 @@ export const previewImageAtom = atom((get) => {
     intensity: dithering.intensity
   })
 
-  return new ImageData(previewBuffer, cropped.width, cropped.height)
+  return remapImageDataToPalette(
+    new ImageData(previewBuffer, cropped.width, cropped.height),
+    reduced
+  )
 })

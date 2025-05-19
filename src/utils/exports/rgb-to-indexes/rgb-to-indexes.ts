@@ -31,23 +31,25 @@ export function rgbToIndexBufferExact(
   const length = rgbaBuf.length / 4
   const indices = new Uint8Array(length)
 
+  // Build a map for fast lookup
+  const paletteMap = new Map<string, number>()
+  palette.forEach(([r, g, b], idx) => {
+    paletteMap.set(`${r},${g},${b}`, idx)
+  })
+
   for (let i = 0; i < length; i++) {
     const off = i * 4
-
-    // quantification vers le niveau CPC le plus proche
     const r = quantizeCPC(rgbaBuf[off])
     const g = quantizeCPC(rgbaBuf[off + 1])
     const b = quantizeCPC(rgbaBuf[off + 2])
+    const key = `${r},${g},${b}`
 
-    const idx = palette.findIndex(
-      ([pr, pg, pb]) => pr === r && pg === g && pb === b
-    )
-    if (idx === -1) {
+    const idx = paletteMap.get(key)
+    if (idx === undefined) {
       throw new Error(
         `Pixel RGB [${r}, ${g}, ${b}] non trouvé dans la palette.`
       )
     }
-
     indices[i] = idx
   }
 
@@ -66,31 +68,37 @@ export function remapImageDataToPalette(
 ): ImageData {
   const { width, height, data } = imgData
   const out = new Uint8ClampedArray(data.length)
+  const colorCache = new Map<string, Vector>()
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i]
     const g = data[i + 1]
     const b = data[i + 2]
+    const key = `${r},${g},${b}`
 
-    // Recherche de la couleur la plus proche dans la palette
-    let best: Vector = reducedPalette[0]
-    let bestDist = Infinity
-    for (const [rc, gc, bc] of reducedPalette) {
-      const dr = r - rc
-      const dg = g - gc
-      const db = b - bc
-      const dist = dr * dr + dg * dg + db * db
-      if (dist < bestDist) {
-        bestDist = dist
-        best = [rc, gc, bc]
+    let best: Vector
+    if (colorCache.has(key)) {
+      best = colorCache.get(key)!
+    } else {
+      let bestDist = Infinity
+      best = reducedPalette[0]
+      for (const [rc, gc, bc] of reducedPalette) {
+        const dr = r - rc
+        const dg = g - gc
+        const db = b - bc
+        const dist = dr * dr + dg * dg + db * db
+        if (dist < bestDist) {
+          bestDist = dist
+          best = [rc, gc, bc]
+        }
       }
+      colorCache.set(key, best)
     }
 
-    // Écriture du pixel dans le buffer de sortie
     out[i] = best[0]
     out[i + 1] = best[1]
     out[i + 2] = best[2]
-    out[i + 3] = data[i + 3] // on préserve l'alpha d'origine
+    out[i + 3] = data[i + 3] // preserve original alpha
   }
 
   return new ImageData(out, width, height)
