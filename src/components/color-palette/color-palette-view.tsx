@@ -7,7 +7,7 @@ import animStyles from '@/styles/animations.module.css'
 
 import Icon from '../ui/icon'
 import { PaletteSlot } from '@/app/store/palette/types'
-import { ColorPopover } from './color-popover-view/color-popover'
+import { ColorPopover } from './color-popover'
 
 /**
  * Props for the ColorPaletteView component.
@@ -40,7 +40,6 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
   onSetColor,
   fullPalette
 }) => {
-  console.log('slots', slots)
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null)
   const [focusedColorIdx, setFocusedColorIdx] = useState<number>(0)
   const popoverRef = useRef<HTMLDivElement>(null)
@@ -72,6 +71,30 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
     if (openPopoverIndex !== null) setFocusedColorIdx(0)
   }, [openPopoverIndex])
 
+  const colorOptionRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  // Imperatively focus the correct color option when focusedColorIdx changes
+  useEffect(() => {
+    if (openPopoverIndex !== null && colorOptionRefs.current[focusedColorIdx]) {
+      colorOptionRefs.current[focusedColorIdx]?.focus()
+    }
+  }, [focusedColorIdx, openPopoverIndex])
+
+  // When opening the popover, set focusedColorIdx to the first enabled color
+  useEffect(() => {
+    if (openPopoverIndex !== null) {
+      // Find the first not-used color
+      const firstEnabledIdx = fullPalette.findIndex((pc, idx) => {
+        return !slots.some((slot, i) => {
+          if (i === openPopoverIndex) return false
+          if (!slot.color) return false
+          return Array.from(slot.color).every((v, j) => v === pc.vector[j])
+        })
+      })
+      setFocusedColorIdx(firstEnabledIdx === -1 ? 0 : firstEnabledIdx)
+    }
+  }, [openPopoverIndex, fullPalette, slots])
+
   /**
    * Keyboard navigation for the color popover.
    */
@@ -91,11 +114,11 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
     } else if (e.key === 'Enter' || e.key === ' ') {
       // Simulate click on the focused color if not disabled
       const pc = fullPalette[focusedColorIdx]
-      const isUsed = slots.some((s, i) => {
+      // Check if the selected color is already used in another slot
+      const isUsed = slots.some((slot, i) => {
         if (i === slotIdx) return false
-        return (
-          Array.from(s.color ?? []).every((v, j) => v === pc.vector[j]) ?? false
-        )
+        if (!slot.color) return false
+        return Array.from(slot.color).every((v, j) => v === pc.vector[j])
       })
       if (!isUsed) {
         onSetColor({ index: slotIdx, color: pc })
@@ -178,6 +201,7 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
 
                   {openPopoverIndex === idx && (
                     <ColorPopover
+                      colorOptionRefs={colorOptionRefs}
                       fullPalette={fullPalette}
                       slots={slots}
                       slotIdx={idx}

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { describe, it, vi, beforeEach } from 'vitest'
 import { ColorPaletteView, ColorPaletteViewProps } from './color-palette-view'
@@ -154,5 +154,64 @@ describe('ColorPaletteView', () => {
     // Simulate outside click
     fireEvent.mouseDown(document.body)
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  describe('ColorPaletteView keyboard navigation', () => {
+    function openPopoverAndGetOptions() {
+      render(<ColorPaletteView {...props} />)
+      fireEvent.click(
+        screen.getByRole('button', { name: /Ajouter une couleur/i })
+      )
+      return screen.getAllByRole('option')
+    }
+
+    function getFirstEnabled(options: HTMLElement[]) {
+      return options.find((btn) => !(btn as HTMLButtonElement).disabled)
+    }
+
+    function getNextEnabled(options: HTMLElement[], current: HTMLElement) {
+      return options
+        .slice(options.indexOf(current) + 1)
+        .find((btn) => !(btn as HTMLButtonElement).disabled)
+    }
+
+    it('ArrowDown/ArrowRight moves focus to next enabled color', async () => {
+      const options = openPopoverAndGetOptions()
+      const firstEnabled = getFirstEnabled(options)
+      expect(firstEnabled).toBeDefined()
+      await waitFor(() => expect(firstEnabled).toHaveFocus())
+
+      // Simulate ArrowRight
+      fireEvent.keyDown(firstEnabled!.parentElement!, { key: 'ArrowRight' })
+      const nextEnabled = getNextEnabled(options, firstEnabled!)
+      if (nextEnabled) {
+        await waitFor(() => expect(nextEnabled).toHaveFocus())
+      } else {
+        await waitFor(() => expect(firstEnabled).toHaveFocus())
+      }
+    })
+
+    it('Enter/Space only selects enabled color', async () => {
+      const options = openPopoverAndGetOptions()
+      const firstEnabled = getFirstEnabled(options)
+      expect(firstEnabled).toBeDefined()
+      await waitFor(() => expect(firstEnabled).toHaveFocus())
+
+      // Press Enter
+      fireEvent.keyDown(firstEnabled!.parentElement!, { key: 'Enter' })
+      expect(onSetColor).toHaveBeenCalledWith({
+        index: expect.any(Number),
+        color: expect.any(Object)
+      })
+
+      // Try to select a disabled option
+      const firstDisabled = options.find(
+        (btn) => (btn as HTMLButtonElement).disabled
+      )
+      if (firstDisabled) {
+        fireEvent.keyDown(firstDisabled.parentElement!, { key: 'Enter' })
+      }
+      expect(onSetColor).toHaveBeenCalledTimes(1)
+    })
   })
 })

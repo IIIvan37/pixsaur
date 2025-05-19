@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-
+import styles from './popover.module.css'
 /**
  * Popover component that displays its children in a floating dialog.
  *
@@ -44,20 +44,13 @@ export const Popover: React.FC<PopoverProps> = ({
     return () => document.removeEventListener('mousedown', handleClick)
   }, [isOpen, onClose, ref])
 
-  // Focus management (optional)
-  useEffect(() => {
-    if (isOpen && ref.current) {
-      ref.current.focus()
-    }
-  }, [isOpen, ref])
-
   if (!isOpen) return null
 
   return (
     <div
       ref={ref}
+      className={styles.popover}
       style={getPopoverStyle ? getPopoverStyle() : undefined}
-      tabIndex={-1}
       onKeyDown={onKeyDown}
       role='dialog'
       aria-modal='true'
