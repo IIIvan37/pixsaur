@@ -7,6 +7,7 @@ import animStyles from '@/styles/animations.module.css'
 
 import Icon from '../ui/icon'
 import { PaletteSlot } from '@/app/store/palette/types'
+import { ColorPopover } from './color-popover-view/color-popover'
 
 /**
  * Props for the ColorPaletteView component.
@@ -39,6 +40,7 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
   onSetColor,
   fullPalette
 }) => {
+  console.log('slots', slots)
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null)
   const [focusedColorIdx, setFocusedColorIdx] = useState<number>(0)
   const popoverRef = useRef<HTMLDivElement>(null)
@@ -175,48 +177,20 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
                   </button>
 
                   {openPopoverIndex === idx && (
-                    <div
-                      className={styles.colorPopover}
-                      ref={popoverRef}
-                      style={getPopoverStyle(idx)}
-                      tabIndex={-1}
+                    <ColorPopover
+                      fullPalette={fullPalette}
+                      slots={slots}
+                      slotIdx={idx}
+                      focusedColorIdx={focusedColorIdx}
+                      onColorSelect={handleColorSelect}
                       onKeyDown={(e) =>
                         handlePopoverKeyDown(e, fullPalette.length, idx)
                       }
-                    >
-                      <div
-                        className={styles.colorGrid}
-                        role='listbox'
-                        aria-label='Options de couleur'
-                      >
-                        {fullPalette.map((pc, optionIdx) => {
-                          const isUsed = slots.some((s, i) => {
-                            if (i === idx) return false
-                            return (
-                              Array.from(s.color ?? []).every(
-                                (v, j) => v === pc.vector[j]
-                              ) ?? false
-                            )
-                          })
-                          return (
-                            <button
-                              key={pc.index}
-                              className={`${styles.colorOption} ${
-                                animStyles.colorSquare
-                              } ${isUsed ? styles.colorOptionActive : ''}`}
-                              style={{ backgroundColor: `#${pc.hex}` }}
-                              title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
-                              role='option'
-                              aria-selected={isUsed}
-                              disabled={isUsed}
-                              tabIndex={focusedColorIdx === optionIdx ? 0 : -1}
-                              autoFocus={focusedColorIdx === optionIdx}
-                              onClick={() => handleColorSelect(pc, idx)}
-                            />
-                          )
-                        })}
-                      </div>
-                    </div>
+                      getPopoverStyle={getPopoverStyle}
+                      onClose={function (): void {
+                        setOpenPopoverIndex(null)
+                      }}
+                    />
                   )}
                 </div>
               )}
