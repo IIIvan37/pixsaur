@@ -5,21 +5,26 @@ import React, { useRef } from 'react'
 describe('Popover', () => {
   const TestPopover = (props?: Partial<PopoverProps>) => {
     const ref = useRef<HTMLDivElement>(null)
+    const anchorRef = useRef<HTMLButtonElement>(null)
     return (
-      <Popover
-        isOpen={props?.isOpen ?? true}
-        onClose={props?.onClose ?? (() => {})}
-        getPopoverStyle={props?.getPopoverStyle}
-        onKeyDown={props?.onKeyDown}
-        popoverRef={props?.popoverRef ?? ref}
-        trigger={<button data-testid='trigger'>Trigger</button>}
-      >
-        <div data-testid='popover-content'>Popover Content</div>
-      </Popover>
+      <>
+        <button ref={anchorRef} data-testid='trigger'>
+          Trigger
+        </button>
+        <Popover
+          isOpen={props?.isOpen ?? true}
+          onClose={props?.onClose ?? (() => {})}
+          getPopoverStyle={props?.getPopoverStyle}
+          onKeyDown={props?.onKeyDown}
+          popoverRef={props?.popoverRef ?? ref}
+        >
+          <div data-testid='popover-content'>Popover Content</div>
+        </Popover>
+      </>
     )
   }
 
-  it('renders trigger and content when open', () => {
+  it('renders content when open', () => {
     render(<TestPopover isOpen={true} />)
     expect(screen.getByTestId('trigger')).toBeInTheDocument()
     expect(screen.getByTestId('popover-content')).toBeInTheDocument()
@@ -31,15 +36,10 @@ describe('Popover', () => {
     expect(screen.queryByTestId('popover-content')).not.toBeInTheDocument()
   })
 
-  it('calls onClose when popover is closed', () => {
+  it('calls onClose when clicking outside', () => {
     const onClose = vi.fn()
     render(<TestPopover isOpen={true} onClose={onClose} />)
-    // Simulate closing by changing open state via onOpenChange
-    fireEvent.click(document.body)
-    // onClose should be called by Radix when clicking outside (simulate manually)
-    // You may need to trigger onOpenChange directly if Radix doesn't propagate in test env
-    // For now, call onClose manually to simulate
-    onClose()
+    fireEvent.mouseDown(document.body)
     expect(onClose).toHaveBeenCalled()
   })
 

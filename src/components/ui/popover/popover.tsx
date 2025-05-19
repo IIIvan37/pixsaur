@@ -1,6 +1,17 @@
-import React from 'react'
-import { Popover as ThemePopover } from '@radix-ui/themes'
+import React, { useEffect, useRef } from 'react'
 
+/**
+ * Popover component that displays its children in a floating dialog.
+ *
+ * @param {boolean} isOpen - Whether the popover is open and visible.
+ * @param {() => void} onClose - Callback invoked when the popover should close (e.g., clicking outside).
+ * @param {() => React.CSSProperties} [getPopoverStyle] - Optional function to provide custom styles for the popover content.
+ * @param {React.ReactNode} children - The content to display inside the popover.
+ * @param {(e: React.KeyboardEvent<HTMLDivElement>) => void} [onKeyDown] - Optional keyboard event handler for the popover content.
+ * @param {React.RefObject<HTMLDivElement | null>} [popoverRef] - Optional ref for the popover content element.
+ *
+ * @returns {JSX.Element | null} The popover content if open, otherwise null.
+ */
 export type PopoverProps = {
   isOpen: boolean
   onClose: () => void
@@ -8,46 +19,50 @@ export type PopoverProps = {
   children: React.ReactNode
   onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void
   popoverRef?: React.RefObject<HTMLDivElement | null>
-  trigger: React.ReactElement
 }
 
-/**
- * Popover component wrapping @radix-ui/themes Popover.
- *
- * @param {boolean} isOpen - Whether the popover is open.
- * @param {() => void} onClose - Callback when the popover should close.
- * @param {() => React.CSSProperties} [getPopoverStyle] - Optional function to provide custom styles for the popover content.
- * @param {React.ReactNode} children - The content to display inside the popover.
- * @param {(e: React.KeyboardEvent<HTMLDivElement>) => void} [onKeyDown] - Optional keyboard event handler for the popover content.
- * @param {React.RefObject<HTMLDivElement | null>} [popoverRef] - Optional ref for the popover content element.
- * @param {React.ReactElement} trigger - The element that triggers the popover.
- *
- * @returns {JSX.Element} The themed popover component.
- */
 export const Popover: React.FC<PopoverProps> = ({
   isOpen,
   onClose,
   getPopoverStyle,
   children,
   onKeyDown,
-  popoverRef,
-  trigger
+  popoverRef
 }) => {
-  const contentProps = {
-    ref: popoverRef,
-    onKeyDown,
-    tabIndex: -1,
-    role: 'dialog' as const,
-    'aria-modal': 'true' as const,
-    ...(getPopoverStyle ? { style: getPopoverStyle() } : {})
-  }
+  const localRef = useRef<HTMLDivElement>(null)
+  const ref = popoverRef || localRef
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return
+    function handleClick(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        onClose()
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [isOpen, onClose, ref])
+
+  // Focus management (optional)
+  useEffect(() => {
+    if (isOpen && ref.current) {
+      ref.current.focus()
+    }
+  }, [isOpen, ref])
+
+  if (!isOpen) return null
+
   return (
-    <ThemePopover.Root
-      open={isOpen}
-      onOpenChange={(open) => !open && onClose()}
+    <div
+      ref={ref}
+      style={getPopoverStyle ? getPopoverStyle() : undefined}
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+      role='dialog'
+      aria-modal='true'
     >
-      <ThemePopover.Trigger>{trigger}</ThemePopover.Trigger>
-      <ThemePopover.Content {...contentProps}>{children}</ThemePopover.Content>
-    </ThemePopover.Root>
+      {children}
+    </div>
   )
 }

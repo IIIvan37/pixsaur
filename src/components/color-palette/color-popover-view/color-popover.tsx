@@ -2,8 +2,8 @@ import { PaletteSlot } from '@/app/store/palette/types'
 import styles from '../color-palette.module.css'
 import animStyles from '@/styles/animations.module.css'
 import { CPCColor } from '@/libs/types'
-import { Popover } from '@/components/ui/popover/popover'
-import Icon from '@/components/ui/icon'
+import { Popover } from '@/components/ui/popover'
+
 type ColorPopoverProps = {
   fullPalette: CPCColor[]
   slots: PaletteSlot[]
@@ -30,11 +30,6 @@ export const ColorPopover: React.FC<ColorPopoverProps> = ({
     getPopoverStyle={() => getPopoverStyle(slotIdx)}
     onKeyDown={onKeyDown}
     onClose={onClose}
-    trigger={
-      <button className={styles.emptySlot} aria-label='Ajouter une couleur'>
-        <Icon name='PlusIcon' className={styles.plusIcon} />
-      </button>
-    }
   >
     <div
       className={styles.colorGrid}
