@@ -48,31 +48,8 @@
   top: 50%;
   transform: translateY(-50%);
 }
-
-.colorGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-1);
-}
-
-.colorOption {
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-green-800);
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.colorOption:hover {
-  transform: scale(1.1);
-  border-color: var(--color-green-400);
-  z-index: 1;
-}
-
 @keyframes popoverAppear {
   from {
-    opacity: 0;
     transform: translateX(-50%) scale(0.9);
   }
   to {
