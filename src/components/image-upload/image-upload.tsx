@@ -11,7 +11,7 @@ export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0]
       if (file && file.type.startsWith('image/')) {
-        processImageFile(file, onImageLoaded)
+        processImageFile(file).then(onImageLoaded)
       }
     },
     [onImageLoaded]
