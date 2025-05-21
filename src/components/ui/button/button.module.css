@@ -7,37 +7,45 @@
   font-size: var(--font-size-md);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  cursor: pointer;
   border: 1px solid var(--color-border);
   background-color: var(--color-background);
   color: var(--color-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* === Variantes === */
 .primary:hover {
+  background-color: var(--color-hover-primary);
   box-shadow: 0 0 4px var(--color-accent);
-  background-color: var(--color-accent-hover, #005500);
+}
+
+.primary:active {
+  background-color: var(--color-pressed-primary);
 }
 
 .secondary {
-  background: none;
-  border: 1px dashed var(--color-accent);
+  background-color: transparent;
   color: var(--color-accent);
+  border: 1px dashed var(--color-accent);
 }
 
 .secondary:hover {
-  background-color: rgba(0, 255, 0, 0.05);
+  background-color: var(--color-hover-secondary);
   border-style: solid;
+}
+
+.secondary:active {
+  background-color: var(--color-pressed-secondary);
 }
 
 .icon {
   padding: var(--space-xs);
   font-size: var(--font-size-md);
-  color: var(--color-accent);
   background: none;
+  color: var(--color-accent);
   border: none;
 }
 
@@ -50,5 +58,5 @@
   pointer-events: none;
   filter: grayscale(60%);
   box-shadow: none;
-  opacity: 1; /* désactivation visuelle via couleur, pas opacité */
+  opacity: 1;
 }

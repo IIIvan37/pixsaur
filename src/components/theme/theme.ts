@@ -7,6 +7,20 @@ export const theme = {
     accentActive: '#00AA00',
     border: '#00DF3A',
     error: '#FF5555',
+    hover: {
+      primary: '#00CC00',
+      secondary: 'rgba(0, 255, 0, 0.05)'
+    },
+
+    pressed: {
+      primary: '#005500',
+      secondary: '#003300'
+    },
+
+    focus: {
+      ring: '#00FF00',
+      glow: '#00FF88'
+    },
     disabled: {
       thumb: '#004400',
       border: '#007700',

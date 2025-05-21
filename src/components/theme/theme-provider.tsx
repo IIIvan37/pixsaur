@@ -3,33 +3,31 @@ import { theme } from './theme'
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
+    function injectVars(
+      prefix: string,
+      obj: Record<string, string | object>,
+      set: (k: string, v: string) => void
+    ) {
+      Object.entries(obj).forEach(([key, value]) => {
+        const fullKey = `${prefix}-${key}`
+        if (typeof value === 'string') {
+          set(fullKey, value)
+        } else {
+          injectVars(fullKey, value as Record<string, string | object>, set)
+        }
+      })
+    }
     const root = document.documentElement
+
     const setVar = (key: string, val: string) =>
       root.style.setProperty(key, val)
 
-    Object.entries(theme.colors).forEach(([k, v]) => {
-      if (typeof v === 'string') {
-        root.style.setProperty(`--color-${k}`, v)
-      }
-
-      // Couleurs imbriquées (ex : disabled.thumb → --color-disabled-thumb)
-      if (typeof v === 'object') {
-        Object.entries(v).forEach(([subKey, subValue]) => {
-          root.style.setProperty(`--color-${k}-${subKey}`, subValue)
-        })
-      }
-    })
-    Object.entries(theme.font.size).forEach(([k, v]) =>
-      setVar(`--font-size-${k}`, v)
-    )
-    setVar('--font-family', theme.font.family)
-    Object.entries(theme.spacing).forEach(([k, v]) => setVar(`--space-${k}`, v))
-    Object.entries(theme.radius).forEach(([k, v]) => setVar(`--radius-${k}`, v))
-    Object.entries(theme.shadow).forEach(([k, v]) => setVar(`--shadow-${k}`, v))
-    Object.entries(theme.spinner).forEach(([k, v]) =>
-      setVar(`--spinner-${k}`, v)
-    )
-    Object.entries(theme.grid).forEach(([k, v]) => setVar(`--grid-${k}`, v))
+    injectVars('--color', theme.colors, setVar)
+    injectVars('--font', theme.font, setVar)
+    injectVars('--spacing', theme.spacing, setVar)
+    injectVars('--radius', theme.radius, setVar)
+    injectVars('--shadow', theme.shadow, setVar)
+    injectVars('--spinner', theme.spinner, setVar)
   }, [])
 
   return <>{children}</>
