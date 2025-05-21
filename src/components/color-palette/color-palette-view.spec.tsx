@@ -13,15 +13,7 @@ vi.mock('@/styles/animations.module.css', () => ({
   __esModule: true,
   default: {}
 }))
-vi.mock('@/components/ui/icon', () => ({
-  __esModule: true,
-  default: (
-    props: React.ComponentPropsWithoutRef<'span'> & {
-      name: string
-      'data-testid'?: string
-    }
-  ) => <span data-testid={props['data-testid'] ?? props.name} {...props} />
-}))
+vi.mock('@/components/ui/icon')
 
 // Mock palette data for tests (French names)
 const mockPalette = [

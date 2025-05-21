@@ -13,7 +13,6 @@
 
 .section {
   margin-bottom: var(--space-4);
-
 }
 
 .flexRow {
@@ -22,7 +21,6 @@
   flex-wrap: wrap;
   gap: var(--space-4);
 }
-
 
 .flexColumn_1 {
   flex: 1;
@@ -110,7 +108,11 @@
 }
 
 .sliderFillDefault {
-  background: linear-gradient(to right, rgba(0, 255, 65, 0.7), rgba(0, 255, 65, 0.3));
+  background: linear-gradient(
+    to right,
+    rgba(0, 255, 65, 0.7),
+    rgba(0, 255, 65, 0.3)
+  );
 }
 
 .helpText {
@@ -212,8 +214,6 @@
   gap: var(--space-1);
 }
 
-
-
 .controlsContainer {
   flex-direction: column;
   align-items: flex-start;
@@ -222,12 +222,6 @@
 
 .ditheringSlider {
   width: 150px;
-}
-
-.exportPanel {
-  margin-top: var(--space-3);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-green-900);
 }
 
 .resetButton {
@@ -242,13 +236,6 @@
   font-size: var(--font-size-xs);
   cursor: pointer;
   transition: all 0.2s ease;
-}
-
-
-
-.exportButton:hover {
-  background-color: var(--color-green-900);
-  color: var(--color-green-400);
 }
 
 .resetButton:hover {
@@ -284,14 +271,12 @@
     font-size: var(--font-size-md);
   }
 
-
-
   .ditheringSlider {
     width: 100%;
   }
 }
 
-.center{
+.center {
   display: flex;
   justify-content: center;
   align-items: center;

@@ -8,7 +8,7 @@ import Adjustments from '@/app/components/adjustements/adjustements'
 import { useImageAdjustement } from '@/hooks/use-image-adjustement'
 import { useAtom } from 'jotai'
 import { srcAtom } from '../store/image/image'
-import ExportPanel from '../../components/export-panel'
+import ExportPanel from '@/components/export-panel/export-panel'
 
 export default function ImageConverter() {
   const [src] = useAtom(srcAtom)

@@ -1,7 +1,3 @@
-import styles from '@/styles/image-converter.module.css'
-import animStyles from '@/styles/animations.module.css'
-import Icon from './ui/icon'
-import { Button } from '@radix-ui/themes'
 import {
   previewImageAtom,
   reducedPaletteAtom
@@ -12,6 +8,8 @@ import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import { modeAtom } from '@/app/store/config/config'
+import ExportPanelView from './export-panel-view'
+
 export default function ExportPanel() {
   const image = useAtomValue(previewImageAtom)
   const reducedPalette = useAtomValue(reducedPaletteAtom)
@@ -44,17 +42,5 @@ export default function ExportPanel() {
     exportZip(indexBuf, paletteFirmware, canvas, modeConfig.mode)
   }
 
-  return (
-    <div className={styles.exportPanel}>
-      <Button
-        onClick={onExport}
-        disabled={!image?.data}
-        className={[animStyles.button, styles.exportButton].join(' ')}
-        aria-disabled={!image?.data}
-      >
-        <Icon name='DownloadIcon' className={styles.buttonIcon} />
-        Exporter
-      </Button>
-    </div>
-  )
+  return <ExportPanelView onExport={onExport} />
 }
