@@ -14,6 +14,20 @@ export type ColorPaletteViewProps = {
   fullPalette: CPCColor[]
 }
 
+/**
+ * Renders a color palette view with interactive color slots.
+ *
+ * Each slot can display a color (with lock/unlock functionality) or allow the user to add a new color from a popover palette.
+ * Supports keyboard navigation and accessibility features for color selection.
+ *
+ * @component
+ * @param {Object} props - The component props.
+ * @param {Array<Slot>} props.slots - The current color slots in the palette.
+ * @param {(index: number) => void} props.onToggleLock - Callback to toggle the lock state of a color slot.
+ * @param {(params: { index: number; color: CPCColor }) => void} props.onSetColor - Callback to set a color for a slot.
+ * @param {Array<CPCPaletteColor>} props.fullPalette - The full list of available colors to choose from.
+ * @returns {JSX.Element} The rendered color palette view.
+ */
 export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
   slots,
   onToggleLock,
