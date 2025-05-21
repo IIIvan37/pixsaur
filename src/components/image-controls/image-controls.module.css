@@ -1,0 +1,34 @@
+.controlsContainer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.modeButtonsRow {
+  padding: var(--space-2);
+  display: flex;
+  gap: var(--space-2);
+}
+
+.modeButton {
+  padding-inline: var(--space-2);
+  padding-block: var(--space-1);
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.modeButtonActive {
+  background-color: var(--color-green-700);
+  color: var(--color-white);
+}
+
+.modeButtonInactive {
+  background-color: var(--color-green-950);
+  color: var(--color-green-500);
+  border: 1px solid var(--color-green-800);
+}
+
+.ditheringSlider {
+  width: 150px;
+}

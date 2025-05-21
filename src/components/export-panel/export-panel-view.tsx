@@ -1,5 +1,5 @@
 import Button from '../ui/button'
-import styles from '@/styles/image-converter.module.css'
+import styles from './export-panel.module.css'
 import animStyles from '@/styles/animations.module.css'
 import Icon from '@/components/ui/icon'
 export type ExportPanelViewProps = {
