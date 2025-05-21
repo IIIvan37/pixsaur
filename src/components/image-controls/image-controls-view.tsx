@@ -2,7 +2,7 @@ import { CPC_MODE_CONFIG, CpcModeKey } from '@/app/store/config/types'
 import { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { Flex, Heading } from '@radix-ui/themes'
 import Slider from '@/components/ui/slider'
-import styles from '@/styles/image-converter.module.css'
+import styles from './image-controls.module.css'
 import animStyles from '@/styles/animations.module.css'
 import clsx from 'clsx'
 
@@ -77,7 +77,7 @@ export function ImageControlsView({
 
   return (
     <div className={styles.controlsContainer}>
-      <Flex justify='between' align='center' mb='2'>
+      <Flex align='center' mb='2'>
         <Heading size='2' className={styles.sectionTitle}>
           Mode
         </Heading>
@@ -97,7 +97,7 @@ export function ImageControlsView({
           size='small'
         />
       </div>
-      <Flex justify='between' align='center' mb='2'>
+      <Flex align='center' mb='2'>
         <Heading size='2' className={styles.sectionTitle}>
           Espace de couleur
         </Heading>
