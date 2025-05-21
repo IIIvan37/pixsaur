@@ -1,5 +1,5 @@
 import Icon from '@/components/ui/icon'
-import Slider from '@/components/ui/slider'
+import { PixsaurSlider } from '@/components/ui/slider'
 import styles from '@/styles/image-converter.module.css'
 
 import { RangeOption } from './types'
@@ -41,6 +41,7 @@ export const AdjustementsView = ({
           className='text-xs'
           onClick={onReset}
           title='Réinitialiser les ajustements'
+          disabled={disabled}
         >
           <Icon name='ResetIcon' className={styles.buttonIcon} />
           Réinitialiser
@@ -52,7 +53,7 @@ export const AdjustementsView = ({
         {labels.map((adj) => {
           const settings = adjustments[adj.key]
           return (
-            <Slider
+            <PixsaurSlider
               key={adj.key}
               disabled={disabled}
               value={settings[0]}
@@ -60,10 +61,8 @@ export const AdjustementsView = ({
               max={settings[2]}
               step={settings[3]}
               showTooltip={false}
-              onChange={(value) => onChange({ key: adj.key, value })}
+              onChange={(value: number) => onChange({ key: adj.key, value })}
               label={adj.label}
-              compact
-              size='small'
             />
           )
         })}

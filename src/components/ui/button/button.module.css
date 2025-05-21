@@ -10,32 +10,22 @@
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  border: 1px solid transparent;
   cursor: pointer;
-}
-
-/* === PRIMARY === */
-.primary {
+  border: 1px solid var(--color-border);
   background-color: var(--color-background);
   color: var(--color-foreground);
-  border-color: var(--color-border);
 }
 
+/* === Variantes === */
 .primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 6px var(--color-accent);
+  box-shadow: 0 0 4px var(--color-accent);
+  background-color: var(--color-accent-hover, #005500);
 }
 
-.primary:active {
-  transform: translateY(0);
-  background-color: #002800;
-}
-
-/* === SECONDARY === */
 .secondary {
-  background-color: transparent;
-  color: var(--color-accent);
+  background: none;
   border: 1px dashed var(--color-accent);
+  color: var(--color-accent);
 }
 
 .secondary:hover {
@@ -43,7 +33,6 @@
   border-style: solid;
 }
 
-/* === ICON === */
 .icon {
   padding: var(--space-xs);
   font-size: var(--font-size-md);
@@ -52,15 +41,14 @@
   border: none;
 }
 
-.icon:hover {
-  color: var(--color-accent-hover);
-}
-
-/* === DISABLED === */
+/* === Disabled === */
 .disabled {
-  opacity: 0.4;
+  background-color: var(--color-disabled-track);
+  color: var(--color-disabled-text);
+  border-color: var(--color-disabled-border);
   cursor: not-allowed;
   pointer-events: none;
+  filter: grayscale(60%);
   box-shadow: none;
-  transform: none;
+  opacity: 1; /* désactivation visuelle via couleur, pas opacité */
 }

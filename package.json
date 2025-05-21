@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@radix-ui/react-icons": "^1.3.2",
+    "@radix-ui/react-slider": "^1.3.5",
+    "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/themes": "^3.2.1",
     "@types/lodash": "^4.17.16",
     "clsx": "^2.1.1",

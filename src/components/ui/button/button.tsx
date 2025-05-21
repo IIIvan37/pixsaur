@@ -1,22 +1,29 @@
-import type { ReactNode, ButtonHTMLAttributes } from 'react'
+import { Slot } from '@radix-ui/react-slot'
 import clsx from 'clsx'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import styles from './button.module.css'
 
-type ButtonProps = {
-  variant?: 'primary' | 'secondary' | 'icon'
+type Variant = 'primary' | 'secondary' | 'icon'
+
+type Props = {
   children: ReactNode
+  asChild?: boolean
+  variant?: Variant
+  className?: string
 } & ButtonHTMLAttributes<HTMLButtonElement>
 
 export function Button({
-  variant = 'primary',
-  disabled = false,
-  className = '',
   children,
+  asChild = false,
+  variant = 'primary',
+  className = '',
+  disabled,
   ...props
-}: ButtonProps) {
+}: Props) {
+  const Comp = asChild ? Slot : 'button'
+
   return (
-    <button
-      type='button'
+    <Comp
       className={clsx(
         styles.button,
         styles[variant],
@@ -27,6 +34,6 @@ export function Button({
       {...props}
     >
       {children}
-    </button>
+    </Comp>
   )
 }

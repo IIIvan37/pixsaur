@@ -6,8 +6,16 @@ export const theme = {
     accentHover: '#00CC00',
     accentActive: '#00AA00',
     border: '#00DF3A',
-    error: '#FF5555'
+    error: '#FF5555',
+    disabled: {
+      thumb: '#004400',
+      border: '#007700',
+      range: '#005500',
+      track: '#002200',
+      text: '#007700'
+    }
   },
+
   font: {
     family: 'JetBrains Mono, Fira Code, Inconsolata, monospace',
     size: {
