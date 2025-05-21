@@ -1,6 +1,6 @@
 import { Box, Flex, Heading } from '@radix-ui/themes'
 import { ImageUpload } from '@/components/image-upload/image-upload'
-import Button from '@/components/ui/button'
+
 import { downscaleImage } from '@/libs/pixsaur-adapter/io/downscale-image'
 import styles from '@/styles/image-converter.module.css'
 import { ImageSelector } from '@/components/image-selector'
@@ -8,6 +8,7 @@ import Icon from '@/components/ui/icon'
 import { downscaledAtom, setDownscaledAtom } from '../store/image/image'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
+import { Button } from '@/components/ui/button'
 
 type SourceSectionProps = {
   canvasWidth: number

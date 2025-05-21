@@ -1,10 +1,10 @@
-import Button from '@/components/ui/button'
 import Icon from '@/components/ui/icon'
 import Slider from '@/components/ui/slider'
 import styles from '@/styles/image-converter.module.css'
 
 import { RangeOption } from './types'
 import { AdjustementKey } from '@/app/store/config/types'
+import { Button } from '@/components/ui/button'
 
 type RangeLabels = {
   key: AdjustementKey
@@ -37,7 +37,8 @@ export const AdjustementsView = ({
     <div className={styles.panel} style={{ flex: 1 }}>
       <div className={styles.headerFlex}>
         <Button
-          variant='reset'
+          variant='secondary'
+          className='text-xs'
           onClick={onReset}
           title='Réinitialiser les ajustements'
         >

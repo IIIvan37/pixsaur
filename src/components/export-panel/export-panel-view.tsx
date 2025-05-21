@@ -1,7 +1,8 @@
-import Button from '../ui/button'
 import styles from './export-panel.module.css'
 import animStyles from '@/styles/animations.module.css'
 import Icon from '@/components/ui/icon'
+import { Button } from '@/components/ui/button'
+
 export type ExportPanelViewProps = {
   onExport: () => void
 }
