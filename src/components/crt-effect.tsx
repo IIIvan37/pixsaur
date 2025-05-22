@@ -9,6 +9,7 @@ export default function CrtEffect() {
     if (!container) return
 
     // Create occasional glitch effect
+    /*
     const createGlitch = () => {
       if (Math.random() > 0.1) {
         const glitch = document.createElement('div')
@@ -30,11 +31,12 @@ export default function CrtEffect() {
         })
       }
     }
+      */
 
-    const glitchInterval = setInterval(createGlitch, 500)
+    //  const glitchInterval = setInterval(createGlitch, 500)
 
     return () => {
-      clearInterval(glitchInterval)
+      // clearInterval(glitchInterval)
     }
   }, [])
 
