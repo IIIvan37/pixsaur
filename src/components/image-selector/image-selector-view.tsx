@@ -5,6 +5,7 @@ export type ImageSelectorViewProps = {
   canvasHeight: number
   src: ImageData | null
   refCallback: (node: HTMLCanvasElement | null) => void
+  containerRefCallback: (node: HTMLDivElement | null) => void
 }
 
 /**
@@ -22,21 +23,28 @@ export function ImageSelectorView({
   canvasWidth,
   canvasHeight,
   src,
-  refCallback
+  refCallback,
+  containerRefCallback
 }: ImageSelectorViewProps) {
   return (
     <div
+      ref={containerRefCallback}
       style={{
         position: 'relative',
-        width: canvasWidth,
-        height: canvasHeight
+        width: '100%'
       }}
     >
       <canvas
         ref={refCallback}
         width={canvasWidth}
         height={canvasHeight}
-        style={{ position: 'absolute', top: 0, left: 0 }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 'auto'
+        }}
       />
       {src?.data ? (
         <SourceSelector

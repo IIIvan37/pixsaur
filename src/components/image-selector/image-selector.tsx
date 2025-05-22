@@ -1,13 +1,15 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 import { useImageAdjustement } from '@/hooks/use-image-adjustement'
-import { srcAtom } from '@/app/store/image/image'
+import { downscaledAtom, srcAtom } from '@/app/store/image/image'
 import { useAtom } from 'jotai'
 import { ImageSelectorView } from './image-selector-view'
+import { downscaleImage } from '@/libs/pixsaur-adapter/io/downscale-image'
 
 export type ImageSelectorProps = {
   canvasWidth: number
   canvasHeight: number
+  containerRefCallback: (node: HTMLDivElement | null) => void
 }
 
 /**
@@ -23,9 +25,10 @@ export type ImageSelectorProps = {
 
 export function ImageSelector({
   canvasWidth,
-  canvasHeight
+  canvasHeight,
+  containerRefCallback
 }: ImageSelectorProps) {
-  const [src] = useAtom(srcAtom)
+  const [src] = useAtom(downscaledAtom)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   useImageAdjustement()
@@ -37,6 +40,7 @@ export function ImageSelector({
 
   useEffect(() => {
     if (canvasRef.current && src) {
+      console.log('ImageSelector: src', src)
       const ctx = canvasRef.current.getContext('2d')!
       ctx.putImageData(src, 0, 0)
     }
@@ -48,6 +52,7 @@ export function ImageSelector({
       canvasHeight={canvasHeight}
       src={src}
       refCallback={imageRefCallback}
+      containerRefCallback={containerRefCallback}
     />
   )
 }
