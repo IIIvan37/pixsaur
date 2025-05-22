@@ -8,6 +8,7 @@ import {
 } from '../metric/distance'
 import { getRgbToColorSpaceFn, getColorSpaceToRgbFn } from '../space'
 import { ColorSpace, Vector } from '../type'
+import { selectContrastedSubset } from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
 
 export type DitheringMode = 'floydSteinberg' | 'none'
@@ -93,8 +94,13 @@ export function createQuantizer({
       buildHistogram(vecs.map(toW), workingPal, distFn)
     )
 
-    const idxs = selectTopIndices(counts, preIdx, limit)
-    return idxs.map((i) => fromW(workingPal[i]))
+    const idxs = selectTopIndices(counts, preIdx, 16)
+
+    return selectContrastedSubset(
+      idxs.map((i) => fromW(workingPal[i])),
+      limit,
+      distFn
+    )
   }
 
   return {

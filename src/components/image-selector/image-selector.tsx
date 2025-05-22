@@ -28,7 +28,6 @@ export function ImageSelector({
   containerRefCallback
 }: ImageSelectorProps) {
   const src = useAtomValue(workingImageAtom)
-  console.log('ImageSelector: src', src)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   useImageAdjustement()
@@ -40,7 +39,6 @@ export function ImageSelector({
 
   useEffect(() => {
     if (canvasRef.current && src) {
-      console.log('ImageSelector: src', src)
       const ctx = canvasRef.current.getContext('2d')!
       ctx.putImageData(src, 0, 0)
     }

@@ -19,7 +19,6 @@ export const SourceSelector = ({
   canvasWidth,
   canvasHeight
 }: SourceSelectorProps) => {
-  console.log('SourceSelector', width, height, canvasWidth, canvasHeight)
   const selection = useAtomValue(selectionAtom)
   const setSelection = useSetAtom(setSelectionAtom)
   const overlayRef = useRef<HTMLCanvasElement>(null)
