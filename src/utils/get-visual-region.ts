@@ -21,7 +21,6 @@ export function getVisualRegion(
   mode: 0 | 1 | 2
 ): ImageData {
   const { sx, sy, width: sw, height: sh } = selection
-  console.log('sx', sx, 'sy', sy, 'sw', sw, 'sh', sh)
   // Step 1 — Extract the selected region
   const extractCanvas = document.createElement('canvas')
   extractCanvas.width = src.width
@@ -36,14 +35,11 @@ export function getVisualRegion(
     1: 1 / 1, // Mode 1: square pixels
     2: 1 / 2 // Mode 2: tall pixels
   }[mode]
-  console.log('pixelAspectRatio', mode, pixelAspectRatio)
   // Step 3 — Compute the uniform scale factor considering aspect correction
   const correctedH = sh * pixelAspectRatio
-  console.log('correctedH', correctedH)
   const scale = Math.min(targetW / sw, 200 / correctedH)
   const scaledW = Math.round(sw * scale)
   const scaledH = Math.round(sh * scale * pixelAspectRatio)
-  console.log('scaledW', scaledW, 'scaledH', scaledH)
   if (scaledW === 0 || scaledH === 0) {
     console.warn('Skipped: scaled dimensions are zero', scaledW, scaledH)
     return new ImageData(targetW, 200) // image noire
