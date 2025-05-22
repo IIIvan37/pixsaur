@@ -27,6 +27,7 @@
   font-family: 'Fira Code', monospace;
   transition: border-color 0.2s, background-color 0.2s;
   padding: 2rem;
+  cursor: pointer;
 }
 
 .dropzoneActive {
