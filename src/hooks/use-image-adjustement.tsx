@@ -6,7 +6,7 @@ import { useEffect, useMemo } from 'react'
 import debounce from 'lodash/debounce'
 import { asyncWrap } from '@/utils/async-wrap'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { downscaledAtom, srcAtom } from '@/app/store/image/image'
+import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { clearLastChangedKeyAtom, configAtom } from '@/app/store/config/config'
 
 const asyncAdjustRGB = asyncWrap(adjustRGBChannels)
@@ -46,8 +46,7 @@ export function useDebouncedAdjust<T extends AdjustFn>(
 }
 
 export const useImageAdjustement = () => {
-  const src = useAtomValue(srcAtom)
-  const setSrc = useSetAtom(srcAtom)
+  const setSrc = useSetAtom(setWorkingImageAtom)
   const downscaled = useAtomValue(downscaledAtom)
 
   const { red, green, blue, brightness, contrast, saturation, lastChangedKey } =
@@ -58,7 +57,7 @@ export const useImageAdjustement = () => {
   const final = (out: Uint8ClampedArray) => {
     clearLastChangedKey()
 
-    setSrc(new ImageData(out, src!.width, src!.height))
+    setSrc(new ImageData(out, downscaled!.width, downscaled!.height))
   }
 
   useDebouncedAdjust(

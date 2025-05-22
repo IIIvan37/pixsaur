@@ -40,7 +40,7 @@ export default function PixsaurPopover({
             top: collisionPadding,
             bottom: collisionPadding
           }}
-          avoidCollisions={false}
+          avoidCollisions={true}
           onInteractOutside={() => {
             onOpenChange(false)
           }}

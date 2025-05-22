@@ -6,12 +6,10 @@ import PreviewPanel from '@/app/components/preview-panel'
 
 import Adjustments from '@/app/components/adjustements/adjustements'
 import { useImageAdjustement } from '@/hooks/use-image-adjustement'
-import { useAtom } from 'jotai'
-import { srcAtom } from '../store/image/image'
+
 import ExportPanel from '@/components/export-panel/export-panel'
 
 export default function ImageConverter() {
-  const [src] = useAtom(srcAtom)
   useImageAdjustement()
   return (
     <div className={styles.wrapper}>
@@ -22,18 +20,16 @@ export default function ImageConverter() {
         <div className={styles.section}>
           {/* Source and Preview side by side */}
           <div className={styles.flexRow}>
-            <div className={styles.spaceY3} style={{ flex: 1 }}>
+            <div
+              className={styles.spaceY3}
+              style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
+            >
               <Adjustments />
             </div>
 
             {/* Left side: Source Image and Adjustments */}
             <div className={styles.flexColumn_2}>
-              <SourceSection
-                canvasWidth={400}
-                canvasHeight={Math.floor(
-                  (400 * (src?.height || 0)) / (src?.width || 0)
-                )}
-              />
+              <SourceSection />
             </div>
 
             {/* Right side: Preview and Palette */}

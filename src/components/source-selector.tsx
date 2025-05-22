@@ -256,10 +256,7 @@ export const SourceSelector = ({
   }, [width, height, setSelection])
 
   return (
-    <div
-      className={styles.container}
-      style={{ width: canvasWidth, height: canvasHeight }}
-    >
+    <div className={styles.container} style={{ width: '100%', height: 'auto' }}>
       <canvas
         ref={overlayRef}
         width={canvasWidth}

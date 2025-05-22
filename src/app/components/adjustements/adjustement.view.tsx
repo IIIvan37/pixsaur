@@ -47,25 +47,26 @@ export const AdjustementsView = ({
           Réinitialiser
         </Button>
       </div>
-
-      <div className={styles.adjustmentsContainer}>
-        {/* RGB Channels - with labels */}
-        {labels.map((adj) => {
-          const settings = adjustments[adj.key]
-          return (
-            <PixsaurSlider
-              key={adj.key}
-              disabled={disabled}
-              value={settings[0]}
-              min={settings[1]}
-              max={settings[2]}
-              step={settings[3]}
-              showTooltip={false}
-              onChange={(value: number) => onChange({ key: adj.key, value })}
-              label={adj.label}
-            />
-          )
-        })}
+      <div className={styles.adjustmentsContainerWrapper}>
+        <div className={styles.adjustmentsContainer}>
+          {/* RGB Channels - with labels */}
+          {labels.map((adj) => {
+            const settings = adjustments[adj.key]
+            return (
+              <PixsaurSlider
+                key={adj.key}
+                disabled={disabled}
+                value={settings[0]}
+                min={settings[1]}
+                max={settings[2]}
+                step={settings[3]}
+                showTooltip={false}
+                onChange={(value: number) => onChange({ key: adj.key, value })}
+                label={adj.label}
+              />
+            )
+          })}
+        </div>
       </div>
     </div>
   )

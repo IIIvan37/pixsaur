@@ -16,6 +16,7 @@
 .dropzone {
   position: relative;
   width: 100%;
+  min-width: 320px;
   max-height: 300px;
   border: 2px dashed #00ff00;
   background-color: black;

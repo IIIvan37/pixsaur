@@ -31,7 +31,9 @@ export function ImageSelectorView({
       ref={containerRefCallback}
       style={{
         position: 'relative',
-        width: '100%'
+        width: '100%',
+        minWidth: '320px',
+        height: `${canvasHeight}px`
       }}
     >
       <canvas

@@ -7,11 +7,15 @@ import {
 
 import { RangeOption } from './types'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { downscaledAtom, setSrcAtom, srcAtom } from '@/app/store/image/image'
+import {
+  downscaledAtom,
+  setWorkingImageAtom,
+  workingImageAtom
+} from '@/app/store/image/image'
 import { AdjustementKey } from '@/app/store/config/types'
 
 export default function Adjustments() {
-  const src = useAtomValue(srcAtom)
+  const src = useAtomValue(workingImageAtom)
   const { red, green, blue, brightness, contrast, saturation } =
     useAtomValue(configAtom)
   const setComponent = useSetAtom(setComponentAtom)
@@ -19,7 +23,7 @@ export default function Adjustments() {
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
 
   const [downscaled] = useAtom(downscaledAtom)
-  const setSrc = useSetAtom(setSrcAtom)
+  const setSrc = useSetAtom(setWorkingImageAtom)
   // Define the adjustments with their min, max, and step values
   const adjustments: RangeOption = {
     red: [red, 0, 2, 0.01],
@@ -42,9 +46,7 @@ export default function Adjustments() {
 
   const handleReset = () => {
     if (downscaled) {
-      setSrc(
-        new ImageData(downscaled.data, downscaled.width, downscaled.height)
-      )
+      setSrc(null)
     } else {
       console.error('Downscaled image data is null.')
     }

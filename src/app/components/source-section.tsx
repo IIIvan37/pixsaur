@@ -1,12 +1,6 @@
 import { Box, Flex, Heading } from '@radix-ui/themes'
 import { ImageUpload } from '@/components/image-upload/image-upload'
-<<<<<<< Updated upstream
 
-import { downscaleImage } from '@/libs/pixsaur-adapter/io/downscale-image'
-=======
-import Button from '@/components/ui/button'
-
->>>>>>> Stashed changes
 import styles from '@/styles/image-converter.module.css'
 import { ImageSelector } from '@/components/image-selector'
 import Icon from '@/components/ui/icon'
@@ -18,7 +12,7 @@ import Button from '@/components/ui/button'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 
 export default function SourceSection() {
-  const containerRefCallback = useObservedCanvasWidth()
+  const containerRefCallback = useObservedCanvasWidth(320)
   const setImg = useSetAtom(setImgAtom)
   const canvasSize = useAtomValue(canvasSizeAtom)
   const img = useAtomValue(imageAtom)
@@ -30,7 +24,7 @@ export default function SourceSection() {
 
   return (
     <Box className={styles.panel}>
-      <Box className={styles.flexColumn} style={{ minWidth: '400px' }}>
+      <Box className={styles.flexColumn}>
         <Flex justify='between' align='center' mb='2'>
           <Heading size='1' className={styles.sectionTitle} mb='2'>
             Image Source
