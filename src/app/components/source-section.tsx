@@ -1,30 +1,31 @@
 import { Box, Flex, Heading } from '@radix-ui/themes'
 import { ImageUpload } from '@/components/image-upload/image-upload'
+<<<<<<< Updated upstream
 
 import { downscaleImage } from '@/libs/pixsaur-adapter/io/downscale-image'
+=======
+import Button from '@/components/ui/button'
+
+>>>>>>> Stashed changes
 import styles from '@/styles/image-converter.module.css'
 import { ImageSelector } from '@/components/image-selector'
 import Icon from '@/components/ui/icon'
-import { downscaledAtom, setDownscaledAtom } from '../store/image/image'
+import { canvasSizeAtom, imageAtom, setImgAtom } from '../store/image/image'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
 import Button from '@/components/ui/button'
 
-type SourceSectionProps = {
-  canvasWidth: number
-  canvasHeight: number
-}
+import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 
-export default function SourceSection({
-  canvasWidth,
-  canvasHeight
-}: SourceSectionProps) {
-  const downscaled = useAtomValue(downscaledAtom)
-  const setDownscaled = useSetAtom(setDownscaledAtom)
+export default function SourceSection() {
+  const containerRefCallback = useObservedCanvasWidth()
+  const setImg = useSetAtom(setImgAtom)
+  const canvasSize = useAtomValue(canvasSizeAtom)
+  const img = useAtomValue(imageAtom)
+
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
   const handleImageLoaded = (img: HTMLImageElement) => {
-    const downscaled = downscaleImage(img, canvasWidth, undefined)
-    setDownscaled(downscaled)
+    setImg(img)
   }
 
   return (
@@ -34,14 +35,14 @@ export default function SourceSection({
           <Heading size='1' className={styles.sectionTitle} mb='2'>
             Image Source
           </Heading>
-          {!!downscaled && (
+          {!!img && (
             <Button
               variant='secondary'
               className={styles.changeButton}
               aria-label="Changer d'image"
               onClick={() => {
                 resetAdjustments()
-                setDownscaled(null)
+                setImg(null)
               }}
             >
               <Icon name='UploadIcon' className={styles.buttonIcon} />
@@ -49,14 +50,15 @@ export default function SourceSection({
             </Button>
           )}
         </Flex>
-        {!downscaled ? (
+        {!img ? (
           <ImageUpload onImageLoaded={handleImageLoaded} />
         ) : (
           <Box className={styles.spaceY4}>
-            <div className={styles.center}>
+            <div className={styles.center} style={{ padding: '1rem' }}>
               <ImageSelector
-                canvasWidth={canvasWidth}
-                canvasHeight={canvasHeight}
+                containerRefCallback={containerRefCallback}
+                canvasWidth={canvasSize?.width || 0}
+                canvasHeight={canvasSize?.height || 0}
               />
             </div>
           </Box>
