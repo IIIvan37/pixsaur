@@ -1,10 +1,10 @@
 .container {
   display: flex;
-  gap: var(--space-1);
+  gap: var(--spacing-1);
 }
 
 .button {
-  padding: var(--space-1) var(--space-2);
+  padding: var(--spacing-1) var(--spacing-2);
   font-size: var(--font-size-xs);
   background-color: var(--color-green-950);
   color: var(--color-green-500);

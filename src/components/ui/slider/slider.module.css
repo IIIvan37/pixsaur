@@ -1,14 +1,14 @@
 /* === Container === */
 .container {
   width: 100%;
-  margin-bottom: var(--space-md);
+  margin-bottom: var(--spacing-md);
 }
 
 .labelRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-xs);
+  margin-bottom: var(--spacing-xs);
 }
 
 .label {
@@ -20,7 +20,7 @@
 /* === Slider Wrapper === */
 .sliderWrapper {
   position: relative;
-  padding-top: var(--space-sm);
+  padding-top: var(--spacing-sm);
 }
 
 /* === Tooltip === */
@@ -31,7 +31,7 @@
   background-color: rgba(0, 0, 0, 0.85);
   color: var(--color-foreground);
   font-size: var(--font-size-xs);
-  padding: var(--space-xs) var(--space-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   white-space: nowrap;

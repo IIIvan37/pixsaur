@@ -1,6 +1,6 @@
 import { ReactNode, CSSProperties } from 'react'
 
-export function Flex({
+export default function Flex({
   children,
   direction = 'row',
   gap = 'var(--grid-gap)',

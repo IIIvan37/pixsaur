@@ -1,10 +1,10 @@
 import Icon from '@/components/ui/icon'
-import { PixsaurSlider } from '@/components/ui/slider'
+import PixsaurSlider from '@/components/ui/slider'
 import styles from '@/styles/image-converter.module.css'
 
 import { RangeOption } from './types'
 import { AdjustementKey } from '@/app/store/config/types'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button'
 
 type RangeLabels = {
   key: AdjustementKey

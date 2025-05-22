@@ -1,7 +1,7 @@
 import { CPC_MODE_CONFIG, CpcModeKey } from '@/app/store/config/types'
 import { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { Flex, Heading } from '@radix-ui/themes'
-import { PixsaurSlider } from '@/components/ui/slider'
+import PixsaurSlider from '@/components/ui/slider'
 import styles from './image-controls.module.css'
 import animStyles from '@/styles/animations.module.css'
 import clsx from 'clsx'

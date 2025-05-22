@@ -8,7 +8,7 @@ import Icon from '@/components/ui/icon'
 import { downscaledAtom, setDownscaledAtom } from '../store/image/image'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
-import { Button } from '@/components/ui/button'
+import Button from '@/components/ui/button'
 
 type SourceSectionProps = {
   canvasWidth: number

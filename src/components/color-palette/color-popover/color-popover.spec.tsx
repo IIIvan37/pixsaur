@@ -40,9 +40,6 @@ describe('ColorPopover', () => {
         slotIdx={1} // The empty slot
         focusedColorIdx={0}
         onColorSelect={() => {}}
-        onKeyDown={() => {}}
-        getPopoverStyle={() => ({})}
-        onClose={() => {}}
       />
     )
 
@@ -65,9 +62,6 @@ describe('ColorPopover', () => {
         slotIdx={0}
         focusedColorIdx={0}
         onColorSelect={() => {}}
-        onKeyDown={() => {}}
-        getPopoverStyle={() => ({})}
-        onClose={() => {}}
       />
     )
 

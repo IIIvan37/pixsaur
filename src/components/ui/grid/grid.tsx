@@ -1,6 +1,6 @@
 import { ReactNode, CSSProperties } from 'react'
 
-export function Grid({
+export default function Grid({
   children,
   columns = 2,
   gap = 'var(--grid-gap)',

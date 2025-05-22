@@ -15,7 +15,7 @@ type PixsaurSliderProps = {
   showTooltip?: boolean
 }
 
-export function PixsaurSlider({
+export default function PixsaurSlider({
   min,
   max,
   value,

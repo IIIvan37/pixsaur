@@ -1,9 +1,10 @@
-import { PaletteSlot } from '@/app/store/palette/types'
-import styles from '../color-palette.module.css'
-import animStyles from '@/styles/animations.module.css'
-import { CPCColor } from '@/libs/types'
-import { Popover } from '@/components/ui/popover'
+'use client'
+
 import { useRef, useEffect } from 'react'
+
+import { CPCColor } from '@/libs/types'
+import { PaletteSlot } from '@/app/store/palette/types'
+import { ColorPopoverView } from './color-popover-view'
 
 type ColorPopoverProps = {
   fullPalette: CPCColor[]
@@ -11,9 +12,7 @@ type ColorPopoverProps = {
   slotIdx: number
   focusedColorIdx: number
   onColorSelect: (color: CPCColor, slotIdx: number) => void
-  onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void
-  getPopoverStyle: (idx: number) => React.CSSProperties
-  onClose: () => void
+
   colorOptionRefs?: React.RefObject<(HTMLButtonElement | null)[]>
 }
 
@@ -23,61 +22,32 @@ export const ColorPopover: React.FC<ColorPopoverProps> = ({
   slotIdx,
   focusedColorIdx,
   onColorSelect,
-  onKeyDown,
-  getPopoverStyle,
-  onClose,
+
   colorOptionRefs
 }) => {
-  const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const optionRefs = useRef<HTMLButtonElement[]>([])
+  const initialFocusDone = useRef(false)
 
   useEffect(() => {
-    // Wait for refs to be set after render
-    const btn = optionRefs.current[focusedColorIdx]
-    if (btn) {
-      // Use setTimeout to ensure focus after DOM update
-      setTimeout(() => btn.focus(), 0)
+    if (!initialFocusDone.current) {
+      const btn = optionRefs.current[focusedColorIdx]
+      if (btn) btn.focus()
+      initialFocusDone.current = true
     }
-  }, [focusedColorIdx, fullPalette.length])
+  }, [focusedColorIdx])
 
   return (
-    <Popover
-      isOpen={true}
-      getPopoverStyle={() => getPopoverStyle(slotIdx)}
-      onKeyDown={onKeyDown}
-      onClose={onClose}
-    >
-      <div
-        className={styles.colorGrid}
-        role='listbox'
-        aria-label='Options de couleur'
-      >
-        {fullPalette.map((pc, optionIdx) => {
-          const isUsed = slots.some((s, i) => {
-            if (i === slotIdx) return false
-            if (!s.color) return false
-            return Array.from(s.color).every((v, j) => v === pc.vector[j])
-          })
-
-          return (
-            <button
-              ref={(el) => {
-                if (colorOptionRefs) colorOptionRefs.current[optionIdx] = el
-              }}
-              key={pc.index}
-              className={`${styles.colorOption} ${animStyles.colorSquare} ${
-                isUsed ? styles.colorOptionActive : ''
-              }`}
-              style={{ backgroundColor: `#${pc.hex}` }}
-              title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
-              role='option'
-              aria-selected={isUsed}
-              disabled={isUsed}
-              tabIndex={focusedColorIdx === optionIdx ? 0 : -1}
-              onClick={() => onColorSelect(pc, slotIdx)}
-            />
-          )
-        })}
-      </div>
-    </Popover>
+    <ColorPopoverView
+      fullPalette={fullPalette}
+      slots={slots}
+      slotIdx={slotIdx}
+      focusedColorIdx={focusedColorIdx}
+      onColorSelect={onColorSelect}
+      colorOptionRefs={
+        (colorOptionRefs as React.RefObject<HTMLButtonElement[]>) ??
+        (optionRefs as React.RefObject<HTMLButtonElement[]>)
+      }
+      optionRefs={optionRefs}
+    />
   )
 }

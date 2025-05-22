@@ -12,7 +12,7 @@ type Props = {
   className?: string
 } & ButtonHTMLAttributes<HTMLButtonElement>
 
-export function Button({
+export default function Button({
   children,
   asChild = false,
   variant = 'primary',
