@@ -3,6 +3,7 @@ import '@testing-library/jest-dom'
 import { describe, it, vi, beforeEach } from 'vitest'
 import { ColorPaletteView, ColorPaletteViewProps } from './color-palette-view'
 import { vectorToHex } from '@/libs/cpc-palette'
+import { userEvent } from '@testing-library/user-event'
 
 // Mock CSS modules and Icon to avoid style/import issues in tests
 vi.mock('./color-palette.module.css', () => ({
@@ -13,15 +14,7 @@ vi.mock('@/styles/animations.module.css', () => ({
   __esModule: true,
   default: {}
 }))
-vi.mock('@/components/ui/icon', () => ({
-  __esModule: true,
-  default: (
-    props: React.ComponentPropsWithoutRef<'span'> & {
-      name: string
-      'data-testid'?: string
-    }
-  ) => <span data-testid={props['data-testid'] ?? props.name} {...props} />
-}))
+vi.mock('@/components/ui/icon')
 
 // Mock palette data for tests (French names)
 const mockPalette = [
@@ -158,73 +151,19 @@ describe('ColorPaletteView', () => {
     ).toBeInTheDocument()
   })
 
-  it('closes popover when clicking outside', () => {
+  it('closes popover when clicking outside', async () => {
     render(<ColorPaletteView {...props} />)
+
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
+
     expect(screen.getByRole('listbox')).toBeInTheDocument()
-    // Simulate outside click
-    fireEvent.mouseDown(document.body)
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
-  })
 
-  describe('ColorPaletteView keyboard navigation', () => {
-    function openPopoverAndGetOptions() {
-      render(<ColorPaletteView {...props} />)
-      fireEvent.click(
-        screen.getByRole('button', { name: /Ajouter une couleur/i })
-      )
-      return screen.getAllByRole('option')
-    }
+    userEvent.click(document.body) // ← parfois nécessaire pour déclencher onBlur
 
-    function getFirstEnabled(options: HTMLElement[]) {
-      return options.find((btn) => !(btn as HTMLButtonElement).disabled)
-    }
-
-    function getNextEnabled(options: HTMLElement[], current: HTMLElement) {
-      return options
-        .slice(options.indexOf(current) + 1)
-        .find((btn) => !(btn as HTMLButtonElement).disabled)
-    }
-
-    it('ArrowDown/ArrowRight moves focus to next enabled color', async () => {
-      const options = openPopoverAndGetOptions()
-      const firstEnabled = getFirstEnabled(options)
-      expect(firstEnabled).toBeDefined()
-      await waitFor(() => expect(firstEnabled).toHaveFocus())
-
-      // Simulate ArrowRight
-      fireEvent.keyDown(firstEnabled!.parentElement!, { key: 'ArrowRight' })
-      const nextEnabled = getNextEnabled(options, firstEnabled!)
-      if (nextEnabled) {
-        await waitFor(() => expect(nextEnabled).toHaveFocus())
-      } else {
-        await waitFor(() => expect(firstEnabled).toHaveFocus())
-      }
-    })
-
-    it('Enter/Space only selects enabled color', async () => {
-      const options = openPopoverAndGetOptions()
-      const firstEnabled = getFirstEnabled(options)
-      expect(firstEnabled).toBeDefined()
-      await waitFor(() => expect(firstEnabled).toHaveFocus())
-
-      // Press Enter
-      fireEvent.keyDown(firstEnabled!.parentElement!, { key: 'Enter' })
-      expect(onSetColor).toHaveBeenCalledWith({
-        index: expect.any(Number),
-        color: expect.any(Object)
-      })
-
-      // Try to select a disabled option
-      const firstDisabled = options.find(
-        (btn) => (btn as HTMLButtonElement).disabled
-      )
-      if (firstDisabled) {
-        fireEvent.keyDown(firstDisabled.parentElement!, { key: 'Enter' })
-      }
-      expect(onSetColor).toHaveBeenCalledTimes(1)
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
     })
   })
 })

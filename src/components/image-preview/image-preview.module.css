@@ -5,7 +5,6 @@
   min-width: 320px;
 }
 
-
 .emptyContainer {
   height: 300px;
   display: flex;
@@ -27,7 +26,7 @@
   background-color: var(--color-green-950);
   font-size: var(--font-size-xs);
   color: var(--color-green-500);
-  padding: var(--space-2);
+  padding: var(--spacing-2);
 }
 
 @keyframes spin {

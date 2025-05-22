@@ -1,0 +1,154 @@
+/* === Container === */
+.container {
+  width: 150px;
+  margin-bottom: var(--spacing-md);
+  margin: 0 auto
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.label {
+  color: var(--color-foreground);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+}
+
+/* === Slider Wrapper === */
+.sliderWrapper {
+  position: relative;
+  padding-top: var(--spacing-sm);
+}
+
+/* === Tooltip === */
+.tooltip {
+  position: absolute;
+  top: -24px;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.85);
+  color: var(--color-foreground);
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 5;
+}
+
+.tooltipVisible {
+  opacity: 1;
+}
+
+.tooltipArrow {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid rgba(0, 0, 0, 0.85);
+}
+
+/* === Radix Slider structure === */
+.sliderRoot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: var(--slider-height, 20px);
+  cursor: pointer;
+}
+
+.sliderTrack {
+  position: relative;
+  flex-grow: 1;
+  height: var(--track-height, 4px);
+  background-color: var(--color-border);
+  border-radius: 9999px;
+  overflow: hidden;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sliderRange {
+  position: absolute;
+  height: 100%;
+  background-color: var(--color-accent);
+  transition: width 0.2s ease;
+  border-radius: 9999px;
+}
+
+.sliderThumb {
+  width: var(--thumb-size, 16px);
+  height: var(--thumb-size, 16px);
+  background-color: var(--color-accent);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  box-shadow: 0 0 2px var(--color-accent);
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.sliderRoot:hover .sliderTrack,
+.sliderRoot:focus-within .sliderTrack {
+  background-color: var(--color-accent);
+  box-shadow: 0 0 6px var(--color-accent);
+}
+
+.sliderRoot:hover .sliderThumb {
+  transform: translate(-50%, -50%) scale(1.2);
+  box-shadow: 0 0 4px var(--color-accent);
+}
+
+/* Optional glowing pulse */
+@keyframes glowPulse {
+  0%, 100% {
+    box-shadow: 0 0 4px var(--color-accent);
+  }
+  50% {
+    box-shadow: 0 0 8px var(--color-accent);
+  }
+}
+
+.sliderRoot:focus-within .sliderTrack {
+  animation: glowPulse 1.2s infinite ease-in-out;
+}
+
+/* === Disabled styles (tokens verts uniquement) === */
+.disabled .sliderThumb {
+  background-color: var(--color-disabled-thumb);
+  border-color: var(--color-disabled-border);
+}
+
+.disabled .sliderRange {
+  background-color: var(--color-disabled-range);
+  opacity: 0.6;
+}
+
+.disabled .sliderTrack {
+  background-color: var(--color-disabled-track);
+  opacity: 0.4;
+  box-shadow: inset 0 0 0 1px var(--color-disabled-border);
+}
+
+.disabled .label {
+  color: var(--color-disabled-text);
+}
+
+.disabled .sliderRoot,
+.disabled .sliderInput {
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(60%);
+  opacity: 1;
+}

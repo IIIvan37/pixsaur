@@ -8,17 +8,17 @@
 .content {
 
   margin: 0 auto;
-  padding: var(--space-4);
-  padding-top: var(--space-4);
-  padding-bottom: var(--space-4);
+  padding: var(--spacing-4);
+  padding-top: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
 }
 
 .header {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--spacing-4);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--spacing-3);
   position: relative;
 }
 
@@ -44,11 +44,11 @@
 }
 
 .footer {
-  margin-top: var(--space-4);
+  margin-top: var(--spacing-4);
   text-align: center;
   color: var(--color-green-700);
   font-size: var(--font-size-xs);
-  padding: var(--space-2) 0;
+  padding: var(--spacing-2) 0;
 }
 
 @media (max-width: 768px) {
@@ -56,7 +56,7 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding-top: var(--space-8);
+    padding-top: var(--spacing-8);
   }
 
   .langSwitcher {

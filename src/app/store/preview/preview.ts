@@ -5,21 +5,21 @@ import { getVisualRegion } from '@/utils/get-visual-region'
 import { atom } from 'jotai'
 import { modeAtom, colorSpaceAtom, ditheringAtom } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
-import { srcAtom, selectionAtom } from '../image/image'
+import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
 
 // 1. Zone sélectionnée réduite à la largeur du mode
 export const croppedImageAtom = atom((get) => {
-  const src = get(srcAtom)
+  const workingImageData = get(workingImageAtom)
   const selection = get(selectionAtom)
   const mode = get(modeAtom)
   const targetWidth = CPC_MODE_CONFIG[mode].width
-  if (!src || !selection) return null
+  if (!workingImageData || !selection) return null
 
   // 1) On récupère la région visuelle brute
   const fullImageData = getVisualRegion(
-    src,
+    workingImageData,
     selection,
     targetWidth,
     CPC_MODE_CONFIG[mode].mode

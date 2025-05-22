@@ -6,6 +6,7 @@ import { PaletteSlot } from '@/app/store/palette/types'
 import { CPCColor } from '@/libs/types'
 import { vectorToHex } from '@/libs/cpc-palette'
 import Icon from '../ui/icon'
+import PixsaurPopover from '../ui/popover'
 
 export type ColorPaletteViewProps = {
   slots: PaletteSlot[]
@@ -25,23 +26,19 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([])
   const colorOptionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
-  // Keep buttonRefs in sync with slots length to avoid stale refs
   useEffect(() => {
     buttonRefs.current.length = slots.length
   }, [slots.length])
 
-  // Reset focused color index when popover opens/closes
   useEffect(() => {
     if (openPopoverIndex !== null) setFocusedColorIdx(0)
   }, [openPopoverIndex])
 
-  // Imperatively focus the correct color option when focusedColorIdx changes
   useEffect(() => {
     const btn = colorOptionRefs.current[focusedColorIdx]
     if (btn) setTimeout(() => btn.focus(), 0)
   }, [focusedColorIdx, openPopoverIndex])
 
-  // When opening the popover, set focusedColorIdx to the first enabled color
   useEffect(() => {
     if (openPopoverIndex !== null) {
       const firstEnabledIdx = fullPalette.findIndex((pc) => {
@@ -60,82 +57,7 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
     setOpenPopoverIndex(null)
   }
 
-  const handlePopoverKeyDown = (
-    e: React.KeyboardEvent<HTMLDivElement>,
-    optionsCount: number,
-    slotIdx: number
-  ) => {
-    if (e.key === 'Escape') {
-      setOpenPopoverIndex(null)
-      return
-    }
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-      let nextIdx = focusedColorIdx
-      do {
-        nextIdx = (nextIdx + 1) % optionsCount
-      } while (
-        slots.some(
-          (slot, i) =>
-            i !== slotIdx &&
-            slot.color &&
-            Array.from(slot.color).every(
-              (v, j) => v === fullPalette[nextIdx].vector[j]
-            )
-        ) &&
-        nextIdx !== focusedColorIdx
-      )
-      setFocusedColorIdx(nextIdx)
-    }
-    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-      let prevIdx = focusedColorIdx
-      do {
-        prevIdx = (prevIdx - 1 + optionsCount) % optionsCount
-      } while (
-        slots.some(
-          (slot, i) =>
-            i !== slotIdx &&
-            slot.color &&
-            Array.from(slot.color).every(
-              (v, j) => v === fullPalette[prevIdx].vector[j]
-            )
-        ) &&
-        prevIdx !== focusedColorIdx
-      )
-      setFocusedColorIdx(prevIdx)
-    }
-    if (e.key === 'Enter' || e.key === ' ') {
-      const color = fullPalette[focusedColorIdx]
-      const isUsed = slots.some(
-        (slot, i) =>
-          i !== slotIdx &&
-          slot.color &&
-          Array.from(slot.color).every((v, j) => v === color.vector[j])
-      )
-      if (!isUsed) {
-        handleColorSelect(color, slotIdx)
-      }
-    }
-  }
 
-  const POPOVER_BOTTOM_THRESHOLD = 200
-  /**
-   * Compute the popover position relative to the slot button.
-   * @param {number} index - The slot index.
-   * @returns {React.CSSProperties} The style object for popover positioning.
-   */
-  const getPopoverStyle = (index: number) => {
-    const btn = buttonRefs.current[index]
-    if (!btn) return {}
-    const rect = btn.getBoundingClientRect()
-    const isNearBottom =
-      window.innerHeight - rect.bottom < POPOVER_BOTTOM_THRESHOLD
-    return {
-      top: isNearBottom ? 'auto' : `${rect.height + 5}px`,
-      bottom: isNearBottom ? `${rect.height + 5}px` : 'auto',
-      left: '50%',
-      transform: 'translateX(-50%)'
-    }
-  }
 
   return (
     <div
@@ -173,33 +95,31 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
                   )}
                 </button>
               ) : (
-                <div className={styles.emptySlotContainer}>
-                  <button
-                    ref={(el) => {
-                      buttonRefs.current[idx] = el
-                    }}
-                    className={styles.emptySlot}
-                    aria-label='Ajouter une couleur'
-                    onClick={() => setOpenPopoverIndex(idx)}
-                  >
-                    <Icon name='PlusIcon' className={styles.plusIcon} />
-                  </button>
-                  {openPopoverIndex === idx && (
-                    <ColorPopover
-                      fullPalette={fullPalette}
-                      slots={slots}
-                      slotIdx={idx}
-                      focusedColorIdx={focusedColorIdx}
-                      onColorSelect={handleColorSelect}
-                      onKeyDown={(e) =>
-                        handlePopoverKeyDown(e, fullPalette.length, idx)
-                      }
-                      getPopoverStyle={getPopoverStyle}
-                      onClose={() => setOpenPopoverIndex(null)}
-                      colorOptionRefs={colorOptionRefs}
-                    />
-                  )}
-                </div>
+                <PixsaurPopover
+                  open={openPopoverIndex === idx}
+                  onOpenChange={(v) => setOpenPopoverIndex(v ? idx : null)}
+                  trigger={
+                    <button
+                      ref={(el) => {
+                        buttonRefs.current[idx] = el
+                      }}
+                      className={styles.emptySlot}
+                      aria-label='Ajouter une couleur'
+                    >
+                      <Icon name='PlusIcon' className={styles.plusIcon} />
+                    </button>
+                  }
+                >
+                  <ColorPopover
+                    fullPalette={fullPalette}
+                    slots={slots}
+                    slotIdx={idx}
+                    focusedColorIdx={focusedColorIdx}
+                    onColorSelect={handleColorSelect}
+                 
+                    colorOptionRefs={colorOptionRefs}
+                  />
+                </PixsaurPopover>
               )}
             </div>
           )

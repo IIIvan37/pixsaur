@@ -1,8 +1,17 @@
 import { useEffect, useRef } from 'react'
-import styles from '@/styles/image-preview.module.css'
+
 import { previewImageAtom } from '@/app/store/preview/preview'
 import { useAtomValue } from 'jotai'
+import { ImagePreviewView } from './image-preview-view'
 
+/**
+ * ImagePreview component renders a preview of an image using a canvas element.
+ * It listens to the `previewImageAtom` state and updates the canvas whenever the image changes.
+ * The image is drawn onto a temporary canvas and then scaled to fit a 320x200 area on the main canvas.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered ImagePreviewView component with the canvas ref and image prop.
+ */
 const ImagePreview = () => {
   const ref = useRef<HTMLCanvasElement>(null)
 
@@ -39,26 +48,7 @@ const ImagePreview = () => {
     )
   }, [image])
 
-  if (!image) {
-    return (
-      <div className={styles.container}>
-        <div className={`${styles.container} ${styles.emptyContainer}`}>
-          <p className={styles.emptyText}>Aucune image traitée</p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className={styles.container}>
-      <canvas
-        ref={ref}
-        width={320}
-        height={200}
-        style={{ width: '320px', height: '200px' }}
-      />
-    </div>
-  )
+  return <ImagePreviewView ref={ref} image={image} />
 }
 
 ImagePreview.displayName = 'ImagePreview'

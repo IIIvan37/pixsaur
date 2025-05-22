@@ -1,40 +1,66 @@
 import { atom } from 'jotai'
-import { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
+import {
+  downscaleImage,
+  Selection
+} from '@/libs/pixsaur-adapter/io/downscale-image'
+
+const srcAtom = atom<ImageData | null>(null)
 
 // Atomes de base
-export const srcAtom = atom<ImageData | null>(null)
-export const downscaledAtom = atom<ImageData | null>(null)
-export const selectionAtom = atom<Selection | null>(null)
+export const imageAtom = atom<HTMLImageElement | null>(null)
 
-// Version de src pour invalidation des hooks
-export const srcVersionAtom = atom(0)
+export const canvasWidthAtom = atom<number | null>(null)
 
-// Action combinée
-export const setDownscaledAtom = atom(
+export const canvasSizeAtom = atom((get) => {
+  const img = get(imageAtom)
+  const width = get(canvasWidthAtom)
+
+  if (!img || !width) return null
+  const height = Math.floor((img.height / img.width) * width)
+  return {
+    width,
+    height
+  }
+})
+
+export const setImgAtom = atom(
   null,
-  (get, set, img: ImageData | null) => {
-    set(downscaledAtom, img)
-    set(srcAtom, img)
-    set(srcVersionAtom, get(srcVersionAtom) + 1)
+  (_get, set, img: HTMLImageElement | null) => {
+    set(imageAtom, img)
+  }
+)
+export const downscaledAtom = atom((get) => {
+  const img = get(imageAtom)
+  const size = get(canvasSizeAtom)
+  if (!img || !size) return null
+  return downscaleImage(img, size.width)
+})
 
-    if (img) {
-      set(selectionAtom, {
-        sx: 0,
-        sy: 0,
-        width: img.width,
-        height: img.height
-      })
-    } else {
-      set(selectionAtom, null)
-    }
+export const workingImageAtom = atom((get) => {
+  const downscaled = get(downscaledAtom)
+  const src = get(srcAtom)
+
+  if (src) {
+    return src
+  } else {
+    if (!downscaled) return null
+    return new ImageData(
+      new Uint8ClampedArray(downscaled.data),
+      downscaled.width,
+      downscaled.height
+    )
+  }
+})
+
+export const setWorkingImageAtom = atom(
+  null,
+  (_get, set, img: ImageData | null) => {
+    set(srcAtom, img)
   }
 )
 
-// Setter direct de src
-export const setSrcAtom = atom(null, (get, set, img: ImageData | null) => {
-  set(srcAtom, img)
-  set(srcVersionAtom, get(srcVersionAtom) + 1)
-})
+// Version de src pour invalidation des hooks
+export const srcVersionAtom = atom(0)
 
 export const setSelectionAtom = atom(
   null,
@@ -42,3 +68,26 @@ export const setSelectionAtom = atom(
     set(selectionAtom, selection)
   }
 )
+
+export const setCanvasWidth = atom(null, (_get, set, width: number) => {
+  set(canvasWidthAtom, width)
+})
+
+export const initialSelectionAtom = atom((get) => {
+  const downscaled = get(downscaledAtom)
+  if (!downscaled) return null
+
+  return {
+    sx: 0,
+    sy: 0,
+    width: downscaled.width,
+    height: downscaled.height
+  }
+})
+
+export const selectionAtom = atom(
+  (get) => get(_selectionWritableAtom) ?? get(initialSelectionAtom),
+  (_get, set, newSel: Selection | null) => set(_selectionWritableAtom, newSel)
+)
+
+const _selectionWritableAtom = atom<Selection | null>(null)

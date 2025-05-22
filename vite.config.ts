@@ -4,7 +4,13 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      babel: {
+        presets: ['jotai/babel/preset']
+      }
+    })
+  ],
 
   resolve: {
     alias: {

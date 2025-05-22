@@ -19,6 +19,7 @@ export const SourceSelector = ({
   canvasWidth,
   canvasHeight
 }: SourceSelectorProps) => {
+  console.log('SourceSelector', width, height, canvasWidth, canvasHeight)
   const selection = useAtomValue(selectionAtom)
   const setSelection = useSetAtom(setSelectionAtom)
   const overlayRef = useRef<HTMLCanvasElement>(null)
@@ -255,10 +256,7 @@ export const SourceSelector = ({
   }, [width, height, setSelection])
 
   return (
-    <div
-      className={styles.container}
-      style={{ width: canvasWidth, height: canvasHeight }}
-    >
+    <div className={styles.container} style={{ width: '100%', height: 'auto' }}>
       <canvas
         ref={overlayRef}
         width={canvasWidth}
