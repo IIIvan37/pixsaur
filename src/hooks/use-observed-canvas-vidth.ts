@@ -1,10 +1,10 @@
-import { setCanvasWidth } from '@/app/store/image/image'
-import { useSetAtom } from 'jotai'
 import { useRef, useCallback } from 'react'
 
-export function useObservedCanvasWidth(min = 320) {
+export function useObservedCanvasWidth(
+  callback: (width: number) => void,
+  min = 320
+) {
   const observerRef = useRef<ResizeObserver | null>(null)
-  const setWidth = useSetAtom(setCanvasWidth)
 
   const containerRefCallback = useCallback(
     (node: HTMLDivElement | null) => {
@@ -16,12 +16,12 @@ export function useObservedCanvasWidth(min = 320) {
       if (node) {
         observerRef.current = new ResizeObserver(([entry]) => {
           const width = Math.max(Math.floor(entry.contentRect.width), min)
-          setWidth(width)
+          callback(width)
         })
         observerRef.current.observe(node)
       }
     },
-    [setWidth, min]
+    [callback, min]
   )
 
   return containerRefCallback

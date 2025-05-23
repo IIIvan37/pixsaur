@@ -23,7 +23,7 @@ export const getSvgDimensions = async (file: File) => {
       if (parts.length === 4) {
         const w = parseFloat(parts[2])
         const h = parseFloat(parts[3])
-        console.log('w', w, 'h', h)
+
         if (!isNaN(w) && !isNaN(h)) {
           return { width: w, height: h }
         }
@@ -69,7 +69,6 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
         console.log('Processing SVG file')
         getSvgDimensions(file)
           .then((dimensions) => {
-            console.log('SVG dimensions:', dimensions)
             img.width = dimensions.width
             img.height = dimensions.height
           })
