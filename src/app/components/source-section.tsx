@@ -1,20 +1,17 @@
-import { Box, Flex, Heading } from '@radix-ui/themes'
+import { Box, Heading } from '@radix-ui/themes'
 import { ImageUpload } from '@/components/image-upload/image-upload'
 
 import styles from '@/styles/image-converter.module.css'
 import { ImageSelector } from '@/components/image-selector'
 import Icon from '@/components/ui/icon'
-import { canvasSizeAtom, imageAtom, setImgAtom } from '../store/image/image'
+import { imageAtom, setImgAtom } from '../store/image/image'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
 import Button from '@/components/ui/button'
 
-import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
-
 export default function SourceSection() {
-  const containerRefCallback = useObservedCanvasWidth(320)
   const setImg = useSetAtom(setImgAtom)
-  const canvasSize = useAtomValue(canvasSizeAtom)
+
   const img = useAtomValue(imageAtom)
 
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
@@ -25,7 +22,7 @@ export default function SourceSection() {
   return (
     <Box className={styles.panel}>
       <Box className={styles.flexColumn}>
-        <Flex justify='between' align='center' mb='2'>
+        <div className={styles.sectionHeader}>
           <Heading size='1' className={styles.sectionTitle} mb='2'>
             Image Source
           </Heading>
@@ -43,20 +40,14 @@ export default function SourceSection() {
               Changer d'image
             </Button>
           )}
-        </Flex>
-        {!img ? (
-          <ImageUpload onImageLoaded={handleImageLoaded} />
-        ) : (
-          <Box className={styles.spaceY4}>
-            <div className={styles.center} style={{ padding: '1rem' }}>
-              <ImageSelector
-                containerRefCallback={containerRefCallback}
-                canvasWidth={canvasSize?.width || 0}
-                canvasHeight={canvasSize?.height || 0}
-              />
-            </div>
-          </Box>
-        )}
+        </div>
+        <div className={styles.center} style={{ padding: '1rem' }}>
+          {!img ? (
+            <ImageUpload onImageLoaded={handleImageLoaded} />
+          ) : (
+            <ImageSelector />
+          )}
+        </div>
       </Box>
     </Box>
   )

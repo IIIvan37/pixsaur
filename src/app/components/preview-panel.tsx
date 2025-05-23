@@ -1,4 +1,4 @@
-import { Box, Flex, Heading } from '@radix-ui/themes'
+import { Box, Heading } from '@radix-ui/themes'
 
 import styles from '@/styles/image-converter.module.css'
 import { useAtomValue, useSetAtom } from 'jotai'
@@ -21,21 +21,14 @@ const PreviewPanel = () => {
   return (
     <Box className={styles.panel}>
       <Box className={styles.flexColumn}>
-        <Flex justify='between' align='center' mb='2'>
+        <div className={styles.sectionHeader}>
           <Heading size='2' className={styles.sectionTitle}>
             Aperçu
           </Heading>
-        </Flex>
-        <Box
-          pt='2'
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
+        </div>
+        <div className={styles.center} style={{ padding: '1rem' }}>
           <ImagePreview />
-        </Box>
+        </div>
         {/* Color Palette below preview */}
         <Box mt='2'>
           <ColorPalette />

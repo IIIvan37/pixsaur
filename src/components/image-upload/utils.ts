@@ -14,15 +14,16 @@ export const getSvgDimensions = async (file: File) => {
   const parser = new DOMParser()
   const doc = parser.parseFromString(svgText, 'image/svg+xml')
   const svg = doc.querySelector('svg')
-
   if (svg) {
     // Try viewBox first
     const viewBox = svg.getAttribute('viewBox')
     if (viewBox) {
       const parts = viewBox.trim().split(/\s+|,/)
+
       if (parts.length === 4) {
         const w = parseFloat(parts[2])
         const h = parseFloat(parts[3])
+
         if (!isNaN(w) && !isNaN(h)) {
           return { width: w, height: h }
         }
@@ -62,7 +63,17 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
       const img = new Image()
       img.onerror = () => reject(new Error('Invalid image'))
       img.onload = () => resolve(img)
+
       img.src = reader.result as string
+      if (file.type === 'image/svg+xml') {
+        console.log('Processing SVG file')
+        getSvgDimensions(file)
+          .then((dimensions) => {
+            img.width = dimensions.width
+            img.height = dimensions.height
+          })
+          .catch(reject)
+      }
     }
     reader.readAsDataURL(file)
   })

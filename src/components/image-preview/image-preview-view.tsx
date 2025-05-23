@@ -1,10 +1,12 @@
 import styles from './image-preview.module.css'
 
 export type ImagePreviewViewProps = {
+  containerRefCallback: (node: HTMLDivElement | null) => void
   ref: React.RefObject<HTMLCanvasElement | null>
   image: ImageData | null
+  width: number
+  height: number
 }
-
 /**
  * ImagePreviewView component renders a canvas element to display an image preview.
  * If no image is provided, it shows a message indicating that no image has been processed.
@@ -15,7 +17,13 @@ export type ImagePreviewViewProps = {
  * @param {ImageData | null} props.image - The image data to be displayed.
  * @returns {JSX.Element} The rendered ImagePreviewView component.
  */
-export function ImagePreviewView({ ref, image }: ImagePreviewViewProps) {
+export function ImagePreviewView({
+  containerRefCallback,
+  ref,
+  image,
+  width,
+  height
+}: ImagePreviewViewProps) {
   if (!image) {
     return (
       <div className={styles.container}>
@@ -27,12 +35,12 @@ export function ImagePreviewView({ ref, image }: ImagePreviewViewProps) {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={containerRefCallback}>
       <canvas
         ref={ref}
-        width={320}
-        height={200}
-        style={{ width: '320px', height: '200px' }}
+        width={width}
+        height={height}
+        style={{ width: `{width}x`, height: `${height}px` }}
       />
     </div>
   )

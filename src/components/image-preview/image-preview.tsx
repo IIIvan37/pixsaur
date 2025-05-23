@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react'
 
-import { previewImageAtom } from '@/app/store/preview/preview'
-import { useAtomValue } from 'jotai'
+import {
+  previewCanvasSizeAtom,
+  previewCanvasWidthAtom,
+  previewImageAtom
+} from '@/app/store/preview/preview'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { ImagePreviewView } from './image-preview-view'
+import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 
 /**
  * ImagePreview component renders a preview of an image using a canvas element.
@@ -13,16 +18,22 @@ import { ImagePreviewView } from './image-preview-view'
  * @returns {JSX.Element} The rendered ImagePreviewView component with the canvas ref and image prop.
  */
 const ImagePreview = () => {
+  const { width, height } = useAtomValue(previewCanvasSizeAtom)
+  console.log('ImagePreview', width, height)
+  const setWidth = useSetAtom(previewCanvasWidthAtom)
+  const containerRefCallback = useObservedCanvasWidth((width) => {
+    setWidth(width)
+  }, 320)
   const ref = useRef<HTMLCanvasElement>(null)
 
   const image = useAtomValue(previewImageAtom)
 
   useEffect(() => {
     const canvas = ref.current
-    if (!canvas || !image) return
+    if (!canvas || !image || !width || !height) return
 
-    canvas.width = 320
-    canvas.height = 200
+    canvas.width = width
+    canvas.height = height
 
     const ctx = canvas.getContext('2d')!
 
@@ -33,22 +44,20 @@ const ImagePreview = () => {
 
     temp.getContext('2d')!.putImageData(image, 0, 0)
 
-    // Étire vers 320x200
     ctx.imageSmoothingEnabled = true
-    ctx.drawImage(
-      temp,
-      0,
-      0,
-      image.width,
-      image.height,
-      0,
-      0,
-      320,
-      image.height
-    )
-  }, [image])
+    console.log('HERE', image.width, image.height, width, height)
+    ctx.drawImage(temp, 0, 0, image.width, image.height, 0, 0, width, height)
+  }, [image, width, height])
 
-  return <ImagePreviewView ref={ref} image={image} />
+  return (
+    <ImagePreviewView
+      containerRefCallback={containerRefCallback}
+      ref={ref}
+      image={image}
+      width={width}
+      height={height}
+    />
+  )
 }
 
 ImagePreview.displayName = 'ImagePreview'

@@ -15,7 +15,7 @@ export const canvasSizeAtom = atom((get) => {
   const img = get(imageAtom)
   const width = get(canvasWidthAtom)
 
-  if (!img || !width) return null
+  if (!img || !width) return { width: 0, height: 0 }
   const height = Math.floor((img.height / img.width) * width)
   return {
     width,
@@ -31,9 +31,9 @@ export const setImgAtom = atom(
 )
 export const downscaledAtom = atom((get) => {
   const img = get(imageAtom)
-  const size = get(canvasSizeAtom)
-  if (!img || !size) return null
-  return downscaleImage(img, size.width)
+  const { width, height } = get(canvasSizeAtom)
+  if (!img || !width || !height) return null
+  return downscaleImage(img, width)
 })
 
 export const workingImageAtom = atom((get) => {

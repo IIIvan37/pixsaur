@@ -9,6 +9,19 @@ import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
 
+export const previewCanvasWidthAtom = atom<number | null>(null)
+
+export const previewCanvasSizeAtom = atom((get) => {
+  const width = get(previewCanvasWidthAtom)
+
+  if (!width) return { width: 0, height: 0 }
+  const height = Math.floor(width * (200 / 320))
+  return {
+    width,
+    height
+  }
+})
+
 // 1. Zone sélectionnée réduite à la largeur du mode
 export const croppedImageAtom = atom((get) => {
   const workingImageData = get(workingImageAtom)
