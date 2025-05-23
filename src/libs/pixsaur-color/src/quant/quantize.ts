@@ -68,7 +68,6 @@ export function createQuantizer({
   preselected,
   quantConfig
 }: CreateQuantizerInput) {
-  console.log('Quantizer created with config:', quantConfig)
   const { colorSpace } = quantConfig
 
   const toW: (c: Vector<'RGB'>) => Vector<typeof colorSpace> =
