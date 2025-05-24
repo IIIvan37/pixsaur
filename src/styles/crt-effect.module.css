@@ -3,9 +3,12 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.8) 100%);
+  background: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0) 60%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
   opacity: 0.95;
-  animation: flicker 0.05s infinite alternate;
 }
 
 .scanlines {
