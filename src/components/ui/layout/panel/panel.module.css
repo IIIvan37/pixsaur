@@ -1,8 +1,8 @@
 .panel {
   background-color: rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-md);
-  padding: var(--spacing-2);
-  border: 1px solid var(--color-green-900);
-  margin-bottom: var(--spacing-2);
+  padding: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-sm);
   flex: 1;
 }
