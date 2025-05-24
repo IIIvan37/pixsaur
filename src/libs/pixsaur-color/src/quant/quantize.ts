@@ -11,7 +11,7 @@ import { ColorSpace, Vector } from '../type'
 import { selectContrastedSubset } from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
 
-export type DitheringMode = 'floydSteinberg' | 'none'
+export type DitheringMode = 'floydSteinberg' | 'bayer2x2' | 'bayer4x4'
 
 export type DitheringConfig = {
   mode: DitheringMode

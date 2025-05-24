@@ -1,10 +1,11 @@
 import { CPC_MODE_CONFIG, CpcModeKey } from '@/app/store/config/types'
 import { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import PixsaurSlider from '@/components/ui/slider'
+
 import styles from './image-controls.module.css'
 import animStyles from '@/styles/animations.module.css'
 import clsx from 'clsx'
 import Flex from '../ui/flex'
+import { DitheringSelector } from './dithering-selector/dithering-selector'
 
 export type ImageControlsViewProps = {
   mode: CpcModeKey
@@ -32,8 +33,7 @@ export type ImageControlsViewProps = {
 export function ImageControlsView({
   mode,
   onModeChange,
-  dithering,
-  onDitheringChange,
+
   colorSpace,
   onColorSpaceChange
 }: ImageControlsViewProps) {
@@ -84,15 +84,7 @@ export function ImageControlsView({
         </div>
       </Flex>
       <div className={styles.ditheringSlider}>
-        <PixsaurSlider
-          min={0}
-          max={1}
-          step={0.01}
-          value={dithering.intensity}
-          onChange={(intensity) => onDitheringChange({ intensity })}
-          label='Tramage'
-          showTooltip={false}
-        />
+        <DitheringSelector />
       </div>
       <Flex align='center'>
         <h2 className={styles.sectionTitle}>Espace de couleur</h2>

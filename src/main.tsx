@@ -3,8 +3,6 @@ import ReactDOM from 'react-dom/client'
 import App from '@/app/app'
 import '@/styles/global.css'
 
-import 'jotai-devtools/styles.css'
-
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

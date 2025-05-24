@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, vi, beforeEach } from 'vitest'
 import {
@@ -75,19 +75,6 @@ describe('ImageControlsView', () => {
     render(<ImageControlsView {...props} />)
     await userEvent.click(screen.getByRole('button', { name: /Mode 2/i }))
     expect(onModeChange).toHaveBeenCalledWith('2')
-  })
-
-  it('renders the dithering slider with correct value', () => {
-    render(<ImageControlsView {...props} />)
-    const slider = screen.getByRole('slider', { name: /Tramage/i })
-    expect(slider).toHaveValue('0.5')
-  })
-
-  it('calls onDitheringChange when slider is changed', async () => {
-    render(<ImageControlsView {...props} />)
-    const slider = screen.getByRole('slider', { name: /Tramage/i })
-    fireEvent.change(slider, { target: { value: 0.7 } })
-    expect(onDitheringChange).toHaveBeenCalledWith({ intensity: 0.7 })
   })
 
   it('renders color space buttons and highlights the active one', () => {

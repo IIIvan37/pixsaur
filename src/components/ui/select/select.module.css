@@ -1,0 +1,51 @@
+.trigger {
+  all: unset;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 160px;
+}
+
+.icon {
+  margin-left: var(--spacing-xs);
+  color: var(--color-foreground);
+}
+
+.content {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 6px var(--color-accent);
+  padding: var(--spacing-xs) 0;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  z-index: 100;
+}
+
+.item {
+  all: unset;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-foreground);
+}
+
+.item:hover,
+.item[data-highlighted] {
+  background-color: var(--color-accentHover);
+  color: var(--color-background);
+}
+
+.check {
+  margin-left: var(--spacing-sm);
+  color: var(--color-foreground);
+}
