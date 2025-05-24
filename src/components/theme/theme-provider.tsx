@@ -12,7 +12,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const fullKey = `${prefix}-${key}`
         if (typeof value === 'string') {
           set(fullKey, value)
-          console.log(`Set CSS variable: ${fullKey} = ${value}`)
         } else {
           injectVars(fullKey, value as Record<string, string | object>, set)
         }

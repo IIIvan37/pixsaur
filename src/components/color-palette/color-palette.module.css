@@ -34,3 +34,10 @@
   border-color: var(--color-accent);
   z-index: 1;
 }
+
+.helpText {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  margin-top: var(--spacing-sm);
+  text-align: center;
+}
