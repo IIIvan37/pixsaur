@@ -1,14 +1,14 @@
 .colorGrid {
   display: grid;
-  grid-template-columns: repeat(9, 1.5rem);
-  gap: var(--spacing-sm);
+  grid-template-columns: repeat(9, 1.4rem);
+  gap: var(--spacing-xs);
   padding: var(--spacing-xs);
   justify-content: center;
 }
 
 .colorOption {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.2rem;
+  height: 1.2rem;
   box-sizing: border-box;
   background: none;
   border: 1px solid var(--color-border);
