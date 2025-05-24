@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
-import styles from '@/styles/source-selector.module.css'
+
 import { useAtomValue, useSetAtom } from 'jotai'
 import { selectionAtom, setSelectionAtom } from '@/app/store/image/image'
+import { SourceSelectorView } from './source-selector-view'
 
-type Handle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | null
+export type Handle =
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | null
 
 export type SourceSelectorProps = {
   width: number
@@ -116,15 +122,6 @@ export const SourceSelector = ({
     },
     [sel, canvasWidth, canvasHeight, width, height]
   )
-
-  const getCursorClass = () => {
-    if (hoverHandle === 'top-left' || hoverHandle === 'bottom-right')
-      return styles.nwse
-    if (hoverHandle === 'top-right' || hoverHandle === 'bottom-left')
-      return styles.nesw
-    if (hoverHandle === 'inside') return styles.move
-    return styles.crosshair
-  }
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -255,21 +252,15 @@ export const SourceSelector = ({
   }, [width, height, setSelection])
 
   return (
-    <div className={styles.container} style={{ width: '100%', height: 'auto' }}>
-      <canvas
-        ref={overlayRef}
-        width={canvasWidth}
-        height={canvasHeight}
-        className={styles.canvas}
-      />
-      <div
-        className={`${styles.overlay} ${getCursorClass()}`}
-        style={{ width: canvasWidth, height: canvasHeight }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onDoubleClick={onDoubleClick}
-      />
-    </div>
+    <SourceSelectorView
+      hoverHandle={hoverHandle}
+      overlayRef={overlayRef}
+      canvasWidth={canvasWidth}
+      canvasHeight={canvasHeight}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onDoubleClick={onDoubleClick}
+    />
   )
 }
