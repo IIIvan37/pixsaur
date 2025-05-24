@@ -8,6 +8,8 @@ import { ColorPalette } from '@/components/color-palette/color-palette'
 import ImageControls from '@/components/image-controls/image-controls'
 import ImagePreview from '@/components/image-preview/image-preview'
 
+import { Panel } from '@/components/ui/layout/panel/panel'
+
 const PreviewPanel = () => {
   const reduced = useAtomValue(reducedPaletteAtom)
   const setReduced = useSetAtom(setReducedPaletteAtom)
@@ -17,25 +19,23 @@ const PreviewPanel = () => {
   }, [reduced, setReduced])
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.flexColumn}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Aperçu</h2>
-        </div>
-        <div className={styles.center} style={{ padding: '1rem' }}>
-          <ImagePreview />
-        </div>
-        {/* Color Palette below preview */}
-        <div>
-          <ColorPalette />
-        </div>
-
-        {/* Mode controls directly under palette */}
-        <div>
-          <ImageControls />
-        </div>
+    <Panel>
+      <div className={styles.sectionHeader}>
+        <h2 className={styles.sectionTitle}>Aperçu</h2>
       </div>
-    </div>
+      <div style={{ width: '100%', padding: '1rem' }}>
+        <ImagePreview />
+      </div>
+      {/* Color Palette below preview */}
+      <div style={{ width: '100%', padding: '1rem' }}>
+        <ColorPalette />
+      </div>
+
+      {/* Mode controls directly under palette */}
+      <div style={{ width: '100%', padding: '1rem' }}>
+        <ImageControls />
+      </div>
+    </Panel>
   )
 }
 

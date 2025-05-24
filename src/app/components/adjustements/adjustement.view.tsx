@@ -5,6 +5,7 @@ import styles from '@/styles/image-converter.module.css'
 import { RangeOption } from './types'
 import { AdjustementKey } from '@/app/store/config/types'
 import Button from '@/components/ui/button'
+import { Panel } from '@/components/ui/layout/panel/panel'
 
 type RangeLabels = {
   key: AdjustementKey
@@ -34,7 +35,7 @@ export const AdjustementsView = ({
   onReset
 }: AdjustementsViewProps) => {
   return (
-    <div className={styles.panel} style={{ flex: 1 }}>
+    <Panel>
       <div className={styles.sectionHeader}>
         <Button
           variant='secondary'
@@ -67,6 +68,6 @@ export const AdjustementsView = ({
           )
         })}
       </div>
-    </div>
+    </Panel>
   )
 }
