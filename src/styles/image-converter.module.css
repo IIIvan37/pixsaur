@@ -21,6 +21,11 @@
   flex-wrap: wrap;
   gap: var(--spacing-4);
 }
+@media (max-width: 1024px) {
+  .flexRow {
+    flex-direction: column;
+  }
+}
 
 .flexColumn_1 {
   flex: 1;
@@ -38,12 +43,12 @@
   flex: 3;
 }
 
-.sectionHeader{
+.sectionHeader {
   display: flex;
   width: 100%;
   justify-content: space-between;
   align-items: center;
-  min-height: 5rem;
+  min-height: 2rem;
   margin-bottom: var(--spacing-sm);
 }
 
@@ -189,11 +194,11 @@
   flex-direction: column;
 }
 
-.adjustmentsContainerWrapper{
+.adjustmentsContainerWrapper {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  flex: 1
+  flex: 1;
 }
 .adjustmentsContainer {
   display: flex;

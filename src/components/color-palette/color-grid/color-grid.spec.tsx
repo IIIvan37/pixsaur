@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react'
 
-import { ColorPopover } from './color-popover'
+import { ColorGrid } from './color-grid'
 import type { CPCColor } from '@/libs/types'
 import type { PaletteSlot } from '@/app/store/palette/types'
 
-describe('ColorPopover', () => {
+describe('ColorGrid', () => {
   const fullPalette: CPCColor[] = [
     {
       index: 0,
@@ -34,7 +34,7 @@ describe('ColorPopover', () => {
 
   it('disables color options already used in other slots', () => {
     render(
-      <ColorPopover
+      <ColorGrid
         fullPalette={fullPalette}
         slots={baseSlots}
         slotIdx={1} // The empty slot
@@ -56,7 +56,7 @@ describe('ColorPopover', () => {
   it('does not disable color if used in the current slot', () => {
     // Slot 0 is filled with Rouge, so Rouge should not be disabled for slotIdx 0
     render(
-      <ColorPopover
+      <ColorGrid
         fullPalette={fullPalette}
         slots={baseSlots}
         slotIdx={0}

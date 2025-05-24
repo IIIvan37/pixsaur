@@ -1,12 +1,12 @@
 import React, { useRef, useState, useEffect } from 'react'
 import styles from './color-palette.module.css'
 import animStyles from '@/styles/animations.module.css'
-import { ColorPopover } from './color-popover/color-popover'
+
 import { PaletteSlot } from '@/app/store/palette/types'
 import { CPCColor } from '@/libs/types'
-import { vectorToHex } from '@/libs/cpc-palette'
-import Icon from '../ui/icon'
-import PixsaurPopover from '../ui/popover'
+
+import { ColorSlot } from './color-slot/color-slot'
+import { EmptySlotButton } from './color-slot/empty.slot'
 
 export type ColorPaletteViewProps = {
   slots: PaletteSlot[]
@@ -57,8 +57,6 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
     setOpenPopoverIndex(null)
   }
 
-
-
   return (
     <div
       className={styles.container}
@@ -67,59 +65,37 @@ export const ColorPaletteView: React.FC<ColorPaletteViewProps> = ({
     >
       <div className={styles.paletteGrid}>
         {slots.map((slot, idx) => {
-          const colorObj = slot.color
-          const hex = colorObj ? vectorToHex(colorObj) : null
+          const color = slot.color
+
           return (
             <div
               key={idx}
               className={`${styles.colorSquare} ${animStyles.colorSquare}`}
             >
-              {colorObj ? (
-                <button
-                  ref={(el) => {
+              {color ? (
+                <ColorSlot
+                  idx={idx}
+                  color={color}
+                  locked={slot.locked}
+                  buttonRef={(el) => {
                     buttonRefs.current[idx] = el
                   }}
-                  className={styles.colorFill}
-                  style={{ backgroundColor: `#${hex}` }}
-                  aria-label={`#${hex} ${
-                    slot.locked ? 'verrouillée' : 'déverrouillée'
-                  }`}
-                  aria-pressed={slot.locked}
-                  title={`R:${colorObj[0]}, V:${colorObj[1]}, B:${colorObj[2]}`}
-                  onClick={() => onToggleLock(idx)}
-                >
-                  {slot.locked && (
-                    <span className={styles.lockOverlay} aria-hidden='true'>
-                      <Icon name='LockClosedIcon' className={styles.lockIcon} />
-                    </span>
-                  )}
-                </button>
+                  onToggleLock={onToggleLock}
+                />
               ) : (
-                <PixsaurPopover
+                <EmptySlotButton
+                  idx={idx}
+                  buttonRef={(el) => {
+                    buttonRefs.current[idx] = el
+                  }}
                   open={openPopoverIndex === idx}
                   onOpenChange={(v) => setOpenPopoverIndex(v ? idx : null)}
-                  trigger={
-                    <button
-                      ref={(el) => {
-                        buttonRefs.current[idx] = el
-                      }}
-                      className={styles.emptySlot}
-                      aria-label='Ajouter une couleur'
-                    >
-                      <Icon name='PlusIcon' className={styles.plusIcon} />
-                    </button>
-                  }
-                >
-                  <ColorPopover
-                    fullPalette={fullPalette}
-                    slots={slots}
-                    slotIdx={idx}
-                    focusedColorIdx={focusedColorIdx}
-                    onColorSelect={handleColorSelect}
-                 
-                    colorOptionRefs={colorOptionRefs}
-                  />
-                </PixsaurPopover>
+                  slots={slots}
+                  fullPalette={fullPalette}
+                  focusedColorIdx={focusedColorIdx}
+                  onColorSelect={handleColorSelect}
+                  colorOptionRefs={colorOptionRefs}
+                />
               )}
             </div>
           )

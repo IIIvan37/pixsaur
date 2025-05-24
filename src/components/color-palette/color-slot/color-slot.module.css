@@ -1,0 +1,54 @@
+.colorFill {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background-color: transparent;
+}
+
+.lockOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lockIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+  color: var(--color-foreground);
+}
+
+.emptySlotContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.emptySlot {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.plusIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+  color: var(--color-accent);
+}
+
+.lockIconDark {
+  color: var(--color-dark);
+}
+
+.lockIconLight {
+  color: var(--color-light);
+}

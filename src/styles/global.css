@@ -1,8 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
-
 /* === Box sizing universel === */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -10,7 +11,7 @@
 html {
   font-size: 14px; /* 1rem = 14px */
   background-color: var(--color-background, black);
-  color: var(--color-foreground, #00DF3A);
+  color: var(--color-foreground, #00df3a);
   font-family: var(--font-family, monospace);
 }
 
@@ -28,7 +29,12 @@ a {
 }
 
 /* === Titres === */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin: 0;
   font-weight: normal;
   font-size: inherit;
@@ -40,7 +46,10 @@ p {
 }
 
 /* === Form controls === */
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font: inherit;
   color: inherit;
   background: none;

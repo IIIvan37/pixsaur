@@ -1,13 +1,10 @@
 .colorGrid {
   display: grid;
-  grid-template-columns: repeat(9, 1.5rem); /* carrés fixes */
-  gap: var(--spacing-xs); /* ou 0.5rem */
-  padding: var(--spacing-sm);
+  grid-template-columns: repeat(9, 1.5rem);
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs);
   justify-content: center;
 }
-
-
-
 
 .colorOption {
   width: 1.5rem;
@@ -18,10 +15,10 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   padding: 0;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
 }
-
-
 
 .colorOption:hover {
   transform: scale(1.15);

@@ -1,12 +1,10 @@
-'use client'
-
 import { useRef, useEffect } from 'react'
 
 import { CPCColor } from '@/libs/types'
 import { PaletteSlot } from '@/app/store/palette/types'
-import { ColorPopoverView } from './color-popover-view'
+import { ColorGridView } from './color-grid-view'
 
-type ColorPopoverProps = {
+type ColorGridProps = {
   fullPalette: CPCColor[]
   slots: PaletteSlot[]
   slotIdx: number
@@ -16,7 +14,7 @@ type ColorPopoverProps = {
   colorOptionRefs?: React.RefObject<(HTMLButtonElement | null)[]>
 }
 
-export const ColorPopover: React.FC<ColorPopoverProps> = ({
+export const ColorGrid: React.FC<ColorGridProps> = ({
   fullPalette,
   slots,
   slotIdx,
@@ -37,7 +35,7 @@ export const ColorPopover: React.FC<ColorPopoverProps> = ({
   }, [focusedColorIdx])
 
   return (
-    <ColorPopoverView
+    <ColorGridView
       fullPalette={fullPalette}
       slots={slots}
       slotIdx={slotIdx}
