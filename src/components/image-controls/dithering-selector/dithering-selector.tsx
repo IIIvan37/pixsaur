@@ -36,15 +36,16 @@ export function DitheringSelector() {
           </SelectItem>
         ))}
       </Select>
-
-      <PixsaurSlider
-        label='Intensité'
-        min={0}
-        max={100}
-        value={Math.round(cfg.intensity * 100)}
-        onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
-        step={1}
-      />
+      <div style={{ flexGrow: 1 }}>
+        <PixsaurSlider
+          label='Intensité'
+          min={0}
+          max={100}
+          value={Math.round(cfg.intensity * 100)}
+          onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
+          step={1}
+        />
+      </div>
     </Flex>
   )
 }
