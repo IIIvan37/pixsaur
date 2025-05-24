@@ -1,10 +1,10 @@
 import { CPC_MODE_CONFIG, CpcModeKey } from '@/app/store/config/types'
 import { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import { Flex, Heading } from '@radix-ui/themes'
 import PixsaurSlider from '@/components/ui/slider'
 import styles from './image-controls.module.css'
 import animStyles from '@/styles/animations.module.css'
 import clsx from 'clsx'
+import Flex from '../ui/flex'
 
 export type ImageControlsViewProps = {
   mode: CpcModeKey
@@ -77,10 +77,8 @@ export function ImageControlsView({
 
   return (
     <div className={styles.controlsContainer}>
-      <Flex align='center' mb='2'>
-        <Heading size='2' className={styles.sectionTitle}>
-          Mode
-        </Heading>
+      <Flex align='center'>
+        <h2 className={styles.sectionTitle}>Mode</h2>
         <div className={styles.modeButtonsRow}>
           {Object.keys(CPC_MODE_CONFIG).map(renderModeButton)}
         </div>
@@ -96,10 +94,8 @@ export function ImageControlsView({
           showTooltip={false}
         />
       </div>
-      <Flex align='center' mb='2'>
-        <Heading size='2' className={styles.sectionTitle}>
-          Espace de couleur
-        </Heading>
+      <Flex align='center'>
+        <h2 className={styles.sectionTitle}>Espace de couleur</h2>
         <div className={styles.modeButtonsRow}>
           {(['RGB', 'XYZ', 'Lab'] as ColorSpace[]).map(renderColorSpaceButton)}
         </div>

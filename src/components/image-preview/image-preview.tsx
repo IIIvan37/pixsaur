@@ -19,7 +19,7 @@ import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
  */
 const ImagePreview = () => {
   const { width, height } = useAtomValue(previewCanvasSizeAtom)
-  console.log('ImagePreview', width, height)
+
   const setWidth = useSetAtom(previewCanvasWidthAtom)
   const containerRefCallback = useObservedCanvasWidth((width) => {
     setWidth(width)

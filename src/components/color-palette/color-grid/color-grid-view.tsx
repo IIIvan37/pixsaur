@@ -1,7 +1,7 @@
 import { PaletteSlot } from '@/app/store/palette/types'
 import { CPCColor } from '@/libs/types'
 import styles from './color-grid.module.css'
-import animStyles from '@/styles/animations.module.css'
+
 import { ColorButton } from '../color-slot/color-button'
 import clsx from 'clsx'
 

@@ -1,4 +1,3 @@
-import { Box, Heading } from '@radix-ui/themes'
 import { ImageUpload } from '@/components/image-upload/image-upload'
 
 import styles from '@/styles/image-converter.module.css'
@@ -20,12 +19,10 @@ export default function SourceSection() {
   }
 
   return (
-    <Box className={styles.panel}>
-      <Box className={styles.flexColumn}>
+    <div className={styles.panel}>
+      <div className={styles.flexColumn}>
         <div className={styles.sectionHeader}>
-          <Heading size='1' className={styles.sectionTitle} mb='2'>
-            Image Source
-          </Heading>
+          <h1 className={styles.sectionTitle}>Image Source</h1>
           {!!img && (
             <Button
               variant='secondary'
@@ -48,7 +45,7 @@ export default function SourceSection() {
             <ImageSelector />
           )}
         </div>
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
