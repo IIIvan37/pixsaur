@@ -16,6 +16,8 @@ export function useObservedCanvasWidth(
       if (node) {
         observerRef.current = new ResizeObserver(([entry]) => {
           const width = Math.max(Math.floor(entry.contentRect.width), min)
+          console.log('Observed preview width =', width)
+
           callback(width)
         })
         observerRef.current.observe(node)
