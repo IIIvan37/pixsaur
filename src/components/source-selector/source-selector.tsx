@@ -2,58 +2,38 @@ import { useCallback, useState } from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { selectionAtom, setSelectionAtom } from '@/app/store/image/image'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
-
-type Handle = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | null
-
-/**
- * Converts a logical selection (in image space) to display coordinates in percent.
- *
- * @param sel - The logical selection { sx, sy, width, height }.
- * @param imageWidth - The logical width of the image (e.g. 400).
- * @param imageHeight - The logical height of the image.
- * @returns A rectangle in percent coordinates: { x, y, width, height }.
- */
-export function logicalToPercentRect(
-  sel: Selection,
-  imageWidth: number,
-  imageHeight: number
-) {
-  return {
-    x: (sel.sx / imageWidth) * 100,
-    y: (sel.sy / imageHeight) * 100,
-    width: (sel.width / imageWidth) * 100,
-    height: (sel.height / imageHeight) * 100
-  }
-}
-
-/**
- * Converts a display rectangle (in percent of container) back to logical image coordinates.
- *
- * @param rect - The selection in percent: { x, y, width, height }.
- * @param imageWidth - The logical image width.
- * @param imageHeight - The logical image height.
- * @returns A logical selection { sx, sy, width, height }.
- */
-export function percentRectToLogical(
-  rect: { x: number; y: number; width: number; height: number },
-  imageWidth: number,
-  imageHeight: number
-): Selection {
-  return {
-    sx: Math.round((rect.x / 100) * imageWidth),
-    sy: Math.round((rect.y / 100) * imageHeight),
-    width: Math.round((rect.width / 100) * imageWidth),
-    height: Math.round((rect.height / 100) * imageHeight)
-  }
-}
+import { Handle, logicalToPercentRect, percentRectToLogical } from './utils'
+import { SourceSelectorView } from './source-selector-view'
 
 export type SourceSelectorProps = {
   width: number
   height: number
-  canvasWidth: number
-  canvasHeight: number
 }
 
+/**
+ * SourceSelector is a React component that provides an interactive selection rectangle
+ * with draggable and resizable handles for selecting a region within a given area.
+ *
+ * Features:
+ * - Allows users to move and resize a selection rectangle within the bounds of the parent area.
+ * - Supports dragging the selection or resizing from any corner handle.
+ * - Double-clicking resets the selection to cover the full area.
+ * - Visual feedback is provided during drag and resize operations.
+ *
+ * Props:
+ * @param {number} width - The width of the selectable area in logical units.
+ * @param {number} height - The height of the selectable area in logical units.
+ *
+ * Usage:
+ * ```tsx
+ * <SourceSelector width={800} height={600} />
+ * ```
+ *
+ * @remarks
+ * - The component uses Jotai atoms for global selection state management.
+ * - Handles are rendered at the four corners of the selection rectangle.
+ * - All coordinates and sizes are managed in both logical and percentage units for responsive behavior.
+ */
 export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
   const [resizeHandle, setResizeHandle] = useState<Handle>(null)
 
@@ -185,77 +165,15 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
     setSelection(full)
   }, [width, height, setSelection])
 
-  const handleSize = 6
-  const inset = 4
-
   return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 2
-      }}
+    <SourceSelectorView
+      rect={rect}
+      dragging={dragging}
+      resizeHandle={resizeHandle}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onDoubleClick={onDoubleClick}
-    >
-      {/* Rectangle de sélection */}
-      <div
-        style={{
-          position: 'absolute',
-          top: `${rect.y}%`,
-          left: `${rect.x}%`,
-          width: `${rect.width}%`,
-          height: `${rect.height}%`,
-          border: '2px solid #00FF00',
-          backgroundColor:
-            dragging || resizeHandle ? 'rgba(0, 255, 0, 0.2)' : 'transparent',
-          boxSizing: 'border-box',
-          pointerEvents: 'none'
-        }}
-      />
-
-      {/* Handles placés à l'intérieur */}
-      {(
-        [
-          { name: 'top-left', dx: 8, dy: 8, cursor: 'nwse-resize' },
-          { name: 'top-right', dx: -8, dy: 8, cursor: 'nesw-resize' },
-          { name: 'bottom-left', dx: 8, dy: -8, cursor: 'nesw-resize' },
-          { name: 'bottom-right', dx: -8, dy: -8, cursor: 'nwse-resize' }
-        ] as const
-      ).map(({ name, dx, dy, cursor }) => {
-        const size = 8
-        const half = size / 2
-        const offsetStyle = {
-          transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`
-        }
-
-        const pos = {
-          top: name.includes('top') ? `${rect.y}%` : `${rect.y + rect.height}%`,
-          left: name.includes('left') ? `${rect.x}%` : `${rect.x + rect.width}%`
-        }
-
-        return (
-          <div
-            key={name}
-            data-handle={name}
-            style={{
-              position: 'absolute',
-              ...pos,
-              width: size,
-              height: size,
-              backgroundColor: '#00FF00',
-              cursor,
-              zIndex: 3,
-              ...offsetStyle
-            }}
-          />
-        )
-      })}
-    </div>
+    />
   )
 }

@@ -1,32 +1,24 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 import { useImageAdjustement } from '@/hooks/use-image-adjustement'
-import { canvasWidthAtom, workingImageAtom } from '@/app/store/image/image'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import { ImageSelectorView } from './image-selector-view'
-import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
+import { workingImageAtom } from '@/app/store/image/image'
 
 /**
- * ImageSelector is a React component responsible for displaying and managing an image canvas.
+ * ImageSelector is a React component responsible for rendering and managing an image selection canvas.
+ * It retrieves the current working image from a state atom, draws it onto a canvas, and passes relevant
+ * properties to the ImageSelectorView component for display.
  *
- * It observes the width of its container and updates the canvas width accordingly using Jotai atoms.
- * The component renders an image onto a canvas element and provides callbacks for referencing
- * both the canvas and its container.
- *
- * @component
- * @returns {JSX.Element} The rendered ImageSelector component.
+ * @returns {JSX.Element} The rendered image selector view with the current image.
  *
  * @remarks
- * - Uses Jotai atoms for state management of canvas size and image data.
- * - Utilizes custom hooks for observing container width and image adjustment.
- * - Passes necessary props and ref callbacks to the underlying ImageSelectorView component.
+ * - Uses `useAtomValue` to access the current image data.
+ * - Utilizes a canvas ref to draw the image using the 2D context.
+ * - Applies image adjustments via the `useImageAdjustement` hook.
+ * - Handles canvas updates when the image source changes.
  */
 export function ImageSelector() {
-  const setWidth = useSetAtom(canvasWidthAtom)
-  const containerRefCallback = useObservedCanvasWidth((width) => {
-    setWidth(width)
-  }, 320)
-
   const src = useAtomValue(workingImageAtom)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -46,11 +38,10 @@ export function ImageSelector() {
 
   return (
     <ImageSelectorView
-      canvasWidth={src?.width || 0}
-      canvasHeight={src?.height || 0}
+      canvasWidth={src?.width ?? 1}
+      canvasHeight={src?.height ?? 1}
       src={src}
       refCallback={imageRefCallback}
-      containerRefCallback={containerRefCallback}
     />
   )
 }

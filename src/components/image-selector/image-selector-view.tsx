@@ -5,15 +5,24 @@ export type ImageSelectorViewProps = {
   canvasHeight: number
   src: ImageData | null
   refCallback: (node: HTMLCanvasElement | null) => void
-  containerRefCallback: (node: HTMLDivElement | null) => void
 }
 
+/**
+ * Renders an image selector view with a canvas and an optional source selector overlay.
+ *
+ * @param props - The properties for the ImageSelectorView component.
+ * @param props.canvasWidth - The width of the canvas element in pixels.
+ * @param props.canvasHeight - The height of the canvas element in pixels.
+ * @param props.src - The source image object, which may include width, height, and data.
+ * @param props.refCallback - A callback ref to access the canvas DOM element.
+ *
+ * @returns A React element containing a canvas and, if available, a SourceSelector overlay.
+ */
 export function ImageSelectorView({
   canvasWidth,
   canvasHeight,
   src,
-  refCallback,
-  containerRefCallback
+  refCallback
 }: ImageSelectorViewProps) {
   const logicalWidth = src?.width ?? 1
   const logicalHeight = src?.height ?? 1
@@ -22,7 +31,6 @@ export function ImageSelectorView({
 
   return (
     <div
-      ref={containerRefCallback}
       style={{
         position: 'relative',
         width: '100%',
@@ -43,12 +51,7 @@ export function ImageSelectorView({
       />
 
       {src?.data && (
-        <SourceSelector
-          width={logicalWidth}
-          height={logicalHeight}
-          canvasWidth={logicalWidth}
-          canvasHeight={logicalHeight}
-        />
+        <SourceSelector width={logicalWidth} height={logicalHeight} />
       )}
     </div>
   )
