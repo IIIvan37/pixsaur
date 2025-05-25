@@ -1,3 +1,4 @@
+// ✅ ImagePreviewView.tsx
 import styles from './image-preview.module.css'
 
 export type ImagePreviewViewProps = {
@@ -7,15 +8,10 @@ export type ImagePreviewViewProps = {
   width: number
   height: number
 }
+
 /**
  * ImagePreviewView component renders a canvas element to display an image preview.
  * If no image is provided, it shows a message indicating that no image has been processed.
- *
- * @component
- * @param {ImagePreviewViewProps} props - The props for the component.
- * @param {React.RefObject<HTMLCanvasElement | null>} props.ref - The ref for the canvas element.
- * @param {ImageData | null} props.image - The image data to be displayed.
- * @returns {JSX.Element} The rendered ImagePreviewView component.
  */
 export function ImagePreviewView({
   containerRefCallback,
@@ -35,12 +31,26 @@ export function ImagePreviewView({
   }
 
   return (
-    <div className={styles.container} ref={containerRefCallback}>
+    <div
+      ref={containerRefCallback}
+      className={styles.container}
+      style={{
+        width: '100%',
+        alignSelf: 'stretch',
+        aspectRatio: '16 / 10', // 320x200 ratio
+        maxHeight: '100%' // permet de s'étendre au besoin
+      }}
+    >
       <canvas
         ref={ref}
         width={width}
         height={height}
-        style={{ width: `{width}x`, height: `${height}px` }}
+        style={{
+          width: '100%',
+          height: '100%',
+          imageRendering: 'pixelated',
+          display: 'block'
+        }}
       />
     </div>
   )

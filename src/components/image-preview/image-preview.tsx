@@ -1,59 +1,65 @@
-import { useEffect, useRef } from 'react'
-
+// ✅ ImagePreview.tsx
+import { useRef, useCallback, useEffect } from 'react'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   previewCanvasSizeAtom,
   previewCanvasWidthAtom,
   previewImageAtom
 } from '@/app/store/preview/preview'
-import { useAtomValue, useSetAtom } from 'jotai'
+
 import { ImagePreviewView } from './image-preview-view'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 
-/**
- * ImagePreview component renders a preview of an image using a canvas element.
- * It listens to the `previewImageAtom` state and updates the canvas whenever the image changes.
- * The image is drawn onto a temporary canvas and then scaled to fit a 320x200 area on the main canvas.
- *
- * @component
- * @returns {JSX.Element} The rendered ImagePreviewView component with the canvas ref and image prop.
- */
 const ImagePreview = () => {
-  const { width, height } = useAtomValue(previewCanvasSizeAtom)
-
-  const setWidth = useSetAtom(previewCanvasWidthAtom)
-  const containerRefCallback = useObservedCanvasWidth((width) => {
-    setWidth(width)
-  }, 320)
   const ref = useRef<HTMLCanvasElement>(null)
 
-  const image = useAtomValue(previewImageAtom)
+  const previewImage = useAtomValue(previewImageAtom)
 
-  useEffect(() => {
+  const setWidth = useSetAtom(previewCanvasWidthAtom)
+  const { width, height } = useAtomValue(previewCanvasSizeAtom)
+
+  const containerRef = useObservedCanvasWidth((proposedWidth) => {
+    setWidth(proposedWidth)
+  }, 320)
+
+  const draw = useCallback(() => {
     const canvas = ref.current
-    if (!canvas || !image || !width || !height) return
+    if (!canvas || !previewImage || width <= 0 || height <= 0) return
 
     canvas.width = width
     canvas.height = height
 
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
 
-    // Crée un canvas temporaire contenant l’image
     const temp = document.createElement('canvas')
-    temp.width = image.width
-    temp.height = image.height
-
-    temp.getContext('2d')!.putImageData(image, 0, 0)
+    temp.width = previewImage.width
+    temp.height = previewImage.height
+    temp.getContext('2d')!.putImageData(previewImage, 0, 0)
 
     ctx.imageSmoothingEnabled = true
-    console.log('HERE', image.width, image.height, width, height)
-    ctx.drawImage(temp, 0, 0, image.width, image.height, 0, 0, width, height)
-  }, [image, width, height])
+    ctx.drawImage(
+      temp,
+      0,
+      0,
+      previewImage.width,
+      previewImage.height,
+      0,
+      0,
+      width,
+      height
+    )
+  }, [previewImage, width, height])
+
+  useEffect(() => {
+    draw()
+  }, [draw])
 
   return (
     <ImagePreviewView
-      containerRefCallback={containerRefCallback}
+      containerRefCallback={containerRef}
       ref={ref}
-      image={image}
+      image={previewImage}
       width={width}
       height={height}
     />
@@ -61,5 +67,4 @@ const ImagePreview = () => {
 }
 
 ImagePreview.displayName = 'ImagePreview'
-
 export default ImagePreview

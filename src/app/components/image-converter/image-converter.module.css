@@ -18,13 +18,16 @@
 .flexRow {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
+
   gap: var(--spacing-lg);
-  align-items: flex-start;
+  align-items: 'stretch';
 }
+
 @media (max-width: 1024px) {
   .flexRow {
     flex-direction: column;
+    align-items: 'center';
+    justify-content: 'flex-start';
   }
 }
 

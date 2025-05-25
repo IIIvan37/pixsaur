@@ -1,34 +1,12 @@
-.container {
-  position: relative;
+.selection-rect {
+  border: 2px solid var(--color-accent);
+  background: transparent;
 }
 
-.canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  width: '100%';
-  height: 'auto';
+.selection-rect--active {
+  background: rgba(0, 255, 0, 0.2);
 }
 
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.crosshair {
-  cursor: crosshair;
-}
-
-.move {
+.selection-rect:hover {
   cursor: move;
-}
-
-.nwse {
-  cursor: nwse-resize;
-}
-
-.nesw {
-  cursor: nesw-resize;
 }

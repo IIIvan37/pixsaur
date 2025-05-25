@@ -10,14 +10,13 @@ vi.mock('../source-selector', () => ({
 describe('ImageSelectorView', () => {
   it('renders a canvas with correct dimensions', () => {
     const refCallback = vi.fn()
-    const containerRefCallback = vi.fn()
+
     render(
       <ImageSelectorView
         canvasWidth={123}
         canvasHeight={456}
         src={null}
         refCallback={refCallback}
-        containerRefCallback={containerRefCallback}
       />
     )
     const canvas = document.querySelector('canvas')
@@ -28,14 +27,13 @@ describe('ImageSelectorView', () => {
 
   it('calls refCallback with the canvas element', () => {
     const refCallback = vi.fn()
-    const containerRefCallback = vi.fn()
+
     render(
       <ImageSelectorView
         canvasWidth={100}
         canvasHeight={100}
         src={null}
         refCallback={refCallback}
-        containerRefCallback={containerRefCallback}
       />
     )
     // refCallback should have been called at least once with a canvas or null
@@ -49,7 +47,7 @@ describe('ImageSelectorView', () => {
 
   it('renders SourceSelector when src is provided', () => {
     const refCallback = vi.fn()
-    const containerRefCallback = vi.fn()
+
     const imageData = new ImageData(50, 60)
     render(
       <ImageSelectorView
@@ -57,7 +55,6 @@ describe('ImageSelectorView', () => {
         canvasHeight={100}
         src={imageData}
         refCallback={refCallback}
-        containerRefCallback={containerRefCallback}
       />
     )
     expect(
@@ -67,14 +64,13 @@ describe('ImageSelectorView', () => {
 
   it('does not render SourceSelector when src is null', () => {
     const refCallback = vi.fn()
-    const containerRefCallback = vi.fn()
+
     render(
       <ImageSelectorView
         canvasWidth={100}
         canvasHeight={100}
         src={null}
         refCallback={refCallback}
-        containerRefCallback={containerRefCallback}
       />
     )
     expect(
@@ -83,14 +79,12 @@ describe('ImageSelectorView', () => {
   })
 
   it('handles zero canvas size gracefully', () => {
-    const containerRefCallback = vi.fn()
     render(
       <ImageSelectorView
         canvasWidth={0}
         canvasHeight={0}
         src={null}
         refCallback={() => {}}
-        containerRefCallback={containerRefCallback}
       />
     )
     expect(document.querySelector('canvas')).toHaveAttribute('width', '0')
@@ -98,7 +92,6 @@ describe('ImageSelectorView', () => {
   })
 
   it('does not crash if refCallback is undefined', () => {
-    const containerRefCallback = vi.fn()
     expect(() =>
       render(
         <ImageSelectorView
@@ -107,7 +100,6 @@ describe('ImageSelectorView', () => {
           src={null}
           // @ts-expect-error intentionally passing undefined
           refCallback={undefined}
-          containerRefCallback={containerRefCallback}
         />
       )
     ).not.toThrow()

@@ -5,35 +5,36 @@ export type ImageSelectorViewProps = {
   canvasHeight: number
   src: ImageData | null
   refCallback: (node: HTMLCanvasElement | null) => void
-  containerRefCallback: (node: HTMLDivElement | null) => void
 }
 
 /**
  * Renders an image selector view with a canvas and an optional source selector overlay.
  *
  * @param props - The properties for the ImageSelectorView component.
- * @param props.canvasWidth - The width of the canvas in pixels.
- * @param props.canvasHeight - The height of the canvas in pixels.
- * @param props.src - The source image data and its dimensions. If present, the SourceSelector is rendered.
- * @param props.refCallback - A callback ref for accessing the canvas DOM element.
+ * @param props.canvasWidth - The width of the canvas element in pixels.
+ * @param props.canvasHeight - The height of the canvas element in pixels.
+ * @param props.src - The source image object, which may include width, height, and data.
+ * @param props.refCallback - A callback ref to access the canvas DOM element.
  *
- * @returns A React element containing a canvas and, if image data is provided, a SourceSelector overlay.
+ * @returns A React element containing a canvas and, if available, a SourceSelector overlay.
  */
 export function ImageSelectorView({
   canvasWidth,
   canvasHeight,
   src,
-  refCallback,
-  containerRefCallback
+  refCallback
 }: ImageSelectorViewProps) {
+  const logicalWidth = src?.width ?? 1
+  const logicalHeight = src?.height ?? 1
+
+  const aspectRatio = `${logicalWidth} / ${logicalHeight}`
+
   return (
     <div
-      ref={containerRefCallback}
       style={{
         position: 'relative',
         width: '100%',
-        minWidth: '320px',
-        height: `${canvasHeight}px`
+        aspectRatio
       }}
     >
       <canvas
@@ -45,17 +46,13 @@ export function ImageSelectorView({
           top: 0,
           left: 0,
           width: '100%',
-          height: 'auto'
+          height: '100%'
         }}
       />
-      {src?.data ? (
-        <SourceSelector
-          width={src.width}
-          height={src.height}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-        />
-      ) : null}
+
+      {src?.data && (
+        <SourceSelector width={logicalWidth} height={logicalHeight} />
+      )}
     </div>
   )
 }

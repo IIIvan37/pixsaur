@@ -1,50 +1,127 @@
-import { Handle } from './source-selector'
+import { Handle } from './utils'
 import styles from './source-selector.module.css'
-export type SourceSelectorViewProps = {
-  overlayRef: React.RefObject<HTMLCanvasElement | null>
-  canvasWidth: number
-  canvasHeight: number
-  hoverHandle: Handle | 'inside' | null
-  onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void
-  onMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void
-  onMouseUp: (e: React.MouseEvent<HTMLDivElement>) => void
-  onDoubleClick: (e: React.MouseEvent<HTMLDivElement>) => void
-}
 
+export type SourceSelectorViewProps = {
+  onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  onMouseMove?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  rect: {
+    x: number // in percent
+    y: number // in percent
+    width: number // in percent
+    height: number // in percent
+  }
+  dragging: boolean
+  resizeHandle: Handle | null
+}
 export function SourceSelectorView({
-  overlayRef,
-  canvasWidth,
-  canvasHeight,
-  hoverHandle,
+  rect,
+  dragging,
+  resizeHandle,
   onMouseDown,
   onMouseMove,
   onMouseUp,
   onDoubleClick
 }: SourceSelectorViewProps) {
-  const getCursorClass = () => {
-    if (hoverHandle === 'top-left' || hoverHandle === 'bottom-right')
-      return styles.nwse
-    if (hoverHandle === 'top-right' || hoverHandle === 'bottom-left')
-      return styles.nesw
-    if (hoverHandle === 'inside') return styles.move
-    return styles.crosshair
-  }
+  const handleSize = 6
+
   return (
-    <div className={styles.container} style={{ width: '100%', height: 'auto' }}>
-      <canvas
-        ref={overlayRef}
-        width={canvasWidth}
-        height={canvasHeight}
-        className={styles.canvas}
-      />
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 2
+      }}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onDoubleClick={onDoubleClick}
+    >
+      {/* Rectangle de sélection */}
       <div
-        className={`${styles.overlay} ${getCursorClass()}`}
-        style={{ width: canvasWidth, height: canvasHeight }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onDoubleClick={onDoubleClick}
+        data-testid='selection-rect'
+        tabIndex={0}
+        role='region'
+        aria-label='Zone de sélection'
+        className={
+          styles['selection-rect'] +
+          (dragging || resizeHandle
+            ? ' ' + styles['selection-rect--active']
+            : '')
+        }
+        style={{
+          position: 'absolute',
+          top: `${rect.y}%`,
+          left: `${rect.x}%`,
+          width: `${rect.width}%`,
+          height: `${rect.height}%`,
+          boxSizing: 'border-box',
+          pointerEvents: 'auto'
+        }}
       />
+
+      {/* Handles placés à l'intérieur */}
+      {(
+        [
+          {
+            name: 'top-left',
+            dx: handleSize,
+            dy: handleSize,
+            cursor: 'nwse-resize'
+          },
+          {
+            name: 'top-right',
+            dx: -handleSize,
+            dy: handleSize,
+            cursor: 'nesw-resize'
+          },
+          {
+            name: 'bottom-left',
+            dx: handleSize,
+            dy: -handleSize,
+            cursor: 'nesw-resize'
+          },
+          {
+            name: 'bottom-right',
+            dx: -handleSize,
+            dy: -handleSize,
+            cursor: 'nwse-resize'
+          }
+        ] as const
+      ).map(({ name, dx, dy, cursor }) => {
+        const size = 8
+        const offsetStyle = {
+          transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`
+        }
+
+        const pos = {
+          top: name.includes('top') ? `${rect.y}%` : `${rect.y + rect.height}%`,
+          left: name.includes('left') ? `${rect.x}%` : `${rect.x + rect.width}%`
+        }
+
+        return (
+          <div
+            key={name}
+            data-handle={name}
+            tabIndex={0}
+            aria-label={`Redimensionner ${name.replace('-', ' ')}`}
+            style={{
+              position: 'absolute',
+              ...pos,
+              width: size,
+              height: size,
+              backgroundColor: '#00FF00',
+              cursor,
+              zIndex: 3,
+              ...offsetStyle
+            }}
+          />
+        )
+      })}
     </div>
   )
 }

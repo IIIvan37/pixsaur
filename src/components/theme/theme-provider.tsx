@@ -28,6 +28,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     injectVars('--radius', theme.radius, setVar)
     injectVars('--shadow', theme.shadow, setVar)
     injectVars('--spinner', theme.spinner, setVar)
+    injectVars('--grid', theme.grid, setVar)
+    injectVars('--breakpoints', theme.breakpoints, setVar)
   }, [])
 
   return <>{children}</>

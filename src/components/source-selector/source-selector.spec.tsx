@@ -1,104 +1,75 @@
-import { vi } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, fireEvent } from '@testing-library/react'
-import {
-  SourceSelectorView,
-  SourceSelectorViewProps
-} from './source-selector-view'
+import { SourceSelectorView } from './source-selector-view'
+import styles from './source-selector.module.css'
 
-function setup(props?: Partial<SourceSelectorViewProps>) {
-  const defaultProps: SourceSelectorViewProps = {
-    overlayRef: { current: null },
-    canvasWidth: 100,
-    canvasHeight: 50,
-    hoverHandle: null,
+describe('SourceSelectorView', () => {
+  const baseProps = {
+    rect: { x: 10, y: 20, width: 30, height: 40 },
+    dragging: false,
+    resizeHandle: null,
     onMouseDown: vi.fn(),
     onMouseMove: vi.fn(),
     onMouseUp: vi.fn(),
-    onDoubleClick: vi.fn(),
-    ...props
+    onDoubleClick: vi.fn()
   }
-  return render(<SourceSelectorView {...defaultProps} />)
-}
 
-describe('SourceSelectorView', () => {
-  it('rend le canvas avec les bonnes dimensions', () => {
-    const { container } = setup()
-    const canvas = container.querySelector('canvas')
-    expect(canvas).toBeTruthy()
-    expect(canvas?.getAttribute('width')).toBe('100')
-    expect(canvas?.getAttribute('height')).toBe('50')
+  it('renders four handles', () => {
+    const { container } = render(<SourceSelectorView {...baseProps} />)
+    const handles = container.querySelectorAll('[data-handle]')
+    expect(handles.length).toBe(4)
   })
 
-  it('applique la bonne classe curseur selon hoverHandle', () => {
-    const { container, rerender } = setup({ hoverHandle: 'top-left' })
-    expect(container.querySelector('[class*="nwse"]')).toBeTruthy()
-
-    rerender(
-      <SourceSelectorView
-        overlayRef={{ current: null }}
-        canvasWidth={100}
-        canvasHeight={50}
-        hoverHandle='top-right'
-        onMouseDown={vi.fn()}
-        onMouseMove={vi.fn()}
-        onMouseUp={vi.fn()}
-        onDoubleClick={vi.fn()}
-      />
-    )
-    expect(container.querySelector('[class*="nesw"]')).toBeTruthy()
-
-    rerender(
-      <SourceSelectorView
-        overlayRef={{ current: null }}
-        canvasWidth={100}
-        canvasHeight={50}
-        hoverHandle='inside'
-        onMouseDown={vi.fn()}
-        onMouseMove={vi.fn()}
-        onMouseUp={vi.fn()}
-        onDoubleClick={vi.fn()}
-      />
-    )
-    expect(container.querySelector('[class*="move"]')).toBeTruthy()
-
-    rerender(
-      <SourceSelectorView
-        overlayRef={{ current: null }}
-        canvasWidth={100}
-        canvasHeight={50}
-        hoverHandle={null}
-        onMouseDown={vi.fn()}
-        onMouseMove={vi.fn()}
-        onMouseUp={vi.fn()}
-        onDoubleClick={vi.fn()}
-      />
-    )
-    expect(container.querySelector('[class*="crosshair"]')).toBeTruthy()
+  it('calls onMouseDown when mouse is pressed', () => {
+    const { container } = render(<SourceSelectorView {...baseProps} />)
+    fireEvent.mouseDown(container.firstChild as Element)
+    expect(baseProps.onMouseDown).toHaveBeenCalled()
   })
 
-  it('déclenche les callbacks souris', () => {
-    const onMouseDown = vi.fn()
-    const onMouseMove = vi.fn()
-    const onMouseUp = vi.fn()
-    const onDoubleClick = vi.fn()
-    const { container } = setup({
-      onMouseDown,
-      onMouseMove,
-      onMouseUp,
-      onDoubleClick
-    })
-    const overlay = container.querySelector(
-      `div[class*="overlay"]`
-    ) as HTMLElement
+  it('calls onMouseMove when mouse is moved', () => {
+    const { container } = render(<SourceSelectorView {...baseProps} />)
+    fireEvent.mouseMove(container.firstChild as Element)
+    expect(baseProps.onMouseMove).toHaveBeenCalled()
+  })
 
-    fireEvent.mouseDown(overlay)
-    fireEvent.mouseMove(overlay)
-    fireEvent.mouseUp(overlay)
-    fireEvent.doubleClick(overlay)
+  it('calls onMouseUp when mouse is released', () => {
+    const { container } = render(<SourceSelectorView {...baseProps} />)
+    fireEvent.mouseUp(container.firstChild as Element)
+    expect(baseProps.onMouseUp).toHaveBeenCalled()
+  })
 
-    expect(onMouseDown).toHaveBeenCalled()
-    expect(onMouseMove).toHaveBeenCalled()
-    expect(onMouseUp).toHaveBeenCalled()
-    expect(onDoubleClick).toHaveBeenCalled()
+  it('calls onDoubleClick when double clicked', () => {
+    const { container } = render(<SourceSelectorView {...baseProps} />)
+    fireEvent.doubleClick(container.firstChild as Element)
+    expect(baseProps.onDoubleClick).toHaveBeenCalled()
+  })
+
+  it('renders the selection rectangle with correct class', () => {
+    const { getByTestId } = render(<SourceSelectorView {...baseProps} />)
+    const rect = getByTestId('selection-rect')
+    expect(rect).toHaveClass(styles['selection-rect'])
+    expect(rect).not.toHaveClass(styles['selection-rect--active'])
+  })
+
+  it('shows selection background when dragging', () => {
+    const { getByTestId } = render(
+      <SourceSelectorView {...baseProps} dragging={true} />
+    )
+    const rect = getByTestId('selection-rect')
+    expect(rect).toHaveClass(
+      styles['selection-rect'],
+      styles['selection-rect--active']
+    )
+  })
+
+  it('shows selection background when resizing', () => {
+    const { getByTestId } = render(
+      <SourceSelectorView {...baseProps} resizeHandle='top-left' />
+    )
+    const rect = getByTestId('selection-rect')
+    expect(rect).toHaveClass(
+      styles['selection-rect'],
+      styles['selection-rect--active']
+    )
   })
 })

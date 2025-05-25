@@ -1,0 +1,16 @@
+.adjustmentsContainer {
+  display: flex;
+
+  justify-content: flex-start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+
+  padding: var(--spacing-sm);
+}
+
+@media (min-width: var(--breakpoint-lg)) {
+  .adjustmentsContainer {
+    flex-direction: column;
+  }
+}
