@@ -1,6 +1,5 @@
 import { useRef, useEffect, useCallback } from 'react'
 
-import { useImageAdjustement } from '@/hooks/use-image-adjustement'
 import { useAtomValue } from 'jotai'
 import { ImageSelectorView } from './image-selector-view'
 import { workingImageAtom } from '@/app/store/image/image'
@@ -22,7 +21,7 @@ export function ImageSelector() {
   const src = useAtomValue(workingImageAtom)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  useImageAdjustement()
+
   const imageRefCallback = useCallback((node: HTMLCanvasElement | null) => {
     if (node) {
       canvasRef.current = node

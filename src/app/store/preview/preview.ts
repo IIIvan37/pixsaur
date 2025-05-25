@@ -13,7 +13,7 @@ export const previewCanvasWidthAtom = atom<number | null>(null)
 
 export const previewCanvasSizeAtom = atom((get) => {
   const width = get(previewCanvasWidthAtom)
-  console.log('HERE', width)
+
   if (!width) return { width: 0, height: 0 }
   const height = Math.floor(width * (200 / 320))
   return {
