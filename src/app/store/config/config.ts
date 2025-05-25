@@ -3,6 +3,7 @@ import { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { atom } from 'jotai'
 import { AdjustementKey, CpcModeKey } from './types'
 
+// Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {
   lastChangedKey: AdjustementKey | null
 } = {
@@ -15,9 +16,10 @@ const defaultConfig: { [key in AdjustementKey]: number } & {
   lastChangedKey: null
 }
 
+// Atom principal des réglages
 export const configAtom = atom<typeof defaultConfig>({ ...defaultConfig })
 
-// Setter générique : (key, value)
+// Setter pour un seul réglage (red, green, etc.)
 export const setComponentAtom = atom(
   null,
   (get, set, payload: { key: AdjustementKey; value: number }) => {
@@ -30,16 +32,17 @@ export const setComponentAtom = atom(
   }
 )
 
-// Clear lastChangedKey
+// Réinitialise uniquement la clé de changement
 export const clearLastChangedKeyAtom = atom(null, (_get, set) => {
   set(configAtom, (prev) => ({ ...prev, lastChangedKey: null }))
 })
 
-// Reset complet
+// Réinitialisation complète explicite
 export const resetImageAdjustmentsAtom = atom(null, (_get, set) => {
   set(configAtom, { ...defaultConfig })
 })
 
+// Atoms pour les autres paramètres de conversion
 export const modeAtom = atom<CpcModeKey>('0')
 export const colorSpaceAtom = atom<ColorSpace>('RGB')
 export const ditheringAtom = atom<DitheringConfig>({
@@ -47,6 +50,7 @@ export const ditheringAtom = atom<DitheringConfig>({
   intensity: 0.5
 })
 
+// Setter partiel pour le dithering
 export const setDitheringAtom = atom(
   null,
   (get, set, payload: Partial<DitheringConfig>) => {
@@ -55,18 +59,28 @@ export const setDitheringAtom = atom(
   }
 )
 
+// Setter du mode CPC avec merge des réglages
 export const setModeAtom = atom(null, (get, set, payload: CpcModeKey) => {
   const prev = get(modeAtom)
   set(modeAtom, payload)
   if (prev !== payload) {
-    set(configAtom, { ...defaultConfig })
+    set(configAtom, (prevConfig) => ({
+      ...defaultConfig,
+      ...prevConfig,
+      lastChangedKey: null
+    }))
   }
 })
 
+// Setter de l’espace couleur avec merge des réglages
 export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
   const prev = get(colorSpaceAtom)
   set(colorSpaceAtom, payload)
   if (prev !== payload) {
-    set(configAtom, { ...defaultConfig })
+    set(configAtom, (prevConfig) => ({
+      ...defaultConfig,
+      ...prevConfig,
+      lastChangedKey: null
+    }))
   }
 })

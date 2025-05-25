@@ -25,13 +25,14 @@ export default function Adjustments() {
   const [downscaled] = useAtom(downscaledAtom)
   const setSrc = useSetAtom(setWorkingImageAtom)
   // Define the adjustments with their min, max, and step values
+
   const adjustments: RangeOption = {
     red: [red, 0, 2, 0.01],
     green: [green, 0, 2, 0.01],
     blue: [blue, 0, 2, 0.01],
     brightness: [brightness, 0, 2, 0.01],
-    contrast: [contrast, 0, 3, 0.01],
-    saturation: [saturation, 0, 3, 0.01]
+    contrast: [contrast, 0, 2, 0.01],
+    saturation: [saturation, 0, 2, 0.01]
   }
 
   const handleChange = ({

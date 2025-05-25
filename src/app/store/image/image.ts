@@ -3,6 +3,8 @@ import {
   downscaleImage,
   Selection
 } from '@/libs/pixsaur-adapter/io/downscale-image'
+import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
+import { configAtom } from '../config/config'
 
 const srcAtom = atom<ImageData | null>(null)
 
@@ -38,19 +40,19 @@ export const downscaledAtom = atom((get) => {
 })
 
 export const workingImageAtom = atom((get) => {
+  const custom = get(srcAtom)
+  const config = get(configAtom) // pour déclencher recalcul
   const downscaled = get(downscaledAtom)
-  const src = get(srcAtom)
 
-  if (src) {
-    return src
-  } else {
-    if (!downscaled) return null
-    return new ImageData(
-      new Uint8ClampedArray(downscaled.data),
-      downscaled.width,
-      downscaled.height
-    )
-  }
+  if (!downscaled) return null
+  if (custom) return custom
+
+  return applyAdjustmentsInOnePass(downscaled, {
+    rgb: { r: config.red, g: config.green, b: config.blue },
+    brightness: config.brightness,
+    contrast: config.contrast,
+    saturation: config.saturation
+  })
 })
 
 export const setWorkingImageAtom = atom(
