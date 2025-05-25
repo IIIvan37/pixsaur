@@ -2,7 +2,7 @@ import { ImageUpload } from '@/components/image-upload/image-upload'
 
 import { ImageSelector } from '@/components/image-selector'
 
-import { imageAtom, setImgAtom } from '../store/image/image'
+import { imageAtom, setImgAtom, setSelectionAtom } from '../store/image/image'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
 
@@ -11,7 +11,7 @@ import { Header } from '@/components/ui/layout/header/header'
 
 export default function SourceSection() {
   const setImg = useSetAtom(setImgAtom)
-
+  const setSelection = useSetAtom(setSelectionAtom)
   const img = useAtomValue(imageAtom)
 
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
@@ -27,6 +27,7 @@ export default function SourceSection() {
         action={() => {
           resetAdjustments()
           setImg(null)
+          setSelection(null)
         }}
         icon='UploadIcon'
       />
