@@ -29,11 +29,12 @@ export const setImgAtom = atom(
     set(imageAtom, img)
   }
 )
+const LOGICAL_WIDTH = 400
 export const downscaledAtom = atom((get) => {
   const img = get(imageAtom)
-  const { width, height } = get(canvasSizeAtom)
-  if (!img || !width || !height) return null
-  return downscaleImage(img, width)
+
+  if (!img) return null
+  return downscaleImage(img, LOGICAL_WIDTH)
 })
 
 export const workingImageAtom = atom((get) => {

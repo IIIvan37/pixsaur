@@ -1,11 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 
 import { useImageAdjustement } from '@/hooks/use-image-adjustement'
-import {
-  canvasSizeAtom,
-  canvasWidthAtom,
-  workingImageAtom
-} from '@/app/store/image/image'
+import { canvasWidthAtom, workingImageAtom } from '@/app/store/image/image'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { ImageSelectorView } from './image-selector-view'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
@@ -31,7 +27,6 @@ export function ImageSelector() {
     setWidth(width)
   }, 320)
 
-  const canvasSize = useAtomValue(canvasSizeAtom)
   const src = useAtomValue(workingImageAtom)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -51,8 +46,8 @@ export function ImageSelector() {
 
   return (
     <ImageSelectorView
-      canvasWidth={canvasSize.width}
-      canvasHeight={canvasSize.height}
+      canvasWidth={src?.width || 0}
+      canvasHeight={src?.height || 0}
       src={src}
       refCallback={imageRefCallback}
       containerRefCallback={containerRefCallback}

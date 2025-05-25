@@ -5,21 +5,22 @@
 .mainContent {
   position: relative;
   z-index: 10;
-  background-color: rgba(0, 0, 0, 0.8);
-  padding: var(--spacing-4);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-green-900);
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 .section {
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-lg);
 }
 
 .flexRow {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: var(--spacing-4);
+  gap: var(--spacing-lg);
+  align-items: flex-start;
 }
 @media (max-width: 1024px) {
   .flexRow {
@@ -37,6 +38,7 @@
   flex: 3;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .flexColumn_3 {
@@ -55,14 +57,14 @@
 .sectionTitle {
   font-size: var(--font-size-lg);
   font-weight: bold;
-  color: var(--color-green-500);
+  color: var(--color-accent);
   margin: 0;
 }
 
 .subsectionTitle {
   font-size: var(--font-size-sm);
   font-weight: 500;
-  color: var(--color-green-500);
+  color: var(--color-accent);
   margin: 0;
 }
 
@@ -70,27 +72,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-2);
+  margin-bottom: var(--spacing-sm);
 }
 
 .modeIndicator {
   display: flex;
   align-items: center;
-  gap: var(--spacing-2);
-  color: var(--color-green-600);
+  gap: var(--spacing-sm);
+  color: var(--color-accent-hover);
   font-size: var(--font-size-sm);
 }
 
 .spaceY4 > * + * {
-  margin-top: var(--spacing-4);
+  margin-top: var(--spacing-lg);
 }
 
 .spaceY3 > * + * {
-  margin-top: var(--spacing-3);
+  margin-top: var(--spacing-md);
 }
 
 .spaceY2 > * + * {
-  margin-top: var(--spacing-2);
+  margin-top: var(--spacing-sm);
 }
 
 .labelRow {
@@ -104,72 +106,46 @@
 
 .valueText {
   font-size: var(--font-size-xs);
-  color: var(--color-green-600);
-}
-
-.sliderContainer {
-  position: relative;
-  margin: var(--spacing-1) 0;
-}
-
-.sliderFill {
-  position: absolute;
-  inset-block: 0;
-  left: 0;
-  pointer-events: none;
-  border-top-left-radius: 9999px;
-  border-bottom-left-radius: 9999px;
-  z-index: 1;
-  height: 4px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.sliderFillDefault {
-  background: linear-gradient(
-    to right,
-    rgba(0, 255, 65, 0.7),
-    rgba(0, 255, 65, 0.3)
-  );
+  color: var(--color-accentHover);
 }
 
 .helpText {
   font-size: var(--font-size-xs);
-  color: var(--color-green-700);
-  margin-top: var(--spacing-2);
+  color: var(--color-accentActive);
+  margin-top: var(--spacing-sm);
 }
 
 .button {
   display: flex;
   align-items: center;
-  padding: var(--spacing-1) var(--spacing-3);
+  padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   cursor: pointer;
 }
 
 .buttonPrimary {
-  background-color: var(--color-green-700);
-  color: var(--color-white);
-  border: 1px solid var(--color-green-900);
+  background-color: var(--color-accentActive);
+  color: var(--color-light);
+  border: 1px solid var(--color-border);
 }
 
 .buttonPrimary:hover {
-  background-color: var(--color-green-600);
+  background-color: var(--color-accentHover);
 }
 
 .buttonSecondary {
   background-color: transparent;
-  color: var(--color-green-500);
-  border: 1px solid var(--color-green-700);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accentActive);
 }
 
 .buttonSecondary:hover {
-  color: var(--color-green-400);
+  color: var(--color-foreground);
 }
 
 .buttonIcon {
-  margin-right: var(--spacing-2);
+  margin-right: var(--spacing-sm);
   width: 1rem;
   height: 1rem;
 }
@@ -192,19 +168,19 @@
 .adjustmentsContainer {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-1);
+  gap: var(--spacing-xs);
   align-items: center;
-  padding: var(--spacing-2);
+  padding: var(--spacing-sm);
 }
 
 .resetButton {
   display: flex;
   align-items: center;
-  gap: var(--spacing-1);
-  padding: var(--spacing-1) var(--spacing-2);
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
   background-color: transparent;
-  color: var(--color-green-500);
-  border: 1px solid var(--color-green-700);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accentActive);
   border-radius: var(--radius-md);
   font-size: var(--font-size-xs);
   cursor: pointer;
@@ -212,8 +188,8 @@
 }
 
 .resetButton:hover {
-  background-color: var(--color-green-900);
-  color: var(--color-green-400);
+  background-color: var(--color-border);
+  color: var(--color-foreground);
 }
 
 .resetButton:active {
@@ -223,25 +199,25 @@
 /* Compact styles */
 @media (min-width: 768px) {
   .mainContent {
-    padding: var(--spacing-4);
+    padding: var(--spacing-sm);
   }
 
   .section {
-    margin-bottom: var(--spacing-4);
+    margin-bottom: var(--spacing-sm);
   }
 }
 
 @media (max-width: 767px) {
   .mainContent {
-    padding: var(--spacing-2);
+    padding: var(--spacing-xs);
   }
 
   .section {
-    margin-bottom: var(--spacing-3);
+    margin-bottom: var(--spacing-xs);
   }
 
   .sectionTitle {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-xs);
   }
 
   .ditheringSlider {
