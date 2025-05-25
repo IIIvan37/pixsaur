@@ -7,7 +7,7 @@ export const theme = {
     accent: '#00FF00',
     accentHover: '#00CC00',
     accentActive: '#00AA00',
-    border: '#00DF3A',
+    border: '#005500',
     error: '#FF5555',
     hover: {
       primary: '#00CC00',
@@ -68,5 +68,13 @@ export const theme = {
     col: '1fr',
     colNarrow: '5.71rem',
     colWide: 'minmax(14.29rem, 1fr)'
+  },
+  breakpoints: {
+    xs: '320px',
+    sm: '480px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
+    xxl: '1536px'
   }
 }

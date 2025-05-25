@@ -1,0 +1,8 @@
+.adjustmentsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  align-items: center;
+  padding: var(--spacing-sm);
+  width: '100%';
+}

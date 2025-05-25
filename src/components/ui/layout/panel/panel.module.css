@@ -4,5 +4,6 @@
   padding: var(--spacing-sm);
   border: 1px solid var(--color-border);
   margin-bottom: var(--spacing-sm);
+  height: 100%;
   flex: 1;
 }

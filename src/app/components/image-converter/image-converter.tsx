@@ -1,5 +1,5 @@
-import styles from '@/styles/image-converter.module.css'
-import CrtEffect from '../../components/crt-effect'
+import styles from './image-converter.module.css'
+import CrtEffect from '@/components/crt-effect'
 
 import SourceSection from '@/app/components/source-section'
 import PreviewPanel from '@/app/components/preview-panel'

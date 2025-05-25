@@ -1,4 +1,4 @@
-import ImageConverter from '@/app/components/image-converter'
+import ImageConverter from './components/image-converter/image-converter'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 
 import styles from '@/styles/app.module.css'

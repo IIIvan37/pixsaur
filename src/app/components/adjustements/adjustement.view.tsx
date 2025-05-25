@@ -1,11 +1,11 @@
-import Icon from '@/components/ui/icon'
 import PixsaurSlider from '@/components/ui/slider'
-import styles from '@/styles/image-converter.module.css'
+import styles from './adjustements.module.css'
 
 import { RangeOption } from './types'
 import { AdjustementKey } from '@/app/store/config/types'
-import Button from '@/components/ui/button'
+
 import { Panel } from '@/components/ui/layout/panel/panel'
+import { Header } from '@/components/ui/layout/header/header'
 
 type RangeLabels = {
   key: AdjustementKey
@@ -36,18 +36,11 @@ export const AdjustementsView = ({
 }: AdjustementsViewProps) => {
   return (
     <Panel>
-      <div className={styles.sectionHeader}>
-        <Button
-          variant='secondary'
-          className='text-xs'
-          onClick={onReset}
-          title='Réinitialiser les ajustements'
-          disabled={disabled}
-        >
-          <Icon name='ResetIcon' className={styles.buttonIcon} />
-          Réinitialiser
-        </Button>
-      </div>
+      <Header
+        action={onReset}
+        actionLabel='Réinitialiser'
+        disabled={disabled}
+      />
 
       <div className={styles.adjustmentsContainer}>
         {/* RGB Channels - with labels */}
