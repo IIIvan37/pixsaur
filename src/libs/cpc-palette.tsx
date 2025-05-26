@@ -39,6 +39,9 @@ export function getCPCPalette(): CPCPalette {
   return cpcFullPalette
 }
 
+export function generateCPCPalette(): Vector[] {
+  return cpcFullPalette.map((entry) => entry.vector)
+}
 // Helper functions for working with vectors
 export function vectorToHex(vector: Vector): string {
   const [r, g, b] = vector

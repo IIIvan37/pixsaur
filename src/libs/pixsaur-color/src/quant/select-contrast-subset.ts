@@ -1,16 +1,24 @@
 import { Vector } from '../type'
 
-function kCombinations<T>(arr: T[], k: number): T[][] {
+function kCombinations<T>(
+  arr: T[],
+  k: number,
+  memo = new Map<string, T[][]>()
+): T[][] {
+  const key = `${arr.length}|${k}`
+  if (memo.has(key)) return memo.get(key)!
+
   if (k === 0) return [[]]
   if (arr.length < k) return []
   if (arr.length === k) return [arr]
 
   const [head, ...tail] = arr
-  const withHead = kCombinations(tail, k - 1).map((c) => [head, ...c])
-  const withoutHead = kCombinations(tail, k)
-  return withHead.concat(withoutHead)
+  const withHead = kCombinations(tail, k - 1, memo).map((c) => [head, ...c])
+  const withoutHead = kCombinations(tail, k, memo)
+  const result = withHead.concat(withoutHead)
+  memo.set(key, result)
+  return result
 }
-
 /**
  * Approximate luminance from RGB [0–1] using Rec. 709 Y formula.
  */
@@ -36,31 +44,41 @@ export function isBright(color: Vector): boolean {
  */
 export function selectContrastedSubset(
   candidates: Vector[],
+  preselected: Vector[],
   size: number,
   distance: (a: Vector, b: Vector) => number
 ): Vector[] {
-  if (candidates.length <= size) return candidates.slice(0, size)
+  // Retirer les couleurs déjà pré-sélectionnées des candidats
+  const preselectedSet = new Set(preselected.map((c) => c.join(',')))
+  const remaining = candidates.filter((c) => !preselectedSet.has(c.join(',')))
 
-  const indices = [...Array(candidates.length).keys()]
-  const combinations = kCombinations(indices, size)
+  // Si trop de pré-sélectionnées, tronquer
+  if (preselected.length >= size) {
+    return preselected.slice(0, size)
+  }
+
+  const needed = size - preselected.length
+  const indices = [...Array(remaining.length).keys()]
+  const combinations = kCombinations(indices, needed)
 
   let bestCombo: number[] = []
   let bestMinDist = -Infinity
 
-  // Prioritize combinations with one dark and one bright color
+  // On ajoute les pré-sélectionnées à chaque combinaison testée
   const filtered = combinations.filter((combo) => {
-    const colors = combo.map((i) => candidates[i])
+    const colors = [...preselected, ...combo.map((i) => remaining[i])]
     return colors.some(isDark) && colors.some(isBright)
   })
 
   const combosToTest = filtered.length > 0 ? filtered : combinations
 
   for (const combo of combosToTest) {
+    const colors = [...preselected, ...combo.map((i) => remaining[i])]
     let minDist = Infinity
 
-    for (let i = 0; i < combo.length; i++) {
-      for (let j = i + 1; j < combo.length; j++) {
-        const d = distance(candidates[combo[i]], candidates[combo[j]])
+    for (let i = 0; i < colors.length; i++) {
+      for (let j = i + 1; j < colors.length; j++) {
+        const d = distance(colors[i], colors[j])
         if (d < minDist) minDist = d
         if (minDist <= bestMinDist) break
       }
@@ -72,5 +90,6 @@ export function selectContrastedSubset(
     }
   }
 
-  return bestCombo.map((i) => candidates[i])
+  // Retourner les pré-sélectionnées + le meilleur complément
+  return [...preselected, ...bestCombo.map((i) => remaining[i])]
 }

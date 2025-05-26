@@ -80,6 +80,7 @@ export function createQuantizer({
   const vecs = bufferToVectors(buf)
   // conversion de la palette et indices pré‑sélectionnés
   const workingPal = basePalette.map(toW)
+
   const preIdx = preselected
     .map((c) =>
       basePalette.findIndex(
@@ -88,15 +89,22 @@ export function createQuantizer({
     )
     .filter((i) => i >= 0)
 
+  if (preselected.length !== preIdx.length) {
+    console.log('Bad preselected colors:', preselected)
+  }
+
   const reducePalette = (limit: number): Vector<'RGB'>[] => {
+    if (preIdx.length >= limit) {
+      return preIdx.map((i) => fromW(workingPal[i])).slice(0, limit)
+    }
     const counts = new Uint32Array(
       buildHistogram(vecs.map(toW), workingPal, distFn)
     )
 
     const idxs = selectTopIndices(counts, preIdx, 16)
-
     return selectContrastedSubset(
       idxs.map((i) => fromW(workingPal[i])),
+      preIdx.map((i) => fromW(workingPal[i])),
       limit,
       distFn
     )
