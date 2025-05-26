@@ -83,9 +83,9 @@ export function ImageControlsView({
           {Object.keys(CPC_MODE_CONFIG).map(renderModeButton)}
         </div>
       </Flex>
-      <div className={styles.ditheringSlider}>
-        <DitheringSelector />
-      </div>
+
+      <DitheringSelector />
+
       <Flex align='center'>
         <h2 className={styles.sectionTitle}>Espace de couleur</h2>
         <div className={styles.modeButtonsRow}>

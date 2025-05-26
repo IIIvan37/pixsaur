@@ -2,7 +2,6 @@
 .container {
   width: 150px;
   margin-bottom: var(--spacing-md);
-  margin: 0 auto
 }
 
 .labelRow {
@@ -74,7 +73,9 @@
   background-color: var(--color-border);
   border-radius: 9999px;
   overflow: hidden;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .sliderRange {
@@ -96,7 +97,9 @@
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 1;
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
 }
 
 .sliderRoot:hover .sliderTrack,
@@ -112,7 +115,8 @@
 
 /* Optional glowing pulse */
 @keyframes glowPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 4px var(--color-accent);
   }
   50% {

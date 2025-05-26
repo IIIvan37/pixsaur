@@ -1,6 +1,6 @@
 import { extractBuffer, createQuantizer } from '@/libs/pixsaur-color/src'
 import { Vector } from '@/libs/pixsaur-color/src/type'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+
 import { getVisualRegion } from '@/utils/get-visual-region'
 import { atom } from 'jotai'
 import { modeAtom, colorSpaceAtom, ditheringAtom } from '../config/config'
@@ -8,6 +8,7 @@ import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
+import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
