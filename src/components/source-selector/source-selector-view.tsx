@@ -6,9 +6,6 @@ export type SourceSelectorViewProps = {
   onMouseMove?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
   onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
   onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  onTouchStart?: (e: React.TouchEvent<HTMLDivElement>) => void
-  onTouchMove?: (e: React.TouchEvent<HTMLDivElement>) => void
-  onTouchEnd?: (e: React.TouchEvent<HTMLDivElement>) => void
   rect: {
     x: number // in percent
     y: number // in percent
@@ -25,17 +22,13 @@ export function SourceSelectorView({
   onMouseDown,
   onMouseMove,
   onMouseUp,
-  onDoubleClick,
-  onTouchStart,
-  onTouchMove,
-  onTouchEnd
+  onDoubleClick
 }: SourceSelectorViewProps) {
   const handleSize = 6
 
   return (
     <div
       style={{
-        touchAction: 'none',
         position: 'absolute',
         top: 0,
         left: 0,
@@ -47,9 +40,6 @@ export function SourceSelectorView({
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onDoubleClick={onDoubleClick}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
       {/* Rectangle de sélection */}
       <div
