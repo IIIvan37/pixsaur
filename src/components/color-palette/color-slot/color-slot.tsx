@@ -3,9 +3,10 @@ import styles from './color-slot.module.css'
 import Icon from '@/components/ui/icon'
 import { isBright } from '@/libs/pixsaur-color/src/quant/select-contrast-subset'
 import { Vector } from '@/libs/pixsaur-color/src/type'
-import { vectorToHex } from '@/libs/cpc-palette'
+
 import clsx from 'clsx'
 import { ColorButton } from './color-button'
+import { vectorToHex } from '@/palettes/cpc-palette'
 
 type ColorSlotProps = {
   idx: number

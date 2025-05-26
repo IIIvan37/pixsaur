@@ -1,7 +1,7 @@
 import JSZip from 'jszip'
 import { toASMData } from './to-asm-data'
 import { exportSCR } from './export-scr/export-scr'
-import { injectPaletteDataIntoSCR } from '@/libs/cpc-palette'
+import { injectPaletteDataIntoSCR } from '@/palettes/cpc-palette'
 
 export async function exportZip(
   indexBuf: Uint8Array,

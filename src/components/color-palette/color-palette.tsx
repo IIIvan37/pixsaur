@@ -4,9 +4,10 @@ import {
   onSetColorAtom
 } from '@/app/store/palette/palette'
 import { ColorPaletteView } from './color-palette-view'
-import { getCPCPalette } from '@/libs/cpc-palette'
+
 import { useAtomValue, useSetAtom } from 'jotai'
 import React from 'react'
+import { getCPCPalette } from '@/palettes/cpc-palette'
 
 /**
  * ColorPalette container component.

@@ -9,7 +9,7 @@
   padding: var(--spacing-sm);
 }
 
-@media (min-width: var(--breakpoint-lg)) {
+@media (max-width: var(--breakpoint-lg)) {
   .adjustmentsContainer {
     flex-direction: column;
   }
