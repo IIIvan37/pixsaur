@@ -1,7 +1,7 @@
 .adjustmentsContainer {
   display: flex;
 
-  justify-content: flex-start;
+  justify-content: space-between;
   flex-direction: row;
   flex-wrap: wrap;
   gap: var(--spacing-xs);
@@ -9,7 +9,7 @@
   padding: var(--spacing-sm);
 }
 
-@media (max-width: var(--breakpoint-lg)) {
+@media (min-width: var(--breakpoint-lg)) {
   .adjustmentsContainer {
     flex-direction: column;
   }

@@ -28,7 +28,3 @@
   color: var(--color-accent);
   border: 1px solid var(--color-border);
 }
-
-.ditheringSlider {
-  width: 10.71rem; /* 150px / 14 */
-}
