@@ -18,7 +18,7 @@ export function DitheringSelector() {
       gap='var(--spacing-md)'
       wrap='wrap'
       justify='flex-start'
-      align='center'
+      align='flex-start'
     >
       <Flex direction='column' gap='var(--spacing-xs)' align='start'>
         <label
