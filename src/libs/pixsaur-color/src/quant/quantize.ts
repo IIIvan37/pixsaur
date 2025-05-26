@@ -102,12 +102,14 @@ export function createQuantizer({
     )
 
     const idxs = selectTopIndices(counts, preIdx, 16)
-    return selectContrastedSubset(
+    const out = selectContrastedSubset(
       idxs.map((i) => fromW(workingPal[i])),
       preIdx.map((i) => fromW(workingPal[i])),
       limit,
       distFn
     )
+    console.log('out', out)
+    return out
   }
 
   return {
