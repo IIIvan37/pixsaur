@@ -1,47 +1,49 @@
 import { atom } from 'jotai'
 import {
   downscaleImage,
-  Selection
+  type Selection
 } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import { configAtom } from '../config/config'
 
-const srcAtom = atom<ImageData | null>(null)
+const LOGICAL_WIDTH = 400
 
 // Atomes de base
 export const imageAtom = atom<HTMLImageElement | null>(null)
-
 export const canvasWidthAtom = atom<number | null>(null)
 
 export const canvasSizeAtom = atom((get) => {
   const img = get(imageAtom)
   const width = get(canvasWidthAtom)
-
   if (!img || !width) return { width: 0, height: 0 }
   const height = Math.floor((img.height / img.width) * width)
-  return {
-    width,
-    height
-  }
+  return { width, height }
 })
 
+const srcAtom = atom<ImageData | null>(null)
+export const srcVersionAtom = atom(0)
+
+// Setter principal
 export const setImgAtom = atom(
   null,
   (_get, set, img: HTMLImageElement | null) => {
     set(imageAtom, img)
+    set(srcAtom, null)
+    set(srcVersionAtom, (v) => v + 1)
   }
 )
-const LOGICAL_WIDTH = 400
-export const downscaledAtom = atom((get) => {
-  const img = get(imageAtom)
 
+export const downscaledAtom = atom((get) => {
+  get(srcVersionAtom) // 👈 Dépendance implicite
+  const img = get(imageAtom)
   if (!img) return null
   return downscaleImage(img, LOGICAL_WIDTH)
 })
 
 export const workingImageAtom = atom((get) => {
+  get(srcVersionAtom) // 👈 Dépendance implicite
   const custom = get(srcAtom)
-  const config = get(configAtom) // pour déclencher recalcul
+  const config = get(configAtom)
   const downscaled = get(downscaledAtom)
 
   if (!downscaled) return null
@@ -62,8 +64,21 @@ export const setWorkingImageAtom = atom(
   }
 )
 
-// Version de src pour invalidation des hooks
-export const srcVersionAtom = atom(0)
+export const setCanvasWidth = atom(
+  null,
+  (_get, set, width: number) => {
+    set(canvasWidthAtom, width)
+  }
+)
+
+const _selectionWritableAtom = atom<Selection | null>(null)
+
+export const selectionAtom = atom(
+  (get) => get(_selectionWritableAtom) ?? get(initialSelectionAtom),
+  (_get, set, newSel: Selection | null) => {
+    set(_selectionWritableAtom, newSel)
+  }
+)
 
 export const setSelectionAtom = atom(
   null,
@@ -72,14 +87,9 @@ export const setSelectionAtom = atom(
   }
 )
 
-export const setCanvasWidth = atom(null, (_get, set, width: number) => {
-  set(canvasWidthAtom, width)
-})
-
 export const initialSelectionAtom = atom((get) => {
   const downscaled = get(downscaledAtom)
   if (!downscaled) return null
-
   return {
     sx: 0,
     sy: 0,
@@ -87,10 +97,3 @@ export const initialSelectionAtom = atom((get) => {
     height: downscaled.height
   }
 })
-
-export const selectionAtom = atom(
-  (get) => get(_selectionWritableAtom) ?? get(initialSelectionAtom),
-  (_get, set, newSel: Selection | null) => set(_selectionWritableAtom, newSel)
-)
-
-const _selectionWritableAtom = atom<Selection | null>(null)
