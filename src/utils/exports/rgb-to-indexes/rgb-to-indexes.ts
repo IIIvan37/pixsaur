@@ -37,21 +37,19 @@ export function rgbToIndexBufferExact(
     paletteMap.set(`${r},${g},${b}`, idx)
   })
 
-  for (let i = 0; i < length; i++) {
-    const off = i * 4
-    const r = quantizeCPC(rgbaBuf[off])
-    const g = quantizeCPC(rgbaBuf[off + 1])
-    const b = quantizeCPC(rgbaBuf[off + 2])
-    const key = `${r},${g},${b}`
+for (let i = 0; i < length; i++) {
+  const off = i * 4
+  const r = rgbaBuf[off]
+  const g = rgbaBuf[off + 1]
+  const b = rgbaBuf[off + 2]
+  const key = `${r},${g},${b}`
 
-    const idx = paletteMap.get(key)
-    if (idx === undefined) {
-      throw new Error(
-        `Pixel RGB [${r}, ${g}, ${b}] non trouvé dans la palette.`
-      )
-    }
-    indices[i] = idx
+  const idx = paletteMap.get(key)
+  if (idx === undefined) {
+    throw new Error(`Pixel RGB [${r}, ${g}, ${b}] non trouvé dans la palette.`)
   }
+  indices[i] = idx
+}
 
   return indices
 }

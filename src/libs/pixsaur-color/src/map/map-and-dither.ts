@@ -118,7 +118,7 @@ import {
   getDistanceFn
 } from '../metric/distance'
 import { DitheringConfig } from '../quant'
-import { getRgbToColorSpaceFn } from '../space'
+import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import { Vector, ColorSpace } from '../type'
 
 export function applyFloydSteinbergDither(
@@ -187,21 +187,22 @@ export function mapAndDither(
   srcData: Uint8ClampedArray,
   width: number,
   height: number,
-  paletteRGB: Vector<'RGB'>[],
+  palette: Vector[], // désormais dans l’espace de travail (Lab, XYZ, etc.)
   config: DitheringConfig,
-  colorSpace: ColorSpace = 'RGB'
+  colorSpace: ColorSpace
 ): Uint8ClampedArray {
   const { mode, intensity } = config
   const N = width * height
 
-  // Convert image to target colorspace
+  // Conversion image → colorspace
   const rgbToCS = getRgbToColorSpaceFn(colorSpace)
+  const toRGB = getColorSpaceToRgbFn(colorSpace)
   const distFn = getDistanceFn(
     colorSpace,
     ColorSpaceDistanceMetric[colorSpace][0]
   )
-  const bufCS = new Float32Array(N * 3)
 
+  const bufCS = new Float32Array(N * 3)
   for (let i = 0, j = 0; i < srcData.length; i += 4, j += 3) {
     const cs = rgbToCS([srcData[i], srcData[i + 1], srcData[i + 2]])
     bufCS[j] = cs[0]
@@ -209,12 +210,12 @@ export function mapAndDither(
     bufCS[j + 2] = cs[2]
   }
 
-  const paletteCS = paletteRGB.map((rgb) => Float32Array.from(rgbToCS(rgb)))
-  const paletteOut = paletteRGB.map((rgb) =>
-    Uint8ClampedArray.from([...rgb, 255])
-  )
+  // Projection palette dans le bon espace
+  const paletteCS = palette.map((v) => new Float32Array(v))
+  const paletteOut = palette.map((v) => {
+  return Uint8ClampedArray.from([...toRGB(v), 255])
+})
 
-  // Dispatch dithering
   let out: Uint8ClampedArray
 
   if (mode === 'floydSteinberg') {
@@ -228,6 +229,8 @@ export function mapAndDither(
       intensity
     )
   } else if (mode === 'bayer2x2' || mode === 'bayer4x4') {
+    // ❗️Bayer travaille en RGB directement, on reconvertit
+    const paletteRGB = palette.map(toRGB)
     out = applyBayerDither(
       srcData,
       width,
@@ -244,3 +247,4 @@ export function mapAndDither(
 
   return out
 }
+

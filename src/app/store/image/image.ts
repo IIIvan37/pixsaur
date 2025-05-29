@@ -34,14 +34,14 @@ export const setImgAtom = atom(
 )
 
 export const downscaledAtom = atom((get) => {
-  get(srcVersionAtom) // 👈 Dépendance implicite
+  get(srcVersionAtom) 
   const img = get(imageAtom)
   if (!img) return null
   return downscaleImage(img, LOGICAL_WIDTH)
 })
 
 export const workingImageAtom = atom((get) => {
-  get(srcVersionAtom) // 👈 Dépendance implicite
+  get(srcVersionAtom)
   const custom = get(srcAtom)
   const config = get(configAtom)
   const downscaled = get(downscaledAtom)
