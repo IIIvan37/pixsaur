@@ -21,7 +21,7 @@ export const previewCanvasSizeAtom = atom((get) => {
 
 // 1. Zone sélectionnée réduite à la largeur du mode
 export const croppedImageAtom = atom((get) => {
-  console.log('Recalcul de l’image recadrée')
+
   const workingImageData = get(workingImageAtom)
   const selection = get(selectionAtom)
   const mode = get(modeAtom)
@@ -38,7 +38,7 @@ export const croppedImageAtom = atom((get) => {
 
 // 2. Extraction des données RGBA
 export const croppedBufferAtom = atom((get) => {
-  console.log('Recalcul du buffer recadré')
+
   const cropped = get(croppedImageAtom)
   if (!cropped) return null
   return extractBuffer(cropped)
@@ -46,7 +46,7 @@ export const croppedBufferAtom = atom((get) => {
 
 // 3. Construction du quantizer sans mémoïsation
 export const quantizerAtom = atom((get) => {
-  console.log('Recalcul du quantizer')
+
   const buf = get(croppedBufferAtom)
   const cropped = get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)

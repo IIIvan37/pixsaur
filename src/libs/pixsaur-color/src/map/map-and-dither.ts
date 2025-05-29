@@ -137,7 +137,7 @@ export function applyFloydSteinbergDither(
   const offsets = [3, -3 + w3, w3, 3 + w3]
   const weights = [7 / 16, 3 / 16, 5 / 16, 1 / 16].map((w) => w * intensity)
 
-  console.log('paletteOut', paletteOut)
+
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const idx3 = (y * width + x) * 3

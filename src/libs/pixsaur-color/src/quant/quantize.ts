@@ -6,7 +6,7 @@ import {
   DistanceMetric,
   getDistanceFn
 } from '../metric/distance'
-import { getRgbToColorSpaceFn } from '../space'
+import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import { ColorSpace, Vector } from '../type'
 import { selectContrastedSubset } from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
@@ -55,11 +55,11 @@ export function createQuantizer({
   preselected,
   quantConfig
 }: CreateQuantizerInput) {
-  console.log('base palette:', basePalette)
+
   const { colorSpace, distanceMetric } = quantConfig
 
   const toW = getRgbToColorSpaceFn(colorSpace)
-
+  const fromW = getColorSpaceToRgbFn(colorSpace)
   const distFn: DistanceFn = getDistanceFn(colorSpace, distanceMetric)
 
   const vecs = bufferToVectors(buf)
@@ -85,17 +85,18 @@ const reducePalette = (limit: number): Vector[] => {
   const counts = new Uint32Array(
     buildHistogram(vecs.map(toW), workingPal, distFn)
   )
-  console.log('counts:', counts)
-  const idxs = selectTopIndices(counts, preIdx, limit)
+  const idxs = selectTopIndices(counts, preIdx, 16)
+
 
   const selectedW = selectContrastedSubset(
     idxs.map((i) => workingPal[i]),
     preIdx.map((i) => workingPal[i]),
     limit,
-    distFn
+    distFn,
+    fromW
   )
 
-  console.log('Selected colors (colorSpace):', selectedW)
+
 
   return selectedW
 }

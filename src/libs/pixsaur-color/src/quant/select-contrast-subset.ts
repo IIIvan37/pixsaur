@@ -37,21 +37,29 @@ export function isBright(color: Vector): boolean {
   return luminance(color) > 0.8
 }
 
+
+
 /**
  * Selects the most contrasted subset of N colors from candidates
  * by maximizing the minimum pairwise distance, preferring sets
  * that contain both dark and bright entries.
+ *
+ * @param candidates - List of colors in any color space
+ * @param preselected - Already locked-in colors
+ * @param size - Desired final number of colors
+ * @param distance - Distance function in working space
+ * @param toRGB - Projection function to RGB (for luminance test)
  */
 export function selectContrastedSubset(
   candidates: Vector[],
   preselected: Vector[],
   size: number,
-  distance: (a: Vector, b: Vector) => number
+  distance: (a: Vector, b: Vector) => number,
+  toRGB: (v: Vector) => Vector<'RGB'>
 ): Vector[] {
   const preselectedSet = new Set(preselected.map((c) => c.join(',')))
   const remaining = candidates.filter((c) => !preselectedSet.has(c.join(',')))
 
-  // Si trop de pré-sélectionnées, tronquer
   if (preselected.length >= size) {
     return preselected.slice(0, size)
   }
@@ -59,9 +67,7 @@ export function selectContrastedSubset(
   const needed = size - preselected.length
   const indices = [...Array(remaining.length).keys()]
 
-  // Cas où il n'y a pas assez de couleurs pour compléter la palette
   if (remaining.length < needed) {
-    // Retourner tout ce qu'on peut (préselection + tout le reste)
     return [...preselected, ...remaining].slice(0, size)
   }
 
@@ -70,9 +76,12 @@ export function selectContrastedSubset(
   let bestCombo: number[] = []
   let bestMinDist = -Infinity
 
+  const isDarkRGB = (v: Vector) => isDark(toRGB(v))
+  const isBrightRGB = (v: Vector) => isBright(toRGB(v))
+
   const filtered = combinations.filter((combo) => {
     const colors = [...preselected, ...combo.map((i) => remaining[i])]
-    return colors.some(isDark) && colors.some(isBright)
+    return colors.some(isDarkRGB) && colors.some(isBrightRGB)
   })
 
   const combosToTest = filtered.length > 0 ? filtered : combinations
