@@ -6,7 +6,7 @@ import {
   DistanceMetric,
   getDistanceFn
 } from '../metric/distance'
-import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
+import { getRgbToColorSpaceFn } from '../space'
 import { ColorSpace, Vector } from '../type'
 import { selectContrastedSubset } from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
