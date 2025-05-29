@@ -13,7 +13,7 @@ describe('selectContrastedSubset', () => {
 
   it('retourne les preselected si leur nombre >= size', () => {
     expect(
-      selectContrastedSubset([red, green, blue], [red, green, blue], 2, dist)
+      selectContrastedSubset([red, green, blue], [red, green, blue], 2, dist,  (v) => v)
     ).toEqual([red, green])
   })
 
@@ -22,7 +22,8 @@ describe('selectContrastedSubset', () => {
       [black, white, red, green, blue],
       [red],
       3,
-      dist
+      dist,
+       (v) => v
     )
     expect(result).toContain(red)
     expect(result.length).toBe(3)
@@ -33,7 +34,8 @@ describe('selectContrastedSubset', () => {
       [black, white, red, green, blue],
       [red, green],
       4,
-      dist
+      dist,
+       (v) => v
     )
     expect(result).toEqual(expect.arrayContaining([red, green]))
     expect(result.length).toBe(4)
@@ -44,7 +46,8 @@ describe('selectContrastedSubset', () => {
       [black, white, red, green, blue],
       [],
       2,
-      dist
+      dist,
+      (v) => v // identity function for RGB
     )
     expect(result).toEqual(expect.arrayContaining([black, white]))
   })
@@ -54,7 +57,8 @@ describe('selectContrastedSubset', () => {
       [black, white, red, green, blue],
       [],
       3,
-      dist
+      dist,
+       (v) => v
     )
     expect(result.length).toBe(3)
   })
@@ -64,7 +68,8 @@ describe('selectContrastedSubset', () => {
       [black, white, red, green, blue],
       [black, white, red],
       3,
-      dist
+      dist,
+       (v) => v
     )
     expect(result.length).toBe(3)
   })
