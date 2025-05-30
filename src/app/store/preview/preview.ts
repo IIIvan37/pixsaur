@@ -102,15 +102,17 @@ export const previewImageAtom = atom((get) => {
   remappedCanvas.getContext('2d')!.putImageData(remapped, 0, 0)
 
   const targetW = CPC_MODE_CONFIG[mode].width
+  const targetH = CPC_MODE_CONFIG[mode].height
 
+  // Création du canvas final avec la taille cible
   const finalCanvas = document.createElement('canvas')
   finalCanvas.width = targetW
-  finalCanvas.height = 200
+  finalCanvas.height = targetH
   const finalCtx = finalCanvas.getContext('2d')!
   finalCtx.imageSmoothingEnabled = false
 
   const dx = Math.floor((targetW - remapped.width) / 2)
-  const dy = Math.floor((200 - remapped.height) / 2)
+  const dy = Math.floor((targetH - remapped.height) / 2)
 
   finalCtx.drawImage(
     remappedCanvas,
@@ -123,7 +125,7 @@ export const previewImageAtom = atom((get) => {
     remapped.width,
     remapped.height
   )
-  return finalCtx.getImageData(0, 0, targetW, 200)
+  return finalCtx.getImageData(0, 0, targetW, targetH)
 })
 
 export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {

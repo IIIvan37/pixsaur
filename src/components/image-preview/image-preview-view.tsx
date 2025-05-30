@@ -1,5 +1,8 @@
 // ✅ ImagePreviewView.tsx
+import { useAtomValue } from 'jotai'
 import styles from './image-preview.module.css'
+import { modeAtom } from '@/app/store/config/config'
+import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 
 export type ImagePreviewViewProps = {
   containerRefCallback: (node: HTMLDivElement | null) => void
@@ -20,6 +23,9 @@ export function ImagePreviewView({
   width,
   height
 }: ImagePreviewViewProps) {
+  const mode = useAtomValue(modeAtom)
+  const modeConfig = CPC_MODE_CONFIG[mode]
+
   if (!image) {
     return (
       <div className={styles.container}>
@@ -37,7 +43,7 @@ export function ImagePreviewView({
       style={{
         width: '100%',
         alignSelf: 'stretch',
-        aspectRatio: '16 / 10', // 320x200 ratio
+        aspectRatio: `${modeConfig.overscan ? 384 : 320} / ${modeConfig.height}`, // 320x200 ratio
         maxHeight: '100%' // permet de s'étendre au besoin
       }}
     >
