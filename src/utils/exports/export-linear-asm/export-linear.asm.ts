@@ -5,8 +5,10 @@ export function exportLinearAsm(
   indexBuf: Uint8Array,
   modeConfig: CpcModeConfig
 ): Uint8Array {
-  const scr = new Uint8Array(0x4000).fill(0)
   const pixelsPerByte = [2, 4, 8][modeConfig.mode]
+  const data = new Uint8Array(
+    modeConfig.height * Math.floor(modeConfig.width / pixelsPerByte)
+  ).fill(0)
   let addr = 0
   for (let y = 0; y < modeConfig.height; y++) {
     for (let x = 0; x < Math.floor(modeConfig.width / pixelsPerByte); x++) {
@@ -18,9 +20,9 @@ export function exportLinearAsm(
         modeConfig.mode,
         modeConfig.width
       )
-      scr[addr++] = byte
+      data[addr++] = byte
     }
   }
 
-  return scr
+  return data
 }
