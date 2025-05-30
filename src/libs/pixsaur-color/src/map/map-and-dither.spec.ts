@@ -38,8 +38,8 @@ describe('mapAndDither (Lab, no dithering)', () => {
     const paletteLab = paletteRgb.map(rgbToLab)
 
     const config: DitheringConfig = {
-      mode: 'none',
-      intensity: 1
+      mode: 'none' as const,
+      intensity: 0
     }
 
     const out = mapAndDither(rgba, width, height, paletteLab, config, 'Lab')

@@ -9,7 +9,7 @@ import { selectTopIndices } from './select-to-indices'
 export type DitheringMode = 'floydSteinberg' | 'bayer2x2' | 'bayer4x4'
 
 export type DitheringConfig = {
-  mode: DitheringMode
+  mode: DitheringMode | 'none'
   intensity: number // de 0 (off) à 1 (plein)
 }
 

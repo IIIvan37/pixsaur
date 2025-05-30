@@ -96,6 +96,7 @@ export function applyNoDither(
       }
     }
 
+    console.log(bestI, paletteOut)
     const outIdx = i * 4
     const color = paletteOut[bestI]
     out[outIdx + 0] = color[0]
@@ -213,6 +214,10 @@ export function mapAndDither(
       paletteOut.push(Uint8ClampedArray.from([...rgb, 255]))
       paletteCS.push(Float32Array.from(color))
     }
+  }
+
+  if (mode === 'none') {
+    return applyNoDither(bufCS, width, height, paletteCS, paletteOut, distFn)
   }
 
   if (mode === 'floydSteinberg') {
