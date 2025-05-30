@@ -1,11 +1,6 @@
 import { buildHistogram } from '../histogram'
 import { mapAndDither } from '../map'
-import {
-
-  DistanceFn,
-  DistanceMetric,
-  getDistanceFn
-} from '../metric/distance'
+import { DistanceFn, DistanceMetric, getDistanceFn } from '../metric/distance'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import { ColorSpace, Vector } from '../type'
 import { selectContrastedSubset } from './select-contrast-subset'
@@ -14,7 +9,7 @@ import { selectTopIndices } from './select-to-indices'
 export type DitheringMode = 'floydSteinberg' | 'bayer2x2' | 'bayer4x4'
 
 export type DitheringConfig = {
-  mode: DitheringMode
+  mode: DitheringMode | 'none'
   intensity: number // de 0 (off) à 1 (plein)
 }
 
@@ -55,7 +50,6 @@ export function createQuantizer({
   preselected,
   quantConfig
 }: CreateQuantizerInput) {
-
   const { colorSpace, distanceMetric } = quantConfig
 
   const toW = getRgbToColorSpaceFn(colorSpace)
@@ -64,50 +58,39 @@ export function createQuantizer({
 
   const vecs = bufferToVectors(buf)
 
-
-  const workingPal = basePalette.map((c) => toW([...c] as Vector)) // projection W sans mutation
+  const workingPal = basePalette.map((c) => toW([...c] as Vector))
 
   const preIdx = preselected
     .map((c) =>
-      basePalette.findIndex((p) => p[0] === c[0] && p[1] === c[1] && p[2] === c[2])
+      basePalette.findIndex(
+        (p) => p[0] === c[0] && p[1] === c[1] && p[2] === c[2]
+      )
     )
     .filter((i) => i >= 0)
 
-  if (preselected.length !== preIdx.length) {
-    console.warn('Certaines couleurs pré-sélectionnées ne sont pas dans la base palette', preselected)
+  const reducePalette = (limit: number): Vector[] => {
+    const counts = new Uint32Array(
+      buildHistogram(vecs.map(toW), workingPal, distFn)
+    )
+    const idxs = selectTopIndices(counts, preIdx, 16)
+
+    const out = idxs.map((i) => workingPal[i])
+
+    const selectedW = selectContrastedSubset(
+      out,
+      preIdx.map((i) => [...workingPal[i]] as Vector),
+      limit,
+      distFn,
+      fromW
+    )
+
+    return selectedW
   }
-
-const reducePalette = (limit: number): Vector[] => {
-  if (preIdx.length >= limit) {
-    return preIdx.map((i) => workingPal[i]) // déjà dans le bon colorSpace
-  }
-
-  const counts = new Uint32Array(
-    buildHistogram(vecs.map(toW), workingPal, distFn)
-  )
-  const idxs = selectTopIndices(counts, preIdx, 16)
-
-
-  const selectedW = selectContrastedSubset(
-    idxs.map((i) => workingPal[i]),
-    preIdx.map((i) => workingPal[i]),
-    limit,
-    distFn,
-    fromW
-  )
-
-
-
-  return selectedW
-}
-
-
-
 
   return {
     quantize: reducePalette,
     dither(
-      reducedPalette: Vector<'RGB'>[],
+      reducedPalette: Vector[],
       dithering: DitheringConfig
     ): Uint8ClampedArray {
       return mapAndDither(

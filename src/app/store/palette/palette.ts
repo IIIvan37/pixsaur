@@ -2,6 +2,8 @@ import { atom } from 'jotai'
 import { atomWithCompare } from '../utils'
 import { PaletteSlot } from './types'
 import { Vector } from '@/libs/pixsaur-color/src/type'
+import { modeAtom } from '../config/config'
+import { CPC_MODE_CONFIG } from '../config/types'
 
 // comparaison superficielle pour les slots
 function shallowEqualPalette(a: PaletteSlot[], b: PaletteSlot[]) {
@@ -74,9 +76,11 @@ export const onSetColorAtom = atom(null, (get, set, { index, color }) => {
   set(userPaletteAtom, slots)
 })
 
-export const lockedVectorsAtom = atom(
-  (get) =>
-    get(userPaletteAtom)
-      .filter((slot) => slot.locked)
-      .map((slot) => slot.color) as Vector<'RGB'>[]
-)
+export const lockedVectorsAtom = atom((get) => {
+  const modeKey = get(modeAtom)
+  const mode = CPC_MODE_CONFIG[modeKey]
+  return get(userPaletteAtom)
+    .filter((_, i) => i < mode.nColors)
+    .filter((slot) => slot.locked)
+    .map((slot) => slot.color) as Vector<'RGB'>[]
+})

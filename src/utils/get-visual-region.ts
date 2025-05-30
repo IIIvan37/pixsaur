@@ -58,27 +58,5 @@ export function getVisualRegion(
 
   scaledCtx.drawImage(regionCanvas, 0, 0, sw, sh, 0, 0, scaledW, scaledH)
 
-  // Step 5 — Create final canvas and center the scaled image inside targetW × 200
-  const finalCanvas = document.createElement('canvas')
-  finalCanvas.width = targetW
-  finalCanvas.height = 200
-  const finalCtx = finalCanvas.getContext('2d')!
-  finalCtx.imageSmoothingEnabled = false
-
-  const dx = Math.floor((targetW - scaledW) / 2)
-  const dy = Math.floor((200 - scaledH) / 2)
-
-  finalCtx.drawImage(
-    scaledCanvas,
-    0,
-    0,
-    scaledW,
-    scaledH,
-    dx,
-    dy,
-    scaledW,
-    scaledH
-  )
-
-  return finalCtx.getImageData(0, 0, targetW, 200)
+  return scaledCtx.getImageData(0, 0, scaledW, scaledH)
 }

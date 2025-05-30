@@ -31,7 +31,7 @@ export const cie76Distance = euclideanDistance
  * @param {Vector} b - The second color in Lab space.
  * @returns {number} - The Delta E 2000 distance between the two colors.
  */
-export function deltaE2000(a: Vector, b: Vector): number {
+export function deltaE2000Distance(a: Vector, b: Vector): number {
   const [L1, a1, b1] = a
   const [L2, a2, b2] = b
 
@@ -107,13 +107,13 @@ export type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
 export const ColorSpaceDistanceMetric: Record<ColorSpace, DistanceMetric[]> = {
   RGB: ['euclidean'],
   XYZ: ['euclidean'],
-  Lab: ['cie76']
+  Lab: ['cie76', 'deltaE2000']
 }
 
 const distanceFnFromMetric: Record<DistanceMetric, DistanceFn> = {
   euclidean: euclideanDistance,
   cie76: cie76Distance,
-  deltaE2000: cie76Distance
+  deltaE2000: deltaE2000Distance
 }
 
 /**
