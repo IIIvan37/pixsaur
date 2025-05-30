@@ -8,6 +8,7 @@
   padding: var(--spacing-sm);
   display: flex;
   gap: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
 .modeButton {

@@ -1,4 +1,5 @@
 // 📁 utils/image/getVisualRegionNormalized.ts
+import { CPC_MODE_CONFIG, CpcModeKey } from '@/app/store/config/types'
 import { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 
 /**
@@ -17,9 +18,12 @@ import { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 export function getVisualRegion(
   src: ImageData,
   selection: Selection,
-  targetW: number,
-  mode: 0 | 1 | 2
+  mode: CpcModeKey
 ): ImageData {
+  const modeConfig = CPC_MODE_CONFIG[mode]
+  const targetW = modeConfig.width
+  const targetH = modeConfig.height
+
   const { sx, sy, width: sw, height: sh } = selection
   // Step 1 — Extract the selected region
   const extractCanvas = document.createElement('canvas')
@@ -34,15 +38,15 @@ export function getVisualRegion(
     0: 2 / 1, // Mode 0: wide pixels
     1: 1 / 1, // Mode 1: square pixels
     2: 1 / 2 // Mode 2: tall pixels
-  }[mode]
+  }[modeConfig.mode]
   // Step 3 — Compute the uniform scale factor considering aspect correction
   const correctedH = sh * pixelAspectRatio
-  const scale = Math.min(targetW / sw, 200 / correctedH)
+  const scale = Math.min(targetW / sw, targetH / correctedH)
   const scaledW = Math.round(sw * scale)
   const scaledH = Math.round(sh * scale * pixelAspectRatio)
   if (scaledW === 0 || scaledH === 0) {
     console.warn('Skipped: scaled dimensions are zero', scaledW, scaledH)
-    return new ImageData(targetW, 200) // image noire
+    return new ImageData(targetW, targetH) // image noire
   }
   // Step 4 — Resize the selection to scaledW × scaledH
   const scaledCanvas = document.createElement('canvas')

@@ -25,15 +25,10 @@ export const croppedImageAtom = atom((get) => {
   const workingImageData = get(workingImageAtom)
   const selection = get(selectionAtom)
   const mode = get(modeAtom)
-  const targetWidth = CPC_MODE_CONFIG[mode].width
+
   if (!workingImageData || !selection) return null
 
-  return getVisualRegion(
-    workingImageData,
-    selection,
-    targetWidth,
-    CPC_MODE_CONFIG[mode].mode
-  )
+  return getVisualRegion(workingImageData, selection, mode)
 })
 
 // 2. Extraction des données RGBA
