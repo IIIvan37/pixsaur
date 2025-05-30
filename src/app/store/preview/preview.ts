@@ -52,15 +52,7 @@ export const quantizerAtom = atom((get) => {
   if (!buf || !cropped) return null
 
   const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
-  const distanceMetric = availableMetrics.includes('euclidean')
-    ? 'euclidean'
-    : availableMetrics[0]
-
-  if (!availableMetrics.includes('euclidean')) {
-    console.warn(
-      `Distance metric "euclidean" is not valid for color space "${colorSpace}", using "${distanceMetric}" instead.`
-    )
-  }
+  const distanceMetric = availableMetrics[0]
 
   return createQuantizer({
     buf,
@@ -77,21 +69,18 @@ export const quantizerAtom = atom((get) => {
 
 // 4. Palette réduite copiée profondément
 export const reducedPaletteRawAtom = atom<Vector[]>((get) => {
-  console.log('Recalcul de la palette réduite')
   const quantizer = get(quantizerAtom)
   const mode = get(modeAtom)
   if (!quantizer) return []
   const raw = quantizer.quantize(CPC_MODE_CONFIG[mode].nColors)
   const res = raw.map((v) => [...v] as Vector)
-  console.log(
-    '[reducedPaletteRawAtom] palette:',
-    res.map((v) => v.map((x) => +x.toFixed(1)))
-  )
+
   return res
 })
 
 // 5. Image preview finale avec copie défensive
 export const previewImageAtom = atom((get) => {
+  const mode = get(modeAtom)
   const quantizer = get(quantizerAtom)
   const reduced = get(reducedPaletteRawAtom)
   const reducedRgb = get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
@@ -106,10 +95,40 @@ export const previewImageAtom = atom((get) => {
   })
 
   // remappage final en RGB visible
-  return remapImageDataToPalette(
+  const remapped = remapImageDataToPalette(
     new ImageData(previewBuffer, cropped.width, cropped.height),
     reducedRgb
   )
+
+  // Convert ImageData to Canvas for drawImage
+  const remappedCanvas = document.createElement('canvas')
+  remappedCanvas.width = remapped.width
+  remappedCanvas.height = remapped.height
+  remappedCanvas.getContext('2d')!.putImageData(remapped, 0, 0)
+
+  const targetW = CPC_MODE_CONFIG[mode].width
+
+  const finalCanvas = document.createElement('canvas')
+  finalCanvas.width = targetW
+  finalCanvas.height = 200
+  const finalCtx = finalCanvas.getContext('2d')!
+  finalCtx.imageSmoothingEnabled = false
+
+  const dx = Math.floor((targetW - remapped.width) / 2)
+  const dy = Math.floor((200 - remapped.height) / 2)
+
+  finalCtx.drawImage(
+    remappedCanvas,
+    0,
+    0,
+    remapped.width,
+    remapped.height,
+    dx,
+    dy,
+    remapped.width,
+    remapped.height
+  )
+  return finalCtx.getImageData(0, 0, targetW, 200)
 })
 
 export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
@@ -117,9 +136,6 @@ export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
   const toRGB = getColorSpaceToRgbFn(colorSpace)
   const raw = get(reducedPaletteRawAtom)
   const projected = raw.map(toRGB)
-  console.log(
-    '[reducedPaletteRgbAtom] RGB palette:',
-    projected.map((v) => v.join(','))
-  )
+
   return projected
 })

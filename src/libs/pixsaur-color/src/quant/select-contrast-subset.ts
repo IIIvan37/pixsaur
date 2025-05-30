@@ -55,7 +55,6 @@ export function selectContrastedSubset(
   distance: (a: Vector, b: Vector) => number,
   toRGB: (v: Vector) => Vector<'RGB'>
 ): Vector[] {
-  console.log('candidates:', candidates)
   const preselectedSet = new Set(preselected.map((c) => c.join(',')))
   const remaining = candidates.filter((c) => !preselectedSet.has(c.join(',')))
 

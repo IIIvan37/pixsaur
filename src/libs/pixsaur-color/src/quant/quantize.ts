@@ -56,23 +56,10 @@ export function createQuantizer({
   const fromW = getColorSpaceToRgbFn(colorSpace)
   const distFn: DistanceFn = getDistanceFn(colorSpace, distanceMetric)
 
-  console.log('[createQuantizer] basePalette', basePalette)
   const vecs = bufferToVectors(buf)
 
   const workingPal = basePalette.map((c) => toW([...c] as Vector))
 
-  console.log('[createQuantizer] basePalette => workingPal', workingPal)
-
-  for (let i = 0; i < workingPal.length; i++) {
-    console.log(
-      '[createQuantizer] workingPal[',
-      i,
-      ']',
-      basePalette[i],
-      ' => ',
-      workingPal[i]
-    )
-  }
   const preIdx = preselected
     .map((c) =>
       basePalette.findIndex(
@@ -81,28 +68,13 @@ export function createQuantizer({
     )
     .filter((i) => i >= 0)
 
-  if (preselected.length !== preIdx.length) {
-    console.warn(
-      'Certaines couleurs pré-sélectionnées ne sont pas dans la base palette',
-      preselected
-    )
-  }
-
   const reducePalette = (limit: number): Vector[] => {
-    console.log('[reducePalette] workingPal', workingPal)
-    if (preIdx.length >= limit) {
-      return preIdx.map((i) => workingPal[i])
-    }
-
     const counts = new Uint32Array(
       buildHistogram(vecs.map(toW), workingPal, distFn)
     )
-
-    console.log('[reducePalette] counts', counts)
     const idxs = selectTopIndices(counts, preIdx, 16)
 
     const out = idxs.map((i) => workingPal[i])
-    // Convert Readonly<Vector> to Vector
 
     const selectedW = selectContrastedSubset(
       out,
@@ -111,7 +83,6 @@ export function createQuantizer({
       distFn,
       fromW
     )
-    console.log('[reducePalette] out (working space)', selectedW)
 
     return selectedW
   }
