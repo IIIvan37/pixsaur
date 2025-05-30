@@ -4,7 +4,7 @@ import { CPCColor, CPCPalette } from '@/libs/types'
 // Full CPC hardware palette
 export const cpcFullPalette: CPCColor[] = [
   { index: 0, name: 'Black', hex: '000000', vector: [0, 0, 0] },
-  { index: 1, name: 'Blue', hex: '0000AA', vector: [0, 0, 80] },
+  { index: 1, name: 'Blue', hex: '0000AA', vector: [0, 0, 128] },
   { index: 2, name: 'Bright Blue', hex: '0000FF', vector: [0, 0, 255] },
   { index: 3, name: 'Red', hex: 'AA0000', vector: [128, 0, 0] },
   { index: 4, name: 'Magenta', hex: 'AA00AA', vector: [128, 0, 128] },
