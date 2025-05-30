@@ -39,7 +39,7 @@ export default function ExportPanel() {
     ctx?.putImageData(image, 0, 0)
 
     const modeConfig = CPC_MODE_CONFIG[mode]
-    exportZip(indexBuf, paletteFirmware, canvas, modeConfig.mode)
+    exportZip(indexBuf, paletteFirmware, canvas, modeConfig)
   }
 
   return <ExportPanelView onExport={onExport} />

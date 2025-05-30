@@ -57,15 +57,15 @@ describe('ImageControlsView', () => {
 
   it('renders mode buttons and highlights the active one', () => {
     render(<ImageControlsView {...props} />)
-    expect(screen.getByRole('button', { name: /Mode 0/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /^Mode 0$/i })).toHaveAttribute(
       'aria-pressed',
       'true'
     )
-    expect(screen.getByRole('button', { name: /Mode 1/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /^Mode 1$/i })).toHaveAttribute(
       'aria-pressed',
       'false'
     )
-    expect(screen.getByRole('button', { name: /Mode 2/i })).toHaveAttribute(
+    expect(screen.getByRole('button', { name: /^Mode 2$/i })).toHaveAttribute(
       'aria-pressed',
       'false'
     )
@@ -73,7 +73,7 @@ describe('ImageControlsView', () => {
 
   it('calls onModeChange when a mode button is clicked', async () => {
     render(<ImageControlsView {...props} />)
-    await userEvent.click(screen.getByRole('button', { name: /Mode 2/i }))
+    await userEvent.click(screen.getByRole('button', { name: /Mode 2$/i }))
     expect(onModeChange).toHaveBeenCalledWith('2')
   })
 

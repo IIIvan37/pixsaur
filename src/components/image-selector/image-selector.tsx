@@ -18,7 +18,6 @@ import { workingImageAtom } from '@/app/store/image/image'
  * - Handles canvas updates when the image source changes.
  */
 export function ImageSelector() {
-
   const src = useAtomValue(workingImageAtom)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)

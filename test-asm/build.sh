@@ -1,1 +1,1 @@
-rasm ./main.asm -o ./dist/pix -sw -eo -eb
+rasm ./main.asm -o ./dist/pix
