@@ -1,7 +1,7 @@
 import { Vector } from '../../src/type'
 import {
   cie76Distance,
-  deltaE2000,
+  deltaE2000Distance,
   euclideanDistance
 } from '../../src/metric/distance'
 import { mapToNearest } from '../../src/map'
@@ -30,7 +30,7 @@ describe('mapToNearest', () => {
   it('respecte deltaE2000 pour une couleur intermédiaire', () => {
     // milieu entre rouge et vert
     const color: Vector = [128, 128, 0]
-    const nearest = mapToNearest(color, palette, deltaE2000)
+    const nearest = mapToNearest(color, palette, deltaE2000Distance)
     // en pratique ΔE2000 juge le rouge plus proche que le vert ici
     expect(nearest).toEqual([255, 0, 0])
   })

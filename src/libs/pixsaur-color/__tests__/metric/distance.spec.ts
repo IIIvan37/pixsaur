@@ -1,7 +1,7 @@
 import { Vector } from '../../src/type'
 import {
   cie76Distance,
-  deltaE2000,
+  deltaE2000Distance,
   euclideanDistance
 } from '../../src/metric/distance'
 
@@ -49,24 +49,24 @@ describe('deltaE2000', () => {
   it('identical Lab values returns 0', () => {
     const a: Vector = [50, 20, 30]
     const b: Vector = [50, 20, 30]
-    expect(deltaE2000(a, b)).toBeCloseTo(0, 6)
+    expect(deltaE2000Distance(a, b)).toBeCloseTo(0, 6)
   })
 
   it('returns small deltaE2000 between similar colors', () => {
     const a: Vector = [50, 20, 30]
     const b: Vector = [50, 22, 29]
-    expect(deltaE2000(a, b)).toBeLessThan(3)
+    expect(deltaE2000Distance(a, b)).toBeLessThan(3)
   })
 
   it('returns known deltaE2000 from standard dataset', () => {
     const a: Vector = [50.0, 2.6772, -79.7751]
     const b: Vector = [50.0, 0.0, -82.7485]
-    expect(deltaE2000(a, b)).toBeCloseTo(2.0425, 3) // référence ISO
+    expect(deltaE2000Distance(a, b)).toBeCloseTo(2.0425, 3) // référence ISO
   })
 
   it('returns known deltaE2000 (dataset 2)', () => {
     const a: Vector = [50.0, 3.1571, -77.2803]
     const b: Vector = [50.0, 0.0, -82.7485]
-    expect(deltaE2000(a, b)).toBeCloseTo(2.8615, 3) // référence ISO
+    expect(deltaE2000Distance(a, b)).toBeCloseTo(2.8615, 3) // référence ISO
   })
 })

@@ -37,8 +37,6 @@ export function isBright(color: Vector): boolean {
   return luminance(color) > 0.8
 }
 
-
-
 /**
  * Selects the most contrasted subset of N colors from candidates
  * by maximizing the minimum pairwise distance, preferring sets
@@ -51,12 +49,13 @@ export function isBright(color: Vector): boolean {
  * @param toRGB - Projection function to RGB (for luminance test)
  */
 export function selectContrastedSubset(
-  candidates: Vector[],
+  candidates: readonly Vector[],
   preselected: Vector[],
   size: number,
   distance: (a: Vector, b: Vector) => number,
   toRGB: (v: Vector) => Vector<'RGB'>
 ): Vector[] {
+  console.log('candidates:', candidates)
   const preselectedSet = new Set(preselected.map((c) => c.join(',')))
   const remaining = candidates.filter((c) => !preselectedSet.has(c.join(',')))
 
@@ -76,8 +75,8 @@ export function selectContrastedSubset(
   let bestCombo: number[] = []
   let bestMinDist = -Infinity
 
-  const isDarkRGB = (v: Vector) => isDark(toRGB(v))
-  const isBrightRGB = (v: Vector) => isBright(toRGB(v))
+  const isDarkRGB = (v: Vector) => isDark(toRGB([...v] as Vector<'RGB'>))
+  const isBrightRGB = (v: Vector) => isBright(toRGB([...v] as Vector<'RGB'>))
 
   const filtered = combinations.filter((combo) => {
     const colors = [...preselected, ...combo.map((i) => remaining[i])]

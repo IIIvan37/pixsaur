@@ -55,6 +55,18 @@ export const setReducedPaletteAtom = atom(
         newSlots[i] = { color: vec, locked: false }
       }
     }
+    console.log(
+      '[setReducedPaletteAtom] locked:',
+      lockedVecs.map((v) => v.join(','))
+    )
+    console.log(
+      '[setReducedPaletteAtom] reduced:',
+      reduced.map((v) => v.join(','))
+    )
+    console.log(
+      '[setReducedPaletteAtom] final:',
+      newSlots.map((s) => s.color?.join(',') ?? null)
+    )
 
     set(userPaletteAtom, newSlots)
   }

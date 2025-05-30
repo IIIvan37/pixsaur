@@ -1,6 +1,6 @@
 import {
   previewImageAtom,
-  reducedPaletteAtom
+  reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
 import { useAtomValue } from 'jotai'
 import { exportZip } from '@/utils/exports/export-zip'
@@ -12,7 +12,7 @@ import ExportPanelView from './export-panel-view'
 
 export default function ExportPanel() {
   const image = useAtomValue(previewImageAtom)
-  const reducedPalette = useAtomValue(reducedPaletteAtom)
+  const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
   const mode = useAtomValue(modeAtom)
 
   const onExport = () => {

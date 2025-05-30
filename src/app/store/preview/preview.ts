@@ -9,6 +9,7 @@ import { lockedVectorsAtom } from '../palette/palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
+import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -21,7 +22,6 @@ export const previewCanvasSizeAtom = atom((get) => {
 
 // 1. Zone sélectionnée réduite à la largeur du mode
 export const croppedImageAtom = atom((get) => {
-
   const workingImageData = get(workingImageAtom)
   const selection = get(selectionAtom)
   const mode = get(modeAtom)
@@ -38,7 +38,6 @@ export const croppedImageAtom = atom((get) => {
 
 // 2. Extraction des données RGBA
 export const croppedBufferAtom = atom((get) => {
-
   const cropped = get(croppedImageAtom)
   if (!cropped) return null
   return extractBuffer(cropped)
@@ -46,7 +45,6 @@ export const croppedBufferAtom = atom((get) => {
 
 // 3. Construction du quantizer sans mémoïsation
 export const quantizerAtom = atom((get) => {
-
   const buf = get(croppedBufferAtom)
   const cropped = get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
@@ -78,33 +76,50 @@ export const quantizerAtom = atom((get) => {
 })
 
 // 4. Palette réduite copiée profondément
-export const reducedPaletteAtom = atom<Vector[]>((get) => {
+export const reducedPaletteRawAtom = atom<Vector[]>((get) => {
   console.log('Recalcul de la palette réduite')
   const quantizer = get(quantizerAtom)
   const mode = get(modeAtom)
   if (!quantizer) return []
   const raw = quantizer.quantize(CPC_MODE_CONFIG[mode].nColors)
-  console.log('palette avant', raw.map((c) => [...c]))
-  return raw.map((v) => [...v] as Vector)
+  const res = raw.map((v) => [...v] as Vector)
+  console.log(
+    '[reducedPaletteRawAtom] palette:',
+    res.map((v) => v.map((x) => +x.toFixed(1)))
+  )
+  return res
 })
 
 // 5. Image preview finale avec copie défensive
 export const previewImageAtom = atom((get) => {
   const quantizer = get(quantizerAtom)
-  const reduced = get(reducedPaletteAtom)
+  const reduced = get(reducedPaletteRawAtom)
+  const reducedRgb = get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
   const cropped = get(croppedImageAtom)
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
 
-  const safePalette = reduced.map((v) => [...v] as Vector)
-  const previewBuffer = quantizer.dither(safePalette, {
+  // reduced est en espace de travail (Lab, XYZ, etc.)
+  const previewBuffer = quantizer.dither(reduced, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
-  console.log('palette après safe ?', safePalette)
 
+  // remappage final en RGB visible
   return remapImageDataToPalette(
     new ImageData(previewBuffer, cropped.width, cropped.height),
-    safePalette
+    reducedRgb
   )
+})
+
+export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
+  const colorSpace = get(colorSpaceAtom)
+  const toRGB = getColorSpaceToRgbFn(colorSpace)
+  const raw = get(reducedPaletteRawAtom)
+  const projected = raw.map(toRGB)
+  console.log(
+    '[reducedPaletteRgbAtom] RGB palette:',
+    projected.map((v) => v.join(','))
+  )
+  return projected
 })
