@@ -5,7 +5,6 @@ import {
 } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import { configAtom } from '../config/config'
-import * as imgly from '@imgly/background-removal'
 
 const LOGICAL_WIDTH = 400
 
@@ -27,29 +26,8 @@ export const srcVersionAtom = atom(0)
 // Setter principal
 export const setImgAtom = atom(
   null,
-  async (_get, set, img: HTMLImageElement | null) => {
-    let cleanImg = null
-    if (img) {
-      imgly.removeBackground(img, {}, (err, cleanBlob) => {
-        console.log(cleanBlob)
-        cleanImg = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const url = URL.createObjectURL(cleanBlob)
-          const image = new window.Image()
-          image.onload = () => {
-            URL.revokeObjectURL(url)
-            resolve(image)
-          }
-          image.onerror = (e) => {
-            URL.revokeObjectURL(url)
-            reject(e)
-          }
-          image.src = url
-        })
-      })
-    }
-
-    set(imageAtom, cleanImg)
-
+  (_get, set, img: HTMLImageElement | null) => {
+    set(imageAtom, img)
     set(srcAtom, null)
     set(srcVersionAtom, (v) => v + 1)
   }
