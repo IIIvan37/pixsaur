@@ -5,6 +5,7 @@ import {
 } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import { configAtom } from '../config/config'
+import * as imgly from '@imgly/background-removal'
 
 const LOGICAL_WIDTH = 400
 
@@ -26,15 +27,36 @@ export const srcVersionAtom = atom(0)
 // Setter principal
 export const setImgAtom = atom(
   null,
-  (_get, set, img: HTMLImageElement | null) => {
-    set(imageAtom, img)
+  async (_get, set, img: HTMLImageElement | null) => {
+    let cleanImg = null
+    if (img) {
+      imgly.removeBackground(img, {}, (err, cleanBlob) => {
+        console.log(cleanBlob)
+        cleanImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const url = URL.createObjectURL(cleanBlob)
+          const image = new window.Image()
+          image.onload = () => {
+            URL.revokeObjectURL(url)
+            resolve(image)
+          }
+          image.onerror = (e) => {
+            URL.revokeObjectURL(url)
+            reject(e)
+          }
+          image.src = url
+        })
+      })
+    }
+
+    set(imageAtom, cleanImg)
+
     set(srcAtom, null)
     set(srcVersionAtom, (v) => v + 1)
   }
 )
 
 export const downscaledAtom = atom((get) => {
-  get(srcVersionAtom) 
+  get(srcVersionAtom)
   const img = get(imageAtom)
   if (!img) return null
   return downscaleImage(img, LOGICAL_WIDTH)
@@ -64,12 +86,9 @@ export const setWorkingImageAtom = atom(
   }
 )
 
-export const setCanvasWidth = atom(
-  null,
-  (_get, set, width: number) => {
-    set(canvasWidthAtom, width)
-  }
-)
+export const setCanvasWidth = atom(null, (_get, set, width: number) => {
+  set(canvasWidthAtom, width)
+})
 
 const _selectionWritableAtom = atom<Selection | null>(null)
 
