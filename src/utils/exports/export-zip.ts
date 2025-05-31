@@ -43,7 +43,7 @@ export async function exportZip(
   const linear_asm_text =
     getHeader(modeConfig, 'Linear') +
     toASMData(linear_asm, `${asmLabel}-linear`)
-  zip.file(`${asmLabel}-linear.asm`, linear_asm_text)
+  zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
 
   const paletteFirmwareText = toASMData(
     new Uint8Array(paletteFirmware),
