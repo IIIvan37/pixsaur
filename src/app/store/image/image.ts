@@ -34,7 +34,7 @@ export const setImgAtom = atom(
 )
 
 export const downscaledAtom = atom((get) => {
-  get(srcVersionAtom) 
+  get(srcVersionAtom)
   const img = get(imageAtom)
   if (!img) return null
   return downscaleImage(img, LOGICAL_WIDTH)
@@ -64,12 +64,9 @@ export const setWorkingImageAtom = atom(
   }
 )
 
-export const setCanvasWidth = atom(
-  null,
-  (_get, set, width: number) => {
-    set(canvasWidthAtom, width)
-  }
-)
+export const setCanvasWidth = atom(null, (_get, set, width: number) => {
+  set(canvasWidthAtom, width)
+})
 
 const _selectionWritableAtom = atom<Selection | null>(null)
 
