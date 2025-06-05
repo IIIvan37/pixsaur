@@ -1,6 +1,9 @@
 import { extractBuffer, createQuantizer } from '@/libs/pixsaur-color/src'
 import { Vector } from '@/libs/pixsaur-color/src/type'
-import { getVisualRegion } from '@/utils/get-visual-region'
+import {
+  getVisualRegion,
+  getVisualRegionNormalized
+} from '@/utils/get-visual-region'
 import { atom } from 'jotai'
 import { modeAtom, colorSpaceAtom, ditheringAtom } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
@@ -24,11 +27,10 @@ export const previewCanvasSizeAtom = atom((get) => {
 export const croppedImageAtom = atom((get) => {
   const workingImageData = get(workingImageAtom)
   const selection = get(selectionAtom)
-  const mode = get(modeAtom)
 
   if (!workingImageData || !selection) return null
 
-  return getVisualRegion(workingImageData, selection, mode)
+  return getVisualRegion(workingImageData, selection)
 })
 
 // 2. Extraction des données RGBA
@@ -83,15 +85,16 @@ export const previewImageAtom = atom((get) => {
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
 
+  const normalized = getVisualRegionNormalized(cropped, mode)
   // reduced est en espace de travail (Lab, XYZ, etc.)
-  const previewBuffer = quantizer.dither(reduced, {
+  const previewBuffer = quantizer.dither(normalized, reduced, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
 
   // remappage final en RGB visible
   const remapped = remapImageDataToPalette(
-    new ImageData(previewBuffer, cropped.width, cropped.height),
+    new ImageData(previewBuffer, normalized.width, normalized.height),
     reducedRgb
   )
 

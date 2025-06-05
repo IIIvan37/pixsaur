@@ -17,13 +17,8 @@ import { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
  */
 export function getVisualRegion(
   src: ImageData,
-  selection: Selection,
-  mode: CpcModeKey
+  selection: Selection
 ): ImageData {
-  const modeConfig = CPC_MODE_CONFIG[mode]
-  const targetW = modeConfig.width
-  const targetH = modeConfig.height
-
   const { sx, sy, width: sw, height: sh } = selection
   // Step 1 — Extract the selected region
   const extractCanvas = document.createElement('canvas')
@@ -31,8 +26,13 @@ export function getVisualRegion(
   extractCanvas.height = src.height
   const extractCtx = extractCanvas.getContext('2d')!
   extractCtx.putImageData(src, 0, 0)
-  const region = extractCtx.getImageData(sx, sy, sw, sh)
+  return extractCtx.getImageData(sx, sy, sw, sh)
+}
 
+export function getVisualRegionNormalized(src: ImageData, mode: CpcModeKey) {
+  const modeConfig = CPC_MODE_CONFIG[mode]
+  const targetW = modeConfig.width
+  const targetH = modeConfig.height
   // Step 2 — Compute the CPC pixel aspect ratio (used for visual correction)
   const pixelAspectRatio = {
     0: 2 / 1, // Mode 0: wide pixels
@@ -40,10 +40,10 @@ export function getVisualRegion(
     2: 1 / 2 // Mode 2: tall pixels
   }[modeConfig.mode]
   // Step 3 — Compute the uniform scale factor considering aspect correction
-  const correctedH = sh * pixelAspectRatio
-  const scale = Math.min(targetW / sw, targetH / correctedH)
-  const scaledW = Math.round(sw * scale)
-  const scaledH = Math.round(sh * scale * pixelAspectRatio)
+  const correctedH = src.height * pixelAspectRatio
+  const scale = Math.min(targetW / src.width, targetH / correctedH)
+  const scaledW = Math.round(src.width * scale)
+  const scaledH = Math.round(src.height * scale * pixelAspectRatio)
   if (scaledW === 0 || scaledH === 0) {
     console.warn('Skipped: scaled dimensions are zero', scaledW, scaledH)
     return new ImageData(targetW, targetH) // image noire
@@ -56,11 +56,21 @@ export function getVisualRegion(
   scaledCtx.imageSmoothingEnabled = false
 
   const regionCanvas = document.createElement('canvas')
-  regionCanvas.width = sw
-  regionCanvas.height = sh
-  regionCanvas.getContext('2d')!.putImageData(region, 0, 0)
+  regionCanvas.width = src.width
+  regionCanvas.height = src.height
+  regionCanvas.getContext('2d')!.putImageData(src, 0, 0)
 
-  scaledCtx.drawImage(regionCanvas, 0, 0, sw, sh, 0, 0, scaledW, scaledH)
+  scaledCtx.drawImage(
+    regionCanvas,
+    0,
+    0,
+    src.width,
+    src.height,
+    0,
+    0,
+    scaledW,
+    scaledH
+  )
 
   return scaledCtx.getImageData(0, 0, scaledW, scaledH)
 }
