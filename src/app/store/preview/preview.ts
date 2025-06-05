@@ -53,8 +53,7 @@ export const quantizerAtom = atom((get) => {
 
   return createQuantizer({
     buf,
-    width: cropped.width,
-    height: cropped.height,
+
     basePalette: generateAmstradCPCPalette(),
     preselected: lockedVecs,
     quantConfig: {

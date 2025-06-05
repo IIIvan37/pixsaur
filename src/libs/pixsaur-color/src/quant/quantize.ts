@@ -35,8 +35,7 @@ export function bufferToVectors(data: Uint8ClampedArray): Vector<'RGB'>[] {
 
 type CreateQuantizerInput = {
   buf: Uint8ClampedArray
-  width: number
-  height: number
+
   basePalette: Vector<'RGB'>[]
   preselected: Vector<'RGB'>[]
   quantConfig: QuantizeConfig
@@ -44,8 +43,6 @@ type CreateQuantizerInput = {
 
 export function createQuantizer({
   buf,
-  width,
-  height,
   basePalette,
   preselected,
   quantConfig
