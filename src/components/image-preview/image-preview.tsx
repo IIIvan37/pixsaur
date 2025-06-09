@@ -37,7 +37,7 @@ const ImagePreview = () => {
     temp.height = previewImage.height
     temp.getContext('2d')!.putImageData(previewImage, 0, 0)
 
-    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingEnabled = false
 
     ctx.drawImage(
       temp,
