@@ -1,91 +1,84 @@
-/**
- * Create a minimal Amstrad CPC DSK disk image as a base for writing data.
- * @param filename The name of the disk (max 8 chars, padded with spaces; longer names will be truncated)
- * @returns The DSK file as a Uint8Array (raw binary image)
- *
- * Note: If the filename is longer than 8 characters, it will be truncated.
- *       All sectors are filled with 0xE5 (blank). This is a single-sided, 40-track, 9-sector/track, 512 bytes/sector disk.
- */
-
 const NUM_TRACKS = 40
-const NUM_SIDES = 2
+const NUM_SIDES = 1
 const SECTORS_PER_TRACK = 9
 const SECTOR_SIZE = 512
-const TRACK_SIZE = 0x1300 // 4864 bytes per track (standard for CPCEMU DSK)
-const TRACK_HEADER_SIZE = 0x100 // 256 bytes (track header + sector info table)
-const DSK_SIGNATURE = 'MV - CPCEMU Disk-File\r\nDisk-Info\r\n'
+const TRACK_SIZE = 0x1300 // 4864 bytes
+const DSK_SIGNATURE = 'EXTENDED CPC DSK File\r\nDisk-Info\r\n'
 const TRACK_SIGNATURE = 'Track-Info\r\n'
 
-/**
- * Convert an ASCII string to a Uint8Array.
- */
-const ascii = (str: string): Uint8Array => {
-  const arr = new Uint8Array(str.length)
-  for (let i = 0; i < str.length; i++) arr[i] = str.charCodeAt(i)
-  return arr
-}
+const ascii = (s: string): Uint8Array => new TextEncoder().encode(s)
 
 /**
- * Create the 256-byte DSK header.
+ * Crée une piste valide avec table de secteurs et données remplies à 0xE5.
+ * Injecte un catalogue dans les secteurs C1 à C4 de la piste 0 si demandé.
  */
-function createDskHeader(filename: string): Uint8Array {
-  const header = new Uint8Array(256)
-  header.set(ascii(DSK_SIGNATURE), 0)
-  // Disk name (offset 0x22, 8 chars, padded/truncated)
-  const diskName = filename.padEnd(8, ' ').slice(0, 8)
-  header.set(ascii(diskName), 0x22)
-  header[0x30] = NUM_TRACKS
-  header[0x31] = NUM_SIDES
-  // Track size table (offset 0x34, 1 byte per track)
-  for (let t = 0; t < NUM_TRACKS; t++) {
-    header[0x34 + t] = TRACK_SIZE / 256 // 0x13 (4864/256)
-  }
-  return header
-}
-
-/**
- * Create a single track (with header, sector info, and blank sector data).
- */
-function createTrack(trackNum: number): Uint8Array {
+function createTrack(trackNum: number, includeCatalog: boolean): Uint8Array {
   const track = new Uint8Array(TRACK_SIZE)
+
+  // En-tête
   track.set(ascii(TRACK_SIGNATURE), 0)
   track[0x10] = trackNum
-  track[0x11] = 0
-  track[0x14] = 0x41 // sector size: 512 bytes
+  track[0x11] = 0 // side
   track[0x15] = SECTORS_PER_TRACK
-  track[0x16] = SECTOR_SIZE / 128 // 4 (512/128)
-  // Fill sector info table (offset 0x18, 8 bytes per sector)
-  for (let s = 0; s < SECTORS_PER_TRACK; s++) {
-    const base = 0x18 + s * 8
-    // --- FIX: Use AMSDOS sector IDs ---
-    const sectorId = trackNum === 0 ? 0xc1 + s : s + 1
-    track[base + 0] = sectorId // sector ID
-    track[base + 1] = trackNum // track
-    track[base + 2] = 0 // side
-    track[base + 3] = 2 // size code (2 = 512 bytes)
-    track[base + 4] = 0 // FDC status 1
-    track[base + 5] = 0 // FDC status 2
-    track[base + 6] = SECTOR_SIZE & 0xff
-    track[base + 7] = SECTOR_SIZE >> 8
+  track[0x16] = SECTOR_SIZE / 128 // = 4
+  track[0x17] = 0xe5
+
+  // Table des secteurs
+  for (let i = 0; i < SECTORS_PER_TRACK; i++) {
+    const sid = trackNum === 0 ? 0xc1 + i : i + 1
+    const off = 0x18 + i * 8
+    track[off + 0] = sid
+    track[off + 1] = trackNum
+    track[off + 2] = 0 // side
+    track[off + 3] = 2 // size code = 512
+    track[off + 4] = 0
+    track[off + 5] = 0
+    track[off + 6] = SECTOR_SIZE & 0xff
+    track[off + 7] = SECTOR_SIZE >> 8
   }
-  track.fill(0xe5, TRACK_HEADER_SIZE)
-  if (trackNum === 0) {
-    track.fill(0xe5, TRACK_HEADER_SIZE, TRACK_HEADER_SIZE + 2 * SECTOR_SIZE)
+
+  // Données des secteurs
+  const catalog = new Uint8Array(2048).fill(0xe5)
+  const sectorDataStart = 256 + 72
+
+  for (let i = 0; i < SECTORS_PER_TRACK; i++) {
+    const sid = trackNum === 0 ? 0xc1 + i : i + 1
+    const dataOffset = sectorDataStart + i * SECTOR_SIZE
+
+    if (includeCatalog && sid >= 0xc1 && sid <= 0xc4) {
+      const index = sid - 0xc1
+      track.set(
+        catalog.slice(index * SECTOR_SIZE, (index + 1) * SECTOR_SIZE),
+        dataOffset
+      )
+    } else {
+      track.fill(0xe5, dataOffset, dataOffset + SECTOR_SIZE)
+    }
   }
+
   return track
 }
 
 /**
- * Create a blank Amstrad CPC DSK image.
+ * Crée un disque DSK Amstrad CPC formaté vide.
  */
-export const createDsk = (filename: string): Uint8Array => {
-  const header = createDskHeader(filename)
-  const tracks = new Uint8Array(TRACK_SIZE * NUM_TRACKS)
-  for (let trackNum = 0; trackNum < NUM_TRACKS; trackNum++) {
-    tracks.set(createTrack(trackNum), trackNum * TRACK_SIZE)
+export function createBlankDSK(diskName = 'PIXSAUR'): Uint8Array {
+  const header = new Uint8Array(256).fill(0)
+  header.set(ascii(DSK_SIGNATURE), 0)
+  header.set(ascii(diskName.padEnd(8, ' ').slice(0, 8)), 0x22)
+  header[0x30] = NUM_TRACKS
+  header[0x31] = NUM_SIDES
+  for (let i = 0; i < NUM_TRACKS; i++) {
+    header[0x34 + i] = TRACK_SIZE / 256 // 0x13
   }
-  const dsk = new Uint8Array(256 + TRACK_SIZE * NUM_TRACKS)
+
+  const dsk = new Uint8Array(256 + NUM_TRACKS * TRACK_SIZE)
   dsk.set(header, 0)
-  dsk.set(tracks, 256)
+
+  for (let t = 0; t < NUM_TRACKS; t++) {
+    const track = createTrack(t, t === 0)
+    dsk.set(track, 256 + t * TRACK_SIZE)
+  }
+
   return dsk
 }
