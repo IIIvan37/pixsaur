@@ -8,7 +8,7 @@
  */
 
 const NUM_TRACKS = 40
-const NUM_SIDES = 1
+const NUM_SIDES = 2
 const SECTORS_PER_TRACK = 9
 const SECTOR_SIZE = 512
 const TRACK_SIZE = 0x1300 // 4864 bytes per track (standard for CPCEMU DSK)
@@ -57,7 +57,9 @@ function createTrack(trackNum: number): Uint8Array {
   // Fill sector info table (offset 0x18, 8 bytes per sector)
   for (let s = 0; s < SECTORS_PER_TRACK; s++) {
     const base = 0x18 + s * 8
-    track[base + 0] = s + 1 // sector ID
+    // --- FIX: Use AMSDOS sector IDs ---
+    const sectorId = trackNum === 0 ? 0xc1 + s : s + 1
+    track[base + 0] = sectorId // sector ID
     track[base + 1] = trackNum // track
     track[base + 2] = 0 // side
     track[base + 3] = 2 // size code (2 = 512 bytes)
@@ -66,8 +68,10 @@ function createTrack(trackNum: number): Uint8Array {
     track[base + 6] = SECTOR_SIZE & 0xff
     track[base + 7] = SECTOR_SIZE >> 8
   }
-  // Sector data (fill with 0xE5, standard for blank, starts at TRACK_HEADER_SIZE)
   track.fill(0xe5, TRACK_HEADER_SIZE)
+  if (trackNum === 0) {
+    track.fill(0xe5, TRACK_HEADER_SIZE, TRACK_HEADER_SIZE + 2 * SECTOR_SIZE)
+  }
   return track
 }
 
