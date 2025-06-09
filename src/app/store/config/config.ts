@@ -84,3 +84,5 @@ export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
     }))
   }
 })
+
+export const smoothingAtom = atom<boolean>(true)

@@ -9,10 +9,11 @@ import {
 
 import { ImagePreviewView } from './image-preview-view'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
+import { smoothingAtom } from '@/app/store/config/config'
 
 const ImagePreview = () => {
   const ref = useRef<HTMLCanvasElement>(null)
-
+  const smoothing = useAtomValue(smoothingAtom)
   const previewImage = useAtomValue(previewImageAtom)
 
   const setWidth = useSetAtom(previewCanvasWidthAtom)
@@ -37,7 +38,7 @@ const ImagePreview = () => {
     temp.height = previewImage.height
     temp.getContext('2d')!.putImageData(previewImage, 0, 0)
 
-    ctx.imageSmoothingEnabled = false
+    ctx.imageSmoothingEnabled = smoothing
 
     ctx.drawImage(
       temp,
@@ -50,7 +51,7 @@ const ImagePreview = () => {
       width,
       height
     )
-  }, [previewImage, width, height])
+  }, [previewImage, width, height, smoothing])
 
   useEffect(() => {
     draw()
