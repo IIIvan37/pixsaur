@@ -80,3 +80,4 @@ export type AdjustementKey =
   | 'brightness'
   | 'contrast'
   | 'saturation'
+  | 'posterization'

@@ -5,6 +5,7 @@ export function applyAdjustmentsInOnePass(
     brightness: number // facteur (1 = neutre)
     contrast: number // facteur (1 = neutre)
     saturation: number // facteur (1 = neutre)
+    posterization: number // nombre de niveaux (256 = neutre)
   }
 ): ImageData {
   const output = new ImageData(input.width, input.height)
@@ -15,6 +16,9 @@ export function applyAdjustmentsInOnePass(
   const brightness = config.brightness
   const contrast = config.contrast
   const saturation = config.saturation
+  const posterization = config.posterization ?? 256
+
+  const posterizeStep = 255 / (posterization - 1)
 
   for (let i = 0; i < src.length; i += 4) {
     // Étape 1 : RGB multiplicatif
@@ -22,12 +26,12 @@ export function applyAdjustmentsInOnePass(
     let g = src[i + 1] * gFactor
     let b = src[i + 2] * bFactor
 
-    // Étape 2 : Brightness multiplicatif
+    // Étape 2 : Brightness
     r *= brightness
     g *= brightness
     b *= brightness
 
-    // Étape 3 : Contraste (centré sur 128)
+    // Étape 3 : Contraste
     r = (r - 128) * contrast + 128
     g = (g - 128) * contrast + 128
     b = (b - 128) * contrast + 128
@@ -83,10 +87,21 @@ export function applyAdjustmentsInOnePass(
       b1 = hue2rgb(p, q, h - 1 / 3)
     }
 
+    // Étape 5 : Posterization
+    let rp = r1 * 255
+    let gp = g1 * 255
+    let bp = b1 * 255
+
+    if (posterization < 256) {
+      rp = Math.round(rp / posterizeStep) * posterizeStep
+      gp = Math.round(gp / posterizeStep) * posterizeStep
+      bp = Math.round(bp / posterizeStep) * posterizeStep
+    }
+
     // Clamp final et écriture
-    dst[i] = Math.round(Math.max(0, Math.min(255, r1 * 255)))
-    dst[i + 1] = Math.round(Math.max(0, Math.min(255, g1 * 255)))
-    dst[i + 2] = Math.round(Math.max(0, Math.min(255, b1 * 255)))
+    dst[i] = Math.round(Math.max(0, Math.min(255, rp)))
+    dst[i + 1] = Math.round(Math.max(0, Math.min(255, gp)))
+    dst[i + 2] = Math.round(Math.max(0, Math.min(255, bp)))
     dst[i + 3] = src[i + 3]
   }
 

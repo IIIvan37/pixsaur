@@ -16,8 +16,9 @@ import { AdjustementKey } from '@/app/store/config/types'
 
 export default function Adjustments() {
   const src = useAtomValue(workingImageAtom)
-  const { red, green, blue, brightness, contrast, saturation } =
+  const { red, green, blue, brightness, contrast, saturation, posterization } =
     useAtomValue(configAtom)
+
   const setComponent = useSetAtom(setComponentAtom)
 
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
@@ -32,7 +33,8 @@ export default function Adjustments() {
     blue: [blue, 0, 2, 0.01],
     brightness: [brightness, 0, 2, 0.01],
     contrast: [contrast, 0, 2, 0.01],
-    saturation: [saturation, 0, 2, 0.01]
+    saturation: [saturation, 0, 2, 0.01],
+    posterization: [posterization, 2, 256, 1]
   }
 
   const handleChange = ({
