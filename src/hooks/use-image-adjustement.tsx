@@ -9,8 +9,16 @@ export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
   const downscaled = useAtomValue(downscaledAtom)
 
-  const { red, green, blue, brightness, contrast, saturation, lastChangedKey } =
-    useAtomValue(configAtom)
+  const {
+    red,
+    green,
+    blue,
+    brightness,
+    contrast,
+    saturation,
+    posterization,
+    lastChangedKey
+  } = useAtomValue(configAtom)
 
   const clearLastChangedKey = useSetAtom(clearLastChangedKeyAtom)
   const data = useMemo(
@@ -31,12 +39,13 @@ export const useImageAdjustement = () => {
             rgb: { r: red, g: green, b: blue },
             brightness,
             contrast,
-            saturation
+            saturation,
+            posterization
           }
         )
         setSrc(result)
         clearLastChangedKey()
-      }, 300),
+      }, 0),
     [
       downscaled,
       red,
@@ -45,6 +54,7 @@ export const useImageAdjustement = () => {
       brightness,
       contrast,
       saturation,
+      posterization,
       setSrc,
       clearLastChangedKey
     ]

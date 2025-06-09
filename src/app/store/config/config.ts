@@ -13,6 +13,7 @@ const defaultConfig: { [key in AdjustementKey]: number } & {
   brightness: 1,
   contrast: 1,
   saturation: 1,
+  posterization: 256,
   lastChangedKey: null
 }
 

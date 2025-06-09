@@ -18,7 +18,8 @@ const labels: RangeLabels[] = [
   { key: 'blue', label: 'Bleu' },
   { key: 'brightness', label: 'Luminosité' },
   { key: 'contrast', label: 'Contraste' },
-  { key: 'saturation', label: 'Saturation' }
+  { key: 'saturation', label: 'Saturation' },
+  { key: 'posterization', label: 'Posterisation' }
 ]
 
 type AdjustementsViewProps = {
@@ -48,13 +49,13 @@ export const AdjustementsView = ({
           const settings = adjustments[adj.key]
           return (
             <PixsaurSlider
+              showTooltip
               key={adj.key}
               disabled={disabled}
               value={settings[0]}
               min={settings[1]}
               max={settings[2]}
               step={settings[3]}
-              showTooltip={false}
               onChange={(value: number) => onChange({ key: adj.key, value })}
               label={adj.label}
             />
