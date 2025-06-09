@@ -53,7 +53,8 @@ export const workingImageAtom = atom((get) => {
     rgb: { r: config.red, g: config.green, b: config.blue },
     brightness: config.brightness,
     contrast: config.contrast,
-    saturation: config.saturation
+    saturation: config.saturation,
+    posterization: config.posterization
   })
 })
 
