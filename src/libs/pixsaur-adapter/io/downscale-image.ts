@@ -11,13 +11,13 @@ export type Selection = {
  * or the entire image if no selection is provided.
  *
  * @param img        Loaded HTMLImageElement
- * @param maxWidth   Desired maximum width (original or reduced)
+ * @param _maxWidth   Desired maximum width (original or reduced)
  * @param selection  Area to extract after scaling (optional)
  * @returns          ImageData of the extracted region
  */
 export function downscaleImage(
   img: HTMLImageElement,
-  maxWidth: number,
+  _maxWidth: number,
   selection?: Selection
 ): ImageData {
   // 1. calcul du scale pour limiter la largeur
