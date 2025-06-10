@@ -31,6 +31,7 @@ export function ImageSelector() {
   useEffect(() => {
     if (canvasRef.current && src) {
       const ctx = canvasRef.current.getContext('2d')!
+      ctx.imageSmoothingEnabled = true // Disable smoothing for pixel art
       ctx.putImageData(src, 0, 0)
     }
   }, [src])
