@@ -111,8 +111,8 @@ export const previewImageAtom = atom((get) => {
   finalCanvas.width = targetW
   finalCanvas.height = targetH
   const finalCtx = finalCanvas.getContext('2d')!
-  finalCtx.imageSmoothingEnabled = false
-
+  finalCtx.imageSmoothingEnabled = true
+  finalCtx.imageSmoothingQuality = 'high'
   const dx = Math.floor((targetW - remapped.width) / 2)
   const dy = Math.floor((targetH - remapped.height) / 2)
 

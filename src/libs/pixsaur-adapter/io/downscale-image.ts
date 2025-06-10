@@ -21,7 +21,7 @@ export function downscaleImage(
   selection?: Selection
 ): ImageData {
   // 1. calcul du scale pour limiter la largeur
-  void maxWidth
+
   const scale = 1
 
   const w = Math.floor(img.width * scale)

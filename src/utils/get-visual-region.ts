@@ -25,6 +25,7 @@ export function getVisualRegion(
   extractCanvas.width = src.width
   extractCanvas.height = src.height
   const extractCtx = extractCanvas.getContext('2d')!
+  extractCtx.imageSmoothingEnabled = true // pas de lissage
   extractCtx.putImageData(src, 0, 0)
   return extractCtx.getImageData(sx, sy, sw, sh)
 }
@@ -53,7 +54,7 @@ export function getVisualRegionNormalized(src: ImageData, mode: CpcModeKey) {
   scaledCanvas.width = scaledW
   scaledCanvas.height = scaledH
   const scaledCtx = scaledCanvas.getContext('2d')!
-  scaledCtx.imageSmoothingEnabled = false
+  scaledCtx.imageSmoothingEnabled = true
 
   const regionCanvas = document.createElement('canvas')
   regionCanvas.width = src.width

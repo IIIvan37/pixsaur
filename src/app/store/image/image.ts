@@ -6,7 +6,7 @@ import {
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import { configAtom } from '../config/config'
 
-const LOGICAL_WIDTH = 400
+const LOGICAL_WIDTH = 800
 
 // Atomes de base
 export const imageAtom = atom<HTMLImageElement | null>(null)
