@@ -1,0 +1,21 @@
+{
+	"siteId": "aa71b53d-0f84-4d0a-a63d-8797601058e3",
+	"geolocation": {
+		"data": {
+			"city": "Tours",
+			"country": {
+				"code": "FR",
+				"name": "France"
+			},
+			"subdivision": {
+				"code": "CVL",
+				"name": "Centre-Val de Loire"
+			},
+			"timezone": "Europe/Paris",
+			"latitude": 47.3983,
+			"longitude": 0.7037,
+			"postalCode": "37000"
+		},
+		"timestamp": 1749733041962
+	}
+}
