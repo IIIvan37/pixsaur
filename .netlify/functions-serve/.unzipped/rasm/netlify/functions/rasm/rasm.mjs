@@ -15,28 +15,29 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
 
 // netlify/functions/rasm/rasm.mts
 import path from "path";
-var { spawn } = __require("child_process");
-var rasm_default = (request, context) => {
-  const rasm = spawn(path.join(process.cwd(), "bin", "rasm"), [
-    path.join(process.cwd(), "asm", "main.asm"),
-    "-o",
-    "pixsaur"
-  ]);
-  rasm.stdout.on("data", (data) => {
-    console.log(`stdout: ${data}`);
-  });
-  rasm.stderr.on("data", (data) => {
-    console.log(`stderr: ${data}`);
-  });
-  rasm.on("error", (error) => {
-    console.log(`error: ${error.message}`);
-  });
-  rasm.on("close", (code) => {
-    console.log(`child process exited with code ${code}`);
-  });
-  const url = new URL(request.url);
-  const subject = url.searchParams.get("name") || "World";
-  return new Response(`Hello ${subject}`);
+import fs from "fs/promises";
+var { exec } = __require("child_process");
+var rasm_default = async (request, context) => {
+  const res = exec(
+    `${path.join(process.cwd())}/bin/rasm ./asm/main.asm -o pixsaur`,
+    async (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return new Response(`Error: ${error.message}`, { status: 500 });
+      }
+      if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        return new Response(`Error: ${stderr}`, { status: 500 });
+      }
+      const out = await fs.readFile(
+        path.join(process.cwd(), "pixsaur.dsk"),
+        "binary"
+      );
+      console.log("here", out);
+      return new Response(out);
+    }
+  );
+  console.log("res", res);
 };
 export {
   rasm_default as default

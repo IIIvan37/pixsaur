@@ -2,8 +2,25 @@ import ImageConverter from './components/image-converter/image-converter'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 
 import styles from '@/styles/app.module.css'
+import { useEffect } from 'react'
 
 export default function App() {
+  const getRasm = async () => {
+    const res = await fetch('./.netlify/functions/rasm')
+    if (!res.ok) {
+      console.error('Failed to fetch rasm binary:', res.statusText)
+      return
+    }
+    const blob = await res.blob()
+    console.log('blob', blob)
+  }
+
+  useEffect(() => {
+    getRasm()
+  }, [])
+
+  useEffect(() => {})
+  // Preload the logo image
   return (
     <ThemeProvider>
       <main className={styles.container}>

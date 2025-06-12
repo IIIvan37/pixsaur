@@ -1,32 +1,30 @@
 import { Context } from '@netlify/functions'
-const { spawn } = require('child_process')
+const { exec } = require('child_process')
 import path from 'path'
+import fs from 'fs/promises'
 
-export default (request: Request, context: Context) => {
-  const rasm = spawn(path.join(process.cwd(), 'bin', 'rasm'), [
-    path.join(process.cwd(), 'asm', 'main.asm'),
-    '-o',
-    'pixsaur'
-  ])
+export default async (request: Request, context: Context) => {
+  const res = exec(
+    `${path.join(process.cwd())}/bin/rasm ./asm/main.asm -o pixsaur`,
+    async (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`)
+        return new Response(`Error: ${error.message}`, { status: 500 })
+      }
+      if (stderr) {
+        console.error(`stderr: ${stderr}`)
+        return new Response(`Error: ${stderr}`, { status: 500 })
+      }
 
-  rasm.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`)
-  })
+      const out = await fs.readFile(
+        path.join(process.cwd(), 'pixsaur.dsk'),
+        'binary'
+      )
 
-  rasm.stderr.on('data', (data) => {
-    console.log(`stderr: ${data}`)
-  })
+      console.log('here', out)
+      return new Response(out)
+    }
+  )
 
-  rasm.on('error', (error) => {
-    console.log(`error: ${error.message}`)
-  })
-
-  rasm.on('close', (code) => {
-    console.log(`child process exited with code ${code}`)
-  })
-
-  const url = new URL(request.url)
-  const subject = url.searchParams.get('name') || 'World'
-
-  return new Response(`Hello ${subject}`)
+  console.log('res', res)
 }

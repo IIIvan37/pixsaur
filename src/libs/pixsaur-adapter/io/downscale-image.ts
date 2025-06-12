@@ -20,6 +20,7 @@ export function downscaleImage(
   maxWidth: number,
   selection?: Selection
 ): ImageData {
+  void maxWidth
   // 1. calcul du scale pour limiter la largeur
 
   const scale = 1

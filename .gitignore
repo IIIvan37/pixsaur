@@ -25,3 +25,6 @@ dist-ssr
 *.icloud
 *.zip
 disk.dsk
+
+# Local Netlify folder
+.netlify
