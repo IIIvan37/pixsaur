@@ -1,5 +1,14 @@
+import {
+  ColorSpaceDistanceMetric,
+  DistanceFn,
+  getDistanceFn
+} from '../metric/distance'
+import { DitheringConfig } from '../quant'
+import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
+import { Vector, ColorSpace } from '../type'
+
 const BAYER_MATRICES: Record<
-  'bayer2x2' | 'bayer4x4',
+  'bayer2x2' | 'bayer4x4' | 'bayer8x8',
   { size: number; matrix: number[][] }
 > = {
   bayer2x2: {
@@ -17,7 +26,89 @@ const BAYER_MATRICES: Record<
       [3, 11, 1, 9],
       [15, 7, 13, 5]
     ]
+  },
+  bayer8x8: {
+    size: 8,
+    matrix: [
+      [0, 32, 8, 40, 2, 34, 10, 42],
+      [48, 16, 56, 24, 50, 18, 58, 26],
+      [12, 44, 4, 36, 14, 46, 6, 38],
+      [60, 28, 52, 20, 62, 30, 54, 22],
+      [3, 35, 11, 43, 1, 33, 9, 41],
+      [51, 19, 59, 27, 49, 17, 57, 25],
+      [15, 47, 7, 39, 13, 45, 5, 37],
+      [63, 31, 55, 23, 61, 29, 53, 21]
+    ]
   }
+}
+
+function pseudoRandomVec(
+  x: number,
+  y: number,
+  magnitude: number
+): [number, number, number] {
+  const seed = (x * 374761393 + y * 668265263) ^ (x * y)
+  const h = (seed ^ (seed >>> 13)) * 1274126177
+  const r1 = (((h >>> 0) & 0xff) / 255 - 0.5) * magnitude
+  const r2 = (((h >>> 8) & 0xff) / 255 - 0.5) * magnitude
+  const r3 = (((h >>> 16) & 0xff) / 255 - 0.5) * magnitude
+  return [r1, r2, r3]
+}
+
+export function applyYliluoma1Dither(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  paletteCS: Float32Array[],
+  paletteOut: Uint8ClampedArray[],
+  config: DitheringConfig,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const { intensity } = config
+  const { size, matrix } = BAYER_MATRICES['bayer8x8']
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const o = i * 4
+
+      // Lire pixel source
+      pixel[0] = bufCS[i * 3 + 0]
+      pixel[1] = bufCS[i * 3 + 1]
+      pixel[2] = bufCS[i * 3 + 2]
+
+      // Offset déterministe
+      const tx = x % size
+      const ty = y % size
+      const t = matrix[ty][tx] / (size * size) - 0.5 // [-0.5, 0.5]
+      const [dx, dy, dz] = pseudoRandomVec(x, y, intensity * t * 2 * 255) // +/-127 * intensity * t
+
+      pixel[0] = Math.max(0, Math.min(255, pixel[0] + dx))
+      pixel[1] = Math.max(0, Math.min(255, pixel[1] + dy))
+      pixel[2] = Math.max(0, Math.min(255, pixel[2] + dz))
+
+      // Trouver la couleur la plus proche
+      let best = 0
+      let minDist = Infinity
+      for (let p = 0; p < paletteCS.length; p++) {
+        const dist = distFn(pixel, paletteCS[p])
+        if (dist < minDist) {
+          minDist = dist
+          best = p
+        }
+      }
+
+      const [r, g, b] = paletteOut[best]
+      out[o + 0] = r
+      out[o + 1] = g
+      out[o + 2] = b
+      out[o + 3] = 255
+    }
+  }
+
+  return out
 }
 
 export function applyBayerDither(
@@ -28,7 +119,7 @@ export function applyBayerDither(
   paletteOut: Uint8ClampedArray[],
   config: DitheringConfig,
   distFn: DistanceFn,
-  mode: 'bayer2x2' | 'bayer4x4'
+  mode: 'bayer2x2' | 'bayer4x4' | 'bayer8x8'
 ): Uint8ClampedArray {
   const { intensity } = config
   const out = new Uint8ClampedArray(width * height * 4)
@@ -96,7 +187,6 @@ export function applyNoDither(
       }
     }
 
-    console.log(bestI, paletteOut)
     const outIdx = i * 4
     const color = paletteOut[bestI]
     out[outIdx + 0] = color[0]
@@ -107,15 +197,6 @@ export function applyNoDither(
 
   return out
 }
-
-import {
-  ColorSpaceDistanceMetric,
-  DistanceFn,
-  getDistanceFn
-} from '../metric/distance'
-import { DitheringConfig } from '../quant'
-import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
-import { Vector, ColorSpace } from '../type'
 
 export function applyFloydSteinbergDither(
   bufCS: Float32Array,
@@ -230,7 +311,11 @@ export function mapAndDither(
       distFn,
       intensity
     )
-  } else if (mode === 'bayer2x2' || mode === 'bayer4x4') {
+  } else if (
+    mode === 'bayer2x2' ||
+    mode === 'bayer4x4' ||
+    mode === 'bayer8x8'
+  ) {
     return applyBayerDither(
       bufCS,
       width,
@@ -240,6 +325,16 @@ export function mapAndDither(
       config,
       distFn,
       mode
+    )
+  } else if (mode === 'yioluma1') {
+    return applyYliluoma1Dither(
+      bufCS,
+      width,
+      height,
+      paletteCS,
+      paletteOut,
+      config,
+      distFn
     )
   } else {
     console.warn(`Unsupported dithering mode: ${mode}`)
