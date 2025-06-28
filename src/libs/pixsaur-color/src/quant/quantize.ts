@@ -6,7 +6,12 @@ import { ColorSpace, Vector } from '../type'
 import { selectContrastedSubset } from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
 
-export type DitheringMode = 'floydSteinberg' | 'bayer2x2' | 'bayer4x4'
+export type DitheringMode =
+  | 'floydSteinberg'
+  | 'bayer2x2'
+  | 'bayer4x4'
+  | 'bayer8x8'
+  | 'yioluma1'
 
 export type DitheringConfig = {
   mode: DitheringMode | 'none'
@@ -54,7 +59,7 @@ export function createQuantizer({
   const distFn: DistanceFn = getDistanceFn(colorSpace, distanceMetric)
 
   const vecs = bufferToVectors(buf)
-  console.log('Input vectors:', vecs.length)
+
   const workingPal = basePalette.map((c) => toW([...c] as Vector))
 
   const preIdx = preselected

@@ -7,7 +7,9 @@ import styles from './dithering-selector.module.css'
 const MODES = [
   { value: 'floydSteinberg', label: 'Floyd–Steinberg' },
   { value: 'bayer2x2', label: 'Bayer 2x2' },
-  { value: 'bayer4x4', label: 'Bayer 4x4' }
+  { value: 'bayer4x4', label: 'Bayer 4x4' },
+  { value: 'bayer8x8', label: 'bayer 8x8' },
+  { value: 'yioluma1', label: 'Yioluma 1' }
 ]
 
 export function DitheringSelector() {
