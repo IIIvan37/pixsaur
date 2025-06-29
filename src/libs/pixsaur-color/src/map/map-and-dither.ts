@@ -125,7 +125,7 @@ function applyYliluoma2Dither(
   const { size, matrix } = BAYER_MATRICES['bayer8x8']
 
   const out = new Uint8ClampedArray(width * height * 4)
-  // const pixel = new Float32Array(3)
+  const pixel = new Float32Array(3)
   const errorBuf = new Float32Array(width * height * 3) // erreur persistante par pixel
 
   for (let y = 0; y < height; y++) {
@@ -134,18 +134,22 @@ function applyYliluoma2Dither(
       const i3 = i * 3
       const o4 = i * 4
 
-      // Lire la couleur source
+      // Lire la couleur source + erreur mémorisée
       const r = bufCS[i3 + 0] + errorBuf[i3 + 0]
       const g = bufCS[i3 + 1] + errorBuf[i3 + 1]
       const b = bufCS[i3 + 2] + errorBuf[i3 + 2]
 
-      // Chercher les 2 couleurs les plus proches
-      let best = 0
-      let second = 0
-      let bestD = Infinity
-      let secondD = Infinity
+      pixel[0] = r
+      pixel[1] = g
+      pixel[2] = b
+
+      // Trouver les 2 couleurs les plus proches
+      let best = 0,
+        second = 0
+      let bestD = Infinity,
+        secondD = Infinity
       for (let p = 0; p < paletteCS.length; p++) {
-        const d = distFn([r, g, b], paletteCS[p])
+        const d = distFn(pixel, paletteCS[p])
         if (d < bestD) {
           second = best
           secondD = bestD
@@ -157,19 +161,24 @@ function applyYliluoma2Dither(
         }
       }
 
-      // Calcul de distance relative
+      // Seuil spatial [0..1]
       const t = matrix[y % size][x % size] / (size * size)
-      const mix = t < 0.5 ? best : second
 
-      const [cr, cg, cb] = paletteCS[mix]
-      const errR = r - cr
-      const errG = g - cg
-      const errB = b - cb
+      // Transition douce contrôlée par intensity
+      const w = Math.max(0, Math.min(1, (t - 0.5) * intensity + 0.5))
+      const mix = w < 0.5 ? best : second
 
+      // Calcul de l’erreur par rapport au pixel original
+      const errR = r - paletteCS[mix][0]
+      const errG = g - paletteCS[mix][1]
+      const errB = b - paletteCS[mix][2]
+
+      // On accumule une fraction de l’erreur, contrôlée par intensity
       errorBuf[i3 + 0] = errR * intensity
       errorBuf[i3 + 1] = errG * intensity
       errorBuf[i3 + 2] = errB * intensity
 
+      // Écrire la couleur choisie
       const [or, og, ob] = paletteOut[mix]
       out[o4 + 0] = or
       out[o4 + 1] = og
