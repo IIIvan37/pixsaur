@@ -42,6 +42,7 @@ const BAYER_MATRICES: Record<
   }
 }
 
+//
 function pseudoRandomVec(
   x: number,
   y: number,
@@ -105,6 +106,84 @@ export function applyYliluoma1Dither(
       out[o + 1] = g
       out[o + 2] = b
       out[o + 3] = 255
+    }
+  }
+
+  return out
+}
+
+function applyYliluoma2Dither(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  paletteCS: Float32Array[],
+  paletteOut: Uint8ClampedArray[],
+  config: DitheringConfig,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const { intensity } = config
+  const { size, matrix } = BAYER_MATRICES['bayer8x8']
+
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+  const errorBuf = new Float32Array(width * height * 3) // erreur persistante par pixel
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const i3 = i * 3
+      const o4 = i * 4
+
+      // Lire la couleur source + erreur mémorisée
+      const r = bufCS[i3 + 0] + errorBuf[i3 + 0]
+      const g = bufCS[i3 + 1] + errorBuf[i3 + 1]
+      const b = bufCS[i3 + 2] + errorBuf[i3 + 2]
+
+      pixel[0] = r
+      pixel[1] = g
+      pixel[2] = b
+
+      // Trouver les 2 couleurs les plus proches
+      let best = 0,
+        second = 0
+      let bestD = Infinity,
+        secondD = Infinity
+      for (let p = 0; p < paletteCS.length; p++) {
+        const d = distFn(pixel, paletteCS[p])
+        if (d < bestD) {
+          second = best
+          secondD = bestD
+          best = p
+          bestD = d
+        } else if (d < secondD) {
+          second = p
+          secondD = d
+        }
+      }
+
+      // Seuil spatial [0..1]
+      const t = matrix[y % size][x % size] / (size * size)
+
+      // Transition douce contrôlée par intensity
+      const w = Math.max(0, Math.min(1, (t - 0.5) * intensity + 0.5))
+      const mix = w < 0.5 ? best : second
+
+      // Calcul de l’erreur par rapport au pixel original
+      const errR = r - paletteCS[mix][0]
+      const errG = g - paletteCS[mix][1]
+      const errB = b - paletteCS[mix][2]
+
+      // On accumule une fraction de l’erreur, contrôlée par intensity
+      errorBuf[i3 + 0] = errR * intensity
+      errorBuf[i3 + 1] = errG * intensity
+      errorBuf[i3 + 2] = errB * intensity
+
+      // Écrire la couleur choisie
+      const [or, og, ob] = paletteOut[mix]
+      out[o4 + 0] = or
+      out[o4 + 1] = og
+      out[o4 + 2] = ob
+      out[o4 + 3] = 255
     }
   }
 
@@ -326,8 +405,18 @@ export function mapAndDither(
       distFn,
       mode
     )
-  } else if (mode === 'yioluma1') {
+  } else if (mode === 'ylioluma1') {
     return applyYliluoma1Dither(
+      bufCS,
+      width,
+      height,
+      paletteCS,
+      paletteOut,
+      config,
+      distFn
+    )
+  } else if (mode === 'ylioluma2') {
+    return applyYliluoma2Dither(
       bufCS,
       width,
       height,

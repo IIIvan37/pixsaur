@@ -11,7 +11,8 @@ export type DitheringMode =
   | 'bayer2x2'
   | 'bayer4x4'
   | 'bayer8x8'
-  | 'yioluma1'
+  | 'ylioluma1'
+  | 'ylioluma2'
 
 export type DitheringConfig = {
   mode: DitheringMode | 'none'
