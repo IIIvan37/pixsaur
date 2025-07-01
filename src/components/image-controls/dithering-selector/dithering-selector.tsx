@@ -10,7 +10,9 @@ const MODES = [
   { value: 'bayer4x4', label: 'Bayer 4x4' },
   { value: 'bayer8x8', label: 'bayer 8x8' },
   { value: 'ylioluma1', label: 'Ylioluma 1' },
-  { value: 'ylioluma2', label: 'Ylioluma 2' }
+  { value: 'ylioluma2', label: 'Ylioluma 2' },
+  { value: 'atkinson', label: 'Atkinson' },
+  { value: 'halftone4x4', label: 'Halftone 4x4' }
 ]
 
 export function DitheringSelector() {
