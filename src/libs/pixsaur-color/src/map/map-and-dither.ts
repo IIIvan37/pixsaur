@@ -1,14 +1,5 @@
-import {
-  ColorSpaceDistanceMetric,
-  DistanceFn,
-  getDistanceFn
-} from '../metric/distance'
-import { DitheringConfig } from '../quant'
-import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
-import { Vector, ColorSpace } from '../type'
-
 const BAYER_MATRICES: Record<
-  'bayer2x2' | 'bayer4x4' | 'bayer8x8',
+  'bayer2x2' | 'bayer4x4',
   { size: number; matrix: number[][] }
 > = {
   bayer2x2: {
@@ -26,168 +17,7 @@ const BAYER_MATRICES: Record<
       [3, 11, 1, 9],
       [15, 7, 13, 5]
     ]
-  },
-  bayer8x8: {
-    size: 8,
-    matrix: [
-      [0, 32, 8, 40, 2, 34, 10, 42],
-      [48, 16, 56, 24, 50, 18, 58, 26],
-      [12, 44, 4, 36, 14, 46, 6, 38],
-      [60, 28, 52, 20, 62, 30, 54, 22],
-      [3, 35, 11, 43, 1, 33, 9, 41],
-      [51, 19, 59, 27, 49, 17, 57, 25],
-      [15, 47, 7, 39, 13, 45, 5, 37],
-      [63, 31, 55, 23, 61, 29, 53, 21]
-    ]
   }
-}
-
-//
-function pseudoRandomVec(
-  x: number,
-  y: number,
-  magnitude: number
-): [number, number, number] {
-  const seed = (x * 374761393 + y * 668265263) ^ (x * y)
-  const h = (seed ^ (seed >>> 13)) * 1274126177
-  const r1 = (((h >>> 0) & 0xff) / 255 - 0.5) * magnitude
-  const r2 = (((h >>> 8) & 0xff) / 255 - 0.5) * magnitude
-  const r3 = (((h >>> 16) & 0xff) / 255 - 0.5) * magnitude
-  return [r1, r2, r3]
-}
-
-export function applyYliluoma1Dither(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
-  config: DitheringConfig,
-  distFn: DistanceFn
-): Uint8ClampedArray {
-  const { intensity } = config
-  const { size, matrix } = BAYER_MATRICES['bayer8x8']
-  const out = new Uint8ClampedArray(width * height * 4)
-  const pixel = new Float32Array(3)
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const i = y * width + x
-      const o = i * 4
-
-      // Lire pixel source
-      pixel[0] = bufCS[i * 3 + 0]
-      pixel[1] = bufCS[i * 3 + 1]
-      pixel[2] = bufCS[i * 3 + 2]
-
-      // Offset déterministe
-      const tx = x % size
-      const ty = y % size
-      const t = matrix[ty][tx] / (size * size) - 0.5 // [-0.5, 0.5]
-      const [dx, dy, dz] = pseudoRandomVec(x, y, intensity * t * 2 * 255) // +/-127 * intensity * t
-
-      pixel[0] = Math.max(0, Math.min(255, pixel[0] + dx))
-      pixel[1] = Math.max(0, Math.min(255, pixel[1] + dy))
-      pixel[2] = Math.max(0, Math.min(255, pixel[2] + dz))
-
-      // Trouver la couleur la plus proche
-      let best = 0
-      let minDist = Infinity
-      for (let p = 0; p < paletteCS.length; p++) {
-        const dist = distFn(pixel, paletteCS[p])
-        if (dist < minDist) {
-          minDist = dist
-          best = p
-        }
-      }
-
-      const [r, g, b] = paletteOut[best]
-      out[o + 0] = r
-      out[o + 1] = g
-      out[o + 2] = b
-      out[o + 3] = 255
-    }
-  }
-
-  return out
-}
-
-function applyYliluoma2Dither(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
-  config: DitheringConfig,
-  distFn: DistanceFn
-): Uint8ClampedArray {
-  const { intensity } = config
-  const { size, matrix } = BAYER_MATRICES['bayer8x8']
-
-  const out = new Uint8ClampedArray(width * height * 4)
-  const pixel = new Float32Array(3)
-  const errorBuf = new Float32Array(width * height * 3) // erreur persistante par pixel
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const i = y * width + x
-      const i3 = i * 3
-      const o4 = i * 4
-
-      // Lire la couleur source + erreur mémorisée
-      const r = bufCS[i3 + 0] + errorBuf[i3 + 0]
-      const g = bufCS[i3 + 1] + errorBuf[i3 + 1]
-      const b = bufCS[i3 + 2] + errorBuf[i3 + 2]
-
-      pixel[0] = r
-      pixel[1] = g
-      pixel[2] = b
-
-      // Trouver les 2 couleurs les plus proches
-      let best = 0,
-        second = 0
-      let bestD = Infinity,
-        secondD = Infinity
-      for (let p = 0; p < paletteCS.length; p++) {
-        const d = distFn(pixel, paletteCS[p])
-        if (d < bestD) {
-          second = best
-          secondD = bestD
-          best = p
-          bestD = d
-        } else if (d < secondD) {
-          second = p
-          secondD = d
-        }
-      }
-
-      // Seuil spatial [0..1]
-      const t = matrix[y % size][x % size] / (size * size)
-
-      // Transition douce contrôlée par intensity
-      const w = Math.max(0, Math.min(1, (t - 0.5) * intensity + 0.5))
-      const mix = w < 0.5 ? best : second
-
-      // Calcul de l’erreur par rapport au pixel original
-      const errR = r - paletteCS[mix][0]
-      const errG = g - paletteCS[mix][1]
-      const errB = b - paletteCS[mix][2]
-
-      // On accumule une fraction de l’erreur, contrôlée par intensity
-      errorBuf[i3 + 0] = errR * intensity
-      errorBuf[i3 + 1] = errG * intensity
-      errorBuf[i3 + 2] = errB * intensity
-
-      // Écrire la couleur choisie
-      const [or, og, ob] = paletteOut[mix]
-      out[o4 + 0] = or
-      out[o4 + 1] = og
-      out[o4 + 2] = ob
-      out[o4 + 3] = 255
-    }
-  }
-
-  return out
 }
 
 export function applyBayerDither(
@@ -198,7 +28,7 @@ export function applyBayerDither(
   paletteOut: Uint8ClampedArray[],
   config: DitheringConfig,
   distFn: DistanceFn,
-  mode: 'bayer2x2' | 'bayer4x4' | 'bayer8x8'
+  mode: 'bayer2x2' | 'bayer4x4'
 ): Uint8ClampedArray {
   const { intensity } = config
   const out = new Uint8ClampedArray(width * height * 4)
@@ -266,6 +96,7 @@ export function applyNoDither(
       }
     }
 
+    console.log(bestI, paletteOut)
     const outIdx = i * 4
     const color = paletteOut[bestI]
     out[outIdx + 0] = color[0]
@@ -276,6 +107,15 @@ export function applyNoDither(
 
   return out
 }
+
+import {
+  ColorSpaceDistanceMetric,
+  DistanceFn,
+  getDistanceFn
+} from '../metric/distance'
+import { DitheringConfig } from '../quant'
+import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
+import { Vector, ColorSpace } from '../type'
 
 export function applyFloydSteinbergDither(
   bufCS: Float32Array,
@@ -390,11 +230,7 @@ export function mapAndDither(
       distFn,
       intensity
     )
-  } else if (
-    mode === 'bayer2x2' ||
-    mode === 'bayer4x4' ||
-    mode === 'bayer8x8'
-  ) {
+  } else if (mode === 'bayer2x2' || mode === 'bayer4x4') {
     return applyBayerDither(
       bufCS,
       width,
@@ -404,26 +240,6 @@ export function mapAndDither(
       config,
       distFn,
       mode
-    )
-  } else if (mode === 'ylioluma1') {
-    return applyYliluoma1Dither(
-      bufCS,
-      width,
-      height,
-      paletteCS,
-      paletteOut,
-      config,
-      distFn
-    )
-  } else if (mode === 'ylioluma2') {
-    return applyYliluoma2Dither(
-      bufCS,
-      width,
-      height,
-      paletteCS,
-      paletteOut,
-      config,
-      distFn
     )
   } else {
     console.warn(`Unsupported dithering mode: ${mode}`)
