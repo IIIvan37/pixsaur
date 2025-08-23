@@ -25,6 +25,7 @@ export default function PixsaurPopover({
   sideOffset = 8,
   collisionPadding = 8
 }: Props) {
+  // Debug log removed
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>{trigger}</Popover.Trigger>
@@ -41,9 +42,7 @@ export default function PixsaurPopover({
             bottom: collisionPadding
           }}
           avoidCollisions={true}
-          onInteractOutside={() => {
-            onOpenChange(false)
-          }}
+          // onInteractOutside désactivé pour test
         >
           {children}
           <Popover.Arrow className={styles.arrow} />

@@ -41,3 +41,18 @@
   margin-top: var(--spacing-sm);
   text-align: center;
 }
+
+.popover {
+  position: absolute;
+  z-index: 10;
+  background: #000;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid #eee;
+  padding: 16px;
+  min-width: 260px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
