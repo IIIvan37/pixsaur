@@ -10,27 +10,31 @@ import clsx from 'clsx';
 export type ColorGridViewProps = {
   fullPalette: CPCColor[];
   slots: PaletteSlot[];
-  slotIdx: number;
-  focusedColorIdx: number;
-  onColorSelect: (color: CPCColor, slotIdx: number) => void;
-  onToggleLock: (idx: number) => void;
-  colorOptionRefs: React.RefObject<HTMLButtonElement[]>;
-  optionRefs: React.RefObject<HTMLButtonElement[]>;
+  slotIndex: number;
+  focusedColorIndex: number;
+  onColorSelect: (color: CPCColor, slotIndex: number) => void;
+  onToggleLock: (index: number) => void;
+  colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>;
+  optionRefs: React.RefObject<(HTMLButtonElement | null)[]>;
   onClose: () => void;
 };
 
 export function ColorGridView({
   fullPalette,
   slots,
-  slotIdx,
-  focusedColorIdx,
+  slotIndex,
+  focusedColorIndex,
   onColorSelect,
   onToggleLock,
   colorOptionRefs,
   optionRefs,
   onClose
 }: ColorGridViewProps) {
-  const slot = slots[slotIdx];
+  // Helper to check if a color is used in the palette (excluding current slot)
+  const isColorUsed = (s: PaletteSlot, pc: CPCColor, index: number) => {
+    return s.color && index !== slotIndex && Array.from(s.color).every((v, j) => v === pc.vector[j]);
+  };
+  const slot = slots[slotIndex];
   return (
     <div className="popover" style={{ position: 'relative', minHeight: 140, maxHeight: 260 }}>
       <div
@@ -38,14 +42,10 @@ export function ColorGridView({
         role='listbox'
         aria-label='Options de couleur'
       >
-        {fullPalette.map((pc: CPCColor, optionIdx: number) => {
-          const isUsed = slots.some((s: PaletteSlot, i: number) => {
-            if (i === slotIdx) return false;
-            if (!s.color) return false;
-            return Array.from(s.color).every((v: number, j: number) => v === pc.vector[j]);
-          });
+        {fullPalette.map((pc: CPCColor, optionIndex: number) => {
+          const isUsed = slots.some((s: PaletteSlot, i: number) => isColorUsed(s, pc, i));
           return (
-            <div key={optionIdx}>
+            <div key={optionIndex}>
               <ColorButton
                 colorHex={`#${pc.hex}`}
                 className={clsx(
@@ -54,15 +54,20 @@ export function ColorGridView({
                 )}
                 title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
                 role='option'
-                aria-selected={focusedColorIdx === optionIdx}
+                aria-selected={focusedColorIndex === optionIndex}
                 disabled={isUsed}
-                tabIndex={focusedColorIdx === optionIdx ? 0 : -1}
+                tabIndex={focusedColorIndex === optionIndex ? 0 : -1}
                 buttonRef={(el: HTMLButtonElement | null) => {
-                  if (colorOptionRefs && el)
-                    colorOptionRefs.current[optionIdx] = el;
-                  if (el) optionRefs.current[optionIdx] = el;
+                  React.useEffect(() => {
+                    if (colorOptionRefs) colorOptionRefs.current[optionIndex] = el;
+                    optionRefs.current[optionIndex] = el;
+                    return () => {
+                      if (colorOptionRefs) colorOptionRefs.current[optionIndex] = null;
+                      optionRefs.current[optionIndex] = null;
+                    };
+                  }, [el, optionIndex]);
                 }}
-                onClick={() => onColorSelect(pc, slotIdx)}
+                onClick={() => onColorSelect(pc, slotIndex)}
               />
             </div>
           );
@@ -71,19 +76,10 @@ export function ColorGridView({
       {/* Affiche le bouton lock uniquement si le slot est rempli */}
       {slot.color && (
         <Button
+          className={styles.lockButton}
           variant="secondary"
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            right: 6,
-            fontWeight: 600,
-            fontSize: '1rem',
-            minWidth: 80,
-            paddingRight: 8,
-            paddingLeft: 8
-          }}
           onClick={() => {
-            onToggleLock(slotIdx);
+            onToggleLock(slotIndex);
             onClose();
           }}
         >

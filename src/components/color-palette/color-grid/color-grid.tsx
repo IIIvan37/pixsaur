@@ -7,45 +7,51 @@ import { ColorGridView } from './color-grid-view'
 type ColorGridProps = {
   fullPalette: CPCColor[]
   slots: PaletteSlot[]
-  slotIdx: number
-  focusedColorIdx: number
-  onColorSelect: (color: CPCColor, slotIdx: number) => void
-
+  slotIndex: number
+  focusedColorIndex: number
+  onColorSelect: (color: CPCColor, slotIndex: number) => void
   colorOptionRefs?: React.RefObject<(HTMLButtonElement | null)[]>
 }
 
 export const ColorGrid: React.FC<ColorGridProps> = ({
   fullPalette,
   slots,
-  slotIdx,
-  focusedColorIdx,
+  slotIndex,
+  focusedColorIndex,
   onColorSelect,
-
   colorOptionRefs
 }) => {
-  const optionRefs = useRef<HTMLButtonElement[]>([])
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
   const initialFocusDone = useRef(false)
 
   useEffect(() => {
     if (!initialFocusDone.current) {
-      const btn = optionRefs.current[focusedColorIdx]
+      const btn = optionRefs.current[focusedColorIndex]
       if (btn) btn.focus()
       initialFocusDone.current = true
     }
-  }, [focusedColorIdx])
+  }, [focusedColorIndex])
+
+  // Placeholder handlers for unimplemented methods
+  // Placeholder functions for unimplemented handlers (camelCase)
+  const handleToggleLock = (): void => {
+    throw new Error('Function not implemented.');
+  };
+  const handleClose = (): void => {
+    throw new Error('Function not implemented.');
+  };
 
   return (
     <ColorGridView
       fullPalette={fullPalette}
       slots={slots}
-      slotIdx={slotIdx}
-      focusedColorIdx={focusedColorIdx}
+      slotIndex={slotIndex}
+      focusedColorIndex={focusedColorIndex}
       onColorSelect={onColorSelect}
-      colorOptionRefs={(colorOptionRefs as React.RefObject<HTMLButtonElement[]>) ??
-        (optionRefs as React.RefObject<HTMLButtonElement[]>)}
+      colorOptionRefs={colorOptionRefs ?? optionRefs}
       optionRefs={optionRefs}
-      onToggleLock={() => {}}
-      onClose={() => {}}
+      onToggleLock={handleToggleLock}
+      onClose={handleClose}
     />
   )
 }
