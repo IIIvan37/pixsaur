@@ -111,8 +111,8 @@ export const ColorPaletteView = (
                   <ColorGridView
                     fullPalette={fullPalette}
                     slots={slots}
-                    slotIdx={idx}
-                    focusedColorIdx={focusedColorIdx}
+                    slotIndex={idx}
+                    focusedColorIndex={focusedColorIdx}
                     onColorSelect={(color) => handleColorSelect(color, idx)}
                     colorOptionRefs={colorOptionRefs}
                     optionRefs={colorOptionRefs}

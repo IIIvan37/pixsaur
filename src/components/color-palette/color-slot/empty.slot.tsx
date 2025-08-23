@@ -45,8 +45,8 @@ export function EmptySlotButton({
       <ColorGrid
         fullPalette={fullPalette}
         slots={slots}
-        slotIdx={idx}
-        focusedColorIdx={focusedColorIdx}
+        slotIndex={idx}
+        focusedColorIndex={focusedColorIdx}
         onColorSelect={onColorSelect}
         colorOptionRefs={colorOptionRefs}
       />

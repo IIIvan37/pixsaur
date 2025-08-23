@@ -1,3 +1,14 @@
+/* Button for lock/unlock in color grid popover */
+.lockButton {
+  position: absolute;
+  bottom: 10px;
+  right: 6px;
+  font-weight: 600;
+  font-size: 1rem;
+  min-width: 80px;
+  padding-right: 8px;
+  padding-left: 8px;
+}
 .colorGrid {
   display: grid;
   grid-template-columns: repeat(9, 1.4rem);
