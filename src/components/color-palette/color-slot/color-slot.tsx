@@ -17,11 +17,11 @@ type ColorSlotProps = {
   buttonRef: (el: HTMLButtonElement | null) => void;
   onToggleLock: (idx: number) => void;
   onOpenPopover?: () => void;
-
+  focused?: boolean;
 };
 
 export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
-  ({ idx, color, locked, buttonRef, onToggleLock, onOpenPopover }, ref) => {
+  ({ idx, color, locked, buttonRef, onToggleLock, onOpenPopover, focused }, ref) => {
     const hex = vectorToHex(color);
     return (
       <ColorButton
@@ -29,7 +29,7 @@ export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
         colorHex={`#${hex}`}
         className={styles.colorFill}
         title={`#${hex} ${locked ? 'verrouillée' : 'déverrouillée'}`}
-        ariaSelected={undefined}
+  aria-selected={focused ? 'true' : 'false'}
         buttonRef={buttonRef}
         onClick={onOpenPopover ? () => onOpenPopover() : undefined}
       >

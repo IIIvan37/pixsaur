@@ -54,7 +54,7 @@ export function ColorGridView({
                 )}
                 title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
                 role='option'
-                ariaSelected={focusedColorIdx === optionIdx}
+                aria-selected={focusedColorIdx === optionIdx}
                 disabled={isUsed}
                 tabIndex={focusedColorIdx === optionIdx ? 0 : -1}
                 buttonRef={(el: HTMLButtonElement | null) => {

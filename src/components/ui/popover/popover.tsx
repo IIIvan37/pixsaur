@@ -25,7 +25,7 @@ export default function PixsaurPopover({
   sideOffset = 8,
   collisionPadding = 8
 }: Props) {
-  console.log('PixsaurPopover', { open });
+  // Debug log removed
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>{trigger}</Popover.Trigger>
