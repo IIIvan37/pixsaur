@@ -58,14 +58,8 @@ export function ColorGridView({
                 disabled={isUsed}
                 tabIndex={focusedColorIndex === optionIndex ? 0 : -1}
                 buttonRef={(el: HTMLButtonElement | null) => {
-                  React.useEffect(() => {
-                    if (colorOptionRefs) colorOptionRefs.current[optionIndex] = el;
-                    optionRefs.current[optionIndex] = el;
-                    return () => {
-                      if (colorOptionRefs) colorOptionRefs.current[optionIndex] = null;
-                      optionRefs.current[optionIndex] = null;
-                    };
-                  }, [el, optionIndex]);
+                  if (colorOptionRefs && colorOptionRefs.current) colorOptionRefs.current[optionIndex] = el;
+                  if (optionRefs && optionRefs.current) optionRefs.current[optionIndex] = el;
                 }}
                 onClick={() => onColorSelect(pc, slotIndex)}
               />

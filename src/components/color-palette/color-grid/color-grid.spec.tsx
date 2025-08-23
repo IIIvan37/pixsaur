@@ -37,8 +37,8 @@ describe('ColorGrid', () => {
       <ColorGrid
         fullPalette={fullPalette}
         slots={baseSlots}
-        slotIdx={1} // The empty slot
-        focusedColorIdx={0}
+  slotIndex={1} // The empty slot
+  focusedColorIndex={0}
         onColorSelect={() => {}}
       />
     )
@@ -59,8 +59,8 @@ describe('ColorGrid', () => {
       <ColorGrid
         fullPalette={fullPalette}
         slots={baseSlots}
-        slotIdx={0}
-        focusedColorIdx={0}
+  slotIndex={0}
+  focusedColorIndex={0}
         onColorSelect={() => {}}
       />
     )

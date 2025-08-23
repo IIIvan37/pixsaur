@@ -1,6 +1,6 @@
 
 // ...existing code...
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import styles from './color-slot.module.css';
 import Icon from '@/components/ui/icon';
 import { isBright } from '@/libs/pixsaur-color/src/quant/select-contrast-subset';
@@ -21,7 +21,7 @@ type ColorSlotProps = {
 };
 
 export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
-  ({ idx, color, locked, buttonRef, onToggleLock, onOpenPopover, focused }, ref) => {
+  ({ color, locked, buttonRef, onOpenPopover, focused }, ref) => {
     const hex = vectorToHex(color);
     return (
       <ColorButton
