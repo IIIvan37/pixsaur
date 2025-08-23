@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { forwardRef } from 'react'
 import clsx from 'clsx'
 import styles from './color-button.module.css'
 
@@ -15,30 +15,36 @@ type ColorButtonProps = {
   children?: React.ReactNode
 }
 
-export const ColorButton: React.FC<ColorButtonProps> = ({
-  colorHex,
-  className,
-  title,
-  role,
-  ariaSelected,
-  disabled,
-  tabIndex,
-  onClick,
-  buttonRef,
-  children
-}) => (
-  <button
-    ref={buttonRef}
-    className={clsx(styles.colorButton, className)}
-    style={{ backgroundColor: colorHex }}
-    title={title}
-    role={role}
-    aria-selected={ariaSelected}
-    disabled={disabled}
-    tabIndex={tabIndex}
-    onClick={onClick}
-    type='button'
-  >
-    {children}
-  </button>
+export const ColorButton = forwardRef<HTMLButtonElement, ColorButtonProps>(
+  ({
+    colorHex,
+    className,
+    title,
+    role,
+    ariaSelected,
+    disabled,
+    tabIndex,
+    onClick,
+    buttonRef,
+    children
+  }, ref) => (
+    <button
+      ref={el => {
+        if (buttonRef) buttonRef(el);
+        if (typeof ref === 'function') ref(el);
+        else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = el;
+      }}
+      className={clsx(styles.colorButton, className)}
+      style={{ backgroundColor: colorHex }}
+      title={title}
+      role={role}
+      aria-selected={ariaSelected}
+      disabled={disabled}
+      tabIndex={tabIndex}
+      onClick={onClick}
+      type='button'
+    >
+      {children}
+    </button>
+  )
 )

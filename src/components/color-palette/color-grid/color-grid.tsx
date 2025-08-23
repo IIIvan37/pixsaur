@@ -41,11 +41,12 @@ export const ColorGrid: React.FC<ColorGridProps> = ({
       slotIdx={slotIdx}
       focusedColorIdx={focusedColorIdx}
       onColorSelect={onColorSelect}
-      colorOptionRefs={
-        (colorOptionRefs as React.RefObject<HTMLButtonElement[]>) ??
-        (optionRefs as React.RefObject<HTMLButtonElement[]>)
-      }
-      optionRefs={optionRefs}
-    />
+      colorOptionRefs={(colorOptionRefs as React.RefObject<HTMLButtonElement[]>) ??
+        (optionRefs as React.RefObject<HTMLButtonElement[]>)}
+      optionRefs={optionRefs} onToggleLock={function (): void {
+        throw new Error('Function not implemented.')
+      } } onClose={function (): void {
+        throw new Error('Function not implemented.')
+      } }    />
   )
 }
