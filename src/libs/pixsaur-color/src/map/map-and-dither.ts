@@ -96,7 +96,6 @@ export function applyNoDither(
       }
     }
 
-    console.log(bestI, paletteOut)
     const outIdx = i * 4
     const color = paletteOut[bestI]
     out[outIdx + 0] = color[0]

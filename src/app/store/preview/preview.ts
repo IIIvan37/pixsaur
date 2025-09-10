@@ -93,7 +93,11 @@ export const previewImageAtom = atom((get) => {
 
   // remappage final en RGB visible
   const remapped = remapImageDataToPalette(
-    new ImageData(previewBuffer, normalized.width, normalized.height),
+    new ImageData(
+      new Uint8ClampedArray(previewBuffer), // Ensure buffer is correct type
+      normalized.width,
+      normalized.height
+    ),
     reducedRgb
   )
 
@@ -136,5 +140,26 @@ export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
   const raw = get(reducedPaletteRawAtom)
   const projected = raw.map(toRGB)
 
-  return projected
+  // Quantify colors to match CPC palette values (0, 128, 255)
+  const quantified = projected.map(([r, g, b]) => {
+    const quantizeCPC = (value: number): number => {
+      const levels = [0, 128, 255]
+      let best = levels[0]
+      let bestDist = Math.abs(value - best)
+
+      for (const lvl of levels) {
+        const dist = Math.abs(value - lvl)
+        if (dist < bestDist) {
+          bestDist = dist
+          best = lvl
+        }
+      }
+
+      return best
+    }
+
+    return [quantizeCPC(r), quantizeCPC(g), quantizeCPC(b)] as Vector<'RGB'>
+  })
+
+  return quantified
 })
