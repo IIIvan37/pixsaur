@@ -60,7 +60,6 @@ export function createQuantizer({
   const distFn: DistanceFn = getDistanceFn(colorSpace, distanceMetric)
 
   const vecs = bufferToVectors(buf)
-
   const workingPal = basePalette.map((c) => toW([...c] as Vector))
 
   const preIdx = preselected
@@ -75,7 +74,7 @@ export function createQuantizer({
     const counts = new Uint32Array(
       buildHistogram(vecs.map(toW), workingPal, distFn)
     )
-    console.log(`Counts: ${counts}`)
+   
     const idxs = selectTopIndices(counts, preIdx, 16)
 
     const out = idxs.map((i) => workingPal[i])
