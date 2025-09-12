@@ -7,7 +7,7 @@ export class CPUPaletteProcessor implements IPaletteProcessor {
     return true
   }
   
-  async extractDominantColors(imageData: ImageData, maxColors: number): Promise<number[][]> {
+  async extractDominantColors(_imageData: ImageData, maxColors: number): Promise<number[][]> {
     // TODO: Implémenter l'extraction de couleurs dominantes CPU
     // Pour l'instant retourne une palette CPC basique
     const cpcBasic = [

@@ -83,7 +83,7 @@ export class PixsaurWebGL {
       this.gl.deleteTexture(this.paletteTexture)
     }
 
-    this.paletteTexture = this.renderer.createTexture(palette.length, 1, paletteData)
+    this.paletteTexture = this.renderer.createTexture(new ImageData(new Uint8ClampedArray(paletteData), palette.length, 1))
   }
 
   // Apply CPC quantization only
@@ -94,7 +94,7 @@ export class PixsaurWebGL {
     this.renderer.setSize(width, height)
 
     // Create source texture
-    const sourceTexture = this.renderer.createTextureFromImageData(sourceImageData)
+    const sourceTexture = this.renderer.createTexture(sourceImageData)
 
     // Render
     this.quantizationShader.use()
@@ -129,7 +129,7 @@ export class PixsaurWebGL {
     this.renderer.setSize(width, height)
 
     // Create source texture
-    const sourceTexture = this.renderer.createTextureFromImageData(sourceImageData)
+    const sourceTexture = this.renderer.createTexture(sourceImageData)
 
     // Render
     this.bayerDitheringShader.use()

@@ -25,7 +25,7 @@ export class CPUImageProcessor implements IImageProcessor {
     })
   }
   
-  async quantizeColors(imageData: ImageData, config: IQuantizationConfig): Promise<ImageData> {
+  async quantizeColors(imageData: ImageData, _config: IQuantizationConfig): Promise<ImageData> {
     // Quantification CPC traditionnelle pixel par pixel
     const data = new Uint8ClampedArray(imageData.data)
     
@@ -41,8 +41,8 @@ export class CPUImageProcessor implements IImageProcessor {
   
   async applyDithering(
     imageData: ImageData, 
-    palette: number[][], 
-    config: IDitheringConfig
+    _palette: number[][], 
+    _config: IDitheringConfig
   ): Promise<ImageData> {
     // TODO: Implémenter le dithering CPU existant
     // Pour l'instant, retourne l'image sans dithering

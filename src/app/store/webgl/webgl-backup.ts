@@ -21,7 +21,6 @@ export const initWebGLAtom = atom(null, (_get, set) => {
 })
 
 // Atom to check if WebGL is available
-import { atom } from 'jotai'
 import { WebGLImageProcessor, type ImageAdjustmentConfig } from '../../../libs/pixsaur-webgl/src/image-processor'
 
 // Check if WebGL2 is available
