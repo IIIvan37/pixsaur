@@ -84,6 +84,26 @@ export class ImageProcessorFactory {
     adapterLogger.info('Using CPU software palette processor')
     return processor
   }
+
+  // Nouvelle méthode pour le pipeline optimisé WebGL
+  async createPipelineProcessor(): Promise<IImageProcessor> {
+    if (this.isWebGLAvailable()) {
+      try {
+        const { WebGLPipelineProcessor } = await import('../adapters/webgl-pipeline-processor')
+        const processor = new WebGLPipelineProcessor()
+        
+        if (processor.isAvailable()) {
+          adapterLogger.info('Using WebGL optimized pipeline processor (multi-pass)')
+          return processor
+        }
+      } catch (error) {
+        adapterLogger.warn('Failed to initialize WebGL pipeline processor, falling back to regular processors:', error)
+      }
+    }
+    
+    // Fallback vers le processeur WebGL/CPU normal
+    return this.createImageProcessor()
+  }
 }
 
 // Singleton global pour faciliter l'usage

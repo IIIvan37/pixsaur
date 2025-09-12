@@ -31,7 +31,10 @@ export function downscaleImage(
   const off = document.createElement('canvas')
   off.width = w
   off.height = h
-  const ctx = off.getContext('2d')!
+  const ctx = off.getContext('2d')
+  if (!ctx) {
+    throw new Error('Failed to get 2D context from canvas')
+  }
   ctx.imageSmoothingEnabled = false // pas de lissage
   ctx.drawImage(
     img,
