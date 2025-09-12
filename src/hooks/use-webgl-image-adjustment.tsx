@@ -5,6 +5,7 @@ import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { clearLastChangedKeyAtom, configAtom } from '@/app/store/config/config'
 import { webglAvailableAtom, webglAdjustImageAtom } from '@/app/store/webgl/webgl'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
+import { perfLogger, logger } from '@/utils/logger'
 
 export const useWebGLImageAdjustment = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
@@ -29,16 +30,8 @@ export const useWebGLImageAdjustment = () => {
     [downscaled]
   )
 
-  // Debounce timing optimized for performance
-  const debounceTime = useMemo(() => {
-    if (!webglAvailable) return 150 // CPU needs more debounce
-    
-    // Different debounce for different adjustment types
-    const fastAdjustments = ['red', 'green', 'blue', 'brightness'] 
-    const isFastAdjustment = fastAdjustments.includes(lastChangedKey || '')
-    
-    return isFastAdjustment ? 10 : 30 // WebGL is fast enough for very responsive UI
-  }, [webglAvailable, lastChangedKey])
+  // Debounce timing optimisé - valeur minimale pour réactivité maximale  
+  const debounceTime = 0
 
   const debouncedApply = useMemo(
     () =>
@@ -64,35 +57,35 @@ export const useWebGLImageAdjustment = () => {
         // Try WebGL first if available
         if (webglAvailable) {
           try {
-            console.time('🚀 WebGL adjustment')
+            perfLogger.time('WebGL adjustment')
             const webglResult = webglAdjust({ imageData, config })
-            console.timeEnd('🚀 WebGL adjustment')
+            perfLogger.timeEnd('WebGL adjustment')
             
             if (webglResult) {
               result = webglResult
             } else {
-              console.warn('🚀 WebGL returned null, falling back to CPU')
+              logger.warn('WebGL returned null, falling back to CPU')
               // Fallback to CPU
-              console.time('⚠️ CPU adjustment (WebGL fallback)')
+              perfLogger.time('CPU adjustment (WebGL fallback)')
               result = applyAdjustmentsInOnePass(imageData, config)
-              console.timeEnd('⚠️ CPU adjustment (WebGL fallback)')
+              perfLogger.timeEnd('CPU adjustment (WebGL fallback)')
             }
           } catch (error) {
-            console.warn('WebGL adjustment failed, using CPU fallback:', error)
-            console.time('⚠️ CPU adjustment (WebGL error)')
+            logger.warn('WebGL adjustment failed, using CPU fallback:', error)
+            perfLogger.time('CPU adjustment (WebGL error)')
             result = applyAdjustmentsInOnePass(imageData, config)
-            console.timeEnd('⚠️ CPU adjustment (WebGL error)')
+            perfLogger.timeEnd('CPU adjustment (WebGL error)')
           }
         } else {
           // CPU fallback
-          console.time('⚠️ CPU adjustment')
+          perfLogger.time('CPU adjustment')
           result = applyAdjustmentsInOnePass(imageData, config)
-          console.timeEnd('⚠️ CPU adjustment')
+          perfLogger.timeEnd('CPU adjustment')
         }
 
         setSrc(result)
         clearLastChangedKey()
-      }, debounceTime), // Debounce adaptatif selon WebGL/CPU et type d'ajustement
+      }, debounceTime), // Debounce minimal pour réactivité maximale
     [
       downscaled,
       red,
@@ -105,8 +98,7 @@ export const useWebGLImageAdjustment = () => {
       setSrc,
       clearLastChangedKey,
       webglAvailable,
-      webglAdjust,
-      debounceTime
+      webglAdjust
     ]
   )
 

@@ -31,18 +31,8 @@ export const useOptimizedImageAdjustment = () => {
     [downscaled]
   )
 
-  // Debounce timing optimisé et uniforme pour tous les ajustements
-  const debounceTime = useMemo(() => {
-    if (!isInitialized) return 100 // En attente d'initialisation
-
-    if (isHardwareAccelerated) {
-      // WebGL GPU - responsive mais pas trop agressif
-      return 16 // ~60fps
-    } else {
-      // CPU - plus conservateur mais toujours responsive
-      return 80
-    }
-  }, [isInitialized, isHardwareAccelerated])
+  // Debounce timing optimisé - valeur minimale pour réactivité maximale
+  const debounceTime = 0
 
   // Vérification si les ajustements sont neutres (évite le traitement inutile)
   const hasNonDefaultAdjustments = useMemo(() => {
@@ -99,7 +89,6 @@ export const useOptimizedImageAdjustment = () => {
       clearLastChangedKey,
       applyAdjustments,
       isInitialized,
-      debounceTime,
       hasNonDefaultAdjustments
     ]
   )

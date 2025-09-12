@@ -4,6 +4,7 @@ import { useAtomValue, useSetAtom } from 'jotai'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { clearLastChangedKeyAtom, configAtom } from '@/app/store/config/config'
 import { useImageProcessors } from './use-image-processors'
+import { perfLogger, logger } from '@/utils/logger'
 
 export const useAdapterImageAdjustment = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
@@ -27,20 +28,8 @@ export const useAdapterImageAdjustment = () => {
     [downscaled]
   )
 
-  // Debounce timing optimisé selon le type d'adaptateur
-  const debounceTime = useMemo(() => {
-    if (!isInitialized) return 100 // En attente d'initialisation
-    
-    if (isHardwareAccelerated) {
-      // WebGL GPU - ultra-rapide
-      const fastAdjustments = ['red', 'green', 'blue', 'brightness'] 
-      const isFastAdjustment = fastAdjustments.includes(lastChangedKey || '')
-      return isFastAdjustment ? 10 : 30
-    } else {
-      // CPU - plus conservateur
-      return 150
-    }
-  }, [isInitialized, isHardwareAccelerated, lastChangedKey])
+  // Debounce timing optimisé - valeur minimale pour réactivité maximale
+  const debounceTime = 0
 
   const debouncedApply = useMemo(
     () =>
@@ -62,16 +51,16 @@ export const useAdapterImageAdjustment = () => {
         }
 
         try {
-          console.time(`🎨 ${isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustment`)
+          perfLogger.time(`${isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustment`)
           
           const result = await applyAdjustments(imageData, config)
           
-          console.timeEnd(`🎨 ${isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustment`)
+          perfLogger.timeEnd(`${isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustment`)
           
           setSrc(result)
           clearLastChangedKey()
         } catch (error) {
-          console.error('❌ Image adjustment failed:', error)
+          logger.error('Image adjustment failed:', error)
           clearLastChangedKey()
         }
       }, debounceTime),
@@ -88,8 +77,7 @@ export const useAdapterImageAdjustment = () => {
       clearLastChangedKey,
       applyAdjustments,
       isInitialized,
-      isHardwareAccelerated,
-      debounceTime
+      isHardwareAccelerated
     ]
   )
 

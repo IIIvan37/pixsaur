@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger'
+
 export type Selection = {
   sx: number
   sy: number
@@ -21,9 +23,9 @@ export function downscaleImage(
   selection?: Selection
 ): ImageData {
   // 1. calcul du scale pour limiter la largeur
-  console.log(img.width, _maxWidth)
+  logger.debug(`Downscaling image: ${img.width}px → max ${_maxWidth}px`)
   const scale = img.width > _maxWidth ? _maxWidth / img.width : 1
-  console.log('scale', scale)
+  logger.debug(`Scale factor: ${scale}`)
   const w = Math.floor(img.width * scale)
   const h = Math.floor(img.height * scale)
 

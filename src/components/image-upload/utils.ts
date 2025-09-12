@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger'
+
 /**
  * Asynchronously extracts the width and height of an SVG file.
  *
@@ -66,7 +68,7 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
 
       img.src = reader.result as string
       if (file.type === 'image/svg+xml') {
-        console.log('Processing SVG file')
+        logger.debug('Processing SVG file')
         getSvgDimensions(file)
           .then((dimensions) => {
             img.width = dimensions.width

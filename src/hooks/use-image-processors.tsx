@@ -1,6 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useEffect } from 'react'
-import { adapterLogger } from '@/utils/logger'
+import { perfLogger, adapterLogger } from '@/utils/logger'
 import { 
   imageProcessorAtom, 
   paletteProcessorAtom, 
@@ -56,9 +56,9 @@ export const useImageProcessors = () => {
       throw new Error('Image processor not initialized')
     }
     
-    console.time(`🎨 ${imageProcessor.isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustments`)
+    perfLogger.time(`${imageProcessor.isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustments`)
     const result = await imageProcessor.applyAdjustments(imageData, config)
-    console.timeEnd(`🎨 ${imageProcessor.isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustments`)
+    perfLogger.timeEnd(`${imageProcessor.isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustments`)
     
     return result
   }, [imageProcessor])

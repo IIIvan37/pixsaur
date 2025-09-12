@@ -27,11 +27,11 @@ describe('useOptimizedImageAdjustment', () => {
     expect(typeof result.current.debounceTime).toBe('number')
   })
 
-  it('should use appropriate debounce times for different processor types', () => {
+  it('should use minimal debounce for maximum responsiveness', () => {
     const { result } = renderHook(() => useOptimizedImageAdjustment())
 
-    // WebGL should have faster debounce (16ms for ~60fps)
-    expect(result.current.debounceTime).toBe(16)
+    // Should have minimal debounce (0ms) for instant responsiveness
+    expect(result.current.debounceTime).toBe(0)
   })
 
   it('should handle non-default adjustments detection', () => {
