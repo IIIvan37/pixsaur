@@ -9,7 +9,7 @@ export const PerformanceIndicator = () => {
     <div className={styles.indicator} title={webglAvailable ? 'Accélération GPU WebGL active' : 'Mode CPU (WebGL indisponible)'}>
       <div className={styles.dot} data-webgl={webglAvailable} />
       <span className={styles.text}>
-        {webglAvailable ? '🚀 WebGL' : '⚙️ CPU'}
+        {webglAvailable ? 'WebGL' : '⚙️ CPU'}
       </span>
     </div>
   )

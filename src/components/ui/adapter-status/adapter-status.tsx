@@ -21,9 +21,9 @@ export function AdapterStatusIndicator() {
         <div className={`${styles.dot} ${isHardwareAccelerated ? styles.webgl : styles.cpu}`} />
         <span className={styles.text}>
           {isHardwareAccelerated ? (
-            <>🚀 GPU WebGL</>
+            <>GPU WebGL</>
           ) : (
-            <>🐌 CPU Software</>
+            <>CPU Software</>
           )}
         </span>
         <span className={styles.subtext}>

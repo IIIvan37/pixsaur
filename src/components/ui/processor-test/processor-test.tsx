@@ -69,8 +69,8 @@ export function ProcessorTestComponent() {
       <h3>🔧 Image Processor Status</h3>
       <div style={{ marginBottom: '1rem' }}>
         <div><strong>Status:</strong> {status}</div>
-        <div><strong>Image Processor:</strong> {imageProcessor?.isHardwareAccelerated ? '🚀 WebGL (GPU)' : '🐌 CPU'}</div>
-        <div><strong>Palette Processor:</strong> {paletteProcessor?.isHardwareAccelerated ? '🚀 WebGL (GPU)' : '🐌 CPU'}</div>
+        <div><strong>Image Processor:</strong> {imageProcessor?.isHardwareAccelerated ? 'WebGL (GPU)' : 'CPU'}</div>
+        <div><strong>Palette Processor:</strong> {paletteProcessor?.isHardwareAccelerated ? 'WebGL (GPU)' : 'CPU'}</div>
         <div><strong>Initialized:</strong> {isInitialized ? '✅' : '⏳'}</div>
       </div>
       
