@@ -5,12 +5,18 @@ import SourceSection from '@/app/components/source-section'
 import PreviewPanel from '@/app/components/preview-panel'
 
 import Adjustments from '@/app/components/adjustements/adjustements'
-import { useWebGLImageAdjustment } from '@/hooks/use-webgl-image-adjustment'
+import { useImageProcessors } from '@/hooks/use-image-processors'
+import { useAdapterImageAdjustment } from '@/hooks/use-adapter-image-adjustment'
 
 import ExportPanel from '@/components/export-panel/export-panel'
 
 export default function ImageConverter() {
-  useWebGLImageAdjustment()
+  // Initialise les processeurs automatiquement
+  useImageProcessors()
+  
+  // Utilise les adaptateurs pour les ajustements d'image
+  useAdapterImageAdjustment()
+  
   return (
     <div className={styles.wrapper}>
       {<CrtEffect />}

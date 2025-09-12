@@ -6,7 +6,7 @@ import {
   previewCanvasWidthAtom,
   previewImageAtom
 } from '@/app/store/preview/preview'
-import { webglAvailableAtom } from '@/app/store/webgl/webgl'
+// import { webglAvailableAtom } from '@/app/store/webgl/webgl' // Unused for now
 
 import { ImagePreviewView } from './image-preview-view'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
@@ -16,16 +16,16 @@ const ImagePreview = () => {
   const ref = useRef<HTMLCanvasElement>(null)
   const smoothing = useAtomValue(smoothingAtom)
   const previewImage = useAtomValue(previewImageAtom)
-  const webglAvailable = useAtomValue(webglAvailableAtom)
+  // const webglAvailable = useAtomValue(webglAvailableAtom) // Unused for now
 
-  // Test WebGL availability
-  useEffect(() => {
-    if (webglAvailable) {
-      console.log('🚀 WebGL acceleration available')
-    } else {
-      console.log('⚠️ Using CPU fallback')
-    }
-  }, [webglAvailable])
+  // Test WebGL availability désactivé pour éviter les logs en doublon
+  // useEffect(() => {
+  //   if (webglAvailable) {
+  //     console.log('🚀 WebGL acceleration available')
+  //   } else {
+  //     console.log('⚠️ Using CPU fallback')
+  //   }
+  // }, [webglAvailable])
 
   const setWidth = useSetAtom(previewCanvasWidthAtom)
   const { width, height } = useAtomValue(previewCanvasSizeAtom)

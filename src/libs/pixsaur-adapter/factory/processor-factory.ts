@@ -1,0 +1,90 @@
+import type { IImageProcessor, IPaletteProcessor } from '../interfaces/image-processor'
+import { adapterLogger } from '@/utils/logger'
+
+// Factory pour créer automatiquement l'adaptateur approprié
+export class ImageProcessorFactory {
+  private static instance: ImageProcessorFactory | null = null
+  
+  static getInstance(): ImageProcessorFactory {
+    if (!ImageProcessorFactory.instance) {
+      ImageProcessorFactory.instance = new ImageProcessorFactory()
+    }
+    return ImageProcessorFactory.instance
+  }
+  
+  // Détection des capacités WebGL2
+  isWebGLAvailable(): boolean {
+    try {
+      const canvas = document.createElement('canvas')
+      const gl = canvas.getContext('webgl2')
+      return !!gl && this.checkWebGLCapabilities(gl)
+    } catch {
+      return false
+    }
+  }
+  
+  private checkWebGLCapabilities(gl: WebGL2RenderingContext): boolean {
+    // Vérifications des capacités requises pour nos shaders
+    const requiredExtensions: string[] = [
+      // Extensions nécessaires si besoin
+      // 'EXT_color_buffer_float' // exemple
+    ]
+    
+    for (const ext of requiredExtensions) {
+      if (!gl.getExtension(ext)) {
+        adapterLogger.warn(`WebGL extension ${ext} not supported`)
+        return false
+      }
+    }
+    
+    return true
+  }
+  
+  // Création automatique du bon adaptateur
+  async createImageProcessor(): Promise<IImageProcessor> {
+    if (this.isWebGLAvailable()) {
+      try {
+        const { WebGLImageProcessor } = await import('../adapters/webgl-image-processor')
+        const processor = new WebGLImageProcessor()
+        
+        if (processor.isAvailable()) {
+          adapterLogger.info('Using WebGL hardware-accelerated image processor')
+          return processor
+        }
+      } catch (error) {
+        adapterLogger.warn('Failed to initialize WebGL processor, falling back to CPU:', error)
+      }
+    }
+    
+    // Fallback vers CPU
+    const { CPUImageProcessor } = await import('../adapters/cpu-image-processor')
+    const processor = new CPUImageProcessor()
+    adapterLogger.info('Using CPU software image processor')
+    return processor
+  }
+  
+  async createPaletteProcessor(): Promise<IPaletteProcessor> {
+    if (this.isWebGLAvailable()) {
+      try {
+        const { WebGLPaletteProcessor } = await import('../adapters/webgl-palette-processor')
+        const processor = new WebGLPaletteProcessor()
+        
+        if (processor.isAvailable()) {
+          adapterLogger.info('Using WebGL hardware-accelerated palette processor')
+          return processor
+        }
+      } catch (error) {
+        adapterLogger.warn('Failed to initialize WebGL palette processor, falling back to CPU:', error)
+      }
+    }
+    
+    // Fallback vers CPU
+    const { CPUPaletteProcessor } = await import('../adapters/cpu-palette-processor')
+    const processor = new CPUPaletteProcessor()
+    adapterLogger.info('Using CPU software palette processor')
+    return processor
+  }
+}
+
+// Singleton global pour faciliter l'usage
+export const imageProcessorFactory = ImageProcessorFactory.getInstance()
