@@ -6,9 +6,7 @@ export class ImageProcessorFactory {
   private static instance: ImageProcessorFactory | null = null
   
   static getInstance(): ImageProcessorFactory {
-    if (!ImageProcessorFactory.instance) {
-      ImageProcessorFactory.instance = new ImageProcessorFactory()
-    }
+    ImageProcessorFactory.instance ??= new ImageProcessorFactory()
     return ImageProcessorFactory.instance
   }
   
@@ -23,17 +21,20 @@ export class ImageProcessorFactory {
     }
   }
   
-  private checkWebGLCapabilities(gl: WebGL2RenderingContext): boolean {
+  private checkWebGLCapabilities(_gl: WebGL2RenderingContext): boolean {
     // Vérifications des capacités requises pour nos shaders
     const requiredExtensions: string[] = [
       // Extensions nécessaires si besoin
       // 'EXT_color_buffer_float' // exemple
     ]
     
-    for (const ext of requiredExtensions) {
-      if (!gl.getExtension(ext)) {
-        adapterLogger.warn(`WebGL extension ${ext} not supported`)
-        return false
+    // Pour l'instant, pas d'extensions requises
+    if (requiredExtensions.length > 0) {
+      for (const ext of requiredExtensions) {
+        if (!_gl.getExtension(ext)) {
+          adapterLogger.warn(`WebGL extension ${ext} not supported`)
+          return false
+        }
       }
     }
     
