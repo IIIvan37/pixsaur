@@ -86,7 +86,7 @@ export class ImageProcessorFactory {
     return processor
   }
 
-  // Nouvelle méthode pour le pipeline optimisé WebGL
+  // Nouvelle méthode pour le pipeline optimisé WebGL/CPU
   async createPipelineProcessor(): Promise<IImageProcessor> {
     if (this.isWebGLAvailable()) {
       try {
@@ -98,12 +98,15 @@ export class ImageProcessorFactory {
           return processor
         }
       } catch (error) {
-        adapterLogger.warn('Failed to initialize WebGL pipeline processor, falling back to regular processors:', error)
+        adapterLogger.warn('Failed to initialize WebGL pipeline processor, falling back to CPU pipeline:', error)
       }
     }
     
-    // Fallback vers le processeur WebGL/CPU normal
-    return this.createImageProcessor()
+    // Fallback vers le processeur pipeline CPU optimisé (pas le processeur normal)
+    const { CPUPipelineProcessor } = await import('../adapters/cpu-pipeline-processor')
+    const processor = new CPUPipelineProcessor()
+    adapterLogger.info('Using CPU optimized pipeline processor')
+    return processor
   }
 }
 
