@@ -1,5 +1,5 @@
 import { extractBuffer, createQuantizer } from '@/libs/pixsaur-color/src'
-import { Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   getVisualRegion,
   getVisualRegionNormalized
@@ -105,7 +105,7 @@ export const previewImageAtom = atom((get) => {
   const remappedCanvas = document.createElement('canvas')
   remappedCanvas.width = remapped.width
   remappedCanvas.height = remapped.height
-  remappedCanvas.getContext('2d')!.putImageData(remapped, 0, 0)
+  remappedCanvas.getContext('2d')?.putImageData(remapped, 0, 0)
 
   const targetW = CPC_MODE_CONFIG[mode].width
   const targetH = CPC_MODE_CONFIG[mode].height
@@ -114,7 +114,8 @@ export const previewImageAtom = atom((get) => {
   const finalCanvas = document.createElement('canvas')
   finalCanvas.width = targetW
   finalCanvas.height = targetH
-  const finalCtx = finalCanvas.getContext('2d')!
+  const finalCtx = finalCanvas.getContext('2d')
+  if (!finalCtx) return null
   finalCtx.imageSmoothingEnabled = true
   finalCtx.imageSmoothingQuality = 'high'
   const dx = Math.floor((targetW - remapped.width) / 2)
