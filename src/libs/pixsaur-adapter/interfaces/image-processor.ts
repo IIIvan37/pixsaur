@@ -16,6 +16,7 @@ export interface IQuantizationConfig {
 export interface IDitheringConfig {
   mode: 'none' | 'floyd-steinberg' | 'bayer'
   intensity: number
+  matrixSize?: 2 | 4 | 8 // Taille matrice Bayer (défaut: 4)
 }
 
 // Interface principale pour le traitement d'image
