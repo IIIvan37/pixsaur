@@ -5,12 +5,12 @@ import SourceSection from '@/app/components/source-section'
 import PreviewPanel from '@/app/components/preview-panel'
 
 import Adjustments from '@/app/components/adjustements/adjustements'
-import { useImageAdjustement } from '@/hooks/use-image-adjustement'
+import { useWebGLImageAdjustment } from '@/hooks/use-webgl-image-adjustment'
 
 import ExportPanel from '@/components/export-panel/export-panel'
 
 export default function ImageConverter() {
-  useImageAdjustement()
+  useWebGLImageAdjustment()
   return (
     <div className={styles.wrapper}>
       {<CrtEffect />}

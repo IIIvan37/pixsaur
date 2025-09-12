@@ -1,0 +1,1 @@
+export { PerformanceIndicator } from './performance-indicator'

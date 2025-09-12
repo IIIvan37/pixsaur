@@ -6,6 +6,7 @@ import { AdjustementKey } from '@/app/store/config/types'
 
 import { Panel } from '@/components/ui/layout/panel/panel'
 import { Header } from '@/components/ui/layout/header/header'
+import { PerformanceIndicator } from '@/components/ui/performance-indicator'
 
 type RangeLabels = {
   key: AdjustementKey
@@ -42,6 +43,10 @@ export const AdjustementsView = ({
         actionLabel='Réinitialiser'
         disabled={disabled}
       />
+      
+      <div style={{ padding: 'var(--spacing-xs)', borderBottom: '1px solid var(--color-border)' }}>
+        <PerformanceIndicator />
+      </div>
 
       <div className={styles.adjustmentsContainer}>
         {/* RGB Channels - with labels */}
