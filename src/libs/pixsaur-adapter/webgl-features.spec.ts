@@ -151,8 +151,7 @@ describe('WebGL Extended Features', () => {
     // Test avec un processeur invalide pour forcer l'erreur
     const brokenProcessor = new WebGLImageProcessor()
     // On simule une erreur en invalidant le renderer
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(brokenProcessor as any).renderer = null
+    ;(brokenProcessor as unknown as { renderer: null }).renderer = null
     
     const testImage = createTestImage()
     const config: IQuantizationConfig = { targetPalette: 'cpc' }

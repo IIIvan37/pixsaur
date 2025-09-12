@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+// Ce fichier contient des appels WebGL qui ne sont pas des hooks React
 import type { 
   IImageProcessor, 
   IImageAdjustmentConfig, 
@@ -56,7 +58,11 @@ export class WebGLImageProcessor implements IImageProcessor {
     
     return result
   }
-  
+
+  private activateShaderProgram(gl: WebGL2RenderingContext, program: WebGLProgram): void {
+    gl.useProgram(program)
+  }
+
   async quantizeColors(imageData: ImageData, _config: IQuantizationConfig): Promise<ImageData> {
     if (!this.renderer) {
       // Fallback CPU direct si pas de renderer WebGL
@@ -67,10 +73,8 @@ export class WebGLImageProcessor implements IImageProcessor {
       const { width, height } = imageData
       this.renderer.setSize(width, height)
 
-      // Créer le shader de quantization CPC si nécessaire
-      if (!this.quantizationShader) {
-        this.quantizationShader = new Shader(this.renderer.gl, vertexShader, cpcQuantizationShader)
-      }
+      // Initialiser le shader de quantization si nécessaire
+      this.quantizationShader ??= new Shader(this.renderer.gl, vertexShader, cpcQuantizationShader)
 
       // Créer texture source
       const sourceTexture = this.renderer.createTexture(imageData)
@@ -86,8 +90,8 @@ export class WebGLImageProcessor implements IImageProcessor {
 
       const gl = this.renderer.gl
 
-      // Utiliser le shader et configurer les uniforms
-      gl.useProgram(this.quantizationShader.program)
+      // Activer le programme shader et configurer les uniforms
+      this.activateShaderProgram(gl, this.quantizationShader.program)
       
       // Bind texture
       gl.activeTexture(gl.TEXTURE0)
@@ -164,8 +168,8 @@ export class WebGLImageProcessor implements IImageProcessor {
         throw new Error('Failed to create framebuffer')
       }
 
-      // Utiliser le shader et configurer les uniforms
-      gl.useProgram(this.ditheringShader.program)
+      // Activer le programme shader et configurer les uniforms
+      this.activateShaderProgram(gl, this.ditheringShader.program)
       
       // Bind textures
       gl.activeTexture(gl.TEXTURE0)
