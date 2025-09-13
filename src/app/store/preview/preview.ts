@@ -48,10 +48,11 @@ export const quantizerAtom = atom((get) => {
   const colorSpace = get(colorSpaceAtom)
   if (!buf || !cropped) return null
 
+  console.time('🔍 Quantizer Creation')
   const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
   const distanceMetric = availableMetrics[0]
 
-  return createQuantizer({
+  const quantizer = createQuantizer({
     buf,
 
     basePalette: generateAmstradCPCPalette(),
@@ -61,6 +62,8 @@ export const quantizerAtom = atom((get) => {
       distanceMetric
     }
   })
+  console.timeEnd('🔍 Quantizer Creation')
+  return quantizer
 })
 
 // 4. Palette réduite copiée profondément
@@ -68,9 +71,12 @@ export const reducedPaletteRawAtom = atom<Vector[]>((get) => {
   const quantizer = get(quantizerAtom)
   const mode = get(modeAtom)
   if (!quantizer) return []
+  
+  console.time('🎨 Palette Quantization')
   const raw = quantizer.quantize(CPC_MODE_CONFIG[mode].nColors)
+  console.timeEnd('🎨 Palette Quantization')
+  
   const res = raw.map((v) => [...v] as Vector)
-
   return res
 })
 
@@ -84,13 +90,19 @@ export const previewImageAtom = atom((get) => {
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
 
+  console.time('🖼️ Preview Generation')
+  
   const normalized = getVisualRegionNormalized(cropped, mode)
+  
+  console.time('  📐 Dithering')
   // reduced est en espace de travail (Lab, XYZ, etc.)
   const previewBuffer = quantizer.dither(normalized, reduced, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
+  console.timeEnd('  📐 Dithering')
 
+  console.time('  🎯 Remapping')
   // remappage final en RGB visible
   const remapped = remapImageDataToPalette(
     new ImageData(
@@ -100,12 +112,16 @@ export const previewImageAtom = atom((get) => {
     ),
     reducedRgb
   )
+  console.timeEnd('  🎯 Remapping')
 
+  console.time('  🖌️ Canvas Operations')
   // Convert ImageData to Canvas for drawImage
   const remappedCanvas = document.createElement('canvas')
   remappedCanvas.width = remapped.width
   remappedCanvas.height = remapped.height
-  remappedCanvas.getContext('2d')!.putImageData(remapped, 0, 0)
+  const remappedCtx = remappedCanvas.getContext('2d')
+  if (!remappedCtx) return null
+  remappedCtx.putImageData(remapped, 0, 0)
 
   const targetW = CPC_MODE_CONFIG[mode].width
   const targetH = CPC_MODE_CONFIG[mode].height
@@ -114,7 +130,8 @@ export const previewImageAtom = atom((get) => {
   const finalCanvas = document.createElement('canvas')
   finalCanvas.width = targetW
   finalCanvas.height = targetH
-  const finalCtx = finalCanvas.getContext('2d')!
+  const finalCtx = finalCanvas.getContext('2d')
+  if (!finalCtx) return null
   finalCtx.imageSmoothingEnabled = true
   finalCtx.imageSmoothingQuality = 'high'
   const dx = Math.floor((targetW - remapped.width) / 2)
@@ -131,7 +148,11 @@ export const previewImageAtom = atom((get) => {
     remapped.width,
     remapped.height
   )
-  return finalCtx.getImageData(0, 0, targetW, targetH)
+  console.timeEnd('  🖌️ Canvas Operations')
+  
+  const result = finalCtx.getImageData(0, 0, targetW, targetH)
+  console.timeEnd('🖼️ Preview Generation')
+  return result
 })
 
 export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
