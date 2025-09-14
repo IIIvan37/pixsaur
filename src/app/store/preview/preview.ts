@@ -49,8 +49,6 @@ export const quantizerAtom = atom((get) => {
   const colorSpace = get(colorSpaceAtom)
   if (!buf || !cropped) return null
 
-  console.time('🔍 [DIRECT] Quantizer Creation')
-  console.log('📊 [DIRECT] Creating quantizer directly (legacy system)')
   const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
   const distanceMetric = availableMetrics[0]
 
@@ -64,7 +62,6 @@ export const quantizerAtom = atom((get) => {
       distanceMetric
     }
   })
-  console.timeEnd('🔍 [DIRECT] Quantizer Creation')
   return quantizer
 })
 
