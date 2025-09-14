@@ -1,0 +1,1 @@
+export { DebugPanel, default } from './debug-panel';

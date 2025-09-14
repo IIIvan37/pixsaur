@@ -3,7 +3,7 @@ import debounce from 'lodash/debounce'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { clearLastChangedKeyAtom, configAtom } from '@/app/store/config/config'
-import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
+import { processorFactory } from '@/libs/pixsaur-adapter'
 
 export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
@@ -29,7 +29,8 @@ export const useImageAdjustement = () => {
   const debouncedApply = useMemo(
     () =>
       debounce((data: Uint8ClampedArray) => {
-        const result = applyAdjustmentsInOnePass(
+        const processor = processorFactory.createBestProcessor()
+        const result = processor.applyAdjustmentsSync(
           new ImageData(
             new Uint8ClampedArray(data),
             downscaled!.width,

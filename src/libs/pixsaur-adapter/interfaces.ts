@@ -34,6 +34,14 @@ export interface ImageProcessor {
   ): Promise<ImageData>
 
   /**
+   * Version synchrone des ajustements pour compatibilité avec les atoms Jotai
+   */
+  applyAdjustmentsSync(
+    imageData: ImageData, 
+    adjustments: AdjustmentConfig
+  ): ImageData
+
+  /**
    * Quantifie une palette à partir d'un buffer d'image
    */
   quantizePalette(

@@ -13,6 +13,7 @@ import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
+import { processorFactory } from '@/libs/pixsaur-adapter'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -48,7 +49,8 @@ export const quantizerAtom = atom((get) => {
   const colorSpace = get(colorSpaceAtom)
   if (!buf || !cropped) return null
 
-  console.time('🔍 Quantizer Creation')
+  console.time('🔍 [DIRECT] Quantizer Creation')
+  console.log('📊 [DIRECT] Creating quantizer directly (legacy system)')
   const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
   const distanceMetric = availableMetrics[0]
 
@@ -62,30 +64,41 @@ export const quantizerAtom = atom((get) => {
       distanceMetric
     }
   })
-  console.timeEnd('🔍 Quantizer Creation')
+  console.timeEnd('🔍 [DIRECT] Quantizer Creation')
   return quantizer
 })
 
-// 4. Palette réduite copiée profondément
-export const reducedPaletteRawAtom = atom<Vector[]>((get) => {
-  const quantizer = get(quantizerAtom)
+// 4. Palette réduite via ADAPTATEUR (nouveau système principal)
+export const reducedPaletteRawAtom = atom(async (get) => {
+  const buf = get(croppedBufferAtom)
+  const cropped = get(croppedImageAtom)
+  const lockedVecs = get(lockedVectorsAtom)
+  const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
-  if (!quantizer) return []
   
-  console.time('🎨 Palette Quantization')
-  const raw = quantizer.quantize(CPC_MODE_CONFIG[mode].nColors)
-  console.timeEnd('🎨 Palette Quantization')
+  if (!buf || !cropped) return []
+
+  // 🚀 UTILISATION DE L'ADAPTATEUR comme système principal
+  const processor = processorFactory.createBestProcessor()
   
-  const res = raw.map((v) => [...v] as Vector)
-  return res
+  const palette = await processor.quantizePalette(
+    buf,
+    cropped,
+    CPC_MODE_CONFIG[mode].nColors,
+    generateAmstradCPCPalette(),
+    lockedVecs,
+    colorSpace
+  )
+  
+  return palette
 })
 
 // 5. Image preview finale avec copie défensive
-export const previewImageAtom = atom((get) => {
+export const previewImageAtom = atom(async (get) => {
   const mode = get(modeAtom)
   const quantizer = get(quantizerAtom)
-  const reduced = get(reducedPaletteRawAtom)
-  const reducedRgb = get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
+  const reduced = await get(reducedPaletteRawAtom)
+  const reducedRgb = await get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
   const cropped = get(croppedImageAtom)
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
@@ -155,10 +168,10 @@ export const previewImageAtom = atom((get) => {
   return result
 })
 
-export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
+export const reducedPaletteRgbAtom = atom(async (get) => {
   const colorSpace = get(colorSpaceAtom)
   const toRGB = getColorSpaceToRgbFn(colorSpace)
-  const raw = get(reducedPaletteRawAtom)
+  const raw = await get(reducedPaletteRawAtom)
   const projected = raw.map(toRGB)
 
   // Quantify colors to match CPC palette values (0, 128, 255)
@@ -183,4 +196,33 @@ export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
   })
 
   return quantified
+})
+
+// ====== ADAPTER-BASED ATOMS (alternative implementation) ======
+
+/**
+ * Atom alternatif utilisant l'adaptateur pour la quantization
+ * Peut remplacer progressivement le système direct
+ */
+export const adapterPaletteAtom = atom(async (get) => {
+  const buf = get(croppedBufferAtom)
+  const cropped = get(croppedImageAtom)
+  const lockedVecs = get(lockedVectorsAtom)
+  const colorSpace = get(colorSpaceAtom)
+  const mode = get(modeAtom)
+  
+  if (!buf || !cropped) return []
+
+  const processor = processorFactory.createBestProcessor()
+  
+  const palette = await processor.quantizePalette(
+    buf,
+    cropped,
+    CPC_MODE_CONFIG[mode].nColors,
+    generateAmstradCPCPalette(),
+    lockedVecs,
+    colorSpace
+  )
+  
+  return palette
 })
