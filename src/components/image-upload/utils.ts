@@ -1,42 +1,48 @@
 /**
  * Parse SVG viewBox attribute to extract dimensions
  */
-function parseViewBoxDimensions(viewBox: string): { width: number; height: number } {
+function parseViewBoxDimensions(viewBox: string): {
+  width: number
+  height: number
+} {
   const parts = viewBox.trim().split(/\s+|,/)
-  
+
   if (parts.length !== 4) {
     throw new Error('Invalid viewBox format in SVG')
   }
-  
+
   const w = parseFloat(parts[2])
   const h = parseFloat(parts[3])
-  
+
   if (Number.isNaN(w) || Number.isNaN(h)) {
     throw new Error('Invalid viewBox dimensions in SVG')
   }
-  
+
   return { width: w, height: h }
 }
 
 /**
  * Parse SVG width/height attributes to extract dimensions
  */
-function parseWidthHeightAttributes(svg: SVGSVGElement): { width: number; height: number } {
+function parseWidthHeightAttributes(svg: SVGSVGElement): {
+  width: number
+  height: number
+} {
   const widthAttr = svg.getAttribute('width')
   const heightAttr = svg.getAttribute('height')
-  
+
   if (!widthAttr || !heightAttr) {
     throw new Error('No width/height attributes found in SVG')
   }
-  
+
   // Remove units if present (e.g., "100px" -> "100")
   const w = parseInt(widthAttr, 10)
   const h = parseInt(heightAttr, 10)
-  
+
   if (Number.isNaN(w) || Number.isNaN(h)) {
     throw new Error('Invalid width/height attributes in SVG')
   }
-  
+
   return { width: w, height: h }
 }
 
@@ -56,7 +62,7 @@ export const getSvgDimensions = async (file: File) => {
   const parser = new DOMParser()
   const doc = parser.parseFromString(svgText, 'image/svg+xml')
   const svg = doc.querySelector('svg')
-  
+
   if (!svg) {
     throw new Error('Invalid SVG file')
   }

@@ -76,7 +76,11 @@ export const ColorPaletteView = ({
   // When popover opens, focus the first enabled color option
   useEffect(() => {
     if (openPopoverIndex !== null) {
-      const firstEnabledIdx = findFirstEnabledColor(fullPalette, slots, openPopoverIndex)
+      const firstEnabledIdx = findFirstEnabledColor(
+        fullPalette,
+        slots,
+        openPopoverIndex
+      )
       if (firstEnabledIdx !== -1) setFocusedColorIdx(firstEnabledIdx)
     }
   }, [openPopoverIndex, fullPalette, slots])

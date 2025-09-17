@@ -2,10 +2,16 @@ import styles from './source-selector.module.css'
 import type { Handle } from './utils'
 
 export type SourceSelectorViewProps = {
-  readonly onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  readonly onMouseMove?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  readonly onMouseDown?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => void
+  readonly onMouseMove?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => void
   readonly onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  readonly onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  readonly onDoubleClick?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => void
   readonly rect: {
     readonly x: number // in percent
     readonly y: number // in percent
