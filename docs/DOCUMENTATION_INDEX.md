@@ -39,6 +39,20 @@ Pixsaur est une application de traitement d'images avec architecture adaptateur 
 - Comparaison des approches
 - Guide pratique de migration
 
+### 🎮 [architecture/REGL_QUANTIZER_PLAN.md](./architecture/REGL_QUANTIZER_PLAN.md)
+**Plan d'adaptation ReGL pour le quantizer**
+- Analyse de l'implémentation CPU existante
+- Architecture ReGL avec réutilisation des types pixsaur-color
+- Pipeline hybride CPU-GPU optimisé
+- Plan de migration progressive avec fallback
+
+### 🛠️ [architecture/REGL_IMPLEMENTATION_GUIDE.md](./architecture/REGL_IMPLEMENTATION_GUIDE.md)
+**Guide pratique d'implémentation ReGL**
+- Implémentation concrète du ReGL Quantizer
+- Intégration avec l'architecture adapter existante
+- Tests et validation de conformité
+- Checklist et étapes de développement
+
 ## 📈 Documentation Technique
 
 ### �️ **Code Quality Standards (Updated 2025-09-17)**
@@ -104,7 +118,14 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
              Factory Pattern + Cache
                     ↓
               Interface Unifiée
+                    ↓
+          Types pixsaur-color réutilisés
 ```
+
+### 🎯 Roadmap ReGL
+- **Phase actuelle** : Architecture adapter mature avec CPU
+- **Phase suivante** : Implémentation ReGL Quantizer avec types unifiés
+- **Objectif** : Gains performance GPU tout en préservant compatibilité
 
 ## 🚀 Pour Commencer (AI Agent Quick Start)
 
@@ -136,11 +157,13 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 
 ### 4. **Files les plus importants pour AI**
 - `src/libs/pixsaur-adapter/` : Architecture adaptateur
+- `src/libs/pixsaur-color/src/` : **Types et algorithmes de base (à réutiliser)**
 - `src/components/` : Composants React avec patterns modernes
+- `docs/architecture/REGL_*.md` : **Plans et guides ReGL**
 - `biome.json` : Configuration linting/formatting
 - `docs/DEVELOPMENT_GUIDE.md` : Guide technique principal
 
-## 🤖 AI Assistance Patterns
+### 🤖 AI Assistance Patterns
 
 ### Quand modifier du code
 1. **Toujours** vérifier les types avec `readonly` props
@@ -148,6 +171,7 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 3. **Toujours** extraire les fonctions complexes (> 15 cognitive complexity)
 4. **Toujours** utiliser `FUTURE ENHANCEMENT` au lieu de `TODO`
 5. **Toujours** tester avec `pnpm run check` après modification
+6. **Nouveau** : Réutiliser les types de `pixsaur-color` au lieu de redéfinir
 
 ### Patterns d'erreurs communes
 - ❌ `React.MutableRefObject` → ✅ `React.RefObject`
@@ -155,12 +179,14 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 - ❌ Fonctions imbriquées complexes → ✅ Helpers extraits
 - ❌ `TODO:` comments → ✅ `FUTURE ENHANCEMENT:`
 - ❌ Dynamic icon access → ✅ Static icon mapping
+- ❌ **Redéfinir types existants** → ✅ **Import depuis pixsaur-color**
 
 ### Architecture Decision Records (ADR)
 - **ESLint/Prettier → Biome** : Outil unifié, meilleure performance
 - **SonarQube compliance** : Qualité code enterprise, types stricts
 - **ReGL Processor** : Préparation GPU future avec fallback CPU intelligent
 - **Factory Pattern** : Cache efficace, extensibilité pour nouveaux processors
+- **Types unifiés** : Réutilisation pixsaur-color pour cohérence architecturale
 
 ## 🔄 État de la Documentation (Updated September 2025)
 
@@ -170,6 +196,8 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 - `architecture/ADAPTER_ARCHITECTURE.md` - Architecture technique
 - `guides/LOGGING_PATTERNS.md` - Système de logging
 - `architecture/ATOMS_MIGRATION.md` - Migration progressive
+- `architecture/REGL_QUANTIZER_PLAN.md` - **Plan ReGL avec types unifiés**
+- `architecture/REGL_IMPLEMENTATION_GUIDE.md` - **Guide d'implémentation ReGL**
 - `BENCHMARK_TOOLS.md` - Performance tools
 - `biome.json` - **Configuration linting moderne**
 
@@ -186,6 +214,8 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 - **Code quality standards** : Props readonly, RefObject patterns
 - **TypeScript strict** : Cognitive complexity optimisée
 - **AI documentation** : Guide patterns pour agents automatisés
+- **ReGL Planning** : Plan d'implémentation GPU avec types unifiés
+- **Architecture réutilisable** : Réutilisation types pixsaur-color pour cohérence
 
 ---
 

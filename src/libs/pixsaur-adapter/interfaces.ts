@@ -1,4 +1,4 @@
-import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 
 /**
  * Configuration pour les ajustements d'image
@@ -43,14 +43,15 @@ export interface ImageProcessor {
 
   /**
    * Quantifie une palette à partir d'un buffer d'image
+   * Signature standardisée basée sur l'usage réel dans preview.ts
    */
   quantizePalette(
     buffer: Uint8ClampedArray,
-    imageData: ImageData,
+    imageData: ImageData | { width: number; height: number },
     targetColors: number,
-    basePalette?: Vector[],
-    preselected?: Vector[],
-    colorSpace?: string
+    basePalette: Vector[],
+    preselected: Vector[],
+    colorSpace: ColorSpace
   ): Promise<Vector[]>
 
   /**

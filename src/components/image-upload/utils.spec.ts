@@ -41,7 +41,7 @@ describe('image upload utils', () => {
       const svg = `<svg></svg>`
       const file = createFile(svg)
       await expect(getSvgDimensions(file)).rejects.toThrow(
-        /No viewBox or width\/height attributes/
+        /No width\/height attributes found in SVG/
       )
     })
   })

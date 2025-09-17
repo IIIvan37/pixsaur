@@ -1,7 +1,7 @@
 import { createQuantizer } from '@/libs/pixsaur-color/src'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
@@ -49,11 +49,11 @@ export class CpuImageProcessor implements ImageProcessor {
 
   async quantizePalette(
     buffer: Uint8ClampedArray,
-    _imageData: ImageData,
+    _imageData: ImageData | { width: number; height: number },
     targetColors: number,
-    basePalette?: Vector[],
-    preselected?: Vector[],
-    colorSpace: string = 'RGB'
+    basePalette: Vector[],
+    preselected: Vector[],
+    colorSpace: ColorSpace
   ): Promise<Vector[]> {
     adapterLogger.info(
       `🎯 [ADAPTER] Starting CPU quantization via adapter: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`
@@ -65,10 +65,7 @@ export class CpuImageProcessor implements ImageProcessor {
         quantizerLogger.time('🔧 [ADAPTER] Quantizer Creation')
 
         // Utilise la logique existante
-        const availableMetrics =
-          ColorSpaceDistanceMetric[
-            colorSpace as keyof typeof ColorSpaceDistanceMetric
-          ]
+        const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
         const distanceMetric =
           availableMetrics?.[0] || ColorSpaceDistanceMetric.RGB[0]
 
@@ -81,7 +78,7 @@ export class CpuImageProcessor implements ImageProcessor {
           basePalette: basePalette || generateAmstradCPCPalette(),
           preselected: preselected || [],
           quantConfig: {
-            colorSpace: colorSpace as keyof typeof ColorSpaceDistanceMetric,
+            colorSpace,
             distanceMetric
           }
         })

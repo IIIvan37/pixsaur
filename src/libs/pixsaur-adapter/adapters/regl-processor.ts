@@ -1,43 +1,61 @@
 /**
  * Adaptateur ReGL pour le traitement d'images
- * Future implémentation GPU avec ReGL - pour l'instant utilise CPU comme fallback intelligent
+ * Phase 1: Infrastructure ReGL avec ReGLQuantizer intégré et fallback CPU
  * ReGL simplifiera la gestion WebGL quand l'implémentation GPU sera prête
  */
 
+import type REGL from 'regl'
+import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
-
-// Types pour l'espace colorimétrique et métriques
-type ColorSpace = 'RGB' | 'Lab' | 'XYZ'
-type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
+import { ReGLQuantizer } from './regl-quantizer'
 
 /**
  * Adaptateur ReGL pour le traitement d'images
- * Future implémentation GPU - utilise CPU comme fallback intelligent pour l'instant
+ * Phase 1: Infrastructure ReGL prête avec fallback CPU
  */
 export class ReGLProcessor implements ImageProcessor {
   readonly type = 'regl' as const
   readonly isAvailable: boolean
 
-  // Préparation pour future intégration ReGL
+  // ReGL et quantizer (Phase 1: préparation pour GPU)
+  private readonly quantizer?: ReGLQuantizer
+
+  // Capacités détectées
   private readonly reglCapabilities: {
     canUseReGL: boolean
     webglVersion: string | null
     maxTextureSize: number
   }
 
-  constructor() {
-    // Évaluer si ReGL pourrait être utilisé dans le futur
+  constructor(regl?: REGL.Regl) {
+    // Évaluer si ReGL pourrait être utilisé
     this.reglCapabilities = this.evaluateReGLCapabilities()
 
-    // Pour l'instant, toujours disponible avec fallback CPU
+    // Phase 1: Setup optionnel de ReGL
+    if (regl && this.reglCapabilities.canUseReGL) {
+      try {
+        this.quantizer = new ReGLQuantizer(regl)
+        adapterLogger.info(
+          '✅ [ADAPTER] ReGL quantizer initialized successfully'
+        )
+      } catch (error) {
+        adapterLogger.warn(
+          '⚠️ [ADAPTER] ReGL quantizer initialization failed, using CPU fallback',
+          error
+        )
+        this.quantizer = undefined
+      }
+    }
+
+    // Toujours disponible avec fallback CPU
     this.isAvailable = true
 
     adapterLogger.info(
-      `🎮 [ADAPTER] ReGL processor initialized (CPU fallback mode), future ReGL capable: ${this.reglCapabilities.canUseReGL}`
+      `🎮 [ADAPTER] ReGL processor initialized: GPU=${!!this.quantizer}, capabilities=${this.reglCapabilities.canUseReGL}`
     )
   }
 
@@ -156,74 +174,132 @@ export class ReGLProcessor implements ImageProcessor {
   }
 
   /**
-   * Quantification de palette avec CPU fallback
-   * FUTURE ENHANCEMENT: Intégrer ReGL compute-like shaders pour la quantification dans le futur
+   * Quantification de palette avec ReGL ou CPU fallback
+   * Phase 1: Utilise ReGLQuantizer si disponible, sinon fallback CPU
    */
   async quantizePalette(
-    buf: Uint8ClampedArray,
-    cropped: { width: number; height: number },
+    buffer: Uint8ClampedArray,
+    imageData: ImageData | { width: number; height: number },
     targetColors: number,
     basePalette: Vector[],
-    lockedVecs: Vector[],
+    preselected: Vector[],
     colorSpace: ColorSpace
   ): Promise<Vector[]> {
-    return adapterLogger.timeAsync(
-      'ReGL Palette Quantization (CPU fallback)',
-      async () => {
-        adapterLogger.debug(
-          `🎯 [ADAPTER] Starting ReGL quantization (CPU fallback): colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buf.length}`
-        )
+    return adapterLogger.timeAsync('ReGL Palette Quantization', async () => {
+      adapterLogger.debug(
+        `🎯 [ADAPTER] Starting ReGL quantization: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`
+      )
 
-        // Déterminer la métrique de distance basée sur l'espace colorimétrique
-        const distanceMetric: DistanceMetric =
-          colorSpace === 'Lab' ? 'cie76' : 'euclidean'
+      // Déterminer la métrique de distance basée sur l'espace colorimétrique
+      const distanceMetric: DistanceMetric =
+        colorSpace === 'Lab' ? 'cie76' : 'euclidean'
 
-        if (this.reglCapabilities.canUseReGL) {
-          adapterLogger.debug(
-            '🎮 [ADAPTER] ReGL capable system, using optimized CPU quantization'
+      // Extraire dimensions depuis imageData
+      const dimensions =
+        'data' in imageData
+          ? { width: imageData.width, height: imageData.height }
+          : imageData
+
+      // Phase 1: Utiliser ReGLQuantizer si disponible
+      if (this.quantizer && this.shouldUseReGLQuantizer(buffer, dimensions)) {
+        try {
+          adapterLogger.debug('🎮 [ADAPTER] Using ReGL quantizer')
+
+          const fullImageData =
+            'data' in imageData
+              ? imageData
+              : new ImageData(
+                  new Uint8ClampedArray(buffer),
+                  imageData.width,
+                  imageData.height
+                )
+
+          const result = await this.quantizer.quantizePalette(
+            buffer,
+            fullImageData,
+            basePalette,
+            preselected,
+            {
+              colorSpace,
+              distanceMetric,
+              targetColors,
+              gpuOptions: {
+                minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
+              }
+            }
           )
-        } else {
-          adapterLogger.debug(
-            '💻 [ADAPTER] ReGL not available, using standard CPU quantization'
+
+          return [...result] // Conversion readonly -> mutable pour compatibilité
+        } catch (error) {
+          adapterLogger.warn(
+            '⚠️ [ADAPTER] ReGL quantization failed, falling back to CPU',
+            error
           )
+          // Continue vers fallback CPU
         }
-
-        return this.quantizePaletteOptimized(
-          buf,
-          cropped,
-          targetColors,
-          basePalette,
-          lockedVecs,
-          colorSpace,
-          distanceMetric
-        )
       }
+
+      // Fallback CPU (existant)
+      adapterLogger.debug('🖥️ [ADAPTER] Using CPU quantization fallback')
+
+      return this.quantizePaletteOptimized(
+        buffer,
+        dimensions,
+        targetColors,
+        basePalette,
+        preselected,
+        colorSpace,
+        distanceMetric
+      )
+    })
+  }
+
+  /**
+   * Détermine si utiliser ReGL quantizer selon les conditions
+   */
+  private shouldUseReGLQuantizer(
+    _buf: Uint8ClampedArray,
+    cropped: { width: number; height: number }
+  ): boolean {
+    if (!this.quantizer || !this.reglCapabilities.canUseReGL) {
+      return false
+    }
+
+    const pixels = cropped.width * cropped.height
+    const minPixelsForReGL = 64 * 64 // Seuil bas pour Phase 1
+
+    const shouldUse = pixels >= minPixelsForReGL
+
+    adapterLogger.debug(
+      `🤔 [ADAPTER] ReGL decision: ${pixels} pixels, min=${minPixelsForReGL}, shouldUse=${shouldUse}`
     )
+
+    return shouldUse
   }
 
   /**
    * Quantification optimisée (préparation pour future ReGL)
    */
   private async quantizePaletteOptimized(
-    buf: Uint8ClampedArray,
-    _cropped: { width: number; height: number },
+    buffer: Uint8ClampedArray,
+    _dimensions: { width: number; height: number },
     targetColors: number,
     basePalette: Vector[],
-    lockedVecs: Vector[],
+    preselected: Vector[],
     colorSpace: ColorSpace,
     distanceMetric: DistanceMetric
   ): Promise<Vector[]> {
     quantizerLogger.debug(
-      `📊 [ADAPTER] Creating ReGL-ready quantizer with metric: ${distanceMetric}, basePalette=${basePalette.length} colors, preselected=${lockedVecs.length} colors`
+      `📊 [ADAPTER] Creating ReGL-ready quantizer with metric: ${distanceMetric}, basePalette=${basePalette.length} colors, preselected=${preselected.length} colors`
     )
 
     const startTime = performance.now()
 
     // Utiliser la signature correcte de createQuantizer
     const quantizer = createQuantizer({
-      buf,
+      buf: buffer,
       basePalette,
-      preselected: lockedVecs,
+      preselected,
       quantConfig: {
         colorSpace,
         distanceMetric
@@ -259,13 +335,20 @@ export class ReGLProcessor implements ImageProcessor {
   }
 
   /**
-   * Libération des ressources (pour compatibilité future)
+   * Libération des ressources (CPU et ReGL)
    */
   dispose(): void {
-    adapterLogger.debug(
-      '🗑️ [ADAPTER] ReGL Processor disposed (CPU fallback mode)'
-    )
-    // Rien à nettoyer pour l'instant avec CPU fallback
+    try {
+      this.quantizer?.dispose()
+      adapterLogger.debug(
+        '🗑️ [ADAPTER] ReGL Processor disposed (GPU resources cleaned)'
+      )
+    } catch (error) {
+      adapterLogger.error(
+        '❌ [ADAPTER] Error during ReGL processor disposal',
+        error
+      )
+    }
   }
 
   /**
