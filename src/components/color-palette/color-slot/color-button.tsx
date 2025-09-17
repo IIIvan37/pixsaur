@@ -34,8 +34,7 @@ export const ColorButton = forwardRef<HTMLButtonElement, ColorButtonProps>(
       ref={(el) => {
         if (buttonRef) buttonRef(el)
         if (typeof ref === 'function') ref(el)
-        else if (ref)
-          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = el
+        else if (ref && 'current' in ref) ref.current = el
       }}
       className={clsx(styles.colorButton, className)}
       style={{ backgroundColor: colorHex }}

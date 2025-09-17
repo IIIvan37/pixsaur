@@ -7,15 +7,15 @@ import { ColorButton } from '../color-slot/color-button'
 import styles from './color-grid.module.css'
 
 export type ColorGridViewProps = {
-  fullPalette: CPCColor[]
-  slots: PaletteSlot[]
-  slotIndex: number
-  focusedColorIndex: number
-  onColorSelect: (color: CPCColor, slotIndex: number) => void
-  onToggleLock: (index: number) => void
-  colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>
-  optionRefs: React.RefObject<(HTMLButtonElement | null)[]>
-  onClose: () => void
+  readonly fullPalette: CPCColor[]
+  readonly slots: PaletteSlot[]
+  readonly slotIndex: number
+  readonly focusedColorIndex: number
+  readonly onColorSelect: (color: CPCColor, slotIndex: number) => void
+  readonly onToggleLock: (index: number) => void
+  readonly colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>
+  readonly optionRefs: React.RefObject<(HTMLButtonElement | null)[]>
+  readonly onClose: () => void
 }
 
 export function ColorGridView({
@@ -43,6 +43,7 @@ export function ColorGridView({
       className='popover'
       style={{ position: 'relative', minHeight: 140, maxHeight: 260 }}
     >
+      {/* @sonar-ignore-next-line a11y/useSemanticElements: Custom color grid requires visual display - select not suitable */}
       <div
         className={styles.colorGrid}
         role='listbox'
@@ -54,6 +55,7 @@ export function ColorGridView({
           )
           return (
             <div key={pc.hex}>
+              {/* @sonar-ignore-next-line a11y/useSemanticElements: Custom color option with visual display */}
               <ColorButton
                 colorHex={`#${pc.hex}`}
                 className={clsx(

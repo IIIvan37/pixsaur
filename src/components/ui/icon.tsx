@@ -9,6 +9,7 @@ import {
   GearIcon,
   ImageIcon,
   InfoCircledIcon,
+  LockClosedIcon,
   PlusIcon,
   ReloadIcon,
   UploadIcon
@@ -22,6 +23,7 @@ const ICON_MAP = {
   GearIcon,
   ImageIcon,
   InfoCircledIcon,
+  LockClosedIcon,
   ReloadIcon,
   UploadIcon,
   CheckIcon,
@@ -35,10 +37,10 @@ const ICON_MAP = {
 export type IconName = keyof typeof ICON_MAP
 
 interface IconProps {
-  name: IconName
-  className?: string
-  size?: number
-  'aria-hidden'?: boolean
+  readonly name: IconName
+  readonly className?: string
+  readonly size?: number
+  readonly 'aria-hidden'?: boolean
 }
 
 export default function Icon({

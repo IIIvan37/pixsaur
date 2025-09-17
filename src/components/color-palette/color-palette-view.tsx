@@ -11,6 +11,24 @@ import { ColorSlot } from './color-slot/color-slot'
 import { EmptySlotButton } from './color-slot/empty.slot'
 
 /**
+ * Helper function to find the first available color that's not already used
+ * Reduces cognitive complexity by extracting nested logic
+ */
+function findFirstEnabledColor(
+  fullPalette: CPCColor[],
+  slots: PaletteSlot[],
+  excludeSlotIndex: number
+): number {
+  return fullPalette.findIndex((pc) => {
+    return !slots.some((slot, i) => {
+      if (i === excludeSlotIndex) return false
+      if (!slot.color) return false
+      return Array.from(slot.color).every((v, j) => v === pc.vector[j])
+    })
+  })
+}
+
+/**
  * Props for ColorPaletteView
  * @property slots - Array of palette slots
  * @property onToggleLock - Callback to toggle lock state for a slot
@@ -58,13 +76,7 @@ export const ColorPaletteView = ({
   // When popover opens, focus the first enabled color option
   useEffect(() => {
     if (openPopoverIndex !== null) {
-      const firstEnabledIdx = fullPalette.findIndex((pc) => {
-        return !slots.some((slot, i) => {
-          if (i === openPopoverIndex) return false
-          if (!slot.color) return false
-          return Array.from(slot.color).every((v, j) => v === pc.vector[j])
-        })
-      })
+      const firstEnabledIdx = findFirstEnabledColor(fullPalette, slots, openPopoverIndex)
       if (firstEnabledIdx !== -1) setFocusedColorIdx(firstEnabledIdx)
     }
   }, [openPopoverIndex, fullPalette, slots])

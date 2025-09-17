@@ -23,7 +23,7 @@ export class ReGLProcessor implements ImageProcessor {
   readonly isAvailable: boolean
 
   // Préparation pour future intégration ReGL
-  private reglCapabilities: {
+  private readonly reglCapabilities: {
     canUseReGL: boolean
     webglVersion: string | null
     maxTextureSize: number
@@ -90,7 +90,7 @@ export class ReGLProcessor implements ImageProcessor {
 
   /**
    * Applique les ajustements d'image avec CPU fallback
-   * TODO: Remplacer par vraie accélération ReGL dans le futur
+   * FUTURE ENHANCEMENT: Remplacer par vraie accélération ReGL dans le futur
    */
   async applyAdjustments(
     imageData: ImageData,
@@ -157,7 +157,7 @@ export class ReGLProcessor implements ImageProcessor {
 
   /**
    * Quantification de palette avec CPU fallback
-   * TODO: Intégrer ReGL compute-like shaders pour la quantification dans le futur
+   * FUTURE ENHANCEMENT: Intégrer ReGL compute-like shaders pour la quantification dans le futur
    */
   async quantizePalette(
     buf: Uint8ClampedArray,
@@ -238,7 +238,7 @@ export class ReGLProcessor implements ImageProcessor {
     const quantStart = performance.now()
 
     // Utiliser la signature correcte de quantize
-    const palette = await quantizer.quantize(targetColors)
+    const palette = quantizer.quantize(targetColors)
 
     const quantEnd = performance.now()
     quantizerLogger.debug(

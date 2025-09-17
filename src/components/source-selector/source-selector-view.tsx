@@ -2,18 +2,18 @@ import styles from './source-selector.module.css'
 import type { Handle } from './utils'
 
 export type SourceSelectorViewProps = {
-  onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  onMouseMove?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  rect: {
-    x: number // in percent
-    y: number // in percent
-    width: number // in percent
-    height: number // in percent
+  readonly onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  readonly onMouseMove?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  readonly onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  readonly onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  readonly rect: {
+    readonly x: number // in percent
+    readonly y: number // in percent
+    readonly width: number // in percent
+    readonly height: number // in percent
   }
-  dragging: boolean
-  resizeHandle: Handle | null
+  readonly dragging: boolean
+  readonly resizeHandle: Handle | null
 }
 export function SourceSelectorView({
   rect,
