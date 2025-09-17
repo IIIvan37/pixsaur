@@ -1,7 +1,7 @@
+import type { Regl } from 'regl'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { ReGLQuantizer, type ReGLQuantizeConfig } from './regl-quantizer'
-import type { Regl } from 'regl'
+import { type ReGLQuantizeConfig, ReGLQuantizer } from './regl-quantizer'
 
 // Mock ReGL pour benchmarks
 const createBenchmarkMockRegl = (): Partial<Regl> => ({
@@ -12,8 +12,8 @@ const createBenchmarkMockRegl = (): Partial<Regl> => ({
   _gl: {
     canvas: document.createElement('canvas'),
     getExtension: () => ({}),
-    getParameter: () => 16,
-  } as any,
+    getParameter: () => 16
+  } as any
 })
 
 describe('ReGL Quantizer Performance Tests', () => {
@@ -25,27 +25,39 @@ describe('ReGL Quantizer Performance Tests', () => {
   })
 
   const createTestPalette = (): Vector[] => [
-    [255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0],
-    [255, 0, 255], [0, 255, 255], [0, 0, 0], [255, 255, 255],
-    [128, 128, 128], [192, 192, 192], [64, 64, 64], [128, 0, 0],
-    [0, 128, 0], [0, 0, 128], [128, 128, 0], [128, 0, 128],
+    [255, 0, 0],
+    [0, 255, 0],
+    [0, 0, 255],
+    [255, 255, 0],
+    [255, 0, 255],
+    [0, 255, 255],
+    [0, 0, 0],
+    [255, 255, 255],
+    [128, 128, 128],
+    [192, 192, 192],
+    [64, 64, 64],
+    [128, 0, 0],
+    [0, 128, 0],
+    [0, 0, 128],
+    [128, 128, 0],
+    [128, 0, 128]
   ]
 
   const createRandomImageData = (width: number, height: number): ImageData => {
     const size = width * height * 4
     const data = new Uint8ClampedArray(size)
-    
+
     for (let i = 0; i < size; i += 4) {
       // Générer des couleurs semi-aléatoires mais reproductibles
       const x = (i / 4) % width
-      const y = Math.floor((i / 4) / width)
-      
-      data[i] = (x * 37 + y * 19) % 256     // R
+      const y = Math.floor(i / 4 / width)
+
+      data[i] = (x * 37 + y * 19) % 256 // R
       data[i + 1] = (x * 23 + y * 41) % 256 // G
       data[i + 2] = (x * 17 + y * 31) % 256 // B
-      data[i + 3] = 255                     // A
+      data[i + 3] = 255 // A
     }
-    
+
     return new ImageData(data, width, height)
   }
 
@@ -58,19 +70,19 @@ describe('ReGL Quantizer Performance Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 8,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const startTime = performance.now()
-      
+
       const result = await quantizer.quantizePalette(
         buffer,
         imageData,
         palette,
         [],
-        config,
+        config
       )
-      
+
       const endTime = performance.now()
       const duration = endTime - startTime
 
@@ -87,19 +99,19 @@ describe('ReGL Quantizer Performance Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 16,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const startTime = performance.now()
-      
+
       const result = await quantizer.quantizePalette(
         buffer,
         imageData,
         palette,
         [],
-        config,
+        config
       )
-      
+
       const endTime = performance.now()
       const duration = endTime - startTime
 
@@ -116,7 +128,7 @@ describe('ReGL Quantizer Performance Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 8,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const times: number[] = []
@@ -124,15 +136,15 @@ describe('ReGL Quantizer Performance Tests', () => {
 
       for (let i = 0; i < runs; i++) {
         const startTime = performance.now()
-        
+
         const result = await quantizer.quantizePalette(
           buffer,
           imageData,
           palette,
           [],
-          config,
+          config
         )
-        
+
         const endTime = performance.now()
         times.push(endTime - startTime)
 
@@ -155,23 +167,31 @@ describe('ReGL Quantizer Performance Tests', () => {
       const palette = createTestPalette()
 
       const configs = [
-        { targetColors: 8, colorSpace: 'RGB' as const, distanceMetric: 'euclidean' as const },
-        { targetColors: 8, colorSpace: 'Lab' as const, distanceMetric: 'cie76' as const },
+        {
+          targetColors: 8,
+          colorSpace: 'RGB' as const,
+          distanceMetric: 'euclidean' as const
+        },
+        {
+          targetColors: 8,
+          colorSpace: 'Lab' as const,
+          distanceMetric: 'cie76' as const
+        }
       ]
 
       const times: Record<string, number> = {}
 
       for (const config of configs) {
         const startTime = performance.now()
-        
+
         const result = await quantizer.quantizePalette(
           buffer,
           imageData,
           palette,
           [],
-          config,
+          config
         )
-        
+
         const endTime = performance.now()
         times[config.colorSpace] = endTime - startTime
 
@@ -200,19 +220,19 @@ describe('ReGL Quantizer Performance Tests', () => {
         const config: ReGLQuantizeConfig = {
           targetColors,
           colorSpace: 'RGB',
-          distanceMetric: 'euclidean',
+          distanceMetric: 'euclidean'
         }
 
         const startTime = performance.now()
-        
+
         const result = await quantizer.quantizePalette(
           buffer,
           imageData,
           palette,
           [],
-          config,
+          config
         )
-        
+
         const endTime = performance.now()
         times[targetColors] = endTime - startTime
 
@@ -239,7 +259,7 @@ describe('ReGL Quantizer Performance Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 8,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const times: number[] = []
@@ -247,15 +267,15 @@ describe('ReGL Quantizer Performance Tests', () => {
 
       for (let i = 0; i < iterations; i++) {
         const startTime = performance.now()
-        
+
         const result = await quantizer.quantizePalette(
           buffer,
           imageData,
           palette,
           [],
-          config,
+          config
         )
-        
+
         const endTime = performance.now()
         times.push(endTime - startTime)
 
@@ -267,7 +287,8 @@ describe('ReGL Quantizer Performance Tests', () => {
       const secondHalf = times.slice(5, 10)
 
       const avgFirst = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-      const avgSecond = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+      const avgSecond =
+        secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
 
       // La seconde moitié ne devrait pas être significativement plus lente
       expect(avgSecond).toBeLessThan(avgFirst * 2) // Pas plus de 2x plus lent
@@ -281,7 +302,7 @@ describe('ReGL Quantizer Performance Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 6,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const concurrencyLevels = [1, 2, 4]
@@ -289,13 +310,15 @@ describe('ReGL Quantizer Performance Tests', () => {
 
       for (const concurrency of concurrencyLevels) {
         const startTime = performance.now()
-        
-        const tasks = Array(concurrency).fill(null).map(() =>
-          quantizer.quantizePalette(buffer, imageData, palette, [], config)
-        )
-        
+
+        const tasks = Array(concurrency)
+          .fill(null)
+          .map(() =>
+            quantizer.quantizePalette(buffer, imageData, palette, [], config)
+          )
+
         const results = await Promise.all(tasks)
-        
+
         const endTime = performance.now()
         times[concurrency] = endTime - startTime
 
@@ -317,31 +340,31 @@ describe('ReGL Quantizer Performance Tests', () => {
       const monoImageData = new ImageData(
         new Uint8ClampedArray(32 * 32 * 4).fill(128),
         32,
-        32,
+        32
       )
       const monoBuffer = new Uint8ClampedArray(monoImageData.data)
 
       // Palette très large
-      const largePalette: Vector[] = Array(256).fill(null).map((_, i) => [
-        i, (i * 2) % 256, (i * 3) % 256
-      ])
+      const largePalette: Vector[] = Array(256)
+        .fill(null)
+        .map((_, i) => [i, (i * 2) % 256, (i * 3) % 256])
 
       const config: ReGLQuantizeConfig = {
         targetColors: 64,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const startTime = performance.now()
-      
+
       const result = await quantizer.quantizePalette(
         monoBuffer,
         monoImageData,
         largePalette,
         [],
-        config,
+        config
       )
-      
+
       const endTime = performance.now()
       const duration = endTime - startTime
 

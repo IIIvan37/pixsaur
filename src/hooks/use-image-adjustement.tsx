@@ -28,8 +28,8 @@ export const useImageAdjustement = () => {
 
   const debouncedApply = useMemo(
     () =>
-      debounce((data: Uint8ClampedArray) => {
-        const processor = processorFactory.createBestProcessor()
+      debounce(async (data: Uint8ClampedArray) => {
+        const processor = await processorFactory.createBestProcessor()
         const result = processor.applyAdjustmentsSync(
           new ImageData(
             new Uint8ClampedArray(data),

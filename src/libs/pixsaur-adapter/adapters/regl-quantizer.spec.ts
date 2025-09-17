@@ -7,11 +7,11 @@ import { type ReGLQuantizeConfig, ReGLQuantizer } from './regl-quantizer'
 const createMockRegl = (): Partial<Regl> => {
   const mockFramebuffer = {
     destroy: vi.fn(),
-    use: vi.fn((callback) => callback()),
+    use: vi.fn((callback) => callback())
   }
 
   const mockTexture = {
-    destroy: vi.fn(),
+    destroy: vi.fn()
   }
 
   return {
@@ -22,8 +22,8 @@ const createMockRegl = (): Partial<Regl> => {
     _gl: {
       canvas: document.createElement('canvas'),
       getExtension: vi.fn(() => ({})),
-      getParameter: vi.fn(() => 16),
-    } as any,
+      getParameter: vi.fn(() => 16)
+    } as any
   }
 }
 
@@ -51,7 +51,7 @@ const createTestPalette = (): Vector[] => [
   [255, 0, 255], // Magenta
   [0, 255, 255], // Cyan
   [0, 0, 0], // Noir
-  [255, 255, 255], // Blanc
+  [255, 255, 255] // Blanc
 ]
 
 describe('ReGLQuantizer', () => {
@@ -79,7 +79,7 @@ describe('ReGLQuantizer', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -87,7 +87,7 @@ describe('ReGLQuantizer', () => {
         imageData,
         basePalette,
         preselected,
-        config,
+        config
       )
 
       expect(result).toBeDefined()
@@ -112,13 +112,13 @@ describe('ReGLQuantizer', () => {
       const basePalette = createTestPalette()
       const preselected: Vector[] = [
         [255, 0, 0],
-        [0, 255, 0],
+        [0, 255, 0]
       ] // Rouge et vert
 
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -126,7 +126,7 @@ describe('ReGLQuantizer', () => {
         imageData,
         basePalette,
         preselected,
-        config,
+        config
       )
 
       expect(result.length).toBeLessThanOrEqual(4)
@@ -137,7 +137,7 @@ describe('ReGLQuantizer', () => {
           (resultColor: Vector) =>
             resultColor[0] === preselectedColor[0] &&
             resultColor[1] === preselectedColor[1] &&
-            resultColor[2] === preselectedColor[2],
+            resultColor[2] === preselectedColor[2]
         )
         expect(found).toBe(true)
       })
@@ -151,16 +151,22 @@ describe('ReGLQuantizer', () => {
 
       // Utiliser des combinaisons valides colorSpace/distanceMetric
       const validCombinations = [
-        { colorSpace: 'RGB' as ColorSpace, distanceMetric: 'euclidean' as const },
+        {
+          colorSpace: 'RGB' as ColorSpace,
+          distanceMetric: 'euclidean' as const
+        },
         { colorSpace: 'Lab' as ColorSpace, distanceMetric: 'cie76' as const },
-        { colorSpace: 'XYZ' as ColorSpace, distanceMetric: 'euclidean' as const },
+        {
+          colorSpace: 'XYZ' as ColorSpace,
+          distanceMetric: 'euclidean' as const
+        }
       ]
 
       for (const { colorSpace, distanceMetric } of validCombinations) {
         const config: ReGLQuantizeConfig = {
           targetColors: 4,
           colorSpace,
-          distanceMetric,
+          distanceMetric
         }
 
         const result = await quantizer.quantizePalette(
@@ -168,7 +174,7 @@ describe('ReGLQuantizer', () => {
           imageData,
           basePalette,
           preselected,
-          config,
+          config
         )
 
         expect(result).toBeDefined()
@@ -184,16 +190,22 @@ describe('ReGLQuantizer', () => {
 
       // Utiliser des combinaisons valides colorSpace/distanceMetric
       const validCombinations = [
-        { colorSpace: 'RGB' as ColorSpace, distanceMetric: 'euclidean' as const },
+        {
+          colorSpace: 'RGB' as ColorSpace,
+          distanceMetric: 'euclidean' as const
+        },
         { colorSpace: 'Lab' as ColorSpace, distanceMetric: 'cie76' as const },
-        { colorSpace: 'Lab' as ColorSpace, distanceMetric: 'deltaE2000' as const },
+        {
+          colorSpace: 'Lab' as ColorSpace,
+          distanceMetric: 'deltaE2000' as const
+        }
       ]
 
       for (const { colorSpace, distanceMetric } of validCombinations) {
         const config: ReGLQuantizeConfig = {
           targetColors: 4,
           colorSpace,
-          distanceMetric,
+          distanceMetric
         }
 
         const result = await quantizer.quantizePalette(
@@ -201,7 +213,7 @@ describe('ReGLQuantizer', () => {
           imageData,
           basePalette,
           preselected,
-          config,
+          config
         )
 
         expect(result).toBeDefined()
@@ -218,7 +230,7 @@ describe('ReGLQuantizer', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       // Tester en simulation GPU (le quantizer fera le fallback CPU)
@@ -227,7 +239,7 @@ describe('ReGLQuantizer', () => {
         imageData,
         createTestPalette(),
         [],
-        config,
+        config
       )
 
       // Avec le mock actuel et les capacités détectées, ça tombera sur CPU
@@ -248,14 +260,14 @@ describe('ReGLQuantizer', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizerAny.selectColorsGPU(
         histogram,
         basePalette,
         preselected,
-        config,
+        config
       )
 
       expect(result).toBeDefined()
@@ -266,7 +278,11 @@ describe('ReGLQuantizer', () => {
   describe('Error Handling', () => {
     it('should handle very small image data gracefully', async () => {
       // Au lieu de données complètement invalides, utiliser des données très petites
-      const tinyImageData = new ImageData(new Uint8ClampedArray([255, 128, 64, 255]), 1, 1)
+      const tinyImageData = new ImageData(
+        new Uint8ClampedArray([255, 128, 64, 255]),
+        1,
+        1
+      )
       const buffer = new Uint8ClampedArray(tinyImageData.data)
       const basePalette = createTestPalette()
       const preselected: Vector[] = []
@@ -274,7 +290,7 @@ describe('ReGLQuantizer', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -282,7 +298,7 @@ describe('ReGLQuantizer', () => {
         tinyImageData,
         basePalette,
         preselected,
-        config,
+        config
       )
 
       // Devrait réussir même avec une image très petite
@@ -299,7 +315,7 @@ describe('ReGLQuantizer', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       await expect(
@@ -308,8 +324,8 @@ describe('ReGLQuantizer', () => {
           imageData,
           basePalette,
           preselected,
-          config,
-        ),
+          config
+        )
       ).rejects.toThrow()
     })
 
@@ -322,7 +338,7 @@ describe('ReGLQuantizer', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 0,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -330,7 +346,7 @@ describe('ReGLQuantizer', () => {
         imageData,
         basePalette,
         preselected,
-        config,
+        config
       )
 
       // Avec targetColors = 0, devrait retourner un tableau vide
@@ -350,7 +366,7 @@ describe('ReGLQuantizer', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB' as ColorSpace,
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -358,7 +374,7 @@ describe('ReGLQuantizer', () => {
         imageData,
         basePalette,
         preselected,
-        config,
+        config
       )
 
       // Vérifier que la quantification s'est bien déroulée

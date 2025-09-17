@@ -1,7 +1,7 @@
+import type { Regl } from 'regl'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { ReGLQuantizer, type ReGLQuantizeConfig } from './regl-quantizer'
-import type { Regl } from 'regl'
+import { type ReGLQuantizeConfig, ReGLQuantizer } from './regl-quantizer'
 
 // Mock ReGL simple pour tests d'intégration
 const createIntegrationMockRegl = (): Partial<Regl> => ({
@@ -12,8 +12,8 @@ const createIntegrationMockRegl = (): Partial<Regl> => ({
   _gl: {
     canvas: document.createElement('canvas'),
     getExtension: () => ({}),
-    getParameter: () => 16,
-  } as any,
+    getParameter: () => 16
+  } as any
 })
 
 describe('ReGL Quantizer Integration Tests', () => {
@@ -27,12 +27,28 @@ describe('ReGL Quantizer Integration Tests', () => {
     quantizer = new ReGLQuantizer(mockRegl as Regl)
 
     // Data de test déterministe pour 4 pixels colorés
-    testImageData = new ImageData(new Uint8ClampedArray([
-      255, 0, 0, 255, // Rouge
-      0, 255, 0, 255, // Vert
-      0, 0, 255, 255, // Bleu
-      255, 255, 0, 255, // Jaune
-    ]), 2, 2)
+    testImageData = new ImageData(
+      new Uint8ClampedArray([
+        255,
+        0,
+        0,
+        255, // Rouge
+        0,
+        255,
+        0,
+        255, // Vert
+        0,
+        0,
+        255,
+        255, // Bleu
+        255,
+        255,
+        0,
+        255 // Jaune
+      ]),
+      2,
+      2
+    )
 
     testBuffer = new Uint8ClampedArray(testImageData.data)
 
@@ -44,7 +60,7 @@ describe('ReGL Quantizer Integration Tests', () => {
       [255, 0, 255], // Magenta
       [0, 255, 255], // Cyan
       [0, 0, 0], // Noir
-      [255, 255, 255], // Blanc
+      [255, 255, 255] // Blanc
     ]
   })
 
@@ -54,14 +70,32 @@ describe('ReGL Quantizer Integration Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       // Exécuter plusieurs fois la même quantization
       const results = await Promise.all([
-        quantizer.quantizePalette(testBuffer, testImageData, testPalette, preselected, config),
-        quantizer.quantizePalette(testBuffer, testImageData, testPalette, preselected, config),
-        quantizer.quantizePalette(testBuffer, testImageData, testPalette, preselected, config),
+        quantizer.quantizePalette(
+          testBuffer,
+          testImageData,
+          testPalette,
+          preselected,
+          config
+        ),
+        quantizer.quantizePalette(
+          testBuffer,
+          testImageData,
+          testPalette,
+          preselected,
+          config
+        ),
+        quantizer.quantizePalette(
+          testBuffer,
+          testImageData,
+          testPalette,
+          preselected,
+          config
+        )
       ])
 
       // Vérifier que tous les résultats sont identiques
@@ -82,9 +116,21 @@ describe('ReGL Quantizer Integration Tests', () => {
       const preselected: Vector[] = [[255, 0, 0]] // Juste une couleur pour simplifier
       // Utiliser des combinaisons valides colorSpace/distanceMetric
       const configs = [
-        { targetColors: 4, colorSpace: 'RGB' as const, distanceMetric: 'euclidean' as const },
-        { targetColors: 6, colorSpace: 'Lab' as const, distanceMetric: 'cie76' as const },
-        { targetColors: 8, colorSpace: 'Lab' as const, distanceMetric: 'deltaE2000' as const },
+        {
+          targetColors: 4,
+          colorSpace: 'RGB' as const,
+          distanceMetric: 'euclidean' as const
+        },
+        {
+          targetColors: 6,
+          colorSpace: 'Lab' as const,
+          distanceMetric: 'cie76' as const
+        },
+        {
+          targetColors: 8,
+          colorSpace: 'Lab' as const,
+          distanceMetric: 'deltaE2000' as const
+        }
       ]
 
       for (const config of configs) {
@@ -93,7 +139,7 @@ describe('ReGL Quantizer Integration Tests', () => {
           testImageData,
           testPalette,
           preselected,
-          config,
+          config
         )
 
         // Vérifier que le résultat est valide
@@ -104,9 +150,10 @@ describe('ReGL Quantizer Integration Tests', () => {
 
         // Au lieu de vérifier que toutes les couleurs présélectionnées sont présentes,
         // vérifier qu'au moins une couleur avec dominante rouge est présente (tolérance élargie)
-        const hasRedishColor = result.some((color: Vector) => 
-          color[0] > 150 || // Rouge dominant
-          (color[0] > color[1] && color[0] > color[2]) // Composante rouge la plus forte
+        const hasRedishColor = result.some(
+          (color: Vector) =>
+            color[0] > 150 || // Rouge dominant
+            (color[0] > color[1] && color[0] > color[2]) // Composante rouge la plus forte
         )
         expect(hasRedishColor).toBe(true) // Au moins une couleur avec dominante rouge
       }
@@ -120,7 +167,7 @@ describe('ReGL Quantizer Integration Tests', () => {
         const config: ReGLQuantizeConfig = {
           targetColors,
           colorSpace: 'RGB',
-          distanceMetric: 'euclidean',
+          distanceMetric: 'euclidean'
         }
 
         const result = await quantizer.quantizePalette(
@@ -128,7 +175,7 @@ describe('ReGL Quantizer Integration Tests', () => {
           testImageData,
           testPalette,
           preselected,
-          config,
+          config
         )
 
         expect(result.length).toBeLessThanOrEqual(targetColors)
@@ -139,18 +186,34 @@ describe('ReGL Quantizer Integration Tests', () => {
 
   describe('Different Image Scenarios', () => {
     it('should handle high contrast images', async () => {
-      const contrastData = new ImageData(new Uint8ClampedArray([
-        0, 0, 0, 255, // Noir
-        255, 255, 255, 255, // Blanc
-        0, 0, 0, 255, // Noir
-        255, 255, 255, 255, // Blanc
-      ]), 2, 2)
+      const contrastData = new ImageData(
+        new Uint8ClampedArray([
+          0,
+          0,
+          0,
+          255, // Noir
+          255,
+          255,
+          255,
+          255, // Blanc
+          0,
+          0,
+          0,
+          255, // Noir
+          255,
+          255,
+          255,
+          255 // Blanc
+        ]),
+        2,
+        2
+      )
       const contrastBuffer = new Uint8ClampedArray(contrastData.data)
 
       const config: ReGLQuantizeConfig = {
         targetColors: 2,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -158,7 +221,7 @@ describe('ReGL Quantizer Integration Tests', () => {
         contrastData,
         testPalette,
         [],
-        config,
+        config
       )
 
       expect(result.length).toBeLessThanOrEqual(2)
@@ -166,18 +229,34 @@ describe('ReGL Quantizer Integration Tests', () => {
     })
 
     it('should handle gradients effectively', async () => {
-      const gradientData = new ImageData(new Uint8ClampedArray([
-        0, 0, 0, 255, // Noir
-        64, 64, 64, 255, // Gris foncé
-        128, 128, 128, 255, // Gris moyen
-        255, 255, 255, 255, // Blanc
-      ]), 2, 2)
+      const gradientData = new ImageData(
+        new Uint8ClampedArray([
+          0,
+          0,
+          0,
+          255, // Noir
+          64,
+          64,
+          64,
+          255, // Gris foncé
+          128,
+          128,
+          128,
+          255, // Gris moyen
+          255,
+          255,
+          255,
+          255 // Blanc
+        ]),
+        2,
+        2
+      )
       const gradientBuffer = new Uint8ClampedArray(gradientData.data)
 
       const config: ReGLQuantizeConfig = {
         targetColors: 3,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -185,7 +264,7 @@ describe('ReGL Quantizer Integration Tests', () => {
         gradientData,
         testPalette,
         [],
-        config,
+        config
       )
 
       expect(result.length).toBeLessThanOrEqual(3)
@@ -193,18 +272,34 @@ describe('ReGL Quantizer Integration Tests', () => {
     })
 
     it('should handle saturated colors', async () => {
-      const saturatedData = new ImageData(new Uint8ClampedArray([
-        255, 0, 0, 255, // Rouge pur
-        0, 255, 0, 255, // Vert pur
-        0, 0, 255, 255, // Bleu pur
-        255, 255, 0, 255, // Jaune pur
-      ]), 2, 2)
+      const saturatedData = new ImageData(
+        new Uint8ClampedArray([
+          255,
+          0,
+          0,
+          255, // Rouge pur
+          0,
+          255,
+          0,
+          255, // Vert pur
+          0,
+          0,
+          255,
+          255, // Bleu pur
+          255,
+          255,
+          0,
+          255 // Jaune pur
+        ]),
+        2,
+        2
+      )
       const saturatedBuffer = new Uint8ClampedArray(saturatedData.data)
 
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       const result = await quantizer.quantizePalette(
@@ -212,16 +307,22 @@ describe('ReGL Quantizer Integration Tests', () => {
         saturatedData,
         testPalette,
         [],
-        config,
+        config
       )
 
       expect(result.length).toBeLessThanOrEqual(4)
-      
+
       // Vérifier que les couleurs primaires sont bien représentées
-      const hasRed = result.some((c: Vector) => c[0] > 200 && c[1] < 50 && c[2] < 50)
-      const hasGreen = result.some((c: Vector) => c[0] < 50 && c[1] > 200 && c[2] < 50)
-      const hasBlue = result.some((c: Vector) => c[0] < 50 && c[1] < 50 && c[2] > 200)
-      
+      const hasRed = result.some(
+        (c: Vector) => c[0] > 200 && c[1] < 50 && c[2] < 50
+      )
+      const hasGreen = result.some(
+        (c: Vector) => c[0] < 50 && c[1] > 200 && c[2] < 50
+      )
+      const hasBlue = result.some(
+        (c: Vector) => c[0] < 50 && c[1] < 50 && c[2] > 200
+      )
+
       expect(hasRed || hasGreen || hasBlue).toBe(true) // Au moins une couleur primaire
     })
   })
@@ -231,13 +332,21 @@ describe('ReGL Quantizer Integration Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 3,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       // Effectuer plusieurs quantizations pour tester la gestion des ressources
-      const tasks = Array(10).fill(null).map(() =>
-        quantizer.quantizePalette(testBuffer, testImageData, testPalette, [], config),
-      )
+      const tasks = Array(10)
+        .fill(null)
+        .map(() =>
+          quantizer.quantizePalette(
+            testBuffer,
+            testImageData,
+            testPalette,
+            [],
+            config
+          )
+        )
 
       const results = await Promise.all(tasks)
 
@@ -253,14 +362,32 @@ describe('ReGL Quantizer Integration Tests', () => {
     it('should handle concurrent quantizations', async () => {
       // Utiliser des combinaisons valides colorSpace/distanceMetric
       const configs = [
-        { targetColors: 2, colorSpace: 'RGB' as const, distanceMetric: 'euclidean' as const },
-        { targetColors: 3, colorSpace: 'Lab' as const, distanceMetric: 'cie76' as const },
-        { targetColors: 4, colorSpace: 'Lab' as const, distanceMetric: 'deltaE2000' as const },
+        {
+          targetColors: 2,
+          colorSpace: 'RGB' as const,
+          distanceMetric: 'euclidean' as const
+        },
+        {
+          targetColors: 3,
+          colorSpace: 'Lab' as const,
+          distanceMetric: 'cie76' as const
+        },
+        {
+          targetColors: 4,
+          colorSpace: 'Lab' as const,
+          distanceMetric: 'deltaE2000' as const
+        }
       ]
 
       // Lancer plusieurs quantizations en parallèle
       const concurrentTasks = configs.map((config) =>
-        quantizer.quantizePalette(testBuffer, testImageData, testPalette, [], config),
+        quantizer.quantizePalette(
+          testBuffer,
+          testImageData,
+          testPalette,
+          [],
+          config
+        )
       )
 
       const results = await Promise.all(concurrentTasks)
@@ -285,7 +412,7 @@ describe('ReGL Quantizer Integration Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 4,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       // Avec notre mock, cela devrait toujours tomber sur CPU fallback
@@ -294,7 +421,7 @@ describe('ReGL Quantizer Integration Tests', () => {
         testImageData,
         testPalette,
         [],
-        config,
+        config
       )
 
       expect(result).toBeDefined()
@@ -307,7 +434,7 @@ describe('ReGL Quantizer Integration Tests', () => {
       const config: ReGLQuantizeConfig = {
         targetColors: 3,
         colorSpace: 'RGB',
-        distanceMetric: 'euclidean',
+        distanceMetric: 'euclidean'
       }
 
       // Mesurer le temps de plusieurs quantifications pour détecter des régressions
@@ -316,7 +443,13 @@ describe('ReGL Quantizer Integration Tests', () => {
 
       for (let i = 0; i < iterations; i++) {
         const start = performance.now()
-        await quantizer.quantizePalette(testBuffer, testImageData, testPalette, [], config)
+        await quantizer.quantizePalette(
+          testBuffer,
+          testImageData,
+          testPalette,
+          [],
+          config
+        )
         const end = performance.now()
         timings.push(end - start)
       }
@@ -324,10 +457,10 @@ describe('ReGL Quantizer Integration Tests', () => {
       // Vérifier qu'il n'y a pas de dégradation significative
       const avgTime = timings.reduce((a, b) => a + b, 0) / timings.length
       const maxTime = Math.max(...timings)
-      
-            // Le temps max ne devrait pas être plus de 5x le temps moyen (plus tolérant)
+
+      // Le temps max ne devrait pas être plus de 5x le temps moyen (plus tolérant)
       expect(maxTime).toBeLessThan(avgTime * 5)
-      
+
       // Avec CPU fallback, les temps devraient être raisonnables
       expect(avgTime).toBeLessThan(100) // Moins de 100ms en moyenne
     })

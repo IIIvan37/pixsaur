@@ -2,15 +2,12 @@ import { adapterLogger } from '@/utils/logger'
 import { CpuImageProcessor } from './adapters/cpu-processor'
 import { ReGLProcessor } from './adapters/regl-processor'
 import type { ImageProcessor, ProcessorFactory } from './interfaces'
-import {
-  detectWebGLCapabilities,
-  getWebGLSummary,
-  isWebGLRecommended
-} from './webgl-detection'
+import { detectWebGLCapabilities, getWebGLSummary } from './webgl-detection'
+import type * as REGL from 'regl'
 
 /**
  * Factory pour créer les processors d'image
- * Gère la sélection automatique CPU/ReGL avec fallback intelligent
+ * Utilise l'architecture adaptateur avec quantizers CPU/ReGL
  */
 export class ImageProcessorFactory implements ProcessorFactory {
   private static instance: ImageProcessorFactory | null = null
@@ -39,29 +36,30 @@ export class ImageProcessorFactory implements ProcessorFactory {
     }
   }
 
-  createBestProcessor(): ImageProcessor {
+  async createBestProcessor(): Promise<ImageProcessor> {
     return adapterLogger.timeSync(
       '🏭 [FACTORY] Best Processor Selection',
-      () => {
-        // Sélection intelligente basée sur les capacités WebGL pour ReGL
-        if (this.isWebGlAvailable() && isWebGLRecommended()) {
+      async () => {
+        if (this.isWebGlAvailable()) {
           adapterLogger.info(
-            '🏭 [FACTORY] Creating best processor (ReGL recommended)'
+            '🏭 [FACTORY] Creating best processor (trying ReGL first)'
           )
-          const reglProcessor = this.createReGlProcessor()
+
+          const reglProcessor = await this.createReGlProcessor()
           if (reglProcessor) {
             return reglProcessor
           }
-          // Fallback vers CPU si ReGL échoue
+
           adapterLogger.warn(
             '⚠️ [FACTORY] ReGL creation failed, falling back to CPU'
           )
         } else {
           adapterLogger.info(
-            '🏭 [FACTORY] Creating best processor (CPU selected)'
+            '🏭 [FACTORY] Creating best processor (CPU selected - no WebGL)'
           )
         }
 
+        // Fallback CPU processor
         return this.createCpuProcessor()
       }
     )
@@ -83,7 +81,7 @@ export class ImageProcessorFactory implements ProcessorFactory {
     })
   }
 
-  createReGlProcessor(): ImageProcessor | null {
+  async createReGlProcessor(): Promise<ImageProcessor | null> {
     if (!this.isWebGlAvailable()) {
       adapterLogger.warn(
         '🚨 [FACTORY] Cannot create ReGL processor: WebGL not available'
@@ -98,12 +96,21 @@ export class ImageProcessorFactory implements ProcessorFactory {
 
     return adapterLogger.timeSync(
       '🎮 [FACTORY] ReGL Processor Creation',
-      () => {
+      async () => {
         try {
           adapterLogger.info(
             '🎮 [FACTORY] Creating new ReGL processor instance'
           )
-          this.reglProcessor = new ReGLProcessor()
+
+          // Créer l'instance ReGL d'abord
+          const reglInstance = await this.createReGLInstance()
+          if (!reglInstance) {
+            adapterLogger.warn('⚠️ [FACTORY] Failed to create ReGL instance')
+            return null
+          }
+
+          // Créer le ReGLProcessor avec l'instance ReGL
+          this.reglProcessor = new ReGLProcessor(reglInstance)
 
           if (this.reglProcessor.isAvailable) {
             adapterLogger.info(
@@ -137,6 +144,21 @@ export class ImageProcessorFactory implements ProcessorFactory {
     return available
   }
 
+  private async createReGLInstance(): Promise<REGL.Regl | null> {
+    try {
+      adapterLogger.debug('🎨 [FACTORY] Creating ReGL instance...')
+      
+      const { default: createREGL } = await import('regl')
+      const regl = createREGL()
+      
+      adapterLogger.info('✅ [FACTORY] ReGL instance created successfully')
+      return regl
+    } catch (error) {
+      adapterLogger.error('❌ [FACTORY] Failed to create ReGL instance:', error)
+      return null
+    }
+  }
+
   /**
    * Nettoie le cache des processeurs
    */
@@ -151,9 +173,6 @@ export class ImageProcessorFactory implements ProcessorFactory {
       this.reglProcessor.dispose()
       this.reglProcessor = null
       adapterLogger.info('🗑️ [FACTORY] ReGL processor cache cleared')
-    }
-    if (!this.cpuProcessor && !this.reglProcessor) {
-      adapterLogger.debug('💭 [FACTORY] No cached processors to clear')
     }
   }
 }

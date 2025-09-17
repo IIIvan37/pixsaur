@@ -25,8 +25,8 @@ export const previewCanvasSizeAtom = atom((get) => {
 })
 
 // 1. Zone sélectionnée réduite à la largeur du mode
-export const croppedImageAtom = atom((get) => {
-  const workingImageData = get(workingImageAtom)
+export const croppedImageAtom = atom(async (get) => {
+  const workingImageData = await get(workingImageAtom)
   const selection = get(selectionAtom)
 
   if (!workingImageData || !selection) return null
@@ -35,16 +35,16 @@ export const croppedImageAtom = atom((get) => {
 })
 
 // 2. Extraction des données RGBA
-export const croppedBufferAtom = atom((get) => {
-  const cropped = get(croppedImageAtom)
+export const croppedBufferAtom = atom(async (get) => {
+  const cropped = await get(croppedImageAtom)
   if (!cropped) return null
   return extractBuffer(cropped)
 })
 
 // 3. Construction du quantizer sans mémoïsation
-export const quantizerAtom = atom((get) => {
-  const buf = get(croppedBufferAtom)
-  const cropped = get(croppedImageAtom)
+export const quantizerAtom = atom(async (get) => {
+  const buf = await get(croppedBufferAtom)
+  const cropped = await get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   if (!buf || !cropped) return null
@@ -67,8 +67,8 @@ export const quantizerAtom = atom((get) => {
 
 // 4. Palette réduite via ADAPTATEUR (nouveau système principal)
 export const reducedPaletteRawAtom = atom(async (get) => {
-  const buf = get(croppedBufferAtom)
-  const cropped = get(croppedImageAtom)
+  const buf = await get(croppedBufferAtom)
+  const cropped = await get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
@@ -76,7 +76,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   if (!buf || !cropped) return []
 
   // 🚀 UTILISATION DE L'ADAPTATEUR comme système principal
-  const processor = processorFactory.createBestProcessor()
+  const processor = await processorFactory.createBestProcessor()
 
   const palette = await processor.quantizePalette(
     buf,
@@ -93,10 +93,10 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 // 5. Image preview finale avec copie défensive
 export const previewImageAtom = atom(async (get) => {
   const mode = get(modeAtom)
-  const quantizer = get(quantizerAtom)
+  const quantizer = await get(quantizerAtom)
   const reduced = await get(reducedPaletteRawAtom)
   const reducedRgb = await get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
-  const cropped = get(croppedImageAtom)
+  const cropped = await get(croppedImageAtom)
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
 
@@ -202,15 +202,15 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
  * Peut remplacer progressivement le système direct
  */
 export const adapterPaletteAtom = atom(async (get) => {
-  const buf = get(croppedBufferAtom)
-  const cropped = get(croppedImageAtom)
+  const buf = await get(croppedBufferAtom)
+  const cropped = await get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
 
   if (!buf || !cropped) return []
 
-  const processor = processorFactory.createBestProcessor()
+  const processor = await processorFactory.createBestProcessor()
 
   const palette = await processor.quantizePalette(
     buf,

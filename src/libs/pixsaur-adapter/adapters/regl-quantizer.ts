@@ -76,6 +76,7 @@ interface ReGLCapabilities {
  * Phase 1: Infrastructure de base avec fallback CPU robuste
  */
 export class ReGLQuantizer {
+  readonly type = 'regl' as const
   private readonly regl: REGL.Regl
   private readonly capabilities: ReGLCapabilities
 
@@ -278,25 +279,35 @@ export class ReGLQuantizer {
   private detectCapabilities(): ReGLCapabilities {
     const gl = this.regl._gl
 
-    // Extensions requises
-    const extensions = [
-      'OES_texture_float',
-      'EXT_color_buffer_float',
+    // Extensions optionnelles pour de meilleures performances
+    const optionalExtensions = [
+      'EXT_color_buffer_float', 
       'WEBGL_color_buffer_float'
     ]
 
-    const availableExtensions = extensions.filter(
-      (ext) => !!gl.getExtension(ext)
-    )
+    const availableExtensions: string[] = []
+    
+    // Essayons d'activer chaque extension optionnelle
+    for (const extName of optionalExtensions) {
+      const ext = gl.getExtension(extName)
+      if (ext) {
+        availableExtensions.push(extName)
+        adapterLogger.debug(`✅ [ReGL] Extension ${extName} activated`)
+      } else {
+        adapterLogger.debug(`ℹ️ [ReGL] Extension ${extName} not available (optional)`)
+      }
+    }
 
-    const hasFloatTextures = availableExtensions.includes('OES_texture_float')
+    // OES_texture_float n'est plus requis - on fonctionne très bien sans
+    const hasFloatTextures = false // Pas besoin pour notre usage
     const hasColorBufferFloat = availableExtensions.some((ext) =>
       ext.includes('color_buffer_float')
     )
 
     const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
 
-    const canUseGPU = hasFloatTextures && maxTextureSize >= 1024
+    // GPU disponible si la taille texture est suffisante (pas besoin d'extensions)
+    const canUseGPU = maxTextureSize >= 1024
 
     const capabilities: ReGLCapabilities = {
       hasFloatTextures,
@@ -329,7 +340,7 @@ export class ReGLQuantizer {
         width: 27, // 27 couleurs CPC
         height: 1,
         colorFormat: 'rgba',
-        colorType: this.capabilities.hasColorBufferFloat ? 'float' : 'uint8'
+        colorType: 'uint8' // Utilise uint8 par défaut - compatible partout
       })
 
       // Phase 2: Vrais shaders GPU pour histogramme
@@ -507,20 +518,20 @@ export class ReGLQuantizer {
         this.cpcPaletteTexture.destroy()
       }
 
-      // Convertir Vector[] vers Float32Array
-      const paletteData = new Float32Array(basePalette.length * 3)
+      // Convertir Vector[] vers Uint8Array (compatible partout)
+      const paletteData = new Uint8Array(basePalette.length * 3)
       for (let i = 0; i < basePalette.length; i++) {
         const color = basePalette[i]
-        paletteData[i * 3] = color[0] / 255
-        paletteData[i * 3 + 1] = color[1] / 255
-        paletteData[i * 3 + 2] = color[2] / 255
+        paletteData[i * 3] = color[0]
+        paletteData[i * 3 + 1] = color[1] 
+        paletteData[i * 3 + 2] = color[2]
       }
 
       this.cpcPaletteTexture = this.regl.texture({
         width: basePalette.length,
         height: 1,
         format: 'rgb',
-        type: 'float32',
+        type: 'uint8',
         data: paletteData,
         wrap: 'clamp'
       })

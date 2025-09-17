@@ -67,7 +67,7 @@ export interface ProcessorFactory {
   /**
    * Crée le meilleur processor disponible (ReGL en priorité, fallback CPU)
    */
-  createBestProcessor(): ImageProcessor
+  createBestProcessor(): Promise<ImageProcessor>
 
   /**
    * Crée un processor CPU spécifiquement
@@ -77,7 +77,7 @@ export interface ProcessorFactory {
   /**
    * Crée un processor ReGL si disponible
    */
-  createReGlProcessor(): ImageProcessor | null
+  createReGlProcessor(): Promise<ImageProcessor | null>
 
   /**
    * Vérifie si WebGL est disponible (nécessaire pour ReGL)

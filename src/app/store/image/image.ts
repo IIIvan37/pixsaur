@@ -40,7 +40,7 @@ export const downscaledAtom = atom((get) => {
   return downscaleImage(img, LOGICAL_WIDTH)
 })
 
-export const workingImageAtom = atom((get) => {
+export const workingImageAtom = atom(async (get) => {
   get(srcVersionAtom)
   const custom = get(srcAtom)
   const config = get(configAtom)
@@ -50,7 +50,7 @@ export const workingImageAtom = atom((get) => {
   if (custom) return custom
 
   // Utilise l'adapter CPU pour les ajustements
-  const processor = processorFactory.createBestProcessor()
+  const processor = await processorFactory.createBestProcessor()
 
   const result = (processor as any).applyAdjustmentsSync(downscaled, {
     rgb: { r: config.red, g: config.green, b: config.blue },
@@ -60,7 +60,7 @@ export const workingImageAtom = atom((get) => {
     posterization: config.posterization
   })
 
-  processor.dispose()
+  // Ne pas disposer le processor - la factory gère la durée de vie
   return result
 })
 
