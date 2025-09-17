@@ -12,13 +12,13 @@ export interface AdjustmentConfig {
 }
 
 /**
- * Interface pour les processors d'image supportant CPU et WebGL
+ * Interface pour les processors d'image supportant CPU, WebGL et ReGL
  */
 export interface ImageProcessor {
   /**
-   * Type d'implémentation (cpu ou webgl)
+   * Type d'implémentation (cpu, webgl ou regl)
    */
-  readonly type: 'cpu' | 'webgl'
+  readonly type: 'cpu' | 'webgl' | 'regl'
   
   /**
    * Disponibilité du processor
@@ -64,7 +64,7 @@ export interface ImageProcessor {
  */
 export interface ProcessorFactory {
   /**
-   * Crée le meilleur processor disponible (WebGL en priorité, fallback CPU)
+   * Crée le meilleur processor disponible (ReGL en priorité, fallback CPU)
    */
   createBestProcessor(): ImageProcessor
   
@@ -74,12 +74,12 @@ export interface ProcessorFactory {
   createCpuProcessor(): ImageProcessor
   
   /**
-   * Crée un processor WebGL si disponible
+   * Crée un processor ReGL si disponible
    */
-  createWebGlProcessor(): ImageProcessor | null
+  createReGlProcessor(): ImageProcessor | null
   
   /**
-   * Vérifie si WebGL est disponible
+   * Vérifie si WebGL est disponible (nécessaire pour ReGL)
    */
   isWebGlAvailable(): boolean
 }

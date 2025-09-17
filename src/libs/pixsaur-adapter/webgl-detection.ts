@@ -117,7 +117,6 @@ function evaluatePerformance(
   }
 
   const rendererLower = renderer.toLowerCase()
-  const vendorLower = vendor.toLowerCase()
 
   // GPUs haute performance
   const highPerformanceIndicators = [
