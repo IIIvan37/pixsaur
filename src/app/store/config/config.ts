@@ -1,7 +1,7 @@
-import { DitheringConfig } from '@/libs/pixsaur-color/src'
-import { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { atom } from 'jotai'
-import { AdjustementKey, CpcModeKey } from './types'
+import type { DitheringConfig } from '@/libs/pixsaur-color/src'
+import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
+import type { AdjustementKey, CpcModeKey } from './types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {

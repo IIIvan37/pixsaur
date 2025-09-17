@@ -1,1 +1,1 @@
-export { DebugPanel, default } from './debug-panel';
+export { DebugPanel, default } from './debug-panel'

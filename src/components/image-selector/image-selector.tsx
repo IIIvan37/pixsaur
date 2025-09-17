@@ -1,8 +1,7 @@
-import { useRef, useEffect, useCallback } from 'react'
-
 import { useAtomValue } from 'jotai'
-import { ImageSelectorView } from './image-selector-view'
+import { useCallback, useEffect, useRef } from 'react'
 import { workingImageAtom } from '@/app/store/image/image'
+import { ImageSelectorView } from './image-selector-view'
 
 /**
  * ImageSelector is a React component responsible for rendering and managing an image selection canvas.

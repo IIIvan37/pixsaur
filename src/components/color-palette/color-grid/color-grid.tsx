@@ -1,7 +1,6 @@
-import { useRef, useEffect } from 'react'
-
-import { CPCColor } from '@/libs/types'
-import { PaletteSlot } from '@/app/store/palette/types'
+import { useEffect, useRef } from 'react'
+import type { PaletteSlot } from '@/app/store/palette/types'
+import type { CPCColor } from '@/libs/types'
 import { ColorGridView } from './color-grid-view'
 
 type ColorGridProps = {
@@ -35,11 +34,11 @@ export const ColorGrid: React.FC<ColorGridProps> = ({
   // Placeholder handlers for unimplemented methods
   // Placeholder functions for unimplemented handlers (camelCase)
   const handleToggleLock = (): void => {
-    throw new Error('Function not implemented.');
-  };
+    throw new Error('Function not implemented.')
+  }
   const handleClose = (): void => {
-    throw new Error('Function not implemented.');
-  };
+    throw new Error('Function not implemented.')
+  }
 
   return (
     <ColorGridView

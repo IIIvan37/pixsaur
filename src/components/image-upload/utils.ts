@@ -24,7 +24,7 @@ export const getSvgDimensions = async (file: File) => {
         const w = parseFloat(parts[2])
         const h = parseFloat(parts[3])
 
-        if (!isNaN(w) && !isNaN(h)) {
+        if (!Number.isNaN(w) && !Number.isNaN(h)) {
           return { width: w, height: h }
         }
       }
@@ -36,9 +36,9 @@ export const getSvgDimensions = async (file: File) => {
     const heightAttr = svg.getAttribute('height')
     if (widthAttr && heightAttr) {
       // Remove units if present (e.g., "100px" -> "100")
-      const w = parseInt(widthAttr)
-      const h = parseInt(heightAttr)
-      if (!isNaN(w) && !isNaN(h)) {
+      const w = parseInt(widthAttr, 10)
+      const h = parseInt(heightAttr, 10)
+      if (!Number.isNaN(w) && !Number.isNaN(h)) {
         return { width: w, height: h }
       }
       throw new Error('Invalid width/height attributes in SVG')

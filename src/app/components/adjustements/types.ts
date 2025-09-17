@@ -1,4 +1,4 @@
-import { AdjustementKey } from '@/app/store/config/types'
+import type { AdjustementKey } from '@/app/store/config/types'
 
 export type RangeOption = Record<
   AdjustementKey,

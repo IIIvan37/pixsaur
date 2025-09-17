@@ -1,15 +1,15 @@
 // ✅ ImagePreview.tsx
-import { useRef, useCallback, useEffect } from 'react'
+
 import { useAtomValue, useSetAtom } from 'jotai'
+import { useCallback, useEffect, useRef } from 'react'
+import { smoothingAtom } from '@/app/store/config/config'
 import {
   previewCanvasSizeAtom,
   previewCanvasWidthAtom,
   previewImageAtom
 } from '@/app/store/preview/preview'
-
-import { ImagePreviewView } from './image-preview-view'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
-import { smoothingAtom } from '@/app/store/config/config'
+import { ImagePreviewView } from './image-preview-view'
 
 const ImagePreview = () => {
   const ref = useRef<HTMLCanvasElement>(null)

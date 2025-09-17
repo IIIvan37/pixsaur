@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { getSvgDimensions, processImageFile } from './utils'
+import { describe, expect, it } from 'vitest'
 import { mockGlobalImage } from '@/utils/test-utils'
+import { getSvgDimensions, processImageFile } from './utils'
 
 function createFile(contents: string, type = 'image/svg+xml'): File {
   return new File([contents], 'test.svg', { type })

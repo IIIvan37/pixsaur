@@ -1,6 +1,6 @@
 import * as Slider from '@radix-ui/react-slider'
-import { useState, useEffect, type ReactNode } from 'react'
 import clsx from 'clsx'
+import { type ReactNode, useEffect, useState } from 'react'
 import styles from './slider.module.css'
 
 type PixsaurSliderProps = {

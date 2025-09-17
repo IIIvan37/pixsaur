@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 // Test de la fonction de quantification CPC isolément
 describe('CPC Quantization Logic', () => {

@@ -9,7 +9,7 @@ describe('ImagePreviewView', () => {
         ref={React.createRef()}
         image={null}
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        containerRefCallback={function (_: HTMLDivElement | null): void {
+        containerRefCallback={(_: HTMLDivElement | null): void => {
           throw new Error('Function not implemented.')
         }}
         width={0}

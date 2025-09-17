@@ -1,9 +1,9 @@
-import { Vector } from '../../src/type'
 import {
   cie76Distance,
   deltaE2000Distance,
   euclideanDistance
 } from '../../src/metric/distance'
+import type { Vector } from '../../src/type'
 
 describe('euclideanDistance', () => {
   it('returns 0 for identical vectors', () => {

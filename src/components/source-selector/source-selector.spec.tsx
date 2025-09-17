@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, fireEvent } from '@testing-library/react'
-import { SourceSelectorView } from './source-selector-view'
+import { fireEvent, render } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import styles from './source-selector.module.css'
+import { SourceSelectorView } from './source-selector-view'
 
 describe('SourceSelectorView', () => {
   const baseProps = {

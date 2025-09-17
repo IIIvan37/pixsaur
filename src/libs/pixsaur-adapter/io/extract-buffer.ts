@@ -1,4 +1,4 @@
-import { Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 /**
  * Transforms an ImageData object into a cloned Uint8ClampedArray buffer.

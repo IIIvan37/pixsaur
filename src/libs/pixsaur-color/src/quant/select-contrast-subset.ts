@@ -1,4 +1,4 @@
-import { Vector } from '../type'
+import type { Vector } from '../type'
 
 function kCombinations<T>(
   arr: T[],

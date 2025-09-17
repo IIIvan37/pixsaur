@@ -1,5 +1,5 @@
-import { Handle } from './utils'
 import styles from './source-selector.module.css'
+import type { Handle } from './utils'
 
 export type SourceSelectorViewProps = {
   onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
@@ -27,7 +27,10 @@ export function SourceSelectorView({
   const handleSize = 6
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: Interactive overlay for image selection requiring absolute positioning
     <div
+      role='button'
+      tabIndex={0}
       style={{
         position: 'absolute',
         top: 0,
@@ -42,15 +45,13 @@ export function SourceSelectorView({
       onDoubleClick={onDoubleClick}
     >
       {/* Rectangle de sélection */}
-      <div
+      <section
         data-testid='selection-rect'
-        tabIndex={0}
-        role='region'
         aria-label='Zone de sélection'
         className={
           styles['selection-rect'] +
           (dragging || resizeHandle
-            ? ' ' + styles['selection-rect--active']
+            ? ` ${styles['selection-rect--active']}`
             : '')
         }
         style={{
@@ -104,9 +105,11 @@ export function SourceSelectorView({
         }
 
         return (
+          // biome-ignore lint/a11y/useSemanticElements: Resize handle requires precise positioning
           <div
             key={name}
             data-handle={name}
+            role='button'
             tabIndex={0}
             aria-label={`Redimensionner ${name.replace('-', ' ')}`}
             style={{

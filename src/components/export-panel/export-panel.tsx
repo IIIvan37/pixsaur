@@ -1,13 +1,13 @@
+import { useAtomValue } from 'jotai'
+import { modeAtom } from '@/app/store/config/config'
+import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import {
   previewImageAtom,
   reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
-import { useAtomValue } from 'jotai'
+import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { exportZip } from '@/utils/exports/export-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
-import { CPC_MODE_CONFIG } from '@/app/store/config/types'
-import { modeAtom } from '@/app/store/config/config'
 import ExportPanelView from './export-panel-view'
 
 export default function ExportPanel() {

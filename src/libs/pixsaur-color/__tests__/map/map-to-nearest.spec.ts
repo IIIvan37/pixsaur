@@ -1,10 +1,10 @@
-import { Vector } from '../../src/type'
+import { mapToNearest } from '../../src/map'
 import {
   cie76Distance,
   deltaE2000Distance,
   euclideanDistance
 } from '../../src/metric/distance'
-import { mapToNearest } from '../../src/map'
+import type { Vector } from '../../src/type'
 
 describe('mapToNearest', () => {
   const palette: Vector[] = [

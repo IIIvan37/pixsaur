@@ -1,4 +1,4 @@
-import { Vector } from './pixsaur-color/src/type'
+import type { Vector } from './pixsaur-color/src/type'
 
 // CPC Modes
 export type CPCMode = 'mode0' | 'mode1' | 'mode2'

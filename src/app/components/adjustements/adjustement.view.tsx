@@ -1,11 +1,9 @@
+import type { AdjustementKey } from '@/app/store/config/types'
+import { Header } from '@/components/ui/layout/header/header'
+import { Panel } from '@/components/ui/layout/panel/panel'
 import PixsaurSlider from '@/components/ui/slider'
 import styles from './adjustements.module.css'
-
-import { RangeOption } from './types'
-import { AdjustementKey } from '@/app/store/config/types'
-
-import { Panel } from '@/components/ui/layout/panel/panel'
-import { Header } from '@/components/ui/layout/header/header'
+import type { RangeOption } from './types'
 
 type RangeLabels = {
   key: AdjustementKey

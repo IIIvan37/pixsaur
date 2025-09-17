@@ -1,6 +1,6 @@
 import { mapToNearest } from '../map/map-to-nearest'
-import { DistanceFn } from '../metric/distance'
-import { Vector } from '../type'
+import type { DistanceFn } from '../metric/distance'
+import type { Vector } from '../type'
 
 /**
  * Builds a histogram of color frequencies by mapping each color in the input

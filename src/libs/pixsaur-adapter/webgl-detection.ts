@@ -46,13 +46,14 @@ export function detectWebGLCapabilities(): WebGLCapabilities {
   try {
     // Créer un canvas temporaire
     const canvas = document.createElement('canvas')
-    
+
     // Tester WebGL 2.0 d'abord
-    let gl: WebGL2RenderingContext | WebGLRenderingContext | null = canvas.getContext('webgl2')
+    let gl: WebGL2RenderingContext | WebGLRenderingContext | null =
+      canvas.getContext('webgl2')
     if (gl) {
       result.isAvailable = true
       result.version = '2.0'
-      
+
       // WebGL 2.0 a des compute shaders limités
       result.features.computeShaders = false // WebGL 2.0 n'a pas de vrais compute shaders
       result.features.instancedArrays = true // Natif en WebGL 2.0
@@ -84,20 +85,27 @@ export function detectWebGLCapabilities(): WebGLCapabilities {
     result.maxRenderBufferSize = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)
 
     // Tester les extensions importantes
-    result.features.floatTextures = result.extensions.includes('OES_texture_float') || 
-                                   result.extensions.includes('EXT_texture_float_linear')
-    result.features.colorBufferFloat = result.extensions.includes('EXT_color_buffer_float') ||
-                                      result.extensions.includes('WEBGL_color_buffer_float')
-    
+    result.features.floatTextures =
+      result.extensions.includes('OES_texture_float') ||
+      result.extensions.includes('EXT_texture_float_linear')
+    result.features.colorBufferFloat =
+      result.extensions.includes('EXT_color_buffer_float') ||
+      result.extensions.includes('WEBGL_color_buffer_float')
+
     if (result.version === '1.0') {
-      result.features.instancedArrays = result.extensions.includes('ANGLE_instanced_arrays')
+      result.features.instancedArrays = result.extensions.includes(
+        'ANGLE_instanced_arrays'
+      )
     }
 
     // Évaluer les performances basées sur le renderer
-    result.performance = evaluatePerformance(result.renderer, result.vendor, result.maxTextureSize)
+    result.performance = evaluatePerformance(
+      result.renderer,
+      result.vendor,
+      result.maxTextureSize
+    )
 
     return result
-
   } catch (error) {
     console.warn('WebGL detection failed:', error)
     return result
@@ -108,8 +116,8 @@ export function detectWebGLCapabilities(): WebGLCapabilities {
  * Évalue les performances approximatives basées sur les informations du GPU
  */
 function evaluatePerformance(
-  renderer: string | null, 
-  vendor: string | null, 
+  renderer: string | null,
+  vendor: string | null,
   maxTextureSize: number
 ): 'high' | 'medium' | 'low' | 'unknown' {
   if (!renderer || !vendor) {
@@ -120,37 +128,75 @@ function evaluatePerformance(
 
   // GPUs haute performance
   const highPerformanceIndicators = [
-    'rtx', 'gtx 1060', 'gtx 1070', 'gtx 1080', 'gtx 1660', 'gtx 1650',
-    'rx 580', 'rx 590', 'rx 5600', 'rx 5700', 'rx 6600', 'rx 6700',
-    'radeon pro', 'quadro', 'tesla',
-    'iris xe', 'iris plus'
+    'rtx',
+    'gtx 1060',
+    'gtx 1070',
+    'gtx 1080',
+    'gtx 1660',
+    'gtx 1650',
+    'rx 580',
+    'rx 590',
+    'rx 5600',
+    'rx 5700',
+    'rx 6600',
+    'rx 6700',
+    'radeon pro',
+    'quadro',
+    'tesla',
+    'iris xe',
+    'iris plus'
   ]
 
   // GPUs moyennes performance
   const mediumPerformanceIndicators = [
-    'gtx 1050', 'gtx 960', 'gtx 970', 'gtx 980',
-    'rx 560', 'rx 570', 'rx 470', 'rx 480',
-    'iris', 'uhd graphics', 'hd graphics 630'
+    'gtx 1050',
+    'gtx 960',
+    'gtx 970',
+    'gtx 980',
+    'rx 560',
+    'rx 570',
+    'rx 470',
+    'rx 480',
+    'iris',
+    'uhd graphics',
+    'hd graphics 630'
   ]
 
   // GPUs basse performance
   const lowPerformanceIndicators = [
-    'intel', 'integrated', 'hd graphics', 'uhd graphics 600',
-    'mali', 'adreno', 'powervr'
+    'intel',
+    'integrated',
+    'hd graphics',
+    'uhd graphics 600',
+    'mali',
+    'adreno',
+    'powervr'
   ]
 
   // Vérifier les indicateurs haute performance
-  if (highPerformanceIndicators.some(indicator => rendererLower.includes(indicator))) {
+  if (
+    highPerformanceIndicators.some((indicator) =>
+      rendererLower.includes(indicator)
+    )
+  ) {
     return 'high'
   }
 
   // Vérifier les indicateurs moyenne performance
-  if (mediumPerformanceIndicators.some(indicator => rendererLower.includes(indicator))) {
+  if (
+    mediumPerformanceIndicators.some((indicator) =>
+      rendererLower.includes(indicator)
+    )
+  ) {
     return 'medium'
   }
 
   // Vérifier les indicateurs basse performance
-  if (lowPerformanceIndicators.some(indicator => rendererLower.includes(indicator))) {
+  if (
+    lowPerformanceIndicators.some((indicator) =>
+      rendererLower.includes(indicator)
+    )
+  ) {
     return 'low'
   }
 
@@ -171,19 +217,17 @@ function evaluatePerformance(
  */
 export function isWebGLRecommended(): boolean {
   const capabilities = detectWebGLCapabilities()
-  
+
   if (!capabilities.isAvailable) {
     return false
   }
 
   // Critères minimums pour recommander WebGL
-  const hasRequiredFeatures = 
-    capabilities.features.floatTextures && 
-    capabilities.maxTextureSize >= 2048
+  const hasRequiredFeatures =
+    capabilities.features.floatTextures && capabilities.maxTextureSize >= 2048
 
-  const hasGoodPerformance = 
-    capabilities.performance === 'high' || 
-    capabilities.performance === 'medium'
+  const hasGoodPerformance =
+    capabilities.performance === 'high' || capabilities.performance === 'medium'
 
   return hasRequiredFeatures && hasGoodPerformance
 }
@@ -193,14 +237,15 @@ export function isWebGLRecommended(): boolean {
  */
 export function getWebGLSummary(): string {
   const capabilities = detectWebGLCapabilities()
-  
+
   if (!capabilities.isAvailable) {
     return 'WebGL non disponible'
   }
 
   const features = []
   if (capabilities.features.floatTextures) features.push('Float Textures')
-  if (capabilities.features.colorBufferFloat) features.push('Color Buffer Float')
+  if (capabilities.features.colorBufferFloat)
+    features.push('Color Buffer Float')
   if (capabilities.features.instancedArrays) features.push('Instanced Arrays')
 
   return [

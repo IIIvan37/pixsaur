@@ -1,4 +1,4 @@
-import { ColorSpace, Vector } from '../type'
+import type { ColorSpace, Vector } from '../type'
 
 /**
  * Calculates the Euclidean distance between two vectors.
@@ -40,9 +40,7 @@ export function deltaE2000Distance(a: Vector, b: Vector): number {
   const C2 = Math.sqrt(a2 * a2 + b2 * b2)
   const avgC = (C1 + C2) / 2
 
-  const G =
-    0.5 *
-    (1 - Math.sqrt(Math.pow(avgC, 7) / (Math.pow(avgC, 7) + Math.pow(25, 7))))
+  const G = 0.5 * (1 - Math.sqrt(avgC ** 7 / (avgC ** 7 + 25 ** 7)))
   const a1p = a1 * (1 + G)
   const a2p = a2 * (1 + G)
 
@@ -80,20 +78,17 @@ export function deltaE2000Distance(a: Vector, b: Vector): number {
     0.32 * Math.cos(((3 * avgHp + 6) * Math.PI) / 180) -
     0.2 * Math.cos(((4 * avgHp - 63) * Math.PI) / 180)
 
-  const deltaTheta = 30 * Math.exp(-Math.pow((avgHp - 275) / 25, 2))
-  const Rc =
-    2 * Math.sqrt(Math.pow(avgCp, 7) / (Math.pow(avgCp, 7) + Math.pow(25, 7)))
-  const Sl =
-    1 +
-    (0.015 * Math.pow(avgLp - 50, 2)) / Math.sqrt(20 + Math.pow(avgLp - 50, 2))
+  const deltaTheta = 30 * Math.exp(-(((avgHp - 275) / 25) ** 2))
+  const Rc = 2 * Math.sqrt(avgCp ** 7 / (avgCp ** 7 + 25 ** 7))
+  const Sl = 1 + (0.015 * (avgLp - 50) ** 2) / Math.sqrt(20 + (avgLp - 50) ** 2)
   const Sc = 1 + 0.045 * avgCp
   const Sh = 1 + 0.015 * avgCp * T
   const Rt = -Math.sin((2 * deltaTheta * Math.PI) / 180) * Rc
 
   const deltaE = Math.sqrt(
-    Math.pow(deltaLp / Sl, 2) +
-      Math.pow(deltaCp / Sc, 2) +
-      Math.pow(deltaHp / Sh, 2) +
+    (deltaLp / Sl) ** 2 +
+      (deltaCp / Sc) ** 2 +
+      (deltaHp / Sh) ** 2 +
       Rt * (deltaCp / Sc) * (deltaHp / Sh)
   )
 

@@ -19,7 +19,7 @@ export interface ImageProcessor {
    * Type d'implémentation (cpu, webgl ou regl)
    */
   readonly type: 'cpu' | 'webgl' | 'regl'
-  
+
   /**
    * Disponibilité du processor
    */
@@ -29,7 +29,7 @@ export interface ImageProcessor {
    * Applique les ajustements d'image (brightness, contrast, saturation, etc.)
    */
   applyAdjustments(
-    imageData: ImageData, 
+    imageData: ImageData,
     adjustments: AdjustmentConfig
   ): Promise<ImageData>
 
@@ -37,7 +37,7 @@ export interface ImageProcessor {
    * Version synchrone des ajustements pour compatibilité avec les atoms Jotai
    */
   applyAdjustmentsSync(
-    imageData: ImageData, 
+    imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData
 
@@ -67,17 +67,17 @@ export interface ProcessorFactory {
    * Crée le meilleur processor disponible (ReGL en priorité, fallback CPU)
    */
   createBestProcessor(): ImageProcessor
-  
+
   /**
    * Crée un processor CPU spécifiquement
    */
   createCpuProcessor(): ImageProcessor
-  
+
   /**
    * Crée un processor ReGL si disponible
    */
   createReGlProcessor(): ImageProcessor | null
-  
+
   /**
    * Vérifie si WebGL est disponible (nécessaire pour ReGL)
    */

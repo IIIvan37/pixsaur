@@ -1,8 +1,12 @@
 import { buildHistogram } from '../histogram'
 import { mapAndDither } from '../map'
-import { DistanceFn, DistanceMetric, getDistanceFn } from '../metric/distance'
+import {
+  type DistanceFn,
+  type DistanceMetric,
+  getDistanceFn
+} from '../metric/distance'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
-import { ColorSpace, Vector } from '../type'
+import type { ColorSpace, Vector } from '../type'
 import { selectContrastedSubset } from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
 
@@ -74,7 +78,7 @@ export function createQuantizer({
     const counts = new Uint32Array(
       buildHistogram(vecs.map(toW), workingPal, distFn)
     )
-   
+
     const idxs = selectTopIndices(counts, preIdx, 16)
 
     const out = idxs.map((i) => workingPal[i])

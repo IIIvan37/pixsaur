@@ -10,7 +10,7 @@ export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
   const handleUpload = useCallback(
     (acceptedFiles: File[]) => {
       const file = acceptedFiles[0]
-      if (file && file.type.startsWith('image/')) {
+      if (file?.type.startsWith('image/')) {
         processImageFile(file).then(onImageLoaded)
       }
     },

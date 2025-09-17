@@ -1,35 +1,33 @@
-
+import clsx from 'clsx'
 // ...existing code...
-import { forwardRef } from 'react';
-import styles from './color-slot.module.css';
-import Icon from '@/components/ui/icon';
-import { isBright } from '@/libs/pixsaur-color/src/quant/select-contrast-subset';
-import { Vector } from '@/libs/pixsaur-color/src/type';
-import clsx from 'clsx';
-import { ColorButton } from './color-button';
-import { vectorToHex } from '@/palettes/cpc-palette';
-
+import { forwardRef } from 'react'
+import Icon from '@/components/ui/icon'
+import { isBright } from '@/libs/pixsaur-color/src/quant/select-contrast-subset'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { vectorToHex } from '@/palettes/cpc-palette'
+import { ColorButton } from './color-button'
+import styles from './color-slot.module.css'
 
 type ColorSlotProps = {
-  idx: number;
-  color: Vector<'RGB'>;
-  locked: boolean;
-  buttonRef: (el: HTMLButtonElement | null) => void;
-  onToggleLock: (idx: number) => void;
-  onOpenPopover?: () => void;
-  focused?: boolean;
-};
+  idx: number
+  color: Vector<'RGB'>
+  locked: boolean
+  buttonRef: (el: HTMLButtonElement | null) => void
+  onToggleLock: (idx: number) => void
+  onOpenPopover?: () => void
+  focused?: boolean
+}
 
 export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
   ({ color, locked, buttonRef, onOpenPopover, focused }, ref) => {
-    const hex = vectorToHex(color);
+    const hex = vectorToHex(color)
     return (
       <ColorButton
         ref={ref}
         colorHex={`#${hex}`}
         className={styles.colorFill}
         title={`#${hex} ${locked ? 'verrouillée' : 'déverrouillée'}`}
-  aria-selected={focused ? 'true' : 'false'}
+        aria-selected={focused ? 'true' : 'false'}
         buttonRef={buttonRef}
         onClick={onOpenPopover ? () => onOpenPopover() : undefined}
       >
@@ -45,7 +43,6 @@ export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
           </span>
         )}
       </ColorButton>
-    );
+    )
   }
-);
-                  
+)

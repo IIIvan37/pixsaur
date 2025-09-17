@@ -1,9 +1,13 @@
-import { useCallback, useState } from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
+import { useCallback, useState } from 'react'
 import { selectionAtom, setSelectionAtom } from '@/app/store/image/image'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
-import { Handle, logicalToPercentRect, percentRectToLogical } from './utils'
 import { SourceSelectorView } from './source-selector-view'
+import {
+  type Handle,
+  logicalToPercentRect,
+  percentRectToLogical
+} from './utils'
 
 export type SourceSelectorProps = {
   width: number
@@ -44,10 +48,10 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
     selection ?? { sx: 0, sy: 0, width, height }
   )
 
-  const detectHandleHit = (e: React.MouseEvent) => {
+  const detectHandleHit = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement
     return (target.dataset.handle as Handle) || null
-  }
+  }, [])
 
   const [dragging, setDragging] = useState(false)
   const [dragOrigin, setDragOrigin] = useState<{ x: number; y: number } | null>(
@@ -60,12 +64,15 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
 
   const rect = logicalToPercentRect(sel, width, height)
 
-  const getPercentPos = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    const bounds = e.currentTarget.getBoundingClientRect()
-    const px = ((e.clientX - bounds.left) / bounds.width) * 100
-    const py = ((e.clientY - bounds.top) / bounds.height) * 100
-    return { x: px, y: py }
-  }
+  const getPercentPos = useCallback(
+    (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+      const bounds = e.currentTarget.getBoundingClientRect()
+      const px = ((e.clientX - bounds.left) / bounds.width) * 100
+      const py = ((e.clientY - bounds.top) / bounds.height) * 100
+      return { x: px, y: py }
+    },
+    []
+  )
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -88,7 +95,7 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
         setDragOffset({ dx: pos.x - rect.x, dy: pos.y - rect.y })
       }
     },
-    [rect]
+    [rect, detectHandleHit, getPercentPos]
   )
 
   const onMouseMove = useCallback(
@@ -147,7 +154,16 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
 
       setSel(logical)
     },
-    [dragging, dragOrigin, resizeHandle, rect, dragOffset, width, height]
+    [
+      dragging,
+      dragOrigin,
+      resizeHandle,
+      rect,
+      dragOffset,
+      width,
+      height,
+      getPercentPos
+    ]
   )
 
   const onMouseUp = useCallback(() => {

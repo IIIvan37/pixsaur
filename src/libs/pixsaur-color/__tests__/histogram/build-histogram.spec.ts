@@ -1,6 +1,6 @@
-import { Vector } from '../../src/type'
-import { euclideanDistance } from '../../src/metric/distance'
 import { buildHistogram } from '../../src/histogram/build-histogram'
+import { euclideanDistance } from '../../src/metric/distance'
+import type { Vector } from '../../src/type'
 
 describe('buildHistogram', () => {
   it('should count occurrences of mapped colors by index', () => {

@@ -1,13 +1,11 @@
-import { ImageUpload } from '@/components/image-upload/image-upload'
+import { useAtomValue, useSetAtom } from 'jotai'
 
 import { ImageSelector } from '@/components/image-selector'
-
-import { imageAtom, setImgAtom, setSelectionAtom } from '../store/image/image'
-import { useAtomValue, useSetAtom } from 'jotai'
-import { resetImageAdjustmentsAtom } from '../store/config/config'
-
-import { Panel } from '@/components/ui/layout/panel/panel'
+import { ImageUpload } from '@/components/image-upload/image-upload'
 import { Header } from '@/components/ui/layout/header/header'
+import { Panel } from '@/components/ui/layout/panel/panel'
+import { resetImageAdjustmentsAtom } from '../store/config/config'
+import { imageAtom, setImgAtom, setSelectionAtom } from '../store/image/image'
 
 export default function SourceSection() {
   const setImg = useSetAtom(setImgAtom)

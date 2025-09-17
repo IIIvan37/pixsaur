@@ -1,6 +1,6 @@
 import * as SwitchPrimitive from '@radix-ui/react-switch'
-import styles from './switch.module.css'
 import clsx from 'clsx'
+import styles from './switch.module.css'
 
 type SwitchProps = {
   checked: boolean

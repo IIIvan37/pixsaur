@@ -1,6 +1,7 @@
-import styles from './image-upload.module.css'
-import { useDropzone } from 'react-dropzone'
 import { UploadIcon } from '@radix-ui/react-icons'
+import { useId } from 'react'
+import { useDropzone } from 'react-dropzone'
+import styles from './image-upload.module.css'
 
 export type ImageUploadProps = {
   onUpload: (files: File[]) => void
@@ -26,6 +27,7 @@ export const ImageUploadView = ({
   secondaryText = 'ou cliquez pour sélectionner un fichier',
   helpText = 'Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG'
 }: ImageUploadProps) => {
+  const uploadId = useId()
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: onUpload,
     accept: {
@@ -43,7 +45,7 @@ export const ImageUploadView = ({
     >
       <input
         {...getInputProps()}
-        id='image-upload'
+        id={uploadId}
         data-testid='image-upload-input'
       />
       <UploadIcon className={styles.icon} />

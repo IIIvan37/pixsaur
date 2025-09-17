@@ -1,8 +1,8 @@
 // ✅ ImagePreviewView.tsx
 import { useAtomValue } from 'jotai'
-import styles from './image-preview.module.css'
 import { modeAtom } from '@/app/store/config/config'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
+import styles from './image-preview.module.css'
 
 export type ImagePreviewViewProps = {
   containerRefCallback: (node: HTMLDivElement | null) => void

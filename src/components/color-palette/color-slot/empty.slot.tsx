@@ -1,9 +1,9 @@
+import type { PaletteSlot } from '@/app/store/palette/types'
 import Icon from '@/components/ui/icon'
-import styles from './color-slot.module.css'
 import PixsaurPopover from '@/components/ui/popover'
-import { PaletteSlot } from '@/app/store/palette/types'
-import { CPCColor } from '@/libs/types'
+import type { CPCColor } from '@/libs/types'
 import { ColorGrid } from '../color-grid'
+import styles from './color-slot.module.css'
 
 export type EmptySlotButtonProps = {
   idx: number
@@ -35,6 +35,7 @@ export function EmptySlotButton({
           ref={buttonRef}
           className={styles.emptySlot}
           aria-label='Ajouter une couleur'
+          type='button'
         >
           <Icon name='PlusIcon' className={styles.plusIcon} />
         </button>

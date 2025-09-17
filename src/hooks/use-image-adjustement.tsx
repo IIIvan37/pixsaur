@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from 'react'
-import debounce from 'lodash/debounce'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
+import debounce from 'lodash/debounce'
+import { useEffect, useMemo } from 'react'
 import { clearLastChangedKeyAtom, configAtom } from '@/app/store/config/config'
+import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { processorFactory } from '@/libs/pixsaur-adapter'
 
 export const useImageAdjustement = () => {

@@ -1,4 +1,4 @@
-import { PropsWithChildren } from 'react'
+import type { PropsWithChildren } from 'react'
 import Flex from '../../flex'
 import styles from './panel.module.css'
 export function Panel({ children }: PropsWithChildren) {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { mapAndDither } from './map-and-dither'
-import { DitheringConfig } from '../quant'
+import type { DitheringConfig } from '../quant'
 import { rgbToLab } from '../space/convert'
 import type { Vector } from '../type'
+import { mapAndDither } from './map-and-dither'
 
 describe('mapAndDither (Lab, no dithering)', () => {
   it('mappe correctement une image RGBA 2x2 avec palette Lab N/B/R/B', () => {

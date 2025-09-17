@@ -1,10 +1,10 @@
-import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import { createQuantizer } from '@/libs/pixsaur-color/src'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
-import { adapterLogger, quantizerLogger, paletteLogger } from '@/utils/logger'
-import type { ImageProcessor, AdjustmentConfig } from '../interfaces'
+import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
+import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
 
 /**
  * Implémentation CPU du processor d'image
@@ -19,10 +19,12 @@ export class CpuImageProcessor implements ImageProcessor {
   }
 
   async applyAdjustments(
-    imageData: ImageData, 
+    imageData: ImageData,
     adjustments: AdjustmentConfig
   ): Promise<ImageData> {
-    adapterLogger.debug('🔄 CPU async adjustments called, delegating to sync version')
+    adapterLogger.debug(
+      '🔄 CPU async adjustments called, delegating to sync version'
+    )
     return this.applyAdjustmentsSync(imageData, adjustments)
   }
 
@@ -30,13 +32,17 @@ export class CpuImageProcessor implements ImageProcessor {
    * Version synchrone pour compatibilité avec les atoms Jotai existants
    */
   applyAdjustmentsSync(
-    imageData: ImageData, 
+    imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData {
     return adapterLogger.timeSync('🖥️ [ADAPTER] CPU Image Adjustments', () => {
-      adapterLogger.info(`🎨 [ADAPTER] Applying adjustments via CPU processor: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`)
+      adapterLogger.info(
+        `🎨 [ADAPTER] Applying adjustments via CPU processor: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`
+      )
       const result = applyAdjustmentsInOnePass(imageData, adjustments)
-      adapterLogger.debug(`✅ [ADAPTER] CPU adjustments completed: ${imageData.width}x${imageData.height} → ${result.width}x${result.height}`)
+      adapterLogger.debug(
+        `✅ [ADAPTER] CPU adjustments completed: ${imageData.width}x${imageData.height} → ${result.width}x${result.height}`
+      )
       return result
     })
   }
@@ -49,41 +55,56 @@ export class CpuImageProcessor implements ImageProcessor {
     preselected?: Vector[],
     colorSpace: string = 'RGB'
   ): Promise<Vector[]> {
-    adapterLogger.info(`🎯 [ADAPTER] Starting CPU quantization via adapter: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`)
-    
-    return adapterLogger.timeAsync('🖥️ [ADAPTER] CPU Palette Quantization', async () => {
-      quantizerLogger.time('🔧 [ADAPTER] Quantizer Creation')
-      
-      // Utilise la logique existante
-      const availableMetrics = ColorSpaceDistanceMetric[colorSpace as keyof typeof ColorSpaceDistanceMetric]
-      const distanceMetric = availableMetrics?.[0] || ColorSpaceDistanceMetric.RGB[0]
-      
-      quantizerLogger.info(`📊 [ADAPTER] Creating quantizer with metric: ${distanceMetric}, basePalette=${basePalette?.length || 0} colors, preselected=${preselected?.length || 0} colors`)
+    adapterLogger.info(
+      `🎯 [ADAPTER] Starting CPU quantization via adapter: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`
+    )
 
-      const quantizer = createQuantizer({
-        buf: buffer,
-        basePalette: basePalette || generateAmstradCPCPalette(),
-        preselected: preselected || [],
-        quantConfig: {
-          colorSpace: colorSpace as keyof typeof ColorSpaceDistanceMetric,
-          distanceMetric
+    return adapterLogger.timeAsync(
+      '🖥️ [ADAPTER] CPU Palette Quantization',
+      async () => {
+        quantizerLogger.time('🔧 [ADAPTER] Quantizer Creation')
+
+        // Utilise la logique existante
+        const availableMetrics =
+          ColorSpaceDistanceMetric[
+            colorSpace as keyof typeof ColorSpaceDistanceMetric
+          ]
+        const distanceMetric =
+          availableMetrics?.[0] || ColorSpaceDistanceMetric.RGB[0]
+
+        quantizerLogger.info(
+          `📊 [ADAPTER] Creating quantizer with metric: ${distanceMetric}, basePalette=${basePalette?.length || 0} colors, preselected=${preselected?.length || 0} colors`
+        )
+
+        const quantizer = createQuantizer({
+          buf: buffer,
+          basePalette: basePalette || generateAmstradCPCPalette(),
+          preselected: preselected || [],
+          quantConfig: {
+            colorSpace: colorSpace as keyof typeof ColorSpaceDistanceMetric,
+            distanceMetric
+          }
+        })
+
+        quantizerLogger.timeEnd('🔧 [ADAPTER] Quantizer Creation')
+        quantizerLogger.time('⚡ [ADAPTER] Quantization Process')
+
+        const result = quantizer.quantize(targetColors)
+
+        quantizerLogger.timeEnd('⚡ [ADAPTER] Quantization Process')
+        paletteLogger.info(
+          `🎨 [ADAPTER] Quantization completed via adapter: ${result.length}/${targetColors} colors for ${colorSpace}`
+        )
+
+        if (result.length !== targetColors) {
+          paletteLogger.warn(
+            `⚠️ [ADAPTER] Expected ${targetColors} colors but got ${result.length} for ${colorSpace}`
+          )
         }
-      })
-      
-      quantizerLogger.timeEnd('🔧 [ADAPTER] Quantizer Creation')
-      quantizerLogger.time('⚡ [ADAPTER] Quantization Process')
 
-      const result = quantizer.quantize(targetColors)
-      
-      quantizerLogger.timeEnd('⚡ [ADAPTER] Quantization Process')
-      paletteLogger.info(`🎨 [ADAPTER] Quantization completed via adapter: ${result.length}/${targetColors} colors for ${colorSpace}`)
-      
-      if (result.length !== targetColors) {
-        paletteLogger.warn(`⚠️ [ADAPTER] Expected ${targetColors} colors but got ${result.length} for ${colorSpace}`)
+        return result.map((v) => [...v] as Vector)
       }
-      
-      return result.map(v => [...v] as Vector)
-    })
+    )
   }
 
   dispose(): void {

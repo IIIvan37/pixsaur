@@ -1,5 +1,5 @@
-import { Vector } from '@/libs/pixsaur-color/src/type'
-import { CPCColor, CPCPalette } from '@/libs/types'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { CPCColor, CPCPalette } from '@/libs/types'
 
 // Full CPC hardware palette
 export const cpcFullPalette: CPCColor[] = [

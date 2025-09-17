@@ -6,7 +6,7 @@
  * @returns A Uint8Array where each element is the index of the corresponding pixel's color in the palette.
  * @throws {Error} If a pixel's RGB value is not found in the palette.
  */
-import { Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 function quantizeCPC(value: number): number {
   const levels = [0, 128, 255]

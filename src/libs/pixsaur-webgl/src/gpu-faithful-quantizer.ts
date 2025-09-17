@@ -1,6 +1,6 @@
 /**
  * Compute Shader pour construire un histogramme GPU fidèle à l'algorithme CPU
- * 
+ *
  * Cette implémentation reproduit exactement :
  * 1. buildHistogram() - mapping des pixels vers palette CPC complète
  * 2. selectTopIndices() - sélection par fréquence avec seuillage
@@ -13,10 +13,10 @@
 export interface GPUHistogramData {
   /** Histogramme des fréquences [27 entrées pour palette CPC complète] */
   histogram: Uint32Array
-  
+
   /** Buffer des couleurs palette CPC en RGB */
   cpcPalette: Float32Array // 27 * 3 = 81 floats
-  
+
   /** Buffer des distances pré-calculées si nécessaire */
   distanceCache?: Float32Array
 }
@@ -27,16 +27,16 @@ export interface GPUHistogramData {
 export interface GPUQuantizationConfig {
   /** Espace colorimétrique de travail */
   colorSpace: 'RGB' | 'Lab' | 'XYZ'
-  
+
   /** Métrique de distance */
   distanceMetric: 'euclidean' | 'cie76' | 'deltaE2000'
-  
+
   /** Nombre de couleurs cibles */
   targetColors: number
-  
+
   /** Couleurs pré-sélectionnées (verrouillées) */
   preselected?: number[] // indices dans la palette CPC
-  
+
   /** Seuil pour le filtrage adaptatif */
   threshold?: number // défaut: 10
 }
@@ -47,16 +47,16 @@ export interface GPUQuantizationConfig {
 export interface GPUQuantizationResult {
   /** Indices des couleurs sélectionnées dans la palette CPC */
   selectedIndices: number[]
-  
+
   /** Couleurs sélectionnées en RGB */
   selectedColors: number[][]
-  
+
   /** Histogramme utilisé pour la sélection */
   histogram: number[]
-  
+
   /** Temps de calcul en ms */
   computeTime: number
-  
+
   /** Statistiques de performance */
   stats: {
     histogramTime: number
@@ -161,7 +161,7 @@ void main() {
     // Incrémenter l'histogramme de manière atomique
     imageAtomicAdd(u_histogramBuffer, ivec2(closestIndex, 0), 1u);
 }
-`;
+`
 
 /**
  * Classe pour la quantization GPU fidèle
@@ -171,119 +171,137 @@ export class GPUFaithfulQuantizer {
   private computeProgram: WebGLProgram | null = null
   private histogramTexture: WebGLTexture | null = null
   private inputTexture: WebGLTexture | null = null
-  
+
   constructor(gl: WebGL2RenderingContext) {
     this.gl = gl
     this.initializeCompute()
   }
-  
+
   private initializeCompute(): void {
     // Vérifier support Compute Shaders
     if (!this.gl.getExtension('OES_texture_float')) {
       console.warn('⚠️ OES_texture_float not available for GPU histogram')
     }
-    
+
     // Compiler le compute shader
     this.computeProgram = this.createComputeProgram(HISTOGRAM_COMPUTE_SHADER)
-    
+
     // Créer les textures pour l'histogramme
     this.setupHistogramTextures()
   }
-  
+
   private createComputeProgram(_source: string): WebGLProgram | null {
     // Note: WebGL 2.0 ne supporte pas les compute shaders nativement
     // On va utiliser une approche fragment shader + transform feedback
-    console.warn('🔧 WebGL 2.0 detected, using fragment shader approach for histogram')
-    
+    console.warn(
+      '🔧 WebGL 2.0 detected, using fragment shader approach for histogram'
+    )
+
     return null // Implémentation fragment shader suivra
   }
-  
+
   private setupHistogramTextures(): void {
     const gl = this.gl
-    
+
     // Texture pour stocker l'histogramme (27 entrées)
     this.histogramTexture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, this.histogramTexture)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32UI, 27, 1, 0, gl.RED_INTEGER, gl.UNSIGNED_INT, null)
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.R32UI,
+      27,
+      1,
+      0,
+      gl.RED_INTEGER,
+      gl.UNSIGNED_INT,
+      null
+    )
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
   }
-  
+
   /**
    * Construit un histogramme GPU fidèle à buildHistogram() CPU
    */
   async buildHistogramGPU(
-    imageData: ImageData, 
+    imageData: ImageData,
     config: GPUQuantizationConfig
   ): Promise<GPUHistogramData> {
     const startTime = performance.now()
-    
+
     // Pour l'instant, fallback vers CPU pour la compatibilité
     // L'implémentation GPU complète nécessite WebGL Compute Shaders (WebGPU)
     console.log('🚧 GPU histogram not fully implemented, using CPU fallback')
-    
+
     const histogram = await this.buildHistogramCPUFallback(imageData, config)
-    
+
     const endTime = performance.now()
-    console.log(`📊 GPU Histogram (fallback): ${(endTime - startTime).toFixed(2)}ms`)
-    
+    console.log(
+      `📊 GPU Histogram (fallback): ${(endTime - startTime).toFixed(2)}ms`
+    )
+
     return histogram
   }
-  
+
   /**
    * Fallback CPU temporaire qui reproduit exactement buildHistogram()
    */
   private async buildHistogramCPUFallback(
     imageData: ImageData,
-    config: GPUQuantizationConfig  
+    config: GPUQuantizationConfig
   ): Promise<GPUHistogramData> {
     const { data, width, height } = imageData
     const numPixels = width * height
-    
+
     // Palette CPC complète (27 couleurs)
     const cpcPalette = this.getCPCPalette()
     const histogram = new Uint32Array(27) // 27 couleurs CPC
-    
+
     // Log de la configuration pour debug
-    console.log(`📊 Building histogram: ${config.colorSpace} ${config.distanceMetric}, target: ${config.targetColors}`)
-    
+    console.log(
+      `📊 Building histogram: ${config.colorSpace} ${config.distanceMetric}, target: ${config.targetColors}`
+    )
+
     // Construire l'histogramme pixel par pixel
     for (let i = 0; i < numPixels * 4; i += 4) {
       const r = data[i]
       const g = data[i + 1]
       const b = data[i + 2]
       const a = data[i + 3]
-      
+
       // Ignorer les pixels transparents
       if (a === 0) continue
-      
+
       // Trouver la couleur CPC la plus proche
       let minDistance = Infinity
       let closestIndex = 0
-      
+
       for (let j = 0; j < cpcPalette.length; j++) {
         const [cr, cg, cb] = cpcPalette[j]
-        
+
         // Distance euclidienne simple pour tous les cas
         // Les conversions colorspace avancées seront ajoutées plus tard
-        const distance = Math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2)
-        
+        const distance = Math.sqrt(
+          (r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2
+        )
+
         if (distance < minDistance) {
           minDistance = distance
           closestIndex = j
         }
       }
-      
+
       // Incrémenter l'histogramme
       histogram[closestIndex]++
     }
-    
+
     return {
       histogram,
       cpcPalette: new Float32Array(cpcPalette.flat())
     }
   }
-  
+
   /**
    * Sélectionne les couleurs principales selon selectTopIndices() CPU
    */
@@ -293,34 +311,35 @@ export class GPUFaithfulQuantizer {
   ): number[] {
     const { histogram } = histogramData
     const { targetColors, preselected = [], threshold = 10 } = config
-    
+
     // 1. Commencer avec les couleurs pré-sélectionnées
     const selectedIndices = new Set(preselected)
-    
+
     // 2. Créer liste des couleurs avec leurs fréquences
     const colorFreqs = Array.from(histogram.entries())
       .map(([index, freq]) => ({ index, freq }))
       .filter(({ index }) => !selectedIndices.has(index))
       .filter(({ freq }) => freq > 0)
-    
+
     // 3. Appliquer le seuillage adaptatif
-    const maxFreq = Math.max(...colorFreqs.map(cf => cf.freq))
-    const filteredColors = maxFreq > threshold * 100 
-      ? colorFreqs.filter(cf => cf.freq >= threshold)
-      : colorFreqs
-    
+    const maxFreq = Math.max(...colorFreqs.map((cf) => cf.freq))
+    const filteredColors =
+      maxFreq > threshold * 100
+        ? colorFreqs.filter((cf) => cf.freq >= threshold)
+        : colorFreqs
+
     // 4. Trier par fréquence décroissante
     filteredColors.sort((a, b) => b.freq - a.freq)
-    
+
     // 5. Prendre les top N couleurs
     const remaining = targetColors - selectedIndices.size
     for (let i = 0; i < Math.min(remaining, filteredColors.length); i++) {
       selectedIndices.add(filteredColors[i].index)
     }
-    
+
     return Array.from(selectedIndices)
   }
-  
+
   /**
    * Quantization complète fidèle à l'algorithme CPU
    */
@@ -329,25 +348,25 @@ export class GPUFaithfulQuantizer {
     config: GPUQuantizationConfig
   ): Promise<GPUQuantizationResult> {
     const startTime = performance.now()
-    
+
     // 1. Construire l'histogramme (GPU ou fallback CPU)
     const histogramStart = performance.now()
     const histogramData = await this.buildHistogramGPU(imageData, config)
     const histogramTime = performance.now() - histogramStart
-    
+
     // 2. Sélectionner les couleurs principales
     const selectionStart = performance.now()
     const selectedIndices = this.selectTopIndices(histogramData, config)
     const selectionTime = performance.now() - selectionStart
-    
+
     // 3. Convertir en couleurs RGB
     const conversionStart = performance.now()
     const cpcPalette = this.getCPCPalette()
-    const selectedColors = selectedIndices.map(i => cpcPalette[i])
+    const selectedColors = selectedIndices.map((i) => cpcPalette[i])
     const conversionTime = performance.now() - conversionStart
-    
+
     const totalTime = performance.now() - startTime
-    
+
     return {
       selectedIndices,
       selectedColors,
@@ -360,32 +379,50 @@ export class GPUFaithfulQuantizer {
       }
     }
   }
-  
+
   /**
    * Palette CPC complète (27 couleurs)
    */
   private getCPCPalette(): number[][] {
     return [
-      [0, 0, 0], [0, 0, 128], [0, 0, 255], 
-      [128, 0, 0], [128, 0, 128], [128, 0, 255],
-      [255, 0, 0], [255, 0, 128], [255, 0, 255],
-      [0, 128, 0], [0, 128, 128], [0, 128, 255],
-      [128, 128, 0], [128, 128, 128], [128, 128, 255],
-      [255, 128, 0], [255, 128, 128], [255, 128, 255],
-      [0, 255, 0], [0, 255, 128], [0, 255, 255],
-      [128, 255, 0], [128, 255, 128], [128, 255, 255],
-      [255, 255, 0], [255, 255, 128], [255, 255, 255]
+      [0, 0, 0],
+      [0, 0, 128],
+      [0, 0, 255],
+      [128, 0, 0],
+      [128, 0, 128],
+      [128, 0, 255],
+      [255, 0, 0],
+      [255, 0, 128],
+      [255, 0, 255],
+      [0, 128, 0],
+      [0, 128, 128],
+      [0, 128, 255],
+      [128, 128, 0],
+      [128, 128, 128],
+      [128, 128, 255],
+      [255, 128, 0],
+      [255, 128, 128],
+      [255, 128, 255],
+      [0, 255, 0],
+      [0, 255, 128],
+      [0, 255, 255],
+      [128, 255, 0],
+      [128, 255, 128],
+      [128, 255, 255],
+      [255, 255, 0],
+      [255, 255, 128],
+      [255, 255, 255]
     ]
   }
-  
+
   dispose(): void {
     const gl = this.gl
-    
+
     if (this.histogramTexture) {
       gl.deleteTexture(this.histogramTexture)
     }
     if (this.inputTexture) {
-      gl.deleteTexture(this.inputTexture)  
+      gl.deleteTexture(this.inputTexture)
     }
     if (this.computeProgram) {
       gl.deleteProgram(this.computeProgram)

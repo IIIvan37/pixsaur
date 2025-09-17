@@ -4,11 +4,11 @@
  * ReGL simplifiera la gestion WebGL quand l'implémentation GPU sera prête
  */
 
-import { Vector } from '@/libs/pixsaur-color/src/type'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
-import { adapterLogger, quantizerLogger, paletteLogger } from '@/utils/logger'
-import type { ImageProcessor, AdjustmentConfig } from '../interfaces'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
+import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
 
 // Types pour l'espace colorimétrique et métriques
 type ColorSpace = 'RGB' | 'Lab' | 'XYZ'
@@ -32,11 +32,13 @@ export class ReGLProcessor implements ImageProcessor {
   constructor() {
     // Évaluer si ReGL pourrait être utilisé dans le futur
     this.reglCapabilities = this.evaluateReGLCapabilities()
-    
+
     // Pour l'instant, toujours disponible avec fallback CPU
     this.isAvailable = true
-    
-    adapterLogger.info(`🎮 [ADAPTER] ReGL processor initialized (CPU fallback mode), future ReGL capable: ${this.reglCapabilities.canUseReGL}`)
+
+    adapterLogger.info(
+      `🎮 [ADAPTER] ReGL processor initialized (CPU fallback mode), future ReGL capable: ${this.reglCapabilities.canUseReGL}`
+    )
   }
 
   /**
@@ -50,13 +52,16 @@ export class ReGLProcessor implements ImageProcessor {
     try {
       const canvas = document.createElement('canvas')
       const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
-      
+
       if (gl) {
-        const version = gl instanceof WebGL2RenderingContext ? 'WebGL 2.0' : 'WebGL 1.0'
+        const version =
+          gl instanceof WebGL2RenderingContext ? 'WebGL 2.0' : 'WebGL 1.0'
         const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
-        
-        adapterLogger.debug(`🔍 [ADAPTER] WebGL capabilities detected: ${version}, max texture: ${maxTextureSize}px`)
-        
+
+        adapterLogger.debug(
+          `🔍 [ADAPTER] WebGL capabilities detected: ${version}, max texture: ${maxTextureSize}px`
+        )
+
         return {
           canUseReGL: true,
           webglVersion: version,
@@ -71,7 +76,10 @@ export class ReGLProcessor implements ImageProcessor {
         }
       }
     } catch (error) {
-      adapterLogger.warn('⚠️ [ADAPTER] Error evaluating WebGL capabilities:', error)
+      adapterLogger.warn(
+        '⚠️ [ADAPTER] Error evaluating WebGL capabilities:',
+        error
+      )
       return {
         canUseReGL: false,
         webglVersion: null,
@@ -88,26 +96,35 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): Promise<ImageData> {
-    return adapterLogger.timeAsync('ReGL Image Adjustments (CPU fallback)', async () => {
-      adapterLogger.debug(`🎨 [ADAPTER] Applying adjustments via ReGL processor (CPU fallback): brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`)
+    return adapterLogger.timeAsync(
+      'ReGL Image Adjustments (CPU fallback)',
+      async () => {
+        adapterLogger.debug(
+          `🎨 [ADAPTER] Applying adjustments via ReGL processor (CPU fallback): brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`
+        )
 
-      if (this.reglCapabilities.canUseReGL) {
-        adapterLogger.debug('🎮 [ADAPTER] ReGL capable system detected, using optimized CPU processing')
-      } else {
-        adapterLogger.debug('💻 [ADAPTER] ReGL not available, using standard CPU processing')
+        if (this.reglCapabilities.canUseReGL) {
+          adapterLogger.debug(
+            '🎮 [ADAPTER] ReGL capable system detected, using optimized CPU processing'
+          )
+        } else {
+          adapterLogger.debug(
+            '💻 [ADAPTER] ReGL not available, using standard CPU processing'
+          )
+        }
+
+        // Utiliser CPU processing pour l'instant
+        const config = {
+          rgb: adjustments.rgb,
+          brightness: adjustments.brightness,
+          contrast: adjustments.contrast,
+          saturation: adjustments.saturation,
+          posterization: adjustments.posterization
+        }
+
+        return applyAdjustmentsInOnePass(imageData, config)
       }
-      
-      // Utiliser CPU processing pour l'instant
-      const config = {
-        rgb: adjustments.rgb,
-        brightness: adjustments.brightness,
-        contrast: adjustments.contrast,
-        saturation: adjustments.saturation,
-        posterization: adjustments.posterization
-      }
-      
-      return applyAdjustmentsInOnePass(imageData, config)
-    })
+    )
   }
 
   /**
@@ -117,7 +134,9 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData {
-    adapterLogger.debug(`🎨 [ADAPTER] Applying adjustments via ReGL processor (sync CPU fallback): brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`)
+    adapterLogger.debug(
+      `🎨 [ADAPTER] Applying adjustments via ReGL processor (sync CPU fallback): brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`
+    )
 
     const config = {
       rgb: adjustments.rgb,
@@ -128,9 +147,11 @@ export class ReGLProcessor implements ImageProcessor {
     }
 
     if (this.reglCapabilities.canUseReGL) {
-      adapterLogger.debug('🎮 [ADAPTER] ReGL capable system, using optimized CPU processing (sync)')
+      adapterLogger.debug(
+        '🎮 [ADAPTER] ReGL capable system, using optimized CPU processing (sync)'
+      )
     }
-    
+
     return applyAdjustmentsInOnePass(imageData, config)
   }
 
@@ -146,20 +167,38 @@ export class ReGLProcessor implements ImageProcessor {
     lockedVecs: Vector[],
     colorSpace: ColorSpace
   ): Promise<Vector[]> {
-    return adapterLogger.timeAsync('ReGL Palette Quantization (CPU fallback)', async () => {
-      adapterLogger.debug(`🎯 [ADAPTER] Starting ReGL quantization (CPU fallback): colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buf.length}`)
+    return adapterLogger.timeAsync(
+      'ReGL Palette Quantization (CPU fallback)',
+      async () => {
+        adapterLogger.debug(
+          `🎯 [ADAPTER] Starting ReGL quantization (CPU fallback): colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buf.length}`
+        )
 
-      // Déterminer la métrique de distance basée sur l'espace colorimétrique
-      const distanceMetric: DistanceMetric = colorSpace === 'Lab' ? 'cie76' : 'euclidean'
+        // Déterminer la métrique de distance basée sur l'espace colorimétrique
+        const distanceMetric: DistanceMetric =
+          colorSpace === 'Lab' ? 'cie76' : 'euclidean'
 
-      if (this.reglCapabilities.canUseReGL) {
-        adapterLogger.debug('🎮 [ADAPTER] ReGL capable system, using optimized CPU quantization')
-      } else {
-        adapterLogger.debug('💻 [ADAPTER] ReGL not available, using standard CPU quantization')
+        if (this.reglCapabilities.canUseReGL) {
+          adapterLogger.debug(
+            '🎮 [ADAPTER] ReGL capable system, using optimized CPU quantization'
+          )
+        } else {
+          adapterLogger.debug(
+            '💻 [ADAPTER] ReGL not available, using standard CPU quantization'
+          )
+        }
+
+        return this.quantizePaletteOptimized(
+          buf,
+          cropped,
+          targetColors,
+          basePalette,
+          lockedVecs,
+          colorSpace,
+          distanceMetric
+        )
       }
-      
-      return this.quantizePaletteOptimized(buf, cropped, targetColors, basePalette, lockedVecs, colorSpace, distanceMetric)
-    })
+    )
   }
 
   /**
@@ -174,10 +213,12 @@ export class ReGLProcessor implements ImageProcessor {
     colorSpace: ColorSpace,
     distanceMetric: DistanceMetric
   ): Promise<Vector[]> {
-    quantizerLogger.debug(`📊 [ADAPTER] Creating ReGL-ready quantizer with metric: ${distanceMetric}, basePalette=${basePalette.length} colors, preselected=${lockedVecs.length} colors`)
+    quantizerLogger.debug(
+      `📊 [ADAPTER] Creating ReGL-ready quantizer with metric: ${distanceMetric}, basePalette=${basePalette.length} colors, preselected=${lockedVecs.length} colors`
+    )
 
     const startTime = performance.now()
-    
+
     // Utiliser la signature correcte de createQuantizer
     const quantizer = createQuantizer({
       buf,
@@ -188,22 +229,30 @@ export class ReGLProcessor implements ImageProcessor {
         distanceMetric
       }
     })
-    
+
     const creationTime = performance.now()
-    quantizerLogger.debug(`🔧 [ADAPTER] Quantizer Creation: ${(creationTime - startTime).toFixed(2)}ms`)
+    quantizerLogger.debug(
+      `🔧 [ADAPTER] Quantizer Creation: ${(creationTime - startTime).toFixed(2)}ms`
+    )
 
     const quantStart = performance.now()
-    
+
     // Utiliser la signature correcte de quantize
     const palette = await quantizer.quantize(targetColors)
-    
-    const quantEnd = performance.now()
-    quantizerLogger.debug(`⚡ [ADAPTER] Quantization Process: ${(quantEnd - quantStart).toFixed(2)}ms`)
 
-    paletteLogger.debug(`🎨 [ADAPTER] Quantization completed via ReGL adapter (CPU): ${palette.length}/${targetColors} colors for ${colorSpace}`)
-    
+    const quantEnd = performance.now()
+    quantizerLogger.debug(
+      `⚡ [ADAPTER] Quantization Process: ${(quantEnd - quantStart).toFixed(2)}ms`
+    )
+
+    paletteLogger.debug(
+      `🎨 [ADAPTER] Quantization completed via ReGL adapter (CPU): ${palette.length}/${targetColors} colors for ${colorSpace}`
+    )
+
     if (palette.length !== targetColors) {
-      paletteLogger.warn(`⚠️ [ADAPTER] Expected ${targetColors} colors but got ${palette.length} for ${colorSpace}`)
+      paletteLogger.warn(
+        `⚠️ [ADAPTER] Expected ${targetColors} colors but got ${palette.length} for ${colorSpace}`
+      )
     }
 
     return palette
@@ -213,7 +262,9 @@ export class ReGLProcessor implements ImageProcessor {
    * Libération des ressources (pour compatibilité future)
    */
   dispose(): void {
-    adapterLogger.debug('🗑️ [ADAPTER] ReGL Processor disposed (CPU fallback mode)')
+    adapterLogger.debug(
+      '🗑️ [ADAPTER] ReGL Processor disposed (CPU fallback mode)'
+    )
     // Rien à nettoyer pour l'instant avec CPU fallback
   }
 

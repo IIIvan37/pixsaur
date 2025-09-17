@@ -1,19 +1,19 @@
-import { extractBuffer, createQuantizer } from '@/libs/pixsaur-color/src'
-import { Vector } from '@/libs/pixsaur-color/src/type'
+import { atom } from 'jotai'
+import { processorFactory } from '@/libs/pixsaur-adapter'
+import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
+import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
+import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
 import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
-import { atom } from 'jotai'
-import { modeAtom, colorSpaceAtom, ditheringAtom } from '../config/config'
+import { colorSpaceAtom, ditheringAtom, modeAtom } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
-import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
-import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
-import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
-import { processorFactory } from '@/libs/pixsaur-adapter'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -72,12 +72,12 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
-  
+
   if (!buf || !cropped) return []
 
   // 🚀 UTILISATION DE L'ADAPTATEUR comme système principal
   const processor = processorFactory.createBestProcessor()
-  
+
   const palette = await processor.quantizePalette(
     buf,
     cropped,
@@ -86,7 +86,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     lockedVecs,
     colorSpace
   )
-  
+
   return palette
 })
 
@@ -101,9 +101,9 @@ export const previewImageAtom = atom(async (get) => {
   if (!quantizer || !cropped) return null
 
   console.time('🖼️ Preview Generation')
-  
+
   const normalized = getVisualRegionNormalized(cropped, mode)
-  
+
   console.time('  📐 Dithering')
   // reduced est en espace de travail (Lab, XYZ, etc.)
   const previewBuffer = quantizer.dither(normalized, reduced, {
@@ -159,7 +159,7 @@ export const previewImageAtom = atom(async (get) => {
     remapped.height
   )
   console.timeEnd('  🖌️ Canvas Operations')
-  
+
   const result = finalCtx.getImageData(0, 0, targetW, targetH)
   console.timeEnd('🖼️ Preview Generation')
   return result
@@ -207,11 +207,11 @@ export const adapterPaletteAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
-  
+
   if (!buf || !cropped) return []
 
   const processor = processorFactory.createBestProcessor()
-  
+
   const palette = await processor.quantizePalette(
     buf,
     cropped,
@@ -220,6 +220,6 @@ export const adapterPaletteAtom = atom(async (get) => {
     lockedVecs,
     colorSpace
   )
-  
+
   return palette
 })
