@@ -10,7 +10,7 @@ import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
-import { colorSpaceAtom, ditheringAtom, modeAtom } from '../config/config'
+import { colorSpaceAtom, ditheringAtom, modeAtom, processorTypeAtom } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
@@ -72,11 +72,12 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
+  const processorType = get(processorTypeAtom)
 
   if (!buf || !cropped) return []
 
   // 🚀 UTILISATION DE L'ADAPTATEUR comme système principal
-  const processor = await processorFactory.createBestProcessor()
+  const processor = await processorFactory.createBestProcessor(processorType)
 
   const palette = await processor.quantizePalette(
     buf,
@@ -207,10 +208,11 @@ export const adapterPaletteAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
+  const processorType = get(processorTypeAtom)
 
   if (!buf || !cropped) return []
 
-  const processor = await processorFactory.createBestProcessor()
+  const processor = await processorFactory.createBestProcessor(processorType)
 
   const palette = await processor.quantizePalette(
     buf,

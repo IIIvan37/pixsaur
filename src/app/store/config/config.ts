@@ -1,7 +1,7 @@
 import { atom } from 'jotai'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import type { AdjustementKey, CpcModeKey } from './types'
+import type { AdjustementKey, CpcModeKey, ProcessorType } from './types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {
@@ -87,3 +87,14 @@ export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
 })
 
 export const smoothingAtom = atom<boolean>(true)
+
+// Processor type selection (auto, cpu, gpu)
+export const processorTypeAtom = atom<ProcessorType>('auto')
+
+// Setter for processor type
+export const setProcessorTypeAtom = atom(
+  null,
+  (_get, set, payload: ProcessorType) => {
+    set(processorTypeAtom, payload)
+  }
+)

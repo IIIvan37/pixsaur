@@ -1,13 +1,14 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import debounce from 'lodash/debounce'
 import { useEffect, useMemo } from 'react'
-import { clearLastChangedKeyAtom, configAtom } from '@/app/store/config/config'
+import { clearLastChangedKeyAtom, configAtom, processorTypeAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { processorFactory } from '@/libs/pixsaur-adapter'
 
 export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
   const downscaled = useAtomValue(downscaledAtom)
+  const processorType = useAtomValue(processorTypeAtom)
 
   const {
     red,
@@ -29,7 +30,7 @@ export const useImageAdjustement = () => {
   const debouncedApply = useMemo(
     () =>
       debounce(async (data: Uint8ClampedArray) => {
-        const processor = await processorFactory.createBestProcessor()
+        const processor = await processorFactory.createBestProcessor(processorType)
         const result = processor.applyAdjustmentsSync(
           new ImageData(
             new Uint8ClampedArray(data),
@@ -56,6 +57,7 @@ export const useImageAdjustement = () => {
       contrast,
       saturation,
       posterization,
+      processorType,
       setSrc,
       clearLastChangedKey
     ]

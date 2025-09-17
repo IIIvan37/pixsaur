@@ -4,7 +4,7 @@ import {
   downscaleImage,
   type Selection
 } from '@/libs/pixsaur-adapter/io/downscale-image'
-import { configAtom } from '../config/config'
+import { configAtom, processorTypeAtom } from '../config/config'
 
 const LOGICAL_WIDTH = 800
 
@@ -45,12 +45,13 @@ export const workingImageAtom = atom(async (get) => {
   const custom = get(srcAtom)
   const config = get(configAtom)
   const downscaled = get(downscaledAtom)
+  const processorType = get(processorTypeAtom)
 
   if (!downscaled) return null
   if (custom) return custom
 
   // Utilise l'adapter CPU pour les ajustements
-  const processor = await processorFactory.createBestProcessor()
+  const processor = await processorFactory.createBestProcessor(processorType)
 
   const result = (processor as any).applyAdjustmentsSync(downscaled, {
     rgb: { r: config.red, g: config.green, b: config.blue },

@@ -4,6 +4,7 @@ import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import animStyles from '@/styles/animations.module.css'
 import Flex from '../ui/flex'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
+import { ProcessorSelector } from './processor-selector/processor-selector'
 import styles from './image-controls.module.css'
 
 export type ImageControlsViewProps = {
@@ -84,6 +85,8 @@ export function ImageControlsView({
       </Flex>
 
       <DitheringSelector />
+
+      <ProcessorSelector />
 
       <Flex align='center'>
         <h2 className={styles.sectionTitle}>Espace de couleur</h2>

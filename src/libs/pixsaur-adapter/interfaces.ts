@@ -1,5 +1,7 @@
 import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 
+export type ProcessorType = 'auto' | 'cpu' | 'gpu'
+
 /**
  * Configuration pour les ajustements d'image
  */
@@ -66,8 +68,9 @@ export interface ImageProcessor {
 export interface ProcessorFactory {
   /**
    * Crée le meilleur processor disponible (ReGL en priorité, fallback CPU)
+   * @param processorType - Type de processor à utiliser ('auto', 'cpu', 'gpu')
    */
-  createBestProcessor(): Promise<ImageProcessor>
+  createBestProcessor(processorType?: ProcessorType): Promise<ImageProcessor>
 
   /**
    * Crée un processor CPU spécifiquement
