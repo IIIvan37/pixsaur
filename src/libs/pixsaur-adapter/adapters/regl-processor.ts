@@ -4,7 +4,10 @@
  * ReGL simplifiera la gestion WebGL quand l'implémentation GPU sera prête
  */
 
+// Import pour accéder à l'atome de stratégie de contraste
+import { getDefaultStore } from 'jotai'
 import type REGL from 'regl'
+import { contrastStrategyAtom } from '@/app/store/config/config'
 import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
@@ -12,10 +15,6 @@ import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
 import { ReGLQuantizer } from './regl-quantizer'
-
-// Import pour accéder à l'atome de stratégie de contraste
-import { getDefaultStore } from 'jotai'
-import { contrastStrategyAtom } from '@/app/store/config/config'
 
 /**
  * Adaptateur ReGL pour le traitement d'images
@@ -195,7 +194,7 @@ export class ReGLProcessor implements ImageProcessor {
       )
 
       // Déterminer la métrique de distance basée sur l'espace colorimétrique
-      const distanceMetric: DistanceMetric = 
+      const distanceMetric: DistanceMetric =
         colorSpace === 'Lab' ? 'cie76' : 'euclidean' // XYZ et RGB utilisent euclidean
 
       // Extraire dimensions depuis imageData
@@ -205,7 +204,7 @@ export class ReGLProcessor implements ImageProcessor {
           : imageData
 
       // Phase 1: Utiliser ReGLQuantizer si disponible
-      if (this.quantizer && this.shouldUseReGLQuantizer(buffer, dimensions)) {
+      if (this.quantizer) {
         try {
           adapterLogger.debug('🎮 [ADAPTER] Using ReGL quantizer')
 
@@ -257,29 +256,6 @@ export class ReGLProcessor implements ImageProcessor {
         distanceMetric
       )
     })
-  }
-
-  /**
-   * Détermine si utiliser ReGL quantizer selon les conditions
-   */
-  private shouldUseReGLQuantizer(
-    _buf: Uint8ClampedArray,
-    cropped: { width: number; height: number }
-  ): boolean {
-    if (!this.quantizer || !this.reglCapabilities.canUseReGL) {
-      return false
-    }
-
-    const pixels = cropped.width * cropped.height
-    const minPixelsForReGL = 64 * 64 // Seuil bas pour Phase 1
-
-    const shouldUse = pixels >= minPixelsForReGL
-
-    adapterLogger.debug(
-      `🤔 [ADAPTER] ReGL decision: ${pixels} pixels, min=${minPixelsForReGL}, shouldUse=${shouldUse}`
-    )
-
-    return shouldUse
   }
 
   /**

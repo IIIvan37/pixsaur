@@ -10,7 +10,13 @@ import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
-import { colorSpaceAtom, ditheringAtom, modeAtom, processorTypeAtom, contrastStrategyAtom } from '../config/config'
+import {
+  colorSpaceAtom,
+  contrastStrategyAtom,
+  ditheringAtom,
+  modeAtom,
+  processorTypeAtom
+} from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'

@@ -8,7 +8,7 @@ import styles from './image-converter.module.css'
 
 export default function ImageConverter() {
   useImageAdjustement()
-  
+
   return (
     <div className={styles.wrapper}>
       {<CrtEffect />}

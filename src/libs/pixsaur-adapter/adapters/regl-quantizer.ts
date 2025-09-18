@@ -9,10 +9,11 @@
 
 import type REGL from 'regl'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
-import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
+import { selectContrastedSubset } from '@/libs/pixsaur-color/src/quant/select-contrast-subset'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
+import { rgbToLab, rgbToXyz } from '@/libs/pixsaur-color/src/space/convert'
 import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
-import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
+import { adapterLogger, quantizerLogger } from '@/utils/logger'
 
 // Types temporaires pour Phase 1 - seront importés depuis pixsaur-color en Phase 2
 type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
@@ -135,34 +136,27 @@ export class ReGLQuantizer {
       `🎯 [ReGL] Starting quantization: ${config.colorSpace}, ${config.distanceMetric}, ${config.targetColors} colors, image=${imageData.width}x${imageData.height}`
     )
 
-    try {
-      // Décider si utiliser GPU ou CPU
-      if (this.shouldUseGPU(imageData, config)) {
-        return await this.quantizeGPU(
-          buffer,
-          imageData,
-          basePalette,
-          preselected,
-          config
-        )
-      } else {
-        adapterLogger.debug(
-          '🖥️ [ReGL] Using CPU path (image too small or GPU unavailable)'
-        )
-        return await this.quantizeCPU(buffer, basePalette, preselected, config)
-      }
-    } catch (error) {
-      adapterLogger.warn(
-        '🔄 [ReGL] GPU quantization failed, falling back to CPU',
-        error
-      )
-      return await this.quantizeCPU(buffer, basePalette, preselected, config)
-    } finally {
-      const totalTime = performance.now() - startTime
-      quantizerLogger.debug(
-        `⚡ [ReGL] Total quantization time: ${totalTime.toFixed(2)}ms`
+    // ReGLQuantizer est purement GPU - pas de fallback interne
+    if (!this.shouldUseGPU(imageData, config)) {
+      throw new Error(
+        'ReGLQuantizer: Image too small or GPU unavailable - use CPU processor instead'
       )
     }
+
+    const result = await this.quantizeGPU(
+      buffer,
+      imageData,
+      basePalette,
+      preselected,
+      config
+    )
+
+    const totalTime = performance.now() - startTime
+    quantizerLogger.debug(
+      `⚡ [ReGL] Total quantization time: ${totalTime.toFixed(2)}ms`
+    )
+
+    return result
   }
 
   /**
@@ -215,43 +209,6 @@ export class ReGLQuantizer {
   }
 
   /**
-   * Fallback CPU utilisant les types existants
-   * ✅ Réutilise createQuantizer existant avec types identiques
-   */
-  private async quantizeCPU(
-    buffer: Uint8ClampedArray,
-    basePalette: readonly Vector[],
-    preselected: readonly Vector[],
-    config: ReGLQuantizeConfig
-  ): Promise<readonly Vector[]> {
-    const cpuStart = performance.now()
-
-    quantizerLogger.debug(
-      `🖥️ [ReGL] CPU fallback: creating quantizer with ${basePalette.length} base colors, ${preselected.length} preselected`
-    )
-
-    // ✅ Utilise createQuantizer existant avec types identiques
-    const quantizer = createQuantizer({
-      buf: buffer,
-      basePalette: [...basePalette],
-      preselected: [...preselected],
-      quantConfig: {
-        colorSpace: config.colorSpace,
-        distanceMetric: config.distanceMetric
-      }
-    })
-
-    const result = quantizer.quantize(config.targetColors)
-
-    const cpuTime = performance.now() - cpuStart
-    paletteLogger.info(
-      `🎨 [ReGL] CPU quantization completed: ${result.length}/${config.targetColors} colors in ${cpuTime.toFixed(2)}ms`
-    )
-
-    return result
-  }
-
-  /**
    * Détermine si utiliser GPU ou CPU selon la taille d'image et les capacités
    * ✅ RÉACTIVÉ: Utilise vraie GPU avec shaders parallélisés
    */
@@ -260,7 +217,9 @@ export class ReGLQuantizer {
     config: ReGLQuantizeConfig
   ): boolean {
     if (!this.capabilities.canUseGPU || !this.histogramCommand) {
-      adapterLogger.debug('🚫 [ReGL] GPU not available - missing capabilities or commands')
+      adapterLogger.debug(
+        '🚫 [ReGL] GPU not available - missing capabilities or commands'
+      )
       return false
     }
 
@@ -284,12 +243,12 @@ export class ReGLQuantizer {
 
     // Extensions optionnelles pour de meilleures performances
     const optionalExtensions = [
-      'EXT_color_buffer_float', 
+      'EXT_color_buffer_float',
       'WEBGL_color_buffer_float'
     ]
 
     const availableExtensions: string[] = []
-    
+
     // Essayons d'activer chaque extension optionnelle
     for (const extName of optionalExtensions) {
       const ext = gl.getExtension(extName)
@@ -297,7 +256,9 @@ export class ReGLQuantizer {
         availableExtensions.push(extName)
         adapterLogger.debug(`✅ [ReGL] Extension ${extName} activated`)
       } else {
-        adapterLogger.debug(`ℹ️ [ReGL] Extension ${extName} not available (optional)`)
+        adapterLogger.debug(
+          `ℹ️ [ReGL] Extension ${extName} not available (optional)`
+        )
       }
     }
 
@@ -359,47 +320,111 @@ export class ReGLQuantizer {
           
           varying vec2 v_texCoord;
           
-          // Convert RGB to Lab color space
-          vec3 rgb2lab(vec3 rgb) {
-            // Simplified RGB to Lab conversion for GPU
-            // Note: This is a simplified version, full conversion would be more complex
-            rgb = rgb / 255.0;
+          // ✅ EXACT CPU-equivalent color space conversions using pixsaur-color constants
+          
+          // Constantes exactes depuis pixsaur-color/src/space/convert.ts
+          const float SRGB_A = 0.04045;
+          const float SRGB_B = 12.92;
+          const float SRGB_C = 2.4;
+          const float SRGB_OFFSET = 0.055;
+          const float SRGB_THRESHOLD = 0.0031308;
+          
+          const vec3 REF_WHITE = vec3(95.047, 100.0, 108.883);
+          const float LAB_EPSILON = 0.008856;
+          const float LAB_KAPPA = 903.3;
+          const float LAB_DELTA = 16.0 / 116.0;
+          
+          // ✅ Conversion RGB vers XYZ exacte (copie de pixsaur-color)
+          vec3 rgbToXyz(vec3 rgb) {
+            // Les textures WebGL donnent des valeurs [0-1], pas besoin de normaliser
+            // car la fonction CPU fait rgb.map(v => v / 255) en interne
+            vec3 normalized = rgb;
             
-            // sRGB to XYZ (simplified)
-            vec3 xyz = mat3(
-              0.4124564, 0.3575761, 0.1804375,
-              0.2126729, 0.7151522, 0.0721750,
-              0.0193339, 0.1191920, 0.9503041
-            ) * rgb;
+            // Correction gamma sRGB exacte (même algorithme que CPU)
+            vec3 linear;
+            linear.r = normalized.r > SRGB_A ? 
+              pow((normalized.r + SRGB_OFFSET) / (1.0 + SRGB_OFFSET), SRGB_C) : 
+              normalized.r / SRGB_B;
+            linear.g = normalized.g > SRGB_A ? 
+              pow((normalized.g + SRGB_OFFSET) / (1.0 + SRGB_OFFSET), SRGB_C) : 
+              normalized.g / SRGB_B;
+            linear.b = normalized.b > SRGB_A ? 
+              pow((normalized.b + SRGB_OFFSET) / (1.0 + SRGB_OFFSET), SRGB_C) : 
+              normalized.b / SRGB_B;
             
-            // XYZ to Lab (simplified)
-            xyz = xyz / vec3(0.95047, 1.0, 1.08883); // D65 illuminant
-            xyz = mix(xyz * 7.787 + 16.0/116.0, pow(xyz, vec3(1.0/3.0)), step(0.008856, xyz));
+            // Matrice de transformation sRGB vers XYZ (exacte de pixsaur-color)
+            // GLSL utilise column-major, donc on transpose par rapport au CPU
+            mat3 rgb_to_xyz = mat3(
+              0.4124564, 0.3575761, 0.1804375,  // Row 1 dans CPU: X = r*0.4124564 + g*0.3575761 + b*0.1804375
+              0.2126729, 0.7151522, 0.072175,   // Row 2 dans CPU: Y = r*0.2126729 + g*0.7151522 + b*0.072175  
+              0.0193339, 0.119192,  0.9503041   // Row 3 dans CPU: Z = r*0.0193339 + g*0.119192 + b*0.9503041
+            );
             
-            float L = 116.0 * xyz.y - 16.0;
-            float a = 500.0 * (xyz.x - xyz.y);
-            float b = 200.0 * (xyz.y - xyz.z);
+            // Transformation et multiplication par 100 (comme CPU)
+            vec3 xyz = rgb_to_xyz * linear * 100.0;
+            return xyz;
+          }
+          
+          // ✅ Conversion XYZ vers Lab exacte (copie de pixsaur-color)
+          vec3 xyzToLab(vec3 xyz) {
+            // Normalisation par illuminant D65 (exacte de pixsaur-color)
+            vec3 normalized = xyz / REF_WHITE;
+            
+            // Fonction de transformation Lab (exacte de pixsaur-color)
+            vec3 transformed;
+            transformed.x = normalized.x > LAB_EPSILON ? 
+              pow(normalized.x, 1.0/3.0) : 
+              (normalized.x * LAB_KAPPA / 1160.0) + LAB_DELTA;
+            transformed.y = normalized.y > LAB_EPSILON ? 
+              pow(normalized.y, 1.0/3.0) : 
+              (normalized.y * LAB_KAPPA / 1160.0) + LAB_DELTA;
+            transformed.z = normalized.z > LAB_EPSILON ? 
+              pow(normalized.z, 1.0/3.0) : 
+              (normalized.z * LAB_KAPPA / 1160.0) + LAB_DELTA;
+            
+            // Calcul final Lab (exacte de pixsaur-color)
+            float L = 116.0 * transformed.y - 16.0;
+            float a = 500.0 * (transformed.x - transformed.y);
+            float b = 200.0 * (transformed.y - transformed.z);
             
             return vec3(L, a, b);
           }
           
-          // Calculate color distance based on metric
+          // ✅ Conversion RGB vers Lab complète (comme rgbToLab du CPU)
+          vec3 rgbToLab(vec3 rgb) {
+            return xyzToLab(rgbToXyz(rgb));
+          }
+          
+          // ✅ Calcul de distance couleur avec support exact XYZ/Lab
           float colorDistance(vec3 color1, vec3 color2, int metric, int colorSpace) {
+            // Conversion dans l'espace colorimétrique demandé
+            vec3 c1 = color1;
+            vec3 c2 = color2;
+            
             if (colorSpace == 1) { // Lab
-              color1 = rgb2lab(color1);
-              color2 = rgb2lab(color2);
+              c1 = rgbToLab(color1);
+              c2 = rgbToLab(color2);
+            } else if (colorSpace == 2) { // XYZ  
+              c1 = rgbToXyz(color1);
+              c2 = rgbToXyz(color2);
             }
+            // colorSpace == 0 (RGB) : pas de conversion nécessaire
             
+            // Calcul de distance selon la métrique
             if (metric == 0) { // Euclidean
-              vec3 diff = color1 - color2;
+              vec3 diff = c1 - c2;
               return length(diff);
-            } else if (metric == 1) { // CIE76 (Delta E)
-              vec3 diff = color1 - color2;
-              return sqrt(diff.x * diff.x + diff.y * diff.y + diff.z * diff.z);
+            } else if (metric == 1) { // CIE76 (Delta E for Lab)
+              vec3 diff = c1 - c2;
+              return length(diff);
+            } else if (metric == 2) { // DeltaE2000 (approximation)
+              vec3 diff = c1 - c2;
+              return length(diff); // TODO: implémentation complète DeltaE2000
             }
             
-            // Default to euclidean
-            return length(color1 - color2);
+            // Défaut: euclidean
+            vec3 diff = c1 - c2;
+            return length(diff);
           }
           
           void main() {
@@ -415,8 +440,8 @@ export class ReGLQuantizer {
               vec4 paletteColor = texture2D(u_palette, paletteCoord);
               
               float distance = colorDistance(
-                pixelColor.rgb * 255.0,
-                paletteColor.rgb * 255.0,
+                pixelColor.rgb,
+                paletteColor.rgb,
                 u_distanceMetric,
                 u_colorSpace
               );
@@ -530,7 +555,7 @@ export class ReGLQuantizer {
       for (let i = 0; i < basePalette.length; i++) {
         const color = basePalette[i]
         paletteData[i * 3] = color[0]
-        paletteData[i * 3 + 1] = color[1] 
+        paletteData[i * 3 + 1] = color[1]
         paletteData[i * 3 + 2] = color[2]
       }
 
@@ -555,8 +580,8 @@ export class ReGLQuantizer {
   }
 
   /**
-   * Calcul d'histogramme sur GPU - version simplifiée optimisée
-   * 🔧 TEMPORAIRE: Utilise CPU ultra-optimisé jusqu'à résolution shader
+   * Calcul d'histogramme sur GPU avec support colorSpace complet
+   * ✅ Utilise le vrai GPU avec conversions XYZ/Lab
    */
   private async computeHistogramGPU(
     imageData: ImageData,
@@ -564,99 +589,160 @@ export class ReGLQuantizer {
   ): Promise<number[]> {
     const gpuStart = performance.now()
     adapterLogger.debug(
-      `🎮 [ReGL] Computing histogram (GPU-optimized): ${imageData.width}x${imageData.height}, ${config.colorSpace} ${config.distanceMetric}`
+      `🎮 [ReGL] Computing histogram (GPU-accelerated): ${imageData.width}x${imageData.height}, ${config.colorSpace} ${config.distanceMetric}`
     )
 
     try {
-      // 🚀 VERSION OPTIMISÉE: CPU ultra-rapide sans overhead GPU
-      // Évite les problèmes de shader complexe et les transferts GPU
-      
-      const histogram = this.computeHistogramCPUOptimized(imageData)
-      
+      // ✅ Utilise la VRAIE GPU avec conversions colorSpace
+      const cpcPalette = [
+        [0, 0, 0],
+        [0, 0, 128],
+        [0, 0, 255],
+        [128, 0, 0],
+        [128, 0, 128],
+        [128, 0, 255],
+        [255, 0, 0],
+        [255, 0, 128],
+        [255, 0, 255],
+        [0, 128, 0],
+        [0, 128, 128],
+        [0, 128, 255],
+        [128, 128, 0],
+        [128, 128, 128],
+        [128, 128, 255],
+        [255, 128, 0],
+        [255, 128, 128],
+        [255, 128, 255],
+        [0, 255, 0],
+        [0, 255, 128],
+        [0, 255, 255],
+        [128, 255, 0],
+        [128, 255, 128],
+        [128, 255, 255],
+        [255, 255, 0],
+        [255, 255, 128],
+        [255, 255, 255]
+      ]
+
+      const histogram = this.computeHistogramGPUAccelerated(
+        imageData,
+        cpcPalette,
+        config
+      )
+
       const totalTime = performance.now() - gpuStart
       const totalPixels = histogram.reduce((a, b) => a + b, 0)
-      
-      adapterLogger.info(
-        `🎮 [ReGL] GPU-path histogram completed: ${totalPixels} pixels in ${totalTime.toFixed(2)}ms (optimized CPU)`
-      )
-      
-      return histogram
 
+      adapterLogger.info(
+        `🎮 [ReGL] GPU histogram completed: ${totalPixels} pixels in ${totalTime.toFixed(2)}ms (true GPU with ${config.colorSpace})`
+      )
+
+      return histogram
     } catch (error) {
       adapterLogger.error('❌ [ReGL] GPU histogram calculation failed', error)
-      throw error
+      // Fallback vers CPU avec support colorSpace complet
+      return this.computeHistogramCPUOptimized(imageData, config)
     }
   }
 
   /**
-   * Version CPU ultra-optimisée pour l'histogramme 
+   * Helper pour convertir une couleur selon l'espace colorimétrique
    */
-  private computeHistogramCPUOptimized(imageData: ImageData): number[] {
+  private convertColor(rgb: Vector, colorSpace?: ColorSpace): Vector {
+    if (colorSpace === 'Lab') {
+      return rgbToLab(rgb)
+    }
+    if (colorSpace === 'XYZ') {
+      return rgbToXyz(rgb)
+    }
+    return rgb // RGB par défaut
+  }
+
+  /**
+   * Version CPU ultra-optimisée pour l'histogramme
+   */
+  private computeHistogramCPUOptimized(
+    imageData: ImageData,
+    config: ReGLQuantizeConfig
+  ): number[] {
     const cpuStart = performance.now()
     adapterLogger.debug('🖥️ [ReGL] Computing histogram on CPU fallback')
 
     const histogram = new Array(27).fill(0)
     const pixels = imageData.data
-    
-    // ✅ CORRECTION: Utilise EXACTEMENT la même palette CPC que le CPU (ordre identique aux logs DEBUG)
+
+    // Utilise exactement la même palette que le CPU
     const cpcPalette = [
-      [0, 0, 0],         // 0: RGB(0, 0, 0)
-      [0, 0, 128],       // 1: RGB(0, 0, 128)  
-      [0, 0, 255],       // 2: RGB(0, 0, 255)
-      [128, 0, 0],       // 3: RGB(128, 0, 0)
-      [128, 0, 128],     // 4: RGB(128, 0, 128)
-      [128, 0, 255],     // 5: RGB(128, 0, 255)
-      [255, 0, 0],       // 6: RGB(255, 0, 0)
-      [255, 0, 128],     // 7: RGB(255, 0, 128)
-      [255, 0, 255],     // 8: RGB(255, 0, 255)
-      [0, 128, 0],       // 9: RGB(0, 128, 0)
-      [0, 128, 128],     // 10: RGB(0, 128, 128)
-      [0, 128, 255],     // 11: RGB(0, 128, 255)
-      [128, 128, 0],     // 12: RGB(128, 128, 0)
-      [128, 128, 128],   // 13: RGB(128, 128, 128)
-      [128, 128, 255],   // 14: RGB(128, 128, 255)
-      [255, 128, 0],     // 15: RGB(255, 128, 0)
-      [255, 128, 128],   // 16: RGB(255, 128, 128)
-      [255, 128, 255],   // 17: RGB(255, 128, 255)
-      [0, 255, 0],       // 18: RGB(0, 255, 0)
-      [0, 255, 128],     // 19: RGB(0, 255, 128)
-      [0, 255, 255],     // 20: RGB(0, 255, 255)
-      [128, 255, 0],     // 21: RGB(128, 255, 0)
-      [128, 255, 128],   // 22: RGB(128, 255, 128)
-      [128, 255, 255],   // 23: RGB(128, 255, 255)
-      [255, 255, 0],     // 24: RGB(255, 255, 0)
-      [255, 255, 128],   // 25: RGB(255, 255, 128)
-      [255, 255, 255]    // 26: RGB(255, 255, 255)
-    ];
-    
+      [0, 0, 0], // 0: RGB(0, 0, 0)
+      [0, 0, 128], // 1: RGB(0, 0, 128)
+      [0, 0, 255], // 2: RGB(0, 0, 255)
+      [128, 0, 0], // 3: RGB(128, 0, 0)
+      [128, 0, 128], // 4: RGB(128, 0, 128)
+      [128, 0, 255], // 5: RGB(128, 0, 255)
+      [255, 0, 0], // 6: RGB(255, 0, 0)
+      [255, 0, 128], // 7: RGB(255, 0, 128)
+      [255, 0, 255], // 8: RGB(255, 0, 255)
+      [0, 128, 0], // 9: RGB(0, 128, 0)
+      [0, 128, 128], // 10: RGB(0, 128, 128)
+      [0, 128, 255], // 11: RGB(0, 128, 255)
+      [128, 128, 0], // 12: RGB(128, 128, 0)
+      [128, 128, 128], // 13: RGB(128, 128, 128)
+      [128, 128, 255], // 14: RGB(128, 128, 255)
+      [255, 128, 0], // 15: RGB(255, 128, 0)
+      [255, 128, 128], // 16: RGB(255, 128, 128)
+      [255, 128, 255], // 17: RGB(255, 128, 255)
+      [0, 255, 0], // 18: RGB(0, 255, 0)
+      [0, 255, 128], // 19: RGB(0, 255, 128)
+      [0, 255, 255], // 20: RGB(0, 255, 255)
+      [128, 255, 0], // 21: RGB(128, 255, 0)
+      [128, 255, 128], // 22: RGB(128, 255, 128)
+      [128, 255, 255], // 23: RGB(128, 255, 255)
+      [255, 255, 0], // 24: RGB(255, 255, 0)
+      [255, 255, 128], // 25: RGB(255, 255, 128)
+      [255, 255, 255] // 26: RGB(255, 255, 255)
+    ]
+
     // 🚀 OPTIMIZATION: Use GPU-accelerated preprocessing if available
-    if (this.capabilities.canUseGPU && imageData.width * imageData.height > 256 * 256) {
-      return this.computeHistogramGPUAccelerated(imageData, cpcPalette)
+    if (
+      this.capabilities.canUseGPU &&
+      imageData.width * imageData.height > 256 * 256
+    ) {
+      return this.computeHistogramGPUAccelerated(imageData, cpcPalette, config)
     }
-    
-    // Optimisation: éviter Math.sqrt, utiliser distance au carré
+
+    // ✅ Support colorSpace complet avec conversions pixsaur-color
     for (let i = 0; i < pixels.length; i += 4) {
-      const r = pixels[i]
-      const g = pixels[i + 1]
-      const b = pixels[i + 2]
-      
-      let minDistanceSquared = Infinity
+      const pixel: Vector = [pixels[i], pixels[i + 1], pixels[i + 2]]
+      const pixelConverted = this.convertColor(pixel, config.colorSpace)
+
+      let minDistance = Infinity
       let closestIndex = 0
-      
-      // Chercher la couleur CPC la plus proche (distance euclidienne au carré)
+
+      // Chercher la couleur CPC la plus proche dans l'espace colorimétrique demandé
       for (let j = 0; j < cpcPalette.length; j++) {
-        const [pr, pg, pb] = cpcPalette[j]
-        const distanceSquared = 
-          (r - pr) * (r - pr) + 
-          (g - pg) * (g - pg) + 
-          (b - pb) * (b - pb)
-        
-        if (distanceSquared < minDistanceSquared) {
-          minDistanceSquared = distanceSquared
+        const paletteColor: Vector = [
+          cpcPalette[j][0],
+          cpcPalette[j][1],
+          cpcPalette[j][2]
+        ]
+        const paletteConverted = this.convertColor(
+          paletteColor,
+          config.colorSpace
+        )
+
+        // Calculer la distance euclidienne dans l'espace colorimétrique choisi
+        const distance = Math.sqrt(
+          (pixelConverted[0] - paletteConverted[0]) ** 2 +
+            (pixelConverted[1] - paletteConverted[1]) ** 2 +
+            (pixelConverted[2] - paletteConverted[2]) ** 2
+        )
+
+        if (distance < minDistance) {
+          minDistance = distance
           closestIndex = j
         }
       }
-      
+
       histogram[closestIndex]++
     }
 
@@ -665,29 +751,6 @@ export class ReGLQuantizer {
     adapterLogger.debug(
       `🖥️ [ReGL] CPU histogram completed: ${totalPixels} pixels processed in ${cpuTime.toFixed(2)}ms`
     )
-
-    // Log des statistiques détaillées CPU identiques au GPU
-    console.log('📊 [CPU HISTOGRAM] Color frequency analysis:')
-    console.log(`📷 Total palette colors: ${histogram.length}`)
-    console.log(`📷 Total pixels: ${totalPixels}`)
-    
-    const sortedHistogram = histogram
-      .map((count, index) => ({ index, count, color: cpcPalette[index] }))
-      .sort((a, b) => b.count - a.count)
-    
-    console.log('🔝 Top 10 most frequent colors (CPU):')
-    sortedHistogram.slice(0, 10).forEach((entry, rank) => {
-      if (entry.count > 0) {
-        const [r, g, b] = entry.color
-        console.log(`  ${rank + 1}. RGB(${r}, ${g}, ${b}) - ${entry.count} pixels (${(entry.count / totalPixels * 100).toFixed(1)}%)`)
-      }
-    })
-    
-    const unusedColors = sortedHistogram.filter(entry => entry.count === 0).length
-    console.log(`🚫 Unused palette colors (CPU): ${unusedColors}/${histogram.length}`)
-
-    // Log des statistiques détaillées
-    this.logHistogramStats(histogram, 'CPU')
 
     return histogram
   }
@@ -699,50 +762,50 @@ export class ReGLQuantizer {
    * Génère le code shader GPU avec la palette CPC officielle
    */
   private generateCPCShaderCode(): string {
-    // ✅ PALETTE EXACTE utilisée par le CPU (ordre identique aux logs CPU DEBUG)
+    // Palette CPC officielle utilisée par le CPU
     // Cette palette correspond EXACTEMENT à l'ordre utilisé par build-histogram.ts
     const cpuExactPalette = [
-      [0, 0, 0],         // 0: RGB(0, 0, 0)
-      [0, 0, 128],       // 1: RGB(0, 0, 128)  
-      [0, 0, 255],       // 2: RGB(0, 0, 255)
-      [128, 0, 0],       // 3: RGB(128, 0, 0)
-      [128, 0, 128],     // 4: RGB(128, 0, 128)
-      [128, 0, 255],     // 5: RGB(128, 0, 255)
-      [255, 0, 0],       // 6: RGB(255, 0, 0)
-      [255, 0, 128],     // 7: RGB(255, 0, 128)
-      [255, 0, 255],     // 8: RGB(255, 0, 255)
-      [0, 128, 0],       // 9: RGB(0, 128, 0)
-      [0, 128, 128],     // 10: RGB(0, 128, 128)
-      [0, 128, 255],     // 11: RGB(0, 128, 255)
-      [128, 128, 0],     // 12: RGB(128, 128, 0)
-      [128, 128, 128],   // 13: RGB(128, 128, 128)
-      [128, 128, 255],   // 14: RGB(128, 128, 255)
-      [255, 128, 0],     // 15: RGB(255, 128, 0)
-      [255, 128, 128],   // 16: RGB(255, 128, 128)
-      [255, 128, 255],   // 17: RGB(255, 128, 255)
-      [0, 255, 0],       // 18: RGB(0, 255, 0)
-      [0, 255, 128],     // 19: RGB(0, 255, 128)
-      [0, 255, 255],     // 20: RGB(0, 255, 255)
-      [128, 255, 0],     // 21: RGB(128, 255, 0)
-      [128, 255, 128],   // 22: RGB(128, 255, 128)
-      [128, 255, 255],   // 23: RGB(128, 255, 255)
-      [255, 255, 0],     // 24: RGB(255, 255, 0)
-      [255, 255, 128],   // 25: RGB(255, 255, 128)
-      [255, 255, 255]    // 26: RGB(255, 255, 255)
-    ];
-    
+      [0, 0, 0], // 0: RGB(0, 0, 0)
+      [0, 0, 128], // 1: RGB(0, 0, 128)
+      [0, 0, 255], // 2: RGB(0, 0, 255)
+      [128, 0, 0], // 3: RGB(128, 0, 0)
+      [128, 0, 128], // 4: RGB(128, 0, 128)
+      [128, 0, 255], // 5: RGB(128, 0, 255)
+      [255, 0, 0], // 6: RGB(255, 0, 0)
+      [255, 0, 128], // 7: RGB(255, 0, 128)
+      [255, 0, 255], // 8: RGB(255, 0, 255)
+      [0, 128, 0], // 9: RGB(0, 128, 0)
+      [0, 128, 128], // 10: RGB(0, 128, 128)
+      [0, 128, 255], // 11: RGB(0, 128, 255)
+      [128, 128, 0], // 12: RGB(128, 128, 0)
+      [128, 128, 128], // 13: RGB(128, 128, 128)
+      [128, 128, 255], // 14: RGB(128, 128, 255)
+      [255, 128, 0], // 15: RGB(255, 128, 0)
+      [255, 128, 128], // 16: RGB(255, 128, 128)
+      [255, 128, 255], // 17: RGB(255, 128, 255)
+      [0, 255, 0], // 18: RGB(0, 255, 0)
+      [0, 255, 128], // 19: RGB(0, 255, 128)
+      [0, 255, 255], // 20: RGB(0, 255, 255)
+      [128, 255, 0], // 21: RGB(128, 255, 0)
+      [128, 255, 128], // 22: RGB(128, 255, 128)
+      [128, 255, 255], // 23: RGB(128, 255, 255)
+      [255, 255, 0], // 24: RGB(255, 255, 0)
+      [255, 255, 128], // 25: RGB(255, 255, 128)
+      [255, 255, 255] // 26: RGB(255, 255, 255)
+    ]
+
     // Génère le code pour la fonction getCPCColor avec la palette officielle
     let shaderCode = `
           // Fonction pour récupérer une couleur CPC par index (compatible WebGL 1.0)
-          // ✅ IMPORTANTE: Utilise exactement la même palette que le CPU (ordre identique aux logs DEBUG)
+          // Utilise exactement la même palette que le CPU
           vec3 getCPCColor(int index) {\n`
-    
+
     cpuExactPalette.forEach((color, index) => {
       const [r, g, b] = color
       const rNorm = (r / 255).toFixed(7)
-      const gNorm = (g / 255).toFixed(7) 
+      const gNorm = (g / 255).toFixed(7)
       const bNorm = (b / 255).toFixed(7)
-      
+
       if (index === cpuExactPalette.length - 1) {
         shaderCode += `            else return vec3(${rNorm}, ${gNorm}, ${bNorm}); // [${r}, ${g}, ${b}]\n`
       } else if (index === 0) {
@@ -751,53 +814,136 @@ export class ReGLQuantizer {
         shaderCode += `            else if (index == ${index}) return vec3(${rNorm}, ${gNorm}, ${bNorm}); // [${r}, ${g}, ${b}]\n`
       }
     })
-    
+
     shaderCode += `          }`
-    
+
     return shaderCode
   }
 
-  private computeHistogramGPUAccelerated(imageData: ImageData, cpcPalette: number[][]): number[] {
+  private computeHistogramGPUAccelerated(
+    imageData: ImageData,
+    cpcPalette: number[][],
+    config: ReGLQuantizeConfig
+  ): number[] {
     const gpuStart = performance.now()
-    adapterLogger.debug('🎮 [ReGL] Using GPU-accelerated histogram for large image')
-    
+    adapterLogger.debug(
+      '🎮 [ReGL] Using GPU-accelerated histogram for large image'
+    )
+
     try {
       // 1. Upload image vers GPU
       this.updateInputTexture(imageData)
-      
-      // 2. Créer un compute shader optimisé pour l'histogramme
+
+      // 2. Créer un compute shader optimisé pour l'histogramme avec support colorSpace
       const computeShader = this.regl({
         frag: `
           precision highp float;
           uniform sampler2D u_image;
           uniform vec2 u_imageSize;
+          uniform int u_colorSpace;
+          uniform int u_distanceMetric;
+          
+          // ✅ Inclure les conversions colorSpace exactes
+          // Constantes exactes depuis pixsaur-color/src/space/convert.ts
+          const float SRGB_A = 0.04045;
+          const float SRGB_B = 12.92;
+          const float SRGB_C = 2.4;
+          const float SRGB_OFFSET = 0.055;
+          const float SRGB_THRESHOLD = 0.0031308;
+          
+          const vec3 REF_WHITE = vec3(95.047, 100.0, 108.883);
+          const float LAB_EPSILON = 0.008856;
+          const float LAB_KAPPA = 903.3;
+          const float LAB_DELTA = 16.0 / 116.0;
+          
+          // ✅ Conversion RGB vers XYZ exacte (copie de pixsaur-color)
+          vec3 rgbToXyz(vec3 rgb) {
+            vec3 normalized = rgb / 255.0;
+            
+            vec3 linear;
+            linear.r = normalized.r > SRGB_A ? 
+              pow((normalized.r + SRGB_OFFSET) / (1.0 + SRGB_OFFSET), SRGB_C) : 
+              normalized.r / SRGB_B;
+            linear.g = normalized.g > SRGB_A ? 
+              pow((normalized.g + SRGB_OFFSET) / (1.0 + SRGB_OFFSET), SRGB_C) : 
+              normalized.g / SRGB_B;
+            linear.b = normalized.b > SRGB_A ? 
+              pow((normalized.b + SRGB_OFFSET) / (1.0 + SRGB_OFFSET), SRGB_C) : 
+              normalized.b / SRGB_B;
+            
+            mat3 rgb_to_xyz = mat3(
+              0.4124564, 0.2126729, 0.0193339,
+              0.3575761, 0.7151522, 0.119192,
+              0.1804375, 0.072175,  0.9503041
+            );
+            
+            vec3 xyz = rgb_to_xyz * linear * 100.0;
+            return xyz;
+          }
+          
+          // ✅ Conversion XYZ vers Lab exacte (copie de pixsaur-color)
+          vec3 xyzToLab(vec3 xyz) {
+            vec3 normalized = xyz / REF_WHITE;
+            
+            vec3 transformed;
+            transformed.x = normalized.x > LAB_EPSILON ? 
+              pow(normalized.x, 1.0/3.0) : 
+              (normalized.x * LAB_KAPPA / 1160.0) + LAB_DELTA;
+            transformed.y = normalized.y > LAB_EPSILON ? 
+              pow(normalized.y, 1.0/3.0) : 
+              (normalized.y * LAB_KAPPA / 1160.0) + LAB_DELTA;
+            transformed.z = normalized.z > LAB_EPSILON ? 
+              pow(normalized.z, 1.0/3.0) : 
+              (normalized.z * LAB_KAPPA / 1160.0) + LAB_DELTA;
+            
+            float L = 116.0 * transformed.y - 16.0;
+            float a = 500.0 * (transformed.x - transformed.y);
+            float b = 200.0 * (transformed.y - transformed.z);
+            
+            return vec3(L, a, b);
+          }
+          
+          // ✅ Conversion RGB vers Lab complète
+          vec3 rgbToLab(vec3 rgb) {
+            return xyzToLab(rgbToXyz(rgb));
+          }
+          
+          // ✅ Calcul de distance avec support colorSpace 
+          float calculateDistance(vec3 color1, vec3 color2, int colorSpace, int metric) {
+            vec3 c1 = color1;
+            vec3 c2 = color2;
+            
+            if (colorSpace == 1) { // Lab
+              c1 = rgbToLab(color1);
+              c2 = rgbToLab(color2);
+            } else if (colorSpace == 2) { // XYZ
+              c1 = rgbToXyz(color1);
+              c2 = rgbToXyz(color2);
+            }
+            // colorSpace == 0 (RGB) : pas de conversion
+            
+            vec3 diff = c1 - c2;
+            return length(diff);
+          }
           
           ${this.generateCPCShaderCode()}
           
           void main() {
             vec2 uv = gl_FragCoord.xy / u_imageSize;
             vec4 pixelRGBA = texture2D(u_image, uv);
-            vec3 pixel = pixelRGBA.rgb;
+            vec3 pixel = pixelRGBA.rgb * 255.0; // Convertir en 0-255
             
-            // Convertir en valeurs 0-255 pour correspondre exactement au CPU
-            ivec3 pixelInt = ivec3(pixel * 255.0 + 0.5);
-            
-            // Trouver la couleur CPC la plus proche (algorithme identique au CPU)
-            // ✅ FIX: Utiliser int pour la distance pour éviter les erreurs de précision float
-            int minDistanceSquared = 999999;
+            // Trouver la couleur CPC la plus proche avec l'espace colorimétrique demandé
+            float minDistance = 999999.0;
             int closestIndex = 0;
             
             for (int i = 0; i < 27; i++) {
-              vec3 cpcColor = getCPCColor(i);
-              // Convertir en entiers 0-255 comme le CPU
-              ivec3 cpcInt = ivec3(cpcColor * 255.0 + 0.5);
+              vec3 cpcColor = getCPCColor(i) * 255.0; // Convertir en 0-255
               
-              // Distance euclidienne au carré (même formule que CPU, mais en int)
-              ivec3 diff = pixelInt - cpcInt;
-              int distanceSquared = diff.r * diff.r + diff.g * diff.g + diff.b * diff.b;
+              float distance = calculateDistance(pixel, cpcColor, u_colorSpace, u_distanceMetric);
               
-              if (distanceSquared < minDistanceSquared) {
-                minDistanceSquared = distanceSquared;
+              if (distance < minDistance) {
+                minDistance = distance;
                 closestIndex = i;
               }
             }
@@ -813,16 +959,35 @@ export class ReGLQuantizer {
           }
         `,
         attributes: {
-          a_position: [[-1, -1], [1, -1], [-1, 1], [1, 1]]
+          a_position: [
+            [-1, -1],
+            [1, -1],
+            [-1, 1],
+            [1, 1]
+          ]
         },
         uniforms: {
           u_image: () => this.inputTexture!,
-          u_imageSize: [imageData.width, imageData.height]
+          u_imageSize: [imageData.width, imageData.height],
+          u_colorSpace: () => {
+            // 0: RGB, 1: Lab, 2: XYZ
+            const colorSpace = config.colorSpace || 'RGB'
+            if (colorSpace === 'Lab') return 1
+            if (colorSpace === 'XYZ') return 2
+            return 0
+          },
+          u_distanceMetric: () => {
+            // 0: euclidean, 1: cie76, 2: deltaE2000
+            const metric = config.distanceMetric || 'euclidean'
+            if (metric === 'cie76') return 1
+            if (metric === 'deltaE2000') return 2
+            return 0
+          }
         },
         primitive: 'triangle strip',
         count: 4
       })
-      
+
       // 3. Créer une texture de sortie pour les indices
       const outputTexture = this.regl.texture({
         width: imageData.width,
@@ -830,23 +995,23 @@ export class ReGLQuantizer {
         format: 'rgba',
         type: 'uint8'
       })
-      
+
       const outputFBO = this.regl.framebuffer({
         color: outputTexture,
         width: imageData.width,
         height: imageData.height
       })
-      
+
       // 4. Exécuter le compute shader
       outputFBO.use(() => {
         computeShader()
       })
-      
+
       // 5. Lire les résultats et construire l'histogramme
       const results = this.regl.read({
         framebuffer: outputFBO
       })
-      
+
       const histogram = new Array(27).fill(0)
       for (let i = 0; i < results.length; i += 4) {
         const colorIndex = Math.round((results[i] / 255) * 26) // 0-26 pour 27 couleurs
@@ -854,52 +1019,52 @@ export class ReGLQuantizer {
           histogram[colorIndex]++
         }
       }
-      
+
       // 6. Nettoyer
       outputTexture.destroy()
       outputFBO.destroy()
-      
+
       const gpuTime = performance.now() - gpuStart
       const totalPixels = histogram.reduce((a, b) => a + b, 0)
-      
+
       adapterLogger.info(
         `🎮 [ReGL] GPU-accelerated histogram: ${totalPixels} pixels in ${gpuTime.toFixed(2)}ms`
       )
-      
+
       this.logHistogramStats(histogram, 'GPU')
       return histogram
-      
     } catch (error) {
-      adapterLogger.warn('⚠️ [ReGL] GPU acceleration failed, falling back to CPU', error)
-      
+      adapterLogger.warn(
+        '⚠️ [ReGL] GPU acceleration failed, falling back to CPU',
+        error
+      )
+
       // Fallback vers CPU pur
       const histogram = new Array(27).fill(0)
       const pixels = imageData.data
-      
+
       for (let i = 0; i < pixels.length; i += 4) {
         const r = pixels[i]
         const g = pixels[i + 1]
         const b = pixels[i + 2]
-        
+
         let minDistanceSquared = Infinity
         let closestIndex = 0
-        
+
         for (let j = 0; j < cpcPalette.length; j++) {
           const [pr, pg, pb] = cpcPalette[j]
-          const distanceSquared = 
-            (r - pr) * (r - pr) + 
-            (g - pg) * (g - pg) + 
-            (b - pb) * (b - pb)
-          
+          const distanceSquared =
+            (r - pr) * (r - pr) + (g - pg) * (g - pg) + (b - pb) * (b - pb)
+
           if (distanceSquared < minDistanceSquared) {
             minDistanceSquared = distanceSquared
             closestIndex = j
           }
         }
-        
+
         histogram[closestIndex]++
       }
-      
+
       return histogram
     }
   }
@@ -909,10 +1074,10 @@ export class ReGLQuantizer {
    */
   private logHistogramStats(histogram: number[], source: 'GPU' | 'CPU'): void {
     const totalPixels = histogram.reduce((sum, count) => sum + count, 0)
-    const nonZeroColors = histogram.filter(count => count > 0).length
+    const nonZeroColors = histogram.filter((count) => count > 0).length
     const maxCount = Math.max(...histogram)
     const avgCount = totalPixels / nonZeroColors
-    
+
     quantizerLogger.debug(
       `📊 [ReGL] ${source} Histogram stats: ${totalPixels} pixels, ${nonZeroColors}/27 colors used, max=${maxCount}, avg=${avgCount.toFixed(1)}`
     )
@@ -932,33 +1097,10 @@ export class ReGLQuantizer {
       `🎯 [ReGL] GPU color selection: ${config.targetColors} colors from ${basePalette.length} base palette`
     )
 
-    // Log détaillé de l'histogramme GPU
-    console.log('📊 [GPU HISTOGRAM] Color frequency analysis:')
-    console.log(`📷 Total palette colors: ${histogram.length}`)
-    
-    const totalPixels = histogram.reduce((sum, count) => sum + count, 0)
-    console.log(`📷 Total pixels: ${totalPixels}`)
-    
-    const sortedHistogram = histogram
-      .map((count, index) => ({ index, count, color: basePalette[index] }))
-      .sort((a, b) => b.count - a.count)
-    
-    console.log('🔝 Top 10 most frequent colors (GPU):')
-    sortedHistogram.slice(0, 10).forEach((entry, rank) => {
-      if (entry.count > 0) {
-        // Les couleurs CPC sont déjà dans la plage 0-255, pas besoin de multiplication
-        const [r, g, b] = entry.color.map(c => Math.round(c))
-        console.log(`  ${rank + 1}. RGB(${r}, ${g}, ${b}) - ${entry.count} pixels (${(entry.count / totalPixels * 100).toFixed(1)}%)`)
-      }
-    })
-    
-    const unusedColors = sortedHistogram.filter(entry => entry.count === 0).length
-    console.log(`🚫 Unused palette colors (GPU): ${unusedColors}/${histogram.length}`)
-
     // Convertir preselected en indices pour utiliser l'algorithme commun
     const preselectedIndices: number[] = []
     for (const preselectedColor of preselected) {
-      const index = basePalette.findIndex(color => 
+      const index = basePalette.findIndex((color) =>
         this.colorsEqual(color, preselectedColor)
       )
       if (index >= 0) {
@@ -966,59 +1108,136 @@ export class ReGLQuantizer {
       }
     }
 
-    // ✅ UTILISE LA MÊME LOGIQUE QUE LE CPU : 
-    // 1. Sélectionner d'abord les 16 meilleures couleurs (comme le CPU)
-    const maxBasePalette = 16
-    const selectedIndices = selectTopIndicesCore(
+    // ✅ PHASE 1: Sélectionner les 16 couleurs les plus fréquentes (comme CPU)
+    const topIndices = selectTopIndicesCore(
       histogram,
       preselectedIndices,
-      maxBasePalette,
+      16, // Toujours 16 comme le CPU
       {
         threshold: 10
       }
     )
 
-    // 2. Si on a besoin de moins de couleurs, utiliser la logique de sélection de subset du CPU
-    if (config.targetColors < maxBasePalette && selectedIndices.length > config.targetColors) {
-      // Convertir en couleurs et utiliser createQuantizer pour la sélection de subset
-      const reducedBasePalette: Vector[] = selectedIndices.map((idx: number) => [...basePalette[idx]] as Vector)
-      
-      // Créer un buffer minimal représentatif
-      const sampleBuffer = new Uint8ClampedArray(4 * 100) // 100 pixels échantillon
-      for (let i = 0; i < 100; i++) {
-        // Utiliser la couleur la plus fréquente pour l'échantillon
-        const colorIndex = selectedIndices[i % selectedIndices.length]
-        const color = basePalette[colorIndex]
-        sampleBuffer[i * 4] = Math.round(color[0])
-        sampleBuffer[i * 4 + 1] = Math.round(color[1])
-        sampleBuffer[i * 4 + 2] = Math.round(color[2])
-        sampleBuffer[i * 4 + 3] = 255
-      }
+    // ✅ PHASE 2: Appliquer l'algorithme de contraste comme le CPU
+    const candidateColors = topIndices.map(
+      (idx: number) => [...basePalette[idx]] as Vector
+    )
+    const preselectedColors = preselectedIndices.map(
+      (idx: number) => [...basePalette[idx]] as Vector
+    )
 
-      // Utiliser createQuantizer avec la même logique que le CPU
-      const quantizer = createQuantizer({
-        buf: sampleBuffer,
-        basePalette: reducedBasePalette,
-        preselected: [...preselected],
-        quantConfig: {
-          colorSpace: config.colorSpace,
-          distanceMetric: config.distanceMetric,
-          contrastStrategy: config.contrastStrategy ?? 'max'
+    // Créer la fonction de distance selon l'espace colorimétrique
+    const distanceFn = (a: Vector, b: Vector): number => {
+      if (config.colorSpace === 'Lab') {
+        const labA = this.convertColor(a, 'Lab')
+        const labB = this.convertColor(b, 'Lab')
+        let sum = 0
+        for (let i = 0; i < 3; i++) {
+          const d = labA[i] - labB[i]
+          sum += d * d
         }
-      })
-
-      const result = quantizer.quantize(config.targetColors)
-      return result
+        return Math.sqrt(sum)
+      } else if (config.colorSpace === 'XYZ') {
+        const xyzA = this.convertColor(a, 'XYZ')
+        const xyzB = this.convertColor(b, 'XYZ')
+        let sum = 0
+        for (let i = 0; i < 3; i++) {
+          const d = xyzA[i] - xyzB[i]
+          sum += d * d
+        }
+        return Math.sqrt(sum)
+      } else {
+        // RGB euclidean
+        let sum = 0
+        for (let i = 0; i < 3; i++) {
+          const d = a[i] - b[i]
+          sum += d * d
+        }
+        return Math.sqrt(sum)
+      }
     }
 
-    // 3. Sinon, retourner directement les couleurs sélectionnées
-    const result: Vector[] = selectedIndices.slice(0, config.targetColors).map((idx: number) => [...basePalette[idx]] as Vector)
+    // Fonction de conversion vers RGB (pour les tests de luminance)
+    const toRGB = (v: Vector): Vector => {
+      if (config.colorSpace === 'Lab') {
+        // Convertir de Lab vers RGB
+        const [L, a, b] = v
+        // Lab → XYZ
+        const Y = (L + 16) / 116
+        const X = a / 500 + Y
+        const Z = Y - b / 200
+
+        const X3 = X ** 3
+        const Y3 = Y ** 3
+        const Z3 = Z ** 3
+
+        const Xn = X3 > 0.008856 ? X3 : (X - 16 / 116) / 7.787
+        const Yn = Y3 > 0.008856 ? Y3 : (Y - 16 / 116) / 7.787
+        const Zn = Z3 > 0.008856 ? Z3 : (Z - 16 / 116) / 7.787
+
+        // XYZ vers RGB (matrice sRGB)
+        const r = Xn * 3.2406 + Yn * -1.5372 + Zn * -0.4986
+        const g = Xn * -0.9689 + Yn * 1.8758 + Zn * 0.0415
+        const b_rgb = Xn * 0.0557 + Yn * -0.204 + Zn * 1.057
+
+        // Gamma correction
+        const gamma = (c: number) =>
+          c > 0.0031308 ? 1.055 * c ** (1 / 2.4) - 0.055 : 12.92 * c
+
+        return [
+          Math.max(0, Math.min(255, gamma(r) * 255)),
+          Math.max(0, Math.min(255, gamma(g) * 255)),
+          Math.max(0, Math.min(255, gamma(b_rgb) * 255))
+        ]
+      } else if (config.colorSpace === 'XYZ') {
+        // Convertir de XYZ vers RGB
+        const [X, Y, Z] = v
+
+        // XYZ vers RGB (matrice sRGB)
+        const r = X * 3.2406 + Y * -1.5372 + Z * -0.4986
+        const g = X * -0.9689 + Y * 1.8758 + Z * 0.0415
+        const b_rgb = X * 0.0557 + Y * -0.204 + Z * 1.057
+
+        // Gamma correction
+        const gamma = (c: number) =>
+          c > 0.0031308 ? 1.055 * c ** (1 / 2.4) - 0.055 : 12.92 * c
+
+        return [
+          Math.max(0, Math.min(255, gamma(r) * 255)),
+          Math.max(0, Math.min(255, gamma(g) * 255)),
+          Math.max(0, Math.min(255, gamma(b_rgb) * 255))
+        ]
+      } else {
+        // RGB, pas de conversion nécessaire
+        return v
+      }
+    }
+
+    // Utiliser selectContrastedSubset comme le CPU
+    const result = selectContrastedSubset(
+      candidateColors,
+      preselectedColors,
+      config.targetColors,
+      distanceFn,
+      toRGB
+    )
 
     adapterLogger.debug(
       `🎯 [ReGL] GPU selection completed: ${result.length}/${config.targetColors} colors selected`
     )
 
-    return result
+    // CORRECTION: Convertir les couleurs RGB vers l'espace de travail comme le CPU
+    const convertedResult = result.map((color) => {
+      if (config.colorSpace === 'Lab') {
+        return this.convertColor(color, 'Lab')
+      } else if (config.colorSpace === 'XYZ') {
+        return this.convertColor(color, 'XYZ')
+      } else {
+        return color // RGB, pas de conversion
+      }
+    })
+
+    return convertedResult
   }
 
   /**

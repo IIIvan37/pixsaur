@@ -23,13 +23,6 @@ export function buildHistogram(
 
   const histogram = new Array(palette.length).fill(0)
 
-  // DEBUG: Log de la palette utilisée par le CPU
-  console.log('📊 [CPU DEBUG] Palette utilisée par buildHistogram:')
-  palette.forEach((color, index) => {
-    const [r, g, b] = Array.from(color)
-    console.log(`  ${index}: RGB(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`)
-  })
-
   // Map each input color to the nearest palette color and update the histogram
   for (const color of input) {
     const nearestColor = mapToNearest(color, palette, dist)
@@ -43,12 +36,34 @@ export function buildHistogram(
   const sortedIndices = histogram
     .map((count, index) => ({ index, count, color: palette[index] }))
     .sort((a, b) => b.count - a.count)
-  
+
   console.log('🔝 Top 10 most frequent colors (CPU DEBUG):')
   sortedIndices.slice(0, 10).forEach((entry, rank) => {
     if (entry.count > 0) {
       const [r, g, b] = Array.from(entry.color)
-      console.log(`  ${rank + 1}. RGB(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}) - ${entry.count} pixels (${(entry.count / totalPixels * 100).toFixed(1)}%)`)
+
+      // Détecter l'espace colorimétrique basé sur les plages de valeurs
+      let displayString = `RGB(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`
+
+      // Lab: L=[0,100], a et b peuvent être négatifs et dans [-128,127]
+      if (
+        r >= 0 &&
+        r <= 100 &&
+        g >= -128 &&
+        g <= 127 &&
+        b >= -128 &&
+        b <= 127
+      ) {
+        displayString = `Lab(${r.toFixed(1)}, ${g.toFixed(1)}, ${b.toFixed(1)})`
+      }
+      // XYZ: toutes valeurs positives, généralement <= 109 pour CIE XYZ
+      else if (r >= 0 && r <= 110 && g >= 0 && g <= 110 && b >= 0 && b <= 110) {
+        displayString = `XYZ(${r.toFixed(1)}, ${g.toFixed(1)}, ${b.toFixed(1)})`
+      }
+
+      console.log(
+        `  ${rank + 1}. ${displayString} - ${entry.count} pixels (${((entry.count / totalPixels) * 100).toFixed(1)}%)`
+      )
     }
   })
 

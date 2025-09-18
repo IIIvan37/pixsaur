@@ -1,9 +1,9 @@
+import type * as REGL from 'regl'
 import { adapterLogger } from '@/utils/logger'
 import { CpuImageProcessor } from './adapters/cpu-processor'
 import { ReGLProcessor } from './adapters/regl-processor'
 import type { ImageProcessor, ProcessorFactory } from './interfaces'
 import { detectWebGLCapabilities, getWebGLSummary } from './webgl-detection'
-import type * as REGL from 'regl'
 
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
@@ -38,23 +38,33 @@ export class ImageProcessorFactory implements ProcessorFactory {
     }
   }
 
-  async createBestProcessor(processorType: ProcessorType = 'auto'): Promise<ImageProcessor> {
-    adapterLogger.info(`🏭 [FACTORY] createBestProcessor called with type: ${processorType}`)
+  async createBestProcessor(
+    processorType: ProcessorType = 'auto'
+  ): Promise<ImageProcessor> {
+    adapterLogger.info(
+      `🏭 [FACTORY] createBestProcessor called with type: ${processorType}`
+    )
     return adapterLogger.timeSync(
       '🏭 [FACTORY] Best Processor Selection',
       async () => {
         // Force CPU if requested
         if (processorType === 'cpu') {
-          adapterLogger.info('🏭 [FACTORY] Creating CPU processor (forced by user)')
+          adapterLogger.info(
+            '🏭 [FACTORY] Creating CPU processor (forced by user)'
+          )
           return this.createCpuProcessor()
         }
 
         // Force GPU if requested
         if (processorType === 'gpu') {
-          adapterLogger.info('🏭 [FACTORY] Creating GPU processor (forced by user)')
-          
+          adapterLogger.info(
+            '🏭 [FACTORY] Creating GPU processor (forced by user)'
+          )
+
           if (!this.isWebGlAvailable()) {
-            adapterLogger.warn('⚠️ [FACTORY] GPU requested but WebGL not available, falling back to CPU')
+            adapterLogger.warn(
+              '⚠️ [FACTORY] GPU requested but WebGL not available, falling back to CPU'
+            )
             return this.createCpuProcessor()
           }
 
@@ -63,7 +73,9 @@ export class ImageProcessorFactory implements ProcessorFactory {
             return reglProcessor
           }
 
-          adapterLogger.warn('⚠️ [FACTORY] GPU requested but ReGL creation failed, falling back to CPU')
+          adapterLogger.warn(
+            '⚠️ [FACTORY] GPU requested but ReGL creation failed, falling back to CPU'
+          )
           return this.createCpuProcessor()
         }
 
@@ -175,10 +187,10 @@ export class ImageProcessorFactory implements ProcessorFactory {
   private async createReGLInstance(): Promise<REGL.Regl | null> {
     try {
       adapterLogger.debug('🎨 [FACTORY] Creating ReGL instance...')
-      
+
       const { default: createREGL } = await import('regl')
       const regl = createREGL()
-      
+
       adapterLogger.info('✅ [FACTORY] ReGL instance created successfully')
       return regl
     } catch (error) {

@@ -38,9 +38,8 @@ export function isBright(color: Vector): boolean {
 }
 
 /**
- * Selects the most contrasted subset of N colors from candidates
- * by maximizing the minimum pairwise distance, preferring sets
- * that contain both dark and bright entries.
+ * Sélectionne un sous-ensemble de couleurs en maximisant le contraste
+ * Algorithme glouton avec optimisations de performance
  *
  * @param candidates - List of colors in any color space
  * @param preselected - Already locked-in colors
@@ -48,6 +47,7 @@ export function isBright(color: Vector): boolean {
  * @param distance - Distance function in working space
  * @param toRGB - Projection function to RGB (for luminance test)
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export function selectContrastedSubset(
   candidates: readonly Vector[],
   preselected: Vector[],
@@ -110,11 +110,12 @@ export function selectContrastedSubset(
  * Équilibre mieux fréquence d'usage et contraste visuel
  *
  * @param candidates - Couleurs candidates triées par fréquence
- * @param preselected - Couleurs déjà sélectionnées  
+ * @param preselected - Couleurs déjà sélectionnées
  * @param size - Nombre final de couleurs désiré
  * @param distance - Fonction de distance dans l'espace de travail
  * @param toRGB - Fonction de conversion vers RGB pour test de luminance
  */
+// eslint-disable-next-line sonarjs/cognitive-complexity
 export function selectBalancedSubset(
   candidates: readonly Vector[],
   preselected: Vector[],
@@ -144,48 +145,50 @@ export function selectBalancedSubset(
 
     for (let i = 0; i < available.length; i++) {
       const candidate = available[i]
-      
+
       // Score = contraste moyen avec les déjà sélectionnées + bonus luminance
       let totalDistance = 0
       let minDistance = Infinity
-      
+
       for (const selected of result) {
         const d = distance(candidate, selected)
         totalDistance += d
         minDistance = Math.min(minDistance, d)
       }
-      
+
       const avgDistance = result.length > 0 ? totalDistance / result.length : 0
-      
+
       // Bonus luminance : encourage la diversité sombre/claire
       const candidateRGB = toRGB([...candidate] as Vector<'RGB'>)
       const candidateLum = luminance(candidateRGB)
-      
+
       let luminanceBonus = 0
       if (result.length > 0) {
-        const resultLuminances = result.map(c => luminance(toRGB([...c] as Vector<'RGB'>)))
-        const hasVeryDark = resultLuminances.some(l => l < 0.2)
-        const hasVeryBright = resultLuminances.some(l => l > 0.8)
-        
+        const resultLuminances = result.map((c) =>
+          luminance(toRGB([...c] as Vector<'RGB'>))
+        )
+        const hasVeryDark = resultLuminances.some((l) => l < 0.2)
+        const hasVeryBright = resultLuminances.some((l) => l > 0.8)
+
         // Encourage les couleurs sombres si on n'en a pas
         if (!hasVeryDark && candidateLum < 0.2) {
           luminanceBonus = 20
         }
-        // Encourage les couleurs claires si on n'en a pas  
+        // Encourage les couleurs claires si on n'en a pas
         if (!hasVeryBright && candidateLum > 0.8) {
           luminanceBonus = 20
         }
       }
-      
+
       // Score équilibré : distance moyenne + distance minimum + bonus luminance
       const score = avgDistance + minDistance * 0.5 + luminanceBonus
-      
+
       if (score > bestScore) {
         bestScore = score
         bestIndex = i
       }
     }
-    
+
     result.push(available[bestIndex])
     available.splice(bestIndex, 1)
   }

@@ -57,21 +57,13 @@ function filterCandidates(
 
 /**
  * Trie les candidats par ordre décroissant de fréquence
- * ✅ FIX: Tri stable par index en cas d'égalité pour assurer cohérence CPU/GPU
  */
 function sortAndLogCandidates(
   candidates: number[],
   counts: ArrayLike<number>
 ): number[] {
-  // Trier par ordre décroissant de counts, puis par index croissant en cas d'égalité
-  candidates.sort((a, b) => {
-    const countDiff = counts[b] - counts[a]
-    if (countDiff !== 0) {
-      return countDiff
-    }
-    // En cas d'égalité de count, trier par index pour avoir un ordre déterministe
-    return a - b
-  })
+  // Trier par ordre décroissant de counts
+  candidates.sort((a, b) => counts[b] - counts[a])
   return candidates
 }
 
@@ -105,7 +97,7 @@ export function selectTopIndicesCore(
   }
 ): number[] {
   const { threshold = 10 } = options || {}
-  
+
   const P = counts.length
   if (topN <= 0 || P === 0) {
     return []
@@ -113,11 +105,9 @@ export function selectTopIndicesCore(
 
   const result: number[] = []
   const used = new Uint8Array(P)
-  
+
   // 1. Ajouter les indices pré-sélectionnés
-  const isComplete = addPreselectedIndices(
-    preselectedIdx, result, used, topN
-  )
+  const isComplete = addPreselectedIndices(preselectedIdx, result, used, topN)
   if (isComplete) {
     return result
   }
@@ -130,7 +120,7 @@ export function selectTopIndicesCore(
 
   // 4. Compléter la sélection
   completeSelection(sortedCandidates, result, topN)
-  
+
   return result
 }
 

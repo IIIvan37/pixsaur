@@ -1,7 +1,12 @@
 import { atom } from 'jotai'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import type { AdjustementKey, CpcModeKey, ProcessorType, ContrastStrategy } from './types'
+import type {
+  AdjustementKey,
+  ContrastStrategy,
+  CpcModeKey,
+  ProcessorType
+} from './types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {

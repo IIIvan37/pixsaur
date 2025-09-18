@@ -1,3 +1,6 @@
+// Import pour accéder à l'atome de stratégie de contraste
+import { getDefaultStore } from 'jotai'
+import { contrastStrategyAtom } from '@/app/store/config/config'
 import { createQuantizer } from '@/libs/pixsaur-color/src'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
@@ -5,10 +8,6 @@ import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
-
-// Import pour accéder à l'atome de stratégie de contraste
-import { getDefaultStore } from 'jotai'
-import { contrastStrategyAtom } from '@/app/store/config/config'
 
 /**
  * Implémentation CPU du processor d'image
