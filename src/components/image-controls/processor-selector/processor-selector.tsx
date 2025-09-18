@@ -2,6 +2,7 @@ import { useAtom } from 'jotai'
 import { processorTypeAtom } from '@/app/store/config/config'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
+import { isDevelopment } from '@/utils/is-development'
 
 const PROCESSOR_TYPES = [
   { value: 'auto', label: '🤖 Auto (GPU puis CPU)', icon: '🤖' },
@@ -11,6 +12,11 @@ const PROCESSOR_TYPES = [
 
 export function ProcessorSelector() {
   const [processorType, setProcessorType] = useAtom(processorTypeAtom)
+
+  // N'afficher le sélecteur qu'en mode développement
+  if (!isDevelopment()) {
+    return null
+  }
 
   return (
     <Flex

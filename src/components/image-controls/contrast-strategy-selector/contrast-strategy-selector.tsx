@@ -7,6 +7,7 @@ import {
 } from '@/app/store/config/config'
 import type { ContrastStrategy } from '@/app/store/config/types'
 import Flex from '@/components/ui/flex'
+import { isDevelopment } from '@/utils/is-development'
 import animStyles from '@/styles/animations.module.css'
 import styles from '../image-controls.module.css'
 
@@ -18,6 +19,11 @@ export function ContrastStrategySelector() {
   const [contrastStrategy] = useAtom(contrastStrategyAtom)
   const [, setContrastStrategyValue] = useAtom(setContrastStrategyAtom)
   const [mode] = useAtom(modeAtom)
+
+  // N'afficher le sélecteur qu'en mode développement
+  if (!isDevelopment()) {
+    return null
+  }
 
   // Ne montrer le sélecteur que pour les modes 1 et 2 (petites palettes)
   const shouldShow =

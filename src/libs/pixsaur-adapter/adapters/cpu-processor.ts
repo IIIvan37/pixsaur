@@ -1,6 +1,3 @@
-// Import pour accéder à l'atome de stratégie de contraste
-import { getDefaultStore } from 'jotai'
-import { contrastStrategyAtom } from '@/app/store/config/config'
 import { createQuantizer } from '@/libs/pixsaur-color/src'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
@@ -76,14 +73,85 @@ export class CpuImageProcessor implements ImageProcessor {
           `📊 [ADAPTER] Creating quantizer with metric: ${distanceMetric}, basePalette=${basePalette?.length || 0} colors, preselected=${preselected?.length || 0} colors`
         )
 
+        // Convertir la palette vers l'espace de travail comme le fait le GPU
+        const paletteToUse = basePalette || generateAmstradCPCPalette()
+        let convertedPalette: Vector[]
+
+        if (colorSpace === 'Lab') {
+          convertedPalette = paletteToUse.map((color) => {
+            // Convertir RGB vers Lab
+            const [r, g, b] = color.map((c) => c / 255)
+
+            // RGB vers XYZ
+            const gamma = (c: number) =>
+              c > 0.04045 ? ((c + 0.055) / 1.055) ** 2.4 : c / 12.92
+            const rLinear = gamma(r)
+            const gLinear = gamma(g)
+            const bLinear = gamma(b)
+
+            const X =
+              rLinear * 0.4124564 + gLinear * 0.3575761 + bLinear * 0.1804375
+            const Y =
+              rLinear * 0.2126729 + gLinear * 0.7151522 + bLinear * 0.072175
+            const Z =
+              rLinear * 0.0193339 + gLinear * 0.119192 + bLinear * 0.9503041
+
+            // XYZ vers Lab
+            const XnValue = 0.95047
+            const YnValue = 1.0
+            const ZnValue = 1.08883
+
+            const fx =
+              X / XnValue > 0.008856
+                ? (X / XnValue) ** (1 / 3)
+                : (7.787 * X) / XnValue + 16 / 116
+            const fy =
+              Y / YnValue > 0.008856
+                ? (Y / YnValue) ** (1 / 3)
+                : (7.787 * Y) / YnValue + 16 / 116
+            const fz =
+              Z / ZnValue > 0.008856
+                ? (Z / ZnValue) ** (1 / 3)
+                : (7.787 * Z) / ZnValue + 16 / 116
+
+            const L = 116 * fy - 16
+            const a = 500 * (fx - fy)
+            const b_lab = 200 * (fy - fz)
+
+            return [L, a, b_lab] as Vector
+          })
+        } else if (colorSpace === 'XYZ') {
+          convertedPalette = paletteToUse.map((color) => {
+            // Convertir RGB vers XYZ
+            const [r, g, b] = color.map((c) => c / 255)
+
+            const gamma = (c: number) =>
+              c > 0.04045 ? ((c + 0.055) / 1.055) ** 2.4 : c / 12.92
+            const rLinear = gamma(r)
+            const gLinear = gamma(g)
+            const bLinear = gamma(b)
+
+            const X =
+              rLinear * 0.4124564 + gLinear * 0.3575761 + bLinear * 0.1804375
+            const Y =
+              rLinear * 0.2126729 + gLinear * 0.7151522 + bLinear * 0.072175
+            const Z =
+              rLinear * 0.0193339 + gLinear * 0.119192 + bLinear * 0.9503041
+
+            return [X, Y, Z] as Vector
+          })
+        } else {
+          // RGB, pas de conversion
+          convertedPalette = paletteToUse
+        }
+
         const quantizer = createQuantizer({
           buf: buffer,
-          basePalette: basePalette || generateAmstradCPCPalette(),
+          basePalette: convertedPalette,
           preselected: preselected || [],
           quantConfig: {
             colorSpace,
-            distanceMetric,
-            contrastStrategy: getDefaultStore().get(contrastStrategyAtom)
+            distanceMetric
           }
         })
 

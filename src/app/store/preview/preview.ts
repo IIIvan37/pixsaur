@@ -10,6 +10,7 @@ import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
+import { logger } from '@/utils/logger'
 import {
   colorSpaceAtom,
   contrastStrategyAtom,
@@ -111,19 +112,19 @@ export const previewImageAtom = atom(async (get) => {
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
 
-  console.time('🖼️ Preview Generation')
+  logger.time('🖼️ Preview Generation')
 
   const normalized = getVisualRegionNormalized(cropped, mode)
 
-  console.time('  📐 Dithering')
+  logger.time('  📐 Dithering')
   // reduced est en espace de travail (Lab, XYZ, etc.)
   const previewBuffer = quantizer.dither(normalized, reduced, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
-  console.timeEnd('  📐 Dithering')
+  logger.timeEnd('  📐 Dithering')
 
-  console.time('  🎯 Remapping')
+  logger.time('  🎯 Remapping')
   // remappage final en RGB visible
   const remapped = remapImageDataToPalette(
     new ImageData(
@@ -133,9 +134,9 @@ export const previewImageAtom = atom(async (get) => {
     ),
     reducedRgb
   )
-  console.timeEnd('  🎯 Remapping')
+  logger.timeEnd('  🎯 Remapping')
 
-  console.time('  🖌️ Canvas Operations')
+  logger.time('  🖌️ Canvas Operations')
   // Convert ImageData to Canvas for drawImage
   const remappedCanvas = document.createElement('canvas')
   remappedCanvas.width = remapped.width
@@ -169,10 +170,10 @@ export const previewImageAtom = atom(async (get) => {
     remapped.width,
     remapped.height
   )
-  console.timeEnd('  🖌️ Canvas Operations')
+  logger.timeEnd('  🖌️ Canvas Operations')
 
   const result = finalCtx.getImageData(0, 0, targetW, targetH)
-  console.timeEnd('🖼️ Preview Generation')
+  logger.timeEnd('🖼️ Preview Generation')
   return result
 })
 
