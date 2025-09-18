@@ -40,6 +40,10 @@ export const AdjustementsView = ({
         actionLabel='Réinitialiser'
         disabled={disabled}
       />
+      
+      <div style={{ padding: 'var(--spacing-xs)', borderBottom: '1px solid var(--color-border)' }}>
+        <AdapterStatusIndicator />
+      </div>
 
       <div className={styles.adjustmentsContainer}>
         {/* RGB Channels - with labels */}

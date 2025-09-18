@@ -14,6 +14,7 @@ export default function App() {
               height='32'
               alt='Logo Pixsaur - Convertisseur d&apos;images Amstrad CPC'
             />
+
             <h1 className={styles.title}>PIXSAUR</h1>
             <p className={styles.subtitle}>
               Convertisseur d'images Amstrad CPC"

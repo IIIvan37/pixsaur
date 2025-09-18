@@ -6,9 +6,20 @@ global.ImageData =
     width: number
     height: number
     data: Uint8ClampedArray
-    constructor(width: number, height: number) {
-      this.width = width
-      this.height = height
-      this.data = new Uint8ClampedArray(width * height * 4)
+    
+    constructor(dataOrWidth: Uint8ClampedArray | number, width?: number, height?: number) {
+      if (typeof dataOrWidth === 'number' && width !== undefined) {
+        // new ImageData(width, height)
+        this.width = dataOrWidth
+        this.height = width
+        this.data = new Uint8ClampedArray(dataOrWidth * width * 4)
+      } else if (width !== undefined && height !== undefined) {
+        // new ImageData(data, width, height)
+        this.data = new Uint8ClampedArray(dataOrWidth as Uint8ClampedArray)
+        this.width = width
+        this.height = height
+      } else {
+        throw new Error('Invalid ImageData constructor arguments')
+      }
     }
   }
