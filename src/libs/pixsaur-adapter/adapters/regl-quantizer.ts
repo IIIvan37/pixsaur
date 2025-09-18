@@ -364,36 +364,62 @@ export class ReGLQuantizer {
           
           varying vec2 v_texCoord;
           
-          // Convert RGB to Lab color space
-          vec3 rgb2lab(vec3 rgb) {
-            // Simplified RGB to Lab conversion for GPU
-            // Note: This is a simplified version, full conversion would be more complex
+          // Convert RGB to XYZ color space
+          vec3 rgb2xyz(vec3 rgb) {
+            // Normalize RGB values to [0,1]
             rgb = rgb / 255.0;
             
-            // sRGB to XYZ (simplified)
-            vec3 xyz = mat3(
-              0.4124564, 0.3575761, 0.1804375,
-              0.2126729, 0.7151522, 0.0721750,
-              0.0193339, 0.1191920, 0.9503041
-            ) * rgb;
+            // Apply sRGB gamma correction (exact CPU implementation)
+            vec3 linearRgb;
+            linearRgb.r = rgb.r > 0.04045 ? pow((rgb.r + 0.055) / 1.055, 2.4) : rgb.r / 12.92;
+            linearRgb.g = rgb.g > 0.04045 ? pow((rgb.g + 0.055) / 1.055, 2.4) : rgb.g / 12.92;
+            linearRgb.b = rgb.b > 0.04045 ? pow((rgb.b + 0.055) / 1.055, 2.4) : rgb.b / 12.92;
             
-            // XYZ to Lab (simplified)
-            xyz = xyz / vec3(0.95047, 1.0, 1.08883); // D65 illuminant
-            xyz = mix(xyz * 7.787 + 16.0/116.0, pow(xyz, vec3(1.0/3.0)), step(0.008856, xyz));
+            // sRGB to XYZ transformation matrix (exact CPU coefficients)
+            float x = (linearRgb.r * 0.4124564 + linearRgb.g * 0.3575761 + linearRgb.b * 0.1804375) * 100.0;
+            float y = (linearRgb.r * 0.2126729 + linearRgb.g * 0.7151522 + linearRgb.b * 0.072175) * 100.0;
+            float z = (linearRgb.r * 0.0193339 + linearRgb.g * 0.119192 + linearRgb.b * 0.9503041) * 100.0;
             
-            float L = 116.0 * xyz.y - 16.0;
-            float a = 500.0 * (xyz.x - xyz.y);
-            float b = 200.0 * (xyz.y - xyz.z);
+            return vec3(x, y, z);
+          }
+          
+          // Convert RGB to Lab color space
+          vec3 rgb2lab(vec3 rgb) {
+            // First convert to XYZ
+            vec3 xyz = rgb2xyz(rgb);
+            
+            // Normalize by D65 illuminant (exact CPU values)
+            vec3 normalizedXyz = xyz / vec3(95.047, 100.0, 108.883);
+            
+            // Lab conversion with exact CPU constants
+            float epsilon = 0.008856; // LAB_CONST.EPSILON
+            float kappa = 903.3; // LAB_CONST.KAPPA
+            float delta = 16.0 / 116.0; // LAB_CONST.DELTA
+            
+            // Transform function (exact CPU implementation)
+            vec3 f;
+            f.x = normalizedXyz.x > epsilon ? pow(normalizedXyz.x, 1.0/3.0) : (normalizedXyz.x * (kappa / 1160.0) + delta);
+            f.y = normalizedXyz.y > epsilon ? pow(normalizedXyz.y, 1.0/3.0) : (normalizedXyz.y * (kappa / 1160.0) + delta);
+            f.z = normalizedXyz.z > epsilon ? pow(normalizedXyz.z, 1.0/3.0) : (normalizedXyz.z * (kappa / 1160.0) + delta);
+            
+            float L = 116.0 * f.y - 16.0;
+            float a = 500.0 * (f.x - f.y);
+            float b = 200.0 * (f.y - f.z);
             
             return vec3(L, a, b);
           }
           
           // Calculate color distance based on metric
           float colorDistance(vec3 color1, vec3 color2, int metric, int colorSpace) {
+            // Convert colors to the specified color space
             if (colorSpace == 1) { // Lab
               color1 = rgb2lab(color1);
               color2 = rgb2lab(color2);
+            } else if (colorSpace == 2) { // XYZ
+              color1 = rgb2xyz(color1);
+              color2 = rgb2xyz(color2);
             }
+            // colorSpace == 0 is RGB, no conversion needed
             
             if (metric == 0) { // Euclidean
               vec3 diff = color1 - color2;
@@ -464,12 +490,16 @@ export class ReGLQuantizer {
           u_colorSpace: (_context, props: any) => {
             // 0: RGB, 1: Lab, 2: XYZ
             const colorSpace = props.colorSpace || 'RGB'
-            return colorSpace === 'Lab' ? 1 : colorSpace === 'XYZ' ? 2 : 0
+            if (colorSpace === 'Lab') return 1
+            if (colorSpace === 'XYZ') return 2
+            return 0 // RGB
           },
           u_distanceMetric: (_context, props: any) => {
             // 0: euclidean, 1: cie76, 2: deltaE2000
             const metric = props.distanceMetric || 'euclidean'
-            return metric === 'cie76' ? 1 : metric === 'deltaE2000' ? 2 : 0
+            if (metric === 'cie76') return 1
+            if (metric === 'deltaE2000') return 2
+            return 0 // euclidean
           }
         },
         primitive: 'triangle strip',
@@ -574,11 +604,11 @@ export class ReGLQuantizer {
     // Le shader GPU a des problèmes complexes à résoudre
     adapterLogger.debug('🔄 [ReGL] Using CPU histogram fallback for reliability')
     
-    // Construire l'histogramme en CPU en utilisant la même logique que createQuantizer
+    // Construire l'histogramme en CPU en utilisant EXACTEMENT la même logique que createQuantizer
     const histogram = new Array(27).fill(0)
     const pixels = imageData.data
     
-    // Palette CPC de base (les 27 couleurs)
+    // Palette CPC de base (les 27 couleurs) - exactement comme basePalette
     const cpcPalette = [
       [0, 0, 0], [0, 0, 128], [0, 0, 255], [128, 0, 0], [128, 0, 128], [128, 0, 255],
       [255, 0, 0], [255, 0, 128], [255, 0, 255], [0, 128, 0], [0, 128, 128], [0, 128, 255],
@@ -586,24 +616,37 @@ export class ReGLQuantizer {
       [0, 255, 0], [0, 255, 128], [0, 255, 255], [128, 255, 0], [128, 255, 128], [128, 255, 255],
       [255, 255, 0], [255, 255, 128], [255, 255, 255]
     ]
+
+    // Importer les fonctions de conversion et distance - EXACTEMENT comme CPU
+    const { getRgbToColorSpaceFn } = await import('../../pixsaur-color/src/space')
+    const { getDistanceFn } = await import('../../pixsaur-color/src/metric/distance')
+    const { bufferToVectors } = await import('../../pixsaur-color/src/quant/quantize')
     
-    // Pour chaque pixel, trouver la couleur CPC la plus proche
-    for (let i = 0; i < pixels.length; i += 4) {
-      const r = pixels[i]
-      const g = pixels[i + 1]
-      const b = pixels[i + 2]
-      
+    // EXACTEMENT comme dans createQuantizer()
+    const toW = getRgbToColorSpaceFn(config.colorSpace)
+    const distFn = getDistanceFn(config.colorSpace, config.distanceMetric)
+    
+    // 1. Extraire tous les pixels RGB (comme bufferToVectors)
+    const vecs = bufferToVectors(pixels)
+    
+    // 2. Convertir TOUS les pixels vers l'espace de travail (comme vecs.map(toW))
+    const convertedPixels = vecs.map(toW)
+    
+    // 3. Convertir la palette vers l'espace de travail (comme basePalette.map(toW))
+    const workingPal = cpcPalette.map((c) => toW([...c] as any))
+    
+    adapterLogger.debug(
+      `📊 [ReGL] Using ${config.colorSpace} color space with ${config.distanceMetric} distance - CPU logic exact match`
+    )
+    
+    // 4. Construire l'histogramme EXACTEMENT comme buildHistogram()
+    for (const convertedPixel of convertedPixels) {
       let minDistance = Infinity
       let closestIndex = 0
       
-      // Chercher la couleur CPC la plus proche (distance euclidienne)
-      for (let j = 0; j < cpcPalette.length; j++) {
-        const [pr, pg, pb] = cpcPalette[j]
-        const distance = Math.sqrt(
-          (r - pr) * (r - pr) + 
-          (g - pg) * (g - pg) + 
-          (b - pb) * (b - pb)
-        )
+      // Chercher la couleur la plus proche dans l'espace de travail
+      for (let j = 0; j < workingPal.length; j++) {
+        const distance = distFn(convertedPixel, workingPal[j])
         
         if (distance < minDistance) {
           minDistance = distance
@@ -615,8 +658,9 @@ export class ReGLQuantizer {
     }
 
     const totalPixels = histogram.reduce((a, b) => a + b, 0)
+    
     adapterLogger.debug(
-      `📊 [ReGL] CPU histogram computed: ${totalPixels} pixels processed`
+      `📊 [ReGL] CPU histogram computed: ${totalPixels} pixels processed in ${config.colorSpace} space (exact CPU logic)`
     )
 
     return histogram
@@ -659,9 +703,12 @@ export class ReGLQuantizer {
       }
     )
 
-    // Convertir les indices en couleurs pour l'étape 2
-    const frequencySelectedColors: Vector[] = frequencySelectedIndices.map(idx => [...basePalette[idx]] as Vector)
-    const preselectedColors: Vector[] = preselectedIndices.map(idx => [...basePalette[idx]] as Vector)
+    // Convertir les indices en couleurs dans l'espace de travail pour l'étape 2
+    const { getRgbToColorSpaceFn } = await import('../../pixsaur-color/src/space')
+    const toW = getRgbToColorSpaceFn(config.colorSpace)
+    
+    const frequencySelectedColors: Vector[] = frequencySelectedIndices.map(idx => toW([...basePalette[idx]] as Vector))
+    const preselectedColors: Vector[] = preselectedIndices.map(idx => toW([...basePalette[idx]] as Vector))
 
     // ✅ ÉTAPE 2 : Sélection contrastée adaptative (comme CPU mais plus douce)
     

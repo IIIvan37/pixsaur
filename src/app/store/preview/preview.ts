@@ -75,8 +75,8 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
   const processorType = get(processorTypeAtom)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _contrastStrategy = get(contrastStrategyAtom) // Dépendance pour recalculer quand la stratégie change
+  // Dépendance pour recalculer quand la stratégie change
+  get(contrastStrategyAtom)
 
   if (!buf || !cropped) return []
 

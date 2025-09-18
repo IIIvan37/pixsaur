@@ -81,7 +81,6 @@ export function createQuantizer({
     )
 
     const idxs = selectTopIndices(counts, preIdx, 16)
-
     const out = idxs.map((i) => workingPal[i])
 
     // Choisir la stratégie de sélection selon la configuration

@@ -195,8 +195,8 @@ export class ReGLProcessor implements ImageProcessor {
       )
 
       // Déterminer la métrique de distance basée sur l'espace colorimétrique
-      const distanceMetric: DistanceMetric =
-        colorSpace === 'Lab' ? 'cie76' : 'euclidean'
+      const distanceMetric: DistanceMetric = 
+        colorSpace === 'Lab' ? 'cie76' : 'euclidean' // XYZ et RGB utilisent euclidean
 
       // Extraire dimensions depuis imageData
       const dimensions =
