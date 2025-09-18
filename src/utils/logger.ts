@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: LoggerConfig = {
 
 class PerformanceLogger {
   private config: LoggerConfig
-  private timers = new Map<string, number>()
+  private readonly timers = new Map<string, number>()
 
   constructor(config: Partial<LoggerConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config }

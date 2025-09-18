@@ -20,7 +20,8 @@ export default function ExportPanel() {
     const cpcPalette = generateAmstradCPCPalette()
 
     // find indexes of the palette in amstrad cpc palette
-    const paletteFirmware = reducedPalette.map((color) => {
+    const paletteFirmware = reducedPalette.map((colorData: any) => {
+      const color = Array.isArray(colorData) ? colorData : Array.from(colorData)
       const index = cpcPalette.findIndex(
         (c) => c[0] === color[0] && c[1] === color[1] && c[2] === color[2]
       )

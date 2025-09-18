@@ -184,7 +184,8 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   const projected = raw.map(toRGB)
 
   // Quantify colors to match CPC palette values (0, 128, 255)
-  const quantified = projected.map(([r, g, b]) => {
+  const quantified = projected.map((value: any) => {
+    const [r, g, b] = Array.isArray(value) ? value : Array.from(value)
     const quantizeCPC = (value: number): number => {
       const levels = [0, 128, 255]
       let best = levels[0]

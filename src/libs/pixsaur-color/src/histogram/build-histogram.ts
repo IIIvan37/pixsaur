@@ -30,15 +30,16 @@ export function buildHistogram(
     histogram[nearestIndex]++
   }
 
-  // DEBUG: Log de l'histogramme résultant
-  console.log('📊 [CPU DEBUG] Histogramme résultant:')
-  const totalPixels = histogram.reduce((sum, count) => sum + count, 0)
-  const sortedIndices = histogram
-    .map((count, index) => ({ index, count, color: palette[index] }))
-    .sort((a, b) => b.count - a.count)
+  // DEBUG: Histogramme résultant (disabled in production)
+  if (import.meta.env.DEV) {
+    console.log('📊 [CPU DEBUG] Histogramme résultant:')
+    const totalPixels = histogram.reduce((sum, count) => sum + count, 0)
+    const sortedIndices = histogram
+      .map((count, index) => ({ index, count, color: palette[index] }))
+      .sort((a, b) => b.count - a.count)
 
-  console.log('🔝 Top 10 most frequent colors (CPU DEBUG):')
-  sortedIndices.slice(0, 10).forEach((entry, rank) => {
+    console.log('🔝 Top 10 most frequent colors (CPU DEBUG):')
+    sortedIndices.slice(0, 10).forEach((entry, rank) => {
     if (entry.count > 0) {
       const [r, g, b] = Array.from(entry.color)
 
@@ -65,7 +66,8 @@ export function buildHistogram(
         `  ${rank + 1}. ${displayString} - ${entry.count} pixels (${((entry.count / totalPixels) * 100).toFixed(1)}%)`
       )
     }
-  })
+    })
+  }
 
   // Histogram computation completed
 
