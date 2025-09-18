@@ -2,6 +2,7 @@ import { atom } from 'jotai'
 import { PixsaurWebGL, type DitheringConfig } from '@/libs/pixsaur-webgl'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { logger } from '@/utils/logger'
 
 // Singleton WebGL instance
 const webglInstanceAtom = atom<PixsaurWebGL | null>(null)
@@ -15,7 +16,7 @@ export const initWebGLAtom = atom(null, (_get, set) => {
     webgl.setPalette(cpcPalette)
     set(webglInstanceAtom, webgl)
   } catch (error) {
-    console.error('Failed to initialize WebGL:', error)
+    logger.error('Failed to initialize WebGL:', error)
     set(webglInstanceAtom, null)
   }
 })
@@ -42,7 +43,7 @@ const webglProcessorAtom = atom<WebGLImageProcessor | null>((get) => {
   try {
     return new WebGLImageProcessor()
   } catch (error) {
-    console.warn('Failed to create WebGL processor:', error)
+    logger.error('Failed to create WebGL processor:', error)
     return null
   }
 })
@@ -70,7 +71,7 @@ export const webglQuantizeAtom = atom(
     try {
       return webgl.quantizeToCC(imageData)
     } catch (error) {
-      console.error('WebGL quantization failed:', error)
+      logger.error('WebGL quantization failed:', error)
       throw error
     }
   }
@@ -94,7 +95,7 @@ export const webglDitherAtom = atom(
       webgl.setPalette(params.palette)
       return webgl.applyDithering(params.imageData, params.palette, params.config)
     } catch (error) {
-      console.error('WebGL dithering failed:', error)
+      logger.error('WebGL dithering failed:', error)
       throw error
     }
   }

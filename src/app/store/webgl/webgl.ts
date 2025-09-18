@@ -1,5 +1,6 @@
 import { atom } from 'jotai'
 import { WebGLImageProcessor, type ImageAdjustmentConfig } from '../../../libs/pixsaur-webgl/src/image-processor'
+import { logger } from '@/utils/logger'
 
 // Check if WebGL2 is available
 export const webglAvailableAtom = atom<boolean>(() => {
@@ -20,7 +21,7 @@ const webglProcessorAtom = atom<WebGLImageProcessor | null>((get) => {
   try {
     return new WebGLImageProcessor()
   } catch (error) {
-    console.warn('Failed to create WebGL processor:', error)
+    logger.error('Failed to create WebGL processor:', error)
     return null
   }
 })

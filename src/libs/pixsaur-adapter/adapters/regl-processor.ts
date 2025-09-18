@@ -42,10 +42,13 @@ export class ReGLProcessor implements ImageProcessor {
   constructor(regl?: REGL.Regl) {
     // Évaluer si ReGL pourrait être utilisé
     this.reglCapabilities = this.evaluateReGLCapabilities()
+    
+    console.log(`🔍 [ADAPTER] ReGL constructor - regl instance: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`)
 
     // Phase 1: Setup optionnel de ReGL
     if (regl && this.reglCapabilities.canUseReGL) {
       try {
+        console.log('🔧 [ADAPTER] Initializing ReGL quantizer...')
         this.quantizer = new ReGLQuantizer(regl)
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
@@ -60,6 +63,8 @@ export class ReGLProcessor implements ImageProcessor {
         this.quantizer = undefined
         this.regl = undefined
       }
+    } else {
+      console.log(`🚫 [ADAPTER] Skipping ReGL initialization - regl: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`)
     }
 
     // Toujours disponible avec fallback CPU

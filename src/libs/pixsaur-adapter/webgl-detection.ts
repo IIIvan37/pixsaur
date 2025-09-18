@@ -107,8 +107,23 @@ export function detectWebGLCapabilities(): WebGLCapabilities {
 
     return result
   } catch (error) {
-    console.warn('WebGL detection failed:', error)
-    return result
+    // Silently handle WebGL detection failure - this is expected on some systems
+    return {
+      isAvailable: false,
+      version: null,
+      renderer: null,
+      vendor: null,
+      extensions: [],
+      maxTextureSize: 0,
+      maxRenderBufferSize: 0,
+      performance: 'unknown',
+      features: {
+        computeShaders: false,
+        floatTextures: false,
+        colorBufferFloat: false,
+        instancedArrays: false
+      }
+    }
   }
 }
 

@@ -14,6 +14,7 @@ import {
   ReloadIcon,
   UploadIcon
 } from '@radix-ui/react-icons'
+import { logger } from '@/utils/logger'
 
 // Mapping statique des icônes pour éviter l'accès dynamique
 const ICON_MAP = {
@@ -53,7 +54,7 @@ export default function Icon({
   const IconComponent = ICON_MAP[name]
 
   if (!IconComponent) {
-    console.warn(`Icon "${name}" not found in icon mapping`)
+    logger.warn(`Icon "${name}" not found in icon mapping`)
     return null
   }
 

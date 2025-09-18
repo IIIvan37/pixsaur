@@ -1,11 +1,10 @@
 import { atom } from 'jotai'
-import { processorFactory } from '@/libs/pixsaur-adapter'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
-import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
+import { OptimizedImageProcessor } from '@/utils/optimized-image-processor'
 import {
   getVisualRegion,
   getVisualRegionNormalized
@@ -15,9 +14,9 @@ import {
   colorSpaceAtom,
   contrastStrategyAtom,
   ditheringAtom,
-  modeAtom,
-  processorTypeAtom
+  modeAtom
 } from '../config/config'
+import { paletteProcessorAtom } from '../adapters/processors'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
@@ -81,16 +80,19 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
-  const processorType = get(processorTypeAtom)
   // Dépendance pour recalculer quand la stratégie change
   get(contrastStrategyAtom)
 
   if (!buf || !cropped) return []
 
-  // 🚀 UTILISATION DE L'ADAPTATEUR comme système principal
-  const processor = await processorFactory.createBestProcessor(processorType)
+  // 🚀 UTILISATION DES PROCESSEURS CENTRALISÉS (réutilisation de cache)
+  const paletteProcessor = get(paletteProcessorAtom)
+  if (!paletteProcessor) {
+    logger.warn('Palette processor not initialized')
+    return []
+  }
 
-  const palette = await processor.quantizePalette(
+  const palette = await paletteProcessor.quantizePalette(
     buf,
     cropped,
     CPC_MODE_CONFIG[mode].nColors,
@@ -102,7 +104,79 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   return palette
 })
 
-// 5. Image preview finale avec copie défensive
+// ====== CACHE POUR PERFORMANCE ======
+
+/**
+ * Cache intelligent pour dithering basé sur les paramètres
+ */
+type DitheringCacheEntry = {
+  key: string
+  buffer: Uint8ClampedArray
+  width: number
+  height: number
+  timestamp: number
+}
+
+// Cache global pour le dithering (hors atoms pour éviter les problèmes de state)
+const ditheringCache = new Map<string, DitheringCacheEntry>()
+
+/**
+ * Génère une clé de cache pour le dithering
+ */
+export function generateDitheringCacheKey(
+  imageData: ImageData,
+  palette: Vector[],
+  dithering: { mode: string; intensity: number }
+): string {
+  // Hash simple mais efficace basé sur les propriétés critiques
+  const imageHash = `${imageData.width}x${imageData.height}_${imageData.data.length}`
+  const paletteHash = palette.map(p => `${p[0]},${p[1]},${p[2]}`).join('|')
+  const ditheringHash = `${dithering.mode}_${dithering.intensity}`
+  
+  // Génération d'un hash simple mais unique
+  const combined = `${imageHash}_${paletteHash}_${ditheringHash}`
+  let hash = 0
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  
+  return Math.abs(hash).toString(16).padStart(8, '0')
+}
+
+// Nettoyage automatique du cache (garder seulement les 5 dernières entrées)
+function cleanupCache() {
+  if (ditheringCache.size > 5) {
+    const entries = Array.from(ditheringCache.entries())
+    entries.sort((a, b) => b[1].timestamp - a[1].timestamp)
+    ditheringCache.clear()
+    entries.slice(0, 5).forEach(([key, value]) => {
+      ditheringCache.set(key, value)
+    })
+  }
+}
+
+// Variables globales pour les statistiques de cache
+let cacheHits = 0
+let cacheMisses = 0
+
+/**
+ * Récupère les statistiques du cache dithering
+ */
+export function getDitheringCacheStats() {
+  const total = cacheHits + cacheMisses
+  return {
+    size: ditheringCache.size,
+    maxSize: 5,
+    hitRate: total > 0 ? cacheHits / total : 0,
+    hits: cacheHits,
+    misses: cacheMisses,
+    total
+  }
+}
+
+// 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
   const mode = get(modeAtom)
   const quantizer = await get(quantizerAtom)
@@ -115,23 +189,58 @@ export const previewImageAtom = atom(async (get) => {
   logger.time('🖼️ Preview Generation')
 
   const normalized = getVisualRegionNormalized(cropped, mode)
-
-  logger.time('  📐 Dithering')
-  // reduced est en espace de travail (Lab, XYZ, etc.)
-  const previewBuffer = quantizer.dither(normalized, reduced, {
+  if (!normalized) return null
+  
+  // Générer clé de cache pour dithering - VERSION OPTIMISÉE
+  const cacheKey = OptimizedImageProcessor.generateFastCacheKey(normalized, reduced, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
-  logger.timeEnd('  📐 Dithering')
+  logger.info('🔑 [CACHE] Generated key:', cacheKey)
+
+  // Vérifier cache existant
+  let previewBuffer: Uint8ClampedArray
+  const existingCache = ditheringCache.get(cacheKey)
+  
+  if (existingCache) {
+    logger.info('🎯 [CACHE] Dithering cache HIT')
+    cacheHits++
+    previewBuffer = existingCache.buffer
+  } else {
+    // Cache MISS - calculer nouveau dithering
+    logger.info('❌ [CACHE] Dithering cache MISS - computing...')
+    cacheMisses++
+    logger.time('  📐 Dithering')
+    
+    previewBuffer = quantizer.dither(normalized, reduced, {
+      mode: dithering.mode,
+      intensity: dithering.intensity
+    })
+    
+    logger.timeEnd('  📐 Dithering')
+
+    // Mettre à jour le cache
+    ditheringCache.set(cacheKey, {
+      key: cacheKey,
+      buffer: previewBuffer,
+      width: normalized.width,
+      height: normalized.height,
+      timestamp: Date.now()
+    })
+    
+    // Nettoyage automatique
+    cleanupCache()
+  }
 
   logger.time('  🎯 Remapping')
-  // remappage final en RGB visible
-  const remapped = remapImageDataToPalette(
-    new ImageData(
-      new Uint8ClampedArray(previewBuffer), // Ensure buffer is correct type
-      normalized.width,
-      normalized.height
-    ),
+  // remappage final en RGB visible - VERSION OPTIMISÉE (MUTATION EN PLACE)
+  const imageDataToRemap = new ImageData(
+    new Uint8ClampedArray(previewBuffer), // Buffer du cache ou nouveau
+    normalized.width,
+    normalized.height
+  )
+  const remapped = OptimizedImageProcessor.remapImageDataInPlace(
+    imageDataToRemap,
     reducedRgb
   )
   logger.timeEnd('  🎯 Remapping')
@@ -181,31 +290,24 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   const colorSpace = get(colorSpaceAtom)
   const toRGB = getColorSpaceToRgbFn(colorSpace)
   const raw = await get(reducedPaletteRawAtom)
-  const projected = raw.map(toRGB)
+  
+  // VERSION OPTIMISÉE: conversion en place puis quantification
+  const projected = raw.slice() // Shallow copy pour ne pas muter l'original
+  OptimizedImageProcessor.convertPaletteInPlace(projected, toRGB)
 
-  // Quantify colors to match CPC palette values (0, 128, 255)
-  const quantified = projected.map((value: any) => {
-    const [r, g, b] = Array.isArray(value) ? value : Array.from(value)
-    const quantizeCPC = (value: number): number => {
-      const levels = [0, 128, 255]
-      let best = levels[0]
-      let bestDist = Math.abs(value - best)
+  // Quantify colors to match CPC palette values (0, 128, 255) - OPTIMISÉ
+  for (const color of projected) {
+    const r = color[0]
+    const g = color[1] 
+    const b = color[2]
+    
+    // Quantification optimisée en place
+    color[0] = r <= 64 ? 0 : (r <= 192 ? 128 : 255)
+    color[1] = g <= 64 ? 0 : (g <= 192 ? 128 : 255)
+    color[2] = b <= 64 ? 0 : (b <= 192 ? 128 : 255)
+  }
 
-      for (const lvl of levels) {
-        const dist = Math.abs(value - lvl)
-        if (dist < bestDist) {
-          bestDist = dist
-          best = lvl
-        }
-      }
-
-      return best
-    }
-
-    return [quantizeCPC(r), quantizeCPC(g), quantizeCPC(b)] as Vector<'RGB'>
-  })
-
-  return quantified
+  return projected
 })
 
 // ====== ADAPTER-BASED ATOMS (alternative implementation) ======
@@ -214,26 +316,4 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
  * Atom alternatif utilisant l'adaptateur pour la quantization
  * Peut remplacer progressivement le système direct
  */
-export const adapterPaletteAtom = atom(async (get) => {
-  const buf = await get(croppedBufferAtom)
-  const cropped = await get(croppedImageAtom)
-  const lockedVecs = get(lockedVectorsAtom)
-  const colorSpace = get(colorSpaceAtom)
-  const mode = get(modeAtom)
-  const processorType = get(processorTypeAtom)
-
-  if (!buf || !cropped) return []
-
-  const processor = await processorFactory.createBestProcessor(processorType)
-
-  const palette = await processor.quantizePalette(
-    buf,
-    cropped,
-    CPC_MODE_CONFIG[mode].nColors,
-    generateAmstradCPCPalette(),
-    lockedVecs,
-    colorSpace
-  )
-
-  return palette
-})
+// SUPPRIMÉ - redondant avec reducedPaletteRawAtom

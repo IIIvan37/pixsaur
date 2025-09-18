@@ -2,6 +2,7 @@ import { WebGLRenderer } from './renderer'
 import { Shader } from './shader'
 import { vertexShader } from './shaders/vertex.glsl'
 import { imageAdjustmentShader } from './shaders/image-adjustment.glsl'
+import { logger } from '@/utils/logger'
 
 export interface ImageAdjustmentConfig {
   rgb: { r: number; g: number; b: number }
@@ -69,7 +70,7 @@ export class WebGLImageProcessor {
       // Return processed image
       return this.renderer.toImageData(width, height)
     } catch (error) {
-      console.error('WebGL image adjustment failed:', error)
+      logger.error('WebGL image adjustment failed:', error)
       return null
     }
   }

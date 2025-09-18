@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import { processorTypeAtom } from '@/app/store/config/config'
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
+import type REGL from 'regl'
 import { adapterLogger } from '@/utils/logger'
 
 // Atomes pour les adaptateurs auto-sélectionnés
@@ -13,8 +14,12 @@ let isInitializing = false
 
 // Atome pour initialiser les adaptateurs de façon asynchrone (singleton)
 export const initializeProcessorsAtom = atom(null, async (_get, set) => {
+  const callStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown'
+  adapterLogger.debug(`🔧 [PROCESSORS] initializeProcessorsAtom called from: ${callStack}`)
+  
   // Si déjà en cours d'initialisation, attendre la promesse existante
   if (isInitializing && initializationPromise) {
+    adapterLogger.debug('🔄 [PROCESSORS] Already initializing, waiting...')
     await initializationPromise
     return
   }
@@ -23,6 +28,7 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
   const currentImage = _get(imageProcessorAtom)
   const currentPalette = _get(paletteProcessorAtom)
   if (currentImage && currentPalette) {
+    adapterLogger.debug('♻️ [PROCESSORS] Processors already initialized, skipping')
     return
   }
 
@@ -83,6 +89,27 @@ export const disposeProcessorsAtom = atom(null, (get, set) => {
 export const processorFactory = {
   async createBestProcessor(_type = 'gpu') {
     const { ReGLProcessor } = await import('@/libs/pixsaur-adapter/adapters/regl-processor')
-    return new ReGLProcessor()
+    
+    // Créer une instance ReGL pour GPU processing
+    let reglInstance: REGL.Regl | undefined = undefined
+    try {
+      const createREGL = (await import('regl')).default
+      reglInstance = createREGL({
+        // Configuration optimisée pour image processing
+        extensions: [],
+        optionalExtensions: ['OES_texture_float', 'OES_texture_half_float'],
+        attributes: {
+          preserveDrawingBuffer: false,
+          antialias: false,
+          depth: false,
+          stencil: false
+        }
+      })
+      adapterLogger.debug('✅ [FACTORY] ReGL instance created successfully')
+    } catch (error) {
+      adapterLogger.warn('⚠️ [FACTORY] Failed to create ReGL instance, falling back to CPU:', error)
+    }
+    
+    return new ReGLProcessor(reglInstance)
   }
 }

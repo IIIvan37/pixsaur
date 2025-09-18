@@ -1,10 +1,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import debounce from 'lodash/debounce'
 import { useEffect, useMemo } from 'react'
-import {
-  clearLastChangedKeyAtom,
-  configAtom
-} from '@/app/store/config/config'
+import { configAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { useImageProcessors } from './use-image-processors'
 import { adapterLogger } from '@/utils/logger'
@@ -21,11 +18,10 @@ export const useImageAdjustement = () => {
     brightness,
     contrast,
     saturation,
-    posterization,
-    lastChangedKey
+    posterization
   } = useAtomValue(configAtom)
 
-  const clearLastChangedKey = useSetAtom(clearLastChangedKeyAtom)
+
   const data = useMemo(
     () => downscaled?.data || new Uint8ClampedArray(),
     [downscaled]
@@ -56,7 +52,6 @@ export const useImageAdjustement = () => {
           }
         )
         setSrc(result)
-        clearLastChangedKey()
       }, 0),
     [
       imageProcessor,
@@ -69,15 +64,17 @@ export const useImageAdjustement = () => {
       contrast,
       saturation,
       posterization,
-      setSrc,
-      clearLastChangedKey
+      setSrc
     ]
   )
 
   useEffect(() => {
-    if (!downscaled || !lastChangedKey) return
+    if (!downscaled) return
 
+    // Simple logic: apply adjustments when data changes or when there's an adjustment change
+    // The debouncedApply already handles the current adjustment values via closure
     debouncedApply(data)
+    
     return () => debouncedApply.cancel()
-  }, [data, lastChangedKey, debouncedApply, downscaled])
+  }, [data, debouncedApply, downscaled])
 }
