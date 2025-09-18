@@ -10,11 +10,16 @@
 import type REGL from 'regl'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
+import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
+import { selectContrastedSubset, selectBalancedSubset } from '@/libs/pixsaur-color/src/quant/select-contrast-subset'
+import { getDistanceFn } from '@/libs/pixsaur-color/src/metric/distance'
+import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
 import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 
 // Types temporaires pour Phase 1 - seront importés depuis pixsaur-color en Phase 2
 type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
+type ContrastStrategy = 'max' | 'balanced'
 
 /**
  * Configuration ReGL qui étend QuantizeConfig existant
@@ -29,6 +34,9 @@ export interface ReGLQuantizeConfig extends QuantizeConfig {
 
   /** Seuil pour le filtrage adaptatif (défaut: 10) */
   readonly threshold?: number
+
+  /** Stratégie de contraste pour petites palettes (défaut: 'balanced') */
+  readonly contrastStrategy?: ContrastStrategy
 
   /** Options performance GPU */
   readonly gpuOptions?: {
@@ -562,53 +570,61 @@ export class ReGLQuantizer {
       `📊 [ReGL] Computing histogram on GPU: ${imageData.width}x${imageData.height}, ${config.colorSpace} ${config.distanceMetric}`
     )
 
-    return new Promise((resolve, reject) => {
-      try {
-        // Execute GPU histogram computation
-        this.histogramCommand!({
-          colorSpace: config.colorSpace,
-          distanceMetric: config.distanceMetric
-        })
-
-        // Read back results from framebuffer
-        const pixels = this.regl.read({
-          framebuffer: this.histogramFBO!
-        })
-
-        // Convert GPU results to histogram array
-        const histogram = new Array(27).fill(0) // CPC palette has 27 colors
-
-        // Process GPU readback (simplified for Phase 2)
-        // In a real implementation, this would be more sophisticated
-        for (let i = 0; i < pixels.length; i += 4) {
-          const r = pixels[i]
-          const a = pixels[i + 3]
-
-          if (a > 0) {
-            // Extract color index from red channel (encoded in shader)
-            const colorIndex = Math.floor((r / 255) * 27)
-            if (colorIndex >= 0 && colorIndex < 27) {
-              histogram[colorIndex]++
-            }
-          }
-        }
-
-        adapterLogger.debug(
-          `📊 [ReGL] GPU histogram computed: ${histogram.reduce((a, b) => a + b, 0)} pixels processed`
+    // Pour l'instant, utilisons un fallback CPU pour l'histogramme
+    // Le shader GPU a des problèmes complexes à résoudre
+    adapterLogger.debug('🔄 [ReGL] Using CPU histogram fallback for reliability')
+    
+    // Construire l'histogramme en CPU en utilisant la même logique que createQuantizer
+    const histogram = new Array(27).fill(0)
+    const pixels = imageData.data
+    
+    // Palette CPC de base (les 27 couleurs)
+    const cpcPalette = [
+      [0, 0, 0], [0, 0, 128], [0, 0, 255], [128, 0, 0], [128, 0, 128], [128, 0, 255],
+      [255, 0, 0], [255, 0, 128], [255, 0, 255], [0, 128, 0], [0, 128, 128], [0, 128, 255],
+      [128, 128, 0], [128, 128, 128], [128, 128, 255], [255, 128, 0], [255, 128, 128], [255, 128, 255],
+      [0, 255, 0], [0, 255, 128], [0, 255, 255], [128, 255, 0], [128, 255, 128], [128, 255, 255],
+      [255, 255, 0], [255, 255, 128], [255, 255, 255]
+    ]
+    
+    // Pour chaque pixel, trouver la couleur CPC la plus proche
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i]
+      const g = pixels[i + 1]
+      const b = pixels[i + 2]
+      
+      let minDistance = Infinity
+      let closestIndex = 0
+      
+      // Chercher la couleur CPC la plus proche (distance euclidienne)
+      for (let j = 0; j < cpcPalette.length; j++) {
+        const [pr, pg, pb] = cpcPalette[j]
+        const distance = Math.sqrt(
+          (r - pr) * (r - pr) + 
+          (g - pg) * (g - pg) + 
+          (b - pb) * (b - pb)
         )
-
-        resolve(histogram)
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error)
-        adapterLogger.error('❌ [ReGL] GPU histogram computation failed', error)
-        reject(new Error(`GPU histogram computation failed: ${errorMessage}`))
+        
+        if (distance < minDistance) {
+          minDistance = distance
+          closestIndex = j
+        }
       }
-    })
+      
+      histogram[closestIndex]++
+    }
+
+    const totalPixels = histogram.reduce((a, b) => a + b, 0)
+    adapterLogger.debug(
+      `📊 [ReGL] CPU histogram computed: ${totalPixels} pixels processed`
+    )
+
+    return histogram
   }
 
   /**
    * Sélection optimisée des couleurs sur GPU (Phase 2)
+   * ✅ Utilise la logique commune CPU : sélection par fréquence + sélection contrastée
    */
   private async selectColorsGPU(
     histogram: number[],
@@ -620,52 +636,68 @@ export class ReGLQuantizer {
       `🎯 [ReGL] GPU color selection: ${config.targetColors} colors from ${basePalette.length} base palette`
     )
 
-    // Phase 2: Implémentation optimisée utilisant les résultats GPU
-    // Pour l'instant, utilise l'algorithme CPU mais avec données GPU
+    // Calcul de l'histogramme sans variables inutilisées
 
-    // Créer un quantizer temporaire avec l'histogramme GPU
-    const weightedPalette = basePalette.map((color, index) => ({
-      color,
-      weight: histogram[index] || 0
-    }))
-
-    // Trier par fréquence d'utilisation (données GPU)
-    weightedPalette.sort((a, b) => b.weight - a.weight)
-
-    // Commencer avec les couleurs pré-sélectionnées
-    const selectedColors: Vector[] = [...preselected]
-
-    // Ajouter les couleurs les plus fréquentes jusqu'à atteindre la cible
-    for (const { color } of weightedPalette) {
-      if (selectedColors.length >= config.targetColors) {
-        break
-      }
-
-      // Éviter les doublons
-      if (
-        !selectedColors.some((selected) => this.colorsEqual(selected, color))
-      ) {
-        selectedColors.push([...color] as Vector)
+    // Convertir preselected en indices pour utiliser l'algorithme commun
+    const preselectedIndices: number[] = []
+    for (const preselectedColor of preselected) {
+      const index = basePalette.findIndex(color => 
+        this.colorsEqual(color, preselectedColor)
+      )
+      if (index >= 0) {
+        preselectedIndices.push(index)
       }
     }
 
-    // Si pas assez de couleurs, remplir avec les premières disponibles
-    for (const color of basePalette) {
-      if (selectedColors.length >= config.targetColors) {
-        break
+    // ✅ ÉTAPE 1 : Sélection par fréquence (comme CPU selectTopIndices)
+    const frequencySelectedIndices = selectTopIndicesCore(
+      histogram,
+      preselectedIndices,
+      16, // Sélectionner d'abord 16 couleurs comme le CPU
+      {
+        threshold: 10
       }
-      if (
-        !selectedColors.some((selected) => this.colorsEqual(selected, color))
-      ) {
-        selectedColors.push([...color] as Vector)
-      }
+    )
+
+    // Convertir les indices en couleurs pour l'étape 2
+    const frequencySelectedColors: Vector[] = frequencySelectedIndices.map(idx => [...basePalette[idx]] as Vector)
+    const preselectedColors: Vector[] = preselectedIndices.map(idx => [...basePalette[idx]] as Vector)
+
+    // ✅ ÉTAPE 2 : Sélection contrastée adaptative (comme CPU mais plus douce)
+    
+    // Préparer les fonctions de distance et conversion comme le CPU
+    const distFn = getDistanceFn(config.colorSpace, config.distanceMetric)
+    const fromW = getColorSpaceToRgbFn(config.colorSpace)
+
+    // Choisir la stratégie selon le nombre de couleurs cibles et la configuration
+    let contrastSelectedColors: Vector[]
+    const strategy = config.contrastStrategy ?? 'balanced'
+    
+    if (config.targetColors <= 4 && strategy === 'balanced') {
+      // Pour les petites palettes avec stratégie équilibrée
+      contrastSelectedColors = selectBalancedSubset(
+        frequencySelectedColors,
+        preselectedColors,
+        config.targetColors,
+        distFn,
+        fromW
+      )
+    } else {
+      // Pour les grandes palettes ou stratégie contraste maximum
+      contrastSelectedColors = selectContrastedSubset(
+        frequencySelectedColors,
+        preselectedColors,
+        config.targetColors,
+        distFn,
+        fromW
+      )
     }
 
     adapterLogger.debug(
-      `🎯 [ReGL] GPU selection completed: ${selectedColors.length}/${config.targetColors} colors selected`
+      `🎯 [ReGL] GPU selection completed: ${contrastSelectedColors.length}/${config.targetColors} colors selected (frequency + contrast)`
     )
 
-    return selectedColors
+    return contrastSelectedColors
   }
 
   /**

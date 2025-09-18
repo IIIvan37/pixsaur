@@ -6,6 +6,10 @@ import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
 
+// Import pour accéder à l'atome de stratégie de contraste
+import { getDefaultStore } from 'jotai'
+import { contrastStrategyAtom } from '@/app/store/config/config'
+
 /**
  * Implémentation CPU du processor d'image
  * Wraps les fonctions existantes sans changer la logique
@@ -79,7 +83,8 @@ export class CpuImageProcessor implements ImageProcessor {
           preselected: preselected || [],
           quantConfig: {
             colorSpace,
-            distanceMetric
+            distanceMetric,
+            contrastStrategy: getDefaultStore().get(contrastStrategyAtom)
           }
         })
 

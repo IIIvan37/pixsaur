@@ -312,6 +312,29 @@ export class GPUFaithfulQuantizer {
     const { histogram } = histogramData
     const { targetColors, preselected = [], threshold = 10 } = config
 
+    // Log détaillé de l'histogramme GPU
+    console.log('📊 [GPU HISTOGRAM] Color frequency analysis:')
+    console.log(`🎨 GPU Palette size: ${histogram.length}`)
+    
+    const totalPixels = Array.from(histogram).reduce((sum, count) => sum + count, 0)
+    console.log(`📷 Total pixels processed: ${totalPixels}`)
+    
+    const sortedHistogram = Array.from(histogram.entries())
+      .map(([index, count]) => ({ index, count }))
+      .sort((a, b) => b.count - a.count)
+    
+    console.log('🔝 Top 10 most frequent colors (GPU):')
+    const cpcPalette = this.getCPCPalette()
+    sortedHistogram.slice(0, 10).forEach((entry, rank) => {
+      if (entry.count > 0) {
+        const [r, g, b] = cpcPalette[entry.index]
+        console.log(`  ${rank + 1}. RGB(${r}, ${g}, ${b}) - ${entry.count} pixels (${(entry.count / totalPixels * 100).toFixed(1)}%)`)
+      }
+    })
+    
+    const unusedColors = sortedHistogram.filter(entry => entry.count === 0).length
+    console.log(`🚫 Unused palette colors (GPU): ${unusedColors}/${histogram.length}`)
+
     // 1. Commencer avec les couleurs pré-sélectionnées
     const selectedIndices = new Set(preselected)
 
@@ -328,6 +351,8 @@ export class GPUFaithfulQuantizer {
         ? colorFreqs.filter((cf) => cf.freq >= threshold)
         : colorFreqs
 
+    console.log(`🎯 [GPU SELECTION] MaxFreq: ${maxFreq}, Threshold: ${threshold}, Filtered: ${filteredColors.length}/${colorFreqs.length}`)
+
     // 4. Trier par fréquence décroissante
     filteredColors.sort((a, b) => b.freq - a.freq)
 
@@ -337,7 +362,10 @@ export class GPUFaithfulQuantizer {
       selectedIndices.add(filteredColors[i].index)
     }
 
-    return Array.from(selectedIndices)
+    const finalIndices = Array.from(selectedIndices)
+    console.log(`✅ [GPU SELECTION] Selected ${finalIndices.length}/${targetColors} colors:`, finalIndices)
+    
+    return finalIndices
   }
 
   /**

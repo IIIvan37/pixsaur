@@ -30,5 +30,7 @@ export function buildHistogram(
     histogram[nearestIndex]++
   }
 
+  // Histogram computation completed
+
   return histogram
 }

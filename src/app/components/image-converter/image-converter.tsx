@@ -1,6 +1,5 @@
 import Adjustments from '@/app/components/adjustements/adjustements'
 import PreviewPanel from '@/app/components/preview-panel'
-
 import SourceSection from '@/app/components/source-section'
 import CrtEffect from '@/components/crt-effect'
 import ExportPanel from '@/components/export-panel/export-panel'
@@ -9,6 +8,7 @@ import styles from './image-converter.module.css'
 
 export default function ImageConverter() {
   useImageAdjustement()
+  
   return (
     <div className={styles.wrapper}>
       {<CrtEffect />}

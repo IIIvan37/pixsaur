@@ -5,6 +5,7 @@ import animStyles from '@/styles/animations.module.css'
 import Flex from '../ui/flex'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
 import { ProcessorSelector } from './processor-selector/processor-selector'
+import { ContrastStrategySelector } from './contrast-strategy-selector'
 import styles from './image-controls.module.css'
 
 export type ImageControlsViewProps = {
@@ -87,6 +88,8 @@ export function ImageControlsView({
       <DitheringSelector />
 
       <ProcessorSelector />
+
+      <ContrastStrategySelector />
 
       <Flex align='center'>
         <h2 className={styles.sectionTitle}>Espace de couleur</h2>

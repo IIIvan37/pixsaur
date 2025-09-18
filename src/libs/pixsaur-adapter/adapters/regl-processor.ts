@@ -13,6 +13,10 @@ import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
 import { ReGLQuantizer } from './regl-quantizer'
 
+// Import pour accéder à l'atome de stratégie de contraste
+import { getDefaultStore } from 'jotai'
+import { contrastStrategyAtom } from '@/app/store/config/config'
+
 /**
  * Adaptateur ReGL pour le traitement d'images
  * Phase 1: Infrastructure ReGL prête avec fallback CPU
@@ -223,6 +227,7 @@ export class ReGLProcessor implements ImageProcessor {
               colorSpace,
               distanceMetric,
               targetColors,
+              contrastStrategy: getDefaultStore().get(contrastStrategyAtom),
               gpuOptions: {
                 minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
               }

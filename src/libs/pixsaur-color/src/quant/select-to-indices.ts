@@ -13,51 +13,123 @@
  * 4. The function ensures that the result contains at most `topN` indices.
  */
 
-export function selectTopIndices(
-  counts: Uint32Array,
+/**
+ * Ajoute les indices pré-sélectionnés au résultat
+ */
+function addPreselectedIndices(
   preselectedIdx: number[],
+  result: number[],
+  used: Uint8Array,
   topN: number
-): number[] {
-  const P = counts.length
-  if (topN <= 0 || P === 0) {
-    return []
-  }
-
-  // 1. Ajouter les indices pré-sélectionnés dans l'ordre donné
-  const result: number[] = []
-  const used = new Uint8Array(P)
+): boolean {
   for (const idx of preselectedIdx) {
-    if (idx >= 0 && idx < P && !used[idx]) {
+    if (idx >= 0 && idx < used.length && !used[idx]) {
       result.push(idx)
       used[idx] = 1
       if (result.length === topN) {
-        return result
+        return true // Sélection terminée
       }
     }
   }
+  return false // Continuer la sélection
+}
 
-  // Determine if thresholding should be applied (any count >= 10)
-  const THRESHOLD = 10
-  const applyThreshold = counts.some((c) => c >= THRESHOLD)
+/**
+ * Filtre les candidats restants selon le seuil
+ */
+function filterCandidates(
+  counts: ArrayLike<number>,
+  used: Uint8Array,
+  threshold: number
+): number[] {
+  const P = counts.length
+  const applyThreshold = Array.from(counts).some((c) => c >= threshold)
 
-  // 2. Filtrer les indices restants, en appliquant le seuil si nécessaire
   const rest: number[] = []
   for (let i = 0; i < P; i++) {
-    if (!used[i] && (!applyThreshold || counts[i] >= THRESHOLD)) {
+    if (!used[i] && (!applyThreshold || counts[i] >= threshold)) {
       rest.push(i)
     }
   }
 
-  // 3. Trier les indices restants par ordre décroissant de counts
-  rest.sort((a, b) => counts[b] - counts[a])
+  return rest
+}
 
-  // 4. Compléter le résultat avec les indices restants
-  for (const idx of rest) {
+/**
+ * Trie les candidats par ordre décroissant de fréquence
+ */
+function sortAndLogCandidates(
+  candidates: number[],
+  counts: ArrayLike<number>
+): number[] {
+  // Trier par ordre décroissant de counts
+  candidates.sort((a, b) => counts[b] - counts[a])
+  return candidates
+}
+
+/**
+ * Complète le résultat avec les candidats restants
+ */
+function completeSelection(
+  candidates: number[],
+  result: number[],
+  topN: number
+): void {
+  for (const idx of candidates) {
     result.push(idx)
     if (result.length === topN) {
       break
     }
   }
+}
 
+/**
+ * Core selection algorithm used by both CPU and GPU implementations
+ * ✅ DRY principle: Single source of truth for color selection logic
+ * ✅ Complexité réduite par décomposition en sous-fonctions
+ */
+export function selectTopIndicesCore(
+  counts: ArrayLike<number>,
+  preselectedIdx: number[],
+  topN: number,
+  options?: {
+    threshold?: number
+  }
+): number[] {
+  const { threshold = 10 } = options || {}
+  
+  const P = counts.length
+  if (topN <= 0 || P === 0) {
+    return []
+  }
+
+  const result: number[] = []
+  const used = new Uint8Array(P)
+  
+  // 1. Ajouter les indices pré-sélectionnés
+  const isComplete = addPreselectedIndices(
+    preselectedIdx, result, used, topN
+  )
+  if (isComplete) {
+    return result
+  }
+
+  // 2. Filtrer les candidats restants
+  const candidates = filterCandidates(counts, used, threshold)
+
+  // 3. Trier et logger les candidats
+  const sortedCandidates = sortAndLogCandidates(candidates, counts)
+
+  // 4. Compléter la sélection
+  completeSelection(sortedCandidates, result, topN)
+  
   return result
+}
+
+export function selectTopIndices(
+  counts: Uint32Array,
+  preselectedIdx: number[],
+  topN: number
+): number[] {
+  return selectTopIndicesCore(counts, preselectedIdx, topN)
 }

@@ -10,7 +10,7 @@ import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
-import { colorSpaceAtom, ditheringAtom, modeAtom, processorTypeAtom } from '../config/config'
+import { colorSpaceAtom, ditheringAtom, modeAtom, processorTypeAtom, contrastStrategyAtom } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
@@ -47,6 +47,7 @@ export const quantizerAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
+  const contrastStrategy = get(contrastStrategyAtom)
   if (!buf || !cropped) return null
 
   const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
@@ -59,7 +60,8 @@ export const quantizerAtom = atom(async (get) => {
     preselected: lockedVecs,
     quantConfig: {
       colorSpace,
-      distanceMetric
+      distanceMetric,
+      contrastStrategy
     }
   })
   return quantizer
@@ -73,6 +75,8 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
   const processorType = get(processorTypeAtom)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _contrastStrategy = get(contrastStrategyAtom) // Dépendance pour recalculer quand la stratégie change
 
   if (!buf || !cropped) return []
 
