@@ -26,6 +26,11 @@ export class ReGLProcessor implements ImageProcessor {
 
   // ReGL et quantizer (Phase 1: préparation pour GPU)
   private readonly quantizer?: ReGLQuantizer
+  private readonly regl?: REGL.Regl
+  
+  // GPU Image Adjustments
+  private imageAdjustmentCommand?: any
+  private inputTexture?: any
 
   // Capacités détectées
   private readonly reglCapabilities: {
@@ -42,15 +47,18 @@ export class ReGLProcessor implements ImageProcessor {
     if (regl && this.reglCapabilities.canUseReGL) {
       try {
         this.quantizer = new ReGLQuantizer(regl)
+        this.regl = regl // Store ReGL instance
+        this.initializeGPUAdjustments(regl)
         adapterLogger.info(
-          '✅ [ADAPTER] ReGL quantizer initialized successfully'
+          '✅ [ADAPTER] ReGL quantizer and GPU adjustments initialized successfully'
         )
       } catch (error) {
         adapterLogger.warn(
-          '⚠️ [ADAPTER] ReGL quantizer initialization failed, using CPU fallback',
+          '⚠️ [ADAPTER] ReGL initialization failed, using CPU fallback',
           error
         )
         this.quantizer = undefined
+        this.regl = undefined
       }
     }
 
@@ -60,6 +68,162 @@ export class ReGLProcessor implements ImageProcessor {
     adapterLogger.info(
       `🎮 [ADAPTER] ReGL processor initialized: GPU=${!!this.quantizer}, capabilities=${this.reglCapabilities.canUseReGL}`
     )
+  }
+
+  /**
+   * Initialise les shaders GPU pour les ajustements d'image
+   */
+  private initializeGPUAdjustments(regl: REGL.Regl): void {
+    // Create input texture
+    this.inputTexture = regl.texture({
+      width: 1,
+      height: 1,
+      format: 'rgba',
+      type: 'uint8'
+    })
+
+    // Define the adjustment command with proper typing
+    this.imageAdjustmentCommand = regl({
+      frag: `
+        precision mediump float;
+        
+        uniform sampler2D u_image;
+        uniform vec3 u_rgbFactors;    // RGB multiplicatifs
+        uniform float u_brightness;   // Facteur brightness
+        uniform float u_contrast;     // Facteur contrast
+        uniform float u_saturation;   // Facteur saturation
+        uniform float u_posterization; // Niveaux posterization
+        
+        varying vec2 v_texCoord;
+        
+        // Conversion RGB vers HSL
+        vec3 rgb2hsl(vec3 c) {
+          float max_val = max(max(c.r, c.g), c.b);
+          float min_val = min(min(c.r, c.g), c.b);
+          float delta = max_val - min_val;
+          
+          float h = 0.0;
+          float s = 0.0;
+          float l = (max_val + min_val) * 0.5;
+          
+          if (delta > 0.0001) {
+            s = l > 0.5 ? delta / (2.0 - max_val - min_val) : delta / (max_val + min_val);
+            
+            if (max_val == c.r) {
+              h = (c.g - c.b) / delta + (c.g < c.b ? 6.0 : 0.0);
+            } else if (max_val == c.g) {
+              h = (c.b - c.r) / delta + 2.0;
+            } else {
+              h = (c.r - c.g) / delta + 4.0;
+            }
+            h /= 6.0;
+          }
+          
+          return vec3(h, s, l);
+        }
+        
+        // Conversion HSL vers RGB
+        vec3 hsl2rgb(vec3 hsl) {
+          float h = hsl.x;
+          float s = hsl.y;
+          float l = hsl.z;
+          
+          if (s == 0.0) {
+            return vec3(l, l, l);
+          }
+          
+          float q = l < 0.5 ? l * (1.0 + s) : l + s - l * s;
+          float p = 2.0 * l - q;
+          
+          // Fonction hue2rgb inline
+          float r, g, b;
+          
+          // Pour r
+          float t_r = h + 1.0/3.0;
+          if (t_r < 0.0) t_r += 1.0;
+          if (t_r > 1.0) t_r -= 1.0;
+          if (t_r < 1.0/6.0) r = p + (q - p) * 6.0 * t_r;
+          else if (t_r < 1.0/2.0) r = q;
+          else if (t_r < 2.0/3.0) r = p + (q - p) * (2.0/3.0 - t_r) * 6.0;
+          else r = p;
+          
+          // Pour g
+          float t_g = h;
+          if (t_g < 0.0) t_g += 1.0;
+          if (t_g > 1.0) t_g -= 1.0;
+          if (t_g < 1.0/6.0) g = p + (q - p) * 6.0 * t_g;
+          else if (t_g < 1.0/2.0) g = q;
+          else if (t_g < 2.0/3.0) g = p + (q - p) * (2.0/3.0 - t_g) * 6.0;
+          else g = p;
+          
+          // Pour b
+          float t_b = h - 1.0/3.0;
+          if (t_b < 0.0) t_b += 1.0;
+          if (t_b > 1.0) t_b -= 1.0;
+          if (t_b < 1.0/6.0) b = p + (q - p) * 6.0 * t_b;
+          else if (t_b < 1.0/2.0) b = q;
+          else if (t_b < 2.0/3.0) b = p + (q - p) * (2.0/3.0 - t_b) * 6.0;
+          else b = p;
+          
+          return vec3(r, g, b);
+        }
+        
+        void main() {
+          vec4 pixel = texture2D(u_image, v_texCoord);
+          vec3 color = pixel.rgb;
+          
+          // Étape 1: RGB multiplicatif
+          color *= u_rgbFactors;
+          
+          // Étape 2: Brightness
+          color *= u_brightness;
+          
+          // Étape 3: Contrast (pivot autour de 0.5)
+          color = (color - 0.5) * u_contrast + 0.5;
+          
+          // Étape 4: Saturation via HSL
+          vec3 hsl = rgb2hsl(color);
+          hsl.y = clamp(hsl.y * u_saturation, 0.0, 1.0);
+          color = hsl2rgb(hsl);
+          
+            // Étape 5: Posterization
+            if (u_posterization < 255.0) {
+              float step = 255.0 / (u_posterization - 1.0);
+              color = floor(color * 255.0 / step + 0.5) * step / 255.0;
+            }          // Clamp final
+          color = clamp(color, 0.0, 1.0);
+          
+          gl_FragColor = vec4(color, pixel.a);
+        }
+      `,
+      vert: `
+        attribute vec2 a_position;
+        varying vec2 v_texCoord;
+        
+        void main() {
+          v_texCoord = (a_position + 1.0) * 0.5;
+          gl_Position = vec4(a_position, 0.0, 1.0);
+        }
+      `,
+      attributes: {
+        a_position: [
+          [-1, -1],
+          [1, -1], 
+          [-1, 1],
+          [1, 1]
+        ]
+      },
+      uniforms: {
+        u_image: () => this.inputTexture!,
+        u_rgbFactors: (_context, props: any) => props.rgbFactors,
+        u_brightness: (_context, props: any) => props.brightness,
+        u_contrast: (_context, props: any) => props.contrast,
+        u_saturation: (_context, props: any) => props.saturation,
+        u_posterization: (_context, props: any) => props.posterization
+      },
+      primitive: 'triangle strip',
+      count: 4
+    })
   }
 
   /**
@@ -117,24 +281,28 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): Promise<ImageData> {
+    // Essayer d'abord le GPU si disponible
+    if (this.imageAdjustmentCommand && this.quantizer) {
+      return adapterLogger.timeAsync(
+        '🎮 ReGL GPU Image Adjustments',
+        async () => {
+          adapterLogger.debug(
+            `� [ADAPTER] Applying adjustments via GPU: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
+          )
+          
+          return this.applyAdjustmentsGPU(imageData, adjustments)
+        }
+      )
+    }
+
+    // Fallback CPU
     return adapterLogger.timeAsync(
       'ReGL Image Adjustments (CPU fallback)',
       async () => {
         adapterLogger.debug(
-          `🎨 [ADAPTER] Applying adjustments via ReGL processor (CPU fallback): brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`
+          `💻 [ADAPTER] Applying adjustments via CPU fallback: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}, pixels=${imageData.width}x${imageData.height}`
         )
 
-        if (this.reglCapabilities.canUseReGL) {
-          adapterLogger.debug(
-            '🎮 [ADAPTER] ReGL capable system detected, using optimized CPU processing'
-          )
-        } else {
-          adapterLogger.debug(
-            '💻 [ADAPTER] ReGL not available, using standard CPU processing'
-          )
-        }
-
-        // Utiliser CPU processing pour l'instant
         const config = {
           rgb: adjustments.rgb,
           brightness: adjustments.brightness,
@@ -149,31 +317,104 @@ export class ReGLProcessor implements ImageProcessor {
   }
 
   /**
+   * Applique les ajustements via GPU ReGL
+   */
+  private applyAdjustmentsGPU(
+    imageData: ImageData,
+    adjustments: AdjustmentConfig
+  ): ImageData {
+    const { width, height } = imageData
+    const totalPixels = width * height
+    
+    const startTime = performance.now()
+
+    // Mise à jour de la texture d'entrée
+    this.inputTexture = this.regl!.texture({
+      width,
+      height,
+      data: imageData.data,
+      format: 'rgba',
+      type: 'uint8'
+    })
+
+    // Configuration du framebuffer de sortie
+    const outputTexture = this.regl!.texture({
+      width: imageData.width,
+      height: imageData.height,
+      format: 'rgba',
+      type: 'uint8'
+    })
+
+    const framebuffer = this.regl!.framebuffer({
+      color: outputTexture
+    })
+
+    // Rendu avec les ajustements
+    framebuffer.use(() => {
+      this.imageAdjustmentCommand!({
+        rgbFactors: [adjustments.rgb.r, adjustments.rgb.g, adjustments.rgb.b],
+        brightness: adjustments.brightness,
+        contrast: adjustments.contrast,
+        saturation: adjustments.saturation,
+        posterization: adjustments.posterization
+      })
+    })
+
+    // Lecture du résultat
+    const resultData = new Uint8ClampedArray(width * height * 4)
+    this.regl!.read({
+      framebuffer: framebuffer,
+      data: new Uint8Array(resultData.buffer)
+    })
+
+    // Nettoyage
+    framebuffer.destroy()
+    outputTexture.destroy()
+
+    const totalTime = performance.now() - startTime
+    adapterLogger.info(
+      `🎮 [ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${(totalPixels/totalTime/1000).toFixed(1)}M pixels/sec)`
+    )
+
+    return new ImageData(resultData, width, height)
+  }
+
+  /**
    * Version synchrone pour compatibility avec Jotai atoms
    */
   applyAdjustmentsSync(
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData {
-    adapterLogger.debug(
-      `🎨 [ADAPTER] Applying adjustments via ReGL processor (sync CPU fallback): brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}`
+    const timerId = `ReGL Image Adjustments (Sync) ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+    return adapterLogger.timeSync(
+      timerId,
+      () => {
+        // Essayer d'abord le GPU si disponible
+        if (this.imageAdjustmentCommand && this.quantizer) {
+          adapterLogger.debug(
+            `🎮 [ADAPTER] Applying sync adjustments via GPU: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
+          )
+          
+          return this.applyAdjustmentsGPU(imageData, adjustments)
+        }
+
+        // Fallback CPU
+        adapterLogger.debug(
+          `💻 [ADAPTER] Applying sync adjustments via CPU fallback: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
+        )
+
+        const config = {
+          rgb: adjustments.rgb,
+          brightness: adjustments.brightness,
+          contrast: adjustments.contrast,
+          saturation: adjustments.saturation,
+          posterization: adjustments.posterization
+        }
+
+        return applyAdjustmentsInOnePass(imageData, config)
+      }
     )
-
-    const config = {
-      rgb: adjustments.rgb,
-      brightness: adjustments.brightness,
-      contrast: adjustments.contrast,
-      saturation: adjustments.saturation,
-      posterization: adjustments.posterization
-    }
-
-    if (this.reglCapabilities.canUseReGL) {
-      adapterLogger.debug(
-        '🎮 [ADAPTER] ReGL capable system, using optimized CPU processing (sync)'
-      )
-    }
-
-    return applyAdjustmentsInOnePass(imageData, config)
   }
 
   /**
@@ -188,7 +429,8 @@ export class ReGLProcessor implements ImageProcessor {
     preselected: Vector[],
     colorSpace: ColorSpace
   ): Promise<Vector[]> {
-    return adapterLogger.timeAsync('ReGL Palette Quantization', async () => {
+    const timerId = `ReGL Palette Quantization ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+    return adapterLogger.timeAsync(timerId, async () => {
       adapterLogger.debug(
         `🎯 [ADAPTER] Starting ReGL quantization: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`
       )

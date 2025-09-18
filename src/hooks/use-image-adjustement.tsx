@@ -34,6 +34,7 @@ export const useImageAdjustement = () => {
   const debouncedApply = useMemo(
     () =>
       debounce(async (data: Uint8ClampedArray) => {
+        console.log('🔧 [DEBUG] use-image-adjustement calling processor')
         const processor =
           await processorFactory.createBestProcessor(processorType)
         const result = processor.applyAdjustmentsSync(

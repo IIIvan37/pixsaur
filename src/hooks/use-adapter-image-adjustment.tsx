@@ -1,90 +1,64 @@
-import { useEffect, useMemo } from 'react'
-import debounce from 'lodash/debounce'
 import { useAtomValue, useSetAtom } from 'jotai'
+import debounce from 'lodash/debounce'
+import { useMemo } from 'react'
+import { configAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
-import { clearLastChangedKeyAtom, configAtom } from '@/app/store/config/config'
+import { logger } from '@/utils/logger'
 import { useImageProcessors } from './use-image-processors'
-import { perfLogger, logger } from '@/utils/logger'
 
 export const useAdapterImageAdjustment = () => {
-  const setSrc = useSetAtom(setWorkingImageAtom)
-  const downscaled = useAtomValue(downscaledAtom)
-  const { applyAdjustments, isInitialized, isHardwareAccelerated } = useImageProcessors()
+  const config = useAtomValue(configAtom)
+  const downscaledImageData = useAtomValue(downscaledAtom)
+  const setWorkingImage = useSetAtom(setWorkingImageAtom)
 
-  const {
-    red,
-    green,
-    blue,
-    brightness,
-    contrast,
-    saturation,
-    posterization,
-    lastChangedKey
-  } = useAtomValue(configAtom)
+  const { applyAdjustments, isInitialized, isHardwareAccelerated } =
+    useImageProcessors()
 
-  const clearLastChangedKey = useSetAtom(clearLastChangedKeyAtom)
-  const data = useMemo(
-    () => downscaled?.data || new Uint8ClampedArray(),
-    [downscaled]
-  )
-
-  // Debounce timing optimisé - valeur minimale pour réactivité maximale
-  const debounceTime = 0
-
-  const debouncedApply = useMemo(
+  // Fonction pour appliquer les ajustements avec debounce
+  const applyAdjustmentsDebounced = useMemo(
     () =>
-      debounce(async (data: Uint8ClampedArray) => {
-        if (!downscaled || !isInitialized) return
-
-        const imageData = new ImageData(
-          new Uint8ClampedArray(data),
-          downscaled.width,
-          downscaled.height
-        )
-
-        const config = {
-          rgb: { r: red, g: green, b: blue },
-          brightness,
-          contrast,
-          saturation,
-          posterization
+      debounce(async () => {
+        if (!downscaledImageData || !isInitialized) {
+          return
         }
 
         try {
-          perfLogger.time(`${isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustment`)
-          
-          const result = await applyAdjustments(imageData, config)
-          
-          perfLogger.timeEnd(`${isHardwareAccelerated ? 'WebGL' : 'CPU'} adjustment`)
-          
-          setSrc(result)
-          clearLastChangedKey()
+          logger.time(
+            `${isHardwareAccelerated ? 'GPU' : 'CPU'} image adjustments`
+          )
+
+          const adjustedImageData = await applyAdjustments(
+            downscaledImageData,
+            {
+              brightness: config.brightness,
+              contrast: config.contrast,
+              saturation: config.saturation
+            }
+          )
+
+          // Mettre à jour l'image de travail avec le résultat
+          setWorkingImage(adjustedImageData)
+
+          logger.timeEnd(
+            `${isHardwareAccelerated ? 'GPU' : 'CPU'} image adjustments`
+          )
         } catch (error) {
-          logger.error('Image adjustment failed:', error)
-          clearLastChangedKey()
+          logger.error('Error applying image adjustments:', error)
         }
-      }, debounceTime),
+      }, 0),
     [
-      downscaled,
-      red,
-      green,
-      blue,
-      brightness,
-      contrast,
-      saturation,
-      posterization,
-      setSrc,
-      clearLastChangedKey,
-      applyAdjustments,
+      downscaledImageData,
       isInitialized,
-      isHardwareAccelerated
+      isHardwareAccelerated,
+      config,
+      applyAdjustments,
+      setWorkingImage
     ]
   )
 
-  useEffect(() => {
-    if (!downscaled || !lastChangedKey || !isInitialized) return
-
-    debouncedApply(data)
-    return () => debouncedApply.cancel()
-  }, [data, lastChangedKey, debouncedApply, downscaled, isInitialized])
+  return {
+    applyAdjustments: applyAdjustmentsDebounced,
+    isInitialized,
+    isHardwareAccelerated
+  }
 }

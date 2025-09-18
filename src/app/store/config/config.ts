@@ -93,8 +93,8 @@ export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
 
 export const smoothingAtom = atom<boolean>(true)
 
-// Processor type selection (auto, cpu, gpu)
-export const processorTypeAtom = atom<ProcessorType>('auto')
+// Processor type selection (auto, cpu, gpu) - GPU par défaut pour de meilleures performances
+export const processorTypeAtom = atom<ProcessorType>('gpu')
 
 // Setter for processor type
 export const setProcessorTypeAtom = atom(

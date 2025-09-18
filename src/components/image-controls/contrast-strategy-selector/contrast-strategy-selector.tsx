@@ -7,8 +7,8 @@ import {
 } from '@/app/store/config/config'
 import type { ContrastStrategy } from '@/app/store/config/types'
 import Flex from '@/components/ui/flex'
-import { isDevelopment } from '@/utils/is-development'
 import animStyles from '@/styles/animations.module.css'
+import { isDevelopment } from '@/utils/is-development'
 import styles from '../image-controls.module.css'
 
 /**
