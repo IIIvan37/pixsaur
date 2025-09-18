@@ -1,18 +1,17 @@
-import { AdjustementsView } from './adjustement.view'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   configAtom,
   resetImageAdjustmentsAtom,
   setComponentAtom
 } from '@/app/store/config/config'
-
-import { RangeOption } from './types'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import type { AdjustementKey } from '@/app/store/config/types'
 import {
   downscaledAtom,
   setWorkingImageAtom,
   workingImageAtom
 } from '@/app/store/image/image'
-import { AdjustementKey } from '@/app/store/config/types'
+import { AdjustementsView } from './adjustement.view'
+import type { RangeOption } from './types'
 
 export default function Adjustments() {
   const src = useAtomValue(workingImageAtom)

@@ -1,4 +1,4 @@
-import { ReactNode, CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 export default function Flex({
   children,

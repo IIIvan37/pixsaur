@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react'
-
-import { ColorGrid } from './color-grid'
-import type { CPCColor } from '@/libs/types'
 import type { PaletteSlot } from '@/app/store/palette/types'
+import type { CPCColor } from '@/libs/types'
+import { ColorGrid } from './color-grid'
 
 describe('ColorGrid', () => {
   const fullPalette: CPCColor[] = [
@@ -37,8 +36,8 @@ describe('ColorGrid', () => {
       <ColorGrid
         fullPalette={fullPalette}
         slots={baseSlots}
-  slotIndex={1} // The empty slot
-  focusedColorIndex={0}
+        slotIndex={1} // The empty slot
+        focusedColorIndex={0}
         onColorSelect={() => {}}
       />
     )
@@ -59,8 +58,8 @@ describe('ColorGrid', () => {
       <ColorGrid
         fullPalette={fullPalette}
         slots={baseSlots}
-  slotIndex={0}
-  focusedColorIndex={0}
+        slotIndex={0}
+        focusedColorIndex={0}
         onColorSelect={() => {}}
       />
     )

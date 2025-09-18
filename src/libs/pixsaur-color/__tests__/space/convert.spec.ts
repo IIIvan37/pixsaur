@@ -1,5 +1,5 @@
-import { getRgbToColorSpaceFn, getColorSpaceToRgbFn } from '../../src/space'
-import { Vector } from '../../src/type'
+import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../../src/space'
+import type { Vector } from '../../src/type'
 
 describe('Color space conversions', () => {
   describe('RGB to XYZ conversion', () => {

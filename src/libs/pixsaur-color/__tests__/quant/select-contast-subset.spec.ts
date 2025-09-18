@@ -1,5 +1,5 @@
 import { selectContrastedSubset } from '../../src/quant/select-contrast-subset'
-import { Vector } from '../../src/type'
+import type { Vector } from '../../src/type'
 
 const dist = (a: Vector, b: Vector) =>
   Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
@@ -13,7 +13,13 @@ describe('selectContrastedSubset', () => {
 
   it('retourne les preselected si leur nombre >= size', () => {
     expect(
-      selectContrastedSubset([red, green, blue], [red, green, blue], 2, dist,  (v) => v)
+      selectContrastedSubset(
+        [red, green, blue],
+        [red, green, blue],
+        2,
+        dist,
+        (v) => v
+      )
     ).toEqual([red, green])
   })
 
@@ -23,7 +29,7 @@ describe('selectContrastedSubset', () => {
       [red],
       3,
       dist,
-       (v) => v
+      (v) => v
     )
     expect(result).toContain(red)
     expect(result.length).toBe(3)
@@ -35,7 +41,7 @@ describe('selectContrastedSubset', () => {
       [red, green],
       4,
       dist,
-       (v) => v
+      (v) => v
     )
     expect(result).toEqual(expect.arrayContaining([red, green]))
     expect(result.length).toBe(4)
@@ -58,7 +64,7 @@ describe('selectContrastedSubset', () => {
       [],
       3,
       dist,
-       (v) => v
+      (v) => v
     )
     expect(result.length).toBe(3)
   })
@@ -69,7 +75,7 @@ describe('selectContrastedSubset', () => {
       [black, white, red],
       3,
       dist,
-       (v) => v
+      (v) => v
     )
     expect(result.length).toBe(3)
   })

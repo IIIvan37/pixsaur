@@ -1,4 +1,4 @@
-import { Vector, ColorSpace } from '../type'
+import type { ColorSpace, Vector } from '../type'
 
 const DELTA = 6 / 29 // ≃ 0.206893
 const M = 3 * DELTA ** 2 // ≃ 7.787
@@ -75,24 +75,15 @@ export function rgbToXyz(rgb: Vector<'RGB'>): Vector<'XYZ'> {
 
   r =
     r > SRGB_GAMMA.A
-      ? Math.pow(
-          (r + SRGB_GAMMA.OFFSET) / (1 + SRGB_GAMMA.OFFSET),
-          SRGB_GAMMA.C
-        )
+      ? ((r + SRGB_GAMMA.OFFSET) / (1 + SRGB_GAMMA.OFFSET)) ** SRGB_GAMMA.C
       : r / SRGB_GAMMA.B
   g =
     g > SRGB_GAMMA.A
-      ? Math.pow(
-          (g + SRGB_GAMMA.OFFSET) / (1 + SRGB_GAMMA.OFFSET),
-          SRGB_GAMMA.C
-        )
+      ? ((g + SRGB_GAMMA.OFFSET) / (1 + SRGB_GAMMA.OFFSET)) ** SRGB_GAMMA.C
       : g / SRGB_GAMMA.B
   b =
     b > SRGB_GAMMA.A
-      ? Math.pow(
-          (b + SRGB_GAMMA.OFFSET) / (1 + SRGB_GAMMA.OFFSET),
-          SRGB_GAMMA.C
-        )
+      ? ((b + SRGB_GAMMA.OFFSET) / (1 + SRGB_GAMMA.OFFSET)) ** SRGB_GAMMA.C
       : b / SRGB_GAMMA.B
 
   const x = (r * 0.4124564 + g * 0.3575761 + b * 0.1804375) * 100
@@ -103,7 +94,7 @@ export function rgbToXyz(rgb: Vector<'RGB'>): Vector<'XYZ'> {
 }
 
 export function xyzToRgb(xyz: Vector<'XYZ'>): Vector<'RGB'> {
-  let [x, y, z] = xyz.map((v) => v / 100)
+  const [x, y, z] = xyz.map((v) => v / 100)
 
   let r = x * 3.2404542 + y * -1.5371385 + z * -0.4985314
   let g = x * -0.969266 + y * 1.8760108 + z * 0.041556
@@ -111,15 +102,15 @@ export function xyzToRgb(xyz: Vector<'XYZ'>): Vector<'RGB'> {
 
   r =
     r > SRGB_GAMMA.THRESHOLD
-      ? (1 + SRGB_GAMMA.OFFSET) * Math.pow(r, SRGB_GAMMA.D) - SRGB_GAMMA.OFFSET
+      ? (1 + SRGB_GAMMA.OFFSET) * r ** SRGB_GAMMA.D - SRGB_GAMMA.OFFSET
       : SRGB_GAMMA.B * r
   g =
     g > SRGB_GAMMA.THRESHOLD
-      ? (1 + SRGB_GAMMA.OFFSET) * Math.pow(g, SRGB_GAMMA.D) - SRGB_GAMMA.OFFSET
+      ? (1 + SRGB_GAMMA.OFFSET) * g ** SRGB_GAMMA.D - SRGB_GAMMA.OFFSET
       : SRGB_GAMMA.B * g
   b =
     b > SRGB_GAMMA.THRESHOLD
-      ? (1 + SRGB_GAMMA.OFFSET) * Math.pow(b, SRGB_GAMMA.D) - SRGB_GAMMA.OFFSET
+      ? (1 + SRGB_GAMMA.OFFSET) * b ** SRGB_GAMMA.D - SRGB_GAMMA.OFFSET
       : SRGB_GAMMA.B * b
 
   return [

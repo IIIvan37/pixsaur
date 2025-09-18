@@ -1,19 +1,18 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useEffect } from 'react'
-import { setReducedPaletteAtom } from '../store/palette/palette'
-
+import { useEffect, useId } from 'react'
 import { ColorPalette } from '@/components/color-palette/color-palette'
 import ImageControls from '@/components/image-controls/image-controls'
 import ImagePreview from '@/components/image-preview/image-preview'
-
-import { Panel } from '@/components/ui/layout/panel/panel'
-import { Header } from '@/components/ui/layout/header/header'
-import { reducedPaletteRgbAtom } from '../store/preview/preview'
 import Flex from '@/components/ui/flex'
+import { Header } from '@/components/ui/layout/header/header'
+import { Panel } from '@/components/ui/layout/panel/panel'
 import { Switch } from '@/components/ui/switch'
 import { smoothingAtom } from '../store/config/config'
+import { setReducedPaletteAtom } from '../store/palette/palette'
+import { reducedPaletteRgbAtom } from '../store/preview/preview'
 
 const PreviewPanel = () => {
+  const smoothingId = useId()
   const reduced = useAtomValue(reducedPaletteRgbAtom)
   const setReduced = useSetAtom(setReducedPaletteAtom)
   const [smoothing, setSmoothing] = useAtom(smoothingAtom)
@@ -30,7 +29,7 @@ const PreviewPanel = () => {
           onCheckedChange={(value) => {
             setSmoothing(value)
           }}
-          id='smoothing-panel-id'
+          id={smoothingId}
           label='Lissage'
         />
       </Flex>

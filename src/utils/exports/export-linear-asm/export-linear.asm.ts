@@ -1,4 +1,4 @@
-import { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/app/store/config/types'
 import { encodeByte } from '../encode-byte'
 
 export function exportLinearAsm(

@@ -1,12 +1,12 @@
 import JSZip from 'jszip'
-import { toASMData } from './to-asm-data'
-import { exportSCR } from './export-scr/export-scr'
+import type { CpcModeConfig } from '@/app/store/config/types'
 import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
 } from '@/palettes/cpc-palette'
-import { CpcModeConfig } from '@/app/store/config/types'
 import { exportLinearAsm } from './export-linear-asm/export-linear.asm'
+import { exportSCR } from './export-scr/export-scr'
+import { toASMData } from './to-asm-data'
 
 const getHeader = (modeConfig: CpcModeConfig, type: string): string => {
   const pixelsPerByte = [2, 4, 8][modeConfig.mode]

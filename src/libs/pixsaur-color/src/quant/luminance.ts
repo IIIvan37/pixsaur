@@ -1,4 +1,4 @@
-import { Vector } from '../type'
+import type { Vector } from '../type'
 
 /**
  * Approximate luminance from RGB [0–1] using Rec. 709 Y formula.

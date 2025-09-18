@@ -1,7 +1,6 @@
-import ImageConverter from './components/image-converter/image-converter'
 import { ThemeProvider } from '@/components/theme/theme-provider'
-
 import styles from '@/styles/app.module.css'
+import ImageConverter from './components/image-converter/image-converter'
 
 export default function App() {
   return (
@@ -9,7 +8,13 @@ export default function App() {
       <main className={styles.container}>
         <div className={styles.content}>
           <header className={styles.header}>
-            <img src='pixsaur_logo_512.png' alt="Pixsaur logo" width='32' height='32' />
+            <img
+              src='pixsaur_logo_512.png'
+              width='32'
+              height='32'
+              alt='Logo Pixsaur - Convertisseur d&apos;images Amstrad CPC'
+            />
+
             <h1 className={styles.title}>PIXSAUR</h1>
             <p className={styles.subtitle}>
               Convertisseur d'images Amstrad CPC"

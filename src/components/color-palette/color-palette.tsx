@@ -1,13 +1,12 @@
-import {
-  userPaletteAtom,
-  onToggleLockAtom,
-  onSetColorAtom
-} from '@/app/store/palette/palette'
-import { ColorPaletteView } from './color-palette-view'
-
 import { useAtomValue, useSetAtom } from 'jotai'
-import React from 'react'
+import type React from 'react'
+import {
+  onSetColorAtom,
+  onToggleLockAtom,
+  userPaletteAtom
+} from '@/app/store/palette/palette'
 import { getCPCPalette } from '@/palettes/cpc-palette'
+import { ColorPaletteView } from './color-palette-view'
 
 /**
  * ColorPalette container component.

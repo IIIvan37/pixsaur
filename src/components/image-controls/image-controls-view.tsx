@@ -1,11 +1,12 @@
-import { CPC_MODE_CONFIG, CpcModeKey } from '@/app/store/config/types'
-import { ColorSpace } from '@/libs/pixsaur-color/src/type'
-
-import styles from './image-controls.module.css'
-import animStyles from '@/styles/animations.module.css'
 import clsx from 'clsx'
+import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
+import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
+import animStyles from '@/styles/animations.module.css'
 import Flex from '../ui/flex'
+import { ContrastStrategySelector } from './contrast-strategy-selector'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
+import styles from './image-controls.module.css'
+import { ProcessorSelector } from './processor-selector/processor-selector'
 
 export type ImageControlsViewProps = {
   mode: CpcModeKey
@@ -85,6 +86,10 @@ export function ImageControlsView({
       </Flex>
 
       <DitheringSelector />
+
+      <ProcessorSelector />
+
+      <ContrastStrategySelector />
 
       <Flex align='center'>
         <h2 className={styles.sectionTitle}>Espace de couleur</h2>

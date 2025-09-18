@@ -1,7 +1,12 @@
-import { DitheringConfig } from '@/libs/pixsaur-color/src'
-import { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { atom } from 'jotai'
-import { AdjustementKey, CpcModeKey } from './types'
+import type { DitheringConfig } from '@/libs/pixsaur-color/src'
+import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
+import type {
+  AdjustementKey,
+  ContrastStrategy,
+  CpcModeKey,
+  ProcessorType
+} from './types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {
@@ -87,3 +92,25 @@ export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
 })
 
 export const smoothingAtom = atom<boolean>(true)
+
+// Processor type selection (auto, cpu, gpu)
+export const processorTypeAtom = atom<ProcessorType>('auto')
+
+// Setter for processor type
+export const setProcessorTypeAtom = atom(
+  null,
+  (_get, set, payload: ProcessorType) => {
+    set(processorTypeAtom, payload)
+  }
+)
+
+// Contrast strategy selection for small palettes (modes 1-2)
+export const contrastStrategyAtom = atom<ContrastStrategy>('balanced')
+
+// Setter for contrast strategy
+export const setContrastStrategyAtom = atom(
+  null,
+  (_get, set, payload: ContrastStrategy) => {
+    set(contrastStrategyAtom, payload)
+  }
+)

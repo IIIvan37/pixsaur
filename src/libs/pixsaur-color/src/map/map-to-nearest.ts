@@ -1,5 +1,5 @@
-import { DistanceFn } from '../metric/distance'
-import { Vector } from '../type'
+import type { DistanceFn } from '../metric/distance'
+import type { Vector } from '../type'
 
 /**
  * Maps a color to the nearest color in a given palette using a specified distance function.

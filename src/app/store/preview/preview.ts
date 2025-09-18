@@ -1,18 +1,26 @@
-import { extractBuffer, createQuantizer } from '@/libs/pixsaur-color/src'
+import { atom } from 'jotai'
+import { processorFactory } from '@/libs/pixsaur-adapter'
+import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
+import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
+import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
 import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
-import { atom } from 'jotai'
-import { modeAtom, colorSpaceAtom, ditheringAtom } from '../config/config'
+import { logger } from '@/utils/logger'
+import {
+  colorSpaceAtom,
+  contrastStrategyAtom,
+  ditheringAtom,
+  modeAtom,
+  processorTypeAtom
+} from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
-import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
-import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
-import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -24,8 +32,8 @@ export const previewCanvasSizeAtom = atom((get) => {
 })
 
 // 1. Zone sélectionnée réduite à la largeur du mode
-export const croppedImageAtom = atom((get) => {
-  const workingImageData = get(workingImageAtom)
+export const croppedImageAtom = atom(async (get) => {
+  const workingImageData = await get(workingImageAtom)
   const selection = get(selectionAtom)
 
   if (!workingImageData || !selection) return null
@@ -34,63 +42,89 @@ export const croppedImageAtom = atom((get) => {
 })
 
 // 2. Extraction des données RGBA
-export const croppedBufferAtom = atom((get) => {
-  const cropped = get(croppedImageAtom)
+export const croppedBufferAtom = atom(async (get) => {
+  const cropped = await get(croppedImageAtom)
   if (!cropped) return null
   return extractBuffer(cropped)
 })
 
 // 3. Construction du quantizer sans mémoïsation
-export const quantizerAtom = atom((get) => {
-  const buf = get(croppedBufferAtom)
-  const cropped = get(croppedImageAtom)
+export const quantizerAtom = atom(async (get) => {
+  const buf = await get(croppedBufferAtom)
+  const cropped = await get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
+  const contrastStrategy = get(contrastStrategyAtom)
   if (!buf || !cropped) return null
 
   const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
   const distanceMetric = availableMetrics[0]
 
-  return createQuantizer({
+  const quantizer = createQuantizer({
     buf,
 
     basePalette: generateAmstradCPCPalette(),
     preselected: lockedVecs,
     quantConfig: {
       colorSpace,
-      distanceMetric
+      distanceMetric,
+      contrastStrategy
     }
   })
+  return quantizer
 })
 
-// 4. Palette réduite copiée profondément
-export const reducedPaletteRawAtom = atom<Vector[]>((get) => {
-  const quantizer = get(quantizerAtom)
+// 4. Palette réduite via ADAPTATEUR (nouveau système principal)
+export const reducedPaletteRawAtom = atom(async (get) => {
+  const buf = await get(croppedBufferAtom)
+  const cropped = await get(croppedImageAtom)
+  const lockedVecs = get(lockedVectorsAtom)
+  const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
-  if (!quantizer) return []
-  const raw = quantizer.quantize(CPC_MODE_CONFIG[mode].nColors)
-  const res = raw.map((v) => [...v] as Vector)
+  const processorType = get(processorTypeAtom)
+  // Dépendance pour recalculer quand la stratégie change
+  get(contrastStrategyAtom)
 
-  return res
+  if (!buf || !cropped) return []
+
+  // 🚀 UTILISATION DE L'ADAPTATEUR comme système principal
+  const processor = await processorFactory.createBestProcessor(processorType)
+
+  const palette = await processor.quantizePalette(
+    buf,
+    cropped,
+    CPC_MODE_CONFIG[mode].nColors,
+    generateAmstradCPCPalette(),
+    lockedVecs,
+    colorSpace
+  )
+
+  return palette
 })
 
 // 5. Image preview finale avec copie défensive
-export const previewImageAtom = atom((get) => {
+export const previewImageAtom = atom(async (get) => {
   const mode = get(modeAtom)
-  const quantizer = get(quantizerAtom)
-  const reduced = get(reducedPaletteRawAtom)
-  const reducedRgb = get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
-  const cropped = get(croppedImageAtom)
+  const quantizer = await get(quantizerAtom)
+  const reduced = await get(reducedPaletteRawAtom)
+  const reducedRgb = await get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
+  const cropped = await get(croppedImageAtom)
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
 
+  logger.time('🖼️ Preview Generation')
+
   const normalized = getVisualRegionNormalized(cropped, mode)
+
+  logger.time('  📐 Dithering')
   // reduced est en espace de travail (Lab, XYZ, etc.)
   const previewBuffer = quantizer.dither(normalized, reduced, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
+  logger.timeEnd('  📐 Dithering')
 
+  logger.time('  🎯 Remapping')
   // remappage final en RGB visible
   const remapped = remapImageDataToPalette(
     new ImageData(
@@ -100,12 +134,16 @@ export const previewImageAtom = atom((get) => {
     ),
     reducedRgb
   )
+  logger.timeEnd('  🎯 Remapping')
 
+  logger.time('  🖌️ Canvas Operations')
   // Convert ImageData to Canvas for drawImage
   const remappedCanvas = document.createElement('canvas')
   remappedCanvas.width = remapped.width
   remappedCanvas.height = remapped.height
-  remappedCanvas.getContext('2d')?.putImageData(remapped, 0, 0)
+  const remappedCtx = remappedCanvas.getContext('2d')
+  if (!remappedCtx) return null
+  remappedCtx.putImageData(remapped, 0, 0)
 
   const targetW = CPC_MODE_CONFIG[mode].width
   const targetH = CPC_MODE_CONFIG[mode].height
@@ -132,13 +170,17 @@ export const previewImageAtom = atom((get) => {
     remapped.width,
     remapped.height
   )
-  return finalCtx.getImageData(0, 0, targetW, targetH)
+  logger.timeEnd('  🖌️ Canvas Operations')
+
+  const result = finalCtx.getImageData(0, 0, targetW, targetH)
+  logger.timeEnd('🖼️ Preview Generation')
+  return result
 })
 
-export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
+export const reducedPaletteRgbAtom = atom(async (get) => {
   const colorSpace = get(colorSpaceAtom)
   const toRGB = getColorSpaceToRgbFn(colorSpace)
-  const raw = get(reducedPaletteRawAtom)
+  const raw = await get(reducedPaletteRawAtom)
   const projected = raw.map(toRGB)
 
   // Quantify colors to match CPC palette values (0, 128, 255)
@@ -163,4 +205,34 @@ export const reducedPaletteRgbAtom = atom<Vector<'RGB'>[]>((get) => {
   })
 
   return quantified
+})
+
+// ====== ADAPTER-BASED ATOMS (alternative implementation) ======
+
+/**
+ * Atom alternatif utilisant l'adaptateur pour la quantization
+ * Peut remplacer progressivement le système direct
+ */
+export const adapterPaletteAtom = atom(async (get) => {
+  const buf = await get(croppedBufferAtom)
+  const cropped = await get(croppedImageAtom)
+  const lockedVecs = get(lockedVectorsAtom)
+  const colorSpace = get(colorSpaceAtom)
+  const mode = get(modeAtom)
+  const processorType = get(processorTypeAtom)
+
+  if (!buf || !cropped) return []
+
+  const processor = await processorFactory.createBestProcessor(processorType)
+
+  const palette = await processor.quantizePalette(
+    buf,
+    cropped,
+    CPC_MODE_CONFIG[mode].nColors,
+    generateAmstradCPCPalette(),
+    lockedVecs,
+    colorSpace
+  )
+
+  return palette
 })

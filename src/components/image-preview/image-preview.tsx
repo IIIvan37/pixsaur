@@ -1,31 +1,20 @@
-// ✅ ImagePreview.tsx  
-import { useRef, useCallback, useEffect } from 'react'
+// ✅ ImagePreview.tsx
+
 import { useAtomValue, useSetAtom } from 'jotai'
+import { useCallback, useEffect, useRef } from 'react'
+import { smoothingAtom } from '@/app/store/config/config'
 import {
   previewCanvasSizeAtom,
   previewCanvasWidthAtom,
   previewImageAtom
 } from '@/app/store/preview/preview'
-// import { webglAvailableAtom } from '@/app/store/webgl/webgl' // Unused for now
-
-import { ImagePreviewView } from './image-preview-view'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
-import { smoothingAtom } from '@/app/store/config/config'
+import { ImagePreviewView } from './image-preview-view'
 
 const ImagePreview = () => {
   const ref = useRef<HTMLCanvasElement>(null)
   const smoothing = useAtomValue(smoothingAtom)
   const previewImage = useAtomValue(previewImageAtom)
-  // const webglAvailable = useAtomValue(webglAvailableAtom) // Unused for now
-
-  // Test WebGL availability désactivé pour éviter les logs en doublon
-  // useEffect(() => {
-  //   if (webglAvailable) {
-  //     console.log('🚀 WebGL acceleration available')
-  //   } else {
-  //     console.log('⚠️ Using CPU fallback')
-  //   }
-  // }, [webglAvailable])
 
   const setWidth = useSetAtom(previewCanvasWidthAtom)
   const { width, height } = useAtomValue(previewCanvasSizeAtom)
@@ -47,9 +36,7 @@ const ImagePreview = () => {
     const temp = document.createElement('canvas')
     temp.width = previewImage.width
     temp.height = previewImage.height
-    const tempCtx = temp.getContext('2d')
-    if (!tempCtx) return
-    tempCtx.putImageData(previewImage, 0, 0)
+    temp.getContext('2d')!.putImageData(previewImage, 0, 0)
 
     ctx.imageSmoothingEnabled = smoothing
 

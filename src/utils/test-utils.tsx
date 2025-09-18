@@ -16,8 +16,8 @@ export function mockGlobalImage() {
       setTimeout(() => {
         if (val.startsWith('data:image/')) {
           if (this._onload) this._onload()
-        } else {
-          if (this._onerror) this._onerror()
+        } else if (this._onerror) {
+          this._onerror()
         }
       }, 0)
     }

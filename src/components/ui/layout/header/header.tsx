@@ -1,8 +1,7 @@
 import Button from '../../button'
+import type { IconName } from '../../icon'
 import Icon from '../../icon'
 import styles from './header.module.css'
-
-import type { IconName } from '../../icon'
 
 export type HeaderProps = {
   title?: string

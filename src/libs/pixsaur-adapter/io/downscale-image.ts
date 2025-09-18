@@ -1,5 +1,3 @@
-import { logger } from '@/utils/logger'
-
 export type Selection = {
   sx: number
   sy: number
@@ -23,9 +21,7 @@ export function downscaleImage(
   selection?: Selection
 ): ImageData {
   // 1. calcul du scale pour limiter la largeur
-  logger.debug(`Downscaling image: ${img.width}px → max ${_maxWidth}px`)
   const scale = img.width > _maxWidth ? _maxWidth / img.width : 1
-  logger.debug(`Scale factor: ${scale}`)
   const w = Math.floor(img.width * scale)
   const h = Math.floor(img.height * scale)
 
@@ -33,10 +29,7 @@ export function downscaleImage(
   const off = document.createElement('canvas')
   off.width = w
   off.height = h
-  const ctx = off.getContext('2d')
-  if (!ctx) {
-    throw new Error('Failed to get 2D context from canvas')
-  }
+  const ctx = off.getContext('2d')!
   ctx.imageSmoothingEnabled = false // pas de lissage
   ctx.drawImage(
     img,

@@ -5,6 +5,13 @@ export type CpcModeKey =
   | '0-overscan'
   | '1-overscan'
   | '2-overscan'
+
+// Processor types for image processing
+export type ProcessorType = 'auto' | 'cpu' | 'gpu'
+
+// Contrast selection strategy for small palettes (modes 1-2)
+export type ContrastStrategy = 'max' | 'balanced'
+
 // This file defines types and constants related to CPC modes and color adjustments.
 export type CpcModeConfig = {
   overscan: boolean

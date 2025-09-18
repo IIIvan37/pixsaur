@@ -146,7 +146,7 @@ export function applyYliluoma1Dither(
   distFn: DistanceFn
 ): Uint8ClampedArray {
   const { intensity } = config
-  const { size, matrix } = BAYER_MATRICES['bayer8x8']
+  const { size, matrix } = BAYER_MATRICES.bayer8x8
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
 
@@ -199,7 +199,7 @@ export function applyYliluoma2Dither(
   distFn: DistanceFn
 ): Uint8ClampedArray {
   const { intensity } = config
-  const { size, matrix } = BAYER_MATRICES['bayer8x8']
+  const { size, matrix } = BAYER_MATRICES.bayer8x8
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
   const errorBuf = new Float32Array(width * height * 3)
@@ -347,12 +347,12 @@ export function applyNoDither(
 
 import {
   ColorSpaceDistanceMetric,
-  DistanceFn,
+  type DistanceFn,
   getDistanceFn
 } from '../metric/distance'
-import { DitheringConfig } from '../quant'
+import type { DitheringConfig } from '../quant'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
-import { Vector, ColorSpace } from '../type'
+import type { ColorSpace, Vector } from '../type'
 
 export function applyFloydSteinbergDither(
   bufCS: Float32Array,

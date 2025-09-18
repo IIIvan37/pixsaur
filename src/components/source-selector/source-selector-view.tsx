@@ -1,19 +1,25 @@
-import { Handle } from './utils'
 import styles from './source-selector.module.css'
+import type { Handle } from './utils'
 
 export type SourceSelectorViewProps = {
-  onMouseDown?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  onMouseMove?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  onDoubleClick?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  rect: {
-    x: number // in percent
-    y: number // in percent
-    width: number // in percent
-    height: number // in percent
+  readonly onMouseDown?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => void
+  readonly onMouseMove?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => void
+  readonly onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
+  readonly onDoubleClick?: (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => void
+  readonly rect: {
+    readonly x: number // in percent
+    readonly y: number // in percent
+    readonly width: number // in percent
+    readonly height: number // in percent
   }
-  dragging: boolean
-  resizeHandle: Handle | null
+  readonly dragging: boolean
+  readonly resizeHandle: Handle | null
 }
 export function SourceSelectorView({
   rect,
@@ -27,7 +33,10 @@ export function SourceSelectorView({
   const handleSize = 6
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: Interactive overlay for image selection requiring absolute positioning
     <div
+      role='button'
+      tabIndex={0}
       style={{
         position: 'absolute',
         top: 0,
@@ -42,15 +51,13 @@ export function SourceSelectorView({
       onDoubleClick={onDoubleClick}
     >
       {/* Rectangle de sélection */}
-      <div
+      <section
         data-testid='selection-rect'
-        tabIndex={0}
-        role='region'
         aria-label='Zone de sélection'
         className={
           styles['selection-rect'] +
           (dragging || resizeHandle
-            ? ' ' + styles['selection-rect--active']
+            ? ` ${styles['selection-rect--active']}`
             : '')
         }
         style={{
@@ -104,9 +111,11 @@ export function SourceSelectorView({
         }
 
         return (
+          // biome-ignore lint/a11y/useSemanticElements: Resize handle requires precise positioning
           <div
             key={name}
             data-handle={name}
+            role='button'
             tabIndex={0}
             aria-label={`Redimensionner ${name.replace('-', ' ')}`}
             style={{

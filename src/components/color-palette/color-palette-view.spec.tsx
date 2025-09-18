@@ -1,10 +1,13 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { describe, it, vi, beforeEach } from 'vitest'
-import { ColorPaletteView, ColorPaletteViewProps } from './color-palette-view'
 
 import { userEvent } from '@testing-library/user-event'
+import { beforeEach, describe, it, vi } from 'vitest'
 import { vectorToHex } from '@/palettes/cpc-palette'
+import {
+  ColorPaletteView,
+  type ColorPaletteViewProps
+} from './color-palette-view'
 
 // Mock CSS modules and Icon to avoid style/import issues in tests
 vi.mock('./color-palette.module.css', () => ({

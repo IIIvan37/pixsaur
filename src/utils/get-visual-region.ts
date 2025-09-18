@@ -1,6 +1,6 @@
 // 📁 utils/image/getVisualRegionNormalized.ts
-import { CPC_MODE_CONFIG, CpcModeKey } from '@/app/store/config/types'
-import { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
+import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
+import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 
 /**
  * Extracts and scales a rectangular region from an ImageData source.

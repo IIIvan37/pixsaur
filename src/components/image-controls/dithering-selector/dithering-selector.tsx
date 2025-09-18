@@ -1,9 +1,10 @@
-import { Select, SelectItem } from '@/components/ui/select'
-import PixsaurSlider from '@/components/ui/slider'
-import Flex from '@/components/ui/flex'
 import { useAtom } from 'jotai'
 import { ditheringAtom } from '@/app/store/config/config'
+import Flex from '@/components/ui/flex'
+import { Select, SelectItem } from '@/components/ui/select'
+import PixsaurSlider from '@/components/ui/slider'
 import styles from './dithering-selector.module.css'
+
 const MODES = [
   { value: 'floydSteinberg', label: 'Floyd–Steinberg' },
   { value: 'bayer2x2', label: 'Bayer 2x2' },
@@ -26,7 +27,7 @@ export function DitheringSelector() {
       align='flex-start'
     >
       <Flex direction='column' gap='var(--spacing-xs)' align='start'>
-        <label
+        <div
           style={{
             fontFamily: 'var(--font-family)',
             fontSize: 'var(--font-size-sm)',
@@ -34,7 +35,7 @@ export function DitheringSelector() {
           }}
         >
           Mode de dithering
-        </label>
+        </div>
         <Select
           value={cfg.mode}
           onValueChange={(value) =>

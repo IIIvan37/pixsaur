@@ -1,9 +1,9 @@
 import { atom } from 'jotai'
-import { atomWithCompare } from '../utils'
-import { PaletteSlot } from './types'
-import { Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { modeAtom } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
+import { atomWithCompare } from '../utils'
+import type { PaletteSlot } from './types'
 
 // comparaison superficielle pour les slots
 function shallowEqualPalette(a: PaletteSlot[], b: PaletteSlot[]) {

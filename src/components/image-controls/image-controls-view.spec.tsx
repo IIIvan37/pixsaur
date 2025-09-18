@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, it, vi } from 'vitest'
 import {
   ImageControlsView,
-  ImageControlsViewProps
+  type ImageControlsViewProps
 } from './image-controls-view'
 
 // Mock CSS modules and Slider if needed

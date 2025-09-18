@@ -1,10 +1,10 @@
 import { atom } from 'jotai'
+import { processorFactory } from '@/libs/pixsaur-adapter'
 import {
   downscaleImage,
   type Selection
 } from '@/libs/pixsaur-adapter/io/downscale-image'
-import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
-import { configAtom } from '../config/config'
+import { configAtom, processorTypeAtom } from '../config/config'
 
 const LOGICAL_WIDTH = 800
 
@@ -40,22 +40,29 @@ export const downscaledAtom = atom((get) => {
   return downscaleImage(img, LOGICAL_WIDTH)
 })
 
-export const workingImageAtom = atom((get) => {
+export const workingImageAtom = atom(async (get) => {
   get(srcVersionAtom)
   const custom = get(srcAtom)
   const config = get(configAtom)
   const downscaled = get(downscaledAtom)
+  const processorType = get(processorTypeAtom)
 
   if (!downscaled) return null
   if (custom) return custom
 
-  return applyAdjustmentsInOnePass(downscaled, {
+  // Utilise l'adapter CPU pour les ajustements
+  const processor = await processorFactory.createBestProcessor(processorType)
+
+  const result = (processor as any).applyAdjustmentsSync(downscaled, {
     rgb: { r: config.red, g: config.green, b: config.blue },
     brightness: config.brightness,
     contrast: config.contrast,
     saturation: config.saturation,
     posterization: config.posterization
   })
+
+  // Ne pas disposer le processor - la factory gère la durée de vie
+  return result
 })
 
 export const setWorkingImageAtom = atom(

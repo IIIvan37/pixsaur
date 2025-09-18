@@ -1,22 +1,14 @@
-import styles from './image-converter.module.css'
-import CrtEffect from '@/components/crt-effect'
-
-import SourceSection from '@/app/components/source-section'
-import PreviewPanel from '@/app/components/preview-panel'
-
 import Adjustments from '@/app/components/adjustements/adjustements'
-import { useImageProcessors } from '@/hooks/use-image-processors'
-import { useAdapterImageAdjustment } from '@/hooks/use-adapter-image-adjustment'
-
+import PreviewPanel from '@/app/components/preview-panel'
+import SourceSection from '@/app/components/source-section'
+import CrtEffect from '@/components/crt-effect'
 import ExportPanel from '@/components/export-panel/export-panel'
+import { useImageAdjustement } from '@/hooks/use-image-adjustement'
+import styles from './image-converter.module.css'
 
 export default function ImageConverter() {
-  // Initialise les processeurs automatiquement
-  useImageProcessors()
-  
-  // Utilise les adaptateurs pour les ajustements d'image
-  useAdapterImageAdjustment()
-  
+  useImageAdjustement()
+
   return (
     <div className={styles.wrapper}>
       {<CrtEffect />}

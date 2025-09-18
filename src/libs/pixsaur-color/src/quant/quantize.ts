@@ -1,10 +1,16 @@
 import { buildHistogram } from '../histogram'
 import { mapAndDither } from '../map'
-import type { DistanceFn, DistanceMetric } from '../metric/distance'
-import { getDistanceFn } from '../metric/distance'
+import {
+  type DistanceFn,
+  type DistanceMetric,
+  getDistanceFn
+} from '../metric/distance'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import type { ColorSpace, Vector } from '../type'
-import { selectContrastedSubset } from './select-contrast-subset'
+import {
+  selectBalancedSubset,
+  selectContrastedSubset
+} from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
 
 export type DitheringMode =
@@ -23,6 +29,7 @@ export type DitheringConfig = {
 export type QuantizeConfig = {
   colorSpace: ColorSpace
   distanceMetric: DistanceMetric
+  contrastStrategy?: 'max' | 'balanced' // Stratégie de contraste pour petites palettes
 }
 
 /**
@@ -75,18 +82,29 @@ export function createQuantizer({
     const counts = new Uint32Array(
       buildHistogram(vecs.map(toW), workingPal, distFn)
     )
-   
-    const idxs = selectTopIndices(counts, preIdx, 16)
 
+    const idxs = selectTopIndices(counts, preIdx, 16)
     const out = idxs.map((i) => workingPal[i])
 
-    const selectedW = selectContrastedSubset(
-      out,
-      preIdx.map((i) => [...workingPal[i]] as Vector),
-      limit,
-      distFn,
-      fromW
-    )
+    // Choisir la stratégie de sélection selon la configuration
+    const strategy = quantConfig.contrastStrategy ?? 'max'
+
+    const selectedW =
+      limit <= 4 && strategy === 'balanced'
+        ? selectBalancedSubset(
+            out,
+            preIdx.map((i) => [...workingPal[i]] as Vector),
+            limit,
+            distFn,
+            fromW
+          )
+        : selectContrastedSubset(
+            out,
+            preIdx.map((i) => [...workingPal[i]] as Vector),
+            limit,
+            distFn,
+            fromW
+          )
 
     return selectedW
   }
