@@ -1,7 +1,6 @@
 import { atom } from 'jotai'
 import { processorTypeAtom } from '@/app/store/config/config'
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
-import { processorFactory } from '@/libs/pixsaur-adapter'
 import { adapterLogger } from '@/utils/logger'
 
 // Atomes pour les adaptateurs auto-sélectionnés
@@ -79,3 +78,11 @@ export const disposeProcessorsAtom = atom(null, (get, set) => {
 
   adapterLogger.debug('Processors disposed')
 })
+
+// Export du factory pour compatibilité
+export const processorFactory = {
+  async createBestProcessor(_type = 'gpu') {
+    const { ReGLProcessor } = await import('@/libs/pixsaur-adapter/adapters/regl-processor')
+    return new ReGLProcessor()
+  }
+}

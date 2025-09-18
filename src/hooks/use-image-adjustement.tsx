@@ -3,16 +3,16 @@ import debounce from 'lodash/debounce'
 import { useEffect, useMemo } from 'react'
 import {
   clearLastChangedKeyAtom,
-  configAtom,
-  processorTypeAtom
+  configAtom
 } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
-import { processorFactory } from '@/libs/pixsaur-adapter'
+import { useImageProcessors } from './use-image-processors'
+import { adapterLogger } from '@/utils/logger'
 
 export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
   const downscaled = useAtomValue(downscaledAtom)
-  const processorType = useAtomValue(processorTypeAtom)
+  const { imageProcessor, isInitialized } = useImageProcessors()
 
   const {
     red,
@@ -34,10 +34,14 @@ export const useImageAdjustement = () => {
   const debouncedApply = useMemo(
     () =>
       debounce(async (data: Uint8ClampedArray) => {
-        console.log('🔧 [DEBUG] use-image-adjustement calling processor')
-        const processor =
-          await processorFactory.createBestProcessor(processorType)
-        const result = processor.applyAdjustmentsSync(
+        if (!imageProcessor || !isInitialized) {
+          return
+        }
+        
+        if (process.env.NODE_ENV === 'development') {
+          adapterLogger.debug('🔧 [DEBUG] use-image-adjustement calling processor')
+        }
+        const result = imageProcessor.applyAdjustmentsSync(
           new ImageData(
             new Uint8ClampedArray(data),
             downscaled!.width,
@@ -55,6 +59,8 @@ export const useImageAdjustement = () => {
         clearLastChangedKey()
       }, 0),
     [
+      imageProcessor,
+      isInitialized,
       downscaled,
       red,
       green,
@@ -63,7 +69,6 @@ export const useImageAdjustement = () => {
       contrast,
       saturation,
       posterization,
-      processorType,
       setSrc,
       clearLastChangedKey
     ]

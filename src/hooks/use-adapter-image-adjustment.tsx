@@ -11,8 +11,7 @@ export const useAdapterImageAdjustment = () => {
   const downscaledImageData = useAtomValue(downscaledAtom)
   const setWorkingImage = useSetAtom(setWorkingImageAtom)
 
-  const { applyAdjustments, isInitialized, isHardwareAccelerated } =
-    useImageProcessors()
+  const { applyAdjustments, isInitialized } = useImageProcessors()
 
   // Fonction pour appliquer les ajustements avec debounce
   const applyAdjustmentsDebounced = useMemo(
@@ -23,25 +22,21 @@ export const useAdapterImageAdjustment = () => {
         }
 
         try {
-          logger.time(
-            `${isHardwareAccelerated ? 'GPU' : 'CPU'} image adjustments`
-          )
+          logger.time('GPU image adjustments')
 
           const adjustedImageData = await applyAdjustments(
             downscaledImageData,
             {
+              rgb: { r: 0, g: 0, b: 0 },
               brightness: config.brightness,
               contrast: config.contrast,
-              saturation: config.saturation
+              saturation: config.saturation,
+              posterization: 0
             }
           )
 
-          // Mettre à jour l'image de travail avec le résultat
           setWorkingImage(adjustedImageData)
-
-          logger.timeEnd(
-            `${isHardwareAccelerated ? 'GPU' : 'CPU'} image adjustments`
-          )
+          logger.timeEnd('GPU image adjustments')
         } catch (error) {
           logger.error('Error applying image adjustments:', error)
         }
@@ -49,7 +44,6 @@ export const useAdapterImageAdjustment = () => {
     [
       downscaledImageData,
       isInitialized,
-      isHardwareAccelerated,
       config,
       applyAdjustments,
       setWorkingImage
@@ -58,7 +52,6 @@ export const useAdapterImageAdjustment = () => {
 
   return {
     applyAdjustments: applyAdjustmentsDebounced,
-    isInitialized,
-    isHardwareAccelerated
+    isInitialized
   }
 }
