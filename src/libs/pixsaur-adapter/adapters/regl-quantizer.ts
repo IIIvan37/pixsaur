@@ -783,7 +783,8 @@ export class ReGLQuantizer {
             ivec3 pixelInt = ivec3(pixel * 255.0 + 0.5);
             
             // Trouver la couleur CPC la plus proche (algorithme identique au CPU)
-            float minDistanceSquared = 999999.0;
+            // ✅ FIX: Utiliser int pour la distance pour éviter les erreurs de précision float
+            int minDistanceSquared = 999999;
             int closestIndex = 0;
             
             for (int i = 0; i < 27; i++) {
@@ -791,9 +792,9 @@ export class ReGLQuantizer {
               // Convertir en entiers 0-255 comme le CPU
               ivec3 cpcInt = ivec3(cpcColor * 255.0 + 0.5);
               
-              // Distance euclidienne au carré (même formule que CPU)
+              // Distance euclidienne au carré (même formule que CPU, mais en int)
               ivec3 diff = pixelInt - cpcInt;
-              float distanceSquared = float(diff.r * diff.r + diff.g * diff.g + diff.b * diff.b);
+              int distanceSquared = diff.r * diff.r + diff.g * diff.g + diff.b * diff.b;
               
               if (distanceSquared < minDistanceSquared) {
                 minDistanceSquared = distanceSquared;
@@ -965,19 +966,53 @@ export class ReGLQuantizer {
       }
     }
 
-    // ✅ UTILISE LA LOGIQUE COMMUNE - Plus de duplication !
+    // ✅ UTILISE LA MÊME LOGIQUE QUE LE CPU : 
+    // 1. Sélectionner d'abord les 16 meilleures couleurs (comme le CPU)
+    const maxBasePalette = 16
     const selectedIndices = selectTopIndicesCore(
       histogram,
       preselectedIndices,
-      config.targetColors,
+      maxBasePalette,
       {
         threshold: 10
-        // Note: debug option removed as not supported by selectTopIndicesCore
       }
     )
 
-    // Convertir les indices sélectionnés en couleurs
-    const result: Vector[] = selectedIndices.map((idx: number) => [...basePalette[idx]] as Vector)
+    // 2. Si on a besoin de moins de couleurs, utiliser la logique de sélection de subset du CPU
+    if (config.targetColors < maxBasePalette && selectedIndices.length > config.targetColors) {
+      // Convertir en couleurs et utiliser createQuantizer pour la sélection de subset
+      const reducedBasePalette: Vector[] = selectedIndices.map((idx: number) => [...basePalette[idx]] as Vector)
+      
+      // Créer un buffer minimal représentatif
+      const sampleBuffer = new Uint8ClampedArray(4 * 100) // 100 pixels échantillon
+      for (let i = 0; i < 100; i++) {
+        // Utiliser la couleur la plus fréquente pour l'échantillon
+        const colorIndex = selectedIndices[i % selectedIndices.length]
+        const color = basePalette[colorIndex]
+        sampleBuffer[i * 4] = Math.round(color[0])
+        sampleBuffer[i * 4 + 1] = Math.round(color[1])
+        sampleBuffer[i * 4 + 2] = Math.round(color[2])
+        sampleBuffer[i * 4 + 3] = 255
+      }
+
+      // Utiliser createQuantizer avec la même logique que le CPU
+      const quantizer = createQuantizer({
+        buf: sampleBuffer,
+        basePalette: reducedBasePalette,
+        preselected: [...preselected],
+        quantConfig: {
+          colorSpace: config.colorSpace,
+          distanceMetric: config.distanceMetric,
+          contrastStrategy: config.contrastStrategy ?? 'max'
+        }
+      })
+
+      const result = quantizer.quantize(config.targetColors)
+      return result
+    }
+
+    // 3. Sinon, retourner directement les couleurs sélectionnées
+    const result: Vector[] = selectedIndices.slice(0, config.targetColors).map((idx: number) => [...basePalette[idx]] as Vector)
 
     adapterLogger.debug(
       `🎯 [ReGL] GPU selection completed: ${result.length}/${config.targetColors} colors selected`

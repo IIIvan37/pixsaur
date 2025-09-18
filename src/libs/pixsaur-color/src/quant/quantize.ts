@@ -7,7 +7,10 @@ import {
 } from '../metric/distance'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import type { ColorSpace, Vector } from '../type'
-import { selectContrastedSubset, selectBalancedSubset } from './select-contrast-subset'
+import {
+  selectBalancedSubset,
+  selectContrastedSubset
+} from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
 
 export type DitheringMode =
@@ -85,22 +88,23 @@ export function createQuantizer({
 
     // Choisir la stratégie de sélection selon la configuration
     const strategy = quantConfig.contrastStrategy ?? 'max'
-    
-    const selectedW = (limit <= 4 && strategy === 'balanced') 
-      ? selectBalancedSubset(
-          out,
-          preIdx.map((i) => [...workingPal[i]] as Vector),
-          limit,
-          distFn,
-          fromW
-        )
-      : selectContrastedSubset(
-          out,
-          preIdx.map((i) => [...workingPal[i]] as Vector),
-          limit,
-          distFn,
-          fromW
-        )
+
+    const selectedW =
+      limit <= 4 && strategy === 'balanced'
+        ? selectBalancedSubset(
+            out,
+            preIdx.map((i) => [...workingPal[i]] as Vector),
+            limit,
+            distFn,
+            fromW
+          )
+        : selectContrastedSubset(
+            out,
+            preIdx.map((i) => [...workingPal[i]] as Vector),
+            limit,
+            distFn,
+            fromW
+          )
 
     return selectedW
   }

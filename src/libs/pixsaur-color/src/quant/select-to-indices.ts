@@ -57,13 +57,21 @@ function filterCandidates(
 
 /**
  * Trie les candidats par ordre décroissant de fréquence
+ * ✅ FIX: Tri stable par index en cas d'égalité pour assurer cohérence CPU/GPU
  */
 function sortAndLogCandidates(
   candidates: number[],
   counts: ArrayLike<number>
 ): number[] {
-  // Trier par ordre décroissant de counts
-  candidates.sort((a, b) => counts[b] - counts[a])
+  // Trier par ordre décroissant de counts, puis par index croissant en cas d'égalité
+  candidates.sort((a, b) => {
+    const countDiff = counts[b] - counts[a]
+    if (countDiff !== 0) {
+      return countDiff
+    }
+    // En cas d'égalité de count, trier par index pour avoir un ordre déterministe
+    return a - b
+  })
   return candidates
 }
 
