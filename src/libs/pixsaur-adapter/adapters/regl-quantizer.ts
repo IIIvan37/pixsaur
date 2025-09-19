@@ -9,8 +9,8 @@
 
 import type REGL from 'regl'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
-import { selectContrastedSubset } from '@/libs/pixsaur-color/src/quant/select-contrast-subset'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
+import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import { rgbToLab, rgbToXyz } from '@/libs/pixsaur-color/src/space/convert'
 import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, quantizerLogger } from '@/utils/logger'
@@ -1213,13 +1213,16 @@ export class ReGLQuantizer {
       }
     }
 
-    // Utiliser selectContrastedSubset comme le CPU
-    const result = selectContrastedSubset(
-      candidateColors,
-      preselectedColors,
-      config.targetColors,
-      distanceFn,
-      toRGB
+    // Utiliser le sélecteur de stratégie commun 
+    const result = selectByStrategy(
+      { contrastStrategy: config.contrastStrategy, targetColors: config.targetColors },
+      {
+        candidates: candidateColors,
+        preselected: preselectedColors,
+        targetColors: config.targetColors,
+        distanceFn: distanceFn,
+        toRGB: toRGB
+      }
     )
 
     adapterLogger.debug(

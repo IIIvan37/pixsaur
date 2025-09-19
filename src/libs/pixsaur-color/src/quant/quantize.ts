@@ -7,11 +7,8 @@ import {
 } from '../metric/distance'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import type { ColorSpace, Vector } from '../type'
-import {
-  selectBalancedSubset,
-  selectContrastedSubset
-} from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
+import { selectByStrategy } from './strategy-selector'
 
 export type DitheringMode =
   | 'floydSteinberg'
@@ -86,25 +83,17 @@ export function createQuantizer({
     const idxs = selectTopIndices(counts, preIdx, 16)
     const out = idxs.map((i) => workingPal[i])
 
-    // Choisir la stratégie de sélection selon la configuration
-    const strategy = quantConfig.contrastStrategy ?? 'max'
-
-    const selectedW =
-      limit <= 4 && strategy === 'balanced'
-        ? selectBalancedSubset(
-            out,
-            preIdx.map((i) => [...workingPal[i]] as Vector),
-            limit,
-            distFn,
-            fromW
-          )
-        : selectContrastedSubset(
-            out,
-            preIdx.map((i) => [...workingPal[i]] as Vector),
-            limit,
-            distFn,
-            fromW
-          )
+    // Utiliser le sélecteur de stratégie commun
+    const selectedW = selectByStrategy(
+      { contrastStrategy: quantConfig.contrastStrategy, targetColors: limit },
+      {
+        candidates: out,
+        preselected: preIdx.map((i) => [...workingPal[i]] as Vector),
+        targetColors: limit,
+        distanceFn: distFn,
+        toRGB: fromW
+      }
+    )
 
     return selectedW
   }

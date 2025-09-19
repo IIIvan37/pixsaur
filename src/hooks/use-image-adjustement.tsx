@@ -76,5 +76,5 @@ export const useImageAdjustement = () => {
     debouncedApply(data)
     
     return () => debouncedApply.cancel()
-  }, [data, debouncedApply, downscaled])
+  }, [data, debouncedApply, downscaled, red, green, blue, brightness, contrast, saturation, posterization])
 }

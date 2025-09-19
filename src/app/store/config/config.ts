@@ -110,7 +110,10 @@ export const contrastStrategyAtom = atom<ContrastStrategy>('balanced')
 // Setter for contrast strategy
 export const setContrastStrategyAtom = atom(
   null,
-  (_get, set, payload: ContrastStrategy) => {
+  (get, set, payload: ContrastStrategy) => {
+    const current = get(contrastStrategyAtom)
+    console.log('🎯 [CONFIG] setContrastStrategyAtom - changing from', current, 'to', payload)
     set(contrastStrategyAtom, payload)
+    console.log('🎯 [CONFIG] setContrastStrategyAtom - change complete')
   }
 )

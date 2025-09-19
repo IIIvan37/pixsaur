@@ -53,7 +53,8 @@ export interface ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    colorSpace: ColorSpace
+    colorSpace: ColorSpace,
+    contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]>
 
   /**

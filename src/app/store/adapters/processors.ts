@@ -1,6 +1,8 @@
 import { atom } from 'jotai'
 import { processorTypeAtom } from '@/app/store/config/config'
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
+import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
+import createREGL from 'regl'
 import type REGL from 'regl'
 import { adapterLogger } from '@/utils/logger'
 
@@ -85,15 +87,40 @@ export const disposeProcessorsAtom = atom(null, (get, set) => {
   adapterLogger.debug('Processors disposed')
 })
 
-// Export du factory pour compatibilité
+// Atome pour forcer la réinitialisation quand le type change
+export const reinitializeProcessorsAtom = atom(null, async (_get, set) => {
+  adapterLogger.debug('🔄 [PROCESSORS] Forcing reinitialization...')
+  
+  // Nettoyer les anciens processeurs
+  set(disposeProcessorsAtom)
+  
+  // Réinitialiser
+  await set(initializeProcessorsAtom)
+})
+
+// Atome qui écoute les changements de processorType et recharge automatiquement
+export const processorTypeListenerAtom = atom(
+  (get) => get(processorTypeAtom),
+  async (get, set, _payload) => {
+    const newType = get(processorTypeAtom)
+    adapterLogger.debug(`🔄 [PROCESSORS] ProcessorType changed to: ${newType} - reinitializing...`)
+    await set(reinitializeProcessorsAtom)
+  }
+)
 export const processorFactory = {
-  async createBestProcessor(_type = 'gpu') {
-    const { ReGLProcessor } = await import('@/libs/pixsaur-adapter/adapters/regl-processor')
+  async createBestProcessor(type = 'gpu') {
+    console.log(`🔧 [FACTORY] Creating processor with type: ${type}`)
+    
+    // Si CPU est explicitement demandé, créer un processeur CPU
+    if (type === 'cpu') {
+      console.log('🖥️ [FACTORY] CPU processor requested - creating CPU fallback')
+      // Créer un processeur CPU basique (pas de ReGL)
+      return new ReGLProcessor(undefined) // undefined = pas de GPU, fallback CPU
+    }
     
     // Créer une instance ReGL pour GPU processing
     let reglInstance: REGL.Regl | undefined = undefined
     try {
-      const createREGL = (await import('regl')).default
       reglInstance = createREGL({
         // Configuration optimisée pour image processing
         extensions: [],
@@ -105,8 +132,10 @@ export const processorFactory = {
           stencil: false
         }
       })
+      console.log('✅ [FACTORY] ReGL instance created successfully')
       adapterLogger.debug('✅ [FACTORY] ReGL instance created successfully')
     } catch (error) {
+      console.log('⚠️ [FACTORY] Failed to create ReGL instance, falling back to CPU:', error)
       adapterLogger.warn('⚠️ [FACTORY] Failed to create ReGL instance, falling back to CPU:', error)
     }
     

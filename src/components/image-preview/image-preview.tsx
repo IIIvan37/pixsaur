@@ -33,24 +33,32 @@ const ImagePreview = () => {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const temp = document.createElement('canvas')
-    temp.width = previewImage.width
-    temp.height = previewImage.height
-    temp.getContext('2d')!.putImageData(previewImage, 0, 0)
-
     ctx.imageSmoothingEnabled = smoothing
 
-    ctx.drawImage(
-      temp,
-      0,
-      0,
-      previewImage.width,
-      previewImage.height,
-      0,
-      0,
-      width,
-      height
-    )
+    // previewImage est maintenant un ImageData, pas un Canvas
+    if (previewImage instanceof ImageData) {
+      // Créer un canvas temporaire pour l'ImageData
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = previewImage.width
+      tempCanvas.height = previewImage.height
+      const tempCtx = tempCanvas.getContext('2d')
+      if (tempCtx) {
+        tempCtx.putImageData(previewImage, 0, 0)
+        
+        // Dessiner le canvas temporaire sur le canvas de destination
+        ctx.drawImage(
+          tempCanvas,
+          0,
+          0,
+          tempCanvas.width,
+          tempCanvas.height,
+          0,
+          0,
+          width,
+          height
+        )
+      }
+    }
   }, [previewImage, width, height, smoothing])
 
   useEffect(() => {

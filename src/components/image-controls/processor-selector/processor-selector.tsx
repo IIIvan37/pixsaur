@@ -1,5 +1,6 @@
-import { useAtom } from 'jotai'
+import { useAtom, useSetAtom } from 'jotai'
 import { processorTypeAtom } from '@/app/store/config/config'
+import { reinitializeProcessorsAtom } from '@/app/store/adapters/processors'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import { isDevelopment } from '@/utils/is-development'
@@ -12,6 +13,13 @@ const PROCESSOR_TYPES = [
 
 export function ProcessorSelector() {
   const [processorType, setProcessorType] = useAtom(processorTypeAtom)
+  const reinitializeProcessors = useSetAtom(reinitializeProcessorsAtom)
+
+  const handleProcessorChange = async (value: string) => {
+    setProcessorType(value as typeof processorType)
+    // Forcer la réinitialisation des processeurs
+    await reinitializeProcessors()
+  }
 
   // N'afficher le sélecteur qu'en mode développement
   if (!isDevelopment()) {
@@ -37,9 +45,7 @@ export function ProcessorSelector() {
         </div>
         <Select
           value={processorType}
-          onValueChange={(value) =>
-            setProcessorType(value as typeof processorType)
-          }
+          onValueChange={handleProcessorChange}
         >
           {PROCESSOR_TYPES.map((processor) => (
             <SelectItem key={processor.value} value={processor.value}>

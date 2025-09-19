@@ -432,10 +432,12 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    colorSpace: ColorSpace
+    colorSpace: ColorSpace,
+    contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
     const timerId = `ReGL Palette Quantization ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
     return adapterLogger.timeAsync(timerId, async () => {
+      console.log(`🎯 [ADAPTER] Received contrastStrategy: ${contrastStrategy}, targetColors: ${targetColors}`)
       adapterLogger.debug(
         `🎯 [ADAPTER] Starting ReGL quantization: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`
       )
@@ -473,12 +475,14 @@ export class ReGLProcessor implements ImageProcessor {
               colorSpace,
               distanceMetric,
               targetColors,
-              contrastStrategy: getDefaultStore().get(contrastStrategyAtom),
+              contrastStrategy: contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
               gpuOptions: {
                 minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
               }
             }
           )
+          
+          console.log(`🎯 [ADAPTER] Final contrastStrategy passed: ${contrastStrategy || getDefaultStore().get(contrastStrategyAtom)}`)
 
           return [...result] // Conversion readonly -> mutable pour compatibilité
         } catch (error) {
@@ -500,7 +504,8 @@ export class ReGLProcessor implements ImageProcessor {
         basePalette,
         preselected,
         colorSpace,
-        distanceMetric
+        distanceMetric,
+        contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
       )
     })
   }
@@ -515,7 +520,8 @@ export class ReGLProcessor implements ImageProcessor {
     basePalette: Vector[],
     preselected: Vector[],
     colorSpace: ColorSpace,
-    distanceMetric: DistanceMetric
+    distanceMetric: DistanceMetric,
+    contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
     quantizerLogger.debug(
       `📊 [ADAPTER] Creating ReGL-ready quantizer with metric: ${distanceMetric}, basePalette=${basePalette.length} colors, preselected=${preselected.length} colors`
@@ -530,7 +536,8 @@ export class ReGLProcessor implements ImageProcessor {
       preselected,
       quantConfig: {
         colorSpace,
-        distanceMetric
+        distanceMetric,
+        contrastStrategy: contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
       }
     })
 
