@@ -1,4 +1,3 @@
-import { paletteLogger } from '@/utils/logger'
 import { buildHistogram } from '../histogram'
 import { mapAndDither } from '../map'
 import {
@@ -8,7 +7,7 @@ import {
 } from '../metric/distance'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import type { ColorSpace, Vector } from '../type'
-import { selectTopIndices } from './select-to-indices'
+import { selectTopIndicesCore, selectTopIndices } from './select-to-indices'
 import { selectByStrategy } from './strategy-selector'
 
 export type DitheringMode =
@@ -77,19 +76,22 @@ export function createQuantizer({
     .filter((i) => i >= 0)
 
   const reducePalette = (limit: number): Vector[] => {
-    paletteLogger.time('📊 [Histogram] Building color histogram')
-    const histogram = buildHistogram(vecs.map(toW), workingPal, distFn)
-    paletteLogger.timeEnd('📊 [Histogram] Building color histogram')
-
-    const counts = new Uint32Array(histogram)
-    const totalPixels = counts.reduce((sum, count) => sum + count, 0)
-
-    paletteLogger.debug(
-      `📊 [Histogram] Processed ${totalPixels} pixels across ${workingPal.length} palette colors`
+    const counts = new Uint32Array(
+      buildHistogram(vecs.map(toW), workingPal, distFn)
     )
 
-    const idxs = selectTopIndices(counts, preIdx, 16)
-    const out = idxs.map((i) => workingPal[i])
+    // ✅ OPTIMISATION: Utiliser mode diversité pour les palettes moyennes (mode 0 = 16 couleurs)
+    const useDiversityMode = limit >= 8 && limit <= 16
+    
+    const idxs = useDiversityMode 
+      ? selectTopIndicesCore(counts, preIdx, 16, {
+          threshold: 10,
+          diversityMode: true,
+          basePalette: workingPal
+        })
+      : selectTopIndices(counts, preIdx, 16)
+      
+    const out = idxs.map((i: number) => workingPal[i])
 
     // Utiliser le sélecteur de stratégie commun
     const selectedW = selectByStrategy(
