@@ -6,9 +6,11 @@
  */
 
 import type { Vector, ColorSpace } from '../type'
-import type { DistanceFn } from '../metric/distance'
+import type { DistanceFn, DistanceMetric } from '../metric/distance'
+import { getDistanceFn } from '../metric/distance'
 import { selectTopIndicesCore } from '../quant/select-to-indices'
 import { selectByStrategy, type StrategyConfig, type SelectionParams } from '../quant/strategy-selector'
+import { rgbToLab, rgbToXyz } from '../space/convert'
 
 export interface QuantizeParams {
   readonly targetColors: number
@@ -165,6 +167,44 @@ export abstract class QuantizerBase {
     }
     
     return `${width}x${height}-${hash.toString(36)}`
+  }
+
+  /**
+   * 🔧 LOGIQUE COMMUNE: Conversion de couleurs
+   * Élimine la duplication entre ReGL et CPU quantizers
+   */
+  protected convertColor(rgb: Vector, colorSpace: ColorSpace): Vector {
+    switch (colorSpace) {
+      case 'Lab':
+        return rgbToLab(rgb)
+      case 'XYZ':
+        return rgbToXyz(rgb)
+      case 'RGB':
+      default:
+        return rgb // RGB par défaut
+    }
+  }
+
+  /**
+   * 🔧 LOGIQUE COMMUNE: Obtention de la fonction de distance
+   * Single source pour la sélection des métriques
+   */
+  protected getDistanceFunction(colorSpace: ColorSpace, distanceMetric?: DistanceMetric): DistanceFn {
+    // Déterminer la métrique par défaut basée sur l'espace colorimétrique
+    const metric = distanceMetric || (colorSpace === 'Lab' ? 'cie76' : 'euclidean')
+    return getDistanceFn(colorSpace, metric)
+  }
+
+  /**
+   * 🔧 LOGIQUE COMMUNE: Comparaison de couleurs
+   * Utilisée pour éliminer les doublons et validations
+   */
+  protected colorsEqual(color1: Vector, color2: Vector): boolean {
+    return (
+      color1[0] === color2[0] &&
+      color1[1] === color2[1] &&
+      color1[2] === color2[2]
+    )
   }
 
   /**
