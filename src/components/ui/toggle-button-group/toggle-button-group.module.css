@@ -1,0 +1,32 @@
+.buttonGroup {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.toggleButton {
+  padding-inline: var(--spacing-sm);
+  padding-block: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease-in-out;
+}
+
+.toggleButtonActive {
+  background-color: var(--color-accentActive);
+  color: var(--color-light);
+  border-color: var(--color-accentActive);
+}
+
+.toggleButtonInactive {
+  background-color: var(--color-background);
+  color: var(--color-accent);
+  border-color: var(--color-border);
+}
+
+.toggleButtonInactive:hover {
+  background-color: var(--color-backgroundHover);
+  border-color: var(--color-accent);
+}

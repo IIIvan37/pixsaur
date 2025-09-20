@@ -1,4 +1,3 @@
-import clsx from 'clsx'
 import { useAtom } from 'jotai'
 import {
   contrastStrategyAtom,
@@ -7,8 +6,8 @@ import {
 } from '@/app/store/config/config'
 import type { ContrastStrategy } from '@/app/store/config/types'
 import Flex from '@/components/ui/flex'
-import animStyles from '@/styles/animations.module.css'
-import styles from '../image-controls.module.css'
+import { SectionTitle } from '@/components/ui/section-title'
+import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 
 /**
  * Sélecteur de stratégie de contraste pour les modes CPC 1 et 2
@@ -34,45 +33,28 @@ export function ContrastStrategySelector() {
     setContrastStrategyValue(strategy)
   }
 
-  const renderStrategyButton = (
-    strategy: ContrastStrategy,
-    label: string,
-    description: string
-  ) => (
-    <button
-      key={strategy}
-      className={clsx(
-        styles.modeButton,
-        animStyles.modeButton,
-        contrastStrategy === strategy
-          ? [styles.modeButtonActive, animStyles.modeButtonActive]
-          : [styles.modeButtonInactive, animStyles.modeButtonInactive]
-      )}
-      onClick={() => handleStrategyChange(strategy)}
-      aria-label={`${label} - ${description}`}
-      aria-pressed={contrastStrategy === strategy}
-      type='button'
-      title={description}
-    >
-      {label}
-    </button>
-  )
+  const strategyOptions = [
+    {
+      value: 'max' as ContrastStrategy,
+      label: 'Max',
+      ariaLabel: 'Max - Contraste maximum - Idéal pour images détaillées'
+    },
+    {
+      value: 'balanced' as ContrastStrategy,
+      label: 'Équilibré',
+      ariaLabel: 'Équilibré - Équilibre fréquence/contraste - Meilleur pour dominantes colorées'
+    }
+  ]
 
   return (
     <Flex align='center'>
-      <h2 className={styles.sectionTitle}>Contraste</h2>
-      <div className={styles.modeButtonsRow}>
-        {renderStrategyButton(
-          'max',
-          'Max',
-          'Contraste maximum - Idéal pour images détaillées'
-        )}
-        {renderStrategyButton(
-          'balanced',
-          'Équilibré',
-          'Équilibre fréquence/contraste - Meilleur pour dominantes colorées'
-        )}
-      </div>
+      <SectionTitle>Contraste</SectionTitle>
+      <ToggleButtonGroup
+        options={strategyOptions}
+        value={contrastStrategy}
+        onChange={handleStrategyChange}
+        ariaLabelPrefix="Contraste"
+      />
     </Flex>
   )
 }

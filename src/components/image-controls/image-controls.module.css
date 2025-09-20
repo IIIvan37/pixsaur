@@ -4,28 +4,4 @@
   gap: var(--spacing-sm);
 }
 
-.modeButtonsRow {
-  padding: var(--spacing-sm);
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
-.modeButton {
-  padding-inline: var(--spacing-sm);
-  padding-block: var(--spacing-xs);
-  font-size: var(--font-size-xs);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-}
-
-.modeButtonActive {
-  background-color: var(--color-accentActive);
-  color: var(--color-light);
-}
-
-.modeButtonInactive {
-  background-color: var(--color-background);
-  color: var(--color-accent);
-  border: 1px solid var(--color-border);
-}
+/* Styles dupliqués supprimés - maintenant gérés par ToggleButtonGroup */

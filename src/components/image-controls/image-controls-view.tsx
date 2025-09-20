@@ -1,8 +1,8 @@
-import clsx from 'clsx'
 import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import animStyles from '@/styles/animations.module.css'
 import Flex from '../ui/flex'
+import { SectionTitle } from '../ui/section-title'
+import { ToggleButtonGroup } from '../ui/toggle-button-group'
 import { ContrastStrategySelector } from './contrast-strategy-selector'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
 import styles from './image-controls.module.css'
@@ -11,8 +11,6 @@ import { ProcessorSelector } from './processor-selector/processor-selector'
 export type ImageControlsViewProps = {
   mode: CpcModeKey
   onModeChange: (mode: CpcModeKey) => void
-  dithering: { intensity: number }
-  onDitheringChange: (dithering: { intensity: number }) => void
   colorSpace: ColorSpace
   onColorSpaceChange: (colorSpace: ColorSpace) => void
 }
@@ -34,55 +32,31 @@ export type ImageControlsViewProps = {
 export function ImageControlsView({
   mode,
   onModeChange,
-
   colorSpace,
   onColorSpaceChange
-}: ImageControlsViewProps) {
-  const renderModeButton = (key: string) => (
-    <button
-      key={`mode_${key}`}
-      className={clsx(
-        styles.modeButton,
-        animStyles.modeButton,
-        mode === key
-          ? [styles.modeButtonActive, animStyles.modeButtonActive]
-          : [styles.modeButtonInactive, animStyles.modeButtonInactive]
-      )}
-      onClick={() => onModeChange(key as CpcModeKey)}
-      aria-label={`Mode ${key}`}
-      aria-pressed={mode === key}
-      type='button'
-    >
-      {key}
-    </button>
-  )
+}: Readonly<ImageControlsViewProps>) {
+  // Préparer les options pour les groupes de boutons
+  const modeOptions = Object.keys(CPC_MODE_CONFIG).map(key => ({
+    value: key as CpcModeKey,
+    label: key
+  }))
 
-  const renderColorSpaceButton = (space: ColorSpace) => (
-    <button
-      key={space}
-      className={clsx(
-        styles.modeButton,
-        animStyles.modeButton,
-        colorSpace === space
-          ? [styles.modeButtonActive, animStyles.modeButtonActive]
-          : [styles.modeButtonInactive, animStyles.modeButtonInactive]
-      )}
-      onClick={() => onColorSpaceChange(space)}
-      aria-label={`ColorSpace ${space}`}
-      aria-pressed={colorSpace === space}
-      type='button'
-    >
-      {space}
-    </button>
-  )
+  const colorSpaceOptions: Array<{ value: ColorSpace; label: string }> = [
+    { value: 'RGB', label: 'RGB' },
+    { value: 'XYZ', label: 'XYZ' },
+    { value: 'Lab', label: 'Lab' }
+  ]
 
   return (
     <div className={styles.controlsContainer}>
       <Flex align='center'>
-        <h2 className={styles.sectionTitle}>Mode</h2>
-        <div className={styles.modeButtonsRow}>
-          {Object.keys(CPC_MODE_CONFIG).map(renderModeButton)}
-        </div>
+        <SectionTitle>Mode</SectionTitle>
+        <ToggleButtonGroup
+          options={modeOptions}
+          value={mode}
+          onChange={onModeChange}
+          ariaLabelPrefix="Mode"
+        />
       </Flex>
 
       <DitheringSelector />
@@ -92,10 +66,13 @@ export function ImageControlsView({
       <ContrastStrategySelector />
 
       <Flex align='center'>
-        <h2 className={styles.sectionTitle}>Espace de couleur</h2>
-        <div className={styles.modeButtonsRow}>
-          {(['RGB', 'XYZ', 'Lab'] as ColorSpace[]).map(renderColorSpaceButton)}
-        </div>
+        <SectionTitle>Espace de couleur</SectionTitle>
+        <ToggleButtonGroup
+          options={colorSpaceOptions}
+          value={colorSpace}
+          onChange={onColorSpaceChange}
+          ariaLabelPrefix="ColorSpace"
+        />
       </Flex>
     </div>
   )
