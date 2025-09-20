@@ -82,7 +82,10 @@ export class ReGLQuantizer {
   private readonly regl: REGL.Regl
   private readonly capabilities: ReGLCapabilities
 
-  // GPU Resources (initialized later)
+  // Cache pour optimiser les uploads GPU répétés
+  private lastImageDataHash: string | null = null
+
+  // Ressources GPU (réutilisées si possible)
   private histogramCommand?: REGL.DrawCommand
   private histogramFBO?: REGL.Framebuffer
   private inputTexture?: REGL.Texture2D
@@ -513,6 +516,16 @@ export class ReGLQuantizer {
    */
   private updateInputTexture(imageData: ImageData): void {
     try {
+      // ✅ OPTIMISATION: Cache basé sur hash des données d'image
+      const imageHash = this.computeImageHash(imageData)
+      
+      if (this.lastImageDataHash === imageHash && this.inputTexture) {
+        adapterLogger.debug(
+          `♻️ [ReGL] Reusing cached input texture: ${imageData.width}x${imageData.height}`
+        )
+        return // Pas de mise à jour nécessaire
+      }
+
       if (this.inputTexture) {
         this.inputTexture.destroy()
       }
@@ -526,6 +539,8 @@ export class ReGLQuantizer {
         flipY: false
       })
 
+      this.lastImageDataHash = imageHash
+
       adapterLogger.debug(
         `📸 [ReGL] Input texture updated: ${imageData.width}x${imageData.height}`
       )
@@ -533,6 +548,21 @@ export class ReGLQuantizer {
       adapterLogger.error('❌ [ReGL] Failed to update input texture', error)
       throw error
     }
+  }
+
+  /**
+   * ✅ OPTIMISATION: Compute hash rapide pour détecter les images identiques
+   */
+  private computeImageHash(imageData: ImageData): string {
+    // Hash simple mais efficace : taille + échantillonnage des pixels
+    const samples = []
+    const step = Math.max(1, Math.floor(imageData.data.length / 256)) // 256 échantillons max
+    
+    for (let i = 0; i < imageData.data.length; i += step) {
+      samples.push(imageData.data[i])
+    }
+    
+    return `${imageData.width}x${imageData.height}_${samples.join(',')}`
   }
 
   /**

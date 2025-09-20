@@ -139,42 +139,40 @@ export const previewImageAtom = atom(async (get) => {
   logger.timeEnd('  🎯 Remapping')
 
   logger.time('  🖌️ Canvas Operations')
-  // Convert ImageData to Canvas for drawImage
-  const remappedCanvas = document.createElement('canvas')
-  remappedCanvas.width = remapped.width
-  remappedCanvas.height = remapped.height
-  const remappedCtx = remappedCanvas.getContext('2d')
-  if (!remappedCtx) return null
-  remappedCtx.putImageData(remapped, 0, 0)
-
+  
   const targetW = CPC_MODE_CONFIG[mode].width
   const targetH = CPC_MODE_CONFIG[mode].height
-
-  // Création du canvas final avec la taille cible
-  const finalCanvas = document.createElement('canvas')
-  finalCanvas.width = targetW
-  finalCanvas.height = targetH
-  const finalCtx = finalCanvas.getContext('2d')
-  if (!finalCtx) return null
-  finalCtx.imageSmoothingEnabled = true
-  finalCtx.imageSmoothingQuality = 'high'
+  
+  // ✅ OPTIMISATION: Réutiliser un seul canvas pour tout le pipeline
+  const workCanvas = document.createElement('canvas')
+  workCanvas.width = Math.max(remapped.width, targetW)
+  workCanvas.height = Math.max(remapped.height, targetH)
+  const workCtx = workCanvas.getContext('2d')
+  if (!workCtx) return null
+  
+  // Clear et setup du canvas
+  workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height)
+  workCtx.putImageData(remapped, 0, 0)
+  // ✅ OPTIMISATION: Centrage direct sans drawImage supplémentaire
   const dx = Math.floor((targetW - remapped.width) / 2)
   const dy = Math.floor((targetH - remapped.height) / 2)
-
-  finalCtx.drawImage(
-    remappedCanvas,
-    0,
-    0,
-    remapped.width,
-    remapped.height,
-    dx,
-    dy,
-    remapped.width,
-    remapped.height
-  )
+  
+  // Si pas de centrage nécessaire, utiliser directement l'image remappée
+  let result: ImageData
+  if (dx === 0 && dy === 0 && remapped.width === targetW && remapped.height === targetH) {
+    result = remapped // Pas de recopie nécessaire
+  } else {
+    // Créer canvas final seulement si centrage nécessaire
+    const finalCanvas = document.createElement('canvas')
+    finalCanvas.width = targetW
+    finalCanvas.height = targetH
+    const finalCtx = finalCanvas.getContext('2d')!
+    finalCtx.imageSmoothingEnabled = true
+    finalCtx.imageSmoothingQuality = 'high'
+    finalCtx.putImageData(remapped, dx, dy)
+    result = finalCtx.getImageData(0, 0, targetW, targetH)
+  }
   logger.timeEnd('  🖌️ Canvas Operations')
-
-  const result = finalCtx.getImageData(0, 0, targetW, targetH)
   logger.timeEnd('🖼️ Preview Generation')
   return result
 })
@@ -188,6 +186,13 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   const projected = raw.slice() // Shallow copy pour ne pas muter l'original
   OptimizedImageProcessor.convertPaletteInPlace(projected, toRGB)
 
+  // Helper pour quantification CPC optimisée
+  const quantifyToCP = (value: number): number => {
+    if (value <= 64) return 0
+    if (value <= 192) return 128
+    return 255
+  }
+
   // Quantify colors to match CPC palette values (0, 128, 255) - OPTIMISÉ
   for (const color of projected) {
     const r = color[0]
@@ -195,9 +200,9 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
     const b = color[2]
 
     // Quantification optimisée en place
-    color[0] = r <= 64 ? 0 : r <= 192 ? 128 : 255
-    color[1] = g <= 64 ? 0 : g <= 192 ? 128 : 255
-    color[2] = b <= 64 ? 0 : b <= 192 ? 128 : 255
+    color[0] = quantifyToCP(r)
+    color[1] = quantifyToCP(g)
+    color[2] = quantifyToCP(b)
   }
 
   return projected
