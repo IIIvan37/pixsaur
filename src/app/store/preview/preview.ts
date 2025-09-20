@@ -2,7 +2,7 @@ import { atom } from 'jotai'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes/rgb-to-indexes'
 import {
   getVisualRegion,
@@ -13,6 +13,7 @@ import { paletteProcessorAtom } from '../adapters/processors'
 import {
   colorSpaceAtom,
   contrastStrategyAtom,
+  cpcHardwareAtom,
   ditheringAtom,
   modeAtom
 } from '../config/config'
@@ -53,6 +54,7 @@ export const quantizerAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
   const contrastStrategy = get(contrastStrategyAtom)
+  const cpcHardware = get(cpcHardwareAtom)
   if (!buf || !cropped) return null
 
   const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
@@ -61,7 +63,7 @@ export const quantizerAtom = atom(async (get) => {
   const quantizer = createQuantizer({
     buf,
 
-    basePalette: generateAmstradCPCPalette(),
+    basePalette: getPaletteForHardware(cpcHardware),
     preselected: lockedVecs,
     quantConfig: {
       colorSpace,
@@ -72,19 +74,17 @@ export const quantizerAtom = atom(async (get) => {
   return quantizer
 })
 
-// 4. Palette réduite via ADAPTATEUR (nouveau système principal)
+// 4. Quantization avec palette adaptateur
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
   const cropped = await get(croppedImageAtom)
+  const mode = get(modeAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = get(colorSpaceAtom)
-  const mode = get(modeAtom)
-  // Dépendance pour recalculer quand la stratégie change
-  get(contrastStrategyAtom)
+  const cpcHardware = get(cpcHardwareAtom)
 
   if (!buf || !cropped) return []
 
-  // 🚀 UTILISATION DES PROCESSEURS CENTRALISÉS (réutilisation de cache)
   const paletteProcessor = get(paletteProcessorAtom)
   if (!paletteProcessor) {
     logger.warn('Palette processor not initialized')
@@ -95,7 +95,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     buf,
     cropped,
     CPC_MODE_CONFIG[mode].nColors,
-    generateAmstradCPCPalette(),
+    getPaletteForHardware(cpcHardware),
     lockedVecs,
     colorSpace
   )

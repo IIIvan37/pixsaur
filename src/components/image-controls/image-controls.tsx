@@ -1,8 +1,10 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   colorSpaceAtom,
+  cpcHardwareAtom,
   modeAtom,
   setColorSpaceAtom,
+  setCpcHardwareAtom,
   setModeAtom
 } from '@/app/store/config/config'
 import { ImageControlsView } from './image-controls-view'
@@ -22,12 +24,16 @@ export default function ImageControls() {
   const onModeChange = useSetAtom(setModeAtom)
   const colorSpace = useAtomValue(colorSpaceAtom)
   const onColorSpaceChange = useSetAtom(setColorSpaceAtom)
+  const cpcHardware = useAtomValue(cpcHardwareAtom)
+  const onCpcHardwareChange = useSetAtom(setCpcHardwareAtom)
   return (
     <ImageControlsView
       mode={mode}
       onModeChange={onModeChange}
       colorSpace={colorSpace}
       onColorSpaceChange={onColorSpaceChange}
+      cpcHardware={cpcHardware}
+      onCpcHardwareChange={onCpcHardwareChange}
     />
   )
 }

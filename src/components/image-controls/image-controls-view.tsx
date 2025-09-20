@@ -1,4 +1,5 @@
 import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
+import type { CPCHardware } from '@/libs/types'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
@@ -13,6 +14,8 @@ export type ImageControlsViewProps = {
   onModeChange: (mode: CpcModeKey) => void
   colorSpace: ColorSpace
   onColorSpaceChange: (colorSpace: ColorSpace) => void
+  cpcHardware: CPCHardware
+  onCpcHardwareChange: (hardware: CPCHardware) => void
 }
 
 /**
@@ -33,7 +36,9 @@ export function ImageControlsView({
   mode,
   onModeChange,
   colorSpace,
-  onColorSpaceChange
+  onColorSpaceChange,
+  cpcHardware,
+  onCpcHardwareChange
 }: Readonly<ImageControlsViewProps>) {
   // Préparer les options pour les groupes de boutons
   const modeOptions = Object.keys(CPC_MODE_CONFIG).map((key) => ({
@@ -47,6 +52,11 @@ export function ImageControlsView({
     { value: 'Lab', label: 'Lab' }
   ]
 
+  const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
+    { value: 'classic' as CPCHardware, label: 'CPC (27)' },
+    { value: 'plus' as CPCHardware, label: 'CPC+ (4096)' }
+  ]
+
   return (
     <div className={styles.controlsContainer}>
       <Flex align='center'>
@@ -56,6 +66,16 @@ export function ImageControlsView({
           value={mode}
           onChange={onModeChange}
           ariaLabelPrefix='Mode'
+        />
+      </Flex>
+
+      <Flex align='center'>
+        <SectionTitle>Hardware</SectionTitle>
+        <ToggleButtonGroup
+          options={hardwareOptions}
+          value={cpcHardware}
+          onChange={onCpcHardwareChange}
+          ariaLabelPrefix='Hardware'
         />
       </Flex>
 

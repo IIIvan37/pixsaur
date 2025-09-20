@@ -1,14 +1,31 @@
 // ColorPaletteView: Main palette UI component
 // Handles popover logic, slot mapping, focus management, and accessibility
 import { useEffect, useRef, useState } from 'react'
+import { useAtomValue } from 'jotai'
 import type { PaletteSlot } from '@/app/store/palette/types'
+import { cpcHardwareAtom } from '@/app/store/config/config'
 import PixsaurPopover from '@/components/ui/popover'
+import { RgbSlider } from '@/components/ui/rgb-slider'
 import type { CPCColor } from '@/libs/types'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import animStyles from '@/styles/animations.module.css'
 import { ColorGridView } from './color-grid/color-grid-view'
 import styles from './color-palette.module.css'
 import { ColorSlot } from './color-slot/color-slot'
 import { EmptySlotButton } from './color-slot/empty.slot'
+
+/**
+ * Helper function to convert Vector to CPCColor for CPC Plus mode
+ */
+function vectorToCPCColor(vector: Vector, index: number): CPCColor {
+  const [r, g, b] = vector
+  return {
+    index,
+    name: `RGB(${r},${g},${b})`,
+    hex: `${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`,
+    vector
+  }
+}
 
 /**
  * Helper function to find the first available color that's not already used
@@ -56,6 +73,10 @@ export const ColorPaletteView = ({
   const buttonRefs = useRef<HTMLButtonElement[]>([])
   // colorOptionRefs: refs for color option buttons in popover
   const colorOptionRefs = useRef<HTMLButtonElement[]>([])
+  
+  // Get current CPC hardware mode
+  const cpcHardware = useAtomValue(cpcHardwareAtom)
+  const isClassicMode = cpcHardware === 'classic'
 
   // Ensure buttonRefs array matches slots length
   useEffect(() => {
@@ -95,6 +116,17 @@ export const ColorPaletteView = ({
     setOpenPopoverIndex(null)
   }
 
+  /**
+   * Handles RGB color selection for CPC Plus mode
+   * @param vector - RGB vector [r, g, b]
+   * @param idx - Slot index
+   */
+  const handleRgbColorSelect = (vector: Vector, idx: number) => {
+    const color = vectorToCPCColor(vector, idx)
+    onSetColor({ index: idx, color })
+    setOpenPopoverIndex(null)
+  }
+
   return (
     <section className={styles.container} aria-label='Palette de couleurs'>
       <div className={styles.paletteGrid}>
@@ -128,17 +160,25 @@ export const ColorPaletteView = ({
                     />
                   }
                 >
-                  <ColorGridView
-                    fullPalette={fullPalette}
-                    slots={slots}
-                    slotIndex={idx}
-                    focusedColorIndex={focusedColorIdx}
-                    onColorSelect={(color) => handleColorSelect(color, idx)}
-                    colorOptionRefs={colorOptionRefs}
-                    optionRefs={colorOptionRefs}
-                    onToggleLock={onToggleLock}
-                    onClose={() => setOpenPopoverIndex(null)}
-                  />
+                  {isClassicMode ? (
+                    <ColorGridView
+                      fullPalette={fullPalette}
+                      slots={slots}
+                      slotIndex={idx}
+                      focusedColorIndex={focusedColorIdx}
+                      onColorSelect={(color) => handleColorSelect(color, idx)}
+                      colorOptionRefs={colorOptionRefs}
+                      optionRefs={colorOptionRefs}
+                      onToggleLock={onToggleLock}
+                      onClose={() => setOpenPopoverIndex(null)}
+                    />
+                  ) : (
+                    <RgbSlider
+                      value={slot.color}
+                      onChange={(vector) => handleRgbColorSelect(vector, idx)}
+                      label="Modifier la couleur"
+                    />
+                  )}
                 </PixsaurPopover>
               ) : (
                 <EmptySlotButton
@@ -155,6 +195,7 @@ export const ColorPaletteView = ({
                   fullPalette={fullPalette}
                   focusedColorIdx={focusedColorIdx}
                   onColorSelect={handleColorSelect}
+                  onRgbColorSelect={handleRgbColorSelect}
                   colorOptionRefs={colorOptionRefs}
                 />
               )}

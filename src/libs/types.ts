@@ -3,7 +3,13 @@ import type { Vector } from './pixsaur-color/src/type'
 // CPC Modes
 export type CPCMode = 'mode0' | 'mode1' | 'mode2'
 
-// CPC Color
+// CPC Hardware Types
+export enum CPCHardware {
+  CLASSIC = 'classic',
+  PLUS = 'plus'
+}
+
+// CPC Color (Classic 27 colors)
 export interface CPCColor {
   index: number
   name: string
@@ -11,8 +17,18 @@ export interface CPCColor {
   vector: Vector
 }
 
+// CPC Plus Color (4096 possible colors)
+export interface CPCPlusColor {
+  index: number
+  r: number // 0-15 (4-bit)
+  g: number // 0-15 (4-bit)
+  b: number // 0-15 (4-bit)
+  vector: Vector // RGB values [0-255]
+}
+
 // CPC Palette
 export type CPCPalette = CPCColor[]
+export type CPCPlusPalette = CPCPlusColor[]
 
 // Image Adjustments
 export interface ImageAdjustments {

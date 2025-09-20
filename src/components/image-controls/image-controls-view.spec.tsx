@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, it, vi } from 'vitest'
+import { CPCHardware } from '@/libs/types'
 import {
   ImageControlsView,
   type ImageControlsViewProps
@@ -38,16 +39,20 @@ vi.mock('@/components/ui/slider', () => ({
 describe('ImageControlsView', () => {
   let onModeChange: ReturnType<typeof vi.fn>
   let onColorSpaceChange: ReturnType<typeof vi.fn>
+  let onCpcHardwareChange: ReturnType<typeof vi.fn>
   let props: ImageControlsViewProps
 
   beforeEach(() => {
     onModeChange = vi.fn()
     onColorSpaceChange = vi.fn()
+    onCpcHardwareChange = vi.fn()
     props = {
       mode: '0',
       onModeChange,
       colorSpace: 'RGB',
-      onColorSpaceChange
+      onColorSpaceChange,
+      cpcHardware: CPCHardware.CLASSIC,
+      onCpcHardwareChange
     }
   })
 

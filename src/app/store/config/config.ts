@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
+import { CPCHardware } from '@/libs/types'
 import type {
   AdjustementKey,
   ContrastStrategy,
@@ -120,5 +121,24 @@ export const setContrastStrategyAtom = atom(
     )
     set(contrastStrategyAtom, payload)
     console.log('🎯 [CONFIG] setContrastStrategyAtom - change complete')
+  }
+)
+
+// CPC Hardware selection atom
+export const cpcHardwareAtom = atom<CPCHardware>(CPCHardware.CLASSIC)
+
+// Setter for CPC Hardware
+export const setCpcHardwareAtom = atom(
+  null,
+  (get, set, payload: CPCHardware) => {
+    const current = get(cpcHardwareAtom)
+    console.log(
+      '🎮 [CONFIG] setCpcHardwareAtom - changing from',
+      current,
+      'to',
+      payload
+    )
+    set(cpcHardwareAtom, payload)
+    console.log('🎮 [CONFIG] setCpcHardwareAtom - change complete')
   }
 )

@@ -1,7 +1,11 @@
 import type { PaletteSlot } from '@/app/store/palette/types'
+import { useAtomValue } from 'jotai'
+import { cpcHardwareAtom } from '@/app/store/config/config'
 import Icon from '@/components/ui/icon'
 import PixsaurPopover from '@/components/ui/popover'
+import { RgbSlider } from '@/components/ui/rgb-slider'
 import type { CPCColor } from '@/libs/types'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { ColorGrid } from '../color-grid'
 import styles from './color-slot.module.css'
 
@@ -14,6 +18,7 @@ export type EmptySlotButtonProps = {
   readonly fullPalette: CPCColor[]
   readonly focusedColorIdx: number
   readonly onColorSelect: (color: CPCColor, idx: number) => void
+  readonly onRgbColorSelect?: (color: Vector, idx: number) => void
   readonly colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>
 }
 
@@ -26,8 +31,18 @@ export function EmptySlotButton({
   fullPalette,
   focusedColorIdx,
   onColorSelect,
+  onRgbColorSelect,
   colorOptionRefs
 }: EmptySlotButtonProps) {
+  const cpcHardware = useAtomValue(cpcHardwareAtom)
+  const isPlus = cpcHardware === 'plus'
+
+  const handleRgbChange = (color: Vector) => {
+    if (onRgbColorSelect) {
+      onRgbColorSelect(color, idx)
+    }
+  }
+
   return (
     <PixsaurPopover
       trigger={
@@ -43,14 +58,22 @@ export function EmptySlotButton({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <ColorGrid
-        fullPalette={fullPalette}
-        slots={slots}
-        slotIndex={idx}
-        focusedColorIndex={focusedColorIdx}
-        onColorSelect={onColorSelect}
-        colorOptionRefs={colorOptionRefs}
-      />
+      {isPlus ? (
+        <RgbSlider
+          value={[128, 128, 128]} // Valeur par défaut
+          onChange={handleRgbChange}
+          label="Couleur personnalisée CPC+"
+        />
+      ) : (
+        <ColorGrid
+          fullPalette={fullPalette}
+          slots={slots}
+          slotIndex={idx}
+          focusedColorIndex={focusedColorIdx}
+          onColorSelect={onColorSelect}
+          colorOptionRefs={colorOptionRefs}
+        />
+      )}
     </PixsaurPopover>
   )
 }
