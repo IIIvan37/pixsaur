@@ -1,3 +1,4 @@
+import { paletteLogger } from '@/utils/logger'
 import { buildHistogram } from '../histogram'
 import { mapAndDither } from '../map'
 import {
@@ -7,11 +8,8 @@ import {
 } from '../metric/distance'
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import type { ColorSpace, Vector } from '../type'
-import {
-  selectBalancedSubset,
-  selectContrastedSubset
-} from './select-contrast-subset'
 import { selectTopIndices } from './select-to-indices'
+import { selectByStrategy } from './strategy-selector'
 
 export type DitheringMode =
   | 'floydSteinberg'
@@ -79,32 +77,31 @@ export function createQuantizer({
     .filter((i) => i >= 0)
 
   const reducePalette = (limit: number): Vector[] => {
-    const counts = new Uint32Array(
-      buildHistogram(vecs.map(toW), workingPal, distFn)
+    paletteLogger.time('📊 [Histogram] Building color histogram')
+    const histogram = buildHistogram(vecs.map(toW), workingPal, distFn)
+    paletteLogger.timeEnd('📊 [Histogram] Building color histogram')
+
+    const counts = new Uint32Array(histogram)
+    const totalPixels = counts.reduce((sum, count) => sum + count, 0)
+
+    paletteLogger.debug(
+      `📊 [Histogram] Processed ${totalPixels} pixels across ${workingPal.length} palette colors`
     )
 
     const idxs = selectTopIndices(counts, preIdx, 16)
     const out = idxs.map((i) => workingPal[i])
 
-    // Choisir la stratégie de sélection selon la configuration
-    const strategy = quantConfig.contrastStrategy ?? 'max'
-
-    const selectedW =
-      limit <= 4 && strategy === 'balanced'
-        ? selectBalancedSubset(
-            out,
-            preIdx.map((i) => [...workingPal[i]] as Vector),
-            limit,
-            distFn,
-            fromW
-          )
-        : selectContrastedSubset(
-            out,
-            preIdx.map((i) => [...workingPal[i]] as Vector),
-            limit,
-            distFn,
-            fromW
-          )
+    // Utiliser le sélecteur de stratégie commun
+    const selectedW = selectByStrategy(
+      { contrastStrategy: quantConfig.contrastStrategy, targetColors: limit },
+      {
+        candidates: out,
+        preselected: preIdx.map((i) => [...workingPal[i]] as Vector),
+        targetColors: limit,
+        distanceFn: distFn,
+        toRGB: fromW
+      }
+    )
 
     return selectedW
   }

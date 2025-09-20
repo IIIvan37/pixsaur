@@ -41,8 +41,6 @@ export const AdjustementsView = ({
         disabled={disabled}
       />
 
-      
-
       <div className={styles.adjustmentsContainer}>
         {/* RGB Channels - with labels */}
         {labels.map((adj) => {

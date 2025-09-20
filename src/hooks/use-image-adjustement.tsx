@@ -1,31 +1,19 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import debounce from 'lodash/debounce'
 import { useEffect, useMemo } from 'react'
-import {
-  clearLastChangedKeyAtom,
-  configAtom
-} from '@/app/store/config/config'
+import { configAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
-import { useImageProcessors } from './use-image-processors'
 import { adapterLogger } from '@/utils/logger'
+import { useImageProcessors } from './use-image-processors'
 
 export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
   const downscaled = useAtomValue(downscaledAtom)
   const { imageProcessor, isInitialized } = useImageProcessors()
 
-  const {
-    red,
-    green,
-    blue,
-    brightness,
-    contrast,
-    saturation,
-    posterization,
-    lastChangedKey
-  } = useAtomValue(configAtom)
+  const { red, green, blue, brightness, contrast, saturation, posterization } =
+    useAtomValue(configAtom)
 
-  const clearLastChangedKey = useSetAtom(clearLastChangedKeyAtom)
   const data = useMemo(
     () => downscaled?.data || new Uint8ClampedArray(),
     [downscaled]
@@ -37,9 +25,11 @@ export const useImageAdjustement = () => {
         if (!imageProcessor || !isInitialized) {
           return
         }
-        
+
         if (process.env.NODE_ENV === 'development') {
-          adapterLogger.debug('🔧 [DEBUG] use-image-adjustement calling processor')
+          adapterLogger.debug(
+            '🔧 [DEBUG] use-image-adjustement calling processor'
+          )
         }
         const result = imageProcessor.applyAdjustmentsSync(
           new ImageData(
@@ -56,8 +46,7 @@ export const useImageAdjustement = () => {
           }
         )
         setSrc(result)
-        clearLastChangedKey()
-      }, 0),
+      }, 200),
     [
       imageProcessor,
       isInitialized,
@@ -69,15 +58,17 @@ export const useImageAdjustement = () => {
       contrast,
       saturation,
       posterization,
-      setSrc,
-      clearLastChangedKey
+      setSrc
     ]
   )
 
   useEffect(() => {
-    if (!downscaled || !lastChangedKey) return
+    if (!downscaled) return
 
+    // Simple logic: apply adjustments when data changes or when there's an adjustment change
+    // The debouncedApply already handles the current adjustment values via closure
     debouncedApply(data)
+
     return () => debouncedApply.cancel()
-  }, [data, lastChangedKey, debouncedApply, downscaled])
+  }, [data, debouncedApply, downscaled])
 }

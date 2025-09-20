@@ -1,15 +1,12 @@
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   configAtom,
   resetImageAdjustmentsAtom,
   setComponentAtom
 } from '@/app/store/config/config'
 import type { AdjustementKey } from '@/app/store/config/types'
-import {
-  downscaledAtom,
-  setWorkingImageAtom,
-  workingImageAtom
-} from '@/app/store/image/image'
+import { workingImageAtom } from '@/app/store/image/image'
+import { logger } from '@/utils/logger'
 import { AdjustementsView } from './adjustement.view'
 import type { RangeOption } from './types'
 
@@ -19,11 +16,7 @@ export default function Adjustments() {
     useAtomValue(configAtom)
 
   const setComponent = useSetAtom(setComponentAtom)
-
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
-
-  const [downscaled] = useAtom(downscaledAtom)
-  const setSrc = useSetAtom(setWorkingImageAtom)
   // Define the adjustments with their min, max, and step values
 
   const adjustments: RangeOption = {
@@ -47,10 +40,9 @@ export default function Adjustments() {
   }
 
   const handleReset = () => {
-    if (downscaled) {
-      setSrc(null)
-    } else {
-      console.error('Downscaled image data is null.')
+    if (!src?.data) {
+      logger.warn('No source image available for reset')
+      return
     }
     resetAdjustments()
   }

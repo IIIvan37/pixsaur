@@ -27,7 +27,7 @@ export class ReGLProcessor implements ImageProcessor {
   // ReGL et quantizer (Phase 1: préparation pour GPU)
   private readonly quantizer?: ReGLQuantizer
   private readonly regl?: REGL.Regl
-  
+
   // GPU Image Adjustments
   private imageAdjustmentCommand?: any
   private inputTexture?: any
@@ -43,9 +43,14 @@ export class ReGLProcessor implements ImageProcessor {
     // Évaluer si ReGL pourrait être utilisé
     this.reglCapabilities = this.evaluateReGLCapabilities()
 
+    console.log(
+      `🔍 [ADAPTER] ReGL constructor - regl instance: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
+    )
+
     // Phase 1: Setup optionnel de ReGL
     if (regl && this.reglCapabilities.canUseReGL) {
       try {
+        console.log('🔧 [ADAPTER] Initializing ReGL quantizer...')
         this.quantizer = new ReGLQuantizer(regl)
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
@@ -60,6 +65,10 @@ export class ReGLProcessor implements ImageProcessor {
         this.quantizer = undefined
         this.regl = undefined
       }
+    } else {
+      console.log(
+        `🚫 [ADAPTER] Skipping ReGL initialization - regl: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
+      )
     }
 
     // Toujours disponible avec fallback CPU
@@ -208,7 +217,7 @@ export class ReGLProcessor implements ImageProcessor {
       attributes: {
         a_position: [
           [-1, -1],
-          [1, -1], 
+          [1, -1],
           [-1, 1],
           [1, 1]
         ]
@@ -289,7 +298,7 @@ export class ReGLProcessor implements ImageProcessor {
           adapterLogger.debug(
             `� [ADAPTER] Applying adjustments via GPU: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
           )
-          
+
           return this.applyAdjustmentsGPU(imageData, adjustments)
         }
       )
@@ -325,7 +334,7 @@ export class ReGLProcessor implements ImageProcessor {
   ): ImageData {
     const { width, height } = imageData
     const totalPixels = width * height
-    
+
     const startTime = performance.now()
 
     // Mise à jour de la texture d'entrée
@@ -373,7 +382,7 @@ export class ReGLProcessor implements ImageProcessor {
 
     const totalTime = performance.now() - startTime
     adapterLogger.info(
-      `🎮 [ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${(totalPixels/totalTime/1000).toFixed(1)}M pixels/sec)`
+      `🎮 [ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
     )
 
     return new ImageData(resultData, width, height)
@@ -387,34 +396,31 @@ export class ReGLProcessor implements ImageProcessor {
     adjustments: AdjustmentConfig
   ): ImageData {
     const timerId = `ReGL Image Adjustments (Sync) ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-    return adapterLogger.timeSync(
-      timerId,
-      () => {
-        // Essayer d'abord le GPU si disponible
-        if (this.imageAdjustmentCommand && this.quantizer) {
-          adapterLogger.debug(
-            `🎮 [ADAPTER] Applying sync adjustments via GPU: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
-          )
-          
-          return this.applyAdjustmentsGPU(imageData, adjustments)
-        }
-
-        // Fallback CPU
+    return adapterLogger.timeSync(timerId, () => {
+      // Essayer d'abord le GPU si disponible
+      if (this.imageAdjustmentCommand && this.quantizer) {
         adapterLogger.debug(
-          `💻 [ADAPTER] Applying sync adjustments via CPU fallback: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
+          `🎮 [ADAPTER] Applying sync adjustments via GPU: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
         )
 
-        const config = {
-          rgb: adjustments.rgb,
-          brightness: adjustments.brightness,
-          contrast: adjustments.contrast,
-          saturation: adjustments.saturation,
-          posterization: adjustments.posterization
-        }
-
-        return applyAdjustmentsInOnePass(imageData, config)
+        return this.applyAdjustmentsGPU(imageData, adjustments)
       }
-    )
+
+      // Fallback CPU
+      adapterLogger.debug(
+        `💻 [ADAPTER] Applying sync adjustments via CPU fallback: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
+      )
+
+      const config = {
+        rgb: adjustments.rgb,
+        brightness: adjustments.brightness,
+        contrast: adjustments.contrast,
+        saturation: adjustments.saturation,
+        posterization: adjustments.posterization
+      }
+
+      return applyAdjustmentsInOnePass(imageData, config)
+    })
   }
 
   /**
@@ -427,10 +433,14 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    colorSpace: ColorSpace
+    colorSpace: ColorSpace,
+    contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
     const timerId = `ReGL Palette Quantization ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
     return adapterLogger.timeAsync(timerId, async () => {
+      console.log(
+        `🎯 [ADAPTER] Received contrastStrategy: ${contrastStrategy}, targetColors: ${targetColors}`
+      )
       adapterLogger.debug(
         `🎯 [ADAPTER] Starting ReGL quantization: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`
       )
@@ -468,11 +478,16 @@ export class ReGLProcessor implements ImageProcessor {
               colorSpace,
               distanceMetric,
               targetColors,
-              contrastStrategy: getDefaultStore().get(contrastStrategyAtom),
+              contrastStrategy:
+                contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
               gpuOptions: {
                 minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
               }
             }
+          )
+
+          console.log(
+            `🎯 [ADAPTER] Final contrastStrategy passed: ${contrastStrategy || getDefaultStore().get(contrastStrategyAtom)}`
           )
 
           return [...result] // Conversion readonly -> mutable pour compatibilité
@@ -495,7 +510,8 @@ export class ReGLProcessor implements ImageProcessor {
         basePalette,
         preselected,
         colorSpace,
-        distanceMetric
+        distanceMetric,
+        contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
       )
     })
   }
@@ -510,7 +526,8 @@ export class ReGLProcessor implements ImageProcessor {
     basePalette: Vector[],
     preselected: Vector[],
     colorSpace: ColorSpace,
-    distanceMetric: DistanceMetric
+    distanceMetric: DistanceMetric,
+    contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
     quantizerLogger.debug(
       `📊 [ADAPTER] Creating ReGL-ready quantizer with metric: ${distanceMetric}, basePalette=${basePalette.length} colors, preselected=${preselected.length} colors`
@@ -525,7 +542,9 @@ export class ReGLProcessor implements ImageProcessor {
       preselected,
       quantConfig: {
         colorSpace,
-        distanceMetric
+        distanceMetric,
+        contrastStrategy:
+          contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
       }
     })
 
