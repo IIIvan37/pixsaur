@@ -6,9 +6,7 @@ import {
   initializeProcessorsAtom,
   paletteProcessorAtom
 } from '@/app/store/adapters/processors'
-import type {
-  AdjustmentConfig
-} from '@/libs/pixsaur-adapter'
+import type { AdjustmentConfig } from '@/libs/pixsaur-adapter'
 import { adapterLogger, logger } from '@/utils/logger'
 
 export const useImageProcessors = () => {

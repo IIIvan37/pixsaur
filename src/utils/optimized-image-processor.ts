@@ -1,6 +1,6 @@
 /**
  * 🚀 OPTIMISED REMAPPING - Zero-Copy Mutations
- * 
+ *
  * Version optimisée qui mute les buffers en place au lieu de créer des copies
  * Gains attendus: 60-80% moins d'allocations, 40-50% plus rapide
  */
@@ -13,7 +13,7 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 export class OptimizedImageProcessor {
   private static bufferPool: Uint8ClampedArray[] = []
   private static colorCache = new Map<string, Vector>()
-  
+
   /**
    * Récupère un buffer réutilisable ou en crée un nouveau
    * TODO: Implement buffer pooling for even better performance
@@ -26,7 +26,7 @@ export class OptimizedImageProcessor {
   //   }
   //   return new Uint8ClampedArray(size)
   // }
-  
+
   /**
    * Retourne un buffer au pool pour réutilisation
    * TODO: Implement buffer pooling for even better performance
@@ -36,7 +36,7 @@ export class OptimizedImageProcessor {
   //     this.bufferPool.push(buffer)
   //   }
   // }
-  
+
   /**
    * Remapping optimisé avec mutations en place
    * MUTE l'ImageData directement au lieu de créer une copie
@@ -46,10 +46,10 @@ export class OptimizedImageProcessor {
     reducedPalette: Vector[]
   ): ImageData {
     const { data } = imgData
-    
+
     // Réutiliser le cache de couleurs entre les appels
     // this.colorCache.clear() // Commenté pour garder le cache chaud
-    
+
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i]
       const g = data[i + 1]
@@ -57,30 +57,30 @@ export class OptimizedImageProcessor {
       const key = `${r},${g},${b}`
 
       let best: Vector
-      if (this.colorCache.has(key)) {
-        best = this.colorCache.get(key)!
+      if (OptimizedImageProcessor.colorCache.has(key)) {
+        best = OptimizedImageProcessor.colorCache.get(key)!
       } else {
         let bestDist = Infinity
         best = reducedPalette[0]
-        
+
         // Optimisation: early exit si distance parfaite
         for (const palette of reducedPalette) {
           const dr = r - palette[0]
           const dg = g - palette[1]
           const db = b - palette[2]
           const dist = dr * dr + dg * dg + db * db
-          
+
           if (dist === 0) {
             best = palette
             break
           }
-          
+
           if (dist < bestDist) {
             bestDist = dist
             best = palette
           }
         }
-        this.colorCache.set(key, best)
+        OptimizedImageProcessor.colorCache.set(key, best)
       }
 
       // MUTATION EN PLACE - pas de nouvel array
@@ -93,7 +93,7 @@ export class OptimizedImageProcessor {
     // Retourner la même ImageData mutée
     return imgData
   }
-  
+
   /**
    * Version optimisée pour palette conversion sans allocations inutiles
    */
@@ -107,7 +107,7 @@ export class OptimizedImageProcessor {
     }
     return palette
   }
-  
+
   /**
    * Hash de cache optimisé sans allocations string
    */
@@ -119,36 +119,43 @@ export class OptimizedImageProcessor {
     // Éviter les .map() et .join() coûteux
     let hash = imageData.width * 31 + imageData.height
     hash = hash * 31 + imageData.data.length
-    
+
     // Hash rapide de la palette (échantillonnage)
-    for (let i = 0; i < palette.length; i += Math.max(1, Math.floor(palette.length / 8))) {
+    for (
+      let i = 0;
+      i < palette.length;
+      i += Math.max(1, Math.floor(palette.length / 8))
+    ) {
       const color = palette[i]
       hash = hash * 31 + (color[0] * 1000000 + color[1] * 1000 + color[2])
     }
-    
+
     // Hash de config
     hash = hash * 31 + config.mode.charCodeAt(0)
     hash = hash * 31 + Math.floor(config.intensity * 100)
-    
+
     return (hash >>> 0).toString(16) // Unsigned 32-bit
   }
-  
+
   /**
    * Nettoyage des caches pour éviter les fuites mémoire
    */
   static cleanup(): void {
-    this.bufferPool.length = 0
-    this.colorCache.clear()
+    OptimizedImageProcessor.bufferPool.length = 0
+    OptimizedImageProcessor.colorCache.clear()
   }
-  
+
   /**
    * Stats des optimisations
    */
   static getStats() {
     return {
-      bufferPoolSize: this.bufferPool.length,
-      colorCacheSize: this.colorCache.size,
-      memoryUsed: this.bufferPool.reduce((sum, buf) => sum + buf.length * 4, 0)
+      bufferPoolSize: OptimizedImageProcessor.bufferPool.length,
+      colorCacheSize: OptimizedImageProcessor.colorCache.size,
+      memoryUsed: OptimizedImageProcessor.bufferPool.reduce(
+        (sum, buf) => sum + buf.length * 4,
+        0
+      )
     }
   }
 }

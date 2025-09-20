@@ -6,8 +6,12 @@ global.ImageData =
     width: number
     height: number
     data: Uint8ClampedArray
-    
-    constructor(dataOrWidth: Uint8ClampedArray | number, width?: number, height?: number) {
+
+    constructor(
+      dataOrWidth: Uint8ClampedArray | number,
+      width?: number,
+      height?: number
+    ) {
       if (typeof dataOrWidth === 'number' && width !== undefined) {
         // new ImageData(width, height)
         this.width = dataOrWidth

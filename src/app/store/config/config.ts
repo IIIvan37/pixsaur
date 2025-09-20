@@ -112,7 +112,12 @@ export const setContrastStrategyAtom = atom(
   null,
   (get, set, payload: ContrastStrategy) => {
     const current = get(contrastStrategyAtom)
-    console.log('🎯 [CONFIG] setContrastStrategyAtom - changing from', current, 'to', payload)
+    console.log(
+      '🎯 [CONFIG] setContrastStrategyAtom - changing from',
+      current,
+      'to',
+      payload
+    )
     set(contrastStrategyAtom, payload)
     console.log('🎯 [CONFIG] setContrastStrategyAtom - change complete')
   }

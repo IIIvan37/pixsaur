@@ -1,6 +1,6 @@
-import { ThemeProvider } from "@/components/theme/theme-provider";
-import styles from "@/styles/app.module.css";
-import ImageConverter from "./components/image-converter/image-converter";
+import { ThemeProvider } from '@/components/theme/theme-provider'
+import styles from '@/styles/app.module.css'
+import ImageConverter from './components/image-converter/image-converter'
 
 export default function App() {
   return (

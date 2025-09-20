@@ -3,24 +3,16 @@ import debounce from 'lodash/debounce'
 import { useEffect, useMemo } from 'react'
 import { configAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
-import { useImageProcessors } from './use-image-processors'
 import { adapterLogger } from '@/utils/logger'
+import { useImageProcessors } from './use-image-processors'
 
 export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
   const downscaled = useAtomValue(downscaledAtom)
   const { imageProcessor, isInitialized } = useImageProcessors()
 
-  const {
-    red,
-    green,
-    blue,
-    brightness,
-    contrast,
-    saturation,
-    posterization
-  } = useAtomValue(configAtom)
-
+  const { red, green, blue, brightness, contrast, saturation, posterization } =
+    useAtomValue(configAtom)
 
   const data = useMemo(
     () => downscaled?.data || new Uint8ClampedArray(),
@@ -33,9 +25,11 @@ export const useImageAdjustement = () => {
         if (!imageProcessor || !isInitialized) {
           return
         }
-        
+
         if (process.env.NODE_ENV === 'development') {
-          adapterLogger.debug('🔧 [DEBUG] use-image-adjustement calling processor')
+          adapterLogger.debug(
+            '🔧 [DEBUG] use-image-adjustement calling processor'
+          )
         }
         const result = imageProcessor.applyAdjustmentsSync(
           new ImageData(
@@ -74,7 +68,18 @@ export const useImageAdjustement = () => {
     // Simple logic: apply adjustments when data changes or when there's an adjustment change
     // The debouncedApply already handles the current adjustment values via closure
     debouncedApply(data)
-    
+
     return () => debouncedApply.cancel()
-  }, [data, debouncedApply, downscaled, red, green, blue, brightness, contrast, saturation, posterization])
+  }, [
+    data,
+    debouncedApply,
+    downscaled,
+    red,
+    green,
+    blue,
+    brightness,
+    contrast,
+    saturation,
+    posterization
+  ])
 }

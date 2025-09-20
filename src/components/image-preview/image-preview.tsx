@@ -44,7 +44,7 @@ const ImagePreview = () => {
       const tempCtx = tempCanvas.getContext('2d')
       if (tempCtx) {
         tempCtx.putImageData(previewImage, 0, 0)
-        
+
         // Dessiner le canvas temporaire sur le canvas de destination
         ctx.drawImage(
           tempCanvas,

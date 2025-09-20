@@ -8,15 +8,15 @@
  */
 
 import type REGL from 'regl'
+import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
+import { getDistanceFn } from '@/libs/pixsaur-color/src/metric/distance'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import { rgbToLab, rgbToXyz } from '@/libs/pixsaur-color/src/space/convert'
 import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
+import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { adapterLogger, quantizerLogger } from '@/utils/logger'
-
-// Types temporaires pour Phase 1 - seront importés depuis pixsaur-color en Phase 2
-type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
 
 /**
  * Configuration ReGL qui étend QuantizeConfig existant
@@ -594,35 +594,9 @@ export class ReGLQuantizer {
 
     try {
       // ✅ Utilise la VRAIE GPU avec conversions colorSpace
-      const cpcPalette = [
-        [0, 0, 0],
-        [0, 0, 128],
-        [0, 0, 255],
-        [128, 0, 0],
-        [128, 0, 128],
-        [128, 0, 255],
-        [255, 0, 0],
-        [255, 0, 128],
-        [255, 0, 255],
-        [0, 128, 0],
-        [0, 128, 128],
-        [0, 128, 255],
-        [128, 128, 0],
-        [128, 128, 128],
-        [128, 128, 255],
-        [255, 128, 0],
-        [255, 128, 128],
-        [255, 128, 255],
-        [0, 255, 0],
-        [0, 255, 128],
-        [0, 255, 255],
-        [128, 255, 0],
-        [128, 255, 128],
-        [128, 255, 255],
-        [255, 255, 0],
-        [255, 255, 128],
-        [255, 255, 255]
-      ]
+      const cpcPalette = generateAmstradCPCPalette().map((vector) =>
+        Array.from(vector)
+      )
 
       const histogram = this.computeHistogramGPUAccelerated(
         imageData,
@@ -672,35 +646,9 @@ export class ReGLQuantizer {
     const pixels = imageData.data
 
     // Utilise exactement la même palette que le CPU
-    const cpcPalette = [
-      [0, 0, 0], // 0: RGB(0, 0, 0)
-      [0, 0, 128], // 1: RGB(0, 0, 128)
-      [0, 0, 255], // 2: RGB(0, 0, 255)
-      [128, 0, 0], // 3: RGB(128, 0, 0)
-      [128, 0, 128], // 4: RGB(128, 0, 128)
-      [128, 0, 255], // 5: RGB(128, 0, 255)
-      [255, 0, 0], // 6: RGB(255, 0, 0)
-      [255, 0, 128], // 7: RGB(255, 0, 128)
-      [255, 0, 255], // 8: RGB(255, 0, 255)
-      [0, 128, 0], // 9: RGB(0, 128, 0)
-      [0, 128, 128], // 10: RGB(0, 128, 128)
-      [0, 128, 255], // 11: RGB(0, 128, 255)
-      [128, 128, 0], // 12: RGB(128, 128, 0)
-      [128, 128, 128], // 13: RGB(128, 128, 128)
-      [128, 128, 255], // 14: RGB(128, 128, 255)
-      [255, 128, 0], // 15: RGB(255, 128, 0)
-      [255, 128, 128], // 16: RGB(255, 128, 128)
-      [255, 128, 255], // 17: RGB(255, 128, 255)
-      [0, 255, 0], // 18: RGB(0, 255, 0)
-      [0, 255, 128], // 19: RGB(0, 255, 128)
-      [0, 255, 255], // 20: RGB(0, 255, 255)
-      [128, 255, 0], // 21: RGB(128, 255, 0)
-      [128, 255, 128], // 22: RGB(128, 255, 128)
-      [128, 255, 255], // 23: RGB(128, 255, 255)
-      [255, 255, 0], // 24: RGB(255, 255, 0)
-      [255, 255, 128], // 25: RGB(255, 255, 128)
-      [255, 255, 255] // 26: RGB(255, 255, 255)
-    ]
+    const cpcPalette = generateAmstradCPCPalette().map((vector) =>
+      Array.from(vector)
+    )
 
     // 🚀 OPTIMIZATION: Use GPU-accelerated preprocessing if available
     if (
@@ -711,6 +659,8 @@ export class ReGLQuantizer {
     }
 
     // ✅ Support colorSpace complet avec conversions pixsaur-color
+    const distanceFn = getDistanceFn(config.colorSpace, config.distanceMetric)
+
     for (let i = 0; i < pixels.length; i += 4) {
       const pixel: Vector = [pixels[i], pixels[i + 1], pixels[i + 2]]
       const pixelConverted = this.convertColor(pixel, config.colorSpace)
@@ -730,12 +680,8 @@ export class ReGLQuantizer {
           config.colorSpace
         )
 
-        // Calculer la distance euclidienne dans l'espace colorimétrique choisi
-        const distance = Math.sqrt(
-          (pixelConverted[0] - paletteConverted[0]) ** 2 +
-            (pixelConverted[1] - paletteConverted[1]) ** 2 +
-            (pixelConverted[2] - paletteConverted[2]) ** 2
-        )
+        // ✅ Utilise la fonction de distance appropriée depuis pixsaur-color
+        const distance = distanceFn(pixelConverted, paletteConverted)
 
         if (distance < minDistance) {
           minDistance = distance
@@ -764,35 +710,9 @@ export class ReGLQuantizer {
   private generateCPCShaderCode(): string {
     // Palette CPC officielle utilisée par le CPU
     // Cette palette correspond EXACTEMENT à l'ordre utilisé par build-histogram.ts
-    const cpuExactPalette = [
-      [0, 0, 0], // 0: RGB(0, 0, 0)
-      [0, 0, 128], // 1: RGB(0, 0, 128)
-      [0, 0, 255], // 2: RGB(0, 0, 255)
-      [128, 0, 0], // 3: RGB(128, 0, 0)
-      [128, 0, 128], // 4: RGB(128, 0, 128)
-      [128, 0, 255], // 5: RGB(128, 0, 255)
-      [255, 0, 0], // 6: RGB(255, 0, 0)
-      [255, 0, 128], // 7: RGB(255, 0, 128)
-      [255, 0, 255], // 8: RGB(255, 0, 255)
-      [0, 128, 0], // 9: RGB(0, 128, 0)
-      [0, 128, 128], // 10: RGB(0, 128, 128)
-      [0, 128, 255], // 11: RGB(0, 128, 255)
-      [128, 128, 0], // 12: RGB(128, 128, 0)
-      [128, 128, 128], // 13: RGB(128, 128, 128)
-      [128, 128, 255], // 14: RGB(128, 128, 255)
-      [255, 128, 0], // 15: RGB(255, 128, 0)
-      [255, 128, 128], // 16: RGB(255, 128, 128)
-      [255, 128, 255], // 17: RGB(255, 128, 255)
-      [0, 255, 0], // 18: RGB(0, 255, 0)
-      [0, 255, 128], // 19: RGB(0, 255, 128)
-      [0, 255, 255], // 20: RGB(0, 255, 255)
-      [128, 255, 0], // 21: RGB(128, 255, 0)
-      [128, 255, 128], // 22: RGB(128, 255, 128)
-      [128, 255, 255], // 23: RGB(128, 255, 255)
-      [255, 255, 0], // 24: RGB(255, 255, 0)
-      [255, 255, 128], // 25: RGB(255, 255, 128)
-      [255, 255, 255] // 26: RGB(255, 255, 255)
-    ]
+    const cpuExactPalette = generateAmstradCPCPalette().map((vector) =>
+      Array.from(vector)
+    )
 
     // Génère le code pour la fonction getCPCColor avec la palette officielle
     let shaderCode = `
@@ -1213,9 +1133,12 @@ export class ReGLQuantizer {
       }
     }
 
-    // Utiliser le sélecteur de stratégie commun 
+    // Utiliser le sélecteur de stratégie commun
     const result = selectByStrategy(
-      { contrastStrategy: config.contrastStrategy, targetColors: config.targetColors },
+      {
+        contrastStrategy: config.contrastStrategy,
+        targetColors: config.targetColors
+      },
       {
         candidates: candidateColors,
         preselected: preselectedColors,

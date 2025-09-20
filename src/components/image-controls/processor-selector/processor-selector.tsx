@@ -1,6 +1,6 @@
 import { useAtom, useSetAtom } from 'jotai'
-import { processorTypeAtom } from '@/app/store/config/config'
 import { reinitializeProcessorsAtom } from '@/app/store/adapters/processors'
+import { processorTypeAtom } from '@/app/store/config/config'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import { isDevelopment } from '@/utils/is-development'
@@ -43,10 +43,7 @@ export function ProcessorSelector() {
         >
           Processeur
         </div>
-        <Select
-          value={processorType}
-          onValueChange={handleProcessorChange}
-        >
+        <Select value={processorType} onValueChange={handleProcessorChange}>
           {PROCESSOR_TYPES.map((processor) => (
             <SelectItem key={processor.value} value={processor.value}>
               {processor.label}
