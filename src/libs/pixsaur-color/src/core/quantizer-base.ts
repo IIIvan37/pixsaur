@@ -127,22 +127,9 @@ export abstract class QuantizerBase {
   /**
    * 🔧 LOGIQUE COMMUNE: Logging de performance
    */
-  protected logPerformanceStart(operation: string): { end: () => void } {
-    if (!this.config.logPerformance) {
-      return { end: () => {} }
-    }
-
-    const startTime = performance.now()
-    console.log(`🎯 [${this.getQuantizerType()}] Starting ${operation}`)
-
-    return {
-      end: () => {
-        const duration = performance.now() - startTime
-        console.log(
-          `✅ [${this.getQuantizerType()}] ${operation} completed in ${duration.toFixed(2)}ms`
-        )
-      }
-    }
+  protected logPerformanceStart(_operation: string): { end: () => void } {
+    // Performance logging désactivé - console.log supprimé
+    return { end: () => {} }
   }
 
   /**
@@ -175,14 +162,11 @@ export abstract class QuantizerBase {
     return `${width}x${height}-${hash.toString(36)}`
   }
 
-
   /**
    * 🔧 LOGIQUE COMMUNE: Obtention de la fonction de distance
    * Single source pour la sélection des métriques
    */
-  protected getDistanceFunction(
-    distanceMetric?: DistanceMetric
-  ): DistanceFn {
+  protected getDistanceFunction(distanceMetric?: DistanceMetric): DistanceFn {
     // RGB utilise euclidean par défaut
     const metric = distanceMetric || 'euclidean'
     return getDistanceFn('RGB', metric)

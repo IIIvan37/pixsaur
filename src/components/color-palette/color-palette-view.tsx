@@ -178,7 +178,9 @@ export const ColorPaletteView = ({
                     <ColorPickerPopup
                       initialColor={slot.color}
                       isLocked={slot.locked}
-                      onColorConfirm={(vector) => handleRgbColorSelect(vector, idx)}
+                      onColorConfirm={(vector) =>
+                        handleRgbColorSelect(vector, idx)
+                      }
                       onToggleLock={() => onToggleLock(idx)}
                       onClose={() => setOpenPopoverIndex(null)}
                     />

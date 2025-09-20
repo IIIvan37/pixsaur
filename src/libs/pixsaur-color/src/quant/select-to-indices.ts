@@ -96,7 +96,7 @@ function selectDiverseCandidates(
   _alreadySelected: number[] // Unused but kept for API compatibility
 ): number[] {
   if (candidates.length === 0) return []
-  
+
   // Calculer luminance ET teinte approximative des couleurs
   const getColorMetrics = (colorIndex: number) => {
     if (!basePalette[colorIndex]) {
@@ -106,15 +106,15 @@ function selectDiverseCandidates(
     const rNorm = r / 255
     const gNorm = g / 255
     const bNorm = b / 255
-    
+
     // Luminance
     const luminance = 0.2126 * rNorm + 0.7152 * gNorm + 0.0722 * bNorm
-    
+
     // HSL pour la teinte
     const max = Math.max(rNorm, gNorm, bNorm)
     const min = Math.min(rNorm, gNorm, bNorm)
     const delta = max - min
-    
+
     let hue = 0
     if (delta !== 0) {
       if (max === rNorm) {
@@ -127,63 +127,63 @@ function selectDiverseCandidates(
       hue = hue * 60
       if (hue < 0) hue += 360
     }
-    
+
     const saturation = max === 0 ? 0 : delta / max
-    
+
     return { luminance, hue, saturation }
   }
-  
+
   // Calculer métriques pour tous les candidats
-  const colorMetrics = candidates.map(idx => ({
+  const colorMetrics = candidates.map((idx) => ({
     idx,
     count: counts[idx] || 0,
     ...getColorMetrics(idx)
   }))
-  
+
   // Trier par fréquence d'abord (plus importantes restent prioritaires)
   colorMetrics.sort((a, b) => b.count - a.count)
-  
+
   // ✅ DIVERSITÉ CHROMATIQUE: Sélection avec distance minimale entre couleurs
   const selected: number[] = []
   const minColorDistance = 30 // Distance minimale en degrés de teinte
   const minLuminanceDistance = 0.15 // Distance minimale en luminance
-  
+
   for (const candidate of colorMetrics) {
     if (selected.length === 0) {
       // Première couleur: prendre la plus fréquente
       selected.push(candidate.idx)
       continue
     }
-    
+
     // Vérifier la distance avec les couleurs déjà sélectionnées
     let tooSimilar = false
     for (const selectedIdx of selected) {
       const selectedMetrics = getColorMetrics(selectedIdx)
-      
+
       // Distance de teinte (circulaire)
       let hueDiff = Math.abs(candidate.hue - selectedMetrics.hue)
       if (hueDiff > 180) hueDiff = 360 - hueDiff
-      
+
       // Distance de luminance
       const lumDiff = Math.abs(candidate.luminance - selectedMetrics.luminance)
-      
+
       // Couleurs trop similaires si teinte ET luminance proches
       if (hueDiff < minColorDistance && lumDiff < minLuminanceDistance) {
         tooSimilar = true
         break
       }
     }
-    
+
     if (!tooSimilar) {
       selected.push(candidate.idx)
     }
-    
+
     // Si on a assez de couleurs diversifiées, arrêter
     if (selected.length >= Math.min(candidates.length, 12)) {
       break
     }
   }
-  
+
   // Compléter avec les couleurs restantes si nécessaire
   for (const candidate of colorMetrics) {
     if (selected.length >= candidates.length) break
@@ -191,7 +191,7 @@ function selectDiverseCandidates(
       selected.push(candidate.idx)
     }
   }
-  
+
   return selected
 }
 
@@ -232,15 +232,19 @@ export function selectTopIndicesCore(
 
   // 3. ✅ OPTIMISATION: Mode diversité pour palettes moyennes (ex: mode 0 = 16 couleurs)
   if (diversityMode && topN >= 8 && topN <= 16 && options?.basePalette) {
-    quantizerLogger.info(`🎨 [DIVERSITY] Activating diversity mode for ${topN} colors from ${candidates.length} candidates`)
+    quantizerLogger.info(
+      `🎨 [DIVERSITY] Activating diversity mode for ${topN} colors from ${candidates.length} candidates`
+    )
     const diverseCandidates = selectDiverseCandidates(
-      candidates, 
-      counts, 
-      options.basePalette, 
+      candidates,
+      counts,
+      options.basePalette,
       result
     )
     completeSelection(diverseCandidates, result, topN)
-    quantizerLogger.info(`🎨 [DIVERSITY] Selected ${result.length} colors with diversity optimization`)
+    quantizerLogger.info(
+      `🎨 [DIVERSITY] Selected ${result.length} colors with diversity optimization`
+    )
   } else {
     // 4. Mode standard: Trier par fréquence
     const sortedCandidates = sortAndLogCandidates(candidates, counts)

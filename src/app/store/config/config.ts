@@ -2,6 +2,8 @@ import { atom } from 'jotai'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { CPCHardware } from '@/libs/types'
+import { userPaletteAtom } from '../palette/palette'
+import type { PaletteSlot } from '../palette/types'
 import type {
   AdjustementKey,
   ContrastStrategy,
@@ -111,16 +113,8 @@ export const contrastStrategyAtom = atom<ContrastStrategy>('balanced')
 // Setter for contrast strategy
 export const setContrastStrategyAtom = atom(
   null,
-  (get, set, payload: ContrastStrategy) => {
-    const current = get(contrastStrategyAtom)
-    console.log(
-      '🎯 [CONFIG] setContrastStrategyAtom - changing from',
-      current,
-      'to',
-      payload
-    )
+  (_get, set, payload: ContrastStrategy) => {
     set(contrastStrategyAtom, payload)
-    console.log('🎯 [CONFIG] setContrastStrategyAtom - change complete')
   }
 )
 
@@ -132,13 +126,18 @@ export const setCpcHardwareAtom = atom(
   null,
   (get, set, payload: CPCHardware) => {
     const current = get(cpcHardwareAtom)
-    console.log(
-      '🎮 [CONFIG] setCpcHardwareAtom - changing from',
-      current,
-      'to',
-      payload
-    )
+
+    // Débloquer toutes les couleurs lors de tout changement de mode CPC
+    // Cela garantit la cohérence : Classic ↔ Plus = couleurs débloquées
+    if (current !== payload) {
+      const currentPalette = get(userPaletteAtom)
+      const unlockedPalette = currentPalette.map((slot: PaletteSlot) => ({
+        ...slot,
+        locked: false
+      }))
+      set(userPaletteAtom, unlockedPalette)
+    }
+
     set(cpcHardwareAtom, payload)
-    console.log('🎮 [CONFIG] setCpcHardwareAtom - change complete')
   }
 )

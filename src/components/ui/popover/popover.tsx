@@ -28,7 +28,7 @@ export default function PixsaurPopover({
   variant = 'default'
 }: Readonly<Props>) {
   const isUnstyled = variant === 'unstyled'
-  
+
   // Debug log removed
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
