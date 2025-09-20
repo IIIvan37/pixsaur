@@ -93,9 +93,9 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   // 🔍 DEBUG: Log des paramètres de quantification
   const basePalette = getPaletteForHardware(cpcHardware)
   
-  // 🎯 SOLUTION: Augmenter le nombre de couleurs cibles pour CPC Plus
+  // 🎯 SOLUTION: Augmenter drastiquement pour CPC Plus pour forcer la diversité
   const targetColors = cpcHardware === 'plus' 
-    ? Math.min(256, CPC_MODE_CONFIG[mode].nColors * 4) // 4x plus de couleurs pour CPC Plus
+    ? Math.min(512, CPC_MODE_CONFIG[mode].nColors * 32) // 32x plus de couleurs pour maximiser la diversité
     : CPC_MODE_CONFIG[mode].nColors
 
   console.log(`🔍 [DEBUG] CPC Hardware: ${cpcHardware}`)
