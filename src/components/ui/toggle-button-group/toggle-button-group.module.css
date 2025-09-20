@@ -2,6 +2,7 @@
   display: flex;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
+  padding: var(--spacing-sm) 0;
 }
 
 .toggleButton {

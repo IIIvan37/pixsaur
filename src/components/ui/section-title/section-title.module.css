@@ -3,7 +3,4 @@
   font-weight: 600;
   color: var(--color-text);
   margin: 0;
-  margin-bottom: var(--spacing-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }

@@ -13,8 +13,7 @@ import { getDistanceFn } from '@/libs/pixsaur-color/src/metric/distance'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
-import { rgbToLab, rgbToXyz } from '@/libs/pixsaur-color/src/space/convert'
-import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { adapterLogger, quantizerLogger } from '@/utils/logger'
 
@@ -133,7 +132,7 @@ export class ReGLQuantizer {
     const startTime = performance.now()
 
     quantizerLogger.debug(
-      `🎯 [ReGL] Starting quantization: ${config.colorSpace}, ${config.distanceMetric}, ${config.targetColors} colors, image=${imageData.width}x${imageData.height}`
+      `🎯 [ReGL] Starting quantization: RGB, ${config.distanceMetric}, ${config.targetColors} colors, image=${imageData.width}x${imageData.height}`
     )
 
     // ReGLQuantizer est purement GPU - pas de fallback interne
@@ -607,7 +606,7 @@ export class ReGLQuantizer {
   ): Promise<number[]> {
     const gpuStart = performance.now()
     adapterLogger.debug(
-      `🎮 [ReGL] Computing histogram (GPU-accelerated): ${imageData.width}x${imageData.height}, ${config.colorSpace} ${config.distanceMetric}`
+      `🎮 [ReGL] Computing histogram (GPU-accelerated): ${imageData.width}x${imageData.height}, RGB ${config.distanceMetric}`
     )
 
     try {
@@ -626,7 +625,7 @@ export class ReGLQuantizer {
       const totalPixels = histogram.reduce((a, b) => a + b, 0)
 
       adapterLogger.info(
-        `🎮 [ReGL] GPU histogram completed: ${totalPixels} pixels in ${totalTime.toFixed(2)}ms (true GPU with ${config.colorSpace})`
+        `🎮 [ReGL] GPU histogram completed: ${totalPixels} pixels in ${totalTime.toFixed(2)}ms (true GPU with RGB)`
       )
 
       return histogram
@@ -635,19 +634,6 @@ export class ReGLQuantizer {
       // Fallback vers CPU avec support colorSpace complet
       return this.computeHistogramCPUOptimized(imageData, config, basePalette)
     }
-  }
-
-  /**
-   * Helper pour convertir une couleur selon l'espace colorimétrique
-   */
-  private convertColor(rgb: Vector, colorSpace?: ColorSpace): Vector {
-    if (colorSpace === 'Lab') {
-      return rgbToLab(rgb)
-    }
-    if (colorSpace === 'XYZ') {
-      return rgbToXyz(rgb)
-    }
-    return rgb // RGB par défaut
   }
 
   /**
@@ -677,18 +663,18 @@ export class ReGLQuantizer {
     const shouldUseGPU = 
       this.capabilities.canUseGPU &&
       pixelCount > gpuThreshold &&
-      (config.colorSpace === 'RGB' || config.colorSpace === undefined) // RGB est plus rapide
+      true // RGB est toujours supporté sur GPU
       
     if (shouldUseGPU) {
       return this.computeHistogramGPUAccelerated(imageData, cpcPalette, config)
     }
 
     // ✅ Support colorSpace complet avec conversions pixsaur-color
-    const distanceFn = getDistanceFn(config.colorSpace, config.distanceMetric)
+    const distanceFn = getDistanceFn('RGB', config.distanceMetric)
 
     for (let i = 0; i < pixels.length; i += 4) {
       const pixel: Vector = [pixels[i], pixels[i + 1], pixels[i + 2]]
-      const pixelConverted = this.convertColor(pixel, config.colorSpace)
+      const pixelConverted = pixel
 
       let minDistance = Infinity
       let closestIndex = 0
@@ -700,10 +686,7 @@ export class ReGLQuantizer {
           cpcPalette[j][1],
           cpcPalette[j][2]
         ]
-        const paletteConverted = this.convertColor(
-          paletteColor,
-          config.colorSpace
-        )
+        const paletteConverted = paletteColor
 
         // ✅ Utilise la fonction de distance appropriée depuis pixsaur-color
         const distance = distanceFn(pixelConverted, paletteConverted)
@@ -910,10 +893,7 @@ export class ReGLQuantizer {
           u_paletteSize: cpcPalette.length,
           u_imageSize: [imageData.width, imageData.height],
           u_colorSpace: () => {
-            // 0: RGB, 1: Lab, 2: XYZ
-            const colorSpace = config.colorSpace || 'RGB'
-            if (colorSpace === 'Lab') return 1
-            if (colorSpace === 'XYZ') return 2
+            // 0: RGB seulement maintenant
             return 0
           },
           u_distanceMetric: () => {
@@ -1100,7 +1080,9 @@ export class ReGLQuantizer {
     const preselectedIndices: number[] = []
     for (const preselectedColor of preselected) {
       const index = basePalette.findIndex((color) =>
-        this.colorsEqual(color, preselectedColor)
+        color[0] === preselectedColor[0] && 
+        color[1] === preselectedColor[1] && 
+        color[2] === preselectedColor[2]
       )
       if (index >= 0) {
         preselectedIndices.push(index)
@@ -1161,91 +1143,21 @@ export class ReGLQuantizer {
       (idx: number) => [...basePalette[idx]] as Vector
     )
 
-    // Créer la fonction de distance selon l'espace colorimétrique
+    // Créer la fonction de distance pour RGB uniquement
     const distanceFn = (a: Vector, b: Vector): number => {
-      if (config.colorSpace === 'Lab') {
-        const labA = this.convertColor(a, 'Lab')
-        const labB = this.convertColor(b, 'Lab')
-        let sum = 0
-        for (let i = 0; i < 3; i++) {
-          const d = labA[i] - labB[i]
-          sum += d * d
-        }
-        return Math.sqrt(sum)
-      } else if (config.colorSpace === 'XYZ') {
-        const xyzA = this.convertColor(a, 'XYZ')
-        const xyzB = this.convertColor(b, 'XYZ')
-        let sum = 0
-        for (let i = 0; i < 3; i++) {
-          const d = xyzA[i] - xyzB[i]
-          sum += d * d
-        }
-        return Math.sqrt(sum)
-      } else {
-        // RGB euclidean
-        let sum = 0
-        for (let i = 0; i < 3; i++) {
-          const d = a[i] - b[i]
-          sum += d * d
-        }
-        return Math.sqrt(sum)
+      // RGB euclidean
+      let sum = 0
+      for (let i = 0; i < 3; i++) {
+        const d = a[i] - b[i]
+        sum += d * d
       }
+      return Math.sqrt(sum)
     }
 
-    // Fonction de conversion vers RGB (pour les tests de luminance)
+    // Fonction de conversion vers RGB (pas de conversion nécessaire pour RGB)
     const toRGB = (v: Vector): Vector => {
-      if (config.colorSpace === 'Lab') {
-        // Convertir de Lab vers RGB
-        const [L, a, b] = v
-        // Lab → XYZ
-        const Y = (L + 16) / 116
-        const X = a / 500 + Y
-        const Z = Y - b / 200
-
-        const X3 = X ** 3
-        const Y3 = Y ** 3
-        const Z3 = Z ** 3
-
-        const Xn = X3 > 0.008856 ? X3 : (X - 16 / 116) / 7.787
-        const Yn = Y3 > 0.008856 ? Y3 : (Y - 16 / 116) / 7.787
-        const Zn = Z3 > 0.008856 ? Z3 : (Z - 16 / 116) / 7.787
-
-        // XYZ vers RGB (matrice sRGB)
-        const r = Xn * 3.2406 + Yn * -1.5372 + Zn * -0.4986
-        const g = Xn * -0.9689 + Yn * 1.8758 + Zn * 0.0415
-        const b_rgb = Xn * 0.0557 + Yn * -0.204 + Zn * 1.057
-
-        // Gamma correction
-        const gamma = (c: number) =>
-          c > 0.0031308 ? 1.055 * c ** (1 / 2.4) - 0.055 : 12.92 * c
-
-        return [
-          Math.max(0, Math.min(255, gamma(r) * 255)),
-          Math.max(0, Math.min(255, gamma(g) * 255)),
-          Math.max(0, Math.min(255, gamma(b_rgb) * 255))
-        ]
-      } else if (config.colorSpace === 'XYZ') {
-        // Convertir de XYZ vers RGB
-        const [X, Y, Z] = v
-
-        // XYZ vers RGB (matrice sRGB)
-        const r = X * 3.2406 + Y * -1.5372 + Z * -0.4986
-        const g = X * -0.9689 + Y * 1.8758 + Z * 0.0415
-        const b_rgb = X * 0.0557 + Y * -0.204 + Z * 1.057
-
-        // Gamma correction
-        const gamma = (c: number) =>
-          c > 0.0031308 ? 1.055 * c ** (1 / 2.4) - 0.055 : 12.92 * c
-
-        return [
-          Math.max(0, Math.min(255, gamma(r) * 255)),
-          Math.max(0, Math.min(255, gamma(g) * 255)),
-          Math.max(0, Math.min(255, gamma(b_rgb) * 255))
-        ]
-      } else {
-        // RGB, pas de conversion nécessaire
-        return v
-      }
+      // RGB, pas de conversion nécessaire
+      return v
     }
 
     // Utiliser le sélecteur de stratégie commun
@@ -1267,18 +1179,8 @@ export class ReGLQuantizer {
       `🎯 [ReGL] GPU selection completed: ${result.length}/${config.targetColors} colors selected`
     )
 
-    // CORRECTION: Convertir les couleurs RGB vers l'espace de travail comme le CPU
-    const convertedResult = result.map((color) => {
-      if (config.colorSpace === 'Lab') {
-        return this.convertColor(color, 'Lab')
-      } else if (config.colorSpace === 'XYZ') {
-        return this.convertColor(color, 'XYZ')
-      } else {
-        return color // RGB, pas de conversion
-      }
-    })
-
-    return convertedResult
+    // RGB direct, pas de conversion nécessaire
+    return result
   }
 
   /**
@@ -1297,7 +1199,7 @@ export class ReGLQuantizer {
     const sampledColors = this.sampleImageColors(imageData, 128) // 128 échantillons pour un bon compromis
     
     // CPU: Calcul rapide des couleurs dominantes avec diversité
-    const selected = this.selectDiverseColorsFast(sampledColors, basePalette, targetColors, config.colorSpace || 'RGB')
+    const selected = this.selectDiverseColorsFast(sampledColors, basePalette, targetColors)
     
     const duration = performance.now() - start
     adapterLogger.info(`⚡ [ReGL] CPC Plus selection: ${selected.length} colors in ${duration.toFixed(1)}ms (optimized)`)
@@ -1336,8 +1238,7 @@ export class ReGLQuantizer {
   private selectDiverseColorsFast(
     sampledColors: Vector[],
     basePalette: readonly Vector[],
-    targetColors: number,
-    colorSpace: ColorSpace = 'RGB'
+    targetColors: number
   ): number[] {
     // Compter rapidement les couleurs les plus fréquentes
     const colorCount = new Map<number, number>()
@@ -1353,7 +1254,7 @@ export class ReGLQuantizer {
         index,
         frequency: count / sampledColors.length,
         color: [...basePalette[index]] as Vector,
-        converted: this.convertColor(basePalette[index], colorSpace) // Utiliser l'espace choisi
+        converted: basePalette[index] // RGB direct
       }))
       .sort((a, b) => b.frequency - a.frequency) // Trier par fréquence
     
@@ -1378,7 +1279,7 @@ export class ReGLQuantizer {
       // Vérifier diversité minimale (distance > 20)
       let isDiverse = true
       for (const selectedColor of selectedConverted) {
-        if (this.calculateDistance(candidateConverted, selectedColor, colorSpace) < 20) {
+        if (this.calculateDistance(candidateConverted, selectedColor) < 20) {
           isDiverse = false
           break
         }
@@ -1403,7 +1304,7 @@ export class ReGLQuantizer {
         
         let minDistance = Infinity
         for (const selectedColor of selectedConverted) {
-          const distance = this.calculateDistance(candidateConverted, selectedColor, colorSpace)
+          const distance = this.calculateDistance(candidateConverted, selectedColor)
           minDistance = Math.min(minDistance, distance)
         }
         
@@ -1426,22 +1327,12 @@ export class ReGLQuantizer {
   /**
    * � Calcule la distance entre deux couleurs selon l'espace colorimétrique
    */
-  private calculateDistance(color1: Vector, color2: Vector, colorSpace: ColorSpace): number {
-    if (colorSpace === 'Lab') {
-      return this.labDistance(color1, color2)
-    } else if (colorSpace === 'XYZ') {
-      // Distance euclidienne simple pour XYZ
-      const dx = color1[0] - color2[0]
-      const dy = color1[1] - color2[1] 
-      const dz = color1[2] - color2[2]
-      return Math.sqrt(dx * dx + dy * dy + dz * dz)
-    } else {
-      // RGB - Distance euclidienne
-      const dr = color1[0] - color2[0]
-      const dg = color1[1] - color2[1]
-      const db = color1[2] - color2[2]
-      return Math.sqrt(dr * dr + dg * dg + db * db)
-    }
+  private calculateDistance(color1: Vector, color2: Vector): number {
+    // RGB - Distance euclidienne
+    const dr = color1[0] - color2[0]
+    const dg = color1[1] - color2[1]
+    const db = color1[2] - color2[2]
+    return Math.sqrt(dr * dr + dg * dg + db * db)
   }
 
   /**
@@ -1451,11 +1342,8 @@ export class ReGLQuantizer {
     let minDistance = Infinity
     let closestIndex = 0
     
-    const pixelLab = this.convertColor(pixel, 'Lab')
-    
     for (let i = 0; i < palette.length; i++) {
-      const paletteLab = this.convertColor(palette[i], 'Lab')
-      const distance = this.labDistance(pixelLab, paletteLab)
+      const distance = this.calculateDistance(pixel, palette[i])
       
       if (distance < minDistance) {
         minDistance = distance
@@ -1464,143 +1352,6 @@ export class ReGLQuantizer {
     }
     
     return closestIndex
-  }
-
-  /**
-   * 🚀 CPC Plus: Sélection optimisée rapide (MaxMin + échantillonnage) - DEPRECATED
-   * Remplace l'analyse complexe par un algorithme simple et efficace
-   */
-  private async selectFromImageAnalysis(
-    imageData: ImageData,
-    basePalette: readonly Vector[],
-    targetColors: number
-  ): Promise<number[]> {
-    adapterLogger.info(`⚡ [ReGL] Fast CPC Plus selection: ${targetColors} colors from ${basePalette.length} palette`)
-    
-    const start = performance.now()
-    
-    // Approche optimisée: MaxMin Distance avec pré-filtrage intelligent
-    const result = this.selectFastMaxMinDistance(basePalette, targetColors)
-    
-    const duration = performance.now() - start
-    adapterLogger.info(`⚡ [ReGL] Fast selection completed in ${duration.toFixed(1)}ms`)
-    
-    return result
-  }
-
-  /**
-   * ⚡ Sélection MaxMin Distance optimisée pour CPC Plus
-   */
-  private selectFastMaxMinDistance(
-    basePalette: readonly Vector[],
-    targetColors: number
-  ): number[] {
-    if (basePalette.length <= targetColors) {
-      return Array.from({ length: basePalette.length }, (_, i) => i)
-    }
-
-    const selected: number[] = []
-    const paletteWithLab = basePalette.map((color, index) => ({
-      index,
-      color: [...color] as Vector,
-      lab: this.convertColor(color, 'Lab')
-    }))
-
-    // 1. Première couleur: centre de l'espace colorimétrique (gris moyen le plus saturé)
-    let bestFirst = 0
-    let bestScore = 0
-    
-    for (let i = 0; i < paletteWithLab.length; i++) {
-      const color = paletteWithLab[i].color
-      const saturation = this.calculateSaturation(color)
-      const luminance = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]
-      
-      // Score: privilégier saturation modérée + luminance centrale
-      const lumScore = 1 - Math.abs(luminance - 128) / 128
-      const score = saturation * 0.6 + lumScore * 0.4
-      
-      if (score > bestScore) {
-        bestScore = score
-        bestFirst = i
-      }
-    }
-    selected.push(paletteWithLab[bestFirst].index)
-
-    // 2. Couleurs suivantes: MaxMin Distance avec échantillonnage
-    // Pour performance: échantillonner 1 couleur sur N si palette très grande
-    const sampleStep = Math.max(1, Math.floor(paletteWithLab.length / 1000))
-    
-    for (let iteration = 1; iteration < targetColors; iteration++) {
-      let maxMinDistance = 0
-      let bestIndex = -1
-      
-      for (let i = 0; i < paletteWithLab.length; i += sampleStep) {
-        if (selected.includes(paletteWithLab[i].index)) continue
-        
-        // Calculer distance minimale aux couleurs déjà sélectionnées
-        let minDistance = Infinity
-        
-        for (const selectedIndex of selected) {
-          const selectedItem = paletteWithLab.find(p => p.index === selectedIndex)
-          if (selectedItem) {
-            const distance = this.labDistance(paletteWithLab[i].lab, selectedItem.lab)
-            minDistance = Math.min(minDistance, distance)
-          }
-        }
-        
-        if (minDistance > maxMinDistance) {
-          maxMinDistance = minDistance
-          bestIndex = i
-        }
-      }
-      
-      if (bestIndex >= 0) {
-        selected.push(paletteWithLab[bestIndex].index)
-      } else {
-        // Fallback: prendre la première couleur non sélectionnée
-        for (let i = 0; i < paletteWithLab.length; i++) {
-          if (!selected.includes(paletteWithLab[i].index)) {
-            selected.push(paletteWithLab[i].index)
-            break
-          }
-        }
-      }
-    }
-
-    return selected
-  }
-
-  /**
-   * 🌈 Calcule la saturation d'une couleur RGB
-   */
-  private calculateSaturation(color: Vector): number {
-    const [r, g, b] = color.map(c => c / 255)
-    const max = Math.max(r, g, b)
-    const min = Math.min(r, g, b)
-    
-    if (max === 0) return 0
-    return (max - min) / max
-  }
-
-  /**
-   * Distance Lab pour calculs perceptuels
-   */
-  private labDistance(lab1: Vector, lab2: Vector): number {
-    const dL = lab1[0] - lab2[0]
-    const da = lab1[1] - lab2[1] 
-    const db = lab1[2] - lab2[2]
-    return Math.sqrt(dL * dL + da * da + db * db)
-  }
-
-  /**
-   * Utilitaire pour comparer deux couleurs
-   */
-  private colorsEqual(color1: Vector, color2: Vector): boolean {
-    return (
-      color1[0] === color2[0] &&
-      color1[1] === color2[1] &&
-      color1[2] === color2[2]
-    )
   }
 
   /**
@@ -1625,12 +1376,10 @@ export class ReGLQuantizer {
   }
 }
 
-// ✅ Mappings statiques pour type safety (Phase 2)
+// ✅ Mappings statiques pour RGB uniquement
 export const COLOR_SPACE_MAP = {
-  RGB: 0,
-  Lab: 1,
-  XYZ: 2
-} as const satisfies Record<ColorSpace, number>
+  RGB: 0
+} as const
 
 export const DISTANCE_METRIC_MAP = {
   euclidean: 0,
@@ -1638,7 +1387,7 @@ export const DISTANCE_METRIC_MAP = {
   deltaE2000: 2
 } as const satisfies Record<DistanceMetric, number>
 
-// Types utilitaires pour Phase 2
-export type ColorSpaceIndex = (typeof COLOR_SPACE_MAP)[ColorSpace]
+// Types utilitaires pour RGB uniquement
+export type ColorSpaceIndex = 0  // RGB seulement
 export type DistanceMetricIndex =
   (typeof DISTANCE_METRIC_MAP)[keyof typeof DISTANCE_METRIC_MAP]

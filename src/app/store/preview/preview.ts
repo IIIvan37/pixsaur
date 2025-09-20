@@ -1,7 +1,6 @@
 import { atom } from 'jotai'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
-import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes/rgb-to-indexes'
 import {
@@ -11,7 +10,6 @@ import {
 import { logger } from '@/utils/logger'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
-  colorSpaceAtom,
   contrastStrategyAtom,
   cpcHardwareAtom,
   ditheringAtom,
@@ -52,7 +50,7 @@ export const quantizerAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
   const cropped = await get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
-  const colorSpace = get(colorSpaceAtom)
+  const colorSpace = 'RGB' // Fixé sur RGB
   const contrastStrategy = get(contrastStrategyAtom)
   const cpcHardware = get(cpcHardwareAtom)
   if (!buf || !cropped) return null
@@ -65,7 +63,6 @@ export const quantizerAtom = atom(async (get) => {
     basePalette: getPaletteForHardware(cpcHardware),
     preselected: lockedVecs,
     quantConfig: {
-      colorSpace,
       distanceMetric,
       contrastStrategy
     }
@@ -79,7 +76,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const mode = get(modeAtom)
   const lockedVecs = get(lockedVectorsAtom)
-  const colorSpace = get(colorSpaceAtom)
+  const colorSpace = 'RGB' // Fixé sur RGB
   const cpcHardware = get(cpcHardwareAtom)
 
   if (!buf || !cropped) return []
@@ -107,7 +104,6 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     targetColors,
     basePalette,
     lockedVecs,
-    colorSpace,
     // 🎯 SOLUTION: Force strategy 'max' pour CPC Plus pour plus de diversité
     cpcHardware === 'plus' ? 'max' : undefined
   )
@@ -196,17 +192,15 @@ export const previewImageAtom = atom(async (get) => {
 })
 
 export const reducedPaletteRgbAtom = atom(async (get) => {
-  const colorSpace = get(colorSpaceAtom)
   const cpcHardware = get(cpcHardwareAtom)
-  const toRGB = getColorSpaceToRgbFn(colorSpace)
   const raw = await get(reducedPaletteRawAtom)
 
-  // 🔍 DEBUG: Log de la conversion vers RGB
-  console.log(`🔍 [DEBUG RGB] Converting ${raw.length} colors from ${colorSpace} to RGB`)
+  // 🔍 DEBUG: Colors already in RGB format
+  console.log(`🔍 [DEBUG RGB] Processing ${raw.length} RGB colors`)
   console.log(`🔍 [DEBUG RGB] Hardware: ${cpcHardware}`)
 
-  // Conversion colorspace vers RGB
-  const projected = raw.map(toRGB)
+  // Colors are already in RGB format, no conversion needed
+  const projected = raw
 
   // 🔍 DEBUG: Log des couleurs avant quantification hardware
   console.log(`🔍 [DEBUG RGB] Before hardware quantification:`, projected.slice(0, 5))

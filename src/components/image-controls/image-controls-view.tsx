@@ -1,5 +1,4 @@
 import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
-import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import type { CPCHardware } from '@/libs/types'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
@@ -12,15 +11,13 @@ import { ProcessorSelector } from './processor-selector/processor-selector'
 export type ImageControlsViewProps = {
   mode: CpcModeKey
   onModeChange: (mode: CpcModeKey) => void
-  colorSpace: ColorSpace
-  onColorSpaceChange: (colorSpace: ColorSpace) => void
   cpcHardware: CPCHardware
   onCpcHardwareChange: (hardware: CPCHardware) => void
 }
 
 /**
- * Renders the image controls UI, allowing users to select the image processing mode,
- * adjust dithering intensity, and choose the color space.
+ * Renders the image controls UI, allowing users to select the image processing mode
+ * and CPC hardware configuration. ColorSpace is now fixed to RGB for optimal GPU performance.
  *
  * @param props - The props for the ImageControlsView component.
  * @param props.mode - The current image processing mode.
@@ -35,8 +32,6 @@ export type ImageControlsViewProps = {
 export function ImageControlsView({
   mode,
   onModeChange,
-  colorSpace,
-  onColorSpaceChange,
   cpcHardware,
   onCpcHardwareChange
 }: Readonly<ImageControlsViewProps>) {
@@ -46,12 +41,6 @@ export function ImageControlsView({
     label: key
   }))
 
-  const colorSpaceOptions: Array<{ value: ColorSpace; label: string }> = [
-    { value: 'RGB', label: 'RGB' },
-    { value: 'XYZ', label: 'XYZ' },
-    { value: 'Lab', label: 'Lab' }
-  ]
-
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
     { value: 'classic' as CPCHardware, label: 'CPC (27)' },
     { value: 'plus' as CPCHardware, label: 'CPC+ (4096)' }
@@ -59,6 +48,16 @@ export function ImageControlsView({
 
   return (
     <div className={styles.controlsContainer}>
+       <Flex align='center'>
+        <SectionTitle>Hardware</SectionTitle>
+        <ToggleButtonGroup
+          options={hardwareOptions}
+          value={cpcHardware}
+          onChange={onCpcHardwareChange}
+          ariaLabelPrefix='Hardware'
+        />
+      </Flex>
+
       <Flex align='center'>
         <SectionTitle>Mode</SectionTitle>
         <ToggleButtonGroup
@@ -69,31 +68,12 @@ export function ImageControlsView({
         />
       </Flex>
 
-      <Flex align='center'>
-        <SectionTitle>Hardware</SectionTitle>
-        <ToggleButtonGroup
-          options={hardwareOptions}
-          value={cpcHardware}
-          onChange={onCpcHardwareChange}
-          ariaLabelPrefix='Hardware'
-        />
-      </Flex>
-
+     
       <DitheringSelector />
 
       <ProcessorSelector />
 
       <ContrastStrategySelector />
-
-      <Flex align='center'>
-        <SectionTitle>Espace de couleur</SectionTitle>
-        <ToggleButtonGroup
-          options={colorSpaceOptions}
-          value={colorSpace}
-          onChange={onColorSpaceChange}
-          ariaLabelPrefix='ColorSpace'
-        />
-      </Flex>
     </div>
   )
 }

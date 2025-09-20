@@ -1,9 +1,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
-  colorSpaceAtom,
   cpcHardwareAtom,
   modeAtom,
-  setColorSpaceAtom,
   setCpcHardwareAtom,
   setModeAtom
 } from '@/app/store/config/config'
@@ -11,7 +9,8 @@ import { ImageControlsView } from './image-controls-view'
 
 /**
  * ImageControls is a container component that connects Jotai atoms for image configuration
- * (mode, dithering, and color space) to the presentational ImageControlsView component.
+ * (mode and hardware) to the presentational ImageControlsView component.
+ * ColorSpace is now fixed to RGB for optimal GPU performance.
  *
  * It retrieves the current values and setter functions for each configuration option from the store,
  * and passes them as props to ImageControlsView.
@@ -22,16 +21,12 @@ import { ImageControlsView } from './image-controls-view'
 export default function ImageControls() {
   const mode = useAtomValue(modeAtom)
   const onModeChange = useSetAtom(setModeAtom)
-  const colorSpace = useAtomValue(colorSpaceAtom)
-  const onColorSpaceChange = useSetAtom(setColorSpaceAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const onCpcHardwareChange = useSetAtom(setCpcHardwareAtom)
   return (
     <ImageControlsView
       mode={mode}
       onModeChange={onModeChange}
-      colorSpace={colorSpace}
-      onColorSpaceChange={onColorSpaceChange}
       cpcHardware={cpcHardware}
       onCpcHardwareChange={onCpcHardwareChange}
     />

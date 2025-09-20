@@ -8,7 +8,7 @@
 import type REGL from 'regl'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import type { DistanceMetric } from '../metric/distance'
-import type { ColorSpace, Vector } from '../type'
+import type { Vector } from '../type'
 import {
   type QuantizeParams,
   type QuantizeResult,
@@ -17,7 +17,6 @@ import {
 } from './quantizer-base'
 
 export interface ReGLQuantizeConfig {
-  readonly colorSpace: ColorSpace
   readonly distanceMetric?: DistanceMetric
   readonly targetColors: number
   readonly contrastStrategy?: 'max' | 'balanced'
@@ -85,8 +84,8 @@ export class ReGLQuantizerUnified extends QuantizerBase {
         params.basePalette
       )
 
-      // ✅ Utilise la stratégie de contraste commune héritée
-      const distanceFn = this.getDistanceFunction(params.colorSpace)
+      // ✅ Utilise RGB uniquement maintenant  
+      const distanceFn = this.getDistanceFunction()
       const finalColors = this.applyContrastStrategy(
         selectedColors,
         this.indicesToColors(
@@ -144,8 +143,8 @@ export class ReGLQuantizerUnified extends QuantizerBase {
       u_image: imageTexture,
       u_palette: this.paletteTexture!,
       u_imageSize: [imageData.width, imageData.height],
-      u_colorSpace: this.mapColorSpaceToInt(params.colorSpace),
-      u_distanceMetric: this.mapDistanceMetricToInt(params.colorSpace)
+      u_colorSpace: 0, // RGB = 0
+      u_distanceMetric: 0 // euclidean = 0
     })
 
     // Lire les résultats GPU et construire histogram
@@ -337,29 +336,6 @@ export class ReGLQuantizerUnified extends QuantizerBase {
         gl_FragColor = vec4(float(closestIndex) / 26.0, 1.0, 0.0, 1.0);
       }
     `
-  }
-
-  /**
-   * 🔧 HELPER: Mappage colorSpace vers int pour GPU
-   */
-  private mapColorSpaceToInt(colorSpace: ColorSpace): number {
-    switch (colorSpace) {
-      case 'Lab':
-        return 1
-      case 'XYZ':
-        return 2
-      default:
-        return 0
-    }
-  }
-
-  /**
-   * 🔧 HELPER: Mappage distanceMetric vers int pour GPU
-   */
-  private mapDistanceMetricToInt(colorSpace: ColorSpace): number {
-    // ✅ Réutilise la logique de QuantizerBase
-    const metric = colorSpace === 'Lab' ? 'cie76' : 'euclidean'
-    return metric === 'cie76' ? 1 : 0
   }
 
   /**

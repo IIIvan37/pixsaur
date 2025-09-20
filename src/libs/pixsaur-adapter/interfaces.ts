@@ -1,4 +1,4 @@
-import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
@@ -46,6 +46,7 @@ export interface ImageProcessor {
   /**
    * Quantifie une palette à partir d'un buffer d'image
    * Signature standardisée basée sur l'usage réel dans preview.ts
+   * Colorspace fixé sur RGB pour optimisation GPU
    */
   quantizePalette(
     buffer: Uint8ClampedArray,
@@ -53,7 +54,6 @@ export interface ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    colorSpace: ColorSpace,
     contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]>
 

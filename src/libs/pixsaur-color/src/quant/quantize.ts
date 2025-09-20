@@ -5,8 +5,7 @@ import {
   type DistanceMetric,
   getDistanceFn
 } from '../metric/distance'
-import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
-import type { ColorSpace, Vector } from '../type'
+import type { Vector } from '../type'
 import { selectTopIndicesCore, selectTopIndices } from './select-to-indices'
 import { selectByStrategy } from './strategy-selector'
 
@@ -24,7 +23,6 @@ export type DitheringConfig = {
 }
 
 export type QuantizeConfig = {
-  colorSpace: ColorSpace
   distanceMetric: DistanceMetric
   contrastStrategy?: 'max' | 'balanced' // Stratégie de contraste pour petites palettes
 }
@@ -58,11 +56,12 @@ export function createQuantizer({
   preselected,
   quantConfig
 }: CreateQuantizerInput) {
-  const { colorSpace, distanceMetric } = quantConfig
+  const { distanceMetric } = quantConfig
 
-  const toW = getRgbToColorSpaceFn(colorSpace)
-  const fromW = getColorSpaceToRgbFn(colorSpace)
-  const distFn: DistanceFn = getDistanceFn(colorSpace, distanceMetric)
+  // Pour RGB seulement, pas de conversion nécessaire
+  const toW = (rgb: Vector) => rgb
+  const fromW = (rgb: Vector) => rgb
+  const distFn: DistanceFn = getDistanceFn('RGB', distanceMetric)
 
   const vecs = bufferToVectors(buf)
   const workingPal = basePalette.map((c) => toW([...c] as Vector))
@@ -121,7 +120,7 @@ export function createQuantizer({
         data.height,
         reducedPalette,
         dithering,
-        colorSpace
+        'RGB'
       )
     }
   }

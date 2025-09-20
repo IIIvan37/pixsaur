@@ -148,16 +148,6 @@ describe('ReGLQuantizerUnified - DRY Architecture', () => {
     loggerQuantizer.dispose()
   })
 
-  test('🎨 ColorSpace conversion mapping', () => {
-    expect((quantizer as any).mapColorSpaceToInt('RGB')).toBe(0)
-    expect((quantizer as any).mapColorSpaceToInt('Lab')).toBe(1)
-    expect((quantizer as any).mapColorSpaceToInt('XYZ')).toBe(2)
-  })
-
-  test('🔬 Distance metric mapping', () => {
-    expect((quantizer as any).mapDistanceMetricToInt('RGB')).toBe(0) // euclidean
-    expect((quantizer as any).mapDistanceMetricToInt('Lab')).toBe(1) // cie76
-  })
 
   test('🚫 Disposed quantizer protection', async () => {
     quantizer.dispose()
