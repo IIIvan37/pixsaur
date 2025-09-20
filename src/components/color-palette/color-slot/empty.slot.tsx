@@ -1,11 +1,11 @@
-import type { PaletteSlot } from '@/app/store/palette/types'
 import { useAtomValue } from 'jotai'
 import { cpcHardwareAtom } from '@/app/store/config/config'
+import type { PaletteSlot } from '@/app/store/palette/types'
 import Icon from '@/components/ui/icon'
 import PixsaurPopover from '@/components/ui/popover'
 import { RgbSlider } from '@/components/ui/rgb-slider'
-import type { CPCColor } from '@/libs/types'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { CPCColor } from '@/libs/types'
 import { ColorGrid } from '../color-grid'
 import styles from './color-slot.module.css'
 
@@ -62,7 +62,7 @@ export function EmptySlotButton({
         <RgbSlider
           value={[128, 128, 128]} // Valeur par défaut
           onChange={handleRgbChange}
-          label="Couleur personnalisée CPC+"
+          label='Couleur personnalisée CPC+'
         />
       ) : (
         <ColorGrid

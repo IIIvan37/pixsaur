@@ -1,6 +1,6 @@
 import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
-import type { CPCHardware } from '@/libs/types'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
+import type { CPCHardware } from '@/libs/types'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
 import { ToggleButtonGroup } from '../ui/toggle-button-group'

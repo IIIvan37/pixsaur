@@ -62,7 +62,6 @@ export const quantizerAtom = atom(async (get) => {
 
   const quantizer = createQuantizer({
     buf,
-
     basePalette: getPaletteForHardware(cpcHardware),
     preselected: lockedVecs,
     quantConfig: {
@@ -181,29 +180,38 @@ export const previewImageAtom = atom(async (get) => {
 
 export const reducedPaletteRgbAtom = atom(async (get) => {
   const colorSpace = get(colorSpaceAtom)
+  const cpcHardware = get(cpcHardwareAtom)
   const toRGB = getColorSpaceToRgbFn(colorSpace)
   const raw = await get(reducedPaletteRawAtom)
 
   // Conversion colorspace vers RGB
   const projected = raw.map(toRGB)
 
-  // Helper pour quantification CPC optimisée
-  const quantifyToCP = (value: number): number => {
-    if (value <= 64) return 0
-    if (value <= 192) return 128
-    return 255
-  }
+  // Quantification selon le hardware sélectionné
+  if (cpcHardware === 'classic') {
+    // Helper pour quantification CPC classique optimisée
+    const quantifyToCPClassic = (value: number): number => {
+      if (value <= 64) return 0
+      if (value <= 192) return 128
+      return 255
+    }
 
-  // Quantify colors to match CPC palette values (0, 128, 255) - OPTIMISÉ
-  for (const color of projected) {
-    const r = color[0]
-    const g = color[1]
-    const b = color[2]
+    // Quantify colors to match CPC classic palette values (0, 128, 255)
+    for (const color of projected) {
+      const r = color[0]
+      const g = color[1]
+      const b = color[2]
 
-    // Quantification optimisée en place
-    color[0] = quantifyToCP(r)
-    color[1] = quantifyToCP(g)
-    color[2] = quantifyToCP(b)
+      // Quantification optimisée en place
+      color[0] = quantifyToCPClassic(r)
+      color[1] = quantifyToCPClassic(g)
+      color[2] = quantifyToCPClassic(b)
+    }
+  } else {
+    // CPC Plus: PAS de quantification supplémentaire !
+    // Les couleurs sont déjà correctement générées par generateCPCPlusPalette()
+    // qui scale correctement les valeurs 4-bit (0-15) vers 8-bit (0-255)
+    // Toute requantification ici casserait la précision CPC Plus
   }
 
   return projected

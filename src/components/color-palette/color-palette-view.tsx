@@ -1,13 +1,14 @@
 // ColorPaletteView: Main palette UI component
 // Handles popover logic, slot mapping, focus management, and accessibility
-import { useEffect, useRef, useState } from 'react'
+
 import { useAtomValue } from 'jotai'
-import type { PaletteSlot } from '@/app/store/palette/types'
+import { useEffect, useRef, useState } from 'react'
 import { cpcHardwareAtom } from '@/app/store/config/config'
+import type { PaletteSlot } from '@/app/store/palette/types'
 import PixsaurPopover from '@/components/ui/popover'
 import { RgbSlider } from '@/components/ui/rgb-slider'
-import type { CPCColor } from '@/libs/types'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { CPCColor } from '@/libs/types'
 import animStyles from '@/styles/animations.module.css'
 import { ColorGridView } from './color-grid/color-grid-view'
 import styles from './color-palette.module.css'
@@ -73,7 +74,7 @@ export const ColorPaletteView = ({
   const buttonRefs = useRef<HTMLButtonElement[]>([])
   // colorOptionRefs: refs for color option buttons in popover
   const colorOptionRefs = useRef<HTMLButtonElement[]>([])
-  
+
   // Get current CPC hardware mode
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const isClassicMode = cpcHardware === 'classic'
@@ -176,7 +177,7 @@ export const ColorPaletteView = ({
                     <RgbSlider
                       value={slot.color}
                       onChange={(vector) => handleRgbColorSelect(vector, idx)}
-                      label="Modifier la couleur"
+                      label='Modifier la couleur'
                     />
                   )}
                 </PixsaurPopover>

@@ -145,3 +145,23 @@ export function getPaletteForHardware(hardware: CPCHardware): Vector[] {
       return generateAmstradCPCPalette() // Fallback to classic
   }
 }
+
+/**
+ * 🎨 Get CPCColor palette based on hardware
+ * Returns CPCColor[] format for UI components
+ */
+export function getCPCPaletteByHardware(hardware: CPCHardware): CPCColor[] {
+  if (hardware === CPCHardware.PLUS) {
+    // Pour CPC Plus, générer dynamiquement les CPCColor depuis les 4096 couleurs
+    const vectors = generateCPCPlusPalette()
+    return vectors.map((vector, index) => ({
+      index,
+      name: `RGB(${vector[0]},${vector[1]},${vector[2]})`,
+      hex: `${vector[0].toString(16).padStart(2, '0')}${vector[1].toString(16).padStart(2, '0')}${vector[2].toString(16).padStart(2, '0')}`,
+      vector
+    }))
+  } else {
+    // CPC Classic: utiliser la palette statique existante
+    return cpcFullPalette
+  }
+}
