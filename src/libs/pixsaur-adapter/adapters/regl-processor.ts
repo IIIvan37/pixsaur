@@ -11,7 +11,7 @@ import { contrastStrategyAtom } from '@/app/store/config/config'
 import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
-import type { ColorSpace, Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
 import { ReGLQuantizer } from './regl-quantizer'
@@ -426,6 +426,7 @@ export class ReGLProcessor implements ImageProcessor {
   /**
    * Quantification de palette avec ReGL ou CPU fallback
    * Phase 1: Utilise ReGLQuantizer si disponible, sinon fallback CPU
+   * Colorspace fixé sur RGB pour optimisation GPU
    */
   async quantizePalette(
     buffer: Uint8ClampedArray,
@@ -433,7 +434,6 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    colorSpace: ColorSpace,
     contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
     const timerId = `ReGL Palette Quantization ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
@@ -442,12 +442,11 @@ export class ReGLProcessor implements ImageProcessor {
         `🎯 [ADAPTER] Received contrastStrategy: ${contrastStrategy}, targetColors: ${targetColors}`
       )
       adapterLogger.debug(
-        `🎯 [ADAPTER] Starting ReGL quantization: colorSpace=${colorSpace}, targetColors=${targetColors}, bufferSize=${buffer.length}`
+        `🎯 [ADAPTER] Starting ReGL quantization: colorSpace=RGB, targetColors=${targetColors}, bufferSize=${buffer.length}`
       )
 
-      // Déterminer la métrique de distance basée sur l'espace colorimétrique
-      const distanceMetric: DistanceMetric =
-        colorSpace === 'Lab' ? 'cie76' : 'euclidean' // XYZ et RGB utilisent euclidean
+      // RGB utilise euclidean distance
+      const distanceMetric: DistanceMetric = 'euclidean'
 
       // Extraire dimensions depuis imageData
       const dimensions =
@@ -475,7 +474,6 @@ export class ReGLProcessor implements ImageProcessor {
             basePalette,
             preselected,
             {
-              colorSpace,
               distanceMetric,
               targetColors,
               contrastStrategy:
@@ -509,7 +507,6 @@ export class ReGLProcessor implements ImageProcessor {
         targetColors,
         basePalette,
         preselected,
-        colorSpace,
         distanceMetric,
         contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
       )
@@ -525,7 +522,6 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    colorSpace: ColorSpace,
     distanceMetric: DistanceMetric,
     contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
@@ -541,7 +537,6 @@ export class ReGLProcessor implements ImageProcessor {
       basePalette,
       preselected,
       quantConfig: {
-        colorSpace,
         distanceMetric,
         contrastStrategy:
           contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
@@ -564,12 +559,12 @@ export class ReGLProcessor implements ImageProcessor {
     )
 
     paletteLogger.debug(
-      `🎨 [ADAPTER] Quantization completed via ReGL adapter (CPU): ${palette.length}/${targetColors} colors for ${colorSpace}`
+      `🎨 [ADAPTER] Quantization completed via ReGL adapter (CPU): ${palette.length}/${targetColors} colors for RGB`
     )
 
     if (palette.length !== targetColors) {
       paletteLogger.warn(
-        `⚠️ [ADAPTER] Expected ${targetColors} colors but got ${palette.length} for ${colorSpace}`
+        `⚠️ [ADAPTER] Expected ${targetColors} colors but got ${palette.length} for RGB`
       )
     }
 

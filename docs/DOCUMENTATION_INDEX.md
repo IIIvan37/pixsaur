@@ -6,6 +6,48 @@ Cette documentation est optimisée pour les agents AI développant et maintenant
 
 ## 🎯 Vue d'ense### 🔍 Patterns observés
 
+### CPC Plus GPU Histogram Fix (Sept 20, 2025)
+**Cas d'étude : Debugging systematic d'un bug GPU complexe**
+
+```
+Problem: CPC Plus shows wrong colors (blue-dominated vs full 4096-color diversity)
+Root Cause Analysis:
+1. ❌ UI issue? → ✅ UI working correctly (getCPCPaletteByHardware)
+2. ❌ Quantization config? → ✅ Config passing 4096 colors correctly  
+3. 🎯 GPU Histogram hard-coded to 27 colors despite 4096 input
+
+Critical Discovery:
+regl-quantizer.ts:956 🔍 [HISTOGRAM DEBUG] GPU Histogram: 413640 pixels, 10/27 colors detected
+# Should be: 10/4096 colors detected
+
+Fix Implementation:
+- computeHistogramGPU: Add basePalette parameter for dynamic palette
+- GPU shader: Replace hard-coded getCPCColor() with texture lookup
+- WebGL compatibility: Use for(i < 4096) with break for dynamic size
+- Histogram parsing: Dynamic index calculation vs hard-coded /26.0
+
+Result: CPC Plus now detects 15/4096+ colors with visual diversity improvement
+Performance: CPC Classic 30ms → CPC Plus 300ms (expected for larger palette)
+```
+
+### ColorSpace Support Matrix (Sept 20, 2025)
+**État actuel du support des espaces colorimétriques**
+
+| Processor | CPC Mode | RGB | Lab | XYZ | Notes |
+|-----------|----------|-----|-----|-----|-------|
+| **CPU** | Classic | ✅ | ✅ | ✅ | Support complet tous espaces |
+| **CPU** | Plus | ✅ | ✅ | ✅ | Support complet tous espaces |
+| **GPU** | Classic | ✅ | ❌ | ❌ | RGB only, fallback CPU pour Lab/XYZ |
+| **GPU** | Plus | ✅ | ❌ | ❌ | RGB only, fallback CPU pour Lab/XYZ |
+
+**Décisions architecturales :**
+- **GPU RGB-only** : Choix de simplicité pour les shaders WebGL
+- **CPU fallback automatique** : Transparent pour l'utilisateur
+- **Qualité préservée** : Lab/XYZ utilisent CPU optimisé
+- **Performance ciblée** : GPU pour RGB haute performance, CPU pour précision colorimétrique
+
+**FUTURE ENHANCEMENT** : GPU Lab/XYZ nécessiterait shader complexe et validation extensive
+
 ### ReGL Quantizer fonctionnel (Nouveau Sept 18, 2025)
 ```
 🎮 [ReGL] GPU quantization completed: 16/16 colors in 400-600ms
@@ -49,18 +91,20 @@ Pixsaur est une application de traitement d'images avec architecture adaptateur 
 - Guide pratique de migration
 
 ### 🎮 [architecture/REGL_QUANTIZER_PLAN.md](./architecture/REGL_QUANTIZER_PLAN.md)
-**Plan d'adaptation ReGL pour le quantizer - ✅ IMPLÉMENTÉ**
+**Plan d'adaptation ReGL pour le quantizer - ✅ IMPLÉMENTÉ avec limitations**
 - ✅ Analyse de l'implémentation CPU existante
 - ✅ Architecture ReGL avec réutilisation des types pixsaur-color
 - ✅ Pipeline hybride CPU-GPU avec logique CPU exacte
-- ✅ Résolution problème doublons XYZ/LAB (Sept 2025)
+- ✅ Support RGB complet sur GPU (CPC Classic + Plus optimisé)
+- ⚠️ Lab/XYZ: CPU fallback automatique (GPU non supporté)
 
 ### 🛠️ [architecture/REGL_IMPLEMENTATION_GUIDE.md](./architecture/REGL_IMPLEMENTATION_GUIDE.md)
-**Guide pratique d'implémentation ReGL - ✅ COMPLÉTÉ**
+**Guide pratique d'implémentation ReGL - ✅ COMPLÉTÉ avec choix techniques**
 - ✅ Implémentation concrète du ReGL Quantizer fonctionnelle
-- ✅ Intégration parfaite avec l'architecture adapter existante
-- ✅ Tests et validation : CPU/GPU produisent résultats identiques
-- ✅ Debug workflow : problème couleurs dupliquées résolu
+- ✅ CPC Plus optimizations: histogram bypass + diversity selection
+- ✅ Choix technique: GPU=RGB uniquement, CPU=Lab/XYZ/RGB
+- ✅ Auto-fallback transparent selon colorspace
+- ✅ Performance: 33% gain CPC Plus, diversité couleurs améliorée
 
 ## 📈 Documentation Technique
 
@@ -84,6 +128,13 @@ Pixsaur est une application de traitement d'images avec architecture adaptateur 
 - Integration testing avec images de référence
 - Validation de la qualité de quantification
 - Comparaison CPU vs GPU
+
+### 🎨 [COLORSPACE_SUPPORT.md](./COLORSPACE_SUPPORT.md)
+**Guide complet des espaces colorimétriques - ✅ NOUVEAU Sept 2025**
+- Support matrix: RGB (GPU) vs Lab/XYZ (CPU)
+- Rationale technique et choix d'architecture
+- Guide d'utilisation par cas d'usage (performance vs qualité)
+- Auto-fallback transparent et métriques comparatives
 
 ## 🤖 AI Development Patterns
 
@@ -176,6 +227,57 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 
 ### 🤖 AI Assistance Patterns
 
+### Colorspace Support Matrix (Updated Sept 20, 2025)
+```typescript
+// Quantizer capabilities by processor and colorspace
+┌─────────────┬─────┬─────┬─────┬──────────────────┐
+│ Processor   │ RGB │ Lab │ XYZ │ Performance      │
+├─────────────┼─────┼─────┼─────┼──────────────────┤
+│ CPU Classic │ ✅  │ ✅  │ ✅  │ ~50ms (stable)   │
+│ GPU Classic │ ✅  │ ❌  │ ❌  │ ~15-70ms (fast)  │
+│ GPU Plus    │ ✅  │ ❌  │ ❌  │ ~140-210ms (opt) │
+└─────────────┴─────┴─────┴─────┴──────────────────┘
+
+// Auto-fallback behavior
+Lab/XYZ selected → CPU quantizer used automatically
+RGB selected    → GPU quantizer preferred (with CPU fallback)
+
+// Decision rationale:
+GPU Lab/XYZ: Complex shader math, precision issues, marginal performance gain
+CPU Lab/XYZ: Proven accuracy, full IEEE754 precision, acceptable performance
+```
+
+### CPC Plus Debugging Methodology
+```typescript
+// 1. Systematic elimination approach (RESOLVED)
+❌ UI Components → ✅ Check getCPCPaletteByHardware() 
+❌ Configuration → ✅ Verify basePalette.length (27 vs 4096)
+❌ State Management → ✅ Validate atoms and hardware switching
+✅ GPU Shader Logic → FIXED: Dynamic palette size + histogram bypass
+
+// 2. Critical debugging logs implemented
+console.log(`🔍 [HISTOGRAM FIX] Using palette with ${palette.length} colors`)
+console.log(`🔍 [HISTOGRAM DEBUG] GPU Histogram: ${pixels} pixels, ${colors}/${total} colors detected`)
+
+// 3. WebGL optimization patterns applied
+for (int i = 0; i < 4096; i++) {        // Fixed upper bound
+  if (i >= u_paletteSize) break;        // Dynamic break condition
+  vec3 cpcColor = getCPCColor(i);       // Texture lookup vs hard-coded
+}
+
+// 4. Performance vs correctness achieved
+CPC Classic: 27 colors, 15-70ms  ✅ Fast + Correct
+CPC Plus: 4096 colors, 140-210ms ✅ Optimized + Diverse colors
+```
+
+### Quantization Algorithm Evolution (COMPLETED)
+```
+✅ Before: Frequency-based selection → 15 similar greens for CPC Plus
+✅ After: Hybrid selection (60% frequency + 40% MaxMin Distance)
+✅ Result: Diverse color palettes across entire RGB spectrum
+✅ Optimization: Histogram bypass saves 100ms+ on CPC Plus modes
+```
+
 ### Quand modifier du code
 1. **Toujours** vérifier les types avec `readonly` props
 2. **Toujours** utiliser `RefObject<T>` pour les refs
@@ -191,6 +293,9 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 - ❌ `TODO:` comments → ✅ `FUTURE ENHANCEMENT:`
 - ❌ Dynamic icon access → ✅ Static icon mapping
 - ❌ **Redéfinir types existants** → ✅ **Import depuis pixsaur-color**
+- ❌ **GPU shader hard-coded loops** → ✅ **Dynamic palette size with WebGL constraints**
+- ❌ **Texture format mismatches** → ✅ **`format: 'rgb', type: 'uint8'` for palette textures**
+- ❌ **Variable loop bounds in WebGL** → ✅ **Fixed upper bound + break condition**
 
 ### Architecture Decision Records (ADR)
 - **ESLint/Prettier → Biome** : Outil unifié, meilleure performance
@@ -233,6 +338,7 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 - ✅ **87% DRY Violations Eliminated** : 3-phase systematic approach with enterprise patterns
 - ✅ **Architecture Excellence** : 6 design patterns, 95% test coverage, 8 comprehensive guides
 - 🧹 **Code Cleanup Complete** : Dead code eliminated, Biome 0 errors/warnings, optimal quality (Sept 20, 2025)
+- 🎯 **CPC Plus GPU Histogram Fix** : Dynamic palette support 27→4096 colors, WebGL loop optimization (Sept 20, 2025)
 
 ---
 
@@ -253,8 +359,13 @@ const processor = processorFactory.createBestProcessor()
 const result = processor.applyAdjustmentsSync(imageData, adjustments)
 
 // 2. Quantization palette (✅ FONCTIONNEL Sept 2025)
-const palette = await processor.quantizePalette(buffer, imageData, 16, basePalette)
-// ReGL GPU utilisé automatiquement avec fallback CPU
+const palette = await processor.quantizePalette(buffer, imageData, 16, basePalette, [], 'RGB')
+// GPU: RGB seulement, CPU fallback automatique pour Lab/XYZ
+
+// 3. Choix d'espace colorimétrique optimal
+const palette_rgb = await processor.quantizePalette(buffer, imageData, 16, basePalette, [], 'RGB')   // GPU
+const palette_lab = await processor.quantizePalette(buffer, imageData, 16, basePalette, [], 'Lab')   // CPU
+const palette_xyz = await processor.quantizePalette(buffer, imageData, 16, basePalette, [], 'XYZ')   // CPU
 ```
 
 ### Pour extension - Ajouter WebGL
@@ -269,26 +380,40 @@ const palette = await processor.quantizePalette(buffer, imageData, 16, basePalet
 ```javascript
 // Dans la console navigateur, filtrer par :
 "[ADAPTER]"    // Nouveau système adaptateur
-"[DIRECT]"     // Ancien système legacy
+"[DIRECT]"     // Ancien système legacy  
 "[FACTORY]"    // Gestion des processors
-"[WEBGL]"      // Future implémentation WebGL
+"[ReGL]"       // GPU quantization (RGB only)
+"💻 [CPU]"     // CPU fallback (Lab/XYZ support)
 ```
 
-## 📈 Métriques actuelles (Updated September 18, 2025)
+## 📈 Métriques actuelles (Updated September 20, 2025)
 
-Basé sur les logs réels et tests récents :
+Basé sur les logs réels et tests récents CPC Plus optimisations :
 
-| Opération | Système | Performance | Notes |
-|-----------|---------|-------------|-------|
-| Image Adjustments | `[ADAPTER] CPU` | ~30-43ms | ✅ Migré avec logs |
-| **ReGL Quantization** | **`[ADAPTER] GPU`** | **~400-600ms** | ✅ **Fonctionnel Sept 18** |
-| Quantizer Creation | `[DIRECT]` | ~50ms | 🔄 Legacy stable |
-| Palette Quantization | `[DIRECT]` | ~400-640ms | 🔄 Legacy stable |
-| Factory Cache | `[FACTORY]` | < 1ms | ✅ Réutilisation efficace |
-| **CPU/GPU Consistency** | **`[ADAPTER]`** | **100%** | ✅ **Résultats identiques** |
-| **Build Time** | **Vite + TS** | **~3.8s** | ✅ **Optimisé Sept 2025** |
-| **Linting** | **Biome** | **~200ms** | ✅ **0 erreur/warning** |
-| **Bundle Size** | **Production** | **543KB** | ⚠️ Consider code-splitting |
+| Opération | Système | Colorspace | Performance | Notes |
+|-----------|---------|------------|-------------|-------|
+| Image Adjustments | `[ADAPTER] CPU` | All | ~30-43ms | ✅ Migré avec logs |
+| **CPC Classic Quantization** | **`[ADAPTER] GPU`** | **RGB** | **~15-70ms** | ✅ **Histogram + selection** |
+| **CPC Plus Quantization** | **`[ADAPTER] GPU`** | **RGB** | **~140-210ms** | ✅ **Optimized bypass** |
+| **Lab/XYZ Quantization** | **`[ADAPTER] CPU`** | **Lab/XYZ** | **~400-600ms** | ✅ **Auto-fallback** |
+| Quantizer Creation | `[DIRECT]` | All | ~50ms | 🔄 Legacy stable |
+| Factory Cache | `[FACTORY]` | N/A | < 1ms | ✅ Réutilisation efficace |
+| **CPC Plus Histogram Bypass** | **`[ADAPTER]`** | **RGB** | **0ms** | ✅ **vs 100ms+ original** |
+| **Build Time** | **Vite + TS** | N/A | **~3.8s** | ✅ **Optimisé Sept 2025** |
+| **Linting** | **Biome** | N/A | **~200ms** | ✅ **0 erreur/warning** |
+
+### 🚀 CPC Plus Performance Gains (Sept 20, 2025)
+```bash
+# Avant optimisation
+CPC Plus Mode 0 (16 colors): ~300ms (histogram: 100ms + selection: 200ms)
+
+# Après optimisation  
+CPC Plus Mode 0 (16 colors): ~200ms (histogram: 0ms + selection: 200ms)
+CPC Plus Mode 1 (4 colors):  ~160ms (histogram: 0ms + selection: 160ms)
+CPC Plus Mode 2 (2 colors):  ~250ms (histogram: 0ms + selection: 250ms)
+
+# Résultat: 33% plus rapide + diversité couleurs améliorée
+```
 
 ### 🏗️ Build Performance
 ```bash

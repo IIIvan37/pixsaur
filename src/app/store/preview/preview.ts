@@ -1,8 +1,7 @@
 import { atom } from 'jotai'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
-import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
-import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
+import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes/rgb-to-indexes'
 import {
   getVisualRegion,
@@ -11,8 +10,8 @@ import {
 import { logger } from '@/utils/logger'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
-  colorSpaceAtom,
   contrastStrategyAtom,
+  cpcHardwareAtom,
   ditheringAtom,
   modeAtom
 } from '../config/config'
@@ -51,20 +50,19 @@ export const quantizerAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
   const cropped = await get(croppedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
-  const colorSpace = get(colorSpaceAtom)
+  const colorSpace = 'RGB' // Fixé sur RGB
   const contrastStrategy = get(contrastStrategyAtom)
+  const cpcHardware = get(cpcHardwareAtom)
   if (!buf || !cropped) return null
 
-  const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
+  const availableMetrics = DISTANCE_METRICS_BY_COLORSPACE[colorSpace]
   const distanceMetric = availableMetrics[0]
 
   const quantizer = createQuantizer({
     buf,
-
-    basePalette: generateAmstradCPCPalette(),
+    basePalette: getPaletteForHardware(cpcHardware),
     preselected: lockedVecs,
     quantConfig: {
-      colorSpace,
       distanceMetric,
       contrastStrategy
     }
@@ -72,33 +70,47 @@ export const quantizerAtom = atom(async (get) => {
   return quantizer
 })
 
-// 4. Palette réduite via ADAPTATEUR (nouveau système principal)
+// 4. Quantization avec palette adaptateur
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
   const cropped = await get(croppedImageAtom)
-  const lockedVecs = get(lockedVectorsAtom)
-  const colorSpace = get(colorSpaceAtom)
   const mode = get(modeAtom)
-  // Dépendance pour recalculer quand la stratégie change
-  get(contrastStrategyAtom)
+  const lockedVecs = get(lockedVectorsAtom)
+  const colorSpace = 'RGB' // Fixé sur RGB
+  const cpcHardware = get(cpcHardwareAtom)
 
   if (!buf || !cropped) return []
 
-  // 🚀 UTILISATION DES PROCESSEURS CENTRALISÉS (réutilisation de cache)
   const paletteProcessor = get(paletteProcessorAtom)
   if (!paletteProcessor) {
     logger.warn('Palette processor not initialized')
     return []
   }
 
+  // 🔍 DEBUG: Log des paramètres de quantification
+  const basePalette = getPaletteForHardware(cpcHardware)
+  
+  // 🎯 Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
+  const targetColors = CPC_MODE_CONFIG[mode].nColors
+
+  console.log(`🔍 [DEBUG] CPC Hardware: ${cpcHardware}`)
+  console.log(`🔍 [DEBUG] Base palette size: ${basePalette.length} colors`)
+  console.log(`🔍 [DEBUG] Target colors: ${targetColors} (mode: ${mode})`)
+  console.log(`🔍 [DEBUG] Color space: ${colorSpace}`)
+
   const palette = await paletteProcessor.quantizePalette(
     buf,
     cropped,
-    CPC_MODE_CONFIG[mode].nColors,
-    generateAmstradCPCPalette(),
+    targetColors,
+    basePalette,
     lockedVecs,
-    colorSpace
+    // 🎯 SOLUTION: Force strategy 'max' pour CPC Plus pour plus de diversité
+    cpcHardware === 'plus' ? 'max' : undefined
   )
+
+  // 🔍 DEBUG: Log du résultat de quantification
+  console.log(`🔍 [DEBUG] Quantized palette result: ${palette.length} colors`)
+  console.log(`🔍 [DEBUG] First 5 colors:`, palette.slice(0, 5))
 
   return palette
 })
@@ -180,30 +192,47 @@ export const previewImageAtom = atom(async (get) => {
 })
 
 export const reducedPaletteRgbAtom = atom(async (get) => {
-  const colorSpace = get(colorSpaceAtom)
-  const toRGB = getColorSpaceToRgbFn(colorSpace)
+  const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
 
-  // Conversion colorspace vers RGB
-  const projected = raw.map(toRGB)
+  // 🔍 DEBUG: Colors already in RGB format
+  console.log(`🔍 [DEBUG RGB] Processing ${raw.length} RGB colors`)
+  console.log(`🔍 [DEBUG RGB] Hardware: ${cpcHardware}`)
 
-  // Helper pour quantification CPC optimisée
-  const quantifyToCP = (value: number): number => {
-    if (value <= 64) return 0
-    if (value <= 192) return 128
-    return 255
-  }
+  // Colors are already in RGB format, no conversion needed
+  const projected = raw
 
-  // Quantify colors to match CPC palette values (0, 128, 255) - OPTIMISÉ
-  for (const color of projected) {
-    const r = color[0]
-    const g = color[1]
-    const b = color[2]
+  // 🔍 DEBUG: Log des couleurs avant quantification hardware
+  console.log(`🔍 [DEBUG RGB] Before hardware quantification:`, projected.slice(0, 5))
 
-    // Quantification optimisée en place
-    color[0] = quantifyToCP(r)
-    color[1] = quantifyToCP(g)
-    color[2] = quantifyToCP(b)
+  // Quantification selon le hardware sélectionné
+  if (cpcHardware === 'classic') {
+    // Helper pour quantification CPC classique optimisée
+    const quantifyToCPClassic = (value: number): number => {
+      if (value <= 64) return 0
+      if (value <= 192) return 128
+      return 255
+    }
+
+    // Quantify colors to match CPC classic palette values (0, 128, 255)
+    for (const color of projected) {
+      const r = color[0]
+      const g = color[1]
+      const b = color[2]
+
+      // Quantification optimisée en place
+      color[0] = quantifyToCPClassic(r)
+      color[1] = quantifyToCPClassic(g)
+      color[2] = quantifyToCPClassic(b)
+    }
+    console.log(`🔍 [DEBUG RGB] After CPC Classic quantification:`, projected.slice(0, 5))
+  } else {
+    // CPC Plus: PAS de quantification supplémentaire !
+    // Les couleurs sont déjà correctement générées par generateCPCPlusPalette()
+    // qui scale correctement les valeurs 4-bit (0-15) vers 8-bit (0-255)
+    // Toute requantification ici casserait la précision CPC Plus
+    console.log(`🔍 [DEBUG RGB] CPC Plus: NO additional quantification applied`)
+    console.log(`🔍 [DEBUG RGB] Final CPC Plus colors:`, projected.slice(0, 5))
   }
 
   return projected

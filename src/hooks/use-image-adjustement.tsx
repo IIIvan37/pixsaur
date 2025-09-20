@@ -46,7 +46,7 @@ export const useImageAdjustement = () => {
           }
         )
         setSrc(result)
-      }, 200),
+      }, 10),
     [
       imageProcessor,
       isInitialized,

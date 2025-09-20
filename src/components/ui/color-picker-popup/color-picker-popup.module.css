@@ -1,0 +1,115 @@
+/* ColorPickerPopup styles - alignés sur le style des popups classiques */
+.popup {
+  background-color: var(--color-background, #1a1a1a);
+  color: var(--color-foreground, #ffffff);
+  border: 1px solid var(--color-border, #444444);
+  border-radius: var(--radius-sm, 6px);
+  padding: var(--spacing-sm, 12px);
+  padding-bottom: var(--spacing-md, 16px);
+  box-shadow: 0 0 6px var(--color-accent, rgba(0, 123, 255, 0.5));
+  font-family: var(--font-family, system-ui, sans-serif);
+  font-size: var(--font-size-sm, 14px);
+  max-width: 300px;
+  position: relative;
+  z-index: 100;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.colorPreview {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    inset 0 1px 3px rgba(0, 0, 0, 0.1),
+    0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-bottom: var(--spacing-sm);
+  overflow: hidden;
+}
+
+.colorValue {
+  background: rgba(0, 0, 0, 0.25);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-family);
+  text-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.95),
+    0 0 6px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.slidersContainer {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  background: var(--color-backgroundHover);
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.actions {
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--spacing-sm);
+}
+
+.lockActions {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--spacing-sm);
+}
+
+.lockButton {
+  font-weight: 600;
+  font-size: 1rem;
+  min-width: 120px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .popup {
+    min-width: 280px;
+    max-width: 320px;
+  }
+  
+  .content {
+    padding: var(--spacing-sm);
+  }
+  
+  .colorPreview {
+    height: 50px;
+  }
+  
+  .lockButton {
+    min-width: 100px;
+    font-size: var(--font-size-xs);
+  }
+}

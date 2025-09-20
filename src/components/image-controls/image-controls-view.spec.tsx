@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, it, vi } from 'vitest'
+import { CPCHardware } from '@/libs/types'
 import {
   ImageControlsView,
   type ImageControlsViewProps
@@ -37,17 +38,17 @@ vi.mock('@/components/ui/slider', () => ({
 
 describe('ImageControlsView', () => {
   let onModeChange: ReturnType<typeof vi.fn>
-  let onColorSpaceChange: ReturnType<typeof vi.fn>
+  let onCpcHardwareChange: ReturnType<typeof vi.fn>
   let props: ImageControlsViewProps
 
   beforeEach(() => {
     onModeChange = vi.fn()
-    onColorSpaceChange = vi.fn()
+    onCpcHardwareChange = vi.fn()
     props = {
       mode: '0',
       onModeChange,
-      colorSpace: 'RGB',
-      onColorSpaceChange
+      cpcHardware: CPCHardware.CLASSIC,
+      onCpcHardwareChange
     }
   })
 
@@ -71,26 +72,5 @@ describe('ImageControlsView', () => {
     render(<ImageControlsView {...props} />)
     await userEvent.click(screen.getByRole('button', { name: /Mode 2$/i }))
     expect(onModeChange).toHaveBeenCalledWith('2')
-  })
-
-  it('renders color space buttons and highlights the active one', () => {
-    render(<ImageControlsView {...props} />)
-    expect(
-      screen.getByRole('button', { name: /ColorSpace RGB/i })
-    ).toHaveAttribute('aria-pressed', 'true')
-    expect(
-      screen.getByRole('button', { name: /ColorSpace XYZ/i })
-    ).toHaveAttribute('aria-pressed', 'false')
-    expect(
-      screen.getByRole('button', { name: /ColorSpace Lab/i })
-    ).toHaveAttribute('aria-pressed', 'false')
-  })
-
-  it('calls onColorSpaceChange when a color space button is clicked', async () => {
-    render(<ImageControlsView {...props} />)
-    await userEvent.click(
-      screen.getByRole('button', { name: /ColorSpace Lab/i })
-    )
-    expect(onColorSpaceChange).toHaveBeenCalledWith('Lab')
   })
 })

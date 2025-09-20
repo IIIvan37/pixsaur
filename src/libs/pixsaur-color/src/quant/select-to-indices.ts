@@ -1,3 +1,5 @@
+import { quantizerLogger } from '../../../../utils/logger'
+
 /**
  * Selects the top indices from a given counts array, optionally including preselected indices.
  *
@@ -84,9 +86,120 @@ function completeSelection(
 }
 
 /**
+ * ✅ DIVERSITÉ AMÉLIORÉE: Sélection avec diversité chromatique ET de luminance
+ * Pour CPC Plus: évite les couleurs trop similaires en teinte et luminance
+ */
+function selectDiverseCandidates(
+  candidates: number[],
+  counts: ArrayLike<number>,
+  basePalette: readonly any[],
+  _alreadySelected: number[] // Unused but kept for API compatibility
+): number[] {
+  if (candidates.length === 0) return []
+  
+  // Calculer luminance ET teinte approximative des couleurs
+  const getColorMetrics = (colorIndex: number) => {
+    if (!basePalette[colorIndex]) {
+      return { luminance: 0.5, hue: 0, saturation: 0 }
+    }
+    const [r, g, b] = basePalette[colorIndex]
+    const rNorm = r / 255
+    const gNorm = g / 255
+    const bNorm = b / 255
+    
+    // Luminance
+    const luminance = 0.2126 * rNorm + 0.7152 * gNorm + 0.0722 * bNorm
+    
+    // HSL pour la teinte
+    const max = Math.max(rNorm, gNorm, bNorm)
+    const min = Math.min(rNorm, gNorm, bNorm)
+    const delta = max - min
+    
+    let hue = 0
+    if (delta !== 0) {
+      if (max === rNorm) {
+        hue = ((gNorm - bNorm) / delta) % 6
+      } else if (max === gNorm) {
+        hue = (bNorm - rNorm) / delta + 2
+      } else {
+        hue = (rNorm - gNorm) / delta + 4
+      }
+      hue = hue * 60
+      if (hue < 0) hue += 360
+    }
+    
+    const saturation = max === 0 ? 0 : delta / max
+    
+    return { luminance, hue, saturation }
+  }
+  
+  // Calculer métriques pour tous les candidats
+  const colorMetrics = candidates.map(idx => ({
+    idx,
+    count: counts[idx] || 0,
+    ...getColorMetrics(idx)
+  }))
+  
+  // Trier par fréquence d'abord (plus importantes restent prioritaires)
+  colorMetrics.sort((a, b) => b.count - a.count)
+  
+  // ✅ DIVERSITÉ CHROMATIQUE: Sélection avec distance minimale entre couleurs
+  const selected: number[] = []
+  const minColorDistance = 30 // Distance minimale en degrés de teinte
+  const minLuminanceDistance = 0.15 // Distance minimale en luminance
+  
+  for (const candidate of colorMetrics) {
+    if (selected.length === 0) {
+      // Première couleur: prendre la plus fréquente
+      selected.push(candidate.idx)
+      continue
+    }
+    
+    // Vérifier la distance avec les couleurs déjà sélectionnées
+    let tooSimilar = false
+    for (const selectedIdx of selected) {
+      const selectedMetrics = getColorMetrics(selectedIdx)
+      
+      // Distance de teinte (circulaire)
+      let hueDiff = Math.abs(candidate.hue - selectedMetrics.hue)
+      if (hueDiff > 180) hueDiff = 360 - hueDiff
+      
+      // Distance de luminance
+      const lumDiff = Math.abs(candidate.luminance - selectedMetrics.luminance)
+      
+      // Couleurs trop similaires si teinte ET luminance proches
+      if (hueDiff < minColorDistance && lumDiff < minLuminanceDistance) {
+        tooSimilar = true
+        break
+      }
+    }
+    
+    if (!tooSimilar) {
+      selected.push(candidate.idx)
+    }
+    
+    // Si on a assez de couleurs diversifiées, arrêter
+    if (selected.length >= Math.min(candidates.length, 12)) {
+      break
+    }
+  }
+  
+  // Compléter avec les couleurs restantes si nécessaire
+  for (const candidate of colorMetrics) {
+    if (selected.length >= candidates.length) break
+    if (!selected.includes(candidate.idx)) {
+      selected.push(candidate.idx)
+    }
+  }
+  
+  return selected
+}
+
+/**
  * Core selection algorithm used by both CPU and GPU implementations
  * ✅ DRY principle: Single source of truth for color selection logic
  * ✅ Complexité réduite par décomposition en sous-fonctions
+ * ✅ OPTIMISATION: Diversité améliorée pour mode 0 (16 couleurs)
  */
 export function selectTopIndicesCore(
   counts: ArrayLike<number>,
@@ -94,9 +207,11 @@ export function selectTopIndicesCore(
   topN: number,
   options?: {
     threshold?: number
+    diversityMode?: boolean
+    basePalette?: readonly any[]
   }
 ): number[] {
-  const { threshold = 10 } = options || {}
+  const { threshold = 10, diversityMode = false } = options || {}
 
   const P = counts.length
   if (topN <= 0 || P === 0) {
@@ -115,11 +230,22 @@ export function selectTopIndicesCore(
   // 2. Filtrer les candidats restants
   const candidates = filterCandidates(counts, used, threshold)
 
-  // 3. Trier et logger les candidats
-  const sortedCandidates = sortAndLogCandidates(candidates, counts)
-
-  // 4. Compléter la sélection
-  completeSelection(sortedCandidates, result, topN)
+  // 3. ✅ OPTIMISATION: Mode diversité pour palettes moyennes (ex: mode 0 = 16 couleurs)
+  if (diversityMode && topN >= 8 && topN <= 16 && options?.basePalette) {
+    quantizerLogger.info(`🎨 [DIVERSITY] Activating diversity mode for ${topN} colors from ${candidates.length} candidates`)
+    const diverseCandidates = selectDiverseCandidates(
+      candidates, 
+      counts, 
+      options.basePalette, 
+      result
+    )
+    completeSelection(diverseCandidates, result, topN)
+    quantizerLogger.info(`🎨 [DIVERSITY] Selected ${result.length} colors with diversity optimization`)
+  } else {
+    // 4. Mode standard: Trier par fréquence
+    const sortedCandidates = sortAndLogCandidates(candidates, counts)
+    completeSelection(sortedCandidates, result, topN)
+  }
 
   return result
 }

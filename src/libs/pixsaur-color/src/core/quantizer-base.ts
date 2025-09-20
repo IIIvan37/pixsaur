@@ -13,14 +13,12 @@ import {
   type StrategyConfig,
   selectByStrategy
 } from '../quant/strategy-selector'
-import { rgbToLab, rgbToXyz } from '../space/convert'
-import type { ColorSpace, Vector } from '../type'
+import type { Vector } from '../type'
 
 export interface QuantizeParams {
   readonly targetColors: number
   readonly basePalette: readonly Vector[]
   readonly preselectedIndices: readonly number[]
-  readonly colorSpace: ColorSpace
   readonly contrastStrategy?: 'max' | 'balanced'
 }
 
@@ -152,7 +150,7 @@ export abstract class QuantizerBase {
    */
   protected getCacheKey(imageData: ImageData, params: QuantizeParams): string {
     // Hash simple basé sur les paramètres critiques
-    const paramString = `${params.targetColors}-${params.colorSpace}-${params.contrastStrategy}`
+    const paramString = `${params.targetColors}-RGB-${params.contrastStrategy}`
     const imageHash = this.computeImageHash(imageData)
     return `${imageHash}-${paramString}`
   }
@@ -177,33 +175,17 @@ export abstract class QuantizerBase {
     return `${width}x${height}-${hash.toString(36)}`
   }
 
-  /**
-   * 🔧 LOGIQUE COMMUNE: Conversion de couleurs
-   * Élimine la duplication entre ReGL et CPU quantizers
-   */
-  protected convertColor(rgb: Vector, colorSpace: ColorSpace): Vector {
-    switch (colorSpace) {
-      case 'Lab':
-        return rgbToLab(rgb)
-      case 'XYZ':
-        return rgbToXyz(rgb)
-      default:
-        return rgb // RGB par défaut
-    }
-  }
 
   /**
    * 🔧 LOGIQUE COMMUNE: Obtention de la fonction de distance
    * Single source pour la sélection des métriques
    */
   protected getDistanceFunction(
-    colorSpace: ColorSpace,
     distanceMetric?: DistanceMetric
   ): DistanceFn {
-    // Déterminer la métrique par défaut basée sur l'espace colorimétrique
-    const metric =
-      distanceMetric || (colorSpace === 'Lab' ? 'cie76' : 'euclidean')
-    return getDistanceFn(colorSpace, metric)
+    // RGB utilise euclidean par défaut
+    const metric = distanceMetric || 'euclidean'
+    return getDistanceFn('RGB', metric)
   }
 
   /**
