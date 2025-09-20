@@ -1,15 +1,20 @@
 /**
  * 🎮 ReGLQuantifierUnified - Implémentation GPU héritant de QuantizerBase
- * 
+ *
  * Héritage massif (95%+) de la logique commune tout en se concentrant
  * uniquement sur les spécificités GPU/WebGL.
  */
 
 import type REGL from 'regl'
-import type { Vector, ColorSpace } from '../type'
-import type { DistanceMetric } from '../metric/distance'
-import { QuantizerBase, type QuantizeParams, type QuantizeResult, type QuantizerConfig } from './quantizer-base'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import type { DistanceMetric } from '../metric/distance'
+import type { ColorSpace, Vector } from '../type'
+import {
+  type QuantizeParams,
+  type QuantizeResult,
+  QuantizerBase,
+  type QuantizerConfig
+} from './quantizer-base'
 
 export interface ReGLQuantizeConfig {
   readonly colorSpace: ColorSpace
@@ -56,7 +61,7 @@ export class ReGLQuantizerUnified extends QuantizerBase {
     }
 
     const perf = this.logPerformanceStart('ReGL quantization')
-    
+
     try {
       // ✅ Utilise la validation commune héritée
       this.validateParams(params)
@@ -75,13 +80,19 @@ export class ReGLQuantizerUnified extends QuantizerBase {
       )
 
       // ✅ Utilise la conversion commune héritée
-      const selectedColors = this.indicesToColors(selectedIndices, params.basePalette)
+      const selectedColors = this.indicesToColors(
+        selectedIndices,
+        params.basePalette
+      )
 
       // ✅ Utilise la stratégie de contraste commune héritée
       const distanceFn = this.getDistanceFunction(params.colorSpace)
       const finalColors = this.applyContrastStrategy(
         selectedColors,
-        this.indicesToColors([...params.preselectedIndices], params.basePalette),
+        this.indicesToColors(
+          [...params.preselectedIndices],
+          params.basePalette
+        ),
         params,
         distanceFn,
         (v) => v // ReGL résultats déjà en RGB
@@ -146,7 +157,9 @@ export class ReGLQuantizerUnified extends QuantizerBase {
 
     const histogram = new Uint32Array(params.basePalette.length)
     for (let i = 0; i < pixels.length; i += 4) {
-      const index = Math.round(pixels[i] / 255 * (params.basePalette.length - 1))
+      const index = Math.round(
+        (pixels[i] / 255) * (params.basePalette.length - 1)
+      )
       if (index >= 0 && index < histogram.length) {
         histogram[index] = pixels[i + 1] + (pixels[i + 2] << 8) // Reconstruct count
       }
@@ -176,10 +189,10 @@ export class ReGLQuantizerUnified extends QuantizerBase {
     // Créer texture palette CPC
     const paletteData = new Uint8Array(27 * 4) // 27 colors, RGBA
     this.cpcPalette.forEach((color, i) => {
-      paletteData[i * 4] = color[0]     // R
-      paletteData[i * 4 + 1] = color[1] // G  
+      paletteData[i * 4] = color[0] // R
+      paletteData[i * 4 + 1] = color[1] // G
       paletteData[i * 4 + 2] = color[2] // B
-      paletteData[i * 4 + 3] = 255      // A
+      paletteData[i * 4 + 3] = 255 // A
     })
 
     this.paletteTexture = this.regl.texture({
@@ -201,14 +214,21 @@ export class ReGLQuantizerUnified extends QuantizerBase {
         }
       `,
       attributes: {
-        a_position: [[-1, -1], [1, -1], [-1, 1], [1, 1]]
+        a_position: [
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1]
+        ]
       },
       uniforms: {
         u_image: this.regl.prop<any, 'u_image'>('u_image'),
         u_palette: this.regl.prop<any, 'u_palette'>('u_palette'),
         u_imageSize: this.regl.prop<any, 'u_imageSize'>('u_imageSize'),
         u_colorSpace: this.regl.prop<any, 'u_colorSpace'>('u_colorSpace'),
-        u_distanceMetric: this.regl.prop<any, 'u_distanceMetric'>('u_distanceMetric')
+        u_distanceMetric: this.regl.prop<any, 'u_distanceMetric'>(
+          'u_distanceMetric'
+        )
       },
       primitive: 'triangle strip',
       count: 4,
@@ -324,10 +344,12 @@ export class ReGLQuantizerUnified extends QuantizerBase {
    */
   private mapColorSpaceToInt(colorSpace: ColorSpace): number {
     switch (colorSpace) {
-      case 'Lab': return 1
-      case 'XYZ': return 2
-      case 'RGB': 
-      default: return 0
+      case 'Lab':
+        return 1
+      case 'XYZ':
+        return 2
+      default:
+        return 0
     }
   }
 
@@ -351,7 +373,7 @@ export class ReGLQuantizerUnified extends QuantizerBase {
     // quantizationCommand se nettoie automatiquement
 
     this.histogramFBO = undefined
-    this.paletteTexture = undefined  
+    this.paletteTexture = undefined
     this.quantizationCommand = undefined
 
     this.isDisposed = true
@@ -360,7 +382,7 @@ export class ReGLQuantizerUnified extends QuantizerBase {
 
 /**
  * 🎯 AVANTAGES REGL QUANTIZER DRY:
- * 
+ *
  * 1. **95% Code Reuse**: Seul computeHistogramGPU + GPU setup sont spécifiques
  * 2. **Shared Algorithms**: Validation, sélection, conversion automatiquement héritées
  * 3. **Consistent API**: Même interface que CPU pour interchangeabilité totale

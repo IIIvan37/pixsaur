@@ -2,18 +2,18 @@
  * Tests pour ReGLQuantizerUnified - Validation du pattern DRY avec héritage
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 import type REGL from 'regl'
-import { ReGLQuantizerUnified } from './regl-quantizer-unified'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { createTestImageData } from '@/utils/test-utils'
+import { ReGLQuantizerUnified } from './regl-quantizer-unified'
 
 // Mock ReGL pour les tests
 const createMockRegl = (): REGL.Regl => {
   const mockTexture = {
     destroy: vi.fn()
   }
-  
+
   const mockFramebuffer = {
     destroy: vi.fn()
   }
@@ -47,7 +47,7 @@ describe('ReGLQuantizerUnified - DRY Architecture', () => {
 
   test('🔄 Validation héritage QuantizerBase', () => {
     expect(quantizer).toBeInstanceOf(ReGLQuantizerUnified)
-    
+
     // Vérifier que les méthodes communes sont héritées
     expect(quantizer.quantize).toBeDefined()
     expect(typeof quantizer.quantize).toBe('function')
@@ -59,17 +59,20 @@ describe('ReGLQuantizerUnified - DRY Architecture', () => {
 
     // Simuler un quantizer simplifié pour focus sur l'héritage DRY
     const simplifiedQuantizer = new ReGLQuantizerUnified(mockRegl)
-    
+
     // Override computeHistogramGPU pour éviter la complexité GPU complète
     // Simuler un histogram avec assez de couleurs pour la sélection
     const mockHistogram = new Uint32Array(27)
-    mockHistogram[0] = 100  // Rouge CPC
-    mockHistogram[1] = 80   // Vert CPC  
-    mockHistogram[2] = 60   // Bleu CPC
-    mockHistogram[3] = 40   // Cyan CPC
-    mockHistogram[4] = 20   // Autres couleurs...
-    
-    simplifiedQuantizer['computeHistogramGPU'] = vi.fn().mockReturnValue(mockHistogram)
+    mockHistogram[0] = 100 // Rouge CPC
+    mockHistogram[1] = 80 // Vert CPC
+    mockHistogram[2] = 60 // Bleu CPC
+    mockHistogram[3] = 40 // Cyan CPC
+    mockHistogram[4] = 20 // Autres couleurs...
+
+    // Mock la méthode protégée via any pour les tests
+    ;(simplifiedQuantizer as any).computeHistogramGPU = vi
+      .fn()
+      .mockReturnValue(mockHistogram)
 
     const result = await simplifiedQuantizer.quantize(imageData, {
       colorSpace: 'RGB',
@@ -83,7 +86,7 @@ describe('ReGLQuantizerUnified - DRY Architecture', () => {
     expect(result.indices).toContain(0) // Preselected garanti
     expect(result.histogram).toBeInstanceOf(Uint32Array)
     expect(result.histogram).toBe(mockHistogram) // Notre mock
-    
+
     simplifiedQuantizer.dispose()
   })
 
@@ -92,30 +95,32 @@ describe('ReGLQuantizerUnified - DRY Architecture', () => {
     const basePalette = generateAmstradCPCPalette()
 
     // Test validation targetColors invalide (hérité de QuantizerBase)
-    await expect(quantizer.quantize(imageData, {
-      colorSpace: 'RGB',
-      targetColors: 0, // ❌ Invalide
-      preselectedIndices: [],
-      basePalette
-    })).rejects.toThrow('targetColors must be greater than 0')
+    await expect(
+      quantizer.quantize(imageData, {
+        colorSpace: 'RGB',
+        targetColors: 0, // ❌ Invalide
+        preselectedIndices: [],
+        basePalette
+      })
+    ).rejects.toThrow('targetColors must be greater than 0')
   })
 
   test('🔧 GPU Resources lifecycle', () => {
     // Force resource creation
-    quantizer['ensureGPUResources']()
-    
+    ;(quantizer as any).ensureGPUResources()
+
     expect(mockRegl.framebuffer).toHaveBeenCalled()
     expect(mockRegl.texture).toHaveBeenCalled()
 
     // Test dispose
     quantizer.dispose()
-    expect(quantizer['isDisposed']).toBe(true)
+    expect((quantizer as any).isDisposed).toBe(true)
   })
 
   test('📊 Performance logging hérité', async () => {
     const mockLogger = {
       debug: vi.fn(),
-      info: vi.fn(), 
+      info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn()
     }
@@ -126,7 +131,7 @@ describe('ReGLQuantizerUnified - DRY Architecture', () => {
     ;(loggerQuantizer as any).logger = mockLogger
 
     const imageData = createTestImageData(4, 4)
-    
+
     try {
       await loggerQuantizer.quantize(imageData, {
         colorSpace: 'RGB',
@@ -144,27 +149,29 @@ describe('ReGLQuantizerUnified - DRY Architecture', () => {
   })
 
   test('🎨 ColorSpace conversion mapping', () => {
-    expect(quantizer['mapColorSpaceToInt']('RGB')).toBe(0)
-    expect(quantizer['mapColorSpaceToInt']('Lab')).toBe(1)
-    expect(quantizer['mapColorSpaceToInt']('XYZ')).toBe(2)
+    expect((quantizer as any).mapColorSpaceToInt('RGB')).toBe(0)
+    expect((quantizer as any).mapColorSpaceToInt('Lab')).toBe(1)
+    expect((quantizer as any).mapColorSpaceToInt('XYZ')).toBe(2)
   })
 
   test('🔬 Distance metric mapping', () => {
-    expect(quantizer['mapDistanceMetricToInt']('RGB')).toBe(0)  // euclidean
-    expect(quantizer['mapDistanceMetricToInt']('Lab')).toBe(1)  // cie76
+    expect((quantizer as any).mapDistanceMetricToInt('RGB')).toBe(0) // euclidean
+    expect((quantizer as any).mapDistanceMetricToInt('Lab')).toBe(1) // cie76
   })
 
   test('🚫 Disposed quantizer protection', async () => {
     quantizer.dispose()
-    
+
     const imageData = createTestImageData(4, 4)
-    
-    await expect(quantizer.quantize(imageData, {
-      colorSpace: 'RGB',
-      targetColors: 2,
-      preselectedIndices: [],
-      basePalette: generateAmstradCPCPalette()
-    })).rejects.toThrow('ReGL Quantizer has been disposed')
+
+    await expect(
+      quantizer.quantize(imageData, {
+        colorSpace: 'RGB',
+        targetColors: 2,
+        preselectedIndices: [],
+        basePalette: generateAmstradCPCPalette()
+      })
+    ).rejects.toThrow('ReGL Quantizer has been disposed')
   })
 })
 
@@ -181,8 +188,8 @@ describe('ReGLQuantizerUnified - Shader Generation', () => {
   })
 
   test('🎮 Shader contient les conversions colorspace', () => {
-    const shader = quantizer['generateQuantizationShader']()
-    
+    const shader = (quantizer as any).generateQuantizationShader()
+
     expect(shader).toContain('rgbToXyz')
     expect(shader).toContain('xyzToLab')
     expect(shader).toContain('rgbToLab')
@@ -190,8 +197,8 @@ describe('ReGLQuantizerUnified - Shader Generation', () => {
   })
 
   test('🔢 Shader utilise les constantes exactes', () => {
-    const shader = quantizer['generateQuantizationShader']()
-    
+    const shader = (quantizer as any).generateQuantizationShader()
+
     // Vérifier la matrice RGB_TO_XYZ exacte
     expect(shader).toContain('0.4124564')
     expect(shader).toContain('0.3575761')
@@ -201,14 +208,14 @@ describe('ReGLQuantizerUnified - Shader Generation', () => {
 
 /**
  * 🎯 COUVERTURE TEST DRY:
- * 
+ *
  * ✅ Héritage QuantizerBase validé
- * ✅ Validation partagée testée  
+ * ✅ Validation partagée testée
  * ✅ Performance logging hérité
  * ✅ GPU-specific logic isolée
  * ✅ Resource lifecycle géré
  * ✅ Shader generation validée
  * ✅ Error handling unifié
- * 
+ *
  * 📈 95% logique partagée confirmée par les tests
  */

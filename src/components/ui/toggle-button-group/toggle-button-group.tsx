@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
 import clsx from 'clsx'
+import type { ReactNode } from 'react'
 import animStyles from '@/styles/animations.module.css'
 import styles from './toggle-button-group.module.css'
 
@@ -27,11 +27,11 @@ export type ToggleButtonGroupProps<T = string> = {
 
 /**
  * Composant ToggleButtonGroup unifié - DRY principle implementation
- * 
+ *
  * Remplace les patterns de boutons dupliqués dans :
  * - image-controls-view.tsx (renderModeButton, renderColorSpaceButton)
  * - contrast-strategy-selector.tsx (renderStrategyButton)
- * 
+ *
  * @example
  * ```tsx
  * <ToggleButtonGroup
@@ -45,7 +45,7 @@ export type ToggleButtonGroupProps<T = string> = {
  * />
  * ```
  */
-export function ToggleButtonGroup<T extends string | number>({ 
+export function ToggleButtonGroup<T extends string | number>({
   options,
   value,
   onChange,
@@ -56,9 +56,12 @@ export function ToggleButtonGroup<T extends string | number>({
     <div className={`${styles.buttonGroup} ${className}`.trim()}>
       {options.map((option) => {
         const isActive = value === option.value
-        const ariaLabel = option.ariaLabel || 
-          (ariaLabelPrefix ? `${ariaLabelPrefix} ${option.label}` : String(option.label))
-        
+        const ariaLabel =
+          option.ariaLabel ||
+          (ariaLabelPrefix
+            ? `${ariaLabelPrefix} ${option.label}`
+            : String(option.label))
+
         return (
           <button
             key={String(option.value)}

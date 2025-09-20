@@ -1,16 +1,20 @@
 /**
  * 🏗️ QuantizerBase - Classe abstraite pour unifier les quantizers
- * 
+ *
  * Cette classe factorise toute la logique commune entre ReGL et CPU quantizers
  * pour éliminer la duplication de code et centraliser les algorithmes.
  */
 
-import type { Vector, ColorSpace } from '../type'
 import type { DistanceFn, DistanceMetric } from '../metric/distance'
 import { getDistanceFn } from '../metric/distance'
 import { selectTopIndicesCore } from '../quant/select-to-indices'
-import { selectByStrategy, type StrategyConfig, type SelectionParams } from '../quant/strategy-selector'
+import {
+  type SelectionParams,
+  type StrategyConfig,
+  selectByStrategy
+} from '../quant/strategy-selector'
 import { rgbToLab, rgbToXyz } from '../space/convert'
+import type { ColorSpace, Vector } from '../type'
 
 export interface QuantizeParams {
   readonly targetColors: number
@@ -115,7 +119,9 @@ export abstract class QuantizerBase {
     if (params.basePalette.length === 0) {
       throw new Error('basePalette cannot be empty')
     }
-    if (params.preselectedIndices.some(idx => idx >= params.basePalette.length)) {
+    if (
+      params.preselectedIndices.some((idx) => idx >= params.basePalette.length)
+    ) {
       throw new Error('preselectedIndices contains invalid index')
     }
   }
@@ -134,7 +140,9 @@ export abstract class QuantizerBase {
     return {
       end: () => {
         const duration = performance.now() - startTime
-        console.log(`✅ [${this.getQuantizerType()}] ${operation} completed in ${duration.toFixed(2)}ms`)
+        console.log(
+          `✅ [${this.getQuantizerType()}] ${operation} completed in ${duration.toFixed(2)}ms`
+        )
       }
     }
   }
@@ -154,18 +162,18 @@ export abstract class QuantizerBase {
    */
   protected computeImageHash(imageData: ImageData): string {
     const { width, height, data } = imageData
-    
+
     // Sample quelques pixels pour un hash rapide
     const sampleSize = Math.min(1000, data.length / 4)
     const step = Math.floor(data.length / (sampleSize * 4))
-    
+
     let hash = 0
     for (let i = 0; i < data.length; i += step * 4) {
       hash = ((hash << 5) - hash + data[i]) | 0
       hash = ((hash << 5) - hash + data[i + 1]) | 0
       hash = ((hash << 5) - hash + data[i + 2]) | 0
     }
-    
+
     return `${width}x${height}-${hash.toString(36)}`
   }
 
@@ -179,7 +187,6 @@ export abstract class QuantizerBase {
         return rgbToLab(rgb)
       case 'XYZ':
         return rgbToXyz(rgb)
-      case 'RGB':
       default:
         return rgb // RGB par défaut
     }
@@ -189,9 +196,13 @@ export abstract class QuantizerBase {
    * 🔧 LOGIQUE COMMUNE: Obtention de la fonction de distance
    * Single source pour la sélection des métriques
    */
-  protected getDistanceFunction(colorSpace: ColorSpace, distanceMetric?: DistanceMetric): DistanceFn {
+  protected getDistanceFunction(
+    colorSpace: ColorSpace,
+    distanceMetric?: DistanceMetric
+  ): DistanceFn {
     // Déterminer la métrique par défaut basée sur l'espace colorimétrique
-    const metric = distanceMetric || (colorSpace === 'Lab' ? 'cie76' : 'euclidean')
+    const metric =
+      distanceMetric || (colorSpace === 'Lab' ? 'cie76' : 'euclidean')
     return getDistanceFn(colorSpace, metric)
   }
 
@@ -219,13 +230,16 @@ export abstract class QuantizerBase {
     indices: number[],
     basePalette: readonly Vector[]
   ): Vector[] {
-    return indices.map(index => [...basePalette[index]] as Vector)
+    return indices.map((index) => [...basePalette[index]] as Vector)
   }
 
   /**
    * 🔧 HELPER: Validation du résultat
    */
-  protected validateResult(result: QuantizeResult, params: QuantizeParams): void {
+  protected validateResult(
+    result: QuantizeResult,
+    params: QuantizeParams
+  ): void {
     if (result.selectedColors.length !== params.targetColors) {
       console.warn(
         `⚠️ [${this.getQuantizerType()}] Expected ${params.targetColors} colors, got ${result.selectedColors.length}`
@@ -234,10 +248,11 @@ export abstract class QuantizerBase {
 
     // Vérifier que toutes les couleurs sont dans la palette de base
     for (const color of result.selectedColors) {
-      const found = params.basePalette.some(baseColor =>
-        baseColor[0] === color[0] &&
-        baseColor[1] === color[1] &&
-        baseColor[2] === color[2]
+      const found = params.basePalette.some(
+        (baseColor) =>
+          baseColor[0] === color[0] &&
+          baseColor[1] === color[1] &&
+          baseColor[2] === color[2]
       )
       if (!found) {
         throw new Error(`Selected color ${color} not found in base palette`)
@@ -252,12 +267,15 @@ export abstract class QuantizerBase {
 export interface QuantizerFactory {
   createCPUQuantizer(config?: Partial<QuantizerConfig>): QuantizerBase
   createReGLQuantizer(config?: Partial<QuantizerConfig>): QuantizerBase
-  createBestQuantizer(preferGPU?: boolean, config?: Partial<QuantizerConfig>): QuantizerBase
+  createBestQuantizer(
+    preferGPU?: boolean,
+    config?: Partial<QuantizerConfig>
+  ): QuantizerBase
 }
 
 /**
  * 🎯 AVANTAGES DE CETTE REFACTORISATION:
- * 
+ *
  * 1. **DRY Principle**: Logique commune factorisée, plus de duplication
  * 2. **Single Source of Truth**: selectTopColors, applyContrastStrategy centralisés
  * 3. **Testabilité**: Logique commune testée une seule fois

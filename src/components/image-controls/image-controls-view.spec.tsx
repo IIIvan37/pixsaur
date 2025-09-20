@@ -37,19 +37,15 @@ vi.mock('@/components/ui/slider', () => ({
 
 describe('ImageControlsView', () => {
   let onModeChange: ReturnType<typeof vi.fn>
-  let onDitheringChange: ReturnType<typeof vi.fn>
   let onColorSpaceChange: ReturnType<typeof vi.fn>
   let props: ImageControlsViewProps
 
   beforeEach(() => {
     onModeChange = vi.fn()
-    onDitheringChange = vi.fn()
     onColorSpaceChange = vi.fn()
     props = {
       mode: '0',
       onModeChange,
-      dithering: { intensity: 0.5 },
-      onDitheringChange,
       colorSpace: 'RGB',
       onColorSpaceChange
     }

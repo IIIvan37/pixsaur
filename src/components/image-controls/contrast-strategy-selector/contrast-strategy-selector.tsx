@@ -42,7 +42,8 @@ export function ContrastStrategySelector() {
     {
       value: 'balanced' as ContrastStrategy,
       label: 'Équilibré',
-      ariaLabel: 'Équilibré - Équilibre fréquence/contraste - Meilleur pour dominantes colorées'
+      ariaLabel:
+        'Équilibré - Équilibre fréquence/contraste - Meilleur pour dominantes colorées'
     }
   ]
 
@@ -53,7 +54,7 @@ export function ContrastStrategySelector() {
         options={strategyOptions}
         value={contrastStrategy}
         onChange={handleStrategyChange}
-        ariaLabelPrefix="Contraste"
+        ariaLabelPrefix='Contraste'
       />
     </Flex>
   )

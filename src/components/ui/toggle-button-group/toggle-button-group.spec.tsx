@@ -1,6 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { ToggleButtonGroup } from './toggle-button-group'
+import { fireEvent, render, screen } from '@testing-library/react'
 import type { ToggleButtonOption } from './toggle-button-group'
+import { ToggleButtonGroup } from './toggle-button-group'
 
 describe('ToggleButtonGroup', () => {
   const mockOptions: ToggleButtonOption[] = [
@@ -19,7 +19,7 @@ describe('ToggleButtonGroup', () => {
     render(
       <ToggleButtonGroup
         options={mockOptions}
-        value="option1"
+        value='option1'
         onChange={mockOnChange}
       />
     )
@@ -33,7 +33,7 @@ describe('ToggleButtonGroup', () => {
     render(
       <ToggleButtonGroup
         options={mockOptions}
-        value="option2"
+        value='option2'
         onChange={mockOnChange}
       />
     )
@@ -49,7 +49,7 @@ describe('ToggleButtonGroup', () => {
     render(
       <ToggleButtonGroup
         options={mockOptions}
-        value="option1"
+        value='option1'
         onChange={mockOnChange}
       />
     )
@@ -62,9 +62,9 @@ describe('ToggleButtonGroup', () => {
     render(
       <ToggleButtonGroup
         options={mockOptions}
-        value="option1"
+        value='option1'
         onChange={mockOnChange}
-        ariaLabelPrefix="Mode"
+        ariaLabelPrefix='Mode'
       />
     )
 
@@ -81,7 +81,7 @@ describe('ToggleButtonGroup', () => {
     render(
       <ToggleButtonGroup
         options={optionsWithCustomLabels}
-        value="rgb"
+        value='rgb'
         onChange={mockOnChange}
       />
     )
@@ -94,9 +94,9 @@ describe('ToggleButtonGroup', () => {
     const { container } = render(
       <ToggleButtonGroup
         options={mockOptions}
-        value="option1"
+        value='option1'
         onChange={mockOnChange}
-        className="custom-class"
+        className='custom-class'
       />
     )
 

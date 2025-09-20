@@ -518,7 +518,7 @@ export class ReGLQuantizer {
     try {
       // ✅ OPTIMISATION: Cache basé sur hash des données d'image
       const imageHash = this.computeImageHash(imageData)
-      
+
       if (this.lastImageDataHash === imageHash && this.inputTexture) {
         adapterLogger.debug(
           `♻️ [ReGL] Reusing cached input texture: ${imageData.width}x${imageData.height}`
@@ -557,11 +557,11 @@ export class ReGLQuantizer {
     // Hash simple mais efficace : taille + échantillonnage des pixels
     const samples = []
     const step = Math.max(1, Math.floor(imageData.data.length / 256)) // 256 échantillons max
-    
+
     for (let i = 0; i < imageData.data.length; i += step) {
       samples.push(imageData.data[i])
     }
-    
+
     return `${imageData.width}x${imageData.height}_${samples.join(',')}`
   }
 

@@ -1,17 +1,17 @@
 import { useCallback, useEffect } from 'react'
-import { 
-  UnifiedLogger,
+import {
+  adapterLogger,
   type LoggerConfig,
   logger,
-  adapterLogger,
-  quantizerLogger,
   paletteLogger,
+  quantizerLogger,
+  UnifiedLogger,
   webglLogger
 } from '../utils/logger/unified-logger'
 
 /**
  * 🔄 Hook DRY pour gérer la configuration du logger unifié
- * 
+ *
  * REFACTORISATION: Utilise maintenant le système unifié pour éliminer
  * la duplication de code dans les appels de configuration.
  */
@@ -36,16 +36,6 @@ export const useLogger = () => {
   const setTimingEnabled = useCallback((enableTimers: boolean) => {
     UnifiedLogger.configureAll({ enableTimers })
   }, [])
-
-  /**
-   * Configuration complète
-   */
-  const configureLogging = useCallback((config: Partial<LoggerConfig>) => {
-    logger.configure(config)
-    adapterLogger.configure(config)
-    webglLogger.configure(config)
-    quantizerLogger.configure(config)
-    paletteLogger.configure(config)
   /**
    * 🎯 AMÉLIORATION DRY: Configuration groupée unifiée
    */
@@ -77,11 +67,11 @@ export const useLogger = () => {
   const getPerformanceStats = useCallback(() => {
     const allInstances = UnifiedLogger.getAllInstances()
     const stats: Record<string, string[]> = {}
-    
+
     for (const [name, instance] of allInstances) {
       stats[name] = instance.getActiveTimers()
     }
-    
+
     return stats
   }, [])
 
@@ -95,15 +85,15 @@ export const useLogger = () => {
   return {
     // Configuration centralisée (DRY)
     setLoggingEnabled,
-    setLogLevel, 
+    setLogLevel,
     setTimingEnabled,
     setGroupingEnabled,
     configureLogging,
-    
+
     // Monitoring centralisé (DRY)
     clearAllTimers,
     getPerformanceStats,
-    
+
     // Accès direct aux loggers (compatibilité)
     logger,
     adapterLogger,
@@ -112,5 +102,3 @@ export const useLogger = () => {
     webglLogger
   }
 }
-
-export default useLogger

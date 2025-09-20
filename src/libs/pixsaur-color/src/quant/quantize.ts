@@ -1,3 +1,4 @@
+import { paletteLogger } from '@/utils/logger'
 import { buildHistogram } from '../histogram'
 import { mapAndDither } from '../map'
 import {
@@ -8,7 +9,6 @@ import {
 import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import type { ColorSpace, Vector } from '../type'
 import { selectTopIndices } from './select-to-indices'
-import { paletteLogger } from '@/utils/logger'
 import { selectByStrategy } from './strategy-selector'
 
 export type DitheringMode =
@@ -80,10 +80,10 @@ export function createQuantizer({
     paletteLogger.time('📊 [Histogram] Building color histogram')
     const histogram = buildHistogram(vecs.map(toW), workingPal, distFn)
     paletteLogger.timeEnd('📊 [Histogram] Building color histogram')
-    
+
     const counts = new Uint32Array(histogram)
     const totalPixels = counts.reduce((sum, count) => sum + count, 0)
-    
+
     paletteLogger.debug(
       `📊 [Histogram] Processed ${totalPixels} pixels across ${workingPal.length} palette colors`
     )

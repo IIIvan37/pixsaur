@@ -36,7 +36,7 @@ export function ImageControlsView({
   onColorSpaceChange
 }: Readonly<ImageControlsViewProps>) {
   // Préparer les options pour les groupes de boutons
-  const modeOptions = Object.keys(CPC_MODE_CONFIG).map(key => ({
+  const modeOptions = Object.keys(CPC_MODE_CONFIG).map((key) => ({
     value: key as CpcModeKey,
     label: key
   }))
@@ -55,7 +55,7 @@ export function ImageControlsView({
           options={modeOptions}
           value={mode}
           onChange={onModeChange}
-          ariaLabelPrefix="Mode"
+          ariaLabelPrefix='Mode'
         />
       </Flex>
 
@@ -71,7 +71,7 @@ export function ImageControlsView({
           options={colorSpaceOptions}
           value={colorSpace}
           onChange={onColorSpaceChange}
-          ariaLabelPrefix="ColorSpace"
+          ariaLabelPrefix='ColorSpace'
         />
       </Flex>
     </div>

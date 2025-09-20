@@ -1,15 +1,15 @@
 /**
  * 🔄 Logger Unifié DRY - Single Source of Truth pour le Logging
- * 
+ *
  * Ce module remplace les 6 loggers actuels par un système unifié qui élimine
  * la duplication de code et centralise la configuration.
- * 
+ *
  * AVANT (Problématique):
  * - adapterLogger, quantizerLogger, paletteLogger, webglLogger, logger, createLogger
  * - Code dupliqué pour chaque logger
  * - Configuration inconsistante
  * - Maintenance difficile
- * 
+ *
  * APRÈS (Solution DRY):
  * - UnifiedLogger avec instances par module
  * - Configuration centralisée
@@ -38,16 +38,16 @@ export interface LoggerInterface {
   info(...args: any[]): void
   warn(...args: any[]): void
   error(...args: any[]): void
-  
+
   // Grouping
   group(label: string): void
   groupEnd(): void
-  
+
   // Performance timing
   time(name: string): TimerHandle
   timeSync<T>(name: string, fn: () => T): T
   timeAsync<T>(name: string, fn: () => Promise<T>): Promise<T>
-  
+
   // Configuration
   configure(config: Partial<LoggerConfig>): void
   isEnabled(): boolean
@@ -59,7 +59,7 @@ export interface LoggerInterface {
  */
 export const MODULE_EMOJIS = {
   core: '🔧',
-  adapter: '🔄', 
+  adapter: '🔄',
   quantizer: '🎯',
   palette: '🎨',
   webgl: '🎮',
@@ -92,7 +92,7 @@ export class UnifiedLogger implements LoggerInterface {
   private config: LoggerConfig
   private activeTimers = new Map<string, number>()
   private static instances = new Map<string, UnifiedLogger>()
-  
+
   private constructor(
     private readonly moduleName: string,
     initialConfig: Partial<LoggerConfig> = {}
@@ -110,20 +110,23 @@ export class UnifiedLogger implements LoggerInterface {
    * Garantit une seule instance par module
    */
   static getInstance(
-    moduleName: string, 
+    moduleName: string,
     config: Partial<LoggerConfig> = {}
   ): UnifiedLogger {
     if (!UnifiedLogger.instances.has(moduleName)) {
-      UnifiedLogger.instances.set(moduleName, new UnifiedLogger(moduleName, config))
+      UnifiedLogger.instances.set(
+        moduleName,
+        new UnifiedLogger(moduleName, config)
+      )
     }
-    
+
     const instance = UnifiedLogger.instances.get(moduleName)!
-    
+
     // Mettre à jour la config si fournie
     if (Object.keys(config).length > 0) {
       instance.configure(config)
     }
-    
+
     return instance
   }
 
@@ -147,11 +150,11 @@ export class UnifiedLogger implements LoggerInterface {
    */
   private shouldLog(level: LoggerConfig['level']): boolean {
     if (!this.config.enabled) return false
-    
+
     const levels = ['debug', 'info', 'warn', 'error']
     const currentLevelIndex = levels.indexOf(this.config.level)
     const requestedLevelIndex = levels.indexOf(level)
-    
+
     return requestedLevelIndex >= currentLevelIndex
   }
 
@@ -160,11 +163,14 @@ export class UnifiedLogger implements LoggerInterface {
    */
   private formatMessage(...args: any[]): any[] {
     if (!this.config.prefix) return args
-    
-    const styledPrefix = this.config.color 
-      ? [`%c${this.config.prefix}`, `color: ${this.config.color}; font-weight: bold`]
+
+    const styledPrefix = this.config.color
+      ? [
+          `%c${this.config.prefix}`,
+          `color: ${this.config.color}; font-weight: bold`
+        ]
       : [this.config.prefix]
-    
+
     return [...styledPrefix, ...args]
   }
 
@@ -222,7 +228,7 @@ export class UnifiedLogger implements LoggerInterface {
     const startTime = globalThis.performance.now()
     const timerKey = `${this.moduleName}-${name}`
     this.activeTimers.set(timerKey, startTime)
-    
+
     this.debug(`⏱️ Timer started: ${name}`)
 
     return {
@@ -273,8 +279,8 @@ export class UnifiedLogger implements LoggerInterface {
   getActiveTimers(): string[] {
     const modulePrefix = `${this.moduleName}-`
     return Array.from(this.activeTimers.keys())
-      .filter(key => key.startsWith(modulePrefix))
-      .map(key => key.substring(modulePrefix.length))
+      .filter((key) => key.startsWith(modulePrefix))
+      .map((key) => key.substring(modulePrefix.length))
   }
 
   /**
@@ -313,12 +319,14 @@ export class UnifiedLogger implements LoggerInterface {
 /**
  * Créateurs de loggers standardisés pour remplacer les anciens
  */
-export const createModuleLogger = (moduleName: string, config?: Partial<LoggerConfig>) =>
-  UnifiedLogger.getInstance(moduleName, config)
+export const createModuleLogger = (
+  moduleName: string,
+  config?: Partial<LoggerConfig>
+) => UnifiedLogger.getInstance(moduleName, config)
 
 // Instances pré-configurées pour compatibilité
 export const logger = UnifiedLogger.getInstance('core')
-export const adapterLogger = UnifiedLogger.getInstance('adapter') 
+export const adapterLogger = UnifiedLogger.getInstance('adapter')
 export const quantizerLogger = UnifiedLogger.getInstance('quantizer')
 export const paletteLogger = UnifiedLogger.getInstance('palette')
 export const webglLogger = UnifiedLogger.getInstance('webgl')
@@ -327,16 +335,20 @@ export const factoryLogger = UnifiedLogger.getInstance('factory')
 
 // Utilitaires globaux
 export const performance = {
-  quantization: <T>(fn: () => T): T => quantizerLogger.timeSync('Total Quantization', fn),
-  adaptation: <T>(fn: () => T): T => adapterLogger.timeSync('Processor Adaptation', fn),
+  quantization: <T>(fn: () => T): T =>
+    quantizerLogger.timeSync('Total Quantization', fn),
+  adaptation: <T>(fn: () => T): T =>
+    adapterLogger.timeSync('Processor Adaptation', fn),
   webgl: <T>(fn: () => T): T => webglLogger.timeSync('WebGL Operation', fn),
-  palette: <T>(fn: () => T): T => paletteLogger.timeSync('Palette Generation', fn),
-  factory: <T>(fn: () => T): T => factoryLogger.timeSync('Factory Operation', fn)
+  palette: <T>(fn: () => T): T =>
+    paletteLogger.timeSync('Palette Generation', fn),
+  factory: <T>(fn: () => T): T =>
+    factoryLogger.timeSync('Factory Operation', fn)
 }
 
 /**
  * 🎯 AVANTAGES DE CETTE REFACTORISATION DRY:
- * 
+ *
  * 1. **Élimination Duplication**: 6 loggers → 1 classe réutilisable
  * 2. **Configuration Centralisée**: Une seule source de vérité
  * 3. **Interface Cohérente**: Méthodes standardisées partout

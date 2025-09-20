@@ -3,12 +3,12 @@ import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { getColorSpaceToRgbFn } from '@/libs/pixsaur-color/src/space'
 import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes/rgb-to-indexes'
 import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
 import { logger } from '@/utils/logger'
-import { OptimizedImageProcessor } from '@/utils/optimized-image-processor'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   colorSpaceAtom,
@@ -132,34 +132,36 @@ export const previewImageAtom = atom(async (get) => {
     normalized.width,
     normalized.height
   )
-  const remapped = OptimizedImageProcessor.remapImageDataInPlace(
-    imageDataToRemap,
-    reducedRgb
-  )
+  const remapped = remapImageDataToPalette(imageDataToRemap, reducedRgb)
   logger.timeEnd('  🎯 Remapping')
 
   logger.time('  🖌️ Canvas Operations')
-  
+
   const targetW = CPC_MODE_CONFIG[mode].width
   const targetH = CPC_MODE_CONFIG[mode].height
-  
+
   // ✅ OPTIMISATION: Réutiliser un seul canvas pour tout le pipeline
   const workCanvas = document.createElement('canvas')
   workCanvas.width = Math.max(remapped.width, targetW)
   workCanvas.height = Math.max(remapped.height, targetH)
   const workCtx = workCanvas.getContext('2d')
   if (!workCtx) return null
-  
+
   // Clear et setup du canvas
   workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height)
   workCtx.putImageData(remapped, 0, 0)
   // ✅ OPTIMISATION: Centrage direct sans drawImage supplémentaire
   const dx = Math.floor((targetW - remapped.width) / 2)
   const dy = Math.floor((targetH - remapped.height) / 2)
-  
+
   // Si pas de centrage nécessaire, utiliser directement l'image remappée
   let result: ImageData
-  if (dx === 0 && dy === 0 && remapped.width === targetW && remapped.height === targetH) {
+  if (
+    dx === 0 &&
+    dy === 0 &&
+    remapped.width === targetW &&
+    remapped.height === targetH
+  ) {
     result = remapped // Pas de recopie nécessaire
   } else {
     // Créer canvas final seulement si centrage nécessaire
@@ -182,9 +184,8 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   const toRGB = getColorSpaceToRgbFn(colorSpace)
   const raw = await get(reducedPaletteRawAtom)
 
-  // VERSION OPTIMISÉE: conversion en place puis quantification
-  const projected = raw.slice() // Shallow copy pour ne pas muter l'original
-  OptimizedImageProcessor.convertPaletteInPlace(projected, toRGB)
+  // Conversion colorspace vers RGB
+  const projected = raw.map(toRGB)
 
   // Helper pour quantification CPC optimisée
   const quantifyToCP = (value: number): number => {
