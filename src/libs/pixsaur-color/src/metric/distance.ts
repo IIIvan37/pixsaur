@@ -99,10 +99,8 @@ export type DistanceFn = (a: Vector, b: Vector) => number
 
 export type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
 
-export const ColorSpaceDistanceMetric: Record<ColorSpace, DistanceMetric[]> = {
-  RGB: ['euclidean'],
-  XYZ: ['euclidean'],
-  Lab: ['cie76', 'deltaE2000']
+export const DISTANCE_METRICS_BY_COLORSPACE: Record<ColorSpace, DistanceMetric[]> = {
+  RGB: ['euclidean']
 }
 
 const distanceFnFromMetric: Record<DistanceMetric, DistanceFn> = {
@@ -123,7 +121,7 @@ export const getDistanceFn = (
   colorSpace: ColorSpace,
   metric: DistanceMetric
 ): DistanceFn => {
-  const supportedMetrics = ColorSpaceDistanceMetric[colorSpace]
+  const supportedMetrics = DISTANCE_METRICS_BY_COLORSPACE[colorSpace]
   if (!supportedMetrics) {
     throw new Error(`Unsupported color space: "${colorSpace}"`)
   }

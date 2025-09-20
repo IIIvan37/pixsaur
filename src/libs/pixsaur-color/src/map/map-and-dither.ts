@@ -346,7 +346,7 @@ export function applyNoDither(
 }
 
 import {
-  ColorSpaceDistanceMetric,
+  DISTANCE_METRICS_BY_COLORSPACE,
   type DistanceFn,
   getDistanceFn
 } from '../metric/distance'
@@ -597,7 +597,7 @@ export function mapAndDither(
   const toRGB = getColorSpaceToRgbFn(colorSpace)
   const distFn = getDistanceFn(
     colorSpace,
-    ColorSpaceDistanceMetric[colorSpace][0]
+    DISTANCE_METRICS_BY_COLORSPACE[colorSpace][0]
   )
 
   const bufCS = new Float32Array(N * 3)

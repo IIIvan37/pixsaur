@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
-import { ColorSpaceDistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
+import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes/rgb-to-indexes'
 import {
@@ -55,7 +55,7 @@ export const quantizerAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   if (!buf || !cropped) return null
 
-  const availableMetrics = ColorSpaceDistanceMetric[colorSpace]
+  const availableMetrics = DISTANCE_METRICS_BY_COLORSPACE[colorSpace]
   const distanceMetric = availableMetrics[0]
 
   const quantizer = createQuantizer({

@@ -14,7 +14,6 @@ import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 import { adapterLogger, quantizerLogger } from '@/utils/logger'
 
 /**
@@ -1191,7 +1190,7 @@ export class ReGLQuantizer {
     imageData: ImageData,
     basePalette: readonly Vector[],
     targetColors: number,
-    config: ReGLQuantizeConfig
+    _config: ReGLQuantizeConfig
   ): number[] {
     const start = performance.now()
     

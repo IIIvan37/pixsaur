@@ -9,6 +9,7 @@ export interface RgbSliderProps {
   readonly onChange: (value: Vector) => void
   readonly disabled?: boolean
   readonly label?: string
+  readonly showPreview?: boolean
 }
 
 /**
@@ -21,7 +22,8 @@ export function RgbSlider({
   value,
   onChange,
   disabled = false,
-  label = 'RGB'
+  label = 'RGB',
+  showPreview = true
 }: RgbSliderProps) {
   const [localValue, setLocalValue] = useState(value)
 
@@ -81,11 +83,13 @@ export function RgbSlider({
           hideLabel={false}
         />
 
-        <div
-          className={styles.preview}
-          style={{ backgroundColor: `rgb(${r}, ${g}, ${b})` }}
-          title={`RGB(${r}, ${g}, ${b})`}
-        />
+        {showPreview && (
+          <div
+            className={styles.preview}
+            style={{ backgroundColor: `rgb(${r}, ${g}, ${b})` }}
+            title={`RGB(${r}, ${g}, ${b})`}
+          />
+        )}
       </Flex>
     </div>
   )

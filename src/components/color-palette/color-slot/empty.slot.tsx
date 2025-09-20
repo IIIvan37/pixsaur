@@ -3,7 +3,7 @@ import { cpcHardwareAtom } from '@/app/store/config/config'
 import type { PaletteSlot } from '@/app/store/palette/types'
 import Icon from '@/components/ui/icon'
 import PixsaurPopover from '@/components/ui/popover'
-import { RgbSlider } from '@/components/ui/rgb-slider'
+import { ColorPickerPopup } from '@/components/ui/color-picker-popup'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { CPCColor } from '@/libs/types'
 import { ColorGrid } from '../color-grid'
@@ -57,12 +57,16 @@ export function EmptySlotButton({
       }
       open={open}
       onOpenChange={onOpenChange}
+      variant={isPlus ? 'unstyled' : 'default'}
     >
       {isPlus ? (
-        <RgbSlider
-          value={[128, 128, 128]} // Valeur par défaut
-          onChange={handleRgbChange}
-          label='Couleur personnalisée CPC+'
+        <ColorPickerPopup
+          initialColor={[128, 128, 128]} // Valeur par défaut (gris moyen)
+          isLocked={false}
+          onColorConfirm={handleRgbChange}
+          onToggleLock={() => {}} // Pas de verrouillage pour les slots vides
+          onClose={() => onOpenChange(false)}
+          hideLockButton={true}
         />
       ) : (
         <ColorGrid

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cpcHardwareAtom } from '@/app/store/config/config'
 import type { PaletteSlot } from '@/app/store/palette/types'
 import PixsaurPopover from '@/components/ui/popover'
-import { RgbSlider } from '@/components/ui/rgb-slider'
+import { ColorPickerPopup } from '@/components/ui/color-picker-popup'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { CPCColor } from '@/libs/types'
 import animStyles from '@/styles/animations.module.css'
@@ -145,6 +145,7 @@ export const ColorPaletteView = ({
                   onOpenChange={(open) =>
                     setOpenPopoverIndex(open ? idx : null)
                   }
+                  variant={!isClassicMode ? 'unstyled' : 'default'}
                   trigger={
                     <ColorSlot
                       idx={idx}
@@ -174,10 +175,12 @@ export const ColorPaletteView = ({
                       onClose={() => setOpenPopoverIndex(null)}
                     />
                   ) : (
-                    <RgbSlider
-                      value={slot.color}
-                      onChange={(vector) => handleRgbColorSelect(vector, idx)}
-                      label='Modifier la couleur'
+                    <ColorPickerPopup
+                      initialColor={slot.color}
+                      isLocked={slot.locked}
+                      onColorConfirm={(vector) => handleRgbColorSelect(vector, idx)}
+                      onToggleLock={() => onToggleLock(idx)}
+                      onClose={() => setOpenPopoverIndex(null)}
                     />
                   )}
                 </PixsaurPopover>
