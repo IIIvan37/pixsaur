@@ -6,6 +6,30 @@ Cette documentation est optimisée pour les agents AI développant et maintenant
 
 ## 🎯 Vue d'ense### 🔍 Patterns observés
 
+### CPC Plus GPU Histogram Fix (Sept 20, 2025)
+**Cas d'étude : Debugging systematic d'un bug GPU complexe**
+
+```
+Problem: CPC Plus shows wrong colors (blue-dominated vs full 4096-color diversity)
+Root Cause Analysis:
+1. ❌ UI issue? → ✅ UI working correctly (getCPCPaletteByHardware)
+2. ❌ Quantization config? → ✅ Config passing 4096 colors correctly  
+3. 🎯 GPU Histogram hard-coded to 27 colors despite 4096 input
+
+Critical Discovery:
+regl-quantizer.ts:956 🔍 [HISTOGRAM DEBUG] GPU Histogram: 413640 pixels, 10/27 colors detected
+# Should be: 10/4096 colors detected
+
+Fix Implementation:
+- computeHistogramGPU: Add basePalette parameter for dynamic palette
+- GPU shader: Replace hard-coded getCPCColor() with texture lookup
+- WebGL compatibility: Use for(i < 4096) with break for dynamic size
+- Histogram parsing: Dynamic index calculation vs hard-coded /26.0
+
+Result: CPC Plus now detects 15/4096+ colors with visual diversity improvement
+Performance: CPC Classic 30ms → CPC Plus 300ms (expected for larger palette)
+```
+
 ### ReGL Quantizer fonctionnel (Nouveau Sept 18, 2025)
 ```
 🎮 [ReGL] GPU quantization completed: 16/16 colors in 400-600ms
@@ -176,6 +200,36 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 
 ### 🤖 AI Assistance Patterns
 
+### CPC Plus Debugging Methodology
+```typescript
+// 1. Systematic elimination approach
+❌ UI Components → ✅ Check getCPCPaletteByHardware() 
+❌ Configuration → ✅ Verify basePalette.length (27 vs 4096)
+❌ State Management → ✅ Validate atoms and hardware switching
+🎯 GPU Shader Logic → Found: Hard-coded 27-color constraints
+
+// 2. Critical debugging logs to add
+console.log(`🔍 [HISTOGRAM FIX] Using palette with ${palette.length} colors`)
+console.log(`🔍 [HISTOGRAM DEBUG] GPU Histogram: ${pixels} pixels, ${colors}/${total} colors detected`)
+
+// 3. WebGL shader debugging patterns  
+for (int i = 0; i < 4096; i++) {        // Fixed upper bound
+  if (i >= u_paletteSize) break;        // Dynamic break condition
+  vec3 cpcColor = getCPCColor(i);       // Texture lookup vs hard-coded
+}
+
+// 4. Performance vs correctness tradeoff
+CPC Classic: 27 colors, 30ms  ✅ Fast + Correct
+CPC Plus: 4096 colors, 300ms  ✅ Slow + Correct (acceptable for accuracy)
+```
+
+### Quantization Algorithm Limitations
+```
+Current: Frequency-based selection → Similar colors grouped
+Issue: CPC Plus selects 15 similar greens instead of diverse RGB
+Future: Diversity-based algorithm using maximum color distance
+```
+
 ### Quand modifier du code
 1. **Toujours** vérifier les types avec `readonly` props
 2. **Toujours** utiliser `RefObject<T>` pour les refs
@@ -191,6 +245,9 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 - ❌ `TODO:` comments → ✅ `FUTURE ENHANCEMENT:`
 - ❌ Dynamic icon access → ✅ Static icon mapping
 - ❌ **Redéfinir types existants** → ✅ **Import depuis pixsaur-color**
+- ❌ **GPU shader hard-coded loops** → ✅ **Dynamic palette size with WebGL constraints**
+- ❌ **Texture format mismatches** → ✅ **`format: 'rgb', type: 'uint8'` for palette textures**
+- ❌ **Variable loop bounds in WebGL** → ✅ **Fixed upper bound + break condition**
 
 ### Architecture Decision Records (ADR)
 - **ESLint/Prettier → Biome** : Outil unifié, meilleure performance
@@ -233,6 +290,7 @@ CPU Processor (Stable) ←→ ReGL Processor (Future GPU + Fallback CPU)
 - ✅ **87% DRY Violations Eliminated** : 3-phase systematic approach with enterprise patterns
 - ✅ **Architecture Excellence** : 6 design patterns, 95% test coverage, 8 comprehensive guides
 - 🧹 **Code Cleanup Complete** : Dead code eliminated, Biome 0 errors/warnings, optimal quality (Sept 20, 2025)
+- 🎯 **CPC Plus GPU Histogram Fix** : Dynamic palette support 27→4096 colors, WebGL loop optimization (Sept 20, 2025)
 
 ---
 
