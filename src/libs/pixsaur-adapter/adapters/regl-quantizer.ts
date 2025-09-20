@@ -82,10 +82,7 @@ export class ReGLQuantizer {
   private readonly regl: REGL.Regl
   private readonly capabilities: ReGLCapabilities
 
-  // Cache pour optimiser les uploads GPU répétés
-  private lastImageDataHash: string | null = null
-
-  // Ressources GPU (réutilisées si possible)
+  // GPU Resources (initialized later)
   private histogramCommand?: REGL.DrawCommand
   private histogramFBO?: REGL.Framebuffer
   private inputTexture?: REGL.Texture2D
@@ -185,7 +182,7 @@ export class ReGLQuantizer {
 
       // 2. Calcul histogramme GPU
       const histogramStart = performance.now()
-      const histogram = await this.computeHistogramGPU(imageData, config)
+      const histogram = await this.computeHistogramGPU(imageData, basePalette, config)
       const histogramTime = performance.now() - histogramStart
 
       // 3. Sélection palette optimisée
@@ -516,16 +513,6 @@ export class ReGLQuantizer {
    */
   private updateInputTexture(imageData: ImageData): void {
     try {
-      // ✅ OPTIMISATION: Cache basé sur hash des données d'image
-      const imageHash = this.computeImageHash(imageData)
-
-      if (this.lastImageDataHash === imageHash && this.inputTexture) {
-        adapterLogger.debug(
-          `♻️ [ReGL] Reusing cached input texture: ${imageData.width}x${imageData.height}`
-        )
-        return // Pas de mise à jour nécessaire
-      }
-
       if (this.inputTexture) {
         this.inputTexture.destroy()
       }
@@ -539,8 +526,6 @@ export class ReGLQuantizer {
         flipY: false
       })
 
-      this.lastImageDataHash = imageHash
-
       adapterLogger.debug(
         `📸 [ReGL] Input texture updated: ${imageData.width}x${imageData.height}`
       )
@@ -548,21 +533,6 @@ export class ReGLQuantizer {
       adapterLogger.error('❌ [ReGL] Failed to update input texture', error)
       throw error
     }
-  }
-
-  /**
-   * ✅ OPTIMISATION: Compute hash rapide pour détecter les images identiques
-   */
-  private computeImageHash(imageData: ImageData): string {
-    // Hash simple mais efficace : taille + échantillonnage des pixels
-    const samples = []
-    const step = Math.max(1, Math.floor(imageData.data.length / 256)) // 256 échantillons max
-
-    for (let i = 0; i < imageData.data.length; i += step) {
-      samples.push(imageData.data[i])
-    }
-
-    return `${imageData.width}x${imageData.height}_${samples.join(',')}`
   }
 
   /**
@@ -615,6 +585,7 @@ export class ReGLQuantizer {
    */
   private async computeHistogramGPU(
     imageData: ImageData,
+    basePalette: readonly Vector[],
     config: ReGLQuantizeConfig
   ): Promise<number[]> {
     const gpuStart = performance.now()
@@ -623,8 +594,8 @@ export class ReGLQuantizer {
     )
 
     try {
-      // ✅ Utilise la VRAIE GPU avec conversions colorSpace
-      const cpcPalette = generateAmstradCPCPalette().map((vector) =>
+      // ✅ Utilise la palette passée en paramètre (Classic=27, Plus=4096)
+      const cpcPalette = basePalette.map((vector) =>
         Array.from(vector)
       )
 
@@ -789,6 +760,8 @@ export class ReGLQuantizer {
         frag: `
           precision highp float;
           uniform sampler2D u_image;
+          uniform sampler2D u_cpcPalette;
+          uniform int u_paletteSize;
           uniform vec2 u_imageSize;
           uniform int u_colorSpace;
           uniform int u_distanceMetric;
@@ -876,7 +849,11 @@ export class ReGLQuantizer {
             return length(diff);
           }
           
-          ${this.generateCPCShaderCode()}
+          // Fonction pour récupérer une couleur de la texture de palette
+          vec3 getCPCColor(int index) {
+            float x = (float(index) + 0.5) / float(u_paletteSize);
+            return texture2D(u_cpcPalette, vec2(x, 0.5)).rgb * 255.0;
+          }
           
           void main() {
             vec2 uv = gl_FragCoord.xy / u_imageSize;
@@ -887,8 +864,11 @@ export class ReGLQuantizer {
             float minDistance = 999999.0;
             int closestIndex = 0;
             
-            for (int i = 0; i < 27; i++) {
-              vec3 cpcColor = getCPCColor(i) * 255.0; // Convertir en 0-255
+            // Boucle fixe pour WebGL 1.0 (max 4096 couleurs CPC Plus)
+            for (int i = 0; i < 4096; i++) {
+              if (i >= u_paletteSize) break;
+              
+              vec3 cpcColor = getCPCColor(i); // Déjà en 0-255
               
               float distance = calculateDistance(pixel, cpcColor, u_colorSpace, u_distanceMetric);
               
@@ -898,8 +878,8 @@ export class ReGLQuantizer {
               }
             }
             
-            // Output l'index normalisé (0-1 range pour 27 couleurs)
-            gl_FragColor = vec4(float(closestIndex) / 26.0, 0.0, 0.0, 1.0);
+            // Output l'index normalisé (0-1 range pour u_paletteSize couleurs)
+            gl_FragColor = vec4(float(closestIndex) / float(u_paletteSize - 1), 0.0, 0.0, 1.0);
           }
         `,
         vert: `
@@ -918,6 +898,8 @@ export class ReGLQuantizer {
         },
         uniforms: {
           u_image: () => this.inputTexture!,
+          u_cpcPalette: () => this.cpcPaletteTexture!,
+          u_paletteSize: cpcPalette.length,
           u_imageSize: [imageData.width, imageData.height],
           u_colorSpace: () => {
             // 0: RGB, 1: Lab, 2: XYZ
@@ -962,10 +944,10 @@ export class ReGLQuantizer {
         framebuffer: outputFBO
       })
 
-      const histogram = new Array(27).fill(0)
+      const histogram = new Array(cpcPalette.length).fill(0)
       for (let i = 0; i < results.length; i += 4) {
-        const colorIndex = Math.round((results[i] / 255) * 26) // 0-26 pour 27 couleurs
-        if (colorIndex >= 0 && colorIndex < 27) {
+        const colorIndex = Math.round((results[i] / 255) * (cpcPalette.length - 1))
+        if (colorIndex >= 0 && colorIndex < cpcPalette.length) {
           histogram[colorIndex]++
         }
       }
@@ -980,6 +962,20 @@ export class ReGLQuantizer {
       adapterLogger.info(
         `🎮 [ReGL] GPU-accelerated histogram: ${totalPixels} pixels in ${gpuTime.toFixed(2)}ms`
       )
+
+      // 🔍 DEBUG DIRECT: Logs forcés pour l'histogramme
+      const nonZeroColors = histogram.filter((count) => count > 0).length
+      console.log(`🔍 [HISTOGRAM DEBUG] GPU Histogram: ${totalPixels} pixels, ${nonZeroColors}/${histogram.length} colors detected`)
+      
+      if (histogram.length > 27) {
+        const topColors = histogram
+          .map((count, index) => ({ index, count }))
+          .filter(({ count }) => count > 0)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 15)
+        
+        console.log(`🔍 [HISTOGRAM DEBUG] Top 15 colors in ${histogram.length}-color palette:`, topColors)
+      }
 
       this.logHistogramStats(histogram, 'GPU')
       return histogram
@@ -1029,8 +1025,19 @@ export class ReGLQuantizer {
     const avgCount = totalPixels / nonZeroColors
 
     quantizerLogger.debug(
-      `📊 [ReGL] ${source} Histogram stats: ${totalPixels} pixels, ${nonZeroColors}/27 colors used, max=${maxCount}, avg=${avgCount.toFixed(1)}`
+      `📊 [ReGL] ${source} Histogram stats: ${totalPixels} pixels, ${nonZeroColors}/${histogram.length} colors used, max=${maxCount}, avg=${avgCount.toFixed(1)}`
     )
+
+    // 🔍 DEBUG: Log des couleurs les plus fréquentes pour CPC Plus
+    if (histogram.length > 27) {
+      const topColors = histogram
+        .map((count, index) => ({ index, count }))
+        .filter(({ count }) => count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+      
+      console.log(`🔍 [HISTOGRAM] Top 10 colors in ${histogram.length}-color histogram:`, topColors)
+    }
   }
 
   /**

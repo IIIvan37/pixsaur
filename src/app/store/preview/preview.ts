@@ -90,14 +90,33 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     return []
   }
 
+  // 🔍 DEBUG: Log des paramètres de quantification
+  const basePalette = getPaletteForHardware(cpcHardware)
+  
+  // 🎯 SOLUTION: Augmenter le nombre de couleurs cibles pour CPC Plus
+  const targetColors = cpcHardware === 'plus' 
+    ? Math.min(256, CPC_MODE_CONFIG[mode].nColors * 4) // 4x plus de couleurs pour CPC Plus
+    : CPC_MODE_CONFIG[mode].nColors
+
+  console.log(`🔍 [DEBUG] CPC Hardware: ${cpcHardware}`)
+  console.log(`🔍 [DEBUG] Base palette size: ${basePalette.length} colors`)
+  console.log(`🔍 [DEBUG] Target colors: ${targetColors} (original: ${CPC_MODE_CONFIG[mode].nColors})`)
+  console.log(`🔍 [DEBUG] Color space: ${colorSpace}`)
+
   const palette = await paletteProcessor.quantizePalette(
     buf,
     cropped,
-    CPC_MODE_CONFIG[mode].nColors,
-    getPaletteForHardware(cpcHardware),
+    targetColors,
+    basePalette,
     lockedVecs,
-    colorSpace
+    colorSpace,
+    // 🎯 SOLUTION: Force strategy 'max' pour CPC Plus pour plus de diversité
+    cpcHardware === 'plus' ? 'max' : undefined
   )
+
+  // 🔍 DEBUG: Log du résultat de quantification
+  console.log(`🔍 [DEBUG] Quantized palette result: ${palette.length} colors`)
+  console.log(`🔍 [DEBUG] First 5 colors:`, palette.slice(0, 5))
 
   return palette
 })
@@ -184,8 +203,15 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   const toRGB = getColorSpaceToRgbFn(colorSpace)
   const raw = await get(reducedPaletteRawAtom)
 
+  // 🔍 DEBUG: Log de la conversion vers RGB
+  console.log(`🔍 [DEBUG RGB] Converting ${raw.length} colors from ${colorSpace} to RGB`)
+  console.log(`🔍 [DEBUG RGB] Hardware: ${cpcHardware}`)
+
   // Conversion colorspace vers RGB
   const projected = raw.map(toRGB)
+
+  // 🔍 DEBUG: Log des couleurs avant quantification hardware
+  console.log(`🔍 [DEBUG RGB] Before hardware quantification:`, projected.slice(0, 5))
 
   // Quantification selon le hardware sélectionné
   if (cpcHardware === 'classic') {
@@ -207,11 +233,14 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
       color[1] = quantifyToCPClassic(g)
       color[2] = quantifyToCPClassic(b)
     }
+    console.log(`🔍 [DEBUG RGB] After CPC Classic quantification:`, projected.slice(0, 5))
   } else {
     // CPC Plus: PAS de quantification supplémentaire !
     // Les couleurs sont déjà correctement générées par generateCPCPlusPalette()
     // qui scale correctement les valeurs 4-bit (0-15) vers 8-bit (0-255)
     // Toute requantification ici casserait la précision CPC Plus
+    console.log(`🔍 [DEBUG RGB] CPC Plus: NO additional quantification applied`)
+    console.log(`🔍 [DEBUG RGB] Final CPC Plus colors:`, projected.slice(0, 5))
   }
 
   return projected
