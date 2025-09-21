@@ -46,7 +46,6 @@ export function ColorGridView({
       {/* @sonar-ignore-next-line a11y/useSemanticElements: Custom color grid requires visual display - select not suitable */}
       <div
         className={styles.colorGrid}
-        role='listbox'
         aria-label='Options de couleur'
       >
         {fullPalette.map((pc: CPCColor, optionIndex: number) => {
@@ -63,7 +62,6 @@ export function ColorGridView({
                   isUsed && styles.colorOptionUsed
                 )}
                 title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
-                role='option'
                 aria-selected={focusedColorIndex === optionIndex}
                 disabled={isUsed}
                 tabIndex={focusedColorIndex === optionIndex ? 0 : -1}

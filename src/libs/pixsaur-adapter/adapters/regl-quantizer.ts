@@ -671,7 +671,7 @@ export class ReGLQuantizer {
 
     // ✅ OPTIMISATION: GPU seulement pour grandes images et RGB simple
     const shouldUseGPU =
-      this.capabilities.canUseGPU && pixelCount > gpuThreshold && true // RGB est toujours supporté sur GPU
+      this.capabilities.canUseGPU && pixelCount > gpuThreshold // RGB est toujours supporté sur GPU
 
     if (shouldUseGPU) {
       return this.computeHistogramGPUAccelerated(imageData, cpcPalette, config)
@@ -1129,8 +1129,14 @@ export class ReGLQuantizer {
 
     if (isCPCPlus && useOptimizedSelection) {
       // 🚀 CPC Plus: Bypass de l'histogramme + Sélection GPU optimisée
+      const getModeLabel = (targetColors: number): string => {
+        if (targetColors === 16) return '0'
+        if (targetColors === 4) return '1'
+        return '2'
+      }
+      const modeLabel = getModeLabel(config.targetColors)
       adapterLogger.info(
-        `🚀 [ReGL] CPC Plus Mode ${config.targetColors === 16 ? '0' : config.targetColors === 4 ? '1' : '2'}: GPU-accelerated diversity selection (bypassing histogram)`
+        `🚀 [ReGL] CPC Plus Mode ${modeLabel}: GPU-accelerated diversity selection (bypassing histogram)`
       )
       topIndices = this.selectCPCPlusOptimized(
         imageData,
@@ -1450,8 +1456,8 @@ export class ReGLQuantizer {
       this.isDisposed = true
 
       adapterLogger.debug('🧹 [ReGL] Quantizer resources disposed')
-    } catch (error) {
-      adapterLogger.error('❌ [ReGL] Error during disposal', error)
+    } catch {
+      adapterLogger.error('❌ [ReGL] Error during disposal')
     }
   }
 }
