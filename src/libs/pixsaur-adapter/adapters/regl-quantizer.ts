@@ -1234,18 +1234,22 @@ export class ReGLQuantizer {
     imageData: ImageData,
     basePalette: readonly Vector[],
     targetColors: number,
-    _config: ReGLQuantizeConfig
+    config: ReGLQuantizeConfig
   ): number[] {
     const start = performance.now()
 
     // Échantillonnage équilibré : qualité vs performance
     const sampledColors = this.sampleImageColors(imageData, 128) // 128 échantillons pour un bon compromis
 
-    // CPU: Calcul rapide des couleurs dominantes avec diversité
+    // Récupérer les indices présélectionnés (couleurs lockées)
+    const preselectedIndices = config.preselectedIndices || []
+
+    // CPU: Calcul rapide des couleurs dominantes avec diversité (incluant les présélectionnées)
     const selected = this.selectDiverseColorsFast(
       sampledColors,
       basePalette,
-      targetColors
+      targetColors,
+      preselectedIndices
     )
 
     const duration = performance.now() - start
@@ -1292,14 +1296,26 @@ export class ReGLQuantizer {
   private selectDiverseColorsFast(
     sampledColors: Vector[],
     basePalette: readonly Vector[],
-    targetColors: number
+    targetColors: number,
+    preselectedIndices: readonly number[] = []
   ): number[] {
-    // Compter rapidement les couleurs les plus fréquentes
+    // Commencer par les couleurs présélectionnées (priorité absolue)
+    const result: number[] = [...preselectedIndices]
+    const usedIndices = new Set(preselectedIndices)
+
+    // Si on a déjà assez de couleurs présélectionnées, retourner seulement celles-ci
+    if (result.length >= targetColors) {
+      return result.slice(0, targetColors)
+    }
+
+    // Compter rapidement les couleurs les plus fréquentes (en excluant les déjà sélectionnées)
     const colorCount = new Map<number, number>()
 
     for (const sample of sampledColors) {
       const closestIndex = this.findClosestColorIndex(sample, basePalette)
-      colorCount.set(closestIndex, (colorCount.get(closestIndex) || 0) + 1)
+      if (!usedIndices.has(closestIndex)) {
+        colorCount.set(closestIndex, (colorCount.get(closestIndex) || 0) + 1)
+      }
     }
 
     // Convertir en format pour MaxMin Distance avec l'espace colorimétrique choisi
@@ -1312,15 +1328,15 @@ export class ReGLQuantizer {
       }))
       .sort((a, b) => b.frequency - a.frequency) // Trier par fréquence
 
-    if (colorFrequency.length <= targetColors) {
-      return colorFrequency.map((c) => c.index)
+    const remainingSlots = targetColors - result.length
+    if (colorFrequency.length <= remainingSlots) {
+      return [...result, ...colorFrequency.map((c) => c.index)]
     }
 
-    const selected: number[] = []
-    const selectedConverted: Vector[] = []
+    const selectedConverted: Vector[] = result.map(idx => [...basePalette[idx]] as Vector)
 
     // Première couleur: la plus fréquente
-    selected.push(colorFrequency[0].index)
+    result.push(colorFrequency[0].index)
     selectedConverted.push(colorFrequency[0].converted)
 
     // Stratégie hybride: 60% fréquence + 40% diversité
@@ -1329,7 +1345,7 @@ export class ReGLQuantizer {
     // Phase 1: Ajouter les couleurs fréquentes avec diversité minimale
     for (
       let i = 1;
-      i < colorFrequency.length && selected.length < frequencyBudget;
+      i < colorFrequency.length && result.length < frequencyBudget;
       i++
     ) {
       const candidateConverted = colorFrequency[i].converted
@@ -1344,14 +1360,14 @@ export class ReGLQuantizer {
       }
 
       if (isDiverse) {
-        selected.push(colorFrequency[i].index)
+        result.push(colorFrequency[i].index)
         selectedConverted.push(candidateConverted)
       }
     }
 
     // Phase 2: Compléter avec MaxMin Distance sur toute la palette
-    const remaining = colorFrequency.filter((c) => !selected.includes(c.index))
-    const additionalColors = targetColors - selected.length
+    const remaining = colorFrequency.filter((c) => !result.includes(c.index))
+    const additionalColors = targetColors - result.length
 
     for (let i = 0; i < additionalColors && remaining.length > 0; i++) {
       let maxMinDistance = 0
@@ -1376,13 +1392,13 @@ export class ReGLQuantizer {
       }
 
       if (bestIndex >= 0) {
-        selected.push(remaining[bestIndex].index)
+        result.push(remaining[bestIndex].index)
         selectedConverted.push(remaining[bestIndex].converted)
         remaining.splice(bestIndex, 1)
       }
     }
 
-    return selected
+    return result
   }
 
   /**

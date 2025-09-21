@@ -26,7 +26,8 @@ function quantizeCPC(value: number): number {
 
 export function rgbToIndexBufferExact(
   rgbaBuf: Uint8ClampedArray,
-  palette: Vector[]
+  palette: Vector[],
+  quantize = true
 ): Uint8Array {
   const length = rgbaBuf.length / 4
   const indices = new Uint8Array(length)
@@ -39,9 +40,10 @@ export function rgbToIndexBufferExact(
 
   for (let i = 0; i < length; i++) {
     const off = i * 4
-    const r = quantizeCPC(rgbaBuf[off])
-    const g = quantizeCPC(rgbaBuf[off + 1])
-    const b = quantizeCPC(rgbaBuf[off + 2])
+    // Quantification conditionnelle selon le mode CPC
+    const r = quantize ? quantizeCPC(rgbaBuf[off]) : rgbaBuf[off]
+    const g = quantize ? quantizeCPC(rgbaBuf[off + 1]) : rgbaBuf[off + 1]
+    const b = quantize ? quantizeCPC(rgbaBuf[off + 2]) : rgbaBuf[off + 2]
     const key = `${r},${g},${b}`
 
     const idx = paletteMap.get(key)
