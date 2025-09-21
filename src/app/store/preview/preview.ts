@@ -201,23 +201,23 @@ function needsCenteringCheck(workingImage: any, mode: CpcModeKey): boolean {
 }
 
 function addBlackForBorders(
-  projected: any[], 
-  mode: CpcModeKey, 
+  projected: any[],
+  mode: CpcModeKey,
   lockedVecs: any[]
 ): void {
   const blackColor = [0, 0, 0] as [number, number, number]
-  const hasBlack = projected.some(color => 
-    color[0] === 0 && color[1] === 0 && color[2] === 0
+  const hasBlack = projected.some(
+    (color) => color[0] === 0 && color[1] === 0 && color[2] === 0
   )
-  
+
   if (!hasBlack) {
     const maxColors = CPC_MODE_CONFIG[mode].nColors
-    
+
     if (projected.length >= maxColors) {
       // Si on dépasse, retirer les couleurs quantifiées en excès (pas les lockées)
       const lockedCount = lockedVecs.length
       const maxQuantified = maxColors - lockedCount - 1 // -1 pour le noir
-      
+
       if (maxQuantified >= 0) {
         // Garder les couleurs lockées + quantifiées limitées + noir
         const finalPalette = [

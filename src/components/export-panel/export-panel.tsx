@@ -18,11 +18,13 @@ export default function ExportPanel() {
 
   const onExport = async () => {
     if (!image?.data) return
-    
+
     // Nettoyer l'image pour qu'elle corresponde exactement à la palette
-    const { remapImageDataToPalette } = await import('@/utils/exports/rgb-to-indexes')
+    const { remapImageDataToPalette } = await import(
+      '@/utils/exports/rgb-to-indexes'
+    )
     const cleanImage = remapImageDataToPalette(image, reducedPalette)
-    
+
     // Utiliser la palette appropriée selon le hardware CPC
     const cpcPalette = getPaletteForHardware(cpcHardware)
 
@@ -40,7 +42,11 @@ export default function ExportPanel() {
 
     // Utiliser la quantization appropriée selon le hardware
     const shouldQuantize = cpcHardware === 'classic'
-    const indexBuf = rgbToIndexBufferExact(cleanImage.data, reducedPalette, shouldQuantize)
+    const indexBuf = rgbToIndexBufferExact(
+      cleanImage.data,
+      reducedPalette,
+      shouldQuantize
+    )
     const canvas = document.createElement('canvas')
 
     canvas.width = cleanImage.width

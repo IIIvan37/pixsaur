@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   ColorPickerPopup,
   type ColorPickerPopupProps
 } from './color-picker-popup'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 // Mock CSS modules
 vi.mock('./color-picker-popup.module.css', () => ({
