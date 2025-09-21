@@ -6,9 +6,9 @@ import {
   reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
+import { correctColorIndicesForCPC } from '@/utils/exports/correct-indices'
 import { exportZip } from '@/utils/exports/export-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
-import { correctColorIndicesForCPC } from '@/utils/exports/correct-indices'
 import ExportPanelView from './export-panel-view'
 
 export default function ExportPanel() {
@@ -42,7 +42,9 @@ export default function ExportPanel() {
 
       // Find indexes of the palette in amstrad cpc palette
       paletteFirmware = reducedPalette.map((colorData: any) => {
-        const color = Array.isArray(colorData) ? colorData : Array.from(colorData)
+        const color = Array.isArray(colorData)
+          ? colorData
+          : Array.from(colorData)
         const index = cpcPalette.findIndex(
           (c) => c[0] === color[0] && c[1] === color[1] && c[2] === color[2]
         )
@@ -59,7 +61,7 @@ export default function ExportPanel() {
         reducedPalette,
         shouldQuantize
       )
-      
+
       // 🔧 FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
       indexBuf = correctColorIndicesForCPC(indexBuf)
     } else {
@@ -71,7 +73,7 @@ export default function ExportPanel() {
         reducedPalette,
         shouldQuantize
       )
-      
+
       // 🔧 FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
       indexBuf = correctColorIndicesForCPC(indexBuf)
     }
@@ -83,8 +85,15 @@ export default function ExportPanel() {
     ctx?.putImageData(cleanImage, 0, 0)
 
     const modeConfig = CPC_MODE_CONFIG[mode]
-    
-    exportZip(indexBuf, paletteFirmware, canvas, modeConfig, cpcHardware, paletteForExport)
+
+    exportZip(
+      indexBuf,
+      paletteFirmware,
+      canvas,
+      modeConfig,
+      cpcHardware,
+      paletteForExport
+    )
   }
 
   return <ExportPanelView onExport={onExport} />

@@ -98,9 +98,16 @@ describe('ColorPaletteView', () => {
     expect(
       await screen.findByRole('group', { name: /Options de couleur/i })
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('button').filter(btn => 
-      btn.title?.includes('Rouge') || btn.title?.includes('Vert') || btn.title?.includes('Bleu')
-    ).length).toBe(3)
+    expect(
+      screen
+        .getAllByRole('button')
+        .filter(
+          (btn) =>
+            btn.title?.includes('Rouge') ||
+            btn.title?.includes('Vert') ||
+            btn.title?.includes('Bleu')
+        ).length
+    ).toBe(3)
   })
 
   it('opens popover when empty slot is clicked', () => {
@@ -111,9 +118,16 @@ describe('ColorPaletteView', () => {
     expect(
       screen.getByRole('group', { name: /Options de couleur/i })
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('button').filter(btn => 
-      btn.title?.includes('Rouge') || btn.title?.includes('Vert') || btn.title?.includes('Bleu')
-    ).length).toBe(3)
+    expect(
+      screen
+        .getAllByRole('button')
+        .filter(
+          (btn) =>
+            btn.title?.includes('Rouge') ||
+            btn.title?.includes('Vert') ||
+            btn.title?.includes('Bleu')
+        ).length
+    ).toBe(3)
   })
 
   it('calls onSetColor and closes popover when a color is selected', async () => {

@@ -5,12 +5,20 @@ import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
 } from '@/palettes/cpc-palette'
+import {
+  cpcPlusValuesToASM,
+  injectCPCPlusPaletteIntoSCR,
+  paletteToCPCPlusValues
+} from './cpc-plus-format'
 import { exportLinearAsm } from './export-linear-asm/export-linear.asm'
 import { exportSCR } from './export-scr/export-scr'
 import { toASMData } from './to-asm-data'
-import { paletteToCPCPlusValues, cpcPlusValuesToASM, injectCPCPlusPaletteIntoSCR } from './cpc-plus-format'
 
-const getHeader = (modeConfig: CpcModeConfig, type: string, isCPCPlus: boolean): string => {
+const getHeader = (
+  modeConfig: CpcModeConfig,
+  type: string,
+  isCPCPlus: boolean
+): string => {
   const pixelsPerByte = [2, 4, 8][modeConfig.mode]
   const hardwareType = isCPCPlus ? 'CPC+' : 'CPC Classic'
   return `; ${type} Data created with Pixsaur - ${hardwareType}
@@ -42,14 +50,15 @@ export async function exportZip(
 
     // Pour CPC Plus, les données d'image restent identiques (index de 0-15)
     // mais on utilise une palette CPC Plus au lieu de firmware/hardware
-    
+
     // Convert palette to CPC Plus values
     const cpcPlusPaletteValues = paletteToCPCPlusValues(reducedPalette)
-    
+
     // Export SCR avec palette CPC Plus injectée
     const scr = exportSCR(indexBuf, modeConfig)
     injectCPCPlusPaletteIntoSCR(scr, cpcPlusPaletteValues)
-    const asmText = getHeader(modeConfig, 'SCR', true) + toASMData(scr, asmLabel)
+    const asmText =
+      getHeader(modeConfig, 'SCR', true) + toASMData(scr, asmLabel)
     zip.file(`${asmLabel}.asm`, asmText)
 
     // Export Linear identique
@@ -60,16 +69,17 @@ export async function exportZip(
     zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
 
     // Export palette separée en format CPC Plus (16-bit values)
-    const cpcPlusPaletteText = getHeader(modeConfig, 'CPC Plus Palette', true) + 
-                              cpcPlusValuesToASM(cpcPlusPaletteValues, 'palette_cpc_plus')
+    const cpcPlusPaletteText =
+      getHeader(modeConfig, 'CPC Plus Palette', true) +
+      cpcPlusValuesToASM(cpcPlusPaletteValues, 'palette_cpc_plus')
     zip.file('palette_cpc_plus.asm', cpcPlusPaletteText)
-
   } else {
     // ===== CPC CLASSIC EXPORT =====
     const scr = exportSCR(indexBuf, modeConfig)
     injectPaletteDataIntoSCR(scr, paletteFirmware)
-    
-    const asmText = getHeader(modeConfig, 'SCR', false) + toASMData(scr, asmLabel)
+
+    const asmText =
+      getHeader(modeConfig, 'SCR', false) + toASMData(scr, asmLabel)
     zip.file(`${asmLabel}.asm`, asmText)
 
     const linear_asm = exportLinearAsm(indexBuf, modeConfig)

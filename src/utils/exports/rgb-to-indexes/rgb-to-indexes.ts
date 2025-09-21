@@ -4,9 +4,10 @@
  * @param rgbaBuf - The input buffer containing RGBA pixel data (Uint8ClampedArray). Each pixel is represented by 4 consecutive values (R, G, B, A).
  * @param palette - An array of RGB vectors representing the color palette. Each vector is a tuple of three numbers: [R, G, B].
  * @returns A Uint8Array where each element is the index of the corresponding pixel's color in the palette.
- * @throws {Error} If a pixel's RGB value is not found in the palette.
+ * @throws {Error} If a pixel's RGB value is not found in the palette and fallbackToDarkest is false.
  */
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { findDarkestColor } from '../color-utils'
 
 function quantizeCPC(value: number): number {
   const levels = [0, 128, 255]
@@ -24,10 +25,28 @@ function quantizeCPC(value: number): number {
   return best
 }
 
+function findDarkestColorIndex(palette: Vector[]): number {
+  if (palette.length === 0) return 0
+
+  const darkestColor = findDarkestColor(palette)
+  const darkestKey = `${darkestColor[0]},${darkestColor[1]},${darkestColor[2]}`
+
+  // Build a quick lookup to find the index
+  for (let i = 0; i < palette.length; i++) {
+    const [r, g, b] = palette[i]
+    if (`${r},${g},${b}` === darkestKey) {
+      return i
+    }
+  }
+
+  return 0 // Fallback to first color if not found
+}
+
 export function rgbToIndexBufferExact(
   rgbaBuf: Uint8ClampedArray,
   palette: Vector[],
-  quantize = true
+  quantize = true,
+  fallbackToDarkest = false
 ): Uint8Array {
   const length = rgbaBuf.length / 4
   const indices = new Uint8Array(length)
@@ -37,6 +56,11 @@ export function rgbToIndexBufferExact(
   palette.forEach(([r, g, b], idx) => {
     paletteMap.set(`${r},${g},${b}`, idx)
   })
+
+  // Find darkest color index for fallback
+  const darkestColorIndex = fallbackToDarkest
+    ? findDarkestColorIndex(palette)
+    : 0
 
   for (let i = 0; i < length; i++) {
     const off = i * 4
@@ -48,11 +72,16 @@ export function rgbToIndexBufferExact(
 
     const idx = paletteMap.get(key)
     if (idx === undefined) {
-      throw new Error(
-        `Pixel RGB [${r}, ${g}, ${b}] non trouvé dans la palette.`
-      )
+      if (fallbackToDarkest) {
+        indices[i] = darkestColorIndex
+      } else {
+        throw new Error(
+          `Pixel RGB [${r}, ${g}, ${b}] non trouvé dans la palette.`
+        )
+      }
+    } else {
+      indices[i] = idx
     }
-    indices[i] = idx
   }
 
   return indices
