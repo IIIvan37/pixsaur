@@ -16,17 +16,15 @@ export interface ColorPickerPopupProps {
   readonly onToggleLock: () => void
   /** Callback pour fermer la popup */
   readonly onClose: () => void
-  /** Masquer le bouton de verrouillage (pour les empty slots) */
-  readonly hideLockButton?: boolean
 }
 
 /**
  * Popup avancée de sélection de couleur avec sliders RGB
- * 
+ *
  * Fonctionnalités :
  * - Sliders RGB pour ajustement précis
- * - Bouton de validation pour confirmer les changements
- * - Système de verrouillage/déverrouillage intégré
+ * - Bouton "Valider" qui confirme et verrouille automatiquement
+ * - Bouton "Déverrouiller" affiché seulement si la couleur est déjà verrouillée
  * - La popup reste ouverte pendant les ajustements
  */
 export function ColorPickerPopup({
@@ -34,8 +32,7 @@ export function ColorPickerPopup({
   isLocked,
   onColorConfirm,
   onToggleLock,
-  onClose,
-  hideLockButton = false
+  onClose
 }: ColorPickerPopupProps) {
   // État local pour la couleur en cours d'édition
   const [workingColor, setWorkingColor] = useState<Vector>(initialColor)
@@ -51,9 +48,9 @@ export function ColorPickerPopup({
     onClose()
   }
 
-  const handleToggleLock = () => {
+  const handleUnlock = () => {
     onToggleLock()
-    onClose() // Fermer la popup après toggle, comme dans la popup classique
+    onClose() // Fermer la popup après déverrouillage
   }
 
   const [r, g, b] = workingColor
@@ -67,7 +64,9 @@ export function ColorPickerPopup({
           style={{ backgroundColor: `rgb(${r}, ${g}, ${b})` }}
           title={`RGB(${r}, ${g}, ${b})`}
         >
-          <span className={styles.colorValue}>RGB({r}, {g}, {b})</span>
+          <span className={styles.colorValue}>
+            RGB({r}, {g}, {b})
+          </span>
         </div>
 
         {/* Sliders RGB */}
@@ -75,7 +74,7 @@ export function ColorPickerPopup({
           <RgbSlider
             value={workingColor}
             onChange={setWorkingColor}
-            label=""
+            label=''
             showPreview={false}
           />
         </div>
@@ -83,31 +82,25 @@ export function ColorPickerPopup({
         {/* Actions */}
         <div className={styles.actions}>
           {/* Boutons de validation/annulation */}
-          <Flex direction="row" justify="space-between" align="center">
-            <Button
-              variant="secondary"
-              onClick={handleCancel}
-            >
+          <Flex direction='row' justify='space-between' align='center'>
+            <Button variant='secondary' onClick={handleCancel}>
               Annuler
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleConfirm}
-            >
+            <Button variant='primary' onClick={handleConfirm}>
               Valider
             </Button>
           </Flex>
         </div>
 
-        {/* Bouton de verrouillage - en dessous (seulement si pas masqué) */}
-        {!hideLockButton && (
+        {/* Bouton de déverrouillage - seulement si la couleur est verrouillée */}
+        {isLocked && (
           <div className={styles.lockActions}>
             <Button
               className={styles.lockButton}
-              variant="secondary"
-              onClick={handleToggleLock}
+              variant='secondary'
+              onClick={handleUnlock}
             >
-              {isLocked ? 'Déverrouiller' : 'Verrouiller'}
+              Déverrouiller
             </Button>
           </div>
         )}

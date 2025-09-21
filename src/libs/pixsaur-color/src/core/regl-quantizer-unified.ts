@@ -84,7 +84,7 @@ export class ReGLQuantizerUnified extends QuantizerBase {
         params.basePalette
       )
 
-      // ✅ Utilise RGB uniquement maintenant  
+      // ✅ Utilise RGB uniquement maintenant
       const distanceFn = this.getDistanceFunction()
       const finalColors = this.applyContrastStrategy(
         selectedColors,

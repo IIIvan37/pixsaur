@@ -48,7 +48,7 @@ export function ImageControlsView({
 
   return (
     <div className={styles.controlsContainer}>
-       <Flex align='center'>
+      <Flex align='center'>
         <SectionTitle>Hardware</SectionTitle>
         <ToggleButtonGroup
           options={hardwareOptions}
@@ -68,7 +68,6 @@ export function ImageControlsView({
         />
       </Flex>
 
-     
       <DitheringSelector />
 
       <ProcessorSelector />

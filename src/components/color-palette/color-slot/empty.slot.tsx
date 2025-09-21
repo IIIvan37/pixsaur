@@ -66,7 +66,6 @@ export function EmptySlotButton({
           onColorConfirm={handleRgbChange}
           onToggleLock={() => {}} // Pas de verrouillage pour les slots vides
           onClose={() => onOpenChange(false)}
-          hideLockButton={true}
         />
       ) : (
         <ColorGrid

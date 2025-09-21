@@ -1,11 +1,11 @@
 import { useAtomValue } from 'jotai'
-import { modeAtom } from '@/app/store/config/config'
+import { cpcHardwareAtom, modeAtom } from '@/app/store/config/config'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import {
   previewImageAtom,
   reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
+import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { exportZip } from '@/utils/exports/export-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 import ExportPanelView from './export-panel-view'
@@ -13,11 +13,18 @@ import ExportPanelView from './export-panel-view'
 export default function ExportPanel() {
   const image = useAtomValue(previewImageAtom)
   const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
+  const cpcHardware = useAtomValue(cpcHardwareAtom)
   const mode = useAtomValue(modeAtom)
 
-  const onExport = () => {
+  const onExport = async () => {
     if (!image?.data) return
-    const cpcPalette = generateAmstradCPCPalette()
+    
+    // Nettoyer l'image pour qu'elle corresponde exactement à la palette
+    const { remapImageDataToPalette } = await import('@/utils/exports/rgb-to-indexes')
+    const cleanImage = remapImageDataToPalette(image, reducedPalette)
+    
+    // Utiliser la palette appropriée selon le hardware CPC
+    const cpcPalette = getPaletteForHardware(cpcHardware)
 
     // find indexes of the palette in amstrad cpc palette
     const paletteFirmware = reducedPalette.map((colorData: any) => {
@@ -31,13 +38,15 @@ export default function ExportPanel() {
       return index
     })
 
-    const indexBuf = rgbToIndexBufferExact(image.data, reducedPalette)
+    // Utiliser la quantization appropriée selon le hardware
+    const shouldQuantize = cpcHardware === 'classic'
+    const indexBuf = rgbToIndexBufferExact(cleanImage.data, reducedPalette, shouldQuantize)
     const canvas = document.createElement('canvas')
 
-    canvas.width = image.width
-    canvas.height = image.height
+    canvas.width = cleanImage.width
+    canvas.height = cleanImage.height
     const ctx = canvas.getContext('2d')
-    ctx?.putImageData(image, 0, 0)
+    ctx?.putImageData(cleanImage, 0, 0)
 
     const modeConfig = CPC_MODE_CONFIG[mode]
     exportZip(indexBuf, paletteFirmware, canvas, modeConfig)

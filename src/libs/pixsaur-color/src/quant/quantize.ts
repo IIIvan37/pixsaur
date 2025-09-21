@@ -81,15 +81,15 @@ export function createQuantizer({
 
     // ✅ OPTIMISATION: Utiliser mode diversité pour les palettes moyennes (mode 0 = 16 couleurs)
     const useDiversityMode = limit >= 8 && limit <= 16
-    
-    const idxs = useDiversityMode 
+
+    const idxs = useDiversityMode
       ? selectTopIndicesCore(counts, preIdx, 16, {
           threshold: 10,
           diversityMode: true,
           basePalette: workingPal
         })
       : selectTopIndices(counts, preIdx, 16)
-      
+
     const out = idxs.map((i: number) => workingPal[i])
 
     // Utiliser le sélecteur de stratégie commun

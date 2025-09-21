@@ -1,29 +1,34 @@
+import clsx from 'clsx'
 import { useAtom } from 'jotai'
 import {
   contrastStrategyAtom,
   modeAtom,
-  setContrastStrategyAtom
+  setContrastStrategyAtom,
+  cpcHardwareAtom
 } from '@/app/store/config/config'
 import type { ContrastStrategy } from '@/app/store/config/types'
 import Flex from '@/components/ui/flex'
-import { SectionTitle } from '@/components/ui/section-title'
-import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
+import animStyles from '@/styles/animations.module.css'
+import styles from '../image-controls.module.css'
 
 /**
  * Sélecteur de stratégie de contraste pour les modes CPC 1 et 2
  * Permet de choisir entre contraste maximum et approche équilibrée
+ * Masqué en mode CPC Plus
  */
 export function ContrastStrategySelector() {
   const [contrastStrategy] = useAtom(contrastStrategyAtom)
   const [, setContrastStrategyValue] = useAtom(setContrastStrategyAtom)
   const [mode] = useAtom(modeAtom)
+  const [cpcHardware] = useAtom(cpcHardwareAtom)
 
-  // Ne montrer le sélecteur que pour les modes 1 et 2 (petites palettes)
+  // Ne montrer le sélecteur que pour les modes 1 et 2 (petites palettes) ET en mode Classic
   const shouldShow =
-    mode === '1' ||
-    mode === '2' ||
-    mode === '1-overscan' ||
-    mode === '2-overscan'
+    cpcHardware === 'classic' &&
+    (mode === '1' ||
+      mode === '2' ||
+      mode === '1-overscan' ||
+      mode === '2-overscan')
 
   if (!shouldShow) {
     return null
@@ -33,29 +38,45 @@ export function ContrastStrategySelector() {
     setContrastStrategyValue(strategy)
   }
 
-  const strategyOptions = [
-    {
-      value: 'max' as ContrastStrategy,
-      label: 'Max',
-      ariaLabel: 'Max - Contraste maximum - Idéal pour images détaillées'
-    },
-    {
-      value: 'balanced' as ContrastStrategy,
-      label: 'Équilibré',
-      ariaLabel:
-        'Équilibré - Équilibre fréquence/contraste - Meilleur pour dominantes colorées'
-    }
-  ]
+  const renderStrategyButton = (
+    strategy: ContrastStrategy,
+    label: string,
+    description: string
+  ) => (
+    <button
+      key={strategy}
+      className={clsx(
+        styles.modeButton,
+        animStyles.modeButton,
+        contrastStrategy === strategy
+          ? [styles.modeButtonActive, animStyles.modeButtonActive]
+          : [styles.modeButtonInactive, animStyles.modeButtonInactive]
+      )}
+      onClick={() => handleStrategyChange(strategy)}
+      aria-label={`${label} - ${description}`}
+      aria-pressed={contrastStrategy === strategy}
+      type='button'
+      title={description}
+    >
+      {label}
+    </button>
+  )
 
   return (
     <Flex align='center'>
-      <SectionTitle>Contraste</SectionTitle>
-      <ToggleButtonGroup
-        options={strategyOptions}
-        value={contrastStrategy}
-        onChange={handleStrategyChange}
-        ariaLabelPrefix='Contraste'
-      />
+      <h2 className={styles.sectionTitle}>Contraste</h2>
+      <div className={styles.modeButtonsRow}>
+        {renderStrategyButton(
+          'max',
+          'Max',
+          'Contraste maximum - Idéal pour images détaillées'
+        )}
+        {renderStrategyButton(
+          'balanced',
+          'Équilibré',
+          'Équilibre fréquence/contraste - Meilleur pour dominantes colorées'
+        )}
+      </div>
     </Flex>
   )
 }

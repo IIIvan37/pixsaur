@@ -76,7 +76,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const mode = get(modeAtom)
   const lockedVecs = get(lockedVectorsAtom)
-  const colorSpace = 'RGB' // Fixé sur RGB
+  // const colorSpace = 'RGB' // Fixé sur RGB (variable supprimée car non utilisée)
   const cpcHardware = get(cpcHardwareAtom)
 
   if (!buf || !cropped) return []
@@ -89,14 +89,17 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 
   // 🔍 DEBUG: Log des paramètres de quantification
   const basePalette = getPaletteForHardware(cpcHardware)
-  
+
   // 🎯 Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
   const targetColors = CPC_MODE_CONFIG[mode].nColors
 
-  console.log(`🔍 [DEBUG] CPC Hardware: ${cpcHardware}`)
-  console.log(`🔍 [DEBUG] Base palette size: ${basePalette.length} colors`)
-  console.log(`🔍 [DEBUG] Target colors: ${targetColors} (mode: ${mode})`)
-  console.log(`🔍 [DEBUG] Color space: ${colorSpace}`)
+  console.log('🔍 [QUANTIZER DEBUG] Input params:', {
+    targetColors,
+    basePaletteSize: basePalette.length,
+    lockedColorsCount: lockedVecs.length,
+    lockedColors: lockedVecs,
+    cpcHardware
+  })
 
   const palette = await paletteProcessor.quantizePalette(
     buf,
@@ -108,9 +111,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     cpcHardware === 'plus' ? 'max' : undefined
   )
 
-  // 🔍 DEBUG: Log du résultat de quantification
-  console.log(`🔍 [DEBUG] Quantized palette result: ${palette.length} colors`)
-  console.log(`🔍 [DEBUG] First 5 colors:`, palette.slice(0, 5))
+  console.log('🔍 [QUANTIZER DEBUG] Output palette:', palette)
 
   return palette
 })
@@ -194,16 +195,63 @@ export const previewImageAtom = atom(async (get) => {
 export const reducedPaletteRgbAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
+  const mode = get(modeAtom)
+  const workingImage = await get(workingImageAtom)
 
   // 🔍 DEBUG: Colors already in RGB format
-  console.log(`🔍 [DEBUG RGB] Processing ${raw.length} RGB colors`)
-  console.log(`🔍 [DEBUG RGB] Hardware: ${cpcHardware}`)
-
   // Colors are already in RGB format, no conversion needed
   const projected = raw
 
-  // 🔍 DEBUG: Log des couleurs avant quantification hardware
-  console.log(`🔍 [DEBUG RGB] Before hardware quantification:`, projected.slice(0, 5))
+  // Vérifier si des bordures noires seront ajoutées lors du centrage
+  const targetW = CPC_MODE_CONFIG[mode].width
+  const targetH = CPC_MODE_CONFIG[mode].height
+  const needsCentering = workingImage && (
+    workingImage.width !== targetW || 
+    workingImage.height !== targetH
+  )
+
+  // Si centrage nécessaire, forcer l'ajout de la couleur noire pour les bordures
+  if (needsCentering) {
+    const blackColor = [0, 0, 0] as [number, number, number]
+    const hasBlack = projected.some(color => 
+      color[0] === 0 && color[1] === 0 && color[2] === 0
+    )
+    
+    if (!hasBlack) {
+      const maxColors = CPC_MODE_CONFIG[mode].nColors
+      const lockedVecs = get(lockedVectorsAtom)
+      
+      // Ajouter le noir en s'assurant de ne pas dépasser la limite
+      if (projected.length >= maxColors) {
+        // Si on dépasse, retirer les couleurs quantifiées en excès (pas les lockées)
+        // Les couleurs lockées sont normalement en début de palette grâce à la logique CPC Plus
+        const lockedCount = lockedVecs.length
+        const maxQuantified = maxColors - lockedCount - 1 // -1 pour le noir
+        
+        if (maxQuantified >= 0) {
+          // Garder les couleurs lockées + quantifiées limitées + noir
+          const finalPalette = [
+            ...lockedVecs.slice(0, lockedCount),
+            ...projected.slice(lockedCount, lockedCount + maxQuantified),
+            blackColor
+          ]
+          projected.splice(0, projected.length, ...finalPalette)
+        } else {
+          // Pas assez de place même pour le noir, remplacer la dernière
+          projected[projected.length - 1] = blackColor
+        }
+      } else {
+        // Ajouter le noir si on a encore de la place
+        projected.push(blackColor)
+      }
+    }
+  }
+
+  // S'assurer qu'on ne dépasse jamais la limite finale
+  const maxColors = CPC_MODE_CONFIG[mode].nColors
+  if (projected.length > maxColors) {
+    projected.splice(maxColors)
+  }
 
   // Quantification selon le hardware sélectionné
   if (cpcHardware === 'classic') {
@@ -225,15 +273,8 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
       color[1] = quantifyToCPClassic(g)
       color[2] = quantifyToCPClassic(b)
     }
-    console.log(`🔍 [DEBUG RGB] After CPC Classic quantification:`, projected.slice(0, 5))
-  } else {
-    // CPC Plus: PAS de quantification supplémentaire !
-    // Les couleurs sont déjà correctement générées par generateCPCPlusPalette()
-    // qui scale correctement les valeurs 4-bit (0-15) vers 8-bit (0-255)
-    // Toute requantification ici casserait la précision CPC Plus
-    console.log(`🔍 [DEBUG RGB] CPC Plus: NO additional quantification applied`)
-    console.log(`🔍 [DEBUG RGB] Final CPC Plus colors:`, projected.slice(0, 5))
   }
+  // CPC Plus: PAS de quantification supplémentaire !
 
   return projected
 })

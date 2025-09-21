@@ -115,11 +115,8 @@ export const processorTypeListenerAtom = atom(
 )
 export const processorFactory = {
   async createBestProcessor(type = 'gpu') {
-    console.log(`🔧 [FACTORY] Creating processor with type: ${type}`)
-
     // Si CPU est explicitement demandé, créer un processeur CPU
     if (type === 'cpu') {
-      console.log('🖥️ [FACTORY] CPU processor requested - creating CPU fallback')
       // Créer un processeur CPU basique (pas de ReGL)
       return new ReGLProcessor(undefined) // undefined = pas de GPU, fallback CPU
     }
@@ -138,13 +135,8 @@ export const processorFactory = {
           stencil: false
         }
       })
-      console.log('✅ [FACTORY] ReGL instance created successfully')
       adapterLogger.debug('✅ [FACTORY] ReGL instance created successfully')
     } catch (error) {
-      console.log(
-        '⚠️ [FACTORY] Failed to create ReGL instance, falling back to CPU:',
-        error
-      )
       adapterLogger.warn(
         '⚠️ [FACTORY] Failed to create ReGL instance, falling back to CPU:',
         error

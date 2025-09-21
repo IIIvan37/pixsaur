@@ -1,6 +1,6 @@
 /**
  * Configuration RGB seulement - remplacement du colorSpaceAtom
- * 
+ *
  * Après simplification de l'architecture, Pixsaur ne supporte plus que RGB.
  * Ce fichier fournit un atom RGB constant pour maintenir la compatibilité
  * avec le code existant pendant la transition.
