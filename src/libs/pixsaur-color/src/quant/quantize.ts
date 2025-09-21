@@ -6,7 +6,7 @@ import {
   getDistanceFn
 } from '../metric/distance'
 import type { Vector } from '../type'
-import { selectTopIndicesCore, selectTopIndices } from './select-to-indices'
+import { selectTopIndices, selectTopIndicesCore } from './select-to-indices'
 import { selectByStrategy } from './strategy-selector'
 
 export type DitheringMode =

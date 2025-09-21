@@ -15,7 +15,7 @@ import {
   ditheringAtom,
   modeAtom
 } from '../config/config'
-import { CPC_MODE_CONFIG } from '../config/types'
+import { CPC_MODE_CONFIG, type CpcModeKey } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 
@@ -192,59 +192,113 @@ export const previewImageAtom = atom(async (get) => {
   return result
 })
 
+// Helper functions pour réduire la complexité cognitive
+function needsCenteringCheck(workingImage: any, mode: CpcModeKey): boolean {
+  if (!workingImage) return false
+  const targetW = CPC_MODE_CONFIG[mode].width
+  const targetH = CPC_MODE_CONFIG[mode].height
+  return workingImage.width !== targetW || workingImage.height !== targetH
+}
+
+function addBlackForBorders(
+  projected: any[],
+  mode: CpcModeKey,
+  lockedVecs: any[]
+): void {
+  const blackColor = [0, 0, 0] as [number, number, number]
+  const hasBlack = projected.some(
+    (color) => color[0] === 0 && color[1] === 0 && color[2] === 0
+  )
+
+  if (!hasBlack) {
+    const maxColors = CPC_MODE_CONFIG[mode].nColors
+
+    if (projected.length >= maxColors) {
+      // Si on dépasse, retirer les couleurs quantifiées en excès (pas les lockées)
+      const lockedCount = lockedVecs.length
+      const maxQuantified = maxColors - lockedCount - 1 // -1 pour le noir
+
+      if (maxQuantified >= 0) {
+        // Garder les couleurs lockées + quantifiées limitées + noir
+        const finalPalette = [
+          ...lockedVecs.slice(0, lockedCount),
+          ...projected.slice(lockedCount, lockedCount + maxQuantified),
+          blackColor
+        ]
+        projected.splice(0, projected.length, ...finalPalette)
+      } else {
+        // Pas assez de place même pour le noir, remplacer la dernière
+        projected[projected.length - 1] = blackColor
+      }
+    } else {
+      // Ajouter le noir si on a encore de la place
+      projected.push(blackColor)
+    }
+  }
+}
+
+function quantifyCPCClassic(projected: any[]): void {
+  const quantifyToCPClassic = (value: number): number => {
+    const levels = [0, 128, 255]
+    let best = levels[0]
+    let bestDist = Math.abs(value - best)
+
+    for (const lvl of levels) {
+      const dist = Math.abs(value - lvl)
+      if (dist < bestDist) {
+        bestDist = dist
+        best = lvl
+      }
+    }
+    return best
+  }
+
+  for (const color of projected) {
+    const r = color[0]
+    const g = color[1]
+    const b = color[2]
+
+    color[0] = quantifyToCPClassic(r)
+    color[1] = quantifyToCPClassic(g)
+    color[2] = quantifyToCPClassic(b)
+  }
+}
+
+function quantifyCPCPlus(projected: any[]): void {
+  // Quantifier selon le format CPC Plus (4-bit par composante)
+  const quantifyToCPCPlus = (value: number): number => {
+    // Convertir 8-bit vers 4-bit puis retour vers 8-bit
+    const val4bit = Math.round((value / 255) * 15)
+    return Math.round((val4bit / 15) * 255)
+  }
+
+  for (const color of projected) {
+    const r = color[0]
+    const g = color[1] 
+    const b = color[2]
+
+    color[0] = quantifyToCPCPlus(r)
+    color[1] = quantifyToCPCPlus(g)
+    color[2] = quantifyToCPCPlus(b)
+  }
+}
+
 export const reducedPaletteRgbAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
   const mode = get(modeAtom)
   const workingImage = await get(workingImageAtom)
 
-  // 🔍 DEBUG: Colors already in RGB format
   // Colors are already in RGB format, no conversion needed
   const projected = raw
 
   // Vérifier si des bordures noires seront ajoutées lors du centrage
-  const targetW = CPC_MODE_CONFIG[mode].width
-  const targetH = CPC_MODE_CONFIG[mode].height
-  const needsCentering = workingImage && (
-    workingImage.width !== targetW || 
-    workingImage.height !== targetH
-  )
+  const needsCentering = needsCenteringCheck(workingImage, mode)
 
   // Si centrage nécessaire, forcer l'ajout de la couleur noire pour les bordures
   if (needsCentering) {
-    const blackColor = [0, 0, 0] as [number, number, number]
-    const hasBlack = projected.some(color => 
-      color[0] === 0 && color[1] === 0 && color[2] === 0
-    )
-    
-    if (!hasBlack) {
-      const maxColors = CPC_MODE_CONFIG[mode].nColors
-      const lockedVecs = get(lockedVectorsAtom)
-      
-      // Ajouter le noir en s'assurant de ne pas dépasser la limite
-      if (projected.length >= maxColors) {
-        // Si on dépasse, retirer les couleurs quantifiées en excès (pas les lockées)
-        // Les couleurs lockées sont normalement en début de palette grâce à la logique CPC Plus
-        const lockedCount = lockedVecs.length
-        const maxQuantified = maxColors - lockedCount - 1 // -1 pour le noir
-        
-        if (maxQuantified >= 0) {
-          // Garder les couleurs lockées + quantifiées limitées + noir
-          const finalPalette = [
-            ...lockedVecs.slice(0, lockedCount),
-            ...projected.slice(lockedCount, lockedCount + maxQuantified),
-            blackColor
-          ]
-          projected.splice(0, projected.length, ...finalPalette)
-        } else {
-          // Pas assez de place même pour le noir, remplacer la dernière
-          projected[projected.length - 1] = blackColor
-        }
-      } else {
-        // Ajouter le noir si on a encore de la place
-        projected.push(blackColor)
-      }
-    }
+    const lockedVecs = get(lockedVectorsAtom)
+    addBlackForBorders(projected, mode, lockedVecs)
   }
 
   // S'assurer qu'on ne dépasse jamais la limite finale
@@ -255,26 +309,11 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
 
   // Quantification selon le hardware sélectionné
   if (cpcHardware === 'classic') {
-    // Helper pour quantification CPC classique optimisée
-    const quantifyToCPClassic = (value: number): number => {
-      if (value <= 64) return 0
-      if (value <= 192) return 128
-      return 255
-    }
-
-    // Quantify colors to match CPC classic palette values (0, 128, 255)
-    for (const color of projected) {
-      const r = color[0]
-      const g = color[1]
-      const b = color[2]
-
-      // Quantification optimisée en place
-      color[0] = quantifyToCPClassic(r)
-      color[1] = quantifyToCPClassic(g)
-      color[2] = quantifyToCPClassic(b)
-    }
+    quantifyCPCClassic(projected)
+  } else if (cpcHardware === 'plus') {
+    // Pour CPC Plus, quantifier selon le format 4-bit par composante
+    quantifyCPCPlus(projected)
   }
-  // CPC Plus: PAS de quantification supplémentaire !
 
   return projected
 })

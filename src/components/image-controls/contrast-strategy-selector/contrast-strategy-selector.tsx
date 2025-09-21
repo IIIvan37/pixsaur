@@ -2,9 +2,9 @@ import clsx from 'clsx'
 import { useAtom } from 'jotai'
 import {
   contrastStrategyAtom,
+  cpcHardwareAtom,
   modeAtom,
-  setContrastStrategyAtom,
-  cpcHardwareAtom
+  setContrastStrategyAtom
 } from '@/app/store/config/config'
 import type { ContrastStrategy } from '@/app/store/config/types'
 import Flex from '@/components/ui/flex'

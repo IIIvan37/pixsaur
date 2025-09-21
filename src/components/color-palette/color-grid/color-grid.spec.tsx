@@ -43,9 +43,9 @@ describe('ColorGrid', () => {
     )
 
     // Rouge and Vert should be disabled, Bleu should not
-    const rougeBtn = screen.getByRole('option', { name: /Rouge/i })
-    const vertBtn = screen.getByRole('option', { name: /Vert/i })
-    const bleuBtn = screen.getByRole('option', { name: /Bleu/i })
+    const rougeBtn = screen.getByRole('button', { name: /Rouge \(utilisée\)/i })
+    const vertBtn = screen.getByRole('button', { name: /Vert \(utilisée\)/i })
+    const bleuBtn = screen.getByRole('button', { name: /^Bleu$/i })
 
     expect(rougeBtn).toBeDisabled()
     expect(vertBtn).toBeDisabled()
@@ -64,7 +64,7 @@ describe('ColorGrid', () => {
       />
     )
 
-    const rougeBtn = screen.getByRole('option', { name: /Rouge/i })
+    const rougeBtn = screen.getByRole('button', { name: /^Rouge$/i })
     expect(rougeBtn).not.toBeDisabled()
   })
 })

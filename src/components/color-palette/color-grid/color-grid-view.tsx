@@ -44,9 +44,10 @@ export function ColorGridView({
       style={{ position: 'relative', minHeight: 140, maxHeight: 260 }}
     >
       {/* @sonar-ignore-next-line a11y/useSemanticElements: Custom color grid requires visual display - select not suitable */}
+      {/* biome-ignore lint/a11y/useSemanticElements: Custom color grid layout incompatible with fieldset */}
       <div
         className={styles.colorGrid}
-        role='listbox'
+        role='group'
         aria-label='Options de couleur'
       >
         {fullPalette.map((pc: CPCColor, optionIndex: number) => {
@@ -63,7 +64,6 @@ export function ColorGridView({
                   isUsed && styles.colorOptionUsed
                 )}
                 title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
-                role='option'
                 aria-selected={focusedColorIndex === optionIndex}
                 disabled={isUsed}
                 tabIndex={focusedColorIndex === optionIndex ? 0 : -1}
