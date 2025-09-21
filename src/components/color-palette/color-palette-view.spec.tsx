@@ -96,9 +96,11 @@ describe('ColorPaletteView', () => {
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
     expect(
-      await screen.findByRole('listbox', { name: /Options de couleur/i })
+      await screen.findByRole('group', { name: /Options de couleur/i })
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('option').length).toBe(3)
+    expect(screen.getAllByRole('button').filter(btn => 
+      btn.title?.includes('Rouge') || btn.title?.includes('Vert') || btn.title?.includes('Bleu')
+    ).length).toBe(3)
   })
 
   it('opens popover when empty slot is clicked', () => {
@@ -107,9 +109,11 @@ describe('ColorPaletteView', () => {
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
     expect(
-      screen.getByRole('listbox', { name: /Options de couleur/i })
+      screen.getByRole('group', { name: /Options de couleur/i })
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('option').length).toBe(3)
+    expect(screen.getAllByRole('button').filter(btn => 
+      btn.title?.includes('Rouge') || btn.title?.includes('Vert') || btn.title?.includes('Bleu')
+    ).length).toBe(3)
   })
 
   it('calls onSetColor and closes popover when a color is selected', async () => {
@@ -117,12 +121,12 @@ describe('ColorPaletteView', () => {
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
-    const bleuBtn = await screen.findByRole('option', { name: /Bleu/i })
+    const bleuBtn = await screen.findByRole('button', { name: /Bleu/i })
     fireEvent.click(bleuBtn)
     expect(onSetColor).toHaveBeenCalledWith({ index: 1, color: mockPalette[2] })
     // Popover should close
     await waitFor(() =>
-      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+      expect(screen.queryByRole('group')).not.toBeInTheDocument()
     )
   })
 
@@ -132,9 +136,9 @@ describe('ColorPaletteView', () => {
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
     // Rouge et Vert sont utilisés, Bleu ne l'est pas
-    const rougeBtn = screen.getByRole('option', { name: /Rouge/i })
-    const vertBtn = screen.getByRole('option', { name: /Vert/i })
-    const bleuBtn = screen.getByRole('option', { name: /Bleu/i })
+    const rougeBtn = screen.getByRole('button', { name: /Rouge \(utilisée\)/i })
+    const vertBtn = screen.getByRole('button', { name: /Vert \(utilisée\)/i })
+    const bleuBtn = screen.getByRole('button', { name: /^Bleu$/i })
     expect(rougeBtn).toBeDisabled()
     expect(vertBtn).toBeDisabled()
     expect(bleuBtn).not.toBeDisabled()
@@ -146,12 +150,12 @@ describe('ColorPaletteView', () => {
     expect(
       screen.getByRole('region', { name: /Palette de couleurs/i })
     ).toBeInTheDocument()
-    // Popover listbox
+    // Popover group
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
     expect(
-      screen.getByRole('listbox', { name: /Options de couleur/i })
+      screen.getByRole('group', { name: /Options de couleur/i })
     ).toBeInTheDocument()
   })
 
@@ -162,12 +166,12 @@ describe('ColorPaletteView', () => {
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
 
-    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(screen.getByRole('group')).toBeInTheDocument()
 
     userEvent.click(document.body) // ← parfois nécessaire pour déclencher onBlur
 
     await waitFor(() => {
-      expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+      expect(screen.queryByRole('group')).not.toBeInTheDocument()
     })
   })
 })

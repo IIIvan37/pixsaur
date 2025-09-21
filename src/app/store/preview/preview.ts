@@ -239,9 +239,18 @@ function addBlackForBorders(
 
 function quantifyCPCClassic(projected: any[]): void {
   const quantifyToCPClassic = (value: number): number => {
-    if (value <= 64) return 0
-    if (value <= 192) return 128
-    return 255
+    const levels = [0, 128, 255]
+    let best = levels[0]
+    let bestDist = Math.abs(value - best)
+
+    for (const lvl of levels) {
+      const dist = Math.abs(value - lvl)
+      if (dist < bestDist) {
+        bestDist = dist
+        best = lvl
+      }
+    }
+    return best
   }
 
   for (const color of projected) {
@@ -252,6 +261,25 @@ function quantifyCPCClassic(projected: any[]): void {
     color[0] = quantifyToCPClassic(r)
     color[1] = quantifyToCPClassic(g)
     color[2] = quantifyToCPClassic(b)
+  }
+}
+
+function quantifyCPCPlus(projected: any[]): void {
+  // Quantifier selon le format CPC Plus (4-bit par composante)
+  const quantifyToCPCPlus = (value: number): number => {
+    // Convertir 8-bit vers 4-bit puis retour vers 8-bit
+    const val4bit = Math.round((value / 255) * 15)
+    return Math.round((val4bit / 15) * 255)
+  }
+
+  for (const color of projected) {
+    const r = color[0]
+    const g = color[1] 
+    const b = color[2]
+
+    color[0] = quantifyToCPCPlus(r)
+    color[1] = quantifyToCPCPlus(g)
+    color[2] = quantifyToCPCPlus(b)
   }
 }
 
@@ -282,8 +310,10 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   // Quantification selon le hardware sélectionné
   if (cpcHardware === 'classic') {
     quantifyCPCClassic(projected)
+  } else if (cpcHardware === 'plus') {
+    // Pour CPC Plus, quantifier selon le format 4-bit par composante
+    quantifyCPCPlus(projected)
   }
-  // CPC Plus: PAS de quantification supplémentaire !
 
   return projected
 })
