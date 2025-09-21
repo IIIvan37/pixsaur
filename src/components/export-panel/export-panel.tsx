@@ -68,10 +68,12 @@ export default function ExportPanel() {
       // CPC Plus: Use index buffer (same as Classic) but no firmware palette needed
       // The palette will be exported as GRB values instead
       const shouldQuantize = false // CPC Plus peut utiliser toutes les couleurs RGB
+      const fallbackToDarkest = true // Use darkest color for missing colors (padding)
       indexBuf = rgbToIndexBufferExact(
         cleanImage.data,
         reducedPalette,
-        shouldQuantize
+        shouldQuantize,
+        fallbackToDarkest
       )
 
       // 🔧 FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
