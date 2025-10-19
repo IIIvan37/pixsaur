@@ -5,9 +5,9 @@ import type { ReactNode } from 'react'
 import styles from './select.module.css'
 
 type Props = {
-  value: string
-  onValueChange: (value: string) => void
-  children: ReactNode
+  readonly value: string
+  readonly onValueChange: (value: string) => void
+  readonly children: ReactNode
 }
 
 export function Select({ value, onValueChange, children }: Props) {
@@ -30,8 +30,8 @@ export function Select({ value, onValueChange, children }: Props) {
 }
 
 type ItemProps = {
-  value: string
-  children: ReactNode
+  readonly value: string
+  readonly children: ReactNode
 }
 
 export function SelectItem({ value, children }: ItemProps) {

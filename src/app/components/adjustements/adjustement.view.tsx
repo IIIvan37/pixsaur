@@ -1,4 +1,6 @@
 import type { AdjustementKey } from '@/app/store/config/types'
+import { Trans } from '@lingui/react/macro'
+import type { ReactNode } from 'react'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
 import PixsaurSlider from '@/components/ui/slider'
@@ -7,24 +9,24 @@ import type { RangeOption } from './types'
 
 type RangeLabels = {
   key: AdjustementKey
-  label: string
+  label: ReactNode
 }
 // Définition des ajustements RGB (avec labels)
 const labels: RangeLabels[] = [
-  { key: 'red', label: 'Rouge' },
-  { key: 'green', label: 'Vert' },
-  { key: 'blue', label: 'Bleu' },
-  { key: 'brightness', label: 'Luminosité' },
-  { key: 'contrast', label: 'Contraste' },
-  { key: 'saturation', label: 'Saturation' },
-  { key: 'posterization', label: 'Posterisation' }
+  { key: 'red', label: <Trans>Rouge</Trans> },
+  { key: 'green', label: <Trans>Vert</Trans> },
+  { key: 'blue', label: <Trans>Bleu</Trans> },
+  { key: 'brightness', label: <Trans>Luminosité</Trans> },
+  { key: 'contrast', label: <Trans>Contraste</Trans> },
+  { key: 'saturation', label: <Trans>Saturation</Trans> },
+  { key: 'posterization', label: <Trans>Posterisation</Trans> }
 ]
 
 type AdjustementsViewProps = {
-  disabled?: boolean
-  adjustments: RangeOption
-  onChange: ({ key, value }: { key: AdjustementKey; value: number }) => void
-  onReset: () => void
+  readonly disabled?: boolean
+  readonly adjustments: RangeOption
+  readonly onChange: ({ key, value }: { key: AdjustementKey; value: number }) => void
+  readonly onReset: () => void
 }
 
 export const AdjustementsView = ({
@@ -37,7 +39,7 @@ export const AdjustementsView = ({
     <Panel>
       <Header
         action={onReset}
-        actionLabel='Réinitialiser'
+        actionLabel={<Trans>Réinitialiser</Trans>}
         disabled={disabled}
       />
 

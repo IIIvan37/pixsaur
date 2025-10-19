@@ -1,4 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai'
+import { Trans } from '@lingui/react/macro'
 
 import { ImageSelector } from '@/components/image-selector'
 import { ImageUpload } from '@/components/image-upload/image-upload'
@@ -20,8 +21,8 @@ export default function SourceSection() {
   return (
     <Panel>
       <Header
-        title={'Image source'}
-        actionLabel={"Changer d'image"}
+        title={<Trans>Image source</Trans>}
+        actionLabel={<Trans>Changer d'image</Trans>}
         action={() => {
           resetAdjustments()
           setImg(null)

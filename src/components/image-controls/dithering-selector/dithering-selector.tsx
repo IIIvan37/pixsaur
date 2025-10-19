@@ -1,5 +1,6 @@
 import { useAtom } from 'jotai'
 import { ditheringAtom } from '@/app/store/config/config'
+import { Trans } from '@lingui/react/macro'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
@@ -34,7 +35,7 @@ export function DitheringSelector() {
             color: 'var(--color-foreground)'
           }}
         >
-          Mode de dithering
+          <Trans>Mode de dithering</Trans>
         </div>
         <Select
           value={cfg.mode}
@@ -52,7 +53,7 @@ export function DitheringSelector() {
 
       <div className={styles.ditheringSlider}>
         <PixsaurSlider
-          label='Intensité'
+          label={<Trans>Intensité</Trans>}
           min={0}
           max={100}
           value={Math.round(cfg.intensity * 100)}

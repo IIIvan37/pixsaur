@@ -1,0 +1,129 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-10-19 11:24+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:88
+msgid "Annuler"
+msgstr "Cancel"
+
+#: src/app/components/preview-panel.tsx:27
+msgid "Aperçu"
+msgstr "Preview"
+
+#: src/components/image-preview/image-preview-view.tsx:35
+msgid "Aucune image traitée"
+msgstr "No processed image"
+
+#: src/app/components/adjustements/adjustement.view.tsx:18
+#: src/components/ui/rgb-slider/rgb-slider.tsx:85
+msgid "Bleu"
+msgstr "Blue"
+
+#: src/app/components/source-section.tsx:25
+msgid "Changer d'image"
+msgstr "Change image"
+
+#: src/app/components/adjustements/adjustement.view.tsx:20
+msgid "Contraste"
+msgstr "Contrast"
+
+#: src/app/app.tsx:24
+msgid "Convertisseur d'images Amstrad CPC"
+msgstr "Amstrad CPC Image Converter"
+
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
+msgid "Déverrouiller"
+msgstr "Unlock"
+
+#: src/components/export-panel/export-panel-view.tsx:19
+msgid "Exporter"
+msgstr "Export"
+
+#: src/components/image-upload/image-upload-view.tsx:44
+msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
+msgstr "Supported formats: PNG, JPEG, GIF, BMP, WEBP, SVG"
+
+#: src/components/image-upload/image-upload-view.tsx:42
+msgid "Glissez & déposez une image ici"
+msgstr "Drag & drop an image here"
+
+#: src/components/image-controls/image-controls-view.tsx:52
+msgid "Hardware"
+msgstr "Hardware"
+
+#: src/app/components/source-section.tsx:24
+msgid "Image source"
+msgstr "Image source"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:56
+msgid "Intensité"
+msgstr "Intensity"
+
+#: src/app/components/preview-panel.tsx:34
+msgid "Lissage"
+msgstr "Smoothing"
+
+#: src/app/components/adjustements/adjustement.view.tsx:19
+msgid "Luminosité"
+msgstr "Brightness"
+
+#: src/components/image-controls/image-controls-view.tsx:62
+msgid "Mode"
+msgstr "Mode"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:38
+msgid "Mode de dithering"
+msgstr "Dithering mode"
+
+#: src/components/image-upload/image-upload-view.tsx:43
+msgid "ou cliquez pour sélectionner un fichier"
+msgstr "or click to select a file"
+
+#: src/app/components/adjustements/adjustement.view.tsx:22
+msgid "Posterisation"
+msgstr "Posterization"
+
+#: src/components/image-controls/processor-selector/processor-selector.tsx:45
+msgid "Processeur"
+msgstr "Processor"
+
+#: src/components/source-selector/source-selector-view.tsx:112
+msgid "Redimensionner"
+msgstr "Resize"
+
+#: src/app/components/adjustements/adjustement.view.tsx:42
+msgid "Réinitialiser"
+msgstr "Reset"
+
+#: src/app/components/adjustements/adjustement.view.tsx:16
+#: src/components/ui/rgb-slider/rgb-slider.tsx:65
+msgid "Rouge"
+msgstr "Red"
+
+#: src/app/components/adjustements/adjustement.view.tsx:21
+msgid "Saturation"
+msgstr "Saturation"
+
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
+msgid "Valider"
+msgstr "Confirm"
+
+#: src/app/components/adjustements/adjustement.view.tsx:17
+#: src/components/ui/rgb-slider/rgb-slider.tsx:75
+msgid "Vert"
+msgstr "Green"
+
+#: src/components/source-selector/source-selector-view.tsx:48
+msgid "Zone de sélection"
+msgstr "Selection area"

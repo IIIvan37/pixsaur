@@ -55,7 +55,7 @@ export const CPC_MODE_CONFIG: Record<CpcModeKey, CpcModeConfig> = {
     overscan: true,
     mode: 0,
     width: 48 * 2 * 2,
-    height: 272,
+    height: 280,
     nColors: 16,
     scaleX: 2,
     scaleY: 1
@@ -64,7 +64,7 @@ export const CPC_MODE_CONFIG: Record<CpcModeKey, CpcModeConfig> = {
     overscan: true,
     mode: 1,
     width: 48 * 2 * 4,
-    height: 272,
+    height: 280,
     nColors: 4,
     scaleX: 1,
     scaleY: 1
@@ -73,7 +73,7 @@ export const CPC_MODE_CONFIG: Record<CpcModeKey, CpcModeConfig> = {
     overscan: true,
     mode: 2,
     width: 48 * 2 * 8,
-    height: 272,
+    height: 280,
     nColors: 2,
     scaleX: 1,
     scaleY: 2
