@@ -84,7 +84,7 @@ describe('Export Integration with CPC Quantization', () => {
 
     const fullCPCPalette = generateAmstradCPCPalette()
 
-    problematicColors.forEach(([r, g, b]) => {
+    for (const [r, g, b] of problematicColors) {
       const quantified = [quantizeCPC(r), quantizeCPC(g), quantizeCPC(b)]
 
       // Each quantified color should exist in the CPC palette
@@ -97,6 +97,6 @@ describe('Export Integration with CPC Quantization', () => {
         foundIndex,
         `Quantified color [${quantified}] from original [${r},${g},${b}] should exist in CPC palette`
       ).not.toBe(-1)
-    })
+    }
   })
 })

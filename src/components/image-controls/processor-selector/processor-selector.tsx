@@ -1,7 +1,7 @@
+import { Trans } from '@lingui/react/macro'
 import { useAtom, useSetAtom } from 'jotai'
 import { reinitializeProcessorsAtom } from '@/app/store/adapters/processors'
 import { processorTypeAtom } from '@/app/store/config/config'
-import { Trans } from '@lingui/react/macro'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import { isDevelopment } from '@/utils/is-development'

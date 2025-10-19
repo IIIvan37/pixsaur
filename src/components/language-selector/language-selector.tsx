@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai'
-import { localeAtom, SUPPORTED_LOCALES, LOCALE_NAMES } from '@/app/store/locale'
 import type { SupportedLocale } from '@/app/store/locale'
+import { LOCALE_NAMES, localeAtom, SUPPORTED_LOCALES } from '@/app/store/locale'
 import { Select, SelectItem } from '@/components/ui/select'
 import styles from './language-selector.module.css'
 

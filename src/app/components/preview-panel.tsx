@@ -1,6 +1,6 @@
+import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useId } from 'react'
-import { Trans } from '@lingui/react/macro'
 import { ColorPalette } from '@/components/color-palette/color-palette'
 import ImageControls from '@/components/image-controls/image-controls'
 import ImagePreview from '@/components/image-preview/image-preview'

@@ -707,7 +707,7 @@ export class ReGLQuantizer {
       for (let i = start; i < end; i += 4) {
         // Optimisation: Lecture directe sans Math.round coûteux
         const colorIndexFloat = (results[i] / 255) * (cpcPalette.length - 1)
-        const colorIndex = (colorIndexFloat + 0.5) | 0 // Faster than Math.round
+        const colorIndex = Math.trunc(colorIndexFloat + 0.5)
 
         if (colorIndex >= 0 && colorIndex < cpcPalette.length) {
           histogram[colorIndex]++
@@ -925,7 +925,7 @@ export class ReGLQuantizer {
       adapterLogger.info(
         `🚀 [ReGL] CPC Plus Mode ${modeLabel}: GPU-accelerated diversity selection (bypassing histogram)`
       )
-      
+
       // 🎯 Pour petites palettes (modes 1-2): sélectionner plus de candidats
       // pour laisser selectByStrategy choisir les meilleurs contrastés
       const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
@@ -933,7 +933,7 @@ export class ReGLQuantizer {
         actualTargetColors * candidateMultiplier,
         Math.floor(basePalette.length * 0.01) // Max 1% de la palette (41 couleurs pour 4096)
       )
-      
+
       topIndices = this.selectCPCPlusOptimized(
         imageData,
         basePalette,
@@ -964,7 +964,7 @@ export class ReGLQuantizer {
     // ✅ OPTIMISATION: Pour modes 0 (16 couleurs), retourner directement (diversité suffisante)
     // Pour modes 1-2 (4 ou 2 couleurs), appliquer les fonctions de contraste
     const shouldApplyContrastFunctions = config.targetColors <= 4
-    
+
     if (useOptimizedSelection && !shouldApplyContrastFunctions) {
       const selectedColors = topIndices.map(
         (idx: number) => [...basePalette[idx]] as Vector
@@ -991,22 +991,31 @@ export class ReGLQuantizer {
     adapterLogger.info(
       `📊 [ReGL] Candidates pool: ${candidateColors.length} colors (target: ${config.targetColors})`
     )
-    
+
     // 🔍 DEBUG: Afficher les candidats pour vérifier qu'ils sont divers
     if (candidateColors.length <= 10) {
-      candidateColors.forEach((c, i) => {
+      for (const [i, c] of candidateColors.entries()) {
         adapterLogger.debug(`  Candidate ${i}: rgb(${c[0]}, ${c[1]}, ${c[2]})`)
-      })
+      }
     }
 
     // 🎯 Pour les petites palettes (modes 1-2): toujours garantir la présence du noir
+    // SAUF si on a déjà targetColors couleurs preselected (locked)
     // Le noir est essentiel pour le dithering et les bordures
-    if (config.targetColors <= 4) {
+    if (
+      config.targetColors <= 4 &&
+      preselectedColors.length < config.targetColors
+    ) {
       const hasBlack = candidateColors.some(
         (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
       )
-      
-      if (!hasBlack) {
+
+      // Vérifier aussi si le noir est déjà dans les preselected
+      const hasBlackInPreselected = preselectedColors.some(
+        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+      )
+
+      if (!hasBlack && !hasBlackInPreselected) {
         adapterLogger.info(
           `⚫ [ReGL] Adding black to candidates for small palette (${config.targetColors} colors)`
         )
@@ -1023,7 +1032,11 @@ export class ReGLQuantizer {
     // 🎯 Pour CPC Plus en mode balanced avec petites palettes:
     // Filtrer les candidats pour privilégier les luminances moyennes (0.3-0.7)
     // MAIS toujours garder le noir s'il est présent
-    if (isCPCPlus && config.contrastStrategy === 'balanced' && config.targetColors <= 4) {
+    if (
+      isCPCPlus &&
+      config.contrastStrategy === 'balanced' &&
+      config.targetColors <= 4
+    ) {
       // Séparer le noir des autres candidats
       const blackColor = candidateColors.find(
         (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
@@ -1031,47 +1044,45 @@ export class ReGLQuantizer {
       const nonBlackCandidates = candidateColors.filter(
         (c) => !(c[0] === 0 && c[1] === 0 && c[2] === 0)
       )
-      
+
       const withLuminance = nonBlackCandidates.map((c, i) => {
         const [r, g, b] = c
-        const luminance = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
+        const luminance =
+          0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
         return { color: c, luminance, index: i }
       })
-      
+
       // Trier par luminance proche de 0.5 (moyen)
       withLuminance.sort((a, b) => {
         const distA = Math.abs(a.luminance - 0.5)
         const distB = Math.abs(b.luminance - 0.5)
         return distA - distB
       })
-      
+
       // Garder les candidats avec luminance moyenne (moins 1 slot pour le noir)
-      const slotsForNonBlack = blackColor ? config.targetColors * 2 - 1 : config.targetColors * 2
+      const slotsForNonBlack = blackColor
+        ? config.targetColors * 2 - 1
+        : config.targetColors * 2
       const filteredNonBlack = withLuminance
         .slice(0, Math.min(nonBlackCandidates.length, slotsForNonBlack))
         .map((item) => item.color)
-      
+
       // Reconstruire la liste avec le noir en premier
-      const filteredCandidates = blackColor 
+      const filteredCandidates = blackColor
         ? [blackColor, ...filteredNonBlack]
         : filteredNonBlack
-      
+
       adapterLogger.info(
         `🎨 [ReGL] Balanced mode: filtered ${filteredCandidates.length} candidates (black: ${blackColor ? 'yes' : 'no'}, medium luminance: ${filteredNonBlack.length})`
       )
-      
+
       candidateColors.splice(0, candidateColors.length, ...filteredCandidates)
     }
 
     // Créer la fonction de distance pour RGB uniquement
     const distanceFn = (a: Vector, b: Vector): number => {
       // RGB euclidean
-      let sum = 0
-      for (let i = 0; i < 3; i++) {
-        const d = a[i] - b[i]
-        sum += d * d
-      }
-      return Math.sqrt(sum)
+      return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
     }
 
     // Fonction de conversion vers RGB (pas de conversion nécessaire pour RGB)
@@ -1097,9 +1108,9 @@ export class ReGLQuantizer {
 
     // 🔍 DEBUG: Afficher les couleurs finalement sélectionnées
     adapterLogger.info(`✅ [ReGL] Final selection: ${result.length} colors`)
-    result.forEach((c, i) => {
+    for (const [i, c] of result.entries()) {
       adapterLogger.info(`  Final ${i}: rgb(${c[0]}, ${c[1]}, ${c[2]})`)
-    })
+    }
 
     adapterLogger.debug(
       `🎯 [ReGL] GPU selection completed: ${result.length}/${config.targetColors} colors selected`
@@ -1225,7 +1236,7 @@ export class ReGLQuantizer {
     // Modes 1-2 (2-4 couleurs): nécessitent un contraste beaucoup plus élevé
     // Mode 0 (16 couleurs): distance plus faible acceptable
     const minDistance = targetColors && targetColors <= 4 ? 80 : 20
-    
+
     for (
       let i = 1;
       i < colorFrequency.length && result.length < frequencyBudget;
@@ -1236,7 +1247,10 @@ export class ReGLQuantizer {
       // Vérifier diversité minimale avec distance adaptative
       let isDiverse = true
       for (const selectedColor of selectedConverted) {
-        if (this.calculateDistance(candidateConverted, selectedColor) < minDistance) {
+        if (
+          this.calculateDistance(candidateConverted, selectedColor) <
+          minDistance
+        ) {
           isDiverse = false
           break
         }
@@ -1354,14 +1368,15 @@ export class ReGLQuantizer {
       adapterLogger.info(
         `🎨 [ReGL] Balanced mode with ${targetColors} colors: selecting colors with medium luminance (like CPC Classic)`
       )
-      
+
       // Calculer la luminance de chaque couleur
       const withLuminance = colorFrequency.map((c) => {
         const [r, g, b] = c.color
-        const luminance = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
+        const luminance =
+          0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
         return { ...c, luminance }
       })
-      
+
       // Privilégier les couleurs avec luminance moyenne (0.3-0.7) car elles fonctionnent mieux avec le noir
       // Trier par: luminance proche de 0.5 (moyen) + fréquence
       withLuminance.sort((a, b) => {
@@ -1373,14 +1388,17 @@ export class ReGLQuantizer {
         }
         return lumDistA - lumDistB
       })
-      
+
       const topBalanced = withLuminance.slice(0, targetColors - result.length)
       result.push(...topBalanced.map((c) => c.index))
-      
+
+      const luminanceValues = topBalanced
+        .map((c) => c.luminance.toFixed(2))
+        .join(', ')
       adapterLogger.info(
-        `🎨 [ReGL] Selected colors with luminance: ${topBalanced.map((c) => `${c.luminance.toFixed(2)}`).join(', ')}`
+        `🎨 [ReGL] Selected colors with luminance: ${luminanceValues}`
       )
-      
+
       return result
     }
 
@@ -1412,7 +1430,7 @@ export class ReGLQuantizer {
     const dr = color1[0] - color2[0]
     const dg = color1[1] - color2[1]
     const db = color1[2] - color2[2]
-    return Math.sqrt(dr * dr + dg * dg + db * db)
+    return Math.hypot(dr, dg, db)
   }
 
   /**

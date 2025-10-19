@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import {
   getVisualRegion,
@@ -17,6 +18,18 @@ import {
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
+
+/**
+ * Quantifie une valeur RGB (0-255) vers CPC Classic (0, 128, 255)
+ */
+function quantizeCPC(value: number): number {
+  const cpcValues = [0, 128, 255]
+  return cpcValues.reduce(
+    (prev, curr) =>
+      Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev,
+    cpcValues[0]
+  )
+}
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -92,11 +105,36 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   // 🎯 Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
   const targetColors = CPC_MODE_CONFIG[mode].nColors
 
+  // 🎯 Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
+  const quantifyToCPCPlus = (value: number): number => {
+    const val4bit = Math.round((value / 255) * 15)
+    return Math.round((val4bit / 15) * 255)
+  }
+
+  const quantifiedLockedVecs =
+    cpcHardware === 'plus'
+      ? lockedVecs.map(
+          (color) =>
+            [
+              quantifyToCPCPlus(color[0]),
+              quantifyToCPCPlus(color[1]),
+              quantifyToCPCPlus(color[2])
+            ] as Vector<'RGB'>
+        )
+      : lockedVecs.map(
+          (color) =>
+            [
+              quantizeCPC(color[0]),
+              quantizeCPC(color[1]),
+              quantizeCPC(color[2])
+            ] as Vector<'RGB'>
+        )
+
   console.log('🔍 [QUANTIZER DEBUG] Input params:', {
     targetColors,
     basePaletteSize: basePalette.length,
-    lockedColorsCount: lockedVecs.length,
-    lockedColors: lockedVecs,
+    lockedColorsCount: quantifiedLockedVecs.length,
+    lockedColors: quantifiedLockedVecs,
     cpcHardware
   })
 
@@ -105,7 +143,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     cropped,
     targetColors,
     basePalette,
-    lockedVecs,
+    quantifiedLockedVecs,
     contrastStrategy // 🎯 Utiliser la stratégie choisie par l'utilisateur
   )
 
@@ -118,11 +156,18 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 export const previewImageAtom = atom(async (get) => {
   const mode = get(modeAtom)
   const quantizer = await get(quantizerAtom)
-  const reduced = await get(reducedPaletteRawAtom)
+  const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const cropped = await get(croppedImageAtom)
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
+
+  // 🔍 DEBUG: Vérifier la palette avant dithering
+  console.log('🎨 [PREVIEW] Palette for dithering:', {
+    count: reduced.length,
+    colors: reduced.map((c) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`),
+    mode
+  })
 
   logger.time('🖼️ Preview Generation')
 

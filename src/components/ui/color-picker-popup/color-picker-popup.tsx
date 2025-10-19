@@ -1,5 +1,7 @@
-import { useState } from 'react'
 import { Trans } from '@lingui/react/macro'
+import { useAtomValue } from 'jotai'
+import { useState } from 'react'
+import { cpcHardwareAtom } from '@/app/store/config/config'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import Button from '../button'
 import Flex from '../flex'
@@ -37,6 +39,7 @@ export function ColorPickerPopup({
 }: ColorPickerPopupProps) {
   // État local pour la couleur en cours d'édition
   const [workingColor, setWorkingColor] = useState<Vector>(initialColor)
+  const cpcHardware = useAtomValue(cpcHardwareAtom)
 
   const handleConfirm = () => {
     onColorConfirm(workingColor)
@@ -77,6 +80,7 @@ export function ColorPickerPopup({
             onChange={setWorkingColor}
             label=''
             showPreview={false}
+            hardware={cpcHardware}
           />
         </div>
 

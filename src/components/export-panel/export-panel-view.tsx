@@ -1,6 +1,6 @@
+import { Trans } from '@lingui/react/macro'
 import Button from '@/components/ui/button'
 import Icon from '@/components/ui/icon'
-import { Trans } from '@lingui/react/macro'
 import animStyles from '@/styles/animations.module.css'
 import styles from './export-panel.module.css'
 

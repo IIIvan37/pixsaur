@@ -1,6 +1,6 @@
 import path from 'node:path'
-import react from '@vitejs/plugin-react'
 import { lingui } from '@lingui/vite-plugin'
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // https://vite.dev/config/

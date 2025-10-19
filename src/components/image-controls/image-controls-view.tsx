@@ -1,6 +1,6 @@
+import { Trans } from '@lingui/react/macro'
 import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
 import type { CPCHardware } from '@/libs/types'
-import { Trans } from '@lingui/react/macro'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
 import { ToggleButtonGroup } from '../ui/toggle-button-group'
@@ -49,7 +49,9 @@ export function ImageControlsView({
   return (
     <div className={styles.controlsContainer}>
       <Flex align='center'>
-        <SectionTitle><Trans>Hardware</Trans></SectionTitle>
+        <SectionTitle>
+          <Trans>Hardware</Trans>
+        </SectionTitle>
         <ToggleButtonGroup
           options={hardwareOptions}
           value={cpcHardware}
@@ -59,7 +61,9 @@ export function ImageControlsView({
       </Flex>
 
       <Flex align='center'>
-        <SectionTitle><Trans>Mode</Trans></SectionTitle>
+        <SectionTitle>
+          <Trans>Mode</Trans>
+        </SectionTitle>
         <ToggleButtonGroup
           options={modeOptions}
           value={mode}

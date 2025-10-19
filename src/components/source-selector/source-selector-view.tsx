@@ -1,5 +1,5 @@
-import { useLingui } from '@lingui/react'
 import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import styles from './source-selector.module.css'
 import type { Handle } from './utils'
 
@@ -25,17 +25,15 @@ export function SourceSelectorView({
   const handleSize = 6
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: Interactive overlay for image selection requiring absolute positioning
     <div
-      role='button'
-      tabIndex={0}
       style={{
         position: 'absolute',
         top: 0,
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: 2
+        zIndex: 2,
+        cursor: 'crosshair'
       }}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
@@ -103,13 +101,11 @@ export function SourceSelectorView({
         }
 
         return (
-          // biome-ignore lint/a11y/useSemanticElements: Resize handle requires precise positioning
+          // Resize handle - pure visual indicator controlled by parent mouse events
           <div
             key={name}
             data-handle={name}
-            role='button'
-            tabIndex={0}
-            aria-label={_(msg`Redimensionner`)}
+            aria-hidden='true'
             style={{
               position: 'absolute',
               ...pos,
@@ -118,7 +114,8 @@ export function SourceSelectorView({
               backgroundColor: '#00FF00',
               cursor,
               zIndex: 3,
-              ...offsetStyle
+              ...offsetStyle,
+              pointerEvents: 'none'
             }}
           />
         )

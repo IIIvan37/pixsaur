@@ -1,2 +1,2 @@
-export { localeAtom, SUPPORTED_LOCALES, LOCALE_NAMES } from './locale'
 export type { SupportedLocale } from './locale'
+export { LOCALE_NAMES, localeAtom, SUPPORTED_LOCALES } from './locale'

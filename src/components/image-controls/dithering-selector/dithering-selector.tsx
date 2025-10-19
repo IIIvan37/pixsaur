@@ -1,6 +1,6 @@
+import { Trans } from '@lingui/react/macro'
 import { useAtom } from 'jotai'
 import { ditheringAtom } from '@/app/store/config/config'
-import { Trans } from '@lingui/react/macro'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
