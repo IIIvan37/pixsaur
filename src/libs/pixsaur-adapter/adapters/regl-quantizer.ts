@@ -925,14 +925,23 @@ export class ReGLQuantizer {
       adapterLogger.info(
         `🚀 [ReGL] CPC Plus Mode ${modeLabel}: GPU-accelerated diversity selection (bypassing histogram)`
       )
+      
+      // 🎯 Pour petites palettes (modes 1-2): sélectionner plus de candidats
+      // pour laisser selectByStrategy choisir les meilleurs contrastés
+      const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
+      const candidatesCount = Math.min(
+        actualTargetColors * candidateMultiplier,
+        Math.floor(basePalette.length * 0.01) // Max 1% de la palette (41 couleurs pour 4096)
+      )
+      
       topIndices = this.selectCPCPlusOptimized(
         imageData,
         basePalette,
-        actualTargetColors,
+        candidatesCount,
         config
       )
       adapterLogger.info(
-        `⚡ [ReGL] CPC Plus optimized selection: ${actualTargetColors} colors from ${basePalette.length} palette`
+        `⚡ [ReGL] CPC Plus optimized selection: ${topIndices.length} candidates from ${basePalette.length} palette (target: ${actualTargetColors})`
       )
     } else {
       // 📊 CPC Classic: Algorithme de diversité par luminance basé sur histogramme
@@ -952,32 +961,71 @@ export class ReGLQuantizer {
       )
     }
 
-    // ✅ OPTIMISATION: Si mode diversité activé, retourner directement les couleurs sélectionnées
-    if (isCPCPlus && useOptimizedSelection) {
+    // ✅ OPTIMISATION: Pour modes 0 (16 couleurs), retourner directement (diversité suffisante)
+    // Pour modes 1-2 (4 ou 2 couleurs), appliquer les fonctions de contraste
+    const shouldApplyContrastFunctions = config.targetColors <= 4
+    
+    if (useOptimizedSelection && !shouldApplyContrastFunctions) {
       const selectedColors = topIndices.map(
         (idx: number) => [...basePalette[idx]] as Vector
       )
+      const hardwareLabel = isCPCPlus ? 'CPC Plus' : 'CPC Classic'
       adapterLogger.info(
-        `🎨 [ReGL] CPC Plus chromatic diversity: returning ${selectedColors.length} colors directly`
-      )
-      return selectedColors
-    } else if (useOptimizedSelection) {
-      const selectedColors = topIndices.map(
-        (idx: number) => [...basePalette[idx]] as Vector
-      )
-      adapterLogger.info(
-        `🎨 [ReGL] CPC Classic diversity: returning ${selectedColors.length} colors directly`
+        `🎨 [ReGL] ${hardwareLabel} diversity (mode 0): returning ${selectedColors.length} colors directly`
       )
       return selectedColors
     }
 
-    // ✅ PHASE 2: Appliquer l'algorithme de contraste comme le CPU (uniquement si pas de diversité)
+    // ✅ PHASE 2: Appliquer l'algorithme de contraste pour petites palettes (modes 1-2)
     const candidateColors = topIndices.map(
       (idx: number) => [...basePalette[idx]] as Vector
     )
     const preselectedColors = preselectedIndices.map(
       (idx: number) => [...basePalette[idx]] as Vector
     )
+
+    const hardwareLabel = isCPCPlus ? 'CPC Plus' : 'CPC Classic'
+    adapterLogger.info(
+      `🎯 [ReGL] ${hardwareLabel}: Applying contrast functions for ${config.targetColors} colors (strategy: ${config.contrastStrategy || 'max'})`
+    )
+    adapterLogger.info(
+      `📊 [ReGL] Candidates pool: ${candidateColors.length} colors (target: ${config.targetColors})`
+    )
+    
+    // 🔍 DEBUG: Afficher les candidats pour vérifier qu'ils sont divers
+    if (candidateColors.length <= 10) {
+      candidateColors.forEach((c, i) => {
+        adapterLogger.debug(`  Candidate ${i}: rgb(${c[0]}, ${c[1]}, ${c[2]})`)
+      })
+    }
+
+    // 🎯 Pour CPC Plus en mode balanced avec petites palettes:
+    // Filtrer les candidats pour privilégier les luminances moyennes (0.3-0.7)
+    if (isCPCPlus && config.contrastStrategy === 'balanced' && config.targetColors <= 4) {
+      const withLuminance = candidateColors.map((c, i) => {
+        const [r, g, b] = c
+        const luminance = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
+        return { color: c, luminance, index: i }
+      })
+      
+      // Trier par luminance proche de 0.5 (moyen)
+      withLuminance.sort((a, b) => {
+        const distA = Math.abs(a.luminance - 0.5)
+        const distB = Math.abs(b.luminance - 0.5)
+        return distA - distB
+      })
+      
+      // Garder les candidats avec luminance moyenne
+      const filteredCandidates = withLuminance
+        .slice(0, Math.min(candidateColors.length, config.targetColors * 2))
+        .map((item) => item.color)
+      
+      adapterLogger.info(
+        `🎨 [ReGL] Balanced mode: filtered ${filteredCandidates.length} candidates with medium luminance`
+      )
+      
+      candidateColors.splice(0, candidateColors.length, ...filteredCandidates)
+    }
 
     // Créer la fonction de distance pour RGB uniquement
     const distanceFn = (a: Vector, b: Vector): number => {
@@ -1011,6 +1059,12 @@ export class ReGLQuantizer {
       }
     )
 
+    // 🔍 DEBUG: Afficher les couleurs finalement sélectionnées
+    adapterLogger.info(`✅ [ReGL] Final selection: ${result.length} colors`)
+    result.forEach((c, i) => {
+      adapterLogger.info(`  Final ${i}: rgb(${c[0]}, ${c[1]}, ${c[2]})`)
+    })
+
     adapterLogger.debug(
       `🎯 [ReGL] GPU selection completed: ${result.length}/${config.targetColors} colors selected`
     )
@@ -1042,7 +1096,8 @@ export class ReGLQuantizer {
       sampledColors,
       basePalette,
       targetColors,
-      preselectedIndices
+      preselectedIndices,
+      config.contrastStrategy // 🎯 Passer la stratégie de contraste
     )
 
     const duration = performance.now() - start
@@ -1127,8 +1182,14 @@ export class ReGLQuantizer {
     }>,
     selectedConverted: Vector[],
     result: number[],
-    frequencyBudget: number
+    frequencyBudget: number,
+    targetColors?: number
   ): void {
+    // 🎯 Distance minimale adaptative selon la taille de la palette cible
+    // Modes 1-2 (2-4 couleurs): nécessitent un contraste beaucoup plus élevé
+    // Mode 0 (16 couleurs): distance plus faible acceptable
+    const minDistance = targetColors && targetColors <= 4 ? 80 : 20
+    
     for (
       let i = 1;
       i < colorFrequency.length && result.length < frequencyBudget;
@@ -1136,10 +1197,10 @@ export class ReGLQuantizer {
     ) {
       const candidateConverted = colorFrequency[i].converted
 
-      // Vérifier diversité minimale (distance > 20)
+      // Vérifier diversité minimale avec distance adaptative
       let isDiverse = true
       for (const selectedColor of selectedConverted) {
-        if (this.calculateDistance(candidateConverted, selectedColor) < 20) {
+        if (this.calculateDistance(candidateConverted, selectedColor) < minDistance) {
           isDiverse = false
           break
         }
@@ -1202,12 +1263,14 @@ export class ReGLQuantizer {
   /**
    * 🎯 Sélection rapide avec diversité maximale + espaces colorimetériques
    * ✅ Complexité réduite en extrayant les helpers
+   * ✅ Stratégie adaptative selon contrastStrategy
    */
   private selectDiverseColorsFast(
     sampledColors: Vector[],
     basePalette: readonly Vector[],
     targetColors: number,
-    preselectedIndices: readonly number[] = []
+    preselectedIndices: readonly number[] = [],
+    contrastStrategy: 'max' | 'balanced' = 'max'
   ): number[] {
     // Commencer par les couleurs présélectionnées (priorité absolue)
     const result: number[] = [...preselectedIndices]
@@ -1238,15 +1301,60 @@ export class ReGLQuantizer {
     result.push(colorFrequency[0].index)
     selectedConverted.push(colorFrequency[0].converted)
 
-    // Stratégie hybride: 60% fréquence + 40% diversité
-    const frequencyBudget = Math.floor(targetColors * 0.6)
+    // 🎯 Stratégie adaptative selon contrastStrategy
+    // balanced: privilégie la fréquence (80%) pour garder les couleurs dominantes
+    // max: équilibre fréquence (60%) et diversité (40%) pour plus de contraste
+    const frequencyBudget = Math.floor(
+      targetColors * (contrastStrategy === 'balanced' ? 0.8 : 0.6)
+    )
+
+    adapterLogger.info(
+      `🎯 [ReGL] CPC Plus strategy="${contrastStrategy}": frequencyBudget=${frequencyBudget}/${targetColors} (${contrastStrategy === 'balanced' ? '80%' : '60%'} frequency)`
+    )
+
+    // 🎯 Pour les petites palettes (2-4 couleurs) en mode "balanced":
+    // Prendre directement les couleurs les plus fréquentes (comme CPC Classic)
+    if (contrastStrategy === 'balanced' && targetColors <= 4) {
+      adapterLogger.info(
+        `🎨 [ReGL] Balanced mode with ${targetColors} colors: selecting colors with medium luminance (like CPC Classic)`
+      )
+      
+      // Calculer la luminance de chaque couleur
+      const withLuminance = colorFrequency.map((c) => {
+        const [r, g, b] = c.color
+        const luminance = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
+        return { ...c, luminance }
+      })
+      
+      // Privilégier les couleurs avec luminance moyenne (0.3-0.7) car elles fonctionnent mieux avec le noir
+      // Trier par: luminance proche de 0.5 (moyen) + fréquence
+      withLuminance.sort((a, b) => {
+        const lumDistA = Math.abs(a.luminance - 0.5)
+        const lumDistB = Math.abs(b.luminance - 0.5)
+        // Si les luminances sont similaires, privilégier la fréquence
+        if (Math.abs(lumDistA - lumDistB) < 0.1) {
+          return b.frequency - a.frequency
+        }
+        return lumDistA - lumDistB
+      })
+      
+      const topBalanced = withLuminance.slice(0, targetColors - result.length)
+      result.push(...topBalanced.map((c) => c.index))
+      
+      adapterLogger.info(
+        `🎨 [ReGL] Selected colors with luminance: ${topBalanced.map((c) => `${c.luminance.toFixed(2)}`).join(', ')}`
+      )
+      
+      return result
+    }
 
     // Phase 1: Ajouter les couleurs fréquentes avec diversité minimale
     this.selectFrequentColorsWithDiversity(
       colorFrequency,
       selectedConverted,
       result,
-      frequencyBudget
+      frequencyBudget,
+      targetColors // 🎯 Passer targetColors pour distance adaptative
     )
 
     // Phase 2: Compléter avec MaxMin Distance sur toute la palette

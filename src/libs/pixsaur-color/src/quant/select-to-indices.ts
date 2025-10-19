@@ -145,8 +145,12 @@ function selectDiverseCandidates(
 
   // ✅ DIVERSITÉ CHROMATIQUE: Sélection avec distance minimale entre couleurs
   const selected: number[] = []
-  const minColorDistance = 30 // Distance minimale en degrés de teinte
-  const minLuminanceDistance = 0.15 // Distance minimale en luminance
+  
+  // 🎯 Distance adaptative selon le nombre de candidats sélectionnés (= approximation de targetColors)
+  // Pour CPC Plus avec palettes très petites: distances TRÈS strictes
+  const targetCount = candidates.length <= 8 ? candidates.length : 16
+  const minColorDistance = targetCount <= 4 ? 60 : 30 // Distance minimale en degrés de teinte
+  const minLuminanceDistance = targetCount <= 4 ? 0.3 : 0.15 // Distance minimale en luminance
 
   for (const candidate of colorMetrics) {
     if (selected.length === 0) {
@@ -230,10 +234,13 @@ export function selectTopIndicesCore(
   // 2. Filtrer les candidats restants
   const candidates = filterCandidates(counts, used, threshold)
 
-  // 3. ✅ OPTIMISATION: Mode diversité pour palettes moyennes (ex: mode 0 = 16 couleurs)
-  if (diversityMode && topN >= 8 && topN <= 16 && options?.basePalette) {
+  // 3. ✅ OPTIMISATION: Mode diversité pour palettes moyennes ET petites
+  // Petites palettes (2-4 couleurs): diversité CRITIQUE pour éviter couleurs trop proches
+  // Palettes moyennes (8-16 couleurs): diversité pour répartition chromatique
+  if (diversityMode && topN <= 16 && options?.basePalette) {
+    const modeLabel = topN <= 4 ? 'SMALL' : 'MEDIUM'
     quantizerLogger.info(
-      `🎨 [DIVERSITY] Activating diversity mode for ${topN} colors from ${candidates.length} candidates`
+      `🎨 [DIVERSITY-${modeLabel}] Activating diversity mode for ${topN} colors from ${candidates.length} candidates`
     )
     const diverseCandidates = selectDiverseCandidates(
       candidates,
