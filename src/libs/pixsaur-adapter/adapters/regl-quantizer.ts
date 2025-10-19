@@ -999,10 +999,40 @@ export class ReGLQuantizer {
       })
     }
 
+    // 🎯 Pour les petites palettes (modes 1-2): toujours garantir la présence du noir
+    // Le noir est essentiel pour le dithering et les bordures
+    if (config.targetColors <= 4) {
+      const hasBlack = candidateColors.some(
+        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+      )
+      
+      if (!hasBlack) {
+        adapterLogger.info(
+          `⚫ [ReGL] Adding black to candidates for small palette (${config.targetColors} colors)`
+        )
+        // Trouver l'index du noir dans la palette de base
+        const blackIndex = basePalette.findIndex(
+          (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+        )
+        if (blackIndex !== -1) {
+          candidateColors.unshift([0, 0, 0] as Vector)
+        }
+      }
+    }
+
     // 🎯 Pour CPC Plus en mode balanced avec petites palettes:
     // Filtrer les candidats pour privilégier les luminances moyennes (0.3-0.7)
+    // MAIS toujours garder le noir s'il est présent
     if (isCPCPlus && config.contrastStrategy === 'balanced' && config.targetColors <= 4) {
-      const withLuminance = candidateColors.map((c, i) => {
+      // Séparer le noir des autres candidats
+      const blackColor = candidateColors.find(
+        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+      )
+      const nonBlackCandidates = candidateColors.filter(
+        (c) => !(c[0] === 0 && c[1] === 0 && c[2] === 0)
+      )
+      
+      const withLuminance = nonBlackCandidates.map((c, i) => {
         const [r, g, b] = c
         const luminance = 0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
         return { color: c, luminance, index: i }
@@ -1015,13 +1045,19 @@ export class ReGLQuantizer {
         return distA - distB
       })
       
-      // Garder les candidats avec luminance moyenne
-      const filteredCandidates = withLuminance
-        .slice(0, Math.min(candidateColors.length, config.targetColors * 2))
+      // Garder les candidats avec luminance moyenne (moins 1 slot pour le noir)
+      const slotsForNonBlack = blackColor ? config.targetColors * 2 - 1 : config.targetColors * 2
+      const filteredNonBlack = withLuminance
+        .slice(0, Math.min(nonBlackCandidates.length, slotsForNonBlack))
         .map((item) => item.color)
       
+      // Reconstruire la liste avec le noir en premier
+      const filteredCandidates = blackColor 
+        ? [blackColor, ...filteredNonBlack]
+        : filteredNonBlack
+      
       adapterLogger.info(
-        `🎨 [ReGL] Balanced mode: filtered ${filteredCandidates.length} candidates with medium luminance`
+        `🎨 [ReGL] Balanced mode: filtered ${filteredCandidates.length} candidates (black: ${blackColor ? 'yes' : 'no'}, medium luminance: ${filteredNonBlack.length})`
       )
       
       candidateColors.splice(0, candidateColors.length, ...filteredCandidates)
