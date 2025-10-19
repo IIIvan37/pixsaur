@@ -136,6 +136,107 @@ Pixsaur est une application de traitement d'images avec architecture adaptateur 
 - Guide d'utilisation par cas d'usage (performance vs qualité)
 - Auto-fallback transparent et métriques comparatives
 
+## 🔍 Documentation d'Analyse
+
+### 🎯 [analysis/CONVIMGCPC_ANALYSIS.md](./analysis/CONVIMGCPC_ANALYSIS.md)
+**Analyse technique de ConvImgCpc et opportunités pour Pixsaur - ✅ NOUVEAU Oct 2025**
+- Analyse approfondie du convertisseur ConvImgCpc (C#)
+- Algorithmes avancés de quantification et dithering
+- Distance RGB pondérée et sélection de palette 2 passes
+- Techniques de lissage horizontal et ajustements HSL
+- Comparaison détaillée avec Pixsaur et roadmap d'implémentation
+- **Quick Wins identifiés** : Distance pondérée, lissage horizontal, tri de palette
+
+### 🎨 [analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md](./analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md)
+**Analyse UI et système d'export de ConvImgCpc - ✅ NOUVEAU Oct 2025**
+- Architecture de l'interface Windows Forms et éditeurs spécialisés
+- Système d'export complet : 17+ formats (.scr, .asm, .cmp, .dsk, .kit, .imp, .tiles)
+- Format SCR avec structure AMSDOS, Format ASM avec labels configurables
+- Compression (ZX0, ZX1, Standard) et routines de décompression Z80
+
+## 🚀 Guide de Démarrage
+
+### 📋 [IMPLEMENTATION_STARTER_KIT.md](./IMPLEMENTATION_STARTER_KIT.md)
+**Guide complet pour démarrer une session d'implémentation - ✅ NOUVEAU Oct 2025**
+- **Fichiers essentiels** par type de feature (Export, UI/UX, Color, I18N)
+- **Checklists par feature** : quels docs lire, quel code explorer
+- **Templates de prompt** pour nouvelle session avec AI
+- **Matrice de décision** : correspondance Feature → Docs → Code
+- **Quick start commands** pour navigation rapide
+- **→ Document indispensable pour commencer une implémentation**
+- Export d'animations (DeltaPack, DiffImage) et de Tilesets
+- Système de palette avancé (verrouillage, désactivation, génération)
+- Comparaison fonctionnalités avec Pixsaur et roadmap d'implémentation
+- **Priorités identifiées** : Export ASM avancé, désactivation de couleurs, générateur de palettes
+
+## 📚 Documentation Technique Spécialisée
+
+### 🎨 [CPC_PIXEL_ENCODING.md](./CPC_PIXEL_ENCODING.md)
+**Format d'encodage des pixels CPC**
+- Structure binaire des modes 0, 1, 2
+- Entrelacement mémoire CPC
+- Patterns de conversion pixel → byte
+
+### 🌐 [I18N_GUIDE.md](./I18N_GUIDE.md) & [I18N_IMPLEMENTATION_SUMMARY.md](./I18N_IMPLEMENTATION_SUMMARY.md)
+**Internationalisation avec Lingui**
+- Guide d'implémentation i18n
+- Résumé technique de l'intégration
+- Langues supportées : FR, EN, ES, DE
+
+### 🔧 Documentation des Fixes Historiques
+
+#### [LOCKED_COLORS_QUANTIZATION_FIX.md](./LOCKED_COLORS_QUANTIZATION_FIX.md)
+**Fix de la gestion des couleurs verrouillées dans la quantification**
+- Problème : Couleurs verrouillées non respectées
+- Solution : Intégration dans l'algorithme k-means
+
+#### [LOCKED_COLORS_SLOT_MANAGEMENT_FIX.md](./LOCKED_COLORS_SLOT_MANAGEMENT_FIX.md)
+**Fix de la gestion des slots de couleurs verrouillées**
+- Problème : Slots mal assignés lors du verrouillage
+- Solution : Réorganisation de la logique de slots
+
+#### [CPC_PLUS_CONTRAST_FIX.md](./CPC_PLUS_CONTRAST_FIX.md)
+**Fix du contraste pour CPC Plus modes 1-2**
+- Problème : Faible contraste en CPC+ avec palettes réduites
+- Solution : Fonction de sélection par contraste maximal
+
+#### [PADDING_DARKEST_COLOR_IMPLEMENTATION.md](./PADDING_DARKEST_COLOR_IMPLEMENTATION.md)
+**Implémentation du padding avec couleur la plus sombre**
+- Feature : Padding transparent avec couleur CPC appropriée
+- Utilisation : Export DSK et traitement d'images
+
+### 📊 [BROWSER_HEADLESS_ANALYSIS.md](./BROWSER_HEADLESS_ANALYSIS.md)
+**Analyse des navigateurs headless pour tests automatisés**
+- Comparaison Playwright vs Puppeteer
+- Setup pour tests d'intégration
+- Benchmarking automatisé
+
+### 📈 [benchmarks-reference-image.md](./benchmarks-reference-image.md)
+**Benchmarks avec images de référence**
+- Métriques de performance CPU vs GPU
+- Images de test standardisées
+- Résultats comparatifs
+
+### 🗄️ Documentation Architecture Historique
+
+#### [architecture/PHASE_3_QUANTIZER_UNIFICATION_COMPLETE.md](./architecture/PHASE_3_QUANTIZER_UNIFICATION_COMPLETE.md)
+**Phase 3 : Unification des quantizers CPU/GPU - COMPLÉTÉ**
+- Résolution du bug des doublons XYZ/Lab
+- Architecture DRY avec types unifiés
+- Résultats identiques CPU/GPU
+
+#### [architecture/FINAL_MISSION_REPORT.md](./architecture/FINAL_MISSION_REPORT.md)
+**Rapport final de la mission DRY transformation**
+- 87% réduction de duplication de code
+- 6 design patterns appliqués
+- Architecture enterprise-grade atteinte
+
+### 📝 [guides/LOGGING_SYSTEM.md](./guides/LOGGING_SYSTEM.md)
+**Système de logging détaillé**
+- Architecture des loggers
+- Niveaux de log et filtrage
+- Debug patterns avancés
+
 ## 🤖 AI Development Patterns
 
 ### Code Quality Checklist
@@ -315,7 +416,26 @@ CPC Plus: 4096 colors, 140-210ms ✅ Optimized + Diverse colors
 - `architecture/REGL_QUANTIZER_PLAN.md` - **Plan ReGL avec types unifiés**
 - `architecture/REGL_IMPLEMENTATION_GUIDE.md` - **Guide d'implémentation ReGL**
 - `BENCHMARK_TOOLS.md` - Performance tools
+- `COLORSPACE_SUPPORT.md` - Guide espaces colorimétriques
+- `analysis/CONVIMGCPC_ANALYSIS.md` - **Analyse ConvImgCpc - NOUVEAU Oct 2025**
+- `analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md` - **Analyse UI & Export ConvImgCpc - NOUVEAU Oct 2025**
 - `biome.json` - **Configuration linting moderne**
+
+### 📚 Documentation Technique (Référence)
+- `CPC_PIXEL_ENCODING.md` - Format encodage pixels CPC
+- `I18N_GUIDE.md` - Guide internationalisation
+- `I18N_IMPLEMENTATION_SUMMARY.md` - Résumé technique i18n
+- `BROWSER_HEADLESS_ANALYSIS.md` - Tests automatisés headless
+- `benchmarks-reference-image.md` - Benchmarks standardisés
+- `guides/LOGGING_SYSTEM.md` - Système logging détaillé
+
+### 🔧 Documentation Fixes Historiques (Archive)
+- `LOCKED_COLORS_QUANTIZATION_FIX.md` - Fix couleurs verrouillées
+- `LOCKED_COLORS_SLOT_MANAGEMENT_FIX.md` - Fix slots couleurs
+- `CPC_PLUS_CONTRAST_FIX.md` - Fix contraste CPC+
+- `PADDING_DARKEST_COLOR_IMPLEMENTATION.md` - Padding avec couleur sombre
+- `architecture/PHASE_3_QUANTIZER_UNIFICATION_COMPLETE.md` - Phase 3 DRY
+- `architecture/FINAL_MISSION_REPORT.md` - Rapport mission DRY
 
 ### 🗑️ Supprimés (Obsolètes)
 - ~~`GPU_FAITHFUL_IMPLEMENTATION.md`~~ - Remplacé par ReGL
@@ -324,7 +444,7 @@ CPC Plus: 4096 colors, 140-210ms ✅ Optimized + Diverse colors
 - ~~`ALGORITHME_QUANTIZATION_ANALYSIS.md`~~ - Trop technique, obsolète
 - ~~`eslint.config.js`~~ - ~~`.prettierrc`~~ - Remplacés par Biome
 
-### 🆕 Récents changements (Septembre 2025)
+### 🆕 Récents changements (Septembre-Octobre 2025)
 - **Migration Biome** : ESLint/Prettier → Biome unifié
 - **SonarQube compliance** : 0 erreur, 0 warning
 - **Code quality standards** : Props readonly, RefObject patterns
@@ -339,6 +459,9 @@ CPC Plus: 4096 colors, 140-210ms ✅ Optimized + Diverse colors
 - ✅ **Architecture Excellence** : 6 design patterns, 95% test coverage, 8 comprehensive guides
 - 🧹 **Code Cleanup Complete** : Dead code eliminated, Biome 0 errors/warnings, optimal quality (Sept 20, 2025)
 - 🎯 **CPC Plus GPU Histogram Fix** : Dynamic palette support 27→4096 colors, WebGL loop optimization (Sept 20, 2025)
+- 📊 **ConvImgCpc Analysis** : Analyse approfondie du convertisseur concurrent et roadmap d'opportunités (Oct 19, 2025)
+- 🎨 **ConvImgCpc UI & Export Analysis** : Analyse système d'export et interface utilisateur, 17+ formats identifiés (Oct 19, 2025)
+- 🚀 **Implementation Starter Kit** : Guide complet des fichiers essentiels pour démarrer une feature (Oct 19, 2025)
 
 ---
 
