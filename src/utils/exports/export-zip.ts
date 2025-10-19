@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { CPCHardware } from '@/libs/types'
+import type { ExportConfig } from './types'
 import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
@@ -32,11 +33,14 @@ export async function exportZip(
   canvas: HTMLCanvasElement,
   modeConfig: CpcModeConfig,
   cpcHardware: CPCHardware,
-  reducedPalette?: Array<[number, number, number]>,
-  asmLabel = 'pixsaur_data'
+  reducedPalette: Array<[number, number, number]> | undefined,
+  config: ExportConfig
 ) {
   const zip = new JSZip()
   const isCPCPlus = cpcHardware === CPCHardware.PLUS
+  
+  // Get label from config or use default
+  const asmLabel = config.labels.enabled ? config.labels.media : 'pixsaur_data'
 
   const ctx = canvas.getContext('2d')
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
@@ -48,72 +52,88 @@ export async function exportZip(
       throw new Error('Reduced palette is required for CPC Plus export')
     }
 
-    // Pour CPC Plus, les données d'image restent identiques (index de 0-15)
-    // mais on utilise une palette CPC Plus au lieu de firmware/hardware
-
     // Convert palette to CPC Plus values
     const cpcPlusPaletteValues = paletteToCPCPlusValues(reducedPalette)
 
-    // Export SCR avec palette CPC Plus injectée
-    const scr = exportSCR(indexBuf, modeConfig)
-    injectCPCPlusPaletteIntoSCR(scr, cpcPlusPaletteValues)
-    const asmText =
-      getHeader(modeConfig, 'SCR', true) + toASMData(scr, asmLabel)
-    zip.file(`${asmLabel}.asm`, asmText)
+    // Export SCR if enabled
+    if (config.content.includeSCR) {
+      const scr = exportSCR(indexBuf, modeConfig)
+      injectCPCPlusPaletteIntoSCR(scr, cpcPlusPaletteValues)
+      const asmText =
+        getHeader(modeConfig, 'SCR', true) + toASMData(scr, asmLabel)
+      zip.file(`${asmLabel}.asm`, asmText)
+    }
 
-    // Export Linear identique
-    const linear_asm = exportLinearAsm(indexBuf, modeConfig)
-    const linear_asm_text =
-      getHeader(modeConfig, 'Linear', true) +
-      toASMData(linear_asm, `${asmLabel}-linear`)
-    zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+    // Export Linear if enabled
+    if (config.content.includeLinear) {
+      const linear_asm = exportLinearAsm(indexBuf, modeConfig)
+      const linear_asm_text =
+        getHeader(modeConfig, 'Linear', true) +
+        toASMData(linear_asm, `${asmLabel}_linear`)
+      zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+    }
 
-    // Export palette separée en format CPC Plus (16-bit values)
-    const cpcPlusPaletteText =
-      getHeader(modeConfig, 'CPC Plus Palette', true) +
-      cpcPlusValuesToASM(cpcPlusPaletteValues, 'palette_cpc_plus')
-    zip.file('palette_cpc_plus.asm', cpcPlusPaletteText)
+    // Export palette if enabled
+    if (config.content.includePalettes) {
+      const paletteLabel = config.labels.enabled ? config.labels.palette : 'palette_cpc_plus'
+      const cpcPlusPaletteText =
+        getHeader(modeConfig, 'CPC Plus Palette', true) +
+        cpcPlusValuesToASM(cpcPlusPaletteValues, paletteLabel)
+      zip.file(`${paletteLabel}.asm`, cpcPlusPaletteText)
+    }
   } else {
     // ===== CPC CLASSIC EXPORT =====
-    const scr = exportSCR(indexBuf, modeConfig)
-    injectPaletteDataIntoSCR(scr, paletteFirmware)
+    
+    // Export SCR if enabled
+    if (config.content.includeSCR) {
+      const scr = exportSCR(indexBuf, modeConfig)
+      injectPaletteDataIntoSCR(scr, paletteFirmware)
+      const asmText =
+        getHeader(modeConfig, 'SCR', false) + toASMData(scr, asmLabel)
+      zip.file(`${asmLabel}.asm`, asmText)
+    }
 
-    const asmText =
-      getHeader(modeConfig, 'SCR', false) + toASMData(scr, asmLabel)
-    zip.file(`${asmLabel}.asm`, asmText)
+    // Export Linear if enabled
+    if (config.content.includeLinear) {
+      const linear_asm = exportLinearAsm(indexBuf, modeConfig)
+      const linear_asm_text =
+        getHeader(modeConfig, 'Linear', false) +
+        toASMData(linear_asm, `${asmLabel}_linear`)
+      zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+    }
 
-    const linear_asm = exportLinearAsm(indexBuf, modeConfig)
-    const linear_asm_text =
-      getHeader(modeConfig, 'Linear', false) +
-      toASMData(linear_asm, `${asmLabel}-linear`)
-    zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+    // Export firmware and hardware palettes if enabled
+    if (config.content.includePalettes) {
+      const paletteLabel = config.labels.enabled ? config.labels.palette : 'palette'
+      
+      const paletteFirmwareText = toASMData(
+        new Uint8Array(paletteFirmware),
+        `${paletteLabel}_firmware`
+      )
+      zip.file(`${paletteLabel}_firmware.asm`, paletteFirmwareText)
 
-    // Export firmware and hardware palettes for Classic
-    const paletteFirmwareText = toASMData(
-      new Uint8Array(paletteFirmware),
-      'palette_firmware'
-    )
-    zip.file('palette_firmware.asm', paletteFirmwareText)
-
-    const paletteHardwareText = toASMData(
-      new Uint8Array(getHardwarePalette(paletteFirmware)),
-      'palette_hardware'
-    )
-    zip.file('palette_hardware.asm', paletteHardwareText)
+      const paletteHardwareText = toASMData(
+        new Uint8Array(getHardwarePalette(paletteFirmware)),
+        `${paletteLabel}_hardware`
+      )
+      zip.file(`${paletteLabel}_hardware.asm`, paletteHardwareText)
+    }
   }
 
-  // Common exports for both modes
-  const blob = await new Promise<Blob>((resolve) => {
-    canvas.toBlob((b) => resolve(b!), 'image/png')
-  })
-  zip.file('pixsaur.png', blob)
+  // Export PNG if enabled
+  if (config.content.includePNG) {
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((b) => resolve(b!), 'image/png')
+    })
+    zip.file('pixsaur.png', blob)
+  }
 
   // 5. Finalisation et téléchargement
   const zipBlob = await zip.generateAsync({ type: 'blob' })
   const url = URL.createObjectURL(zipBlob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'pixsaur-export.zip'
+  a.download = `${config.filename || 'pixsaur-export'}.zip`
   a.click()
   URL.revokeObjectURL(url)
 }

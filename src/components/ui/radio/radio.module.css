@@ -1,0 +1,54 @@
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-foreground);
+  padding: var(--spacing-xs) 0;
+  transition: color 0.2s ease;
+}
+
+.radioLabel:hover {
+  color: var(--color-accent);
+}
+
+.radio {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-radius: 50%;
+  background-color: var(--color-background);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.radio:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+}
+
+.radio:checked {
+  border-color: var(--color-accent);
+}
+
+.radio:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-accent);
+}
+
+.radio:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

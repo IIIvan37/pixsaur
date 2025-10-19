@@ -1,4 +1,5 @@
 import { useAtomValue } from 'jotai'
+import { useState } from 'react'
 import { cpcHardwareAtom, modeAtom } from '@/app/store/config/config'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import {
@@ -9,15 +10,18 @@ import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { correctColorIndicesForCPC } from '@/utils/exports/correct-indices'
 import { exportZip } from '@/utils/exports/export-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
+import type { ExportConfig } from '@/utils/exports/types'
 import ExportPanelView from './export-panel-view'
+import ExportConfigDialog from './export-config-dialog'
 
 export default function ExportPanel() {
   const image = useAtomValue(previewImageAtom)
   const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const mode = useAtomValue(modeAtom)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  const onExport = async () => {
+  const handleExport = async (config: ExportConfig) => {
     if (!image?.data) return
 
     // ✅ FIX: Ne pas "nettoyer" l'image - previewImageAtom contient déjà le dithering correct
@@ -88,15 +92,28 @@ export default function ExportPanel() {
 
     const modeConfig = CPC_MODE_CONFIG[mode]
 
+    // Generate ZIP with selected content
     exportZip(
       indexBuf,
       paletteFirmware,
       canvas,
       modeConfig,
       cpcHardware,
-      paletteForExport
+      paletteForExport,
+      config
     )
   }
 
-  return <ExportPanelView onExport={onExport} />
+  return (
+    <>
+      <ExportPanelView 
+        onExport={() => setIsDialogOpen(true)}
+      />
+      <ExportConfigDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onConfirm={handleExport}
+      />
+    </>
+  )
 }

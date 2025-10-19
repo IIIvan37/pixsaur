@@ -1,4 +1,5 @@
 import { Trans } from '@lingui/react/macro'
+import clsx from 'clsx'
 import Button from '@/components/ui/button'
 import Icon from '@/components/ui/icon'
 import animStyles from '@/styles/animations.module.css'
@@ -13,7 +14,7 @@ export default function ExportPanelView({ onExport }: ExportPanelViewProps) {
     <div className={styles.exportPanel}>
       <Button
         onClick={onExport}
-        className={[animStyles.button, styles.exportButton].join(' ')}
+        className={clsx(animStyles.button, styles.exportButton)}
       >
         <Icon name='DownloadIcon' className={styles.buttonIcon} />
         <Trans>Exporter</Trans>

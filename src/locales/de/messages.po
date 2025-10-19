@@ -13,7 +13,8 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:88
+#: src/components/export-panel/export-config-dialog.tsx:66
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:92
 msgid "Annuler"
 msgstr "Abbrechen"
 
@@ -21,18 +22,26 @@ msgstr "Abbrechen"
 msgid "Aperçu"
 msgstr "Vorschau"
 
-#: src/components/image-preview/image-preview-view.tsx:35
+#: src/components/image-preview/image-preview-view.tsx:36
 msgid "Aucune image traitée"
 msgstr "Kein verarbeitetes Bild"
 
 #: src/app/components/adjustements/adjustement.view.tsx:18
-#: src/components/ui/rgb-slider/rgb-slider.tsx:85
+#: src/components/ui/rgb-slider/rgb-slider.tsx:122
 msgid "Bleu"
 msgstr "Blau"
 
 #: src/app/components/source-section.tsx:25
 msgid "Changer d'image"
 msgstr "Bild ändern"
+
+#: src/components/export-panel/export-config-dialog.tsx:61
+msgid "Configuration de l'export"
+msgstr "Exportkonfiguration"
+
+#: src/components/export-panel/export-config-dialog.tsx:76
+msgid "Contenu du ZIP"
+msgstr "ZIP-Inhalt"
 
 #: src/app/components/adjustements/adjustement.view.tsx:20
 msgid "Contraste"
@@ -42,15 +51,16 @@ msgstr "Kontrast"
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Bildkonverter"
 
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
 msgstr "Entsperren"
 
-#: src/components/export-panel/export-panel-view.tsx:19
+#: src/components/export-panel/export-config-dialog.tsx:69
+#: src/components/export-panel/export-panel-view.tsx:20
 msgid "Exporter"
 msgstr "Exportieren"
 
-#: src/components/image-upload/image-upload-view.tsx:44
+#: src/components/image-upload/image-upload-view.tsx:45
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Unterstützte Formate: PNG, JPEG, GIF, BMP, WEBP, SVG"
 
@@ -58,7 +68,7 @@ msgstr "Unterstützte Formate: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgid "Glissez & déposez une image ici"
 msgstr "Ziehen Sie ein Bild hierher"
 
-#: src/components/image-controls/image-controls-view.tsx:52
+#: src/components/image-controls/image-controls-view.tsx:53
 msgid "Hardware"
 msgstr "Hardware"
 
@@ -70,6 +80,18 @@ msgstr "Quellbild"
 msgid "Intensité"
 msgstr "Intensität"
 
+#: src/components/export-panel/export-config-dialog.tsx:121
+msgid "Label de la palette"
+msgstr "Paletten-Label"
+
+#: src/components/export-panel/export-config-dialog.tsx:113
+msgid "Label des données"
+msgstr "Daten-Label"
+
+#: src/components/export-panel/export-config-dialog.tsx:87
+msgid "Linear ASM (séquentiel)"
+msgstr "Linear ASM (sequenziell)"
+
 #: src/app/components/preview-panel.tsx:34
 msgid "Lissage"
 msgstr "Glättung"
@@ -78,7 +100,7 @@ msgstr "Glättung"
 msgid "Luminosité"
 msgstr "Helligkeit"
 
-#: src/components/image-controls/image-controls-view.tsx:62
+#: src/components/image-controls/image-controls-view.tsx:65
 msgid "Mode"
 msgstr "Modus"
 
@@ -86,9 +108,21 @@ msgstr "Modus"
 msgid "Mode de dithering"
 msgstr "Dithering-Modus"
 
+#: src/components/export-panel/export-config-dialog.tsx:131
+msgid "Nom du fichier ZIP"
+msgstr "ZIP-Dateiname"
+
 #: src/components/image-upload/image-upload-view.tsx:43
 msgid "ou cliquez pour sélectionner un fichier"
 msgstr "oder klicken Sie, um eine Datei auszuwählen"
+
+#: src/components/export-panel/export-config-dialog.tsx:92
+msgid "Palettes (firmware/hardware)"
+msgstr "Paletten (Firmware/Hardware)"
+
+#: src/components/export-panel/export-config-dialog.tsx:97
+msgid "PNG (aperçu)"
+msgstr "PNG (Vorschau)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:22
 msgid "Posterisation"
@@ -99,15 +133,15 @@ msgid "Processeur"
 msgstr "Prozessor"
 
 #: src/components/source-selector/source-selector-view.tsx:112
-msgid "Redimensionner"
-msgstr "Größe ändern"
+#~ msgid "Redimensionner"
+#~ msgstr "Größe ändern"
 
-#: src/app/components/adjustements/adjustement.view.tsx:42
+#: src/app/components/adjustements/adjustement.view.tsx:48
 msgid "Réinitialiser"
 msgstr "Zurücksetzen"
 
 #: src/app/components/adjustements/adjustement.view.tsx:16
-#: src/components/ui/rgb-slider/rgb-slider.tsx:65
+#: src/components/ui/rgb-slider/rgb-slider.tsx:102
 msgid "Rouge"
 msgstr "Rot"
 
@@ -115,15 +149,27 @@ msgstr "Rot"
 msgid "Saturation"
 msgstr "Sättigung"
 
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
+#: src/components/export-panel/export-config-dialog.tsx:82
+msgid "SCR ASM (format CPC entrelacé)"
+msgstr "SCR ASM (verschachteltes CPC-Format)"
+
+#: src/components/export-panel/export-config-dialog.tsx:62
+msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
+msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
+
+#: src/components/export-panel/export-config-dialog.tsx:106
+msgid "Utiliser des labels personnalisés"
+msgstr "Benutzerdefinierte Labels verwenden"
+
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:95
 msgid "Valider"
 msgstr "Bestätigen"
 
 #: src/app/components/adjustements/adjustement.view.tsx:17
-#: src/components/ui/rgb-slider/rgb-slider.tsx:75
+#: src/components/ui/rgb-slider/rgb-slider.tsx:112
 msgid "Vert"
 msgstr "Grün"
 
-#: src/components/source-selector/source-selector-view.tsx:48
+#: src/components/source-selector/source-selector-view.tsx:46
 msgid "Zone de sélection"
 msgstr "Auswahlbereich"

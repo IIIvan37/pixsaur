@@ -147,12 +147,26 @@ Pixsaur est une application de traitement d'images avec architecture adaptateur 
 - Comparaison détaillée avec Pixsaur et roadmap d'implémentation
 - **Quick Wins identifiés** : Distance pondérée, lissage horizontal, tri de palette
 
-### 🎨 [analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md](./analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md)
+### 📊 [analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md](./analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md)
 **Analyse UI et système d'export de ConvImgCpc - ✅ NOUVEAU Oct 2025**
 - Architecture de l'interface Windows Forms et éditeurs spécialisés
 - Système d'export complet : 17+ formats (.scr, .asm, .cmp, .dsk, .kit, .imp, .tiles)
 - Format SCR avec structure AMSDOS, Format ASM avec labels configurables
 - Compression (ZX0, ZX1, Standard) et routines de décompression Z80
+- Export d'animations (DeltaPack, DiffImage) et de Tilesets
+- Système de palette avancé (verrouillage, désactivation, génération)
+- Comparaison fonctionnalités avec Pixsaur et roadmap d'implémentation
+- **Priorités identifiées** : Export ASM avancé, désactivation de couleurs, générateur de palettes
+
+### 📦 [EXPORT_CONFIGURABLE_IMPLEMENTATION.md](./EXPORT_CONFIGURABLE_IMPLEMENTATION.md)
+**Implémentation complète de l'export configurable - ✅ NOUVEAU Oct 2025**
+- Feature HIGH priority implémentée et testée
+- Dialog d'export unifié avec sélection de contenu ZIP
+- Composants UI réutilisables (Checkbox, Radio, Input) avec styling CPC retro
+- Support multi-langue (EN, FR, ES, DE) - 39/39 traductions
+- Templates ASM simplifiés (MVP sans compression)
+- Architecture avec footer séparé pour dialogs scrollables
+- **Status** : ✅ PRODUCTION READY
 
 ## 🚀 Guide de Démarrage
 
