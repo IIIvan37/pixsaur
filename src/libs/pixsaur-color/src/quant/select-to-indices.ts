@@ -145,7 +145,7 @@ function selectDiverseCandidates(
 
   // ✅ DIVERSITÉ CHROMATIQUE: Sélection avec distance minimale entre couleurs
   const selected: number[] = []
-  
+
   // 🎯 Distance adaptative selon le nombre de candidats sélectionnés (= approximation de targetColors)
   // Pour CPC Plus avec palettes très petites: distances TRÈS strictes
   const targetCount = candidates.length <= 8 ? candidates.length : 16

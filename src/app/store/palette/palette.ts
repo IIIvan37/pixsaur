@@ -25,7 +25,7 @@ export const lockedSlotsAtom = atom<Record<number, Vector<'RGB'>>>({})
 
 // 1️⃣ L’atome principal, mutable, qui contiendra vos 16 slots
 export const userPaletteAtom = atomWithCompare<PaletteSlot[]>(
-  Array(16).fill({ color: null as null | Vector<'RGB'>, locked: false }),
+  new Array(16).fill({ color: null as null | Vector<'RGB'>, locked: false }),
   shallowEqualPalette
 )
 
@@ -59,7 +59,7 @@ export const setReducedPaletteAtom = atom(
         newSlots[i] = { color: vec, locked: false }
       }
     }
-    
+
     // Compléter avec des slots vides pour atteindre 16
     while (newSlots.length < 16) {
       newSlots.push({ color: null, locked: false })

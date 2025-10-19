@@ -1,6 +1,6 @@
-import type { AdjustementKey } from '@/app/store/config/types'
 import { Trans } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
+import type { AdjustementKey } from '@/app/store/config/types'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
 import PixsaurSlider from '@/components/ui/slider'
@@ -25,7 +25,13 @@ const labels: RangeLabels[] = [
 type AdjustementsViewProps = {
   readonly disabled?: boolean
   readonly adjustments: RangeOption
-  readonly onChange: ({ key, value }: { key: AdjustementKey; value: number }) => void
+  readonly onChange: ({
+    key,
+    value
+  }: {
+    key: AdjustementKey
+    value: number
+  }) => void
   readonly onReset: () => void
 }
 

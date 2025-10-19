@@ -1,6 +1,6 @@
-import { UploadIcon } from '@radix-ui/react-icons'
-import { useLingui } from '@lingui/react'
 import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { UploadIcon } from '@radix-ui/react-icons'
 import { useId } from 'react'
 import { useDropzone } from 'react-dropzone'
 import styles from './image-upload.module.css'
@@ -41,7 +41,9 @@ export const ImageUploadView = ({
 
   const defaultPrimaryText = _(msg`Glissez & déposez une image ici`)
   const defaultSecondaryText = _(msg`ou cliquez pour sélectionner un fichier`)
-  const defaultHelpText = _(msg`Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG`)
+  const defaultHelpText = _(
+    msg`Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG`
+  )
 
   return (
     <div
@@ -57,7 +59,9 @@ export const ImageUploadView = ({
       />
       <UploadIcon className={styles.icon} />
       <p className={styles.primaryText}>{primaryText || defaultPrimaryText}</p>
-      <p className={styles.secondaryText}>{secondaryText || defaultSecondaryText}</p>
+      <p className={styles.secondaryText}>
+        {secondaryText || defaultSecondaryText}
+      </p>
       <p className={styles.helpText}>{helpText || defaultHelpText}</p>
     </div>
   )

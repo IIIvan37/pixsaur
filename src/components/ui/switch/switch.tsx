@@ -1,6 +1,6 @@
 import * as SwitchPrimitive from '@radix-ui/react-switch'
-import type { ReactNode } from 'react'
 import clsx from 'clsx'
+import type { ReactNode } from 'react'
 import styles from './switch.module.css'
 
 type SwitchProps = {

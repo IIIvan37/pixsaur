@@ -17,11 +17,11 @@ export const LOCALE_NAMES: Record<SupportedLocale, string> = {
  */
 function detectBrowserLocale(): SupportedLocale {
   const browserLang = navigator.language.split('-')[0].toLowerCase()
-  
+
   if (SUPPORTED_LOCALES.includes(browserLang as SupportedLocale)) {
     return browserLang as SupportedLocale
   }
-  
+
   return 'en'
 }
 

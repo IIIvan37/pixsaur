@@ -24,18 +24,11 @@ import { lockedVectorsAtom } from '../palette/palette'
  */
 function quantizeCPC(value: number): number {
   const cpcValues = [0, 128, 255]
-  return cpcValues.reduce((prev, curr) =>
-    Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev,
+  return cpcValues.reduce(
+    (prev, curr) =>
+      Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev,
     cpcValues[0]
   )
-}
-
-/**
- * Quantifie une valeur RGB (0-255) vers CPC Plus 4-bit (0-15 mapped to 0-255)
- */
-function quantifyToCPCPlus(value: number): number {
-  const val4bit = Math.round((value / 255) * 15)
-  return Math.round((val4bit / 15) * 255)
 }
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
@@ -118,17 +111,24 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     return Math.round((val4bit / 15) * 255)
   }
 
-  const quantifiedLockedVecs = cpcHardware === 'plus' 
-    ? lockedVecs.map(color => [
-        quantifyToCPCPlus(color[0]),
-        quantifyToCPCPlus(color[1]),
-        quantifyToCPCPlus(color[2])
-      ] as Vector<'RGB'>)
-    : lockedVecs.map(color => [
-        quantizeCPC(color[0]),
-        quantizeCPC(color[1]),
-        quantizeCPC(color[2])
-      ] as Vector<'RGB'>)
+  const quantifiedLockedVecs =
+    cpcHardware === 'plus'
+      ? lockedVecs.map(
+          (color) =>
+            [
+              quantifyToCPCPlus(color[0]),
+              quantifyToCPCPlus(color[1]),
+              quantifyToCPCPlus(color[2])
+            ] as Vector<'RGB'>
+        )
+      : lockedVecs.map(
+          (color) =>
+            [
+              quantizeCPC(color[0]),
+              quantizeCPC(color[1]),
+              quantizeCPC(color[2])
+            ] as Vector<'RGB'>
+        )
 
   console.log('🔍 [QUANTIZER DEBUG] Input params:', {
     targetColors,
@@ -165,7 +165,7 @@ export const previewImageAtom = atom(async (get) => {
   // 🔍 DEBUG: Vérifier la palette avant dithering
   console.log('🎨 [PREVIEW] Palette for dithering:', {
     count: reduced.length,
-    colors: reduced.map(c => `rgb(${c[0]}, ${c[1]}, ${c[2]})`),
+    colors: reduced.map((c) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`),
     mode
   })
 

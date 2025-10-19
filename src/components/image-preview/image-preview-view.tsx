@@ -1,16 +1,17 @@
 // ✅ ImagePreviewView.tsx
-import { useAtomValue } from 'jotai'
+
 import { Trans } from '@lingui/react/macro'
+import { useAtomValue } from 'jotai'
 import { modeAtom } from '@/app/store/config/config'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import styles from './image-preview.module.css'
 
 export type ImagePreviewViewProps = {
-  containerRefCallback: (node: HTMLDivElement | null) => void
-  ref: React.RefObject<HTMLCanvasElement | null>
-  image: ImageData | null
-  width: number
-  height: number
+  readonly containerRefCallback: (node: HTMLDivElement | null) => void
+  readonly ref: React.RefObject<HTMLCanvasElement | null>
+  readonly image: ImageData | null
+  readonly width: number
+  readonly height: number
 }
 
 /**

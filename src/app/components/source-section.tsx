@@ -1,5 +1,5 @@
-import { useAtomValue, useSetAtom } from 'jotai'
 import { Trans } from '@lingui/react/macro'
+import { useAtomValue, useSetAtom } from 'jotai'
 
 import { ImageSelector } from '@/components/image-selector'
 import { ImageUpload } from '@/components/image-upload/image-upload'
@@ -31,10 +31,10 @@ export default function SourceSection() {
         icon='UploadIcon'
       />
 
-      {!img ? (
-        <ImageUpload onImageLoaded={handleImageLoaded} />
-      ) : (
+      {img ? (
         <ImageSelector />
+      ) : (
+        <ImageUpload onImageLoaded={handleImageLoaded} />
       )}
     </Panel>
   )
