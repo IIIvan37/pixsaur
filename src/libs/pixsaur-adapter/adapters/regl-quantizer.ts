@@ -1000,13 +1000,19 @@ export class ReGLQuantizer {
     }
 
     // 🎯 Pour les petites palettes (modes 1-2): toujours garantir la présence du noir
+    // SAUF si on a déjà targetColors couleurs preselected (locked)
     // Le noir est essentiel pour le dithering et les bordures
-    if (config.targetColors <= 4) {
+    if (config.targetColors <= 4 && preselectedColors.length < config.targetColors) {
       const hasBlack = candidateColors.some(
         (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
       )
       
-      if (!hasBlack) {
+      // Vérifier aussi si le noir est déjà dans les preselected
+      const hasBlackInPreselected = preselectedColors.some(
+        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+      )
+      
+      if (!hasBlack && !hasBlackInPreselected) {
         adapterLogger.info(
           `⚫ [ReGL] Adding black to candidates for small palette (${config.targetColors} colors)`
         )
