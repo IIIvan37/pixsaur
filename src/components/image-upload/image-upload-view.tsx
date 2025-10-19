@@ -1,4 +1,6 @@
 import { UploadIcon } from '@radix-ui/react-icons'
+import { useLingui } from '@lingui/react'
+import { msg } from '@lingui/core/macro'
 import { useId } from 'react'
 import { useDropzone } from 'react-dropzone'
 import styles from './image-upload.module.css'
@@ -23,10 +25,11 @@ export type ImageUploadProps = {
  */
 export const ImageUploadView = ({
   onUpload,
-  primaryText = 'Glissez & déposez une image ici',
-  secondaryText = 'ou cliquez pour sélectionner un fichier',
-  helpText = 'Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG'
+  primaryText,
+  secondaryText,
+  helpText
 }: ImageUploadProps) => {
+  const { _ } = useLingui()
   const uploadId = useId()
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: onUpload,
@@ -35,6 +38,10 @@ export const ImageUploadView = ({
     },
     multiple: false
   })
+
+  const defaultPrimaryText = _(msg`Glissez & déposez une image ici`)
+  const defaultSecondaryText = _(msg`ou cliquez pour sélectionner un fichier`)
+  const defaultHelpText = _(msg`Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG`)
 
   return (
     <div
@@ -49,9 +56,9 @@ export const ImageUploadView = ({
         data-testid='image-upload-input'
       />
       <UploadIcon className={styles.icon} />
-      <p className={styles.primaryText}>{primaryText}</p>
-      <p className={styles.secondaryText}>{secondaryText}</p>
-      <p className={styles.helpText}>{helpText}</p>
+      <p className={styles.primaryText}>{primaryText || defaultPrimaryText}</p>
+      <p className={styles.secondaryText}>{secondaryText || defaultSecondaryText}</p>
+      <p className={styles.helpText}>{helpText || defaultHelpText}</p>
     </div>
   )
 }

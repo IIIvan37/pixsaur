@@ -1,14 +1,15 @@
+import type { ReactNode } from 'react'
 import Button from '../../button'
 import type { IconName } from '../../icon'
 import Icon from '../../icon'
 import styles from './header.module.css'
 
 export type HeaderProps = {
-  title?: string
-  actionLabel?: string
-  action?: () => void
-  icon?: IconName
-  disabled?: boolean
+  readonly title?: ReactNode
+  readonly actionLabel?: ReactNode
+  readonly action?: () => void
+  readonly icon?: IconName
+  readonly disabled?: boolean
 }
 
 export function Header({
@@ -26,7 +27,7 @@ export function Header({
           disabled={disabled}
           variant='secondary'
           className={styles.headerButton}
-          aria-label={actionLabel}
+          aria-label={typeof actionLabel === 'string' ? actionLabel : undefined}
           onClick={action}
         >
           {icon && <Icon name={icon} className={styles.buttonIcon} />}

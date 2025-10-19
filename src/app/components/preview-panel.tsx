@@ -1,5 +1,6 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useId } from 'react'
+import { Trans } from '@lingui/react/macro'
 import { ColorPalette } from '@/components/color-palette/color-palette'
 import ImageControls from '@/components/image-controls/image-controls'
 import ImagePreview from '@/components/image-preview/image-preview'
@@ -23,14 +24,14 @@ const PreviewPanel = () => {
   return (
     <Panel>
       <Flex align='baseline' justify='between' style={{ width: '100%' }}>
-        <Header title='Aperçu' />
+        <Header title={<Trans>Aperçu</Trans>} />
         <Switch
           checked={smoothing}
           onCheckedChange={(value) => {
             setSmoothing(value)
           }}
           id={smoothingId}
-          label='Lissage'
+          label={<Trans>Lissage</Trans>}
         />
       </Flex>
 

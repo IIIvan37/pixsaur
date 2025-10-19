@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react'
+import { useLingui } from '@lingui/react'
+import { msg } from '@lingui/core/macro'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import Flex from '../flex'
 import PixsaurSlider from '../slider'
@@ -25,6 +27,7 @@ export function RgbSlider({
   label = 'RGB',
   showPreview = true
 }: RgbSliderProps) {
+  const { _ } = useLingui()
   const [localValue, setLocalValue] = useState(value)
 
   const handleChange = useCallback(
@@ -59,7 +62,7 @@ export function RgbSlider({
           value={r}
           onChange={(val) => handleChange('r', val)}
           disabled={disabled}
-          label='Rouge'
+          label={_(msg`Rouge`)}
           hideLabel={false}
         />
 
@@ -69,7 +72,7 @@ export function RgbSlider({
           value={g}
           onChange={(val) => handleChange('g', val)}
           disabled={disabled}
-          label='Vert'
+          label={_(msg`Vert`)}
           hideLabel={false}
         />
 
@@ -79,7 +82,7 @@ export function RgbSlider({
           value={b}
           onChange={(val) => handleChange('b', val)}
           disabled={disabled}
-          label='Bleu'
+          label={_(msg`Bleu`)}
           hideLabel={false}
         />
 

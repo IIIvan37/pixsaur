@@ -1,11 +1,15 @@
 import { ThemeProvider } from '@/components/theme/theme-provider'
+import { LanguageSelector } from '@/components/language-selector'
+import { I18nProviderWrapper } from './i18n-provider'
+import { Trans } from '@lingui/react/macro'
 import styles from '@/styles/app.module.css'
 import ImageConverter from './components/image-converter/image-converter'
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <main className={styles.container}>
+    <I18nProviderWrapper>
+      <ThemeProvider>
+        <main className={styles.container}>
         <div className={styles.content}>
           <header className={styles.header}>
             <img
@@ -17,10 +21,10 @@ export default function App() {
 
             <h1 className={styles.title}>PIXSAUR</h1>
             <p className={styles.subtitle}>
-              Convertisseur d'images Amstrad CPC"
+              <Trans>Convertisseur d'images Amstrad CPC</Trans>
             </p>
             <div className={styles.langSwitcher}>
-              {/* <LanguageSwitcher /> */}
+              <LanguageSelector />
             </div>
           </header>
 
@@ -30,5 +34,6 @@ export default function App() {
         </div>
       </main>
     </ThemeProvider>
+    </I18nProviderWrapper>
   )
 }

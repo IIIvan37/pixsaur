@@ -2,7 +2,7 @@ import { defineConfig } from '@lingui/cli'
 
 export default defineConfig({
   sourceLocale: 'en',
-  locales: ['fr', 'en'],
+  locales: ['en', 'fr', 'es', 'de'],
   compileNamespace: 'ts',
   catalogs: [
     {

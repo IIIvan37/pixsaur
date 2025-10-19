@@ -1,5 +1,6 @@
 // ✅ ImagePreviewView.tsx
 import { useAtomValue } from 'jotai'
+import { Trans } from '@lingui/react/macro'
 import { modeAtom } from '@/app/store/config/config'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import styles from './image-preview.module.css'
@@ -30,7 +31,9 @@ export function ImagePreviewView({
     return (
       <div className={styles.container}>
         <div className={`${styles.container} ${styles.emptyContainer}`}>
-          <p className={styles.emptyText}>Aucune image traitée</p>
+          <p className={styles.emptyText}>
+            <Trans>Aucune image traitée</Trans>
+          </p>
         </div>
       </div>
     )

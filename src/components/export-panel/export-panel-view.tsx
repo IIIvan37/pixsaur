@@ -1,10 +1,11 @@
 import Button from '@/components/ui/button'
 import Icon from '@/components/ui/icon'
+import { Trans } from '@lingui/react/macro'
 import animStyles from '@/styles/animations.module.css'
 import styles from './export-panel.module.css'
 
 export type ExportPanelViewProps = {
-  onExport: () => void
+  readonly onExport: () => void
 }
 
 export default function ExportPanelView({ onExport }: ExportPanelViewProps) {
@@ -15,7 +16,7 @@ export default function ExportPanelView({ onExport }: ExportPanelViewProps) {
         className={[animStyles.button, styles.exportButton].join(' ')}
       >
         <Icon name='DownloadIcon' className={styles.buttonIcon} />
-        Exporter
+        <Trans>Exporter</Trans>
       </Button>
     </div>
   )

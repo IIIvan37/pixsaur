@@ -1,6 +1,7 @@
 import { useAtom, useSetAtom } from 'jotai'
 import { reinitializeProcessorsAtom } from '@/app/store/adapters/processors'
 import { processorTypeAtom } from '@/app/store/config/config'
+import { Trans } from '@lingui/react/macro'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import { isDevelopment } from '@/utils/is-development'
@@ -41,7 +42,7 @@ export function ProcessorSelector() {
             color: 'var(--color-foreground)'
           }}
         >
-          Processeur
+          <Trans>Processeur</Trans>
         </div>
         <Select value={processorType} onValueChange={handleProcessorChange}>
           {PROCESSOR_TYPES.map((processor) => (

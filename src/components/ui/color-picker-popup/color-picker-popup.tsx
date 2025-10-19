@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Trans } from '@lingui/react/macro'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import Button from '../button'
 import Flex from '../flex'
@@ -84,10 +85,10 @@ export function ColorPickerPopup({
           {/* Boutons de validation/annulation */}
           <Flex direction='row' justify='space-between' align='center'>
             <Button variant='secondary' onClick={handleCancel}>
-              Annuler
+              <Trans>Annuler</Trans>
             </Button>
             <Button variant='primary' onClick={handleConfirm}>
-              Valider
+              <Trans>Valider</Trans>
             </Button>
           </Flex>
         </div>
@@ -100,7 +101,7 @@ export function ColorPickerPopup({
               variant='secondary'
               onClick={handleUnlock}
             >
-              Déverrouiller
+              <Trans>Déverrouiller</Trans>
             </Button>
           </div>
         )}

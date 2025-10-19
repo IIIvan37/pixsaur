@@ -1,25 +1,16 @@
+import { useLingui } from '@lingui/react'
+import { msg } from '@lingui/core/macro'
 import styles from './source-selector.module.css'
 import type { Handle } from './utils'
 
-export type SourceSelectorViewProps = {
-  readonly onMouseDown?: (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => void
-  readonly onMouseMove?: (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => void
-  readonly onMouseUp?: (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => void
-  readonly onDoubleClick?: (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => void
-  readonly rect: {
-    readonly x: number // in percent
-    readonly y: number // in percent
-    readonly width: number // in percent
-    readonly height: number // in percent
-  }
+export interface SourceSelectorViewProps {
+  readonly rect: { x: number; y: number; width: number; height: number }
   readonly dragging: boolean
   readonly resizeHandle: Handle | null
+  readonly onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void
+  readonly onMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void
+  readonly onMouseUp: () => void
+  readonly onDoubleClick: () => void
 }
 export function SourceSelectorView({
   rect,
@@ -30,6 +21,7 @@ export function SourceSelectorView({
   onMouseUp,
   onDoubleClick
 }: SourceSelectorViewProps) {
+  const { _ } = useLingui()
   const handleSize = 6
 
   return (
@@ -53,7 +45,7 @@ export function SourceSelectorView({
       {/* Rectangle de sélection */}
       <section
         data-testid='selection-rect'
-        aria-label='Zone de sélection'
+        aria-label={_(msg`Zone de sélection`)}
         className={
           styles['selection-rect'] +
           (dragging || resizeHandle
@@ -117,7 +109,7 @@ export function SourceSelectorView({
             data-handle={name}
             role='button'
             tabIndex={0}
-            aria-label={`Redimensionner ${name.replace('-', ' ')}`}
+            aria-label={_(msg`Redimensionner`)}
             style={{
               position: 'absolute',
               ...pos,
