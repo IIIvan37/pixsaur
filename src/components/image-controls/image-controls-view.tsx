@@ -3,7 +3,6 @@ import type { CPCHardware } from '@/libs/types'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
 import { ToggleButtonGroup } from '../ui/toggle-button-group'
-import { ContrastStrategySelector } from './contrast-strategy-selector'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
 import styles from './image-controls.module.css'
 import { ProcessorSelector } from './processor-selector/processor-selector'
@@ -71,8 +70,6 @@ export function ImageControlsView({
       <DitheringSelector />
 
       <ProcessorSelector />
-
-      <ContrastStrategySelector />
     </div>
   )
 }

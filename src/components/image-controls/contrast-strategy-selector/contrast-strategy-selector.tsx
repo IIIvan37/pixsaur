@@ -2,7 +2,6 @@ import clsx from 'clsx'
 import { useAtom } from 'jotai'
 import {
   contrastStrategyAtom,
-  cpcHardwareAtom,
   modeAtom,
   setContrastStrategyAtom
 } from '@/app/store/config/config'
@@ -14,21 +13,19 @@ import styles from '../image-controls.module.css'
 /**
  * Sélecteur de stratégie de contraste pour les modes CPC 1 et 2
  * Permet de choisir entre contraste maximum et approche équilibrée
- * Masqué en mode CPC Plus
+ * Disponible pour CPC Classic ET CPC Plus en modes 1-2
  */
 export function ContrastStrategySelector() {
   const [contrastStrategy] = useAtom(contrastStrategyAtom)
   const [, setContrastStrategyValue] = useAtom(setContrastStrategyAtom)
   const [mode] = useAtom(modeAtom)
-  const [cpcHardware] = useAtom(cpcHardwareAtom)
 
-  // Ne montrer le sélecteur que pour les modes 1 et 2 (petites palettes) ET en mode Classic
+  // Montrer le sélecteur pour les modes 1 et 2 (petites palettes) - CPC Classic ET Plus
   const shouldShow =
-    cpcHardware === 'classic' &&
-    (mode === '1' ||
-      mode === '2' ||
-      mode === '1-overscan' ||
-      mode === '2-overscan')
+    mode === '1' ||
+    mode === '2' ||
+    mode === '1-overscan' ||
+    mode === '2-overscan'
 
   if (!shouldShow) {
     return null

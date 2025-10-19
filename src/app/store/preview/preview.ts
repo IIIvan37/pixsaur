@@ -2,7 +2,6 @@ import { atom } from 'jotai'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
-import { remapImageDataToPalette } from '@/utils/exports/rgb-to-indexes/rgb-to-indexes'
 import {
   getVisualRegion,
   getVisualRegionNormalized
@@ -76,8 +75,8 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const mode = get(modeAtom)
   const lockedVecs = get(lockedVectorsAtom)
-  // const colorSpace = 'RGB' // Fixé sur RGB (variable supprimée car non utilisée)
   const cpcHardware = get(cpcHardwareAtom)
+  const contrastStrategy = get(contrastStrategyAtom)
 
   if (!buf || !cropped) return []
 
@@ -107,8 +106,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     targetColors,
     basePalette,
     lockedVecs,
-    // 🎯 SOLUTION: Force strategy 'max' pour CPC Plus pour plus de diversité
-    cpcHardware === 'plus' ? 'max' : undefined
+    contrastStrategy // 🎯 Utiliser la stratégie choisie par l'utilisateur
   )
 
   console.log('🔍 [QUANTIZER DEBUG] Output palette:', palette)
@@ -121,7 +119,7 @@ export const previewImageAtom = atom(async (get) => {
   const mode = get(modeAtom)
   const quantizer = await get(quantizerAtom)
   const reduced = await get(reducedPaletteRawAtom)
-  const reducedRgb = await get(reducedPaletteRgbAtom) // ✅ palette déjà projetée en RGB
+  // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const cropped = await get(croppedImageAtom)
   const dithering = get(ditheringAtom)
   if (!quantizer || !cropped) return null
@@ -138,14 +136,29 @@ export const previewImageAtom = atom(async (get) => {
     intensity: dithering.intensity
   })
 
+  // 🔍 DEBUG: Analyser les couleurs réelles dans le buffer après dithering
+  const colorCounts = new Map<string, number>()
+  for (let i = 0; i < previewBuffer.length; i += 4) {
+    const r = previewBuffer[i]
+    const g = previewBuffer[i + 1]
+    const b = previewBuffer[i + 2]
+    const key = `${r},${g},${b}`
+    colorCounts.set(key, (colorCounts.get(key) || 0) + 1)
+  }
+  const top5 = Array.from(colorCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([color, count]) => `rgb(${color}):${count}`)
+  logger.info(`🔍 [PREVIEW] Top 5 colors after dithering: ${top5.join(' | ')}`)
+
   logger.time('  🎯 Remapping')
-  // remappage final en RGB visible - VERSION OPTIMISÉE (MUTATION EN PLACE)
-  const imageDataToRemap = new ImageData(
-    new Uint8ClampedArray(previewBuffer), // Buffer du cache ou nouveau
+  // ✅ Le dithering retourne déjà un buffer RGB, pas besoin de remapping!
+  // Le remapImageDataToPalette était utilisé avant quand on avait des indices
+  const remapped = new ImageData(
+    new Uint8ClampedArray(previewBuffer),
     normalized.width,
     normalized.height
   )
-  const remapped = remapImageDataToPalette(imageDataToRemap, reducedRgb)
   logger.timeEnd('  🎯 Remapping')
 
   logger.time('  🖌️ Canvas Operations')
