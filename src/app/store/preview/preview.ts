@@ -276,7 +276,6 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
   const mode = get(modeAtom)
-  const lockedVecs = get(lockedVectorsAtom)
 
   // Colors are already in RGB format, no conversion needed
   const projected = [...raw] // Create a copy to avoid mutating original
@@ -285,46 +284,19 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   // Padding pixels will be mapped to darkest color during export
   // This preserves color diversity in the quantized palette
 
-  // Créer un Set des couleurs verrouillées pour les préserver
-  const lockedColorKeys = new Set(
-    lockedVecs.map((color) => `${color[0]},${color[1]},${color[2]}`)
-  )
-
-  // S'assurer que toutes les couleurs verrouillées sont présentes dans la palette
-  for (const lockedColor of lockedVecs) {
-    const colorKey = `${lockedColor[0]},${lockedColor[1]},${lockedColor[2]}`
-    const existsInProjected = projected.some(
-      (color) => `${color[0]},${color[1]},${color[2]}` === colorKey
-    )
-
-    if (!existsInProjected) {
-      projected.push([lockedColor[0], lockedColor[1], lockedColor[2]])
-    }
+  // Quantification selon le hardware sélectionné
+  if (cpcHardware === 'classic') {
+    quantifyCPCClassicWithLocked(projected, new Set()) // Quantifier tout
+  } else if (cpcHardware === 'plus') {
+    // Pour CPC Plus, quantifier selon le format 4-bit par composante
+    quantifyCPCPlusWithLocked(projected, new Set()) // Quantifier tout
   }
 
   // S'assurer qu'on ne dépasse jamais la limite finale
   const maxColors = CPC_MODE_CONFIG[mode].nColors
   if (projected.length > maxColors) {
-    // Garder les couleurs verrouillées et supprimer les excédentaires non-verrouillées
-    const lockedColors = projected.filter((color) =>
-      lockedColorKeys.has(`${color[0]},${color[1]},${color[2]}`)
-    )
-    const unlockedColors = projected.filter(
-      (color) => !lockedColorKeys.has(`${color[0]},${color[1]},${color[2]}`)
-    )
-
-    const availableSlots = maxColors - lockedColors.length
-    const finalUnlocked = unlockedColors.slice(0, Math.max(0, availableSlots))
-
-    projected.splice(0, projected.length, ...lockedColors, ...finalUnlocked)
-  }
-
-  // Quantification selon le hardware sélectionné
-  if (cpcHardware === 'classic') {
-    quantifyCPCClassicWithLocked(projected, lockedColorKeys)
-  } else if (cpcHardware === 'plus') {
-    // Pour CPC Plus, quantifier selon le format 4-bit par composante
-    quantifyCPCPlusWithLocked(projected, lockedColorKeys)
+    // Tronquer à maxColors (les couleurs lockées sont déjà en tête grâce au quantizer)
+    projected.splice(maxColors)
   }
 
   return projected
