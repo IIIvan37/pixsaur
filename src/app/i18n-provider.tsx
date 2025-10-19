@@ -10,9 +10,13 @@ async function loadMessages(locale: string) {
   return messages
 }
 
-// Initialiser avec la langue par défaut au démarrage
+// Initialiser avec la langue détectée du navigateur
 const initI18n = async () => {
-  const defaultLocale = 'en'
+  // Détecter la langue du navigateur ou utiliser l'anglais par défaut
+  const browserLang = navigator.language.split('-')[0]
+  const supportedLocales = ['en', 'fr', 'es', 'de']
+  const defaultLocale = supportedLocales.includes(browserLang) ? browserLang : 'en'
+  
   const messages = await loadMessages(defaultLocale)
   i18n.load(defaultLocale, messages)
   i18n.activate(defaultLocale)
@@ -27,19 +31,25 @@ export function I18nProviderWrapper({ children }: { readonly children: ReactNode
   const isInitialMount = useRef(true)
 
   useEffect(() => {
-    // Ne pas recharger au premier mount (déjà fait dans initI18n)
-    if (isInitialMount.current) {
-      isInitialMount.current = false
-      return
-    }
-
     async function load() {
       const messages = await loadMessages(locale)
       i18n.load(locale, messages)
       i18n.activate(locale)
-      // Force un re-render sans démonter les composants
       forceUpdate()
     }
+
+    // Au premier mount, vérifier si la locale correspond à celle initialisée
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      
+      // Si la locale détectée diffère de celle chargée initialement, charger la bonne
+      if (i18n.locale !== locale) {
+        load()
+      }
+      return
+    }
+
+    // Pour les changements ultérieurs de locale
     load()
   }, [locale])
 

@@ -33,6 +33,8 @@ export const setReducedPaletteAtom = atom(
   null,
   (get, set, reduced: Vector<'RGB'>[]) => {
     const prev = get(userPaletteAtom)
+    const modeKey = get(modeAtom)
+    const maxColors = CPC_MODE_CONFIG[modeKey].nColors
 
     // 2.1 – extraire les vecteurs des slots lockés
     const lockedVecs = prev
@@ -45,10 +47,10 @@ export const setReducedPaletteAtom = atom(
         !lockedVecs.some((lv) => Array.from(lv).every((c, i) => c === vec[i]))
     )
 
-    // 2.3 – reconstruire la nouvelle palette
+    // 2.3 – reconstruire la nouvelle palette (limiter à maxColors)
     const newSlots: PaletteSlot[] = []
-    for (let i = 0; i < prev.length; i++) {
-      if (prev[i].locked) {
+    for (let i = 0; i < maxColors; i++) {
+      if (prev[i]?.locked) {
         // on conserve strictement le slot locké
         newSlots[i] = { ...prev[i] }
       } else {
@@ -56,6 +58,11 @@ export const setReducedPaletteAtom = atom(
         const vec = queue.shift() ?? null
         newSlots[i] = { color: vec, locked: false }
       }
+    }
+    
+    // Compléter avec des slots vides pour atteindre 16
+    while (newSlots.length < 16) {
+      newSlots.push({ color: null, locked: false })
     }
 
     set(userPaletteAtom, newSlots)
