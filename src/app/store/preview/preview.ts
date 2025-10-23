@@ -120,12 +120,12 @@ export const croppedBufferAtom = atom(async (get) => {
 // 3. Construction du quantizer sans mémoïsation
 export const quantizerAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
-  const cropped = await get(croppedImageAtom)
+  const processed = await get(resizedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = 'RGB' // Fixé sur RGB
   const contrastStrategy = get(contrastStrategyAtom)
   const cpcHardware = get(cpcHardwareAtom)
-  if (!buf || !cropped) return null
+  if (!buf || !processed) return null
 
   const availableMetrics = DISTANCE_METRICS_BY_COLORSPACE[colorSpace]
   const distanceMetric = availableMetrics[0]
@@ -145,13 +145,13 @@ export const quantizerAtom = atom(async (get) => {
 // 4. Quantization avec palette adaptateur
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
-  const cropped = await get(croppedImageAtom)
+  const processed = await get(resizedImageAtom)
   const mode = get(modeAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
   const contrastStrategy = get(contrastStrategyAtom)
 
-  if (!buf || !cropped) return []
+  if (!buf || !processed) return []
 
   const paletteProcessor = get(paletteProcessorAtom)
   if (!paletteProcessor) {
@@ -200,7 +200,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 
   const palette = await paletteProcessor.quantizePalette(
     buf,
-    cropped,
+    processed,
     targetColors,
     basePalette,
     quantifiedLockedVecs,
@@ -218,9 +218,9 @@ export const previewImageAtom = atom(async (get) => {
   const quantizer = await get(quantizerAtom)
   const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
-  const cropped = await get(croppedImageAtom)
+  const processed = await get(resizedImageAtom)
   const dithering = get(ditheringAtom)
-  if (!quantizer || !cropped) return null
+  if (!quantizer || !processed) return null
 
   // 🔍 DEBUG: Vérifier la palette avant dithering
   console.log('🎨 [PREVIEW] Palette for dithering:', {
@@ -231,7 +231,7 @@ export const previewImageAtom = atom(async (get) => {
 
   logger.time('🖼️ Preview Generation')
 
-  const normalized = getVisualRegionNormalized(cropped, mode)
+  const normalized = getVisualRegionNormalized(processed, mode)
   if (!normalized) return null
 
   logger.time('  📐 Dithering')
