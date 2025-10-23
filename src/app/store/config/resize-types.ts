@@ -12,11 +12,11 @@ export type CPCMode = 0 | 1 | 2
  * Resize modes for transforming selection to output
  */
 export type ResizeMode =
-  | 'fit' // Stretch to fill target dimensions
-  | 'keepSmaller' // Fit inside target (letterbox/pillarbox)
-  | 'keepLarger' // Fill target (crop excess)
+  | 'auto' // Smart resize with CPC aspect ratio correction (RECOMMENDED)
+  | 'keepSmaller' // Fit inside target with aspect ratio (letterbox/pillarbox)
+  | 'keepLarger' // Fill target with aspect ratio (crop excess)
   | 'userSize' // Custom position & size (advanced)
-  | 'origin' // Keep original selection size
+  | 'origin' // Keep original selection size (pixel-perfect, no scaling)
 
 /**
  * Resize configuration

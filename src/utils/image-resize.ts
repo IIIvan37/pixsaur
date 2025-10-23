@@ -27,8 +27,8 @@ export function applyResize(
   const mode = config.mode
 
   switch (mode) {
-    case 'fit':
-      return resizeFit(sourceCanvas, selection, config)
+    case 'auto':
+      return resizeAuto(sourceCanvas, selection)
     case 'keepSmaller':
       return resizeKeepSmaller(sourceCanvas, selection, config)
     case 'keepLarger':
@@ -41,41 +41,22 @@ export function applyResize(
 }
 
 /**
- * Mode 1: FIT - Stretch selection to fill target dimensions
- * Simply scales the selection to target size (may distort aspect ratio)
+ * Mode AUTO: Smart resize with CPC aspect ratio correction (RECOMMENDED)
+ * Returns the selection as-is, because the smart resize (getVisualRegion)
+ * already applied CPC pixel aspect ratio correction before this step.
+ * This is the default behavior when no specific transformation is needed.
  */
-function resizeFit(
+function resizeAuto(
   sourceCanvas: HTMLCanvasElement,
-  selection: Selection,
-  config: ResizeConfig
+  selection: Selection
 ): HTMLCanvasElement {
-  const outputCanvas = document.createElement('canvas')
-  outputCanvas.width = config.targetWidth
-  outputCanvas.height = config.targetHeight
-
-  const ctx = outputCanvas.getContext('2d', { willReadFrequently: true })
-  if (!ctx) {
-    throw new Error('Failed to get 2D context')
-  }
-
-  // Direct stretch from selection to target
-  ctx.drawImage(
-    sourceCanvas,
-    selection.sx,
-    selection.sy,
-    selection.width,
-    selection.height,
-    0,
-    0,
-    config.targetWidth,
-    config.targetHeight
-  )
-
-  return outputCanvas
+  // Simply extract the selection without any transformation
+  // The smart resize already happened in getVisualRegion
+  return extractSelection(sourceCanvas, selection)
 }
 
 /**
- * Mode 2: KEEP SMALLER - Fit inside target (letterbox/pillarbox)
+ * Mode KEEP SMALLER: Fit inside target (letterbox/pillarbox)
  * Scales to fit within target, preserving aspect ratio.
  * Centers the image and fills borders with black.
  */
@@ -171,18 +152,18 @@ function resizeKeepLarger(
 }
 
 /**
- * Mode 4: USER SIZE - Custom position and size
+ * Mode USER SIZE: Custom position and size
  * Advanced mode: user specifies both output size and source position/size.
- * Falls back to fit mode if custom parameters not provided.
+ * Falls back to keepSmaller mode if custom parameters not provided.
  */
 function resizeUserSize(
   sourceCanvas: HTMLCanvasElement,
   selection: Selection,
   config: ResizeConfig
 ): HTMLCanvasElement {
-  // If no custom parameters, use fit mode as fallback
+  // If no custom parameters, use keepSmaller mode as fallback
   if (!config.customPosition || !config.customSize) {
-    return resizeFit(sourceCanvas, selection, config)
+    return resizeKeepSmaller(sourceCanvas, selection, config)
   }
 
   const outputCanvas = document.createElement('canvas')

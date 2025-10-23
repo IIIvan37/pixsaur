@@ -39,33 +39,33 @@ describe('image-resize', () => {
     height: 100
   }
 
-  describe('resizeFit', () => {
-    it('should create canvas with exact target dimensions', () => {
+  describe('resizeAuto', () => {
+    it('should create canvas with exact target dimensions matching selection', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
-        mode: 'fit',
+        mode: 'auto',
         targetWidth: 160,
         targetHeight: 200
       }
 
       const result = applyResize(source, testSelection, config)
 
-      expect(result.width).toBe(160)
-      expect(result.height).toBe(200)
+      expect(result.width).toBe(100)
+      expect(result.height).toBe(100)
     })
 
-    it('should handle non-proportional scaling', () => {
+    it('should extract selection without transformation', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
-        mode: 'fit',
+        mode: 'auto',
         targetWidth: 320,
         targetHeight: 200
       }
 
       const result = applyResize(source, testSelection, config)
 
-      expect(result.width).toBe(320)
-      expect(result.height).toBe(200)
+      expect(result.width).toBe(100)
+      expect(result.height).toBe(100)
     })
   })
 

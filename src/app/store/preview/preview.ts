@@ -15,7 +15,6 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   modeAtom,
-  resizeEnabledAtom,
   resizeModeAtom,
   targetWidthAtom,
   targetHeightAtom
@@ -55,16 +54,15 @@ export const croppedImageAtom = atom(async (get) => {
   return getVisualRegion(workingImageData, selection)
 })
 
-// 1bis. Resize optionnel : applique la transformation si activée
+// 1bis. Resize : applique la transformation selon le mode sélectionné
+// Mode 'auto' = comportement par défaut (smart resize avec aspect ratio CPC)
 export const resizedImageAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
-  const resizeEnabled = get(resizeEnabledAtom)
   const resizeMode = get(resizeModeAtom)
   const targetWidth = get(targetWidthAtom)
   const targetHeight = get(targetHeightAtom)
 
-  // Si pas de resize activé ou pas d'image, retourner l'image croppée directement
-  if (!resizeEnabled || !cropped) {
+  if (!cropped) {
     return cropped
   }
 
@@ -85,7 +83,7 @@ export const resizedImageAtom = atom(async (get) => {
     height: cropped.height
   }
 
-  // Appliquer le resize
+  // Appliquer le resize selon le mode
   try {
     const resizedCanvas = applyResize(canvas, relativeSelection, {
       mode: resizeMode,

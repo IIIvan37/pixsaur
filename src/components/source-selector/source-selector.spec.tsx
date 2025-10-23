@@ -8,9 +8,11 @@ describe('SourceSelectorView', () => {
     rect: { x: 10, y: 20, width: 30, height: 40 },
     dragging: false,
     resizeHandle: null,
+    hoveredHandle: null,
     onMouseDown: vi.fn(),
     onMouseMove: vi.fn(),
     onMouseUp: vi.fn(),
+    onMouseLeave: vi.fn(),
     onDoubleClick: vi.fn()
   }
 

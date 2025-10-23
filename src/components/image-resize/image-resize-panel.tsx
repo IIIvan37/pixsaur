@@ -5,7 +5,6 @@
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
-  resizeEnabledAtom,
   resizeModeAtom,
   setResizeModeAtom,
   targetWidthAtom,
@@ -21,7 +20,6 @@ import { CPC_PRESETS } from '@/app/store/config/resize-types'
 import styles from './image-resize-panel.module.css'
 
 export function ImageResizePanel() {
-  const [resizeEnabled, setResizeEnabled] = useAtom(resizeEnabledAtom)
   const resizeMode = useAtomValue(resizeModeAtom)
   const [targetWidth, setTargetWidth] = useAtom(targetWidthAtom)
   const [targetHeight, setTargetHeight] = useAtom(targetHeightAtom)
@@ -65,79 +63,71 @@ export function ImageResizePanel() {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
-        <h3>Resize</h3>
-        <label className={styles.toggle}>
-          <input
-            type="checkbox"
-            checked={resizeEnabled}
-            onChange={(e) => setResizeEnabled(e.target.checked)}
-          />
-          <span>Enable Resize</span>
-        </label>
+        <h3>Resize Mode</h3>
       </div>
 
-      {resizeEnabled && (
-        <>
-          {/* Source dimensions info */}
-          {selection && (
-            <div className={styles.section}>
-              <div className={styles.infoBox}>
-                <div className={styles.label}>Source (Selection):</div>
-                <div className={styles.dimensionInfo}>
-                  {selection.width} × {selection.height} pixels
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Mode Selection */}
-          <div className={styles.section}>
-            <div className={styles.label}>Mode:</div>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="resizeMode"
-                  value="fit"
-                  checked={resizeMode === 'fit'}
-                  onChange={() => handleModeChange('fit')}
-                />
-                <span>Fit (Stretch)</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="resizeMode"
-                  value="keepSmaller"
-                  checked={resizeMode === 'keepSmaller'}
-                  onChange={() => handleModeChange('keepSmaller')}
-                />
-                <span>Keep Smaller (Letterbox)</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="resizeMode"
-                  value="keepLarger"
-                  checked={resizeMode === 'keepLarger'}
-                  onChange={() => handleModeChange('keepLarger')}
-                />
-                <span>Keep Larger (Crop)</span>
-              </label>
-              <label className={styles.radioLabel}>
-                <input
-                  type="radio"
-                  name="resizeMode"
-                  value="origin"
-                  checked={resizeMode === 'origin'}
-                  onChange={() => handleModeChange('origin')}
-                />
-                <span>Origin (No Scale)</span>
-              </label>
+      {/* Source dimensions info */}
+      {selection && (
+        <div className={styles.section}>
+          <div className={styles.infoBox}>
+            <div className={styles.label}>Source (Selection):</div>
+            <div className={styles.dimensionInfo}>
+              {selection.width} × {selection.height} pixels
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Presets */}
+      {/* Mode Selection */}
+      <div className={styles.section}>
+        <div className={styles.label}>Mode:</div>
+        <div className={styles.radioGroup}>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="resizeMode"
+              value="auto"
+              checked={resizeMode === 'auto'}
+              onChange={() => handleModeChange('auto')}
+            />
+            <span>Auto (Smart CPC adapt)</span>
+          </label>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="resizeMode"
+              value="keepSmaller"
+              checked={resizeMode === 'keepSmaller'}
+              onChange={() => handleModeChange('keepSmaller')}
+            />
+            <span>Keep Smaller (Letterbox)</span>
+          </label>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="resizeMode"
+              value="keepLarger"
+              checked={resizeMode === 'keepLarger'}
+              onChange={() => handleModeChange('keepLarger')}
+            />
+            <span>Keep Larger (Crop)</span>
+          </label>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="resizeMode"
+              value="origin"
+              checked={resizeMode === 'origin'}
+              onChange={() => handleModeChange('origin')}
+            />
+            <span>Origin (No Scale)</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Show target dimensions controls only for non-auto modes */}
+      {resizeMode !== 'auto' && (
+        <>
           <div className={styles.section}>
             <div className={styles.label}>Presets:</div>
             <div className={styles.presetButtons}>

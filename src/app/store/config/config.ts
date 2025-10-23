@@ -153,11 +153,8 @@ export const setCpcHardwareAtom = atom(
 // RESIZE CONFIGURATION
 // ============================================================================
 
-// Resize enabled state
-export const resizeEnabledAtom = atom<boolean>(false)
-
-// Resize mode selection
-export const resizeModeAtom = atom<ResizeMode>('fit')
+// Resize mode selection (auto is the smart default with CPC aspect ratio correction)
+export const resizeModeAtom = atom<ResizeMode>('auto')
 
 // Target dimensions atoms (updated when mode or CPC mode changes)
 export const targetWidthAtom = atom<number>(160)
