@@ -6,7 +6,3 @@
 .selection-rect--active {
   background: rgba(0, 255, 0, 0.2);
 }
-
-.selection-rect:hover {
-  cursor: move;
-}

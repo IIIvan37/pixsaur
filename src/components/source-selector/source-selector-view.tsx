@@ -1,5 +1,6 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
+import { useMemo } from 'react'
 import styles from './source-selector.module.css'
 import type { Handle } from './utils'
 
@@ -7,22 +8,43 @@ export interface SourceSelectorViewProps {
   readonly rect: { x: number; y: number; width: number; height: number }
   readonly dragging: boolean
   readonly resizeHandle: Handle | null
+  readonly hoveredHandle: Handle | null
   readonly onMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void
   readonly onMouseMove: (e: React.MouseEvent<HTMLDivElement>) => void
   readonly onMouseUp: () => void
+  readonly onMouseLeave: () => void
   readonly onDoubleClick: () => void
 }
 export function SourceSelectorView({
   rect,
   dragging,
   resizeHandle,
+  hoveredHandle,
   onMouseDown,
   onMouseMove,
   onMouseUp,
+  onMouseLeave,
   onDoubleClick
 }: SourceSelectorViewProps) {
   const { _ } = useLingui()
   const handleSize = 6
+
+  // Déterminer le curseur en fonction du handle actif ou survolé
+  const cursor = useMemo(() => {
+    const activeHandle = resizeHandle || hoveredHandle
+    if (!activeHandle) return 'crosshair'
+    
+    switch (activeHandle) {
+      case 'top-left':
+      case 'bottom-right':
+        return 'nwse-resize'
+      case 'top-right':
+      case 'bottom-left':
+        return 'nesw-resize'
+      default:
+        return 'crosshair'
+    }
+  }, [resizeHandle, hoveredHandle])
 
   return (
     <div
@@ -33,11 +55,12 @@ export function SourceSelectorView({
         width: '100%',
         height: '100%',
         zIndex: 2,
-        cursor: 'crosshair'
+        cursor
       }}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
       onDoubleClick={onDoubleClick}
     >
       {/* Rectangle de sélection */}

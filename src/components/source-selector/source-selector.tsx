@@ -48,9 +48,38 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
     selection ?? { sx: 0, sy: 0, width, height }
   )
 
-  const detectHandleHit = useCallback((e: React.MouseEvent) => {
-    const target = e.target as HTMLElement
-    return (target.dataset.handle as Handle) || null
+  const detectHandleHit = useCallback((
+    e: React.MouseEvent,
+    selectionRect: { x: number; y: number; width: number; height: number }
+  ) => {
+    const target = e.currentTarget as HTMLElement
+    const bounds = target.getBoundingClientRect()
+    
+    // Coordonnées relatives au container (en %)
+    const relX = ((e.clientX - bounds.left) / bounds.width) * 100
+    const relY = ((e.clientY - bounds.top) / bounds.height) * 100
+    
+    // Taille de la zone cliquable autour du handle (en %)
+    const tolerance = 5 // 5% tolerance pour faciliter le clic
+    
+    // Position des handles en % (basé sur le rectangle de sélection)
+    const handles = [
+      { name: 'top-left' as Handle, x: selectionRect.x, y: selectionRect.y },
+      { name: 'top-right' as Handle, x: selectionRect.x + selectionRect.width, y: selectionRect.y },
+      { name: 'bottom-left' as Handle, x: selectionRect.x, y: selectionRect.y + selectionRect.height },
+      { name: 'bottom-right' as Handle, x: selectionRect.x + selectionRect.width, y: selectionRect.y + selectionRect.height }
+    ]
+    
+    // Trouver le handle le plus proche
+    for (const handle of handles) {
+      const dx = Math.abs(relX - handle.x)
+      const dy = Math.abs(relY - handle.y)
+      if (dx < tolerance && dy < tolerance) {
+        return handle.name
+      }
+    }
+    
+    return null
   }, [])
 
   const [dragging, setDragging] = useState(false)
@@ -61,6 +90,7 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
     dx: 0,
     dy: 0
   })
+  const [hoveredHandle, setHoveredHandle] = useState<Handle | null>(null)
 
   const rect = logicalToPercentRect(sel, width, height)
 
@@ -76,7 +106,7 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
-      const handle = detectHandleHit(e)
+      const handle = detectHandleHit(e, rect)
       if (handle) {
         setResizeHandle(handle)
         setDragging(true)
@@ -100,6 +130,12 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
 
   const onMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      // Détecter le survol d'un handle (seulement si pas en train de drag)
+      if (!dragging) {
+        const handle = detectHandleHit(e, rect)
+        setHoveredHandle(handle)
+      }
+      
       if (!dragging || !dragOrigin) return
       const pos = getPercentPos(e)
 
@@ -162,7 +198,8 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
       dragOffset,
       width,
       height,
-      getPercentPos
+      getPercentPos,
+      detectHandleHit
     ]
   )
 
@@ -172,8 +209,14 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
       setDragOrigin(null)
       setSelection(sel)
       setResizeHandle(null)
+      setHoveredHandle(null)
     }
   }, [dragging, sel, setSelection])
+
+  const onMouseLeave = useCallback(() => {
+    // Réinitialiser le hover quand on quitte la zone
+    setHoveredHandle(null)
+  }, [])
 
   const onDoubleClick = useCallback(() => {
     const full = { sx: 0, sy: 0, width, height }
@@ -186,9 +229,11 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
       rect={rect}
       dragging={dragging}
       resizeHandle={resizeHandle}
+      hoveredHandle={hoveredHandle}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
       onDoubleClick={onDoubleClick}
     />
   )
