@@ -8,12 +8,17 @@ import {
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
 import { logger } from '@/utils/logger'
+import { applyResize, type Selection } from '@/utils/image-resize'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   contrastStrategyAtom,
   cpcHardwareAtom,
   ditheringAtom,
-  modeAtom
+  modeAtom,
+  resizeEnabledAtom,
+  resizeModeAtom,
+  targetWidthAtom,
+  targetHeightAtom
 } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
@@ -40,7 +45,7 @@ export const previewCanvasSizeAtom = atom((get) => {
   return { width, height }
 })
 
-// 1. Zone sélectionnée réduite à la largeur du mode
+// 1. Zone sélectionnée extraite de l'image source
 export const croppedImageAtom = atom(async (get) => {
   const workingImageData = await get(workingImageAtom)
   const selection = get(selectionAtom)
@@ -50,11 +55,66 @@ export const croppedImageAtom = atom(async (get) => {
   return getVisualRegion(workingImageData, selection)
 })
 
-// 2. Extraction des données RGBA
-export const croppedBufferAtom = atom(async (get) => {
+// 1bis. Resize optionnel : applique la transformation si activée
+export const resizedImageAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
-  if (!cropped) return null
-  return extractBuffer(cropped)
+  const resizeEnabled = get(resizeEnabledAtom)
+  const resizeMode = get(resizeModeAtom)
+  const targetWidth = get(targetWidthAtom)
+  const targetHeight = get(targetHeightAtom)
+  const selection = get(selectionAtom)
+
+  // Si pas de resize activé, retourner l'image croppée directement
+  if (!resizeEnabled || !cropped || !selection) {
+    return cropped
+  }
+
+  // Convertir ImageData en Canvas pour applyResize
+  const canvas = document.createElement('canvas')
+  canvas.width = cropped.width
+  canvas.height = cropped.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return cropped
+
+  ctx.putImageData(cropped, 0, 0)
+
+  // Préparer la sélection relative (source = tout le canvas cropped)
+  const relativeSelection: Selection = {
+    sx: 0,
+    sy: 0,
+    width: cropped.width,
+    height: cropped.height
+  }
+
+  // Appliquer le resize
+  try {
+    const resizedCanvas = applyResize(canvas, relativeSelection, {
+      mode: resizeMode,
+      targetWidth,
+      targetHeight
+    })
+
+    // Convertir Canvas → ImageData
+    const resizedCtx = resizedCanvas.getContext('2d')
+    if (!resizedCtx) return cropped
+
+    return resizedCtx.getImageData(
+      0,
+      0,
+      resizedCanvas.width,
+      resizedCanvas.height
+    )
+  } catch (error) {
+    logger.error('Resize failed:', error)
+    return cropped // Fallback sur l'image croppée
+  }
+})
+
+// 2. Extraction des données RGBA (utilise resizedImageAtom au lieu de croppedImageAtom)
+export const croppedBufferAtom = atom(async (get) => {
+  const processed = await get(resizedImageAtom)
+  if (!processed) return null
+  return extractBuffer(processed)
 })
 
 // 3. Construction du quantizer sans mémoïsation

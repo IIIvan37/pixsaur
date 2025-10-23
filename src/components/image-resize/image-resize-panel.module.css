@@ -1,0 +1,177 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-background-secondary);
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.toggle input[type='checkbox'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-left: 0.5rem;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.radioLabel:hover {
+  background: var(--color-background-hover);
+}
+
+.radioLabel input[type='radio'] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.presetButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.presetButton {
+  padding: 0.5rem 0.75rem;
+  background: var(--color-button-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.presetButton:hover {
+  background: var(--color-button-secondary-hover);
+  border-color: var(--color-primary);
+}
+
+.dimensionsRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.dimensionInput {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dimensionInput label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.dimensionInput input[type='number'] {
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  background: var(--color-input-background);
+  color: var(--color-text);
+}
+
+.dimensionInput input[type='number']:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.inputError {
+  border-color: var(--color-error) !important;
+  background: var(--color-error-background) !important;
+}
+
+.errorMessage {
+  font-size: 0.75rem;
+  color: var(--color-error);
+}
+
+.memoryIndicator {
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  border: 2px solid;
+  font-size: 0.875rem;
+}
+
+.memoryOk {
+  background: var(--color-success-background, #d4edda);
+  border-color: var(--color-success, #28a745);
+  color: var(--color-success-text, #155724);
+}
+
+.memoryWarning {
+  background: var(--color-warning-background, #fff3cd);
+  border-color: var(--color-warning, #ffc107);
+  color: var(--color-warning-text, #856404);
+}
+
+.memoryDanger {
+  background: var(--color-error-background, #f8d7da);
+  border-color: var(--color-error, #dc3545);
+  color: var(--color-error-text, #721c24);
+}
+
+.memoryLabel {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.memoryValue {
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.memoryMessage {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
