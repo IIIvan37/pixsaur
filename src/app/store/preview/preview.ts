@@ -62,10 +62,9 @@ export const resizedImageAtom = atom(async (get) => {
   const resizeMode = get(resizeModeAtom)
   const targetWidth = get(targetWidthAtom)
   const targetHeight = get(targetHeightAtom)
-  const selection = get(selectionAtom)
 
-  // Si pas de resize activé, retourner l'image croppée directement
-  if (!resizeEnabled || !cropped || !selection) {
+  // Si pas de resize activé ou pas d'image, retourner l'image croppée directement
+  if (!resizeEnabled || !cropped) {
     return cropped
   }
 

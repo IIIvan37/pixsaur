@@ -15,6 +15,7 @@ import {
   resizeValidationAtom,
   modeAtom
 } from '@/app/store/config/config'
+import { selectionAtom } from '@/app/store/image/image'
 import type { ResizeMode, CPCMode } from '@/app/store/config/resize-types'
 import { CPC_PRESETS } from '@/app/store/config/resize-types'
 import styles from './image-resize-panel.module.css'
@@ -26,6 +27,7 @@ export function ImageResizePanel() {
   const [targetHeight, setTargetHeight] = useAtom(targetHeightAtom)
   const validation = useAtomValue(resizeValidationAtom)
   const cpcMode = useAtomValue(modeAtom)
+  const selection = useAtomValue(selectionAtom)
   const setResizeModeAction = useSetAtom(setResizeModeAtom)
   const setWidthAction = useSetAtom(setTargetWidthAtom)
   const setHeightAction = useSetAtom(setTargetHeightAtom)
@@ -76,6 +78,18 @@ export function ImageResizePanel() {
 
       {resizeEnabled && (
         <>
+          {/* Source dimensions info */}
+          {selection && (
+            <div className={styles.section}>
+              <div className={styles.infoBox}>
+                <div className={styles.label}>Source (Selection):</div>
+                <div className={styles.dimensionInfo}>
+                  {selection.width} × {selection.height} pixels
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mode Selection */}
           <div className={styles.section}>
             <div className={styles.label}>Mode:</div>

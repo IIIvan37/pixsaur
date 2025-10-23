@@ -175,3 +175,16 @@
   font-size: 0.8rem;
   opacity: 0.9;
 }
+
+.infoBox {
+  padding: 0.5rem;
+  background: var(--color-background-tertiary, #f0f0f0);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.dimensionInfo {
+  font-weight: 600;
+  font-family: monospace;
+  margin-top: 0.25rem;
+}
