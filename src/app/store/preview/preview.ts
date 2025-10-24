@@ -15,11 +15,10 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   modeAtom,
-  resizeModeAtom,
-  targetWidthAtom,
-  targetHeightAtom
+  resizeModeAtom
 } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
+import type { CPCMode } from '../config/resize-types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 
@@ -59,8 +58,8 @@ export const croppedImageAtom = atom(async (get) => {
 export const resizedImageAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const resizeMode = get(resizeModeAtom)
-  const targetWidth = get(targetWidthAtom)
-  const targetHeight = get(targetHeightAtom)
+  const cpcModeKey = get(modeAtom)
+  const cpcMode = Number.parseInt(cpcModeKey, 10) as CPCMode
 
   if (!cropped) {
     return cropped
@@ -83,12 +82,11 @@ export const resizedImageAtom = atom(async (get) => {
     height: cropped.height
   }
 
-  // Appliquer le resize selon le mode
+  // Appliquer le resize selon le mode (dimensions calculées automatiquement)
   try {
     const resizedCanvas = applyResize(canvas, relativeSelection, {
       mode: resizeMode,
-      targetWidth,
-      targetHeight
+      cpcMode
     })
 
     // Convertir Canvas → ImageData

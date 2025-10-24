@@ -44,8 +44,7 @@ describe('image-resize', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'auto',
-        targetWidth: 160,
-        targetHeight: 200
+        cpcMode: 0 // Mode 0: 160×200
       }
 
       const result = applyResize(source, testSelection, config)
@@ -58,8 +57,7 @@ describe('image-resize', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'auto',
-        targetWidth: 320,
-        targetHeight: 200
+        cpcMode: 1 // Mode 1: 320×200
       }
 
       const result = applyResize(source, testSelection, config)
@@ -74,8 +72,7 @@ describe('image-resize', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'keepSmaller',
-        targetWidth: 160,
-        targetHeight: 200
+        cpcMode: 0 // Mode 0: 160×200
       }
 
       const result = applyResize(source, testSelection, config)
@@ -90,8 +87,7 @@ describe('image-resize', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'keepLarger',
-        targetWidth: 160,
-        targetHeight: 200
+        cpcMode: 0 // Mode 0: 160×200
       }
 
       const result = applyResize(source, testSelection, config)
@@ -107,8 +103,7 @@ describe('image-resize', () => {
       const selection: Selection = { sx: 0, sy: 0, width: 50, height: 50 }
       const config: ResizeConfig = {
         mode: 'origin',
-        targetWidth: 160,
-        targetHeight: 200
+        cpcMode: 0 // Mode 0: 160×200
       }
 
       const result = applyResize(source, selection, config)
@@ -122,14 +117,13 @@ describe('image-resize', () => {
       const selection: Selection = { sx: 0, sy: 0, width: 200, height: 200 }
       const config: ResizeConfig = {
         mode: 'origin',
-        targetWidth: 100,
-        targetHeight: 100
+        cpcMode: 1 // Mode 1: 320×200 (using mode 1 for different dimensions)
       }
 
       const result = applyResize(source, selection, config)
 
-      expect(result.width).toBe(100)
-      expect(result.height).toBe(100)
+      expect(result.width).toBe(320)
+      expect(result.height).toBe(200)
     })
   })
 
@@ -138,8 +132,7 @@ describe('image-resize', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'userSize',
-        targetWidth: 160,
-        targetHeight: 200,
+        cpcMode: 0, // Mode 0: 160×200
         customPosition: { x: 10, y: 20 },
         customSize: { width: 80, height: 100 }
       }
@@ -150,12 +143,11 @@ describe('image-resize', () => {
       expect(result.height).toBe(200)
     })
 
-    it('should fallback to fit mode when custom params missing', () => {
+    it('should fallback to keepSmaller mode when custom params missing', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'userSize',
-        targetWidth: 160,
-        targetHeight: 200
+        cpcMode: 0 // Mode 0: 160×200
       }
 
       const result = applyResize(source, testSelection, config)

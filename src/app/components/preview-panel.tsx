@@ -4,7 +4,6 @@ import { useEffect, useId } from 'react'
 import { ColorPalette } from '@/components/color-palette/color-palette'
 import ImageControls from '@/components/image-controls/image-controls'
 import ImagePreview from '@/components/image-preview/image-preview'
-import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
 import Flex from '@/components/ui/flex'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -37,9 +36,6 @@ const PreviewPanel = () => {
       </Flex>
 
       <ImagePreview />
-
-      {/* Resize controls */}
-      <ImageResizePanel />
 
       {/* Color Palette below preview */}
 

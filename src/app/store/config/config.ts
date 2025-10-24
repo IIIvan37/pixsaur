@@ -10,13 +10,7 @@ import type {
   CpcModeKey,
   ProcessorType
 } from './types'
-import type { ResizeMode, CPCMode } from './resize-types'
-import {
-  validateCPCMemory,
-  validateWidthForMode,
-  validateHeight,
-  getDefaultTargetSize
-} from './resize-types'
+import type { ResizeMode } from './resize-types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {
@@ -156,85 +150,10 @@ export const setCpcHardwareAtom = atom(
 // Resize mode selection (auto is the smart default with CPC aspect ratio correction)
 export const resizeModeAtom = atom<ResizeMode>('auto')
 
-// Target dimensions atoms (updated when mode or CPC mode changes)
-export const targetWidthAtom = atom<number>(160)
-export const targetHeightAtom = atom<number>(200)
-
-// Derived atom: Initialize target dimensions based on CPC mode
-export const defaultTargetDimensionsAtom = atom((get) => {
-  const cpcMode = get(modeAtom)
-  const numericMode = Number.parseInt(cpcMode, 10) as CPCMode
-  return getDefaultTargetSize(numericMode)
-})
-
-// Setter for resize mode with dimension reset
+// Setter for resize mode
 export const setResizeModeAtom = atom(
   null,
-  (get, set, payload: ResizeMode) => {
+  (_get, set, payload: ResizeMode) => {
     set(resizeModeAtom, payload)
-    
-    // Reset to default dimensions when changing mode
-    if (payload !== 'userSize') {
-      const defaults = get(defaultTargetDimensionsAtom)
-      set(targetWidthAtom, defaults.width)
-      set(targetHeightAtom, defaults.height)
-    }
   }
 )
-
-// Setter for target width with validation
-export const setTargetWidthAtom = atom(
-  null,
-  (get, set, payload: number) => {
-    const cpcMode = get(modeAtom)
-    const numericMode = Number.parseInt(cpcMode, 10) as CPCMode
-    const validation = validateWidthForMode(payload, numericMode)
-    
-    // Always set the value, UI will show validation error
-    set(targetWidthAtom, payload)
-    
-    return validation
-  }
-)
-
-// Setter for target height with validation
-export const setTargetHeightAtom = atom(
-  null,
-  (_get, set, payload: number) => {
-    const validation = validateHeight(payload)
-    
-    // Always set the value, UI will show validation error
-    set(targetHeightAtom, payload)
-    
-    return validation
-  }
-)
-
-// Derived atom: Real-time memory validation
-export const memoryValidationAtom = atom((get) => {
-  const width = get(targetWidthAtom)
-  const height = get(targetHeightAtom)
-  const cpcMode = get(modeAtom)
-  const numericMode = Number.parseInt(cpcMode, 10) as CPCMode
-  
-  return validateCPCMemory(width, height, numericMode)
-})
-
-// Derived atom: Complete validation state
-export const resizeValidationAtom = atom((get) => {
-  const width = get(targetWidthAtom)
-  const height = get(targetHeightAtom)
-  const cpcMode = get(modeAtom)
-  const numericMode = Number.parseInt(cpcMode, 10) as CPCMode
-  
-  const widthValidation = validateWidthForMode(width, numericMode)
-  const heightValidation = validateHeight(height)
-  const memoryValidation = get(memoryValidationAtom)
-  
-  return {
-    width: widthValidation,
-    height: heightValidation,
-    memory: memoryValidation,
-    isValid: widthValidation.valid && heightValidation.valid && memoryValidation.valid
-  }
-})

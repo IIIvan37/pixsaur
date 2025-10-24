@@ -1,9 +1,10 @@
 /**
  * Image Resize Utilities for Pixsaur
- * Implements 5 resize modes from ConvImgCpc system
+ * Dimensions are calculated automatically from CPC mode
  */
 
 import type { ResizeConfig } from '@/app/store/config/resize-types'
+import { getDefaultTargetSize } from '@/app/store/config/resize-types'
 
 export interface Selection {
   sx: number
@@ -65,9 +66,12 @@ function resizeKeepSmaller(
   selection: Selection,
   config: ResizeConfig
 ): HTMLCanvasElement {
+  // Calculate target dimensions from CPC mode
+  const { width: targetWidth, height: targetHeight } = getDefaultTargetSize(config.cpcMode)
+  
   const outputCanvas = document.createElement('canvas')
-  outputCanvas.width = config.targetWidth
-  outputCanvas.height = config.targetHeight
+  outputCanvas.width = targetWidth
+  outputCanvas.height = targetHeight
 
   const ctx = outputCanvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) {
@@ -76,19 +80,19 @@ function resizeKeepSmaller(
 
   // Fill with black background
   ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, config.targetWidth, config.targetHeight)
+  ctx.fillRect(0, 0, targetWidth, targetHeight)
 
   // Calculate scale to fit inside target
-  const scaleX = config.targetWidth / selection.width
-  const scaleY = config.targetHeight / selection.height
+  const scaleX = targetWidth / selection.width
+  const scaleY = targetHeight / selection.height
   const scale = Math.min(scaleX, scaleY)
 
   const scaledWidth = selection.width * scale
   const scaledHeight = selection.height * scale
 
   // Center the scaled image
-  const offsetX = (config.targetWidth - scaledWidth) / 2
-  const offsetY = (config.targetHeight - scaledHeight) / 2
+  const offsetX = (targetWidth - scaledWidth) / 2
+  const offsetY = (targetHeight - scaledHeight) / 2
 
   ctx.drawImage(
     sourceCanvas,
@@ -106,7 +110,7 @@ function resizeKeepSmaller(
 }
 
 /**
- * Mode 3: KEEP LARGER - Fill target (crop excess)
+ * Mode KEEP LARGER: Fill target (crop excess)
  * Scales to fill target completely, preserving aspect ratio.
  * Crops excess content (centered).
  */
@@ -115,9 +119,12 @@ function resizeKeepLarger(
   selection: Selection,
   config: ResizeConfig
 ): HTMLCanvasElement {
+  // Calculate target dimensions from CPC mode
+  const { width: targetWidth, height: targetHeight } = getDefaultTargetSize(config.cpcMode)
+  
   const outputCanvas = document.createElement('canvas')
-  outputCanvas.width = config.targetWidth
-  outputCanvas.height = config.targetHeight
+  outputCanvas.width = targetWidth
+  outputCanvas.height = targetHeight
 
   const ctx = outputCanvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) {
@@ -125,16 +132,16 @@ function resizeKeepLarger(
   }
 
   // Calculate scale to fill target
-  const scaleX = config.targetWidth / selection.width
-  const scaleY = config.targetHeight / selection.height
+  const scaleX = targetWidth / selection.width
+  const scaleY = targetHeight / selection.height
   const scale = Math.max(scaleX, scaleY)
 
   const scaledWidth = selection.width * scale
   const scaledHeight = selection.height * scale
 
   // Center and crop
-  const offsetX = (config.targetWidth - scaledWidth) / 2
-  const offsetY = (config.targetHeight - scaledHeight) / 2
+  const offsetX = (targetWidth - scaledWidth) / 2
+  const offsetY = (targetHeight - scaledHeight) / 2
 
   ctx.drawImage(
     sourceCanvas,
@@ -166,9 +173,12 @@ function resizeUserSize(
     return resizeKeepSmaller(sourceCanvas, selection, config)
   }
 
+  // Calculate target dimensions from CPC mode
+  const { width: targetWidth, height: targetHeight } = getDefaultTargetSize(config.cpcMode)
+  
   const outputCanvas = document.createElement('canvas')
-  outputCanvas.width = config.targetWidth
-  outputCanvas.height = config.targetHeight
+  outputCanvas.width = targetWidth
+  outputCanvas.height = targetHeight
 
   const ctx = outputCanvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) {
@@ -177,7 +187,7 @@ function resizeUserSize(
 
   // Fill with black background
   ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, config.targetWidth, config.targetHeight)
+  ctx.fillRect(0, 0, targetWidth, targetHeight)
 
   // Use custom parameters
   const { x: customX, y: customY } = config.customPosition
@@ -199,8 +209,8 @@ function resizeUserSize(
 }
 
 /**
- * Mode 5: ORIGIN - Keep original selection size
- * No scaling applied. If selection is larger than target, it's cropped (centered).
+ * Mode ORIGIN: Keep original selection size
+ * No scaling applied. If selection is larger than target, it's cropped (top-left).
  * If smaller, it's centered with black borders.
  */
 function resizeOrigin(
@@ -208,9 +218,12 @@ function resizeOrigin(
   selection: Selection,
   config: ResizeConfig
 ): HTMLCanvasElement {
+  // Calculate target dimensions from CPC mode
+  const { width: targetWidth, height: targetHeight } = getDefaultTargetSize(config.cpcMode)
+  
   const outputCanvas = document.createElement('canvas')
-  outputCanvas.width = config.targetWidth
-  outputCanvas.height = config.targetHeight
+  outputCanvas.width = targetWidth
+  outputCanvas.height = targetHeight
 
   const ctx = outputCanvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) {
@@ -219,23 +232,23 @@ function resizeOrigin(
 
   // Fill with black background
   ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, config.targetWidth, config.targetHeight)
+  ctx.fillRect(0, 0, targetWidth, targetHeight)
 
   // Calculate positioning
-  const sourceWidth = Math.min(selection.width, config.targetWidth)
-  const sourceHeight = Math.min(selection.height, config.targetHeight)
+  const sourceWidth = Math.min(selection.width, targetWidth)
+  const sourceHeight = Math.min(selection.height, targetHeight)
 
-  const offsetX = Math.max(0, (config.targetWidth - selection.width) / 2)
-  const offsetY = Math.max(0, (config.targetHeight - selection.height) / 2)
+  const offsetX = Math.max(0, (targetWidth - selection.width) / 2)
+  const offsetY = Math.max(0, (targetHeight - selection.height) / 2)
 
   // Center source crop if image is larger than target
   const sourceOffsetX =
-    selection.width > config.targetWidth
-      ? selection.sx + (selection.width - config.targetWidth) / 2
+    selection.width > targetWidth
+      ? selection.sx + (selection.width - targetWidth) / 2
       : selection.sx
   const sourceOffsetY =
-    selection.height > config.targetHeight
-      ? selection.sy + (selection.height - config.targetHeight) / 2
+    selection.height > targetHeight
+      ? selection.sy + (selection.height - targetHeight) / 2
       : selection.sy
 
   ctx.drawImage(
