@@ -10,6 +10,7 @@ import {
   setResizeModeAtom
 } from '@/app/store/config/config'
 import type { ResizeMode } from '@/app/store/config/resize-types'
+import Flex from '@/components/ui/flex'
 import Radio from '@/components/ui/radio/radio'
 import { SectionTitle } from '@/components/ui/section-title/section-title'
 import styles from './image-resize-panel.module.css'
@@ -29,7 +30,7 @@ export function ImageResizePanel() {
       </SectionTitle>
 
       {/* Mode Selection */}
-      <div className={styles.radioGroup}>
+      <Flex direction="row" wrap="wrap" gap="1rem" align="flex-start">
         <Radio
           name="resizeMode"
           value="auto"
@@ -39,26 +40,12 @@ export function ImageResizePanel() {
         />
         <Radio
           name="resizeMode"
-          value="keepSmaller"
-          checked={resizeMode === 'keepSmaller'}
-          onChange={() => handleModeChange('keepSmaller')}
-          label="Keep Smaller (Letterbox)"
-        />
-        <Radio
-          name="resizeMode"
-          value="keepLarger"
-          checked={resizeMode === 'keepLarger'}
-          onChange={() => handleModeChange('keepLarger')}
-          label="Keep Larger (Crop)"
-        />
-        <Radio
-          name="resizeMode"
           value="origin"
           checked={resizeMode === 'origin'}
           onChange={() => handleModeChange('origin')}
           label="Origin (No Scale)"
         />
-      </div>
+      </Flex>
     </div>
   )
 }

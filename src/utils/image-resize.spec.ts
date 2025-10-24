@@ -67,36 +67,6 @@ describe('image-resize', () => {
     })
   })
 
-  describe('resizeKeepSmaller', () => {
-    it('should create canvas with target dimensions', () => {
-      const source = createMockCanvas(100, 100)
-      const config: ResizeConfig = {
-        mode: 'keepSmaller',
-        cpcMode: 0 // Mode 0: 160×200
-      }
-
-      const result = applyResize(source, testSelection, config)
-
-      expect(result.width).toBe(160)
-      expect(result.height).toBe(200)
-    })
-  })
-
-  describe('resizeKeepLarger', () => {
-    it('should create canvas with target dimensions', () => {
-      const source = createMockCanvas(100, 100)
-      const config: ResizeConfig = {
-        mode: 'keepLarger',
-        cpcMode: 0 // Mode 0: 160×200
-      }
-
-      const result = applyResize(source, testSelection, config)
-
-      expect(result.width).toBe(160)
-      expect(result.height).toBe(200)
-    })
-  })
-
   describe('resizeOrigin', () => {
     it('should create canvas with target dimensions when smaller', () => {
       const source = createMockCanvas(100, 100)
@@ -123,36 +93,6 @@ describe('image-resize', () => {
       const result = applyResize(source, selection, config)
 
       expect(result.width).toBe(320)
-      expect(result.height).toBe(200)
-    })
-  })
-
-  describe('resizeUserSize', () => {
-    it('should use custom parameters when provided', () => {
-      const source = createMockCanvas(100, 100)
-      const config: ResizeConfig = {
-        mode: 'userSize',
-        cpcMode: 0, // Mode 0: 160×200
-        customPosition: { x: 10, y: 20 },
-        customSize: { width: 80, height: 100 }
-      }
-
-      const result = applyResize(source, testSelection, config)
-
-      expect(result.width).toBe(160)
-      expect(result.height).toBe(200)
-    })
-
-    it('should fallback to keepSmaller mode when custom params missing', () => {
-      const source = createMockCanvas(100, 100)
-      const config: ResizeConfig = {
-        mode: 'userSize',
-        cpcMode: 0 // Mode 0: 160×200
-      }
-
-      const result = applyResize(source, testSelection, config)
-
-      expect(result.width).toBe(160)
       expect(result.height).toBe(200)
     })
   })

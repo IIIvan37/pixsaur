@@ -13,9 +13,6 @@ export type CPCMode = 0 | 1 | 2
  */
 export type ResizeMode =
   | 'auto' // Smart resize with CPC aspect ratio correction (RECOMMENDED)
-  | 'keepSmaller' // Fit inside target with aspect ratio (letterbox/pillarbox)
-  | 'keepLarger' // Fill target with aspect ratio (crop excess)
-  | 'userSize' // Custom position & size (advanced)
   | 'origin' // Keep original selection size (pixel-perfect, no scaling)
 
 /**
@@ -24,8 +21,6 @@ export type ResizeMode =
 export interface ResizeConfig {
   mode: ResizeMode
   cpcMode: CPCMode // Used to calculate target dimensions automatically
-  customPosition?: { x: number; y: number } // For userSize mode only
-  customSize?: { width: number; height: number } // For userSize mode only
 }
 
 /**
