@@ -31,7 +31,11 @@ msgstr "Kein verarbeitetes Bild"
 msgid "Bleu"
 msgstr "Blau"
 
-#: src/app/components/source-section.tsx:25
+#: src/components/image-resize/image-resize-panel.tsx:72
+msgid "Centrer l'image"
+msgstr "Bild zentrieren"
+
+#: src/app/components/source-section.tsx:26
 msgid "Changer d'image"
 msgstr "Bild ändern"
 
@@ -72,7 +76,7 @@ msgstr "Ziehen Sie ein Bild hierher"
 msgid "Hardware"
 msgstr "Hardware"
 
-#: src/app/components/source-section.tsx:24
+#: src/app/components/source-section.tsx:25
 msgid "Image source"
 msgstr "Quellbild"
 
@@ -107,6 +111,10 @@ msgstr "Modus"
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:38
 msgid "Mode de dithering"
 msgstr "Dithering-Modus"
+
+#: src/components/image-resize/image-resize-panel.tsx:36
+msgid "Mode de redimensionnement"
+msgstr "Größenänderungsmodus"
 
 #: src/components/export-panel/export-config-dialog.tsx:131
 msgid "Nom du fichier ZIP"
@@ -153,6 +161,10 @@ msgstr "Sättigung"
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (verschachteltes CPC-Format)"
 
+#: src/components/image-resize/image-resize-panel.tsx:42
+msgid "Sélection"
+msgstr "Auswahl"
+
 #: src/components/export-panel/export-config-dialog.tsx:62
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
@@ -170,6 +182,6 @@ msgstr "Bestätigen"
 msgid "Vert"
 msgstr "Grün"
 
-#: src/components/source-selector/source-selector-view.tsx:46
+#: src/components/source-selector/source-selector-view.tsx:69
 msgid "Zone de sélection"
 msgstr "Auswahlbereich"
