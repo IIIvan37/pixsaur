@@ -217,6 +217,7 @@ export const previewImageAtom = atom(async (get) => {
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const processed = await get(resizedImageAtom)
   const dithering = get(ditheringAtom)
+  const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom) // Get center option
   if (!quantizer || !processed) return null
 
@@ -264,49 +265,74 @@ export const previewImageAtom = atom(async (get) => {
   )
   logger.timeEnd('  🎯 Remapping')
 
-  logger.time('  🖌️ Canvas Operations')
+  // 🎯 Centrage uniquement pour le mode auto (origin gère son propre centrage)
+  // En mode auto, getVisualRegionNormalized retourne une ImageData de taille variable (scaledW × scaledH)
+  // qu'il faut centrer dans un canvas 160x200
+  if (resizeMode === 'auto' && centerImage) {
+    logger.time('  📐 Centering (auto mode)')
+    const modeConfig = CPC_MODE_CONFIG[mode]
+    const targetWidth = modeConfig.width
+    const targetHeight = modeConfig.height
 
-	const targetW = CPC_MODE_CONFIG[mode].width
-	const targetH = CPC_MODE_CONFIG[mode].height
+    // Si l'image est déjà à la taille cible, pas besoin de centrer
+    if (remapped.width === targetWidth && remapped.height === targetHeight) {
+      logger.timeEnd('  📐 Centering (auto mode)')
+      logger.timeEnd('🖼️ Preview Generation')
+      return remapped
+    }
 
-	// Calculate centering offsets (both horizontal and vertical)
-	const dx = centerImage ? Math.floor((targetW - remapped.width) / 2) : 0
-	const dy = centerImage ? Math.floor((targetH - remapped.height) / 2) : 0
+    // Créer un canvas à la taille cible
+    const centeredCanvas = document.createElement('canvas')
+    centeredCanvas.width = targetWidth
+    centeredCanvas.height = targetHeight
+    const ctx = centeredCanvas.getContext('2d')
+    if (!ctx) {
+      logger.warn('Failed to get canvas context for centering')
+      logger.timeEnd('  📐 Centering (auto mode)')
+      logger.timeEnd('🖼️ Preview Generation')
+      return remapped
+    }
 
-	// Si pas de centrage nécessaire, utiliser directement l'image remappée
-	let result: ImageData
-	if (
-		dx === 0 &&
-		dy === 0 &&
-		remapped.width === targetW &&
-		remapped.height === targetH
-	) {
-		result = remapped // Pas de recopie nécessaire
-	} else {
-		// Créer canvas final avec padding
-		const finalCanvas = document.createElement('canvas')
-		finalCanvas.width = targetW
-		finalCanvas.height = targetH
-		const finalCtx = finalCanvas.getContext('2d')!
+    // Remplir avec la couleur la plus sombre de la palette (pour le padding)
+    const darkestColor = reduced.reduce((darkest, color) => {
+      const brightness = color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114
+      const darkestBrightness =
+        darkest[0] * 0.299 + darkest[1] * 0.587 + darkest[2] * 0.114
+      return brightness < darkestBrightness ? color : darkest
+    }, reduced[0])
 
-		// Find darkest color in palette for padding
-		const darkestColor = reduced.reduce((darkest, color) => {
-			const brightness = color[0] + color[1] + color[2]
-			const darkestBrightness = darkest[0] + darkest[1] + darkest[2]
-			return brightness < darkestBrightness ? color : darkest
-		}, reduced[0])
+    ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
+    ctx.fillRect(0, 0, targetWidth, targetHeight)
 
-		// Fill background with darkest color
-		finalCtx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
-		finalCtx.fillRect(0, 0, targetW, targetH)
+    // Calculer la position de centrage
+    const dx = Math.floor((targetWidth - remapped.width) / 2)
+    const dy = Math.floor((targetHeight - remapped.height) / 2)
 
-		// Place image at calculated position
-		finalCtx.putImageData(remapped, dx, dy)
-		result = finalCtx.getImageData(0, 0, targetW, targetH)
-	}
-	logger.timeEnd('  🖌️ Canvas Operations')
+    // Créer un canvas temporaire pour l'image remappée
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = remapped.width
+    tempCanvas.height = remapped.height
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) {
+      logger.warn('Failed to get temp canvas context')
+      logger.timeEnd('  📐 Centering (auto mode)')
+      logger.timeEnd('🖼️ Preview Generation')
+      return remapped
+    }
+    tempCtx.putImageData(remapped, 0, 0)
+
+    // Dessiner l'image centrée
+    ctx.drawImage(tempCanvas, dx, dy)
+
+    // Récupérer l'ImageData finale
+    const centered = ctx.getImageData(0, 0, targetWidth, targetHeight)
+    logger.timeEnd('  📐 Centering (auto mode)')
+    logger.timeEnd('🖼️ Preview Generation')
+    return centered
+  }
+
   logger.timeEnd('🖼️ Preview Generation')
-  return result
+  return remapped
 })
 
 // Helper functions pour réduire la complexité cognitive
