@@ -157,3 +157,6 @@ export const setResizeModeAtom = atom(
     set(resizeModeAtom, payload)
   }
 )
+
+// Center image in target (when image is smaller than target dimensions)
+export const centerImageAtom = atom<boolean>(true)

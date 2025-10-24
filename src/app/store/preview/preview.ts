@@ -15,7 +15,8 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   modeAtom,
-  resizeModeAtom
+  resizeModeAtom,
+  centerImageAtom
 } from '../config/config'
 import { CPC_MODE_CONFIG } from '../config/types'
 import type { CPCMode } from '../config/resize-types'
@@ -215,6 +216,7 @@ export const previewImageAtom = atom(async (get) => {
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const processed = await get(resizedImageAtom)
   const dithering = get(ditheringAtom)
+  const centerImage = get(centerImageAtom) // Get center option
   if (!quantizer || !processed) return null
 
   // 🔍 DEBUG: Vérifier la palette avant dithering
@@ -277,8 +279,8 @@ export const previewImageAtom = atom(async (get) => {
   workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height)
   workCtx.putImageData(remapped, 0, 0)
   // ✅ OPTIMISATION: Centrage direct sans drawImage supplémentaire
-  const dx = Math.floor((targetW - remapped.width) / 2)
-  const dy = Math.floor((targetH - remapped.height) / 2)
+  const dx = centerImage ? Math.floor((targetW - remapped.width) / 2) : 0
+  const dy = centerImage ? Math.floor((targetH - remapped.height) / 2) : 0
 
   // Si pas de centrage nécessaire, utiliser directement l'image remappée
   let result: ImageData

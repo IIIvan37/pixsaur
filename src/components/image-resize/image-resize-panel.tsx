@@ -4,8 +4,10 @@
  */
 
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useId } from 'react'
 import {
+  centerImageAtom,
   resizeModeAtom,
   setResizeModeAtom
 } from '@/app/store/config/config'
@@ -14,11 +16,14 @@ import type { ResizeMode } from '@/app/store/config/resize-types'
 import Flex from '@/components/ui/flex'
 import Radio from '@/components/ui/radio/radio'
 import { SectionTitle } from '@/components/ui/section-title/section-title'
+import { Switch } from '@/components/ui/switch'
 import styles from './image-resize-panel.module.css'
 
 export function ImageResizePanel() {
+  const centerId = useId()
   const resizeMode = useAtomValue(resizeModeAtom)
   const selection = useAtomValue(selectionAtom)
+  const [centerImage, setCenterImage] = useAtom(centerImageAtom)
   const setResizeModeAction = useSetAtom(setResizeModeAtom)
 
   const handleModeChange = (mode: ResizeMode) => {
@@ -54,6 +59,18 @@ export function ImageResizePanel() {
           onChange={() => handleModeChange('origin')}
           label="Origin (No Scale)"
         />
+      </Flex>
+
+      {/* Center image option */}
+      <Flex direction="row" gap="0.5rem" align="center">
+        <Switch
+          checked={centerImage}
+          onCheckedChange={setCenterImage}
+          id={centerId}
+        />
+        <label htmlFor={centerId} className={styles.switchLabel}>
+          <Trans>Centrer l'image</Trans>
+        </label>
       </Flex>
     </div>
   )
