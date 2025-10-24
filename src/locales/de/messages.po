@@ -26,12 +26,16 @@ msgstr "Vorschau"
 msgid "Aucune image traitée"
 msgstr "Kein verarbeitetes Bild"
 
+#: src/components/image-resize/image-resize-panel.tsx:54
+msgid "Auto (Smart CPC adapt)"
+msgstr "Auto (intelligente CPC-Anpassung)"
+
 #: src/app/components/adjustements/adjustement.view.tsx:18
 #: src/components/ui/rgb-slider/rgb-slider.tsx:122
 msgid "Bleu"
 msgstr "Blau"
 
-#: src/components/image-resize/image-resize-panel.tsx:72
+#: src/components/image-resize/image-resize-panel.tsx:73
 msgid "Centrer l'image"
 msgstr "Bild zentrieren"
 
@@ -112,13 +116,17 @@ msgstr "Modus"
 msgid "Mode de dithering"
 msgstr "Dithering-Modus"
 
-#: src/components/image-resize/image-resize-panel.tsx:36
+#: src/components/image-resize/image-resize-panel.tsx:37
 msgid "Mode de redimensionnement"
 msgstr "Größenänderungsmodus"
 
 #: src/components/export-panel/export-config-dialog.tsx:131
 msgid "Nom du fichier ZIP"
 msgstr "ZIP-Dateiname"
+
+#: src/components/image-resize/image-resize-panel.tsx:61
+msgid "Origin (No Scale)"
+msgstr "Original (keine Skalierung)"
 
 #: src/components/image-upload/image-upload-view.tsx:43
 msgid "ou cliquez pour sélectionner un fichier"
@@ -161,7 +169,7 @@ msgstr "Sättigung"
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (verschachteltes CPC-Format)"
 
-#: src/components/image-resize/image-resize-panel.tsx:42
+#: src/components/image-resize/image-resize-panel.tsx:43
 msgid "Sélection"
 msgstr "Auswahl"
 

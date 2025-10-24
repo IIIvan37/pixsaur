@@ -3,7 +3,7 @@
  * Provides controls for resizing the selection with CPC constraints
  */
 
-import { Trans } from '@lingui/react/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useId } from 'react'
 import {
@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch'
 import styles from './image-resize-panel.module.css'
 
 export function ImageResizePanel() {
+  const { t } = useLingui()
   const centerId = useId()
   const resizeMode = useAtomValue(resizeModeAtom)
   const selection = useAtomValue(selectionAtom)
@@ -50,14 +51,14 @@ export function ImageResizePanel() {
           value="auto"
           checked={resizeMode === 'auto'}
           onChange={() => handleModeChange('auto')}
-          label="Auto (Smart CPC adapt)"
+          label={t`Auto (Smart CPC adapt)`}
         />
         <Radio
           name="resizeMode"
           value="origin"
           checked={resizeMode === 'origin'}
           onChange={() => handleModeChange('origin')}
-          label="Origin (No Scale)"
+          label={t`Origin (No Scale)`}
         />
       </Flex>
 
