@@ -5,3 +5,12 @@
   margin-top: 1rem;
   width: 100%;
 }
+
+.selectionInfo {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-family: monospace;
+  padding: 0.5rem;
+  background: var(--color-background-tertiary, rgba(0, 0, 0, 0.05));
+  border-radius: 0.25rem;
+}

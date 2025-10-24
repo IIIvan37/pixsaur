@@ -9,6 +9,7 @@ import {
   resizeModeAtom,
   setResizeModeAtom
 } from '@/app/store/config/config'
+import { selectionAtom } from '@/app/store/image/image'
 import type { ResizeMode } from '@/app/store/config/resize-types'
 import Flex from '@/components/ui/flex'
 import Radio from '@/components/ui/radio/radio'
@@ -17,6 +18,7 @@ import styles from './image-resize-panel.module.css'
 
 export function ImageResizePanel() {
   const resizeMode = useAtomValue(resizeModeAtom)
+  const selection = useAtomValue(selectionAtom)
   const setResizeModeAction = useSetAtom(setResizeModeAtom)
 
   const handleModeChange = (mode: ResizeMode) => {
@@ -28,6 +30,13 @@ export function ImageResizePanel() {
       <SectionTitle level={3}>
         <Trans>Mode de redimensionnement</Trans>
       </SectionTitle>
+
+      {/* Selection dimensions info */}
+      {selection && (
+        <div className={styles.selectionInfo}>
+          <Trans>Sélection</Trans>: {selection.width} × {selection.height} px
+        </div>
+      )}
 
       {/* Mode Selection */}
       <Flex direction="row" wrap="wrap" gap="1rem" align="flex-start">
