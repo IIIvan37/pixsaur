@@ -61,6 +61,7 @@ export const resizedImageAtom = atom(async (get) => {
   const resizeMode = get(resizeModeAtom)
   const cpcModeKey = get(modeAtom)
   const cpcMode = Number.parseInt(cpcModeKey, 10) as CPCMode
+  const centerImage = get(centerImageAtom)
 
   if (!cropped) {
     return cropped
@@ -88,7 +89,7 @@ export const resizedImageAtom = atom(async (get) => {
     const resizedCanvas = applyResize(canvas, relativeSelection, {
       mode: resizeMode,
       cpcMode
-    })
+    }, centerImage)
 
     // Convertir Canvas → ImageData
     const resizedCtx = resizedCanvas.getContext('2d')

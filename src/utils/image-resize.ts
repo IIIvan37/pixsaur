@@ -18,12 +18,14 @@ export interface Selection {
  * @param sourceCanvas Original image canvas
  * @param selection Region to extract
  * @param config Resize configuration
+ * @param centerImage Whether to center the image in the target canvas (default: true)
  * @returns New canvas with resized image
  */
 export function applyResize(
   sourceCanvas: HTMLCanvasElement,
   selection: Selection,
-  config: ResizeConfig
+  config: ResizeConfig,
+  centerImage = true
 ): HTMLCanvasElement {
   const mode = config.mode
 
@@ -31,7 +33,7 @@ export function applyResize(
     case 'auto':
       return resizeAuto(sourceCanvas, selection)
     case 'origin':
-      return resizeOrigin(sourceCanvas, selection, config)
+      return resizeOrigin(sourceCanvas, selection, config, centerImage)
   }
 }
 
@@ -52,14 +54,15 @@ function resizeAuto(
 
 /**
  * Mode ORIGIN: Keep original selection size
- * No scaling applied. Always starts from top-left (0,0) - no centering, no padding.
+ * No scaling applied. Position controlled by centerImage parameter.
  * If selection is larger than target, it's cropped from top-left.
- * If smaller, only the image area is drawn (no black borders added).
+ * If smaller, positioned according to centerImage option.
  */
 function resizeOrigin(
   sourceCanvas: HTMLCanvasElement,
   selection: Selection,
-  config: ResizeConfig
+  config: ResizeConfig,
+  centerImage: boolean
 ): HTMLCanvasElement {
   // Calculate target dimensions from CPC mode
   const { width: targetWidth, height: targetHeight } = getDefaultTargetSize(config.cpcMode)
@@ -81,15 +84,19 @@ function resizeOrigin(
   const drawWidth = Math.min(selection.width, targetWidth)
   const drawHeight = Math.min(selection.height, targetHeight)
 
-  // Always draw from top-left (0, 0) - no centering
+  // Calculate position: centered or top-left
+  const dx = centerImage ? Math.floor((targetWidth - drawWidth) / 2) : 0
+  const dy = centerImage ? Math.floor((targetHeight - drawHeight) / 2) : 0
+
+  // Draw image at calculated position
   ctx.drawImage(
     sourceCanvas,
     selection.sx,           // Source start X
     selection.sy,           // Source start Y
     drawWidth,              // Source width (cropped if too large)
     drawHeight,             // Source height (cropped if too large)
-    0,                      // Destination X: always top-left
-    0,                      // Destination Y: always top-left
+    dx,                     // Destination X: centered or top-left
+    dy,                     // Destination Y: centered or top-left
     drawWidth,              // Destination width (1:1, no scaling)
     drawHeight              // Destination height (1:1, no scaling)
   )
