@@ -52,8 +52,9 @@ function resizeAuto(
 
 /**
  * Mode ORIGIN: Keep original selection size
- * No scaling applied. If selection is larger than target, it's cropped (top-left).
- * If smaller, it's centered with black borders.
+ * No scaling applied. Always starts from top-left (0,0) - no centering, no padding.
+ * If selection is larger than target, it's cropped from top-left.
+ * If smaller, only the image area is drawn (no black borders added).
  */
 function resizeOrigin(
   sourceCanvas: HTMLCanvasElement,
@@ -76,33 +77,21 @@ function resizeOrigin(
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, targetWidth, targetHeight)
 
-  // Calculate positioning
-  const sourceWidth = Math.min(selection.width, targetWidth)
-  const sourceHeight = Math.min(selection.height, targetHeight)
+  // Calculate how much of the source we can draw (crop if needed)
+  const drawWidth = Math.min(selection.width, targetWidth)
+  const drawHeight = Math.min(selection.height, targetHeight)
 
-  const offsetX = Math.max(0, (targetWidth - selection.width) / 2)
-  const offsetY = Math.max(0, (targetHeight - selection.height) / 2)
-
-  // Center source crop if image is larger than target
-  const sourceOffsetX =
-    selection.width > targetWidth
-      ? selection.sx + (selection.width - targetWidth) / 2
-      : selection.sx
-  const sourceOffsetY =
-    selection.height > targetHeight
-      ? selection.sy + (selection.height - targetHeight) / 2
-      : selection.sy
-
+  // Always draw from top-left (0, 0) - no centering
   ctx.drawImage(
     sourceCanvas,
-    sourceOffsetX,
-    sourceOffsetY,
-    sourceWidth,
-    sourceHeight,
-    offsetX,
-    offsetY,
-    sourceWidth,
-    sourceHeight
+    selection.sx,           // Source start X
+    selection.sy,           // Source start Y
+    drawWidth,              // Source width (cropped if too large)
+    drawHeight,             // Source height (cropped if too large)
+    0,                      // Destination X: always top-left
+    0,                      // Destination Y: always top-left
+    drawWidth,              // Destination width (1:1, no scaling)
+    drawHeight              // Destination height (1:1, no scaling)
   )
 
   return outputCanvas
