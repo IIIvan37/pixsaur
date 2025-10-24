@@ -54,15 +54,16 @@ function resizeAuto(
 
 /**
  * Mode ORIGIN: Keep original selection size
- * No scaling applied. Position controlled by centerImage parameter.
+ * No scaling applied. Respects centering option.
  * If selection is larger than target, it's cropped from top-left.
- * If smaller, positioned according to centerImage option.
+ * If smaller and centering disabled, starts from top-left (0,0).
+ * If smaller and centering enabled, image is centered with darkest color padding.
  */
 function resizeOrigin(
   sourceCanvas: HTMLCanvasElement,
   selection: Selection,
   config: ResizeConfig,
-  centerImage: boolean
+  centerImage = true
 ): HTMLCanvasElement {
   // Calculate target dimensions from CPC mode
   const { width: targetWidth, height: targetHeight } = getDefaultTargetSize(config.cpcMode)
@@ -84,11 +85,10 @@ function resizeOrigin(
   const drawWidth = Math.min(selection.width, targetWidth)
   const drawHeight = Math.min(selection.height, targetHeight)
 
-  // Calculate position: centered or top-left
+  // Calculate destination position (centered or top-left)
   const dx = centerImage ? Math.floor((targetWidth - drawWidth) / 2) : 0
   const dy = centerImage ? Math.floor((targetHeight - drawHeight) / 2) : 0
 
-  // Draw image at calculated position
   ctx.drawImage(
     sourceCanvas,
     selection.sx,           // Source start X
