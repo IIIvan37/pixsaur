@@ -265,44 +265,45 @@ export const previewImageAtom = atom(async (get) => {
 
   logger.time('  🖌️ Canvas Operations')
 
-  const targetW = CPC_MODE_CONFIG[mode].width
-  const targetH = CPC_MODE_CONFIG[mode].height
+	const targetW = CPC_MODE_CONFIG[mode].width
+	const targetH = CPC_MODE_CONFIG[mode].height
 
-  // ✅ OPTIMISATION: Réutiliser un seul canvas pour tout le pipeline
-  const workCanvas = document.createElement('canvas')
-  workCanvas.width = Math.max(remapped.width, targetW)
-  workCanvas.height = Math.max(remapped.height, targetH)
-  const workCtx = workCanvas.getContext('2d')
-  if (!workCtx) return null
+	// Calculate centering offsets (both horizontal and vertical)
+	const dx = centerImage ? Math.floor((targetW - remapped.width) / 2) : 0
+	const dy = centerImage ? Math.floor((targetH - remapped.height) / 2) : 0
 
-  // Clear et setup du canvas
-  workCtx.clearRect(0, 0, workCanvas.width, workCanvas.height)
-  workCtx.putImageData(remapped, 0, 0)
-  // ✅ OPTIMISATION: Centrage direct sans drawImage supplémentaire
-  const dx = centerImage ? Math.floor((targetW - remapped.width) / 2) : 0
-  const dy = centerImage ? Math.floor((targetH - remapped.height) / 2) : 0
+	// Si pas de centrage nécessaire, utiliser directement l'image remappée
+	let result: ImageData
+	if (
+		dx === 0 &&
+		dy === 0 &&
+		remapped.width === targetW &&
+		remapped.height === targetH
+	) {
+		result = remapped // Pas de recopie nécessaire
+	} else {
+		// Créer canvas final avec padding
+		const finalCanvas = document.createElement('canvas')
+		finalCanvas.width = targetW
+		finalCanvas.height = targetH
+		const finalCtx = finalCanvas.getContext('2d')!
 
-  // Si pas de centrage nécessaire, utiliser directement l'image remappée
-  let result: ImageData
-  if (
-    dx === 0 &&
-    dy === 0 &&
-    remapped.width === targetW &&
-    remapped.height === targetH
-  ) {
-    result = remapped // Pas de recopie nécessaire
-  } else {
-    // Créer canvas final seulement si centrage nécessaire
-    const finalCanvas = document.createElement('canvas')
-    finalCanvas.width = targetW
-    finalCanvas.height = targetH
-    const finalCtx = finalCanvas.getContext('2d')!
-    finalCtx.imageSmoothingEnabled = true
-    finalCtx.imageSmoothingQuality = 'high'
-    finalCtx.putImageData(remapped, dx, dy)
-    result = finalCtx.getImageData(0, 0, targetW, targetH)
-  }
-  logger.timeEnd('  🖌️ Canvas Operations')
+		// Find darkest color in palette for padding
+		const darkestColor = reduced.reduce((darkest, color) => {
+			const brightness = color[0] + color[1] + color[2]
+			const darkestBrightness = darkest[0] + darkest[1] + darkest[2]
+			return brightness < darkestBrightness ? color : darkest
+		}, reduced[0])
+
+		// Fill background with darkest color
+		finalCtx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
+		finalCtx.fillRect(0, 0, targetW, targetH)
+
+		// Place image at calculated position
+		finalCtx.putImageData(remapped, dx, dy)
+		result = finalCtx.getImageData(0, 0, targetW, targetH)
+	}
+	logger.timeEnd('  🖌️ Canvas Operations')
   logger.timeEnd('🖼️ Preview Generation')
   return result
 })
