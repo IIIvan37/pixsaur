@@ -31,8 +31,16 @@ export const ImageUploadView = ({
 }: ImageUploadProps) => {
   const { _ } = useLingui()
   const uploadId = useId()
+  
+  const handleDrop = (files: File[]) => {
+    // Only call onUpload if at least one file is selected
+    if (files.length > 0) {
+      onUpload(files)
+    }
+  }
+  
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: onUpload,
+    onDrop: handleDrop,
     accept: {
       'image/*': []
     },

@@ -1,7 +1,27 @@
+import { i18n } from '@lingui/core'
+import { I18nProvider } from '@lingui/react'
+import type { RenderOptions } from '@testing-library/react'
+import { render } from '@testing-library/react'
+import type { ReactElement } from 'react'
+
+/**
+ * Custom render function that wraps components with I18nProvider
+ * Note: i18n is initialized globally in vitest.setup.tsx
+ */
+export function renderWithI18n(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>
+) {
+  return render(ui, {
+    wrapper: ({ children }) => <I18nProvider i18n={i18n}>{children}</I18nProvider>,
+    ...options
+  })
+}
+
 /** Mock global.Image for image-loading tests in jsdom */
 export function mockGlobalImage() {
-  // @ts-expect-error: Mocking global.Image for jsdom environment in tests
-  global.Image = class {
+  // @ts-expect-error: Mocking globalThis.Image for jsdom environment in tests
+  globalThis.Image = class {
     _src = ''
     _onload: (() => void) | null = null
     _onerror: (() => void) | null = null

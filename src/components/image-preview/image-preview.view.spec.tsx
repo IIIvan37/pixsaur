@@ -1,10 +1,11 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import React from 'react'
+import { renderWithI18n } from '@/utils/test-utils'
 import { ImagePreviewView } from './image-preview-view'
 
 describe('ImagePreviewView', () => {
   it('renders empty message when no image is provided', () => {
-    render(
+    renderWithI18n(
       <ImagePreviewView
         ref={React.createRef()}
         image={null}
@@ -23,7 +24,7 @@ describe('ImagePreviewView', () => {
     // Create a dummy ImageData object
     const imageData = new ImageData(320, 200)
     const ref = React.createRef<HTMLCanvasElement>()
-    render(
+    renderWithI18n(
       <ImagePreviewView
         ref={ref}
         image={imageData}

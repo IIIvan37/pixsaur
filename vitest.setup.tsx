@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom'
+import { i18n } from '@lingui/core'
 import { vi } from 'vitest'
+import { messages as frMessages } from './src/locales/fr/messages'
+
+// Initialize i18n for all tests with French (tests use French text)
+i18n.load('fr', frMessages)
+i18n.activate('fr')
 
 globalThis.ImageData =
   globalThis.ImageData ||

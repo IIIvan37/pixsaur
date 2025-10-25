@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { renderWithI18n } from '@/utils/test-utils'
 import { ImageUploadView } from './image-upload-view'
 
 let files: File[] = []
@@ -26,7 +27,7 @@ describe('ImageUploadView', () => {
   })
 
   it('renders instructional texts', () => {
-    render(<ImageUploadView onUpload={vi.fn()} />)
+    renderWithI18n(<ImageUploadView onUpload={vi.fn()} />)
     expect(screen.getByText(/glissez & déposez une image/i)).toBeInTheDocument()
     expect(
       screen.getByText(/ou cliquez pour sélectionner un fichier/i)
@@ -37,14 +38,14 @@ describe('ImageUploadView', () => {
   it('calls onUpload when a file is selected', () => {
     files = [new File(['dummy'], 'test.png', { type: 'image/png' })]
     const onUpload = vi.fn()
-    render(<ImageUploadView onUpload={onUpload} />)
+    renderWithI18n(<ImageUploadView onUpload={onUpload} />)
     const input = screen.getByTestId('image-upload-input')
     fireEvent.change(input)
     expect(onUpload).toHaveBeenCalledWith(files)
   })
 
   it('renders custom texts if provided', () => {
-    render(
+    renderWithI18n(
       <ImageUploadView
         onUpload={vi.fn()}
         primaryText='Custom primary'
@@ -60,32 +61,31 @@ describe('ImageUploadView', () => {
   it('does not call onUpload if no file is selected', () => {
     files = []
     const onUpload = vi.fn()
-    render(<ImageUploadView onUpload={onUpload} />)
+    renderWithI18n(<ImageUploadView onUpload={onUpload} />)
     const input = screen.getByTestId('image-upload-input')
     fireEvent.change(input)
-    expect(onUpload).toHaveBeenCalledWith([])
+    expect(onUpload).not.toHaveBeenCalled()
   })
 
   it('does not call onUpload for non-image files', () => {
     files = [new File(['dummy'], 'test.txt', { type: 'text/plain' })]
     const onUpload = vi.fn()
-    render(<ImageUploadView onUpload={onUpload} />)
+    renderWithI18n(<ImageUploadView onUpload={onUpload} />)
     const input = screen.getByTestId('image-upload-input')
     fireEvent.change(input)
+    // Component passes all files, parent logic should filter
     expect(onUpload).toHaveBeenCalledWith(files)
-    // In your parent logic, you may want to filter these out!
   })
 
   it('calls onUpload with only the first file if multiple files are selected', () => {
     files = [
-      new File(['a'], 'a.png', { type: 'image/png' }),
-      new File(['b'], 'b.png', { type: 'image/png' })
+      new File(['dummy1'], 'test1.png', { type: 'image/png' }),
+      new File(['dummy2'], 'test2.png', { type: 'image/png' })
     ]
     const onUpload = vi.fn()
-    render(<ImageUploadView onUpload={onUpload} />)
+    renderWithI18n(<ImageUploadView onUpload={onUpload} />)
     const input = screen.getByTestId('image-upload-input')
     fireEvent.change(input)
     expect(onUpload).toHaveBeenCalledWith(files)
-    // Your parent logic may only use the first file!
   })
 })

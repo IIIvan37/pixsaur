@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { renderWithI18n } from '@/utils/test-utils'
 import {
   ColorPickerPopup,
   type ColorPickerPopupProps
@@ -33,20 +34,20 @@ describe('ColorPickerPopup', () => {
   }
 
   it('should render with initial color', () => {
-    render(<ColorPickerPopup {...defaultProps} />)
+    renderWithI18n(<ColorPickerPopup {...defaultProps} />)
 
     expect(screen.getByText('RGB(255, 0, 0)')).toBeInTheDocument()
   })
 
   it('should display correct lock state', () => {
     const lockedProps = { ...defaultProps, isLocked: true }
-    render(<ColorPickerPopup {...lockedProps} />)
+    renderWithI18n(<ColorPickerPopup {...lockedProps} />)
 
     expect(screen.getByText('Déverrouiller')).toBeInTheDocument()
   })
 
   it('should not display unlock button when not locked', () => {
-    render(<ColorPickerPopup {...defaultProps} />)
+    renderWithI18n(<ColorPickerPopup {...defaultProps} />)
 
     // Aucun bouton de verrouillage ne devrait être affiché quand pas verrouillé
     expect(screen.queryByText('Déverrouiller')).not.toBeInTheDocument()
@@ -55,7 +56,7 @@ describe('ColorPickerPopup', () => {
   it('should call onToggleLock when unlock button is clicked on locked color', async () => {
     const onToggleLock = vi.fn()
     const lockedProps = { ...defaultProps, isLocked: true, onToggleLock }
-    render(<ColorPickerPopup {...lockedProps} />)
+    renderWithI18n(<ColorPickerPopup {...lockedProps} />)
 
     await userEvent.click(screen.getByText('Déverrouiller'))
     expect(onToggleLock).toHaveBeenCalledTimes(1)
@@ -63,7 +64,7 @@ describe('ColorPickerPopup', () => {
 
   it('should call onClose when cancel button is clicked', async () => {
     const onClose = vi.fn()
-    render(<ColorPickerPopup {...defaultProps} onClose={onClose} />)
+    renderWithI18n(<ColorPickerPopup {...defaultProps} onClose={onClose} />)
 
     await userEvent.click(screen.getByText('Annuler'))
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -71,7 +72,7 @@ describe('ColorPickerPopup', () => {
 
   it('should call onClose when cancel button is clicked', async () => {
     const onClose = vi.fn()
-    render(<ColorPickerPopup {...defaultProps} onClose={onClose} />)
+    renderWithI18n(<ColorPickerPopup {...defaultProps} onClose={onClose} />)
 
     await userEvent.click(screen.getByText('Annuler'))
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -80,7 +81,7 @@ describe('ColorPickerPopup', () => {
   it('should call onColorConfirm and onClose when validate button is clicked', async () => {
     const onColorConfirm = vi.fn()
     const onClose = vi.fn()
-    render(
+    renderWithI18n(
       <ColorPickerPopup
         {...defaultProps}
         onColorConfirm={onColorConfirm}
@@ -96,14 +97,14 @@ describe('ColorPickerPopup', () => {
   })
 
   it('should not display any lock button when color is not locked', () => {
-    render(<ColorPickerPopup {...defaultProps} />)
+    renderWithI18n(<ColorPickerPopup {...defaultProps} />)
 
     expect(screen.queryByText('Verrouiller')).not.toBeInTheDocument()
     expect(screen.queryByText('Déverrouiller')).not.toBeInTheDocument()
   })
 
   it('should display color preview with correct background', () => {
-    render(<ColorPickerPopup {...defaultProps} />)
+    renderWithI18n(<ColorPickerPopup {...defaultProps} />)
 
     const preview = screen.getByTitle('RGB(255, 0, 0)')
     expect(preview).toHaveStyle('background-color: rgb(255, 0, 0)')

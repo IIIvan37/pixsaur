@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, it, vi } from 'vitest'
+import { renderWithI18n } from '@/utils/test-utils'
 import { CPCHardware } from '@/libs/types'
 import {
   ImageControlsView,
@@ -53,7 +54,7 @@ describe('ImageControlsView', () => {
   })
 
   it('renders mode buttons and highlights the active one', () => {
-    render(<ImageControlsView {...props} />)
+    renderWithI18n(<ImageControlsView {...props} />)
     expect(screen.getByRole('button', { name: /^Mode 0$/i })).toHaveAttribute(
       'aria-pressed',
       'true'
@@ -69,7 +70,7 @@ describe('ImageControlsView', () => {
   })
 
   it('calls onModeChange when a mode button is clicked', async () => {
-    render(<ImageControlsView {...props} />)
+    renderWithI18n(<ImageControlsView {...props} />)
     await userEvent.click(screen.getByRole('button', { name: /Mode 2$/i }))
     expect(onModeChange).toHaveBeenCalledWith('2')
   })
