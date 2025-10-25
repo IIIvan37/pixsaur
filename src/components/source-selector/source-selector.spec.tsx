@@ -30,7 +30,7 @@ describe('SourceSelectorView', () => {
   })
 
   it('calls onMouseMove when mouse is moved', () => {
-    const { container} = renderWithI18n(<SourceSelectorView {...baseProps} />)
+    const { container } = renderWithI18n(<SourceSelectorView {...baseProps} />)
     fireEvent.mouseMove(container.firstChild as Element)
     expect(baseProps.onMouseMove).toHaveBeenCalled()
   })
@@ -48,7 +48,9 @@ describe('SourceSelectorView', () => {
   })
 
   it('renders the selection rectangle with correct class', () => {
-    const { getByTestId } = renderWithI18n(<SourceSelectorView {...baseProps} />)
+    const { getByTestId } = renderWithI18n(
+      <SourceSelectorView {...baseProps} />
+    )
     const rect = getByTestId('selection-rect')
     expect(rect).toHaveClass(styles['selection-rect'])
     expect(rect).not.toHaveClass(styles['selection-rect--active'])

@@ -16,7 +16,8 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   modeAtom,
-  resizeModeAtom
+  resizeModeAtom,
+  targetDimensionsAtom
 } from '../config/config'
 import type { CPCMode } from '../config/resize-types'
 import { CPC_MODE_CONFIG } from '../config/types'
@@ -41,16 +42,16 @@ export const previewCanvasSizeAtom = atom((get) => {
   const containerWidth = get(previewCanvasWidthAtom)
   const mode = get(modeAtom)
   const resizeMode = get(resizeModeAtom)
+  const targetDimensions = get(targetDimensionsAtom)
 
   if (!containerWidth) return { width: 0, height: 0 }
 
   // Obtenir la configuration du mode CPC pour le pixel aspect ratio
   const modeConfig = CPC_MODE_CONFIG[mode]
 
-  // En mode origin, utiliser les dimensions normalisées (160/320/640)
-  // En mode auto, utiliser les dimensions du mode config
-  const canvasWidth = modeConfig.width
-  const canvasHeight = modeConfig.height
+  // Utiliser targetDimensionsAtom pour les dimensions réelles
+  const canvasWidth = targetDimensions.width
+  const canvasHeight = targetDimensions.height
 
   // Dimensions visuelles = dimensions canvas × pixel aspect ratio
   const visualWidth = canvasWidth * modeConfig.scaleX
@@ -96,8 +97,9 @@ export const resizedImageAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const resizeMode = get(resizeModeAtom)
   const cpcModeKey = get(modeAtom)
-  const cpcMode = Number.parseInt(cpcModeKey, 10) as CPCMode
+  const cpcMode = Number(cpcModeKey) as CPCMode
   const centerImage = get(centerImageAtom)
+  const targetDimensions = get(targetDimensionsAtom)
 
   if (!cropped) {
     return cropped
@@ -127,7 +129,8 @@ export const resizedImageAtom = atom(async (get) => {
       relativeSelection,
       {
         mode: resizeMode,
-        cpcMode
+        cpcMode,
+        customDimensions: targetDimensions
       },
       centerImage
     )
@@ -283,11 +286,11 @@ export const previewImageAtom = atom(async (get) => {
   const normalized =
     resizeMode === 'origin'
       ? processed // Utiliser directement l'image sans normalisation
-      : getVisualRegionNormalized(processed, mode)
+      : getVisualRegionNormalized(processed, mode, get(targetDimensionsAtom))
 
   if (!normalized) return null
 
-  console.log('🔍 [AFTER NORMALIZATION]', {
+  logger.debug('🔍 [AFTER NORMALIZATION]', {
     normalizedWidth: normalized.width,
     normalizedHeight: normalized.height
   })
@@ -329,12 +332,13 @@ export const previewImageAtom = atom(async (get) => {
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {
     logger.time('  📐 Positioning (auto mode)')
-    const modeConfig = CPC_MODE_CONFIG[mode]
-    const targetWidth = modeConfig.width
-    const targetHeight = modeConfig.height
+    const targetDimensions = get(targetDimensionsAtom)
 
     // Si l'image est déjà à la taille cible, pas besoin de la repositionner
-    if (remapped.width === targetWidth && remapped.height === targetHeight) {
+    if (
+      remapped.width === targetDimensions.width &&
+      remapped.height === targetDimensions.height
+    ) {
       logger.timeEnd('  📐 Positioning (auto mode)')
       logger.timeEnd('🖼️ Preview Generation')
       return remapped
@@ -342,8 +346,8 @@ export const previewImageAtom = atom(async (get) => {
 
     // Créer un canvas à la taille cible
     const positionedCanvas = document.createElement('canvas')
-    positionedCanvas.width = targetWidth
-    positionedCanvas.height = targetHeight
+    positionedCanvas.width = targetDimensions.width
+    positionedCanvas.height = targetDimensions.height
     const ctx = positionedCanvas.getContext('2d')
     if (!ctx) {
       logger.warn('Failed to get canvas context for positioning')
@@ -361,14 +365,16 @@ export const previewImageAtom = atom(async (get) => {
     }, reduced[0])
 
     ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
-    ctx.fillRect(0, 0, targetWidth, targetHeight)
+    ctx.fillRect(0, 0, targetDimensions.width, targetDimensions.height)
 
     // Calculer la position selon l'option de centrage
     // centerImage = true : centré (dx/dy calculés)
     // centerImage = false : aligné en haut à gauche (dx=0, dy=0)
-    const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
+    const dx = centerImage
+      ? Math.floor((targetDimensions.width - remapped.width) / 2)
+      : 0
     const dy = centerImage
-      ? Math.floor((targetHeight - remapped.height) / 2)
+      ? Math.floor((targetDimensions.height - remapped.height) / 2)
       : 0
 
     // Créer un canvas temporaire pour l'image remappée
@@ -388,7 +394,12 @@ export const previewImageAtom = atom(async (get) => {
     ctx.drawImage(tempCanvas, dx, dy)
 
     // Récupérer l'ImageData finale
-    const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
+    const positioned = ctx.getImageData(
+      0,
+      0,
+      targetDimensions.width,
+      targetDimensions.height
+    )
     logger.timeEnd('  📐 Positioning (auto mode)')
     logger.timeEnd('🖼️ Preview Generation')
     return positioned

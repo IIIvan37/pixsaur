@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
 import type { CPCHardware } from '@/libs/types'
+import { TargetDimensions } from '../target-dimensions'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
 import { ToggleButtonGroup } from '../ui/toggle-button-group'
@@ -71,6 +72,9 @@ export function ImageControlsView({
           ariaLabelPrefix='Mode'
         />
       </Flex>
+
+      {/* Target dimensions panel - always visible */}
+      <TargetDimensions />
 
       <DitheringSelector />
 

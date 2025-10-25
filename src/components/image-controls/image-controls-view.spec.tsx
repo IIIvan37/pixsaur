@@ -1,8 +1,8 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, it, vi } from 'vitest'
-import { renderWithI18n } from '@/utils/test-utils'
 import { CPCHardware } from '@/libs/types'
+import { renderWithI18n } from '@/utils/test-utils'
 import {
   ImageControlsView,
   type ImageControlsViewProps
@@ -73,5 +73,43 @@ describe('ImageControlsView', () => {
     renderWithI18n(<ImageControlsView {...props} />)
     await userEvent.click(screen.getByRole('button', { name: /Mode 2$/i }))
     expect(onModeChange).toHaveBeenCalledWith('2')
+  })
+
+  it('should show target dimensions panel for mode 0', () => {
+    renderWithI18n(<ImageControlsView {...props} mode='0' />)
+
+    // Target dimensions panel is always visible in new architecture
+    expect(screen.queryByLabelText(/Width/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Height/)).toBeInTheDocument()
+  })
+
+  it('should show target dimensions panel for mode 1', () => {
+    renderWithI18n(<ImageControlsView {...props} mode='1' />)
+
+    // Target dimensions panel is always visible in new architecture
+    expect(screen.queryByLabelText(/Width/)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Height/)).toBeInTheDocument()
+  })
+
+  it('should show target dimensions panel for mode 0 with presets', () => {
+    renderWithI18n(<ImageControlsView {...props} mode='0' />)
+
+    // Should find width/height inputs from TargetDimensions
+    expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Height/)).toBeInTheDocument()
+  })
+
+  it('should show target dimensions panel for mode 1', () => {
+    renderWithI18n(<ImageControlsView {...props} mode='1' />)
+
+    expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Height/)).toBeInTheDocument()
+  })
+
+  it('should show target dimensions panel for mode 2', () => {
+    renderWithI18n(<ImageControlsView {...props} mode='2' />)
+
+    expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Height/)).toBeInTheDocument()
   })
 })

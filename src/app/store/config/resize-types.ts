@@ -23,6 +23,7 @@ export type ResizeMode =
 export interface ResizeConfig {
   mode: ResizeMode
   cpcMode: CPCMode // Used to calculate target dimensions automatically
+  customDimensions?: { width: number; height: number } // Optional custom dimensions override
 }
 
 /**
@@ -31,8 +32,14 @@ export interface ResizeConfig {
  * En mode origin, on veut que l'image source respecte le pixel aspect ratio.
  * Le canvas doit avoir les dimensions CPC natives (160, 320, 640).
  * C'est lors de l'affichage que le pixel aspect ratio sera appliqué.
+ *
+ * @param mode CPC mode (0, 1, or 2)
+ * @param customDimensions Optional custom dimensions to override defaults
  */
-export function getNormalizedTargetSize(mode: CPCMode): {
+export function getNormalizedTargetSize(
+  mode: CPCMode,
+  customDimensions?: { width: number; height: number }
+): {
   width: number
   height: number
 } {
@@ -40,9 +47,20 @@ export function getNormalizedTargetSize(mode: CPCMode): {
   const config = CPC_MODE_CONFIG[modeKey]
 
   const ratio = config.scaleX / config.scaleY
-  // Utiliser les dimensions CPC natives
+
+  // Use custom dimensions if provided, otherwise use CPC standard dimensions
+  // Standard dimensions: Mode 0 = 160×200, Mode 1 = 320×200, Mode 2 = 640×200
+  const standardDimensions = {
+    0: { width: 160, height: 200 },
+    1: { width: 320, height: 200 },
+    2: { width: 640, height: 200 }
+  }
+
+  const baseWidth = customDimensions?.width ?? standardDimensions[mode].width
+  const baseHeight = customDimensions?.height ?? standardDimensions[mode].height
+
   return {
-    width: config.width * ratio, // 160, 320, ou 640
-    height: config.height // Toujours 200
+    width: baseWidth * ratio,
+    height: baseHeight
   }
 }
