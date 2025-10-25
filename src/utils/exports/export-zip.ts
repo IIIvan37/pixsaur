@@ -1,7 +1,6 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { CPCHardware } from '@/libs/types'
-import type { ExportConfig } from './types'
 import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
@@ -14,6 +13,7 @@ import {
 import { exportLinearAsm } from './export-linear-asm/export-linear.asm'
 import { exportSCR } from './export-scr/export-scr'
 import { toASMData } from './to-asm-data'
+import type { ExportConfig } from './types'
 
 const getHeader = (
   modeConfig: CpcModeConfig,
@@ -38,7 +38,7 @@ export async function exportZip(
 ) {
   const zip = new JSZip()
   const isCPCPlus = cpcHardware === CPCHardware.PLUS
-  
+
   // Get label from config or use default
   const asmLabel = config.labels.enabled ? config.labels.media : 'pixsaur_data'
 
@@ -75,7 +75,9 @@ export async function exportZip(
 
     // Export palette if enabled
     if (config.content.includePalettes) {
-      const paletteLabel = config.labels.enabled ? config.labels.palette : 'palette_cpc_plus'
+      const paletteLabel = config.labels.enabled
+        ? config.labels.palette
+        : 'palette_cpc_plus'
       const cpcPlusPaletteText =
         getHeader(modeConfig, 'CPC Plus Palette', true) +
         cpcPlusValuesToASM(cpcPlusPaletteValues, paletteLabel)
@@ -83,7 +85,7 @@ export async function exportZip(
     }
   } else {
     // ===== CPC CLASSIC EXPORT =====
-    
+
     // Export SCR if enabled
     if (config.content.includeSCR) {
       const scr = exportSCR(indexBuf, modeConfig)
@@ -104,8 +106,10 @@ export async function exportZip(
 
     // Export firmware and hardware palettes if enabled
     if (config.content.includePalettes) {
-      const paletteLabel = config.labels.enabled ? config.labels.palette : 'palette'
-      
+      const paletteLabel = config.labels.enabled
+        ? config.labels.palette
+        : 'palette'
+
       const paletteFirmwareText = toASMData(
         new Uint8Array(paletteFirmware),
         `${paletteLabel}_firmware`

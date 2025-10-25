@@ -20,11 +20,11 @@ export function generateSCRAsm(
   modeConfig: CpcModeConfig
 ): string {
   const sections: string[] = []
-  
+
   // Generate SCR data
   const scrData = exportSCR(indexBuf, modeConfig)
   sections.push(generateDataSection(scrData, label))
-  
+
   return sections.join('\n')
 }
 
@@ -41,7 +41,7 @@ export function generateLinearAsm(
   modeConfig: CpcModeConfig
 ): string {
   const sections: string[] = []
-  
+
   // Generate linear data
   const { mode, width, height } = modeConfig
   const pixelsPerByte = [2, 4, 8][mode]
@@ -61,9 +61,9 @@ export function generateLinearAsm(
       linear[offset++] = byte
     }
   }
-  
+
   sections.push(generateDataSection(linear, label))
-  
+
   return sections.join('\n')
 }
 
@@ -73,9 +73,6 @@ export function generateLinearAsm(
  * @param label - Label for the palette
  * @returns ASM file content as string
  */
-export function generatePaletteAsm(
-  palette: number[],
-  label: string
-): string {
+export function generatePaletteAsm(palette: number[], label: string): string {
   return generatePaletteSection(palette.slice(0, 16), label)
 }

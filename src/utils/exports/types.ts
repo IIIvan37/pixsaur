@@ -6,37 +6,37 @@
 /**
  * Output format for exports
  */
-export type OutputFormat = 
-  | 'scr-binary'      // Standard SCR file (AMSDOS header + pixels)
-  | 'asm-scr'         // ASM file with SCR format data (entrelaced)
-  | 'asm-linear'      // ASM file with linear data (sequential)
-  | 'dsk'             // Disk image
-  | 'png'             // PNG preview
+export type OutputFormat =
+  | 'scr-binary' // Standard SCR file (AMSDOS header + pixels)
+  | 'asm-scr' // ASM file with SCR format data (entrelaced)
+  | 'asm-linear' // ASM file with linear data (sequential)
+  | 'dsk' // Disk image
+  | 'png' // PNG preview
 
 /**
  * Data format for ASM exports
  */
-export type DataFormat = 
-  | 'scr'       // CPC screen format with entrelacement (16Ko)
-  | 'linear'    // Linear sequential data (simpler, for custom routines)
+export type DataFormat =
+  | 'scr' // CPC screen format with entrelacement (16Ko)
+  | 'linear' // Linear sequential data (simpler, for custom routines)
 
 /**
  * ASM label configuration
  */
 export interface ASMLabels {
   enabled: boolean
-  media: string      // Label for image data (default: "ImageData")
-  palette: string    // Label for palette data (default: "Palette")
+  media: string // Label for image data (default: "ImageData")
+  palette: string // Label for palette data (default: "Palette")
 }
 
 /**
  * ZIP content selection
  */
 export interface ZipContentConfig {
-  includeSCR: boolean           // Include SCR ASM file
-  includeLinear: boolean        // Include Linear ASM file
-  includePalettes: boolean      // Include palette files (firmware/hardware for Classic, CPC+ values for Plus)
-  includePNG: boolean           // Include PNG preview
+  includeSCR: boolean // Include SCR ASM file
+  includeLinear: boolean // Include Linear ASM file
+  includePalettes: boolean // Include palette files (firmware/hardware for Classic, CPC+ values for Plus)
+  includePNG: boolean // Include PNG preview
 }
 
 /**
@@ -45,16 +45,16 @@ export interface ZipContentConfig {
 export interface ExportConfig {
   // ZIP content selection
   content: ZipContentConfig
-  
+
   // ASM-specific options
   labels: ASMLabels
-  
+
   // Code generation options (for future phases)
   // includeCode: boolean        // TODO: Phase 2 - Include display routine
   // compression: string         // TODO: Phase 2 - Compression method
-  
+
   // Export metadata
-  filename: string               // Base filename for ZIP (without extension)
+  filename: string // Base filename for ZIP (without extension)
 }
 
 /**
@@ -81,7 +81,7 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
 export interface ExportResult {
   success: boolean
   filename: string
-  size: number        // Size in bytes
+  size: number // Size in bytes
   format: OutputFormat
   error?: string
 }
