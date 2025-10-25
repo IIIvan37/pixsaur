@@ -1,5 +1,5 @@
 import JSZip from 'jszip'
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfigWithDimensions } from '@/app/store/config/types'
 import { CPCHardware } from '@/libs/types'
 import {
   getHardwarePalette,
@@ -10,20 +10,23 @@ import {
   injectCPCPlusPaletteIntoSCR,
   paletteToCPCPlusValues
 } from './cpc-plus-format'
-import { exportLinearAsm } from './export-linear-asm/export-linear.asm'
+import {
+  exportLinearAsm,
+  splitLinearIntoChunks
+} from './export-linear-asm/export-linear.asm'
 import { exportSCR } from './export-scr/export-scr'
 import { toASMData } from './to-asm-data'
 import type { ExportConfig } from './types'
 
 const getHeader = (
-  modeConfig: CpcModeConfig,
+  modeConfig: CpcModeConfigWithDimensions,
   type: string,
   isCPCPlus: boolean
 ): string => {
   const pixelsPerByte = [2, 4, 8][modeConfig.mode]
   const hardwareType = isCPCPlus ? 'CPC+' : 'CPC Classic'
   return `; ${type} Data created with Pixsaur - ${hardwareType}
-; Mode ${modeConfig.mode} ${modeConfig.overscan ? 'Overscan' : ''} 
+; Mode ${modeConfig.mode}
 ; ${modeConfig.width}x${modeConfig.height} pixels, ${modeConfig.width / pixelsPerByte}x${modeConfig.height} bytes.\n\n`
 }
 
@@ -31,7 +34,7 @@ export async function exportZip(
   indexBuf: Uint8Array,
   paletteFirmware: number[],
   canvas: HTMLCanvasElement,
-  modeConfig: CpcModeConfig,
+  modeConfig: CpcModeConfigWithDimensions,
   cpcHardware: CPCHardware,
   reducedPalette: Array<[number, number, number]> | undefined,
   config: ExportConfig
@@ -64,13 +67,20 @@ export async function exportZip(
       zip.file(`${asmLabel}.asm`, asmText)
     }
 
-    // Export Linear if enabled
+    // Export Linear if enabled (with chunking for files > 16KB)
     if (config.content.includeLinear) {
       const linear_asm = exportLinearAsm(indexBuf, modeConfig)
-      const linear_asm_text =
-        getHeader(modeConfig, 'Linear', true) +
-        toASMData(linear_asm, `${asmLabel}_linear`)
-      zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+      const chunks = splitLinearIntoChunks(linear_asm)
+
+      for (const chunk of chunks) {
+        const suffix = chunks.length > 1 ? `_${chunk.index}` : ''
+        const label = `${asmLabel}_linear${suffix}`
+        const filename = `${label}.asm`
+        const content =
+          getHeader(modeConfig, 'Linear', isCPCPlus) +
+          toASMData(chunk.data, label)
+        zip.file(filename, content)
+      }
     }
 
     // Export palette if enabled

@@ -13,7 +13,9 @@ export function renderWithI18n(
   options?: Omit<RenderOptions, 'wrapper'>
 ) {
   return render(ui, {
-    wrapper: ({ children }) => <I18nProvider i18n={i18n}>{children}</I18nProvider>,
+    wrapper: ({ children }) => (
+      <I18nProvider i18n={i18n}>{children}</I18nProvider>
+    ),
     ...options
   })
 }

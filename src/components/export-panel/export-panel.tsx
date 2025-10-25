@@ -1,6 +1,10 @@
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
-import { cpcHardwareAtom, modeAtom } from '@/app/store/config/config'
+import {
+  cpcHardwareAtom,
+  modeAtom,
+  targetDimensionsAtom
+} from '@/app/store/config/config'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import {
   previewImageAtom,
@@ -19,7 +23,20 @@ export default function ExportPanel() {
   const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const mode = useAtomValue(modeAtom)
+  const targetDimensions = useAtomValue(targetDimensionsAtom)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Check if dimensions are standard (SCR export only available for standard dimensions)
+  const isStandardDimensions =
+    (mode === '0' &&
+      targetDimensions.width === 160 &&
+      targetDimensions.height === 200) ||
+    (mode === '1' &&
+      targetDimensions.width === 320 &&
+      targetDimensions.height === 200) ||
+    (mode === '2' &&
+      targetDimensions.width === 640 &&
+      targetDimensions.height === 200)
 
   const handleExport = async (config: ExportConfig) => {
     if (!image?.data) return
@@ -90,7 +107,12 @@ export default function ExportPanel() {
     const ctx = canvas.getContext('2d')
     ctx?.putImageData(cleanImage, 0, 0)
 
-    const modeConfig = CPC_MODE_CONFIG[mode]
+    // Get mode config and add target dimensions
+    const modeConfig = {
+      ...CPC_MODE_CONFIG[mode],
+      width: targetDimensions.width,
+      height: targetDimensions.height
+    }
 
     // Generate ZIP with selected content
     exportZip(
@@ -111,6 +133,7 @@ export default function ExportPanel() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onConfirm={handleExport}
+        isStandardDimensions={isStandardDimensions}
       />
     </>
   )

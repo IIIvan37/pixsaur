@@ -1,7 +1,7 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Button from '@/components/ui/button'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import PixsaurDialog from '@/components/ui/dialog/dialog'
@@ -14,15 +14,34 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (config: ExportConfig) => void
+  isStandardDimensions: boolean
 }
 
 export default function ExportConfigDialog({
   open,
   onOpenChange,
-  onConfirm
+  onConfirm,
+  isStandardDimensions
 }: Readonly<Props>) {
   const { _ } = useLingui()
-  const [config, setConfig] = useState<ExportConfig>(DEFAULT_EXPORT_CONFIG)
+  const [config, setConfig] = useState<ExportConfig>(() => ({
+    ...DEFAULT_EXPORT_CONFIG,
+    // Désactiver SCR par défaut si dimensions non-standard
+    content: {
+      ...DEFAULT_EXPORT_CONFIG.content,
+      includeSCR: isStandardDimensions
+    }
+  }))
+
+  // Désactiver SCR si les dimensions changent et ne sont plus standard
+  useEffect(() => {
+    if (!isStandardDimensions && config.content.includeSCR) {
+      setConfig((prev) => ({
+        ...prev,
+        content: { ...prev.content, includeSCR: false }
+      }))
+    }
+  }, [isStandardDimensions, config.content.includeSCR])
 
   const handleConfirm = () => {
     onConfirm(config)
@@ -85,6 +104,14 @@ export default function ExportConfigDialog({
             checked={config.content.includeSCR}
             onChange={(e) => updateContent('includeSCR', e.target.checked)}
             label={_(msg`SCR ASM (format CPC entrelacé)`)}
+            disabled={!isStandardDimensions}
+            title={
+              isStandardDimensions
+                ? undefined
+                : _(
+                    msg`Export SCR disponible uniquement en dimensions standard (160×200, 320×200, 640×200)`
+                  )
+            }
           />
           <Checkbox
             checked={config.content.includeLinear}
