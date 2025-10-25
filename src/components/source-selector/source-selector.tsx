@@ -48,39 +48,54 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
     selection ?? { sx: 0, sy: 0, width, height }
   )
 
-  const detectHandleHit = useCallback((
-    e: React.MouseEvent,
-    selectionRect: { x: number; y: number; width: number; height: number }
-  ) => {
-    const target = e.currentTarget as HTMLElement
-    const bounds = target.getBoundingClientRect()
-    
-    // Coordonnées relatives au container (en %)
-    const relX = ((e.clientX - bounds.left) / bounds.width) * 100
-    const relY = ((e.clientY - bounds.top) / bounds.height) * 100
-    
-    // Taille de la zone cliquable autour du handle (en %)
-    const tolerance = 5 // 5% tolerance pour faciliter le clic
-    
-    // Position des handles en % (basé sur le rectangle de sélection)
-    const handles = [
-      { name: 'top-left' as Handle, x: selectionRect.x, y: selectionRect.y },
-      { name: 'top-right' as Handle, x: selectionRect.x + selectionRect.width, y: selectionRect.y },
-      { name: 'bottom-left' as Handle, x: selectionRect.x, y: selectionRect.y + selectionRect.height },
-      { name: 'bottom-right' as Handle, x: selectionRect.x + selectionRect.width, y: selectionRect.y + selectionRect.height }
-    ]
-    
-    // Trouver le handle le plus proche
-    for (const handle of handles) {
-      const dx = Math.abs(relX - handle.x)
-      const dy = Math.abs(relY - handle.y)
-      if (dx < tolerance && dy < tolerance) {
-        return handle.name
+  const detectHandleHit = useCallback(
+    (
+      e: React.MouseEvent,
+      selectionRect: { x: number; y: number; width: number; height: number }
+    ) => {
+      const target = e.currentTarget as HTMLElement
+      const bounds = target.getBoundingClientRect()
+
+      // Coordonnées relatives au container (en %)
+      const relX = ((e.clientX - bounds.left) / bounds.width) * 100
+      const relY = ((e.clientY - bounds.top) / bounds.height) * 100
+
+      // Taille de la zone cliquable autour du handle (en %)
+      const tolerance = 5 // 5% tolerance pour faciliter le clic
+
+      // Position des handles en % (basé sur le rectangle de sélection)
+      const handles = [
+        { name: 'top-left' as Handle, x: selectionRect.x, y: selectionRect.y },
+        {
+          name: 'top-right' as Handle,
+          x: selectionRect.x + selectionRect.width,
+          y: selectionRect.y
+        },
+        {
+          name: 'bottom-left' as Handle,
+          x: selectionRect.x,
+          y: selectionRect.y + selectionRect.height
+        },
+        {
+          name: 'bottom-right' as Handle,
+          x: selectionRect.x + selectionRect.width,
+          y: selectionRect.y + selectionRect.height
+        }
+      ]
+
+      // Trouver le handle le plus proche
+      for (const handle of handles) {
+        const dx = Math.abs(relX - handle.x)
+        const dy = Math.abs(relY - handle.y)
+        if (dx < tolerance && dy < tolerance) {
+          return handle.name
+        }
       }
-    }
-    
-    return null
-  }, [])
+
+      return null
+    },
+    []
+  )
 
   const [dragging, setDragging] = useState(false)
   const [dragOrigin, setDragOrigin] = useState<{ x: number; y: number } | null>(
@@ -135,7 +150,7 @@ export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
         const handle = detectHandleHit(e, rect)
         setHoveredHandle(handle)
       }
-      
+
       if (!dragging || !dragOrigin) return
       const pos = getPercentPos(e)
 

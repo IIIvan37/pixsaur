@@ -11,8 +11,8 @@ import {
   resizeModeAtom,
   setResizeModeAtom
 } from '@/app/store/config/config'
-import { selectionAtom } from '@/app/store/image/image'
 import type { ResizeMode } from '@/app/store/config/resize-types'
+import { selectionAtom } from '@/app/store/image/image'
 import Flex from '@/components/ui/flex'
 import Radio from '@/components/ui/radio/radio'
 import { SectionTitle } from '@/components/ui/section-title/section-title'
@@ -45,17 +45,17 @@ export function ImageResizePanel() {
       )}
 
       {/* Mode Selection */}
-      <Flex direction="row" wrap="wrap" gap="1rem" align="flex-start">
+      <Flex direction='row' wrap='wrap' gap='1rem' align='flex-start'>
         <Radio
-          name="resizeMode"
-          value="auto"
+          name='resizeMode'
+          value='auto'
           checked={resizeMode === 'auto'}
           onChange={() => handleModeChange('auto')}
           label={t`Auto (Smart CPC adapt)`}
         />
         <Radio
-          name="resizeMode"
-          value="origin"
+          name='resizeMode'
+          value='origin'
           checked={resizeMode === 'origin'}
           onChange={() => handleModeChange('origin')}
           label={t`Origin (No Scale)`}
@@ -63,7 +63,7 @@ export function ImageResizePanel() {
       </Flex>
 
       {/* Center image option */}
-      <Flex direction="row" gap="0.5rem" align="center">
+      <Flex direction='row' gap='0.5rem' align='center'>
         <Switch
           checked={centerImage}
           onCheckedChange={setCenterImage}

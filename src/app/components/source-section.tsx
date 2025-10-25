@@ -1,8 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-
-import { ImageSelector } from '@/components/image-selector'
 import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
+import { ImageSelector } from '@/components/image-selector'
 import { ImageUpload } from '@/components/image-upload/image-upload'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'

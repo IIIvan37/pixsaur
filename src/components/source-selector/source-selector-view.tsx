@@ -33,7 +33,7 @@ export function SourceSelectorView({
   const cursor = useMemo(() => {
     const activeHandle = resizeHandle || hoveredHandle
     if (!activeHandle) return 'crosshair'
-    
+
     switch (activeHandle) {
       case 'top-left':
       case 'bottom-right':
@@ -47,6 +47,8 @@ export function SourceSelectorView({
   }, [resizeHandle, hoveredHandle])
 
   return (
+    /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
+    /* sonar-ignore-next-line */
     <div
       style={{
         position: 'absolute',

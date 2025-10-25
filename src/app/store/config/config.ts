@@ -4,13 +4,13 @@ import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { CPCHardware } from '@/libs/types'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
+import type { ResizeMode } from './resize-types'
 import type {
   AdjustementKey,
   ContrastStrategy,
   CpcModeKey,
   ProcessorType
 } from './types'
-import type { ResizeMode } from './resize-types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {
