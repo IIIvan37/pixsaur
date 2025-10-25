@@ -37,7 +37,7 @@ export default function PixsaurDialog({
           )}
           <div className={styles.body}>{children}</div>
           {footer && <div className={styles.footer}>{footer}</div>}
-          <Dialog.Close className={styles.closeButton} aria-label="Close">
+          <Dialog.Close className={styles.closeButton} aria-label='Close'>
             ×
           </Dialog.Close>
         </Dialog.Content>

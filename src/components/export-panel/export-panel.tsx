@@ -11,8 +11,8 @@ import { correctColorIndicesForCPC } from '@/utils/exports/correct-indices'
 import { exportZip } from '@/utils/exports/export-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 import type { ExportConfig } from '@/utils/exports/types'
-import ExportPanelView from './export-panel-view'
 import ExportConfigDialog from './export-config-dialog'
+import ExportPanelView from './export-panel-view'
 
 export default function ExportPanel() {
   const image = useAtomValue(previewImageAtom)
@@ -106,9 +106,7 @@ export default function ExportPanel() {
 
   return (
     <>
-      <ExportPanelView 
-        onExport={() => setIsDialogOpen(true)}
-      />
+      <ExportPanelView onExport={() => setIsDialogOpen(true)} />
       <ExportConfigDialog
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}

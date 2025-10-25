@@ -1,13 +1,13 @@
-import { Trans } from '@lingui/react/macro'
-import { useLingui } from '@lingui/react'
 import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { useState } from 'react'
-import type { ExportConfig } from '@/utils/exports/types'
-import { DEFAULT_EXPORT_CONFIG } from '@/utils/exports/types'
-import PixsaurDialog from '@/components/ui/dialog/dialog'
 import Button from '@/components/ui/button'
 import Checkbox from '@/components/ui/checkbox/checkbox'
+import PixsaurDialog from '@/components/ui/dialog/dialog'
 import Input from '@/components/ui/input/input'
+import type { ExportConfig } from '@/utils/exports/types'
+import { DEFAULT_EXPORT_CONFIG } from '@/utils/exports/types'
 import styles from './export-config-dialog.module.css'
 
 type Props = {
@@ -29,7 +29,10 @@ export default function ExportConfigDialog({
     onOpenChange(false)
   }
 
-  const updateContent = (key: keyof ExportConfig['content'], value: boolean) => {
+  const updateContent = (
+    key: keyof ExportConfig['content'],
+    value: boolean
+  ) => {
     setConfig((prev) => ({
       ...prev,
       content: { ...prev.content, [key]: value }
@@ -59,10 +62,12 @@ export default function ExportConfigDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={_(msg`Configuration de l'export`)}
-      description={_(msg`Sélectionnez les fichiers à inclure dans l'archive ZIP`)}
+      description={_(
+        msg`Sélectionnez les fichiers à inclure dans l'archive ZIP`
+      )}
       footer={
         <div className={styles.actions}>
-          <Button onClick={() => onOpenChange(false)} variant="secondary">
+          <Button onClick={() => onOpenChange(false)} variant='secondary'>
             <Trans>Annuler</Trans>
           </Button>
           <Button onClick={handleConfirm}>
@@ -75,7 +80,7 @@ export default function ExportConfigDialog({
         <div className={styles.label}>
           <Trans>Contenu du ZIP</Trans>
         </div>
-                <div className={styles.checkboxGroup}>
+        <div className={styles.checkboxGroup}>
           <Checkbox
             checked={config.content.includeSCR}
             onChange={(e) => updateContent('includeSCR', e.target.checked)}
@@ -111,28 +116,28 @@ export default function ExportConfigDialog({
         <>
           <Input
             label={_(msg`Label des données`)}
-            type="text"
+            type='text'
             value={config.labels.media}
             onChange={(e) => updateLabels('media', e.target.value)}
-            placeholder="ImageData"
+            placeholder='ImageData'
           />
 
           <Input
             label={_(msg`Label de la palette`)}
-            type="text"
+            type='text'
             value={config.labels.palette}
             onChange={(e) => updateLabels('palette', e.target.value)}
-            placeholder="Palette"
+            placeholder='Palette'
           />
         </>
       )}
 
       <Input
         label={_(msg`Nom du fichier ZIP`)}
-        type="text"
+        type='text'
         value={config.filename}
         onChange={(e) => updateFilename(e.target.value)}
-        placeholder="pixsaur_export"
+        placeholder='pixsaur_export'
       />
     </PixsaurDialog>
   )
