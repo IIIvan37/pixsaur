@@ -4,7 +4,7 @@
  */
 
 import type { ResizeConfig } from '@/app/store/config/resize-types'
-import { getDefaultTargetSize } from '@/app/store/config/resize-types'
+import { getNormalizedTargetSize } from '@/app/store/config/resize-types'
 
 export interface Selection {
   sx: number
@@ -65,9 +65,20 @@ function resizeOrigin(
   config: ResizeConfig,
   centerImage = true
 ): HTMLCanvasElement {
-  // Calculate target dimensions from CPC mode
-  const { width: targetWidth, height: targetHeight } = getDefaultTargetSize(config.cpcMode)
-  
+  // Calculate target dimensions - use normalized size for aspect ratio correction
+  const { width: targetWidth, height: targetHeight } = getNormalizedTargetSize(
+    config.cpcMode
+  )
+
+  console.log('🎯 [RESIZE ORIGIN]', {
+    cpcMode: config.cpcMode,
+    targetWidth,
+    targetHeight,
+    selectionWidth: selection.width,
+    selectionHeight: selection.height,
+    centerImage
+  })
+
   const outputCanvas = document.createElement('canvas')
   outputCanvas.width = targetWidth
   outputCanvas.height = targetHeight
@@ -91,14 +102,14 @@ function resizeOrigin(
 
   ctx.drawImage(
     sourceCanvas,
-    selection.sx,           // Source start X
-    selection.sy,           // Source start Y
-    drawWidth,              // Source width (cropped if too large)
-    drawHeight,             // Source height (cropped if too large)
-    dx,                     // Destination X: centered or top-left
-    dy,                     // Destination Y: centered or top-left
-    drawWidth,              // Destination width (1:1, no scaling)
-    drawHeight              // Destination height (1:1, no scaling)
+    selection.sx, // Source start X
+    selection.sy, // Source start Y
+    drawWidth, // Source width (cropped if too large)
+    drawHeight, // Source height (cropped if too large)
+    dx, // Destination X: centered or top-left
+    dy, // Destination Y: centered or top-left
+    drawWidth, // Destination width (1:1, no scaling)
+    drawHeight // Destination height (1:1, no scaling)
   )
 
   return outputCanvas

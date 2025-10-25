@@ -1,10 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
-import {
-  applyResize,
-  extractSelection,
-  type Selection
-} from './image-resize'
+import { describe, expect, it, vi } from 'vitest'
 import type { ResizeConfig } from '@/app/store/config/resize-types'
+import { applyResize, extractSelection, type Selection } from './image-resize'
 
 // Mock canvas for testing (happy-dom doesn't support 2D context fully)
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {
@@ -73,12 +69,12 @@ describe('image-resize', () => {
       const selection: Selection = { sx: 0, sy: 0, width: 50, height: 50 }
       const config: ResizeConfig = {
         mode: 'origin',
-        cpcMode: 0 // Mode 0: 160×200
+        cpcMode: 0 // Mode 0: 320×200 (normalized with ratio)
       }
 
       const result = applyResize(source, selection, config)
 
-      expect(result.width).toBe(160)
+      expect(result.width).toBe(320) // 160 * (scaleX/scaleY) = 160 * 2 = 320
       expect(result.height).toBe(200)
     })
 
@@ -109,4 +105,3 @@ describe('image-resize', () => {
     })
   })
 })
-

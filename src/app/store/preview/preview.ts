@@ -7,19 +7,19 @@ import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
-import { logger } from '@/utils/logger'
 import { applyResize, type Selection } from '@/utils/image-resize'
+import { logger } from '@/utils/logger'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
+  centerImageAtom,
   contrastStrategyAtom,
   cpcHardwareAtom,
   ditheringAtom,
   modeAtom,
-  resizeModeAtom,
-  centerImageAtom
+  resizeModeAtom
 } from '../config/config'
-import { CPC_MODE_CONFIG } from '../config/types'
 import type { CPCMode } from '../config/resize-types'
+import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 
@@ -38,9 +38,45 @@ function quantizeCPC(value: number): number {
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
 export const previewCanvasSizeAtom = atom((get) => {
-  const width = get(previewCanvasWidthAtom)
-  if (!width) return { width: 0, height: 0 }
-  const height = Math.floor(width * (200 / 320))
+  const containerWidth = get(previewCanvasWidthAtom)
+  const mode = get(modeAtom)
+  const resizeMode = get(resizeModeAtom)
+
+  if (!containerWidth) return { width: 0, height: 0 }
+
+  // Obtenir la configuration du mode CPC pour le pixel aspect ratio
+  const modeConfig = CPC_MODE_CONFIG[mode]
+
+  // En mode origin, utiliser les dimensions normalisées (160/320/640)
+  // En mode auto, utiliser les dimensions du mode config
+  const canvasWidth = modeConfig.width
+  const canvasHeight = modeConfig.height
+
+  // Dimensions visuelles = dimensions canvas × pixel aspect ratio
+  const visualWidth = canvasWidth * modeConfig.scaleX
+  const visualHeight = canvasHeight * modeConfig.scaleY
+
+  // Calculer le scale pour fit dans le container (sans dépasser la largeur disponible)
+  const scale = Math.min(containerWidth / visualWidth, 1) // Ne pas upscaler
+
+  const width = Math.floor(visualWidth * scale)
+  const height = Math.floor(visualHeight * scale)
+
+  console.log('📐 [PREVIEW CANVAS SIZE]', {
+    mode,
+    resizeMode,
+    canvasWidth,
+    canvasHeight,
+    scaleX: modeConfig.scaleX,
+    scaleY: modeConfig.scaleY,
+    visualWidth,
+    visualHeight,
+    containerWidth,
+    scale,
+    displayWidth: width,
+    displayHeight: height
+  })
+
   return { width, height }
 })
 
@@ -86,10 +122,15 @@ export const resizedImageAtom = atom(async (get) => {
 
   // Appliquer le resize selon le mode (dimensions calculées automatiquement)
   try {
-    const resizedCanvas = applyResize(canvas, relativeSelection, {
-      mode: resizeMode,
-      cpcMode
-    }, centerImage)
+    const resizedCanvas = applyResize(
+      canvas,
+      relativeSelection,
+      {
+        mode: resizeMode,
+        cpcMode
+      },
+      centerImage
+    )
 
     // Convertir Canvas → ImageData
     const resizedCtx = resizedCanvas.getContext('2d')
@@ -230,8 +271,26 @@ export const previewImageAtom = atom(async (get) => {
 
   logger.time('🖼️ Preview Generation')
 
-  const normalized = getVisualRegionNormalized(processed, mode)
+  console.log('🔍 [BEFORE NORMALIZATION]', {
+    resizeMode,
+    processedWidth: processed.width,
+    processedHeight: processed.height,
+    willSkipNormalization: resizeMode === 'origin'
+  })
+
+  // 🎯 En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
+  // On ne doit PAS appliquer getVisualRegionNormalized qui re-scale avec le pixel aspect ratio
+  const normalized =
+    resizeMode === 'origin'
+      ? processed // Utiliser directement l'image sans normalisation
+      : getVisualRegionNormalized(processed, mode)
+
   if (!normalized) return null
+
+  console.log('🔍 [AFTER NORMALIZATION]', {
+    normalizedWidth: normalized.width,
+    normalizedHeight: normalized.height
+  })
 
   logger.time('  📐 Dithering')
 
@@ -308,7 +367,9 @@ export const previewImageAtom = atom(async (get) => {
     // centerImage = true : centré (dx/dy calculés)
     // centerImage = false : aligné en haut à gauche (dx=0, dy=0)
     const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
-    const dy = centerImage ? Math.floor((targetHeight - remapped.height) / 2) : 0
+    const dy = centerImage
+      ? Math.floor((targetHeight - remapped.height) / 2)
+      : 0
 
     // Créer un canvas temporaire pour l'image remappée
     const tempCanvas = document.createElement('canvas')

@@ -45,6 +45,15 @@ const ImagePreview = () => {
       if (tempCtx) {
         tempCtx.putImageData(previewImage, 0, 0)
 
+        console.log('🖼️ [IMAGE PREVIEW DRAW]', {
+          sourceWidth: tempCanvas.width,
+          sourceHeight: tempCanvas.height,
+          destWidth: width,
+          destHeight: height,
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height
+        })
+
         // Dessiner le canvas temporaire sur le canvas de destination
         ctx.drawImage(
           tempCanvas,
