@@ -345,6 +345,7 @@ export function applyNoDither(
   return out
 }
 
+import { logger } from '@/utils/logger'
 import {
   DISTANCE_METRICS_BY_COLORSPACE,
   type DistanceFn,
@@ -625,7 +626,7 @@ export function mapAndDither(
       mode
     )
   } else {
-    console.warn(`Unsupported dithering mode: ${mode}`)
+    logger.warn(`Unsupported dithering mode: ${mode}`)
     return new Uint8ClampedArray(N * 4)
   }
 }

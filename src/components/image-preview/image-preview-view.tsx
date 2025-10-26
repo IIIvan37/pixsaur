@@ -10,6 +10,8 @@ export type ImagePreviewViewProps = {
   readonly image: ImageData | null
   readonly width: number
   readonly height: number
+  readonly onClick?: () => void
+  readonly tooltip?: string
 }
 
 /**
@@ -21,7 +23,9 @@ export function ImagePreviewView({
   ref,
   image,
   width,
-  height
+  height,
+  onClick,
+  tooltip
 }: ImagePreviewViewProps) {
   if (!image) {
     return (
@@ -39,11 +43,14 @@ export function ImagePreviewView({
         ref={ref}
         width={width}
         height={height}
+        onClick={onClick}
+        title={tooltip}
         style={{
           width: '100%',
           height: '100%',
           objectFit: 'contain',
-          display: 'block'
+          display: 'block',
+          cursor: onClick ? 'pointer' : 'default'
         }}
       />
     </div>

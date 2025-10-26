@@ -61,7 +61,7 @@ export const previewCanvasSizeAtom = atom((get) => {
   const width = Math.floor(visualWidth * scale)
   const height = Math.floor(visualHeight * scale)
 
-  console.log('📐 [PREVIEW CANVAS SIZE]', {
+  logger.debug('[PREVIEW CANVAS SIZE]', {
     mode,
     resizeMode,
     canvasWidth,
@@ -226,7 +226,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
             ] as Vector<'RGB'>
         )
 
-  console.log('🔍 [QUANTIZER DEBUG] Input params:', {
+  logger.debug('[QUANTIZER DEBUG] Input params:', {
     targetColors,
     basePaletteSize: basePalette.length,
     lockedColorsCount: quantifiedLockedVecs.length,
@@ -243,7 +243,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     contrastStrategy // 🎯 Utiliser la stratégie choisie par l'utilisateur
   )
 
-  console.log('🔍 [QUANTIZER DEBUG] Output palette:', palette)
+  logger.debug('[QUANTIZER DEBUG] Output palette:', palette)
 
   return palette
 })
@@ -262,7 +262,7 @@ export const previewImageAtom = atom(async (get) => {
   if (!quantizer || !processed) return null
 
   // 🔍 DEBUG: Vérifier la palette avant dithering
-  console.log('🎨 [PREVIEW] Palette for dithering:', {
+  logger.debug('[PREVIEW] Palette for dithering:', {
     count: reduced.length,
     colors: reduced.map((c) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`),
     mode
@@ -270,7 +270,7 @@ export const previewImageAtom = atom(async (get) => {
 
   logger.time('🖼️ Preview Generation')
 
-  console.log('🔍 [BEFORE NORMALIZATION]', {
+  logger.debug('[BEFORE NORMALIZATION]', {
     resizeMode,
     processedWidth: processed.width,
     processedHeight: processed.height,
@@ -286,7 +286,7 @@ export const previewImageAtom = atom(async (get) => {
 
   if (!normalized) return null
 
-  console.log('🔍 [AFTER NORMALIZATION]', {
+  logger.debug('[AFTER NORMALIZATION]', {
     normalizedWidth: normalized.width,
     normalizedHeight: normalized.height
   })

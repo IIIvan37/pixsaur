@@ -5,6 +5,7 @@
 
 import type { ResizeConfig } from '@/app/store/config/resize-types'
 import { getNormalizedTargetSize } from '@/app/store/config/resize-types'
+import { logger } from './logger'
 
 export interface Selection {
   sx: number
@@ -70,7 +71,7 @@ function resizeOrigin(
     config.modeConfig
   )
 
-  console.log('🎯 [RESIZE ORIGIN]', {
+  logger.debug('[RESIZE ORIGIN]', {
     modeConfig: config.modeConfig,
     targetWidth,
     targetHeight,

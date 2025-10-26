@@ -5,6 +5,7 @@ import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
 } from '@/palettes/cpc-palette'
+import { logger } from '@/utils/logger'
 import {
   cpcPlusValuesToASM,
   injectCPCPlusPaletteIntoSCR,
@@ -46,6 +47,20 @@ export async function exportZip(
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
   if (!data) return
 
+  // Check if mode is standard (required for SCR format)
+  // SCR format requires standard 16KB screen dimensions
+  const isStandardMode =
+    !modeConfig.overscan &&
+    ((modeConfig.mode === 0 &&
+      modeConfig.width === 160 &&
+      modeConfig.height === 200) ||
+      (modeConfig.mode === 1 &&
+        modeConfig.width === 320 &&
+        modeConfig.height === 200) ||
+      (modeConfig.mode === 2 &&
+        modeConfig.width === 640 &&
+        modeConfig.height === 200))
+
   if (isCPCPlus) {
     // ===== CPC PLUS EXPORT =====
     if (!reducedPalette) {
@@ -55,22 +70,34 @@ export async function exportZip(
     // Convert palette to CPC Plus values
     const cpcPlusPaletteValues = paletteToCPCPlusValues(reducedPalette)
 
-    // Export SCR if enabled
-    if (config.content.includeSCR) {
+    // Export SCR only if standard mode
+    if (config.content.includeSCR && isStandardMode) {
       const scr = exportSCR(indexBuf, modeConfig)
       injectCPCPlusPaletteIntoSCR(scr, cpcPlusPaletteValues)
-      const asmText =
-        getHeader(modeConfig, 'SCR', true) + toASMData(scr, asmLabel)
-      zip.file(`${asmLabel}.asm`, asmText)
+      const asmResult = toASMData(scr, asmLabel)
+      if (typeof asmResult === 'string') {
+        const asmText = getHeader(modeConfig, 'SCR', true) + asmResult
+        zip.file(`${asmLabel}.asm`, asmText)
+      }
     }
 
     // Export Linear if enabled
     if (config.content.includeLinear) {
       const linear_asm = exportLinearAsm(indexBuf, modeConfig)
-      const linear_asm_text =
-        getHeader(modeConfig, 'Linear', true) +
-        toASMData(linear_asm, `${asmLabel}_linear`)
-      zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+      const asmResult = toASMData(linear_asm, `${asmLabel}_linear`)
+
+      if (typeof asmResult === 'string') {
+        // Single file
+        const linear_asm_text =
+          getHeader(modeConfig, 'Linear', true) + asmResult
+        zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+      } else {
+        // Multiple chunked files
+        const header = getHeader(modeConfig, 'Linear', true)
+        for (const chunk of asmResult) {
+          zip.file(chunk.filename, header + chunk.content)
+        }
+      }
     }
 
     // Export palette if enabled
@@ -86,22 +113,34 @@ export async function exportZip(
   } else {
     // ===== CPC CLASSIC EXPORT =====
 
-    // Export SCR if enabled
-    if (config.content.includeSCR) {
+    // Export SCR only if standard mode
+    if (config.content.includeSCR && isStandardMode) {
       const scr = exportSCR(indexBuf, modeConfig)
       injectPaletteDataIntoSCR(scr, paletteFirmware)
-      const asmText =
-        getHeader(modeConfig, 'SCR', false) + toASMData(scr, asmLabel)
-      zip.file(`${asmLabel}.asm`, asmText)
+      const asmResult = toASMData(scr, asmLabel)
+      if (typeof asmResult === 'string') {
+        const asmText = getHeader(modeConfig, 'SCR', false) + asmResult
+        zip.file(`${asmLabel}.asm`, asmText)
+      }
     }
 
     // Export Linear if enabled
     if (config.content.includeLinear) {
       const linear_asm = exportLinearAsm(indexBuf, modeConfig)
-      const linear_asm_text =
-        getHeader(modeConfig, 'Linear', false) +
-        toASMData(linear_asm, `${asmLabel}_linear`)
-      zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+      const asmResult = toASMData(linear_asm, `${asmLabel}_linear`)
+
+      if (typeof asmResult === 'string') {
+        // Single file
+        const linear_asm_text =
+          getHeader(modeConfig, 'Linear', false) + asmResult
+        zip.file(`${asmLabel}_linear.asm`, linear_asm_text)
+      } else {
+        // Multiple chunked files
+        const header = getHeader(modeConfig, 'Linear', false)
+        for (const chunk of asmResult) {
+          zip.file(chunk.filename, header + chunk.content)
+        }
+      }
     }
 
     // Export firmware and hardware palettes if enabled
@@ -110,26 +149,91 @@ export async function exportZip(
         ? config.labels.palette
         : 'palette'
 
-      const paletteFirmwareText = toASMData(
+      const paletteFirmwareResult = toASMData(
         new Uint8Array(paletteFirmware),
         `${paletteLabel}_firmware`
       )
-      zip.file(`${paletteLabel}_firmware.asm`, paletteFirmwareText)
+      if (typeof paletteFirmwareResult === 'string') {
+        zip.file(`${paletteLabel}_firmware.asm`, paletteFirmwareResult)
+      }
 
-      const paletteHardwareText = toASMData(
+      const paletteHardwareResult = toASMData(
         new Uint8Array(getHardwarePalette(paletteFirmware)),
         `${paletteLabel}_hardware`
       )
-      zip.file(`${paletteLabel}_hardware.asm`, paletteHardwareText)
+      if (typeof paletteHardwareResult === 'string') {
+        zip.file(`${paletteLabel}_hardware.asm`, paletteHardwareResult)
+      }
     }
   }
 
   // Export PNG if enabled
-  if (config.content.includePNG) {
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b!), 'image/png')
-    })
-    zip.file('pixsaur.png', blob)
+  if (config.content.includePNG || config.content.includePNGCorrected) {
+    // Calculate aspect ratio correction based on mode
+    // Mode 0: 2 pixels/byte, PAR = 2.0 (wide pixels) - double width
+    // Mode 1: 4 pixels/byte, PAR = 1.0 (square pixels) - no change
+    // Mode 2: 8 pixels/byte, narrow pixels - double height instead
+    const widthMultiplier = modeConfig.mode === 0 ? 2 : 1
+    const heightMultiplier = modeConfig.mode === 2 ? 2 : 1
+
+    // Export original PNG (square pixels)
+    if (config.content.includePNG) {
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), 'image/png')
+      })
+      zip.file('pixsaur.png', blob)
+    }
+
+    // Export PNG with correct aspect ratio
+    if (config.content.includePNGCorrected) {
+      logger.debug('Creating corrected aspect PNG:', {
+        originalWidth: canvas.width,
+        originalHeight: canvas.height,
+        mode: modeConfig.mode,
+        widthMultiplier,
+        heightMultiplier,
+        correctedWidth: canvas.width * widthMultiplier,
+        correctedHeight: canvas.height * heightMultiplier
+      })
+
+      const correctedCanvas = document.createElement('canvas')
+      const correctedWidth = canvas.width * widthMultiplier
+      const correctedHeight = canvas.height * heightMultiplier
+      correctedCanvas.width = correctedWidth
+      correctedCanvas.height = correctedHeight
+      const correctedCtx = correctedCanvas.getContext('2d', {
+        alpha: false
+      })
+      if (correctedCtx) {
+        // Fill with black background first
+        correctedCtx.fillStyle = '#000000'
+        correctedCtx.fillRect(0, 0, correctedWidth, correctedHeight)
+
+        // Disable smoothing for pixel-perfect scaling
+        correctedCtx.imageSmoothingEnabled = false
+
+        // Draw the original canvas scaled
+        correctedCtx.drawImage(
+          canvas,
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+          0,
+          0,
+          correctedWidth,
+          correctedHeight
+        )
+
+        const correctedBlob = await new Promise<Blob | null>((resolve) => {
+          correctedCanvas.toBlob(resolve, 'image/png')
+        })
+        logger.debug('Corrected blob size:', correctedBlob?.size)
+        if (correctedBlob) {
+          zip.file('pixsaur_corrected_aspect.png', correctedBlob)
+        }
+      }
+    }
   }
 
   // 5. Finalisation et téléchargement

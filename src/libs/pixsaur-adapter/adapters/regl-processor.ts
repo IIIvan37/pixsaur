@@ -43,14 +43,14 @@ export class ReGLProcessor implements ImageProcessor {
     // Évaluer si ReGL pourrait être utilisé
     this.reglCapabilities = this.evaluateReGLCapabilities()
 
-    console.log(
-      `🔍 [ADAPTER] ReGL constructor - regl instance: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
+    adapterLogger.debug(
+      `[ADAPTER] ReGL constructor - regl instance: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
     )
 
     // Phase 1: Setup optionnel de ReGL
     if (regl && this.reglCapabilities.canUseReGL) {
       try {
-        console.log('🔧 [ADAPTER] Initializing ReGL quantizer...')
+        adapterLogger.debug('[ADAPTER] Initializing ReGL quantizer...')
         this.quantizer = new ReGLQuantizer(regl)
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
@@ -66,8 +66,8 @@ export class ReGLProcessor implements ImageProcessor {
         this.regl = undefined
       }
     } else {
-      console.log(
-        `🚫 [ADAPTER] Skipping ReGL initialization - regl: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
+      adapterLogger.debug(
+        `[ADAPTER] Skipping ReGL initialization - regl: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
       )
     }
 
@@ -438,11 +438,11 @@ export class ReGLProcessor implements ImageProcessor {
   ): Promise<Vector[]> {
     const timerId = `ReGL Palette Quantization ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
     return adapterLogger.timeAsync(timerId, async () => {
-      console.log(
-        `🎯 [ADAPTER] Received contrastStrategy: ${contrastStrategy}, targetColors: ${targetColors}`
+      adapterLogger.debug(
+        `[ADAPTER] Received contrastStrategy: ${contrastStrategy}, targetColors: ${targetColors}`
       )
       adapterLogger.debug(
-        `🎯 [ADAPTER] Starting ReGL quantization: colorSpace=RGB, targetColors=${targetColors}, bufferSize=${buffer.length}`
+        `[ADAPTER] Starting ReGL quantization: colorSpace=RGB, targetColors=${targetColors}, bufferSize=${buffer.length}`
       )
 
       // RGB utilise euclidean distance
@@ -484,8 +484,8 @@ export class ReGLProcessor implements ImageProcessor {
             }
           )
 
-          console.log(
-            `🎯 [ADAPTER] Final contrastStrategy passed: ${contrastStrategy || getDefaultStore().get(contrastStrategyAtom)}`
+          adapterLogger.debug(
+            `[ADAPTER] Final contrastStrategy passed: ${contrastStrategy || getDefaultStore().get(contrastStrategyAtom)}`
           )
 
           return [...result] // Conversion readonly -> mutable pour compatibilité

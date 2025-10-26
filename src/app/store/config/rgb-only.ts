@@ -7,6 +7,7 @@
  */
 
 import { atom } from 'jotai'
+import { logger } from '@/utils/logger'
 
 // Atom RGB constant - remplace l'ancien colorSpaceAtom
 export const rgbColorSpaceAtom = atom('RGB' as const)
@@ -14,7 +15,7 @@ export const rgbColorSpaceAtom = atom('RGB' as const)
 // Setter no-op pour compatibilité - les changements d'espace couleur sont ignorés
 export const setRgbColorSpaceAtom = atom(null, () => {
   // No-op: L'espace couleur est fixé sur RGB
-  console.warn('Color space is now fixed to RGB - ignoring color space change')
+  logger.warn('Color space is now fixed to RGB - ignoring color space change')
 })
 
 // Type pour remplacer ColorSpace
