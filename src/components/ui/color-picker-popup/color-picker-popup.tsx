@@ -9,15 +9,15 @@ import { RgbSlider } from '../rgb-slider'
 import styles from './color-picker-popup.module.css'
 
 export interface ColorPickerPopupProps {
-  /** Couleur initiale */
+  /** Initial color */
   readonly initialColor: Vector
-  /** Indique si la couleur est verrouillée */
+  /** Indicates if the color is locked */
   readonly isLocked: boolean
-  /** Callback appelé lors de la validation d'une nouvelle couleur */
+  /** Callback called when a new color is confirmed */
   readonly onColorConfirm: (color: Vector) => void
-  /** Callback pour basculer le verrouillage */
+  /** Callback to toggle lock */
   readonly onToggleLock: () => void
-  /** Callback pour fermer la popup */
+  /** Callback to close the popup */
   readonly onClose: () => void
 }
 

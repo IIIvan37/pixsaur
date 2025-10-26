@@ -4,24 +4,24 @@ import animStyles from '@/styles/animations.module.css'
 import styles from './toggle-button-group.module.css'
 
 export type ToggleButtonOption<T = string> = {
-  /** Valeur unique de l'option */
+  /** Unique option value */
   value: T
-  /** Libellé affiché dans le bouton */
+  /** Label displayed in the button */
   label: ReactNode
-  /** Label d'accessibilité (par défaut: utilise label) */
+  /** Accessibility label (defaults to label) */
   ariaLabel?: string
 }
 
 export type ToggleButtonGroupProps<T = string> = {
-  /** Options disponibles */
+  /** Available options */
   options: ToggleButtonOption<T>[]
-  /** Valeur actuellement sélectionnée */
+  /** Currently selected value */
   value: T
-  /** Callback lors du changement de valeur */
+  /** Callback when value changes */
   onChange: (value: T) => void
-  /** Classes CSS supplémentaires */
+  /** Additional CSS classes */
   className?: string
-  /** Préfixe pour les aria-labels (ex: "Mode", "ColorSpace") */
+  /** Prefix for aria-labels (e.g., "Mode", "ColorSpace") */
   ariaLabelPrefix?: string
 }
 

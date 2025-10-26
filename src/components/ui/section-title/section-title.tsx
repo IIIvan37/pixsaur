@@ -2,11 +2,11 @@ import type { ElementType, ReactNode } from 'react'
 import styles from './section-title.module.css'
 
 export type SectionTitleProps = {
-  /** Le contenu du titre */
+  /** The title content */
   children: ReactNode
-  /** Niveau de titre sémantique (h2 par défaut) */
+  /** Semantic title level (h2 by default) */
   level?: 2 | 3 | 4
-  /** Classes CSS supplémentaires */
+  /** Additional CSS classes */
   className?: string
 }
 

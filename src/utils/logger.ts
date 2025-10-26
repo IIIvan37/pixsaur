@@ -1,18 +1,18 @@
 /**
- * Performance Logger pour Pixsaur
- * - Inactif en production par défaut
+ * Performance Logger for Pixsaur
+ * - Disabled in production by default
  * - Configurable via options
- * - Timers intégrés pour mesures de performance
+ * - Integrated timers for performance measurements
  */
 
 export interface LoggerConfig {
-  /** Activer le logging (false en production par défaut) */
+  /** Enable logging (false in production by default) */
   enabled: boolean
-  /** Niveau minimum de log */
+  /** Minimum log level */
   level: 'debug' | 'info' | 'warn' | 'error'
-  /** Préfixe pour tous les logs */
+  /** Prefix for all logs */
   prefix: string
-  /** Activer les mesures de performance */
+  /** Enable performance measurements */
   enableTiming: boolean
 }
 

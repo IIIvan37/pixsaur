@@ -153,20 +153,20 @@ const GPU_ACCELERATED_VERTEX_SHADER = `
 `
 
 /**
- * Configuration ReGL qui étend QuantizeConfig existant
- * ✅ Réutilise les types pixsaur-color au lieu de redéfinir
+ * ReGL configuration that extends existing QuantizeConfig
+ * ✅ Reuses pixsaur-color types instead of redefining
  */
 export interface ReGLQuantizeConfig extends QuantizeConfig {
-  /** Nombre de couleurs cibles */
+  /** Target number of colors */
   readonly targetColors: number
 
-  /** Couleurs pré-sélectionnées (verrouillées) en indices CPC */
+  /** Pre-selected (locked) colors as CPC indices */
   readonly preselectedIndices?: readonly number[]
 
-  /** Seuil pour le filtrage adaptatif (défaut: 10) */
+  /** Threshold for adaptive filtering (default: 10) */
   readonly threshold?: number
 
-  /** Options performance GPU */
+  /** GPU performance options */
   readonly gpuOptions?: {
     readonly batchSize?: number
     readonly useAsyncReadback?: boolean
