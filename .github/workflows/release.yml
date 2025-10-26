@@ -7,60 +7,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ${{ matrix.platform }}
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [ubuntu-22.04, windows-latest, macos-latest]
+  build-linux:
+    runs-on: ubuntu-22.04
     
     steps:
       - name: Checkout code
-        run: |
-          git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY .
-          git checkout $GITHUB_SHA
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        run: |
-          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-        if: matrix.platform == 'ubuntu-22.04'
-
-      - name: Setup Node.js (Windows)
-        run: |
-          choco install nodejs --version=20.11.0 -y
-        if: matrix.platform == 'windows-latest'
-
-      - name: Setup Node.js (macOS)
-        run: |
-          brew install node@20
-        if: matrix.platform == 'macos-latest'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Install pnpm
         run: |
           corepack enable
           corepack prepare pnpm@10.11.0 --activate
 
-      - name: Install Rust (Ubuntu)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source "$HOME/.cargo/env"
+          rustc --version
 
-      - name: Install Rust (Windows)
-        if: matrix.platform == 'windows-latest'
-        run: |
-          choco install rust -y
-
-      - name: Install Rust (macOS)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source "$HOME/.cargo/env"
-
-      - name: Install system dependencies (Ubuntu)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -79,24 +49,74 @@ jobs:
         run: pnpm install
 
       - name: Build Tauri application
+        run: |
+          source "$HOME/.cargo/env"
+          pnpm tauri:build
+
+      - name: List build output
+        run: |
+          ls -la src-tauri/target/release/bundle/ || echo "No bundle directory"
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm@10.11.0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri application
         run: pnpm tauri:build
 
-      - name: Upload artifacts (Ubuntu)
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: List build output
         run: |
-          mkdir -p artifacts
-          cp src-tauri/target/release/bundle/appimage/*.AppImage artifacts/ || true
-          cp src-tauri/target/release/bundle/deb/*.deb artifacts/ || true
+          dir src-tauri\target\release\bundle\
+        shell: cmd
 
-      - name: Upload artifacts (Windows)
-        if: matrix.platform == 'windows-latest'
-        run: |
-          mkdir artifacts
-          copy src-tauri\target\release\bundle\msi\*.msi artifacts\ || echo "No MSI"
-          copy src-tauri\target\release\bundle\nsis\*.exe artifacts\ || echo "No NSIS"
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Upload artifacts (macOS)
-        if: matrix.platform == 'macos-latest'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
         run: |
-          mkdir -p artifacts
-          cp src-tauri/target/release/bundle/dmg/*.dmg artifacts/ || true
+          corepack enable
+          corepack prepare pnpm@10.11.0 --activate
+
+      - name: Install Rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustc --version
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Tauri application
+        run: |
+          source "$HOME/.cargo/env"
+          pnpm tauri:build
+
+      - name: List build output
+        run: |
+          ls -la src-tauri/target/release/bundle/ || echo "No bundle directory"
