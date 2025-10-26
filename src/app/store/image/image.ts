@@ -58,6 +58,14 @@ export const workingImageAtom = atom(async (get) => {
     brightness: config.brightness,
     contrast: config.contrast,
     saturation: config.saturation,
+    hue: config.hue,
+    vibrance: config.vibrance,
+    temperature: config.temperature,
+    tint: config.tint,
+    gamma: config.gamma,
+    exposure: config.exposure,
+    highlights: config.highlights,
+    shadows: config.shadows,
     posterization: config.posterization
   })
 

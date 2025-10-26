@@ -13,10 +13,30 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#: src/app/components/adjustements/adjustement.view.tsx:67
+msgid "Ajuste la clarté globale de l'image"
+msgstr "Passt die globale Helligkeit des Bildes an"
+
+#: src/app/components/adjustements/adjustement.view.tsx:72
+msgid "Ajuste la différence entre les tons clairs et foncés"
+msgstr "Passt den Unterschied zwischen hellen und dunklen Tönen an"
+
+#: src/app/components/adjustements/adjustement.view.tsx:112
+msgid "Ajuste uniquement les zones claires de l'image"
+msgstr "Passt nur die hellen Bereiche des Bildes an"
+
+#: src/app/components/adjustements/adjustement.view.tsx:117
+msgid "Ajuste uniquement les zones sombres de l'image"
+msgstr "Passt nur die dunklen Bereiche des Bildes an"
+
 #: src/components/export-panel/export-config-dialog.tsx:97
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:92
 msgid "Annuler"
 msgstr "Abbrechen"
+
+#: src/components/image-controls/image-controls-view.tsx:119
+#~ msgid "Anti-Aliasing"
+#~ msgstr "Kantenglättung"
 
 #: src/app/components/preview-panel.tsx:27
 msgid "Aperçu"
@@ -30,10 +50,22 @@ msgstr "Kein verarbeitetes Bild"
 msgid "Auto (Smart CPC adapt)"
 msgstr "Auto (intelligente CPC-Anpassung)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:18
+#: src/app/components/adjustements/adjustement.view.tsx:92
+msgid "Balance bleu/orange (-100 = froid, +100 = chaud)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:97
+msgid "Balance vert/magenta pour corriger les dominantes de couleur"
+msgstr "Grün/Magenta-Balance zur Korrektur von Farbstichen"
+
+#: src/app/components/adjustements/adjustement.view.tsx:61
 #: src/components/ui/rgb-slider/rgb-slider.tsx:122
 msgid "Bleu"
 msgstr "Blau"
+
+#: src/app/components/adjustements/adjustement.view.tsx:27
+msgid "Canaux RGB"
+msgstr "RGB-Kanäle"
 
 #: src/components/image-resize/image-resize-panel.tsx:73
 msgid "Centrer l'image"
@@ -59,7 +91,7 @@ msgstr "Exportkonfiguration"
 msgid "Contenu du ZIP"
 msgstr "ZIP-Inhalt"
 
-#: src/app/components/adjustements/adjustement.view.tsx:20
+#: src/app/components/adjustements/adjustement.view.tsx:71
 msgid "Contraste"
 msgstr "Kontrast"
 
@@ -67,30 +99,58 @@ msgstr "Kontrast"
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Bildkonverter"
 
+#: src/app/components/adjustements/adjustement.view.tsx:102
+msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
+msgstr "Nichtlineare Helligkeitskorrektur (0.1-3.0, 1.0 = neutral)"
+
+#: src/app/components/adjustements/adjustement.view.tsx:32
+msgid "Couleur & Température"
+msgstr "Farbe & Temperatur"
+
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
 msgstr "Entsperren"
 
-#: src/components/image-controls/image-controls-view.tsx:93
+#: src/components/image-controls/image-controls-view.tsx:100
 msgid "Dimensions"
 msgstr "Abmessungen"
+
+#: src/app/components/adjustements/adjustement.view.tsx:42
+msgid "Effets"
+msgstr "Effekte"
 
 #: src/components/export-panel/export-config-dialog.tsx:100
 #: src/components/export-panel/export-panel-view.tsx:20
 msgid "Exporter"
 msgstr "Exportieren"
 
+#: src/app/components/adjustements/adjustement.view.tsx:106
+msgid "Exposition"
+msgstr "Belichtung"
+
+#: src/app/components/adjustements/adjustement.view.tsx:37
+msgid "Exposition & Tonalité"
+msgstr "Belichtung & Tonalität"
+
 #: src/components/image-upload/image-upload-view.tsx:53
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Unterstützte Formate: PNG, JPEG, GIF, BMP, WEBP, SVG"
+
+#: src/app/components/adjustements/adjustement.view.tsx:101
+msgid "Gamma"
+msgstr "Gamma"
 
 #: src/components/image-upload/image-upload-view.tsx:50
 msgid "Glissez & déposez une image ici"
 msgstr "Ziehen Sie ein Bild hierher"
 
-#: src/components/image-controls/image-controls-view.tsx:69
+#: src/components/image-controls/image-controls-view.tsx:76
 msgid "Hardware"
 msgstr "Hardware"
+
+#: src/app/components/adjustements/adjustement.view.tsx:111
+msgid "Hautes lumières"
+msgstr "Lichter"
 
 #: src/components/image-controls/custom-dimensions-input/custom-dimensions-input.tsx:143
 msgid "Hauteur"
@@ -103,6 +163,10 @@ msgstr "Quellbild"
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:56
 msgid "Intensité"
 msgstr "Intensität"
+
+#: src/app/components/adjustements/adjustement.view.tsx:77
+msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
+msgstr "Farbintensität (0 = Schwarzweiß, 2 = sehr gesättigt)"
 
 #: src/components/export-panel/export-config-dialog.tsx:167
 msgid "Label de la palette"
@@ -128,7 +192,11 @@ msgstr "Linear ASM (sequenziell)"
 msgid "Lissage"
 msgstr "Glättung"
 
-#: src/app/components/adjustements/adjustement.view.tsx:19
+#: src/components/image-controls/image-controls-view.tsx:119
+msgid "Lissage horizontal"
+msgstr "Horizontale Glättung"
+
+#: src/app/components/adjustements/adjustement.view.tsx:66
 msgid "Luminosité"
 msgstr "Helligkeit"
 
@@ -149,9 +217,25 @@ msgstr "Dithering-Modus"
 msgid "Mode de redimensionnement"
 msgstr "Größenänderungsmodus"
 
+#: src/app/components/adjustements/adjustement.view.tsx:62
+msgid "Multiplie le canal bleu (0-2x)"
+msgstr "Multipliziert den Blaukanal (0-2x)"
+
+#: src/app/components/adjustements/adjustement.view.tsx:52
+msgid "Multiplie le canal rouge (0-2x)"
+msgstr "Multipliziert den Rotkanal (0-2x)"
+
+#: src/app/components/adjustements/adjustement.view.tsx:57
+msgid "Multiplie le canal vert (0-2x)"
+msgstr "Multipliziert den Grünkanal (0-2x)"
+
 #: src/components/export-panel/export-config-dialog.tsx:177
 msgid "Nom du fichier ZIP"
 msgstr "ZIP-Dateiname"
+
+#: src/app/components/adjustements/adjustement.view.tsx:116
+msgid "Ombres"
+msgstr "Schatten"
 
 #: src/components/image-resize/image-resize-panel.tsx:61
 msgid "Origin (No Scale)"
@@ -165,7 +249,7 @@ msgstr "oder klicken Sie, um eine Datei auszuwählen"
 msgid "Palettes (firmware/hardware)"
 msgstr "Paletten (Firmware/Hardware)"
 
-#: src/components/image-controls/image-controls-view.tsx:81
+#: src/components/image-controls/image-controls-view.tsx:88
 msgid "Pixel Mode"
 msgstr "Pixelmodus"
 
@@ -181,7 +265,7 @@ msgstr "PNG (korrektes CPC-Seitenverhältnis)"
 msgid "PNG (pixels carrés)"
 msgstr "PNG (quadratische Pixel)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:22
+#: src/app/components/adjustements/adjustement.view.tsx:121
 msgid "Posterisation"
 msgstr "Posterisierung"
 
@@ -193,18 +277,30 @@ msgstr "Prozessor"
 #~ msgid "Redimensionner"
 #~ msgstr "Größe ändern"
 
-#: src/app/components/adjustements/adjustement.view.tsx:48
+#: src/app/components/adjustements/adjustement.view.tsx:122
+msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)"
+msgstr "Reduziert die Anzahl der Farbstufen für einen Postereffekt (2-256)"
+
+#: src/app/components/adjustements/adjustement.view.tsx:185
 msgid "Réinitialiser"
 msgstr "Zurücksetzen"
 
-#: src/app/components/adjustements/adjustement.view.tsx:16
+#: src/app/components/adjustements/adjustement.view.tsx:82
+msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:51
 #: src/components/ui/rgb-slider/rgb-slider.tsx:102
 msgid "Rouge"
 msgstr "Rot"
 
-#: src/app/components/adjustements/adjustement.view.tsx:21
+#: src/app/components/adjustements/adjustement.view.tsx:76
 msgid "Saturation"
 msgstr "Sättigung"
+
+#: src/app/components/adjustements/adjustement.view.tsx:87
+msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
+msgstr "Intelligente Sättigung, die matte Farben verstärkt ohne zu übersättigen"
 
 #: src/components/export-panel/export-config-dialog.tsx:113
 msgid "SCR ASM (format CPC entrelacé)"
@@ -218,6 +314,22 @@ msgstr "Auswahl"
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
 
+#: src/app/components/adjustements/adjustement.view.tsx:107
+msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:81
+msgid "Teinte"
+msgstr "Farbton"
+
+#: src/app/components/adjustements/adjustement.view.tsx:96
+msgid "Teinte colorée"
+msgstr "Farbstich"
+
+#: src/app/components/adjustements/adjustement.view.tsx:91
+msgid "Température"
+msgstr "Temperatur"
+
 #: src/components/export-panel/export-config-dialog.tsx:152
 msgid "Utiliser des labels personnalisés"
 msgstr "Benutzerdefinierte Labels verwenden"
@@ -226,10 +338,14 @@ msgstr "Benutzerdefinierte Labels verwenden"
 msgid "Valider"
 msgstr "Bestätigen"
 
-#: src/app/components/adjustements/adjustement.view.tsx:17
+#: src/app/components/adjustements/adjustement.view.tsx:56
 #: src/components/ui/rgb-slider/rgb-slider.tsx:112
 msgid "Vert"
 msgstr "Grün"
+
+#: src/app/components/adjustements/adjustement.view.tsx:86
+msgid "Vibrance"
+msgstr "Lebendigkeit"
 
 #: src/components/source-selector/source-selector-view.tsx:71
 msgid "Zone de sélection"

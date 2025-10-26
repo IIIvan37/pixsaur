@@ -1,7 +1,8 @@
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   cpcHardwareAtom,
   dimensionPresetAtom,
+  horizontalSmoothingAtom,
   pixelModeAtom,
   setCpcHardwareAtom,
   setDimensionPresetAtom,
@@ -27,6 +28,9 @@ export default function ImageControls() {
   const onDimensionPresetChange = useSetAtom(setDimensionPresetAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const onCpcHardwareChange = useSetAtom(setCpcHardwareAtom)
+  const [horizontalSmoothing, setHorizontalSmoothing] = useAtom(
+    horizontalSmoothingAtom
+  )
 
   return (
     <ImageControlsView
@@ -36,6 +40,8 @@ export default function ImageControls() {
       onDimensionPresetChange={onDimensionPresetChange}
       cpcHardware={cpcHardware}
       onCpcHardwareChange={onCpcHardwareChange}
+      horizontalSmoothing={horizontalSmoothing}
+      onHorizontalSmoothingChange={setHorizontalSmoothing}
     />
   )
 }
