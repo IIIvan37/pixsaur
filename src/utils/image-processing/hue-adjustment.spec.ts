@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { applyHueAdjustment } from './hue-adjustment'
 
 describe('applyHueAdjustment', () => {
   it('should return a copy when hueShift is 0', () => {
     const imageData = new ImageData(2, 2)
-    imageData.data.set([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 128, 128, 128, 255])
+    imageData.data.set([
+      255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 128, 128, 128, 255
+    ])
 
     const result = applyHueAdjustment(imageData, 0)
 
@@ -20,9 +22,9 @@ describe('applyHueAdjustment', () => {
     const result = applyHueAdjustment(imageData, 120)
 
     // Red (0°) + 120° = Green (120°)
-    expect(result.data[0]).toBe(0)   // R
+    expect(result.data[0]).toBe(0) // R
     expect(result.data[1]).toBe(255) // G
-    expect(result.data[2]).toBe(0)   // B
+    expect(result.data[2]).toBe(0) // B
     expect(result.data[3]).toBe(255) // A (preserved)
   })
 
@@ -33,8 +35,8 @@ describe('applyHueAdjustment', () => {
     const result = applyHueAdjustment(imageData, 120)
 
     // Green (120°) + 120° = Blue (240°)
-    expect(result.data[0]).toBe(0)   // R
-    expect(result.data[1]).toBe(0)   // G
+    expect(result.data[0]).toBe(0) // R
+    expect(result.data[1]).toBe(0) // G
     expect(result.data[2]).toBe(255) // B
     expect(result.data[3]).toBe(255) // A
   })
@@ -47,8 +49,8 @@ describe('applyHueAdjustment', () => {
 
     // Blue (240°) + 120° = Red (360° = 0°)
     expect(result.data[0]).toBe(255) // R
-    expect(result.data[1]).toBe(0)   // G
-    expect(result.data[2]).toBe(0)   // B
+    expect(result.data[1]).toBe(0) // G
+    expect(result.data[2]).toBe(0) // B
     expect(result.data[3]).toBe(255) // A
   })
 
@@ -59,8 +61,8 @@ describe('applyHueAdjustment', () => {
     const result = applyHueAdjustment(imageData, -120)
 
     // Red (0°) - 120° = Blue (240°)
-    expect(result.data[0]).toBe(0)   // R
-    expect(result.data[1]).toBe(0)   // G
+    expect(result.data[0]).toBe(0) // R
+    expect(result.data[1]).toBe(0) // G
     expect(result.data[2]).toBe(255) // B
   })
 
@@ -104,10 +106,7 @@ describe('applyHueAdjustment', () => {
     const imageData = new ImageData(2, 2)
     // Red, Green, Blue, White
     imageData.data.set([
-      255, 0, 0, 255,
-      0, 255, 0, 255,
-      0, 0, 255, 255,
-      255, 255, 255, 255
+      255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255
     ])
 
     const result = applyHueAdjustment(imageData, 180)

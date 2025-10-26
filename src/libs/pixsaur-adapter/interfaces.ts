@@ -11,6 +11,13 @@ export interface AdjustmentConfig {
   contrast: number
   saturation: number
   hue: number // Rotation de teinte en degrés (-180 à +180)
+  vibrance: number // Saturation intelligente (-100 à +100)
+  temperature: number // Balance des blancs bleu/orange (-100 à +100)
+  tint: number // Balance des blancs vert/magenta (-100 à +100)
+  gamma: number // Correction gamma (0.1 à 3.0, défaut 1.0)
+  exposure: number // Exposition en stops (-3 à +3)
+  highlights: number // Ajustement des hautes lumières (-100 à +100)
+  shadows: number // Ajustement des ombres (-100 à +100)
   posterization: number
 }
 

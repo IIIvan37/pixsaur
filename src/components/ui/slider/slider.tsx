@@ -10,6 +10,7 @@ type PixsaurSliderProps = {
   step?: number
   onChange: (val: number) => void
   label?: ReactNode
+  description?: ReactNode
   hideLabel?: boolean
   disabled?: boolean
   showTooltip?: boolean
@@ -22,11 +23,13 @@ export default function PixsaurSlider({
   step = 1,
   onChange,
   label,
+  description,
   hideLabel = false,
   disabled = false,
   showTooltip = true
-}: PixsaurSliderProps) {
+}: Readonly<PixsaurSliderProps>) {
   const [tooltipVisible, setTooltipVisible] = useState(false)
+  const [descTooltipVisible, setDescTooltipVisible] = useState(false)
   const [percent, setPercent] = useState(0)
 
   useEffect(() => {
@@ -39,6 +42,22 @@ export default function PixsaurSlider({
       {!hideLabel && label && (
         <div className={styles.labelRow}>
           <span className={styles.label}>{label}</span>
+          {description && (
+            <button
+              type="button"
+              className={styles.infoIcon}
+              onMouseEnter={() => setDescTooltipVisible(true)}
+              onMouseLeave={() => setDescTooltipVisible(false)}
+              onFocus={() => setDescTooltipVisible(true)}
+              onBlur={() => setDescTooltipVisible(false)}
+              aria-label="Information"
+            >
+              ⓘ
+            </button>
+          )}
+          {description && descTooltipVisible && (
+            <div className={styles.descriptionTooltip}>{description}</div>
+          )}
         </div>
       )}
 

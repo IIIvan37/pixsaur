@@ -19,6 +19,13 @@ export const useImageAdjustement = () => {
     contrast,
     saturation,
     hue,
+    vibrance,
+    temperature,
+    tint,
+    gamma,
+    exposure,
+    highlights,
+    shadows,
     posterization
   } = useAtomValue(configAtom)
 
@@ -51,6 +58,13 @@ export const useImageAdjustement = () => {
             contrast,
             saturation,
             hue,
+            vibrance,
+            temperature,
+            tint,
+            gamma,
+            exposure,
+            highlights,
+            shadows,
             posterization
           }
         )
@@ -67,6 +81,13 @@ export const useImageAdjustement = () => {
       contrast,
       saturation,
       hue,
+      vibrance,
+      temperature,
+      tint,
+      gamma,
+      exposure,
+      highlights,
+      shadows,
       posterization,
       setSrc
     ]

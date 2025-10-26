@@ -97,12 +97,19 @@ export class ReGLProcessor implements ImageProcessor {
         precision mediump float;
         
         uniform sampler2D u_image;
-        uniform vec3 u_rgbFactors;    // RGB multiplicatifs
-        uniform float u_brightness;   // Facteur brightness
-        uniform float u_contrast;     // Facteur contrast
-        uniform float u_saturation;   // Facteur saturation
-        uniform float u_hue;          // Rotation de teinte (0-1, représente -180 à +180 degrés)
-        uniform float u_posterization; // Niveaux posterization
+        uniform vec3 u_rgbFactors;      // RGB multiplicatifs
+        uniform float u_brightness;     // Facteur brightness
+        uniform float u_contrast;       // Facteur contrast
+        uniform float u_saturation;     // Facteur saturation
+        uniform float u_hue;            // Rotation de teinte (normalized)
+        uniform float u_vibrance;       // Saturation intelligente
+        uniform float u_temperature;    // Balance bleu/orange
+        uniform float u_tint;           // Balance vert/magenta
+        uniform float u_gamma;          // Correction gamma
+        uniform float u_exposure;       // Exposition (stops)
+        uniform float u_highlights;     // Ajustement hautes lumières
+        uniform float u_shadows;        // Ajustement ombres
+        uniform float u_posterization;  // Niveaux posterization
         
         varying vec2 v_texCoord;
         
@@ -178,6 +185,11 @@ export class ReGLProcessor implements ImageProcessor {
           return vec3(r, g, b);
         }
         
+        // Luminance (ITU-R BT.601)
+        float luminance(vec3 color) {
+          return dot(color, vec3(0.299, 0.587, 0.114));
+        }
+        
         void main() {
           vec4 pixel = texture2D(u_image, v_texCoord);
           vec3 color = pixel.rgb;
@@ -185,28 +197,84 @@ export class ReGLProcessor implements ImageProcessor {
           // Étape 1: RGB multiplicatif
           color *= u_rgbFactors;
           
-          // Étape 2: Brightness
+          // Étape 2: Temperature (-100/+100 → bleu/orange)
+          if (u_temperature != 0.0) {
+            float temp = u_temperature / 100.0;
+            color.r *= 1.0 + temp * 0.3;
+            color.b *= 1.0 - temp * 0.3;
+          }
+          
+          // Étape 3: Tint (-100/+100 → vert/magenta)
+          if (u_tint != 0.0) {
+            float tintVal = u_tint / 100.0;
+            color.g *= 1.0 + tintVal * 0.3;
+            color.r *= 1.0 - tintVal * 0.15;
+            color.b *= 1.0 - tintVal * 0.15;
+          }
+          
+          // Étape 4: Exposure (stops: -3 à +3)
+          if (u_exposure != 0.0) {
+            color *= pow(2.0, u_exposure);
+          }
+          
+          // Étape 5: Highlights/Shadows
+          if (u_highlights != 0.0 || u_shadows != 0.0) {
+            float lum = luminance(color);
+            
+            // Highlights: affecte les zones claires (lum > 0.5)
+            if (u_highlights != 0.0 && lum > 0.5) {
+              float highlightMask = (lum - 0.5) * 2.0; // 0 à 1
+              float highlightFactor = 1.0 + (u_highlights / 100.0) * highlightMask;
+              color *= highlightFactor;
+            }
+            
+            // Shadows: affecte les zones sombres (lum < 0.5)
+            if (u_shadows != 0.0 && lum < 0.5) {
+              float shadowMask = (0.5 - lum) * 2.0; // 0 à 1
+              float shadowFactor = 1.0 + (u_shadows / 100.0) * shadowMask;
+              color *= shadowFactor;
+            }
+          }
+          
+          // Étape 6: Brightness
           color *= u_brightness;
           
-          // Étape 3: Contrast (pivot autour de 0.5)
+          // Étape 7: Gamma correction
+          if (u_gamma != 1.0) {
+            color = pow(color, vec3(1.0 / u_gamma));
+          }
+          
+          // Étape 8: Contrast (pivot autour de 0.5)
           color = (color - 0.5) * u_contrast + 0.5;
           
-          // Étape 4: Saturation + Hue via HSL
+          // Étape 9: Saturation + Hue + Vibrance via HSL
           vec3 hsl = rgb2hsl(color);
           
-          // Appliquer rotation de teinte
+          // Hue rotation
           if (u_hue != 0.0) {
             hsl.x = mod(hsl.x + u_hue, 1.0);
           }
           
+          // Saturation
           hsl.y = clamp(hsl.y * u_saturation, 0.0, 1.0);
+          
+          // Vibrance (saturation intelligente: booste couleurs ternes, préserve saturées)
+          if (u_vibrance != 0.0) {
+            float vibranceFactor = u_vibrance / 100.0;
+            // Plus la saturation actuelle est faible, plus vibrance a d'effet
+            float vibranceBoost = vibranceFactor * (1.0 - hsl.y);
+            hsl.y = clamp(hsl.y + vibranceBoost, 0.0, 1.0);
+          }
+          
           color = hsl2rgb(hsl);
           
-            // Étape 5: Posterization
-            if (u_posterization < 255.0) {
-              float step = 255.0 / (u_posterization - 1.0);
-              color = floor(color * 255.0 / step + 0.5) * step / 255.0;
-            }          // Clamp final
+          // Étape 10: Posterization
+          if (u_posterization < 255.0) {
+            float step = 255.0 / (u_posterization - 1.0);
+            color = floor(color * 255.0 / step + 0.5) * step / 255.0;
+          }
+          
+          // Clamp final
           color = clamp(color, 0.0, 1.0);
           
           gl_FragColor = vec4(color, pixel.a);
@@ -235,7 +303,14 @@ export class ReGLProcessor implements ImageProcessor {
         u_brightness: (_context, props: any) => props.brightness,
         u_contrast: (_context, props: any) => props.contrast,
         u_saturation: (_context, props: any) => props.saturation,
-        u_hue: (_context, props: any) => (props.hue || 0) / 360.0, // -180/+180 degrés → -0.5/+0.5
+        u_hue: (_context, props: any) => (props.hue || 0) / 360, // -180/+180 → -0.5/+0.5
+        u_vibrance: (_context, props: any) => props.vibrance || 0,
+        u_temperature: (_context, props: any) => props.temperature || 0,
+        u_tint: (_context, props: any) => props.tint || 0,
+        u_gamma: (_context, props: any) => props.gamma || 1,
+        u_exposure: (_context, props: any) => props.exposure || 0,
+        u_highlights: (_context, props: any) => props.highlights || 0,
+        u_shadows: (_context, props: any) => props.shadows || 0,
         u_posterization: (_context, props: any) => props.posterization
       },
       primitive: 'triangle strip',
@@ -326,6 +401,13 @@ export class ReGLProcessor implements ImageProcessor {
           contrast: adjustments.contrast,
           saturation: adjustments.saturation,
           hue: adjustments.hue,
+          vibrance: adjustments.vibrance,
+          temperature: adjustments.temperature,
+          tint: adjustments.tint,
+          gamma: adjustments.gamma,
+          exposure: adjustments.exposure,
+          highlights: adjustments.highlights,
+          shadows: adjustments.shadows,
           posterization: adjustments.posterization
         }
 
@@ -375,6 +457,13 @@ export class ReGLProcessor implements ImageProcessor {
         contrast: adjustments.contrast,
         saturation: adjustments.saturation,
         hue: adjustments.hue,
+        vibrance: adjustments.vibrance,
+        temperature: adjustments.temperature,
+        tint: adjustments.tint,
+        gamma: adjustments.gamma,
+        exposure: adjustments.exposure,
+        highlights: adjustments.highlights,
+        shadows: adjustments.shadows,
         posterization: adjustments.posterization
       })
     })
@@ -427,6 +516,13 @@ export class ReGLProcessor implements ImageProcessor {
         contrast: adjustments.contrast,
         saturation: adjustments.saturation,
         hue: adjustments.hue,
+        vibrance: adjustments.vibrance,
+        temperature: adjustments.temperature,
+        tint: adjustments.tint,
+        gamma: adjustments.gamma,
+        exposure: adjustments.exposure,
+        highlights: adjustments.highlights,
+        shadows: adjustments.shadows,
         posterization: adjustments.posterization
       }
 

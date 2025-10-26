@@ -7,12 +7,12 @@ import {
   getVisualRegion,
   getVisualRegionNormalized
 } from '@/utils/get-visual-region'
-import { applyResize, type Selection } from '@/utils/image-resize'
-import { logger } from '@/utils/logger'
 import {
   applyHorizontalSmoothing,
   getPixelWidthForMode
 } from '@/utils/image-processing/horizontal-smoothing'
+import { applyResize, type Selection } from '@/utils/image-resize'
+import { logger } from '@/utils/logger'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,

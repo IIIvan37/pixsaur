@@ -12,8 +12,23 @@ import type { RangeOption } from './types'
 
 export default function Adjustments() {
   const src = useAtomValue(workingImageAtom)
-  const { red, green, blue, brightness, contrast, saturation, hue, posterization } =
-    useAtomValue(configAtom)
+  const {
+    red,
+    green,
+    blue,
+    brightness,
+    contrast,
+    saturation,
+    hue,
+    vibrance,
+    temperature,
+    tint,
+    gamma,
+    exposure,
+    highlights,
+    shadows,
+    posterization
+  } = useAtomValue(configAtom)
 
   const setComponent = useSetAtom(setComponentAtom)
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
@@ -27,6 +42,13 @@ export default function Adjustments() {
     contrast: [contrast, 0, 2, 0.01],
     saturation: [saturation, 0, 2, 0.01],
     hue: [hue, -180, 180, 1],
+    vibrance: [vibrance, -100, 100, 1],
+    temperature: [temperature, -100, 100, 1],
+    tint: [tint, -100, 100, 1],
+    gamma: [gamma, 0.1, 3, 0.1],
+    exposure: [exposure, -3, 3, 0.1],
+    highlights: [highlights, -100, 100, 1],
+    shadows: [shadows, -100, 100, 1],
     posterization: [posterization, 2, 256, 1]
   }
 

@@ -33,6 +33,13 @@ const defaultConfig: { [key in AdjustementKey]: number } & {
   contrast: 1,
   saturation: 1,
   hue: 0, // -180 à +180 degrés
+  vibrance: 0, // -100 à +100
+  temperature: 0, // -100 à +100 (bleu/orange)
+  tint: 0, // -100 à +100 (vert/magenta)
+  gamma: 1, // 0.1 à 3.0
+  exposure: 0, // -3 à +3 stops
+  highlights: 0, // -100 à +100
+  shadows: 0, // -100 à +100
   posterization: 256,
   lastChangedKey: null
 }
