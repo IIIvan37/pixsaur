@@ -1,0 +1,40 @@
+.container {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  width: 100%;
+  height: 35.71rem; /* 500px / 14 - fixed height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22.86rem; /* 320px / 14 */
+  overflow: auto;
+}
+
+.emptyContainer {
+  height: 21.43rem; /* 300px / 14 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyText {
+  color: var(--color-accentActive);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.infoBar {
+  background-color: var(--color-background);
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  padding: var(--spacing-sm);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

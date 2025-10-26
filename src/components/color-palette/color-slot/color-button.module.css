@@ -1,0 +1,11 @@
+/* Nouveau style commun */
+.colorButton {
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 0;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
+}

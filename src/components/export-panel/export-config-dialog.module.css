@@ -1,0 +1,26 @@
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.label {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-foreground);
+  font-family: var(--font-mono);
+  text-shadow: 0 0 1px var(--color-accent);
+}
+
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  padding-left: var(--spacing-xs);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}

@@ -1,0 +1,8 @@
+.selection-rect {
+  border: 2px solid var(--color-accent);
+  background: transparent;
+}
+
+.selection-rect--active {
+  background: rgba(0, 255, 0, 0.2);
+}

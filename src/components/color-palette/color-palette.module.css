@@ -1,0 +1,58 @@
+.container {
+  margin-top: var(--spacing-sm);
+  padding: 0 var(--spacing-sm);
+}
+
+.paletteGrid {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
+.colorSquare {
+  position: relative;
+
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  overflow: visible;
+  cursor: pointer;
+}
+
+@media only screen and (max-width: 600px) {
+  .colorSquare {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+.colorSquare:hover {
+  transform: scale(1.15);
+  border-color: var(--color-accent);
+  z-index: 1;
+}
+
+.helpText {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  margin-top: var(--spacing-sm);
+  text-align: center;
+}
+
+.popover {
+  position: absolute;
+  z-index: 10;
+  background: #000;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid #eee;
+  padding: 16px;
+  min-width: 260px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}

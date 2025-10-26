@@ -1,0 +1,66 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Pixsaur",
+  "version": "0.1.0",
+  "identifier": "com.pixsaur.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "pnpm dev",
+    "beforeBuildCommand": "pnpm build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Pixsaur - Amstrad CPC Image Converter",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 768,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null,
+      "capabilities": [
+        {
+          "identifier": "main-capability",
+          "windows": ["main"],
+          "permissions": [
+            "core:default",
+            "dialog:default",
+            "fs:default",
+            "fs:allow-write-file",
+            "fs:allow-read-file",
+            "updater:default",
+            "updater:allow-check",
+            "updater:allow-download-and-install",
+            "process:default",
+            "process:allow-restart"
+          ]
+        }
+      ]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/IIIvan37/pixsaur/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVBM0VBRkU2RkU5NDI3NzUKUldSMUo1VCs1cTgrNmhlM2Fkc3BhU1FDN0ZxMHdyYjB6TG9VbnNxb1RnSnVDMjJLQndkRWk1TT0K"
+    }
+  }
+}

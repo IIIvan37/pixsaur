@@ -1,0 +1,45 @@
+import { Trans } from '@lingui/react/macro'
+import { useAtomValue, useSetAtom } from 'jotai'
+import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
+import { ImageSelector } from '@/components/image-selector'
+import { ImageUpload } from '@/components/image-upload/image-upload'
+import { Header } from '@/components/ui/layout/header/header'
+import { Panel } from '@/components/ui/layout/panel/panel'
+import { resetImageAdjustmentsAtom } from '../store/config/config'
+import { imageAtom, setImgAtom, setSelectionAtom } from '../store/image/image'
+
+export default function SourceSection() {
+  const setImg = useSetAtom(setImgAtom)
+  const setSelection = useSetAtom(setSelectionAtom)
+  const img = useAtomValue(imageAtom)
+
+  const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
+  const handleImageLoaded = (img: HTMLImageElement) => {
+    setImg(img)
+  }
+
+  return (
+    <Panel>
+      <Header
+        title={<Trans>Image source</Trans>}
+        actionLabel={<Trans>Changer d'image</Trans>}
+        action={() => {
+          resetAdjustments()
+          setImg(null)
+          setSelection(null)
+        }}
+        icon='UploadIcon'
+      />
+
+      {img ? (
+        <>
+          <ImageSelector />
+          {/* Resize mode controls - placed after source selection */}
+          <ImageResizePanel />
+        </>
+      ) : (
+        <ImageUpload onImageLoaded={handleImageLoaded} />
+      )}
+    </Panel>
+  )
+}

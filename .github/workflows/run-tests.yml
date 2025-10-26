@@ -1,0 +1,43 @@
+name: Run Tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # Checkout code
+
+      - name: Checkout code
+        run: |
+          git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY .
+          git checkout $GITHUB_SHA
+
+      # Install pnpm
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@8.0.0 --activate
+
+      # Setup Node.js
+      - name: Setup Node.js
+        run: |
+
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+          sudo apt-get install -y nodejs
+          node --version
+          npm --version
+
+      # Install dependencies
+      - name: Install dependencies
+        run: pnpm install
+
+      # Run tests
+      - name: Run tests
+        run: pnpm test

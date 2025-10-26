@@ -1,0 +1,60 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.label {
+  color: var(--color-foreground, #00ff00);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(0.875rem, 0.9vw, 1rem);
+  text-shadow: 0 0 2px #00ff00;
+  user-select: none;
+}
+
+.root {
+  width: 44px;
+  height: 22px;
+  background-color: #001100;
+  border: 1px solid var(--color-border, #00df3a);
+  border-radius: 9999px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.root:hover {
+  border-color: #00ff00;
+  box-shadow: 0 0 3px #00ff00;
+}
+
+.rootChecked {
+  background-color: #00cc00;
+}
+
+.rootChecked:hover {
+  box-shadow: 0 0 4px #00ff00;
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: #000000;
+  border: 1px solid #00ff00;
+  border-radius: 50%;
+  transform: translateX(0);
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.rootChecked .thumb {
+  transform: translateX(20px);
+}

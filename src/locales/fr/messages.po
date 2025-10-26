@@ -1,0 +1,352 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-10-19 11:24+0200\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: fr\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/app/components/adjustements/adjustement.view.tsx:67
+msgid "Ajuste la clarté globale de l'image"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:72
+msgid "Ajuste la différence entre les tons clairs et foncés"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:112
+msgid "Ajuste uniquement les zones claires de l'image"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:117
+msgid "Ajuste uniquement les zones sombres de l'image"
+msgstr ""
+
+#: src/components/export-panel/export-config-dialog.tsx:97
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:92
+msgid "Annuler"
+msgstr "Annuler"
+
+#: src/components/image-controls/image-controls-view.tsx:119
+#~ msgid "Anti-Aliasing"
+#~ msgstr "Anti-Crénelage"
+
+#: src/app/components/preview-panel.tsx:27
+msgid "Aperçu"
+msgstr "Aperçu"
+
+#: src/components/image-preview/image-preview-view.tsx:34
+msgid "Aucune image traitée"
+msgstr "Aucune image traitée"
+
+#: src/components/image-resize/image-resize-panel.tsx:54
+msgid "Auto (Smart CPC adapt)"
+msgstr "Auto (adaptation CPC intelligente)"
+
+#: src/app/components/adjustements/adjustement.view.tsx:92
+msgid "Balance bleu/orange (-100 = froid, +100 = chaud)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:97
+msgid "Balance vert/magenta pour corriger les dominantes de couleur"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:61
+#: src/components/ui/rgb-slider/rgb-slider.tsx:122
+msgid "Bleu"
+msgstr "Bleu"
+
+#: src/app/components/adjustements/adjustement.view.tsx:27
+msgid "Canaux RGB"
+msgstr "Canaux RGB"
+
+#: src/components/image-resize/image-resize-panel.tsx:73
+msgid "Centrer l'image"
+msgstr "Centrer l'image"
+
+#: src/app/components/source-section.tsx:25
+msgid "Changer d'image"
+msgstr "Changer d'image"
+
+#: src/components/image-preview/image-preview.tsx:134
+msgid "Cliquer pour ouvrir dans un nouvel onglet"
+msgstr "Cliquer pour ouvrir dans un nouvel onglet"
+
+#: src/components/image-preview/image-preview.tsx:134
+#: src/components/image-preview/image-preview.tsx:134
+#~ msgid "Cliquer pour ouvrir en plein écran dans un nouvel onglet"
+#~ msgstr "Cliquer pour ouvrir en plein écran dans un nouvel onglet"
+
+#: src/components/export-panel/export-config-dialog.tsx:90
+msgid "Configuration de l'export"
+msgstr "Configuration de l'export"
+
+#: src/components/export-panel/export-config-dialog.tsx:107
+msgid "Contenu du ZIP"
+msgstr "Contenu du ZIP"
+
+#: src/app/components/adjustements/adjustement.view.tsx:71
+msgid "Contraste"
+msgstr "Contraste"
+
+#: src/app/app.tsx:24
+msgid "Convertisseur d'images Amstrad CPC"
+msgstr "Convertisseur d'images Amstrad CPC"
+
+#: src/app/components/adjustements/adjustement.view.tsx:102
+msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:32
+msgid "Couleur & Température"
+msgstr "Couleur & Température"
+
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
+msgid "Déverrouiller"
+msgstr "Déverrouiller"
+
+#: src/components/image-controls/image-controls-view.tsx:100
+msgid "Dimensions"
+msgstr "Dimensions"
+
+#: src/app/components/adjustements/adjustement.view.tsx:42
+msgid "Effets"
+msgstr "Effets"
+
+#: src/components/export-panel/export-config-dialog.tsx:100
+#: src/components/export-panel/export-panel-view.tsx:20
+msgid "Exporter"
+msgstr "Exporter"
+
+#: src/app/components/adjustements/adjustement.view.tsx:106
+msgid "Exposition"
+msgstr "Exposition"
+
+#: src/app/components/adjustements/adjustement.view.tsx:37
+msgid "Exposition & Tonalité"
+msgstr "Exposition & Tonalité"
+
+#: src/components/image-upload/image-upload-view.tsx:53
+msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
+msgstr "Formats supportés : PNG, JPEG, GIF, BMP, WEBP, SVG"
+
+#: src/app/components/adjustements/adjustement.view.tsx:101
+msgid "Gamma"
+msgstr "Gamma"
+
+#: src/components/image-upload/image-upload-view.tsx:50
+msgid "Glissez & déposez une image ici"
+msgstr "Glissez & déposez une image ici"
+
+#: src/components/image-controls/image-controls-view.tsx:76
+msgid "Hardware"
+msgstr "Matériel"
+
+#: src/app/components/adjustements/adjustement.view.tsx:111
+msgid "Hautes lumières"
+msgstr "Hautes lumières"
+
+#: src/components/image-controls/custom-dimensions-input/custom-dimensions-input.tsx:143
+msgid "Hauteur"
+msgstr "Hauteur"
+
+#: src/app/components/source-section.tsx:24
+msgid "Image source"
+msgstr "Image source"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:56
+msgid "Intensité"
+msgstr "Intensité"
+
+#: src/app/components/adjustements/adjustement.view.tsx:77
+msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
+msgstr ""
+
+#: src/components/export-panel/export-config-dialog.tsx:167
+msgid "Label de la palette"
+msgstr "Label de la palette"
+
+#: src/components/export-panel/export-config-dialog.tsx:159
+msgid "Label des données"
+msgstr "Label des données"
+
+#: src/components/image-controls/custom-dimensions-input/custom-dimensions-input.tsx:129
+msgid "Largeur"
+msgstr "Largeur"
+
+#: src/components/export-panel/export-config-dialog.tsx:119
+msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+msgstr "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+
+#: src/components/export-panel/export-config-dialog.tsx:126
+msgid "Linear ASM (séquentiel)"
+msgstr "Linear ASM (séquentiel)"
+
+#: src/app/components/preview-panel.tsx:34
+msgid "Lissage"
+msgstr "Lissage"
+
+#: src/components/image-controls/image-controls-view.tsx:119
+msgid "Lissage horizontal"
+msgstr "Lissage horizontal"
+
+#: src/app/components/adjustements/adjustement.view.tsx:66
+msgid "Luminosité"
+msgstr "Luminosité"
+
+#: src/components/image-controls/custom-dimensions-input/custom-dimensions-input.tsx:156
+msgid "Mémoire"
+msgstr "Mémoire"
+
+#: src/components/image-controls/image-controls-view.tsx:65
+#~ msgid "Mode"
+#~ msgstr "Mode"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:38
+msgid "Mode de dithering"
+msgstr "Mode de dithering"
+
+#: src/components/image-resize/image-resize-panel.tsx:37
+msgid "Mode de redimensionnement"
+msgstr "Mode de redimensionnement"
+
+#: src/app/components/adjustements/adjustement.view.tsx:62
+msgid "Multiplie le canal bleu (0-2x)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:52
+msgid "Multiplie le canal rouge (0-2x)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:57
+msgid "Multiplie le canal vert (0-2x)"
+msgstr ""
+
+#: src/components/export-panel/export-config-dialog.tsx:177
+msgid "Nom du fichier ZIP"
+msgstr "Nom du fichier ZIP"
+
+#: src/app/components/adjustements/adjustement.view.tsx:116
+msgid "Ombres"
+msgstr "Ombres"
+
+#: src/components/image-resize/image-resize-panel.tsx:61
+msgid "Origin (No Scale)"
+msgstr "Origine (sans échelle)"
+
+#: src/components/image-upload/image-upload-view.tsx:51
+msgid "ou cliquez pour sélectionner un fichier"
+msgstr "ou cliquez pour sélectionner un fichier"
+
+#: src/components/export-panel/export-config-dialog.tsx:131
+msgid "Palettes (firmware/hardware)"
+msgstr "Palettes (firmware/hardware)"
+
+#: src/components/image-controls/image-controls-view.tsx:88
+msgid "Pixel Mode"
+msgstr "Mode pixel"
+
+#: src/components/export-panel/export-config-dialog.tsx:97
+#~ msgid "PNG (aperçu)"
+#~ msgstr "PNG (aperçu)"
+
+#: src/components/export-panel/export-config-dialog.tsx:143
+msgid "PNG (aspect ratio CPC correct)"
+msgstr "PNG (ratio CPC corrigé)"
+
+#: src/components/export-panel/export-config-dialog.tsx:136
+msgid "PNG (pixels carrés)"
+msgstr "PNG (pixels carrés)"
+
+#: src/app/components/adjustements/adjustement.view.tsx:121
+msgid "Posterisation"
+msgstr "Posterisation"
+
+#: src/components/image-controls/processor-selector/processor-selector.tsx:45
+msgid "Processeur"
+msgstr "Processeur"
+
+#: src/components/source-selector/source-selector-view.tsx:112
+#~ msgid "Redimensionner"
+#~ msgstr "Redimensionner"
+
+#: src/app/components/adjustements/adjustement.view.tsx:122
+msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:185
+msgid "Réinitialiser"
+msgstr "Réinitialiser"
+
+#: src/app/components/adjustements/adjustement.view.tsx:82
+msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:51
+#: src/components/ui/rgb-slider/rgb-slider.tsx:102
+msgid "Rouge"
+msgstr "Rouge"
+
+#: src/app/components/adjustements/adjustement.view.tsx:76
+msgid "Saturation"
+msgstr "Saturation"
+
+#: src/app/components/adjustements/adjustement.view.tsx:87
+msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
+msgstr ""
+
+#: src/components/export-panel/export-config-dialog.tsx:113
+msgid "SCR ASM (format CPC entrelacé)"
+msgstr "SCR ASM (format CPC entrelacé)"
+
+#: src/components/image-resize/image-resize-panel.tsx:43
+msgid "Sélection"
+msgstr "Sélection"
+
+#: src/components/export-panel/export-config-dialog.tsx:92
+msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
+msgstr "Sélectionnez les fichiers à inclure dans l'archive ZIP"
+
+#: src/app/components/adjustements/adjustement.view.tsx:107
+msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
+msgstr ""
+
+#: src/app/components/adjustements/adjustement.view.tsx:81
+msgid "Teinte"
+msgstr "Teinte"
+
+#: src/app/components/adjustements/adjustement.view.tsx:96
+msgid "Teinte colorée"
+msgstr "Teinte colorée"
+
+#: src/app/components/adjustements/adjustement.view.tsx:91
+msgid "Température"
+msgstr "Température"
+
+#: src/components/export-panel/export-config-dialog.tsx:152
+msgid "Utiliser des labels personnalisés"
+msgstr "Utiliser des labels personnalisés"
+
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:95
+msgid "Valider"
+msgstr "Valider"
+
+#: src/app/components/adjustements/adjustement.view.tsx:56
+#: src/components/ui/rgb-slider/rgb-slider.tsx:112
+msgid "Vert"
+msgstr "Vert"
+
+#: src/app/components/adjustements/adjustement.view.tsx:86
+msgid "Vibrance"
+msgstr "Vibrance"
+
+#: src/components/source-selector/source-selector-view.tsx:71
+msgid "Zone de sélection"
+msgstr "Zone de sélection"
