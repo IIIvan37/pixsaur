@@ -25,3 +25,6 @@ tauri = { version = "2.9.1", features = ["image-png", "image-ico"] }
 tauri-plugin-log = "2.4.0"
 tauri-plugin-dialog = "2.4.0"
 tauri-plugin-fs = "2.4.0"
+tauri-plugin-updater = "2.9.0"
+tauri-plugin-process = "2.3.0"
+tauri-plugin-updater = "2.9.0"

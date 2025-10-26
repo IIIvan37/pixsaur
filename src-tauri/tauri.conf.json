@@ -33,7 +33,12 @@
             "dialog:default",
             "fs:default",
             "fs:allow-write-file",
-            "fs:allow-read-file"
+            "fs:allow-read-file",
+            "updater:default",
+            "updater:allow-check",
+            "updater:allow-download-and-install",
+            "process:default",
+            "process:allow-restart"
           ]
         }
       ]
@@ -49,5 +54,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/IIIvan37/pixsaur/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
+    }
   }
 }
