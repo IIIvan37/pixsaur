@@ -25,3 +25,22 @@ dist-ssr
 *.icloud
 *.zip
 disk.dsk
+
+# Tauri build outputs
+src-tauri/target/
+src-tauri/Cargo.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Signing keys (CRITICAL - never commit!)
+*.key
+*.key.pub
+.tauri/
+
+# Temporary files
+*.tmp
+*.temp
+.cache
