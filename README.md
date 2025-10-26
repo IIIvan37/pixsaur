@@ -1,10 +1,10 @@
 # Pixsaur 🦖
 
-**Convertisseur d'images pour Amstrad CPC** - Application web moderne avec quantification de palette, dithering, et exports multiformats.
+**Convertisseur d'images pour Amstrad CPC** - Application web et desktop avec quantification de palette, dithering, et exports multiformats.
 
 > Transformez vos images modernes en graphismes rétro Amstrad CPC avec précision et performance.
 
-Pixsaur est une application web moderne de traitement d'images spécialisée dans la conversion vers les formats Amstrad CPC. Architecture adaptateur CPU/GPU avec support complet des contraintes matérielles CPC (palettes 27/4096 couleurs, modes d'écran, dimensions, mémoire).
+Pixsaur est une application moderne de traitement d'images spécialisée dans la conversion vers les formats Amstrad CPC. Architecture adaptateur CPU/GPU avec support complet des contraintes matérielles CPC (palettes 27/4096 couleurs, modes d'écran, dimensions, mémoire).
 
 ## ✨ Fonctionnalités
 
@@ -41,8 +41,7 @@ pnpm install
 # Développement web (http://localhost:5173)
 pnpm dev
 
-# Desktop (Tauri) - Installe d'abord les dépendances :
-./scripts/install-tauri-deps.sh
+# Desktop (Tauri)
 pnpm tauri:dev
 
 # Build production
@@ -55,63 +54,12 @@ pnpm test
 pnpm typecheck
 ```
 
-## 📚 Documentation Complète
-
-### 🎯 Pour Démarrer une Implémentation
-
-**Nouveau dans le projet ?** Consultez ces guides dans l'ordre :
-
-```bash
-# 1. Point d'entrée : vue d'ensemble
-cat docs/DOCUMENTATION_INDEX.md
-
-# 2. Guide rapide : commandes par feature
-cat docs/QUICK_START_GUIDE.md
-
-# 3. Instructions AI : architecture et patterns
-cat .github/copilot-instructions.md
-```
-
-### 📖 Documentation Principale
-
-| Document | Description |
-|----------|-------------|
-| **[DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md)** | 🗂️ Navigation centrale, récents changements |
-| **[QUICK_START_GUIDE.md](./docs/QUICK_START_GUIDE.md)** | ⚡ Commandes bash par type de feature |
-| **[IMPLEMENTATION_STARTER_KIT.md](./docs/IMPLEMENTATION_STARTER_KIT.md)** | 📋 Guide complet : checklists, templates, matrice de décision |
-| **[DEVELOPMENT_GUIDE.md](./docs/DEVELOPMENT_GUIDE.md)** | 🏗️ Architecture, patterns, best practices |
-
-### 🔍 Documentation Spécialisée
-
-**Analyse Compétitive**
-- [CONVIMGCPC_ANALYSIS.md](./docs/analysis/CONVIMGCPC_ANALYSIS.md) - Algorithmes et opportunités
-- [CONVIMGCPC_UI_EXPORT_ANALYSIS.md](./docs/analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md) - UI et 17+ formats d'export
-
-**Architecture & Implémentation**
-- [ADAPTER_ARCHITECTURE.md](./docs/architecture/ADAPTER_ARCHITECTURE.md) - CPU/GPU adapters
-- [COLORSPACE_SUPPORT.md](./docs/COLORSPACE_SUPPORT.md) - Espaces colorimétriques
-- [I18N_GUIDE.md](./docs/I18N_GUIDE.md) - Internationalisation (Lingui)
-
-**Guides Techniques**
-- [LOGGING_SYSTEM.md](./docs/guides/LOGGING_SYSTEM.md) - Patterns de logging
-- [CPC_PIXEL_ENCODING.md](./docs/CPC_PIXEL_ENCODING.md) - Encodage pixels CPC
-
-## 🎯 Fonctionnalités
-```
-
 ## 🎯 Fonctionnalités
 
 - **Traitement d'images** : Ajustements de luminosité, contraste, saturation
 - **Quantification de palette** : Conversion vers palettes couleur spécifiques
 - **Architecture adaptateur** : Support CPU/GPU avec fallback intelligent
 - **Performance optimisée** : Monitoring et benchmarks intégrés
-
-## 📚 Documentation
-
-→ **[Documentation complète dans `/docs`](./docs/)**
-
-- **[Guide de Développement](./docs/DEVELOPMENT_GUIDE.md)** : Documentation principale et référence
-- **[Index de Documentation](./docs/DOCUMENTATION_INDEX.md)** : Navigation et organisation
 
 ## 🔧 Stack Technique
 
@@ -234,95 +182,51 @@ memory <= 65536        // 64Ko max (varies by mode)
 
 ### 📋 Planifié (Phases)
 
-**Phase 1 - Exports Essentiels** (2 semaines)
+**Phase 1 - Exports Essentiels**
 - [ ] Export ASM avec code assembleur configurable
 - [ ] Export DSK (images disque Amstrad)
 - [ ] Dialog SaveMedia avec presets
 
-**Phase 2 - UI/UX Avancée** (1-2 semaines)
+**Phase 2 - UI/UX Avancée**
 - [ ] 5 modes de redimensionnement (Fit, KeepSmaller, KeepLarger, UserSize, Origin)
 - [ ] Taille destination personnalisée avec validation 64Ko
 - [ ] Presets CPC (Standard, Overscan, modes 0/1/2)
 - [ ] Boutons ×2/÷2 pour dimensions
 
-**Phase 3 - Exports Avancés** (2-3 semaines)
+**Phase 3 - Exports Avancés**
 - [ ] Format CMP avec compression (ZX0, ZX1, Standard)
 - [ ] Format KIT (palettes CPC Plus 12-bit)
 - [ ] Format IMP (split-screen)
 - [ ] Format Tiles avec déduplication
 
-**Phase 4 - Fonctionnalités Avancées** (3-4 semaines)
+**Phase 4 - Fonctionnalités Avancées**
 - [ ] Dithering personnalisé (patterns, intensité)
 - [ ] Distance RGB pondérée
 - [ ] Lissage horizontal anti-aliasing
 - [ ] Gestion animations et sprites
 
-**Phase 5 - Optimisations** (2 semaines)
+**Phase 5 - Optimisations**
 - [ ] GPU complete (Lab/XYZ colorspaces)
 - [ ] Batch processing multiple images
 - [ ] Web Workers pour threading
 - [ ] Cache amélioré
 
-> **Voir** [CONVIMGCPC_UI_EXPORT_ANALYSIS.md](./docs/analysis/CONVIMGCPC_UI_EXPORT_ANALYSIS.md) pour détails complets
-
 ## 🤝 Contribution
 
-Les contributions sont les bienvenues ! Voici comment participer :
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
 
-### Workflow
-1. **Fork** le projet
-2. **Créer une branche** : `git checkout -b feature/amazing-feature`
-3. **Lire la documentation** : Consulter [QUICK_START_GUIDE.md](./docs/QUICK_START_GUIDE.md)
-4. **Développer** : Suivre les patterns dans [copilot-instructions.md](./.github/copilot-instructions.md)
-5. **Tester** : `pnpm test` et `pnpm typecheck`
-6. **Commit** : Messages clairs et structurés
-7. **Push** : `git push origin feature/amazing-feature`
-8. **Pull Request** : Description détaillée des changements
-
-### Standards de Code
-- ✅ TypeScript strict mode
-- ✅ Biome linting (0 erreurs/warnings)
-- ✅ Tests co-localisés (`.spec.tsx`)
-- ✅ CSS Modules pour styling
-- ✅ Jotai atoms (pas de prop drilling)
-- ✅ Props readonly
-- ✅ RefObject pattern pour refs
-
-### Où Contribuer ?
-
-**Quick Wins** (faciles, impact élevé) :
-- Distance RGB pondérée (perception visuelle)
-- Lissage horizontal anti-aliasing
-- Tri de palette par fréquence
-- Export formats additionnels
-
-**Features Majeures** :
-- GPU Lab/XYZ colorspaces
-- Système compression (ZX0, ZX1)
-- Éditeur de dithering patterns
-- Animations et sprites
-
-> **Voir** [Roadmap](#-roadmap) pour la liste complète
-
-## 🐛 Bugs et Questions
-
-- **Issues** : Utiliser [GitHub Issues](https://github.com/IIIvan37/pixsaur/issues)
-- **Discussions** : Proposer des features ou poser des questions
-- **Documentation** : Améliorer les docs dans `/docs`
+### Quick Start
+1. Fork the project
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Follow code standards (TypeScript strict, Biome linting)
+4. Test your changes: `pnpm test && pnpm typecheck`
+5. Commit with clear messages
+6. Push and create a Pull Request
 
 ## 📄 License
 
-MIT License - Voir [LICENSE](./LICENSE) pour détails
+MIT License - See [LICENSE](./LICENSE) for details
 
 ---
 
-## 🔗 Liens Utiles
-
-- **Amstrad CPC** : [CPCWiki](http://www.cpcwiki.eu/)
-- **CPC Plus** : [Plus Documentation](http://www.cpcwiki.eu/index.php/Arnold_V_specs_revised)
-- **ConvImgCpc** : [Outil de référence](https://github.com/cpcsdk/convimgcpc) (analyse compétitive)
-- **ReGL** : [GPU programming](https://github.com/regl-project/regl)
-
----
-
-**Fait avec ❤️ pour la communauté Amstrad CPC**
+**Made with ❤️ for the Amstrad CPC community**
