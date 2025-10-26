@@ -1,9 +1,7 @@
 // ✅ ImagePreviewView.tsx
 
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue } from 'jotai'
-import { modeAtom } from '@/app/store/config/config'
-import { CPC_MODE_CONFIG } from '@/app/store/config/types'
+import type React from 'react'
 import styles from './image-preview.module.css'
 
 export type ImagePreviewViewProps = {
@@ -12,6 +10,8 @@ export type ImagePreviewViewProps = {
   readonly image: ImageData | null
   readonly width: number
   readonly height: number
+  readonly onClick?: () => void
+  readonly tooltip?: string
 }
 
 /**
@@ -23,43 +23,34 @@ export function ImagePreviewView({
   ref,
   image,
   width,
-  height
+  height,
+  onClick,
+  tooltip
 }: ImagePreviewViewProps) {
-  const mode = useAtomValue(modeAtom)
-  const modeConfig = CPC_MODE_CONFIG[mode]
-
   if (!image) {
     return (
-      <div className={styles.container}>
-        <div className={`${styles.container} ${styles.emptyContainer}`}>
-          <p className={styles.emptyText}>
-            <Trans>Aucune image traitée</Trans>
-          </p>
-        </div>
+      <div className={`${styles.container} ${styles.emptyContainer}`}>
+        <p className={styles.emptyText}>
+          <Trans>Aucune image traitée</Trans>
+        </p>
       </div>
     )
   }
 
   return (
-    <div
-      ref={containerRefCallback}
-      className={styles.container}
-      style={{
-        width: '100%',
-        alignSelf: 'stretch',
-        aspectRatio: `${modeConfig.overscan ? 384 : 320} / ${modeConfig.height}`, // 320x200 ratio
-        maxHeight: '100%' // permet de s'étendre au besoin
-      }}
-    >
+    <div ref={containerRefCallback} className={styles.container}>
       <canvas
         ref={ref}
         width={width}
         height={height}
+        onClick={onClick}
+        title={tooltip}
         style={{
           width: '100%',
           height: '100%',
-
-          display: 'block'
+          objectFit: 'contain',
+          display: 'block',
+          cursor: onClick ? 'pointer' : 'default'
         }}
       />
     </div>

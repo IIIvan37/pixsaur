@@ -1,7 +1,9 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
+import { useAtomValue } from 'jotai'
 import { useEffect, useState } from 'react'
+import { effectiveModeConfigAtom } from '@/app/store/config/config'
 import Button from '@/components/ui/button'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import PixsaurDialog from '@/components/ui/dialog/dialog'
@@ -14,34 +16,39 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: (config: ExportConfig) => void
-  isStandardDimensions: boolean
 }
 
 export default function ExportConfigDialog({
   open,
   onOpenChange,
-  onConfirm,
-  isStandardDimensions
+  onConfirm
 }: Readonly<Props>) {
   const { _ } = useLingui()
-  const [config, setConfig] = useState<ExportConfig>(() => ({
-    ...DEFAULT_EXPORT_CONFIG,
-    // Désactiver SCR par défaut si dimensions non-standard
-    content: {
-      ...DEFAULT_EXPORT_CONFIG.content,
-      includeSCR: isStandardDimensions
-    }
-  }))
+  const [config, setConfig] = useState<ExportConfig>(DEFAULT_EXPORT_CONFIG)
+  const modeConfig = useAtomValue(effectiveModeConfigAtom)
 
-  // Désactiver SCR si les dimensions changent et ne sont plus standard
+  // Check if mode is standard (required for SCR format)
+  const isStandardMode =
+    !modeConfig.overscan &&
+    ((modeConfig.mode === 0 &&
+      modeConfig.width === 160 &&
+      modeConfig.height === 200) ||
+      (modeConfig.mode === 1 &&
+        modeConfig.width === 320 &&
+        modeConfig.height === 200) ||
+      (modeConfig.mode === 2 &&
+        modeConfig.width === 640 &&
+        modeConfig.height === 200))
+
+  // Automatically uncheck SCR if mode is not standard
   useEffect(() => {
-    if (!isStandardDimensions && config.content.includeSCR) {
+    if (!isStandardMode && config.content.includeSCR) {
       setConfig((prev) => ({
         ...prev,
         content: { ...prev.content, includeSCR: false }
       }))
     }
-  }, [isStandardDimensions, config.content.includeSCR])
+  }, [isStandardMode, config.content.includeSCR])
 
   const handleConfirm = () => {
     onConfirm(config)
@@ -104,12 +111,12 @@ export default function ExportConfigDialog({
             checked={config.content.includeSCR}
             onChange={(e) => updateContent('includeSCR', e.target.checked)}
             label={_(msg`SCR ASM (format CPC entrelacé)`)}
-            disabled={!isStandardDimensions}
+            disabled={!isStandardMode}
             title={
-              isStandardDimensions
+              isStandardMode
                 ? undefined
                 : _(
-                    msg`Export SCR disponible uniquement en dimensions standard (160×200, 320×200, 640×200)`
+                    msg`Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)`
                   )
             }
           />
@@ -126,7 +133,14 @@ export default function ExportConfigDialog({
           <Checkbox
             checked={config.content.includePNG}
             onChange={(e) => updateContent('includePNG', e.target.checked)}
-            label={_(msg`PNG (aperçu)`)}
+            label={_(msg`PNG (pixels carrés)`)}
+          />
+          <Checkbox
+            checked={config.content.includePNGCorrected}
+            onChange={(e) =>
+              updateContent('includePNGCorrected', e.target.checked)
+            }
+            label={_(msg`PNG (aspect ratio CPC correct)`)}
           />
         </div>
       </div>

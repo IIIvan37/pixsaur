@@ -1,7 +1,6 @@
 import { atom } from 'jotai'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { modeAtom } from '../config/config'
-import { CPC_MODE_CONFIG } from '../config/types'
+import { effectiveModeConfigAtom } from '../config/config'
 import { atomWithCompare } from '../utils'
 import type { PaletteSlot } from './types'
 
@@ -33,8 +32,8 @@ export const setReducedPaletteAtom = atom(
   null,
   (get, set, reduced: Vector<'RGB'>[]) => {
     const prev = get(userPaletteAtom)
-    const modeKey = get(modeAtom)
-    const maxColors = CPC_MODE_CONFIG[modeKey].nColors
+    const modeConfig = get(effectiveModeConfigAtom)
+    const maxColors = modeConfig.nColors
 
     // 2.1 – extraire les vecteurs des slots lockés
     const lockedVecs = prev
@@ -84,10 +83,9 @@ export const onSetColorAtom = atom(null, (get, set, { index, color }) => {
 })
 
 export const lockedVectorsAtom = atom((get) => {
-  const modeKey = get(modeAtom)
-  const mode = CPC_MODE_CONFIG[modeKey]
+  const modeConfig = get(effectiveModeConfigAtom)
   return get(userPaletteAtom)
-    .filter((_, i) => i < mode.nColors)
+    .filter((_, i) => i < modeConfig.nColors)
     .filter((slot) => slot.locked)
     .map((slot) => slot.color) as Vector<'RGB'>[]
 })

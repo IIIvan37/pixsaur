@@ -1,17 +1,19 @@
 import { Trans } from '@lingui/react/macro'
-import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
+import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
 import type { CPCHardware } from '@/libs/types'
-import { TargetDimensions } from '../target-dimensions'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
 import { ToggleButtonGroup } from '../ui/toggle-button-group'
+import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
 import styles from './image-controls.module.css'
 import { ProcessorSelector } from './processor-selector/processor-selector'
 
 export type ImageControlsViewProps = {
-  mode: CpcModeKey
-  onModeChange: (mode: CpcModeKey) => void
+  pixelMode: PixelMode
+  onPixelModeChange: (mode: PixelMode) => void
+  dimensionPreset: DimensionPreset
+  onDimensionPresetChange: (preset: DimensionPreset) => void
   cpcHardware: CPCHardware
   onCpcHardwareChange: (hardware: CPCHardware) => void
 }
@@ -21,26 +23,39 @@ export type ImageControlsViewProps = {
  * and CPC hardware configuration. ColorSpace is now fixed to RGB for optimal GPU performance.
  *
  * @param props - The props for the ImageControlsView component.
- * @param props.mode - The current image processing mode.
- * @param props.onModeChange - Callback invoked when the mode is changed.
- * @param props.dithering - The current dithering settings, including intensity.
- * @param props.onDitheringChange - Callback invoked when the dithering intensity is changed.
- * @param props.colorSpace - The currently selected color space.
- * @param props.onColorSpaceChange - Callback invoked when the color space is changed.
+ * @param props.pixelMode - The current pixel aspect ratio mode (0, 1, or 2).
+ * @param props.onPixelModeChange - Callback invoked when the pixel mode is changed.
+ * @param props.dimensionPreset - The current dimension preset (standard or overscan).
+ * @param props.onDimensionPresetChange - Callback invoked when the dimension preset is changed.
+ * @param props.cpcHardware - The currently selected CPC hardware.
+ * @param props.onCpcHardwareChange - Callback invoked when the hardware is changed.
  *
  * @returns The rendered image controls view component.
  */
 export function ImageControlsView({
-  mode,
-  onModeChange,
+  pixelMode,
+  onPixelModeChange,
+  dimensionPreset,
+  onDimensionPresetChange,
   cpcHardware,
   onCpcHardwareChange
 }: Readonly<ImageControlsViewProps>) {
-  // Préparer les options pour les groupes de boutons
-  const modeOptions = Object.keys(CPC_MODE_CONFIG).map((key) => ({
-    value: key as CpcModeKey,
-    label: key
-  }))
+  // Pixel mode options (0, 1, 2)
+  const pixelModeOptions: Array<{ value: PixelMode; label: string }> = [
+    { value: 0, label: 'Mode 0' },
+    { value: 1, label: 'Mode 1' },
+    { value: 2, label: 'Mode 2' }
+  ]
+
+  // Dimension preset options (standard, overscan, custom)
+  const dimensionPresetOptions: Array<{
+    value: DimensionPreset
+    label: string
+  }> = [
+    { value: 'standard', label: 'Standard' },
+    { value: 'overscan', label: 'Overscan' },
+    { value: 'custom', label: 'Custom' }
+  ]
 
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
     { value: 'classic' as CPCHardware, label: 'CPC (27)' },
@@ -63,18 +78,30 @@ export function ImageControlsView({
 
       <Flex align='center'>
         <SectionTitle>
-          <Trans>Mode</Trans>
+          <Trans>Pixel Mode</Trans>
         </SectionTitle>
         <ToggleButtonGroup
-          options={modeOptions}
-          value={mode}
-          onChange={onModeChange}
-          ariaLabelPrefix='Mode'
+          options={pixelModeOptions}
+          value={pixelMode}
+          onChange={onPixelModeChange}
+          ariaLabelPrefix='Pixel Mode'
         />
       </Flex>
 
-      {/* Target dimensions panel - always visible */}
-      <TargetDimensions />
+      <Flex align='center'>
+        <SectionTitle>
+          <Trans>Dimensions</Trans>
+        </SectionTitle>
+        <ToggleButtonGroup
+          options={dimensionPresetOptions}
+          value={dimensionPreset}
+          onChange={onDimensionPresetChange}
+          ariaLabelPrefix='Dimensions'
+        />
+      </Flex>
+
+      {/* Show custom dimensions input when custom preset is selected */}
+      {dimensionPreset === 'custom' && <CustomDimensionsInput />}
 
       <DitheringSelector />
 

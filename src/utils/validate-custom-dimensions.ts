@@ -12,11 +12,10 @@
 export type CpcMode = 0 | 1 | 2
 
 export interface ValidationResult {
-  readonly valid: boolean
-  readonly widthInBytes: number
-  readonly bytes: number
-  readonly kb: number
-  readonly errors: readonly string[]
+  valid: boolean
+  bytes: number
+  kb: number
+  errors: string[]
 }
 
 /**
@@ -44,54 +43,40 @@ export function validateCustomDimensions(
 ): ValidationResult {
   const errors: string[] = []
 
-  // Pixels per byte by mode
-  const pixelsPerByte = [2, 4, 8][mode]
+  // Mode-specific constraints
+  const widthStep = getWidthStep(mode)
+  const pixelsPerByte = [2, 4, 8][mode] // Mode 0=2px/byte, Mode 1=4px/byte, Mode 2=8px/byte
 
-  // Width constraint by mode
-  const widthStep = [4, 8, 16][mode]
-
-  // Validate width alignment
+  // 1. Width must be multiple of widthStep (4, 8, or 16)
   if (width % widthStep !== 0) {
-    errors.push(`Width must be multiple of ${widthStep} for Mode ${mode}`)
+    errors.push(`Largeur doit être multiple de ${widthStep}`)
   }
 
-  // Calculate width in bytes
+  // 2. Width in bytes must be even
   const widthInBytes = width / pixelsPerByte
-
-  // Validate width in bytes is even
   if (widthInBytes % 2 !== 0) {
-    errors.push(`Width in bytes (${widthInBytes}) must be even`)
+    errors.push(`Largeur en octets (${widthInBytes}) doit être paire`)
   }
 
-  // Validate height is multiple of 8 (CPC interlacing)
+  // 3. Height must be multiple of 8
   if (height % 8 !== 0) {
-    errors.push('Height must be multiple of 8 (CPC interlacing)')
+    errors.push('Hauteur doit être multiple de 8')
   }
 
-  // Calculate memory usage
-  const bytes = height * widthInBytes
-  const kb = bytes / 1024
+  // 4. Calculate total memory
+  const totalBytes = widthInBytes * height
+  const totalKb = totalBytes / 1024
 
-  // Validate memory limit (64 Ko)
-  if (bytes > 65536) {
-    errors.push(`Memory usage ${kb.toFixed(2)} Ko exceeds 64 Ko limit`)
-  }
-
-  // Validate minimum dimensions
-  if (width < widthStep) {
-    errors.push(`Width must be at least ${widthStep} pixels`)
-  }
-
-  if (height < 8) {
-    errors.push('Height must be at least 8 lines')
+  // 5. Check 64Ko limit
+  if (totalBytes > 65536) {
+    errors.push(`Mémoire ${totalKb.toFixed(2)} Ko dépasse 64 Ko`)
   }
 
   return {
     valid: errors.length === 0,
-    widthInBytes,
-    bytes,
-    kb,
-    errors: Object.freeze(errors)
+    bytes: totalBytes,
+    kb: totalKb,
+    errors
   }
 }
 
@@ -112,49 +97,4 @@ export function getWidthStep(mode: CpcMode): number {
  */
 export function getHeightStep(): number {
   return 8
-}
-
-/**
- * Calculates maximum dimensions for a given memory budget
- *
- * @param mode - CPC mode (0, 1, or 2)
- * @param maxBytes - Maximum memory in bytes (default: 65536)
- * @returns Maximum width and height that fit in memory
- *
- * @example
- * ```typescript
- * const max = getMaxDimensions(0, 16384) // 16 Ko
- * console.log(`Max: ${max.width}×${max.height}`)
- * ```
- */
-export function getMaxDimensions(
-  mode: CpcMode,
-  maxBytes: number = 65536
-): { readonly width: number; readonly height: number } {
-  const pixelsPerByte = [2, 4, 8][mode]
-  const widthStep = getWidthStep(mode)
-  const heightStep = getHeightStep()
-
-  // Start with maximum height (needs to be multiple of 8)
-  let height = Math.floor(544 / heightStep) * heightStep // Max CPC height ~544
-
-  // Calculate max width for this height
-  while (height >= heightStep) {
-    const maxWidthInBytes = Math.floor(maxBytes / height)
-    // Ensure widthInBytes is even
-    const widthInBytes = Math.floor(maxWidthInBytes / 2) * 2
-    const width = widthInBytes * pixelsPerByte
-
-    // Round down to width step
-    const alignedWidth = Math.floor(width / widthStep) * widthStep
-
-    if (alignedWidth >= widthStep) {
-      return { width: alignedWidth, height }
-    }
-
-    height -= heightStep
-  }
-
-  // Fallback to minimum valid dimensions
-  return { width: widthStep, height: heightStep }
 }

@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import { useAtom } from 'jotai'
 import {
   contrastStrategyAtom,
-  modeAtom,
+  derivedModeAtom,
   setContrastStrategyAtom
 } from '@/app/store/config/config'
 import type { ContrastStrategy } from '@/app/store/config/types'
@@ -18,7 +18,7 @@ import styles from '../image-controls.module.css'
 export function ContrastStrategySelector() {
   const [contrastStrategy] = useAtom(contrastStrategyAtom)
   const [, setContrastStrategyValue] = useAtom(setContrastStrategyAtom)
-  const [mode] = useAtom(modeAtom)
+  const [mode] = useAtom(derivedModeAtom)
 
   // Montrer le sélecteur pour les modes 1 et 2 (petites palettes) - CPC Classic ET Plus
   const shouldShow =

@@ -14,13 +14,11 @@ import {
   centerImageAtom,
   contrastStrategyAtom,
   cpcHardwareAtom,
+  derivedModeAtom,
   ditheringAtom,
-  modeAtom,
-  resizeModeAtom,
-  targetDimensionsAtom
+  effectiveModeConfigAtom,
+  resizeModeAtom
 } from '../config/config'
-import type { CPCMode } from '../config/resize-types'
-import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 
@@ -40,18 +38,18 @@ export const previewCanvasWidthAtom = atom<number | null>(null)
 
 export const previewCanvasSizeAtom = atom((get) => {
   const containerWidth = get(previewCanvasWidthAtom)
-  const mode = get(modeAtom)
+  const mode = get(derivedModeAtom)
   const resizeMode = get(resizeModeAtom)
-  const targetDimensions = get(targetDimensionsAtom)
 
   if (!containerWidth) return { width: 0, height: 0 }
 
   // Obtenir la configuration du mode CPC pour le pixel aspect ratio
-  const modeConfig = CPC_MODE_CONFIG[mode]
+  const modeConfig = get(effectiveModeConfigAtom)
 
-  // Utiliser targetDimensionsAtom pour les dimensions réelles
-  const canvasWidth = targetDimensions.width
-  const canvasHeight = targetDimensions.height
+  // En mode origin, utiliser les dimensions normalisées (160/320/640)
+  // En mode auto, utiliser les dimensions du mode config
+  const canvasWidth = modeConfig.width
+  const canvasHeight = modeConfig.height
 
   // Dimensions visuelles = dimensions canvas × pixel aspect ratio
   const visualWidth = canvasWidth * modeConfig.scaleX
@@ -63,7 +61,7 @@ export const previewCanvasSizeAtom = atom((get) => {
   const width = Math.floor(visualWidth * scale)
   const height = Math.floor(visualHeight * scale)
 
-  console.log('📐 [PREVIEW CANVAS SIZE]', {
+  logger.debug('[PREVIEW CANVAS SIZE]', {
     mode,
     resizeMode,
     canvasWidth,
@@ -96,10 +94,8 @@ export const croppedImageAtom = atom(async (get) => {
 export const resizedImageAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const resizeMode = get(resizeModeAtom)
-  const cpcModeKey = get(modeAtom)
-  const cpcMode = Number(cpcModeKey) as CPCMode
+  const modeConfig = get(effectiveModeConfigAtom)
   const centerImage = get(centerImageAtom)
-  const targetDimensions = get(targetDimensionsAtom)
 
   if (!cropped) {
     return cropped
@@ -129,8 +125,7 @@ export const resizedImageAtom = atom(async (get) => {
       relativeSelection,
       {
         mode: resizeMode,
-        cpcMode,
-        customDimensions: targetDimensions
+        modeConfig
       },
       centerImage
     )
@@ -187,7 +182,6 @@ export const quantizerAtom = atom(async (get) => {
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
   const processed = await get(resizedImageAtom)
-  const mode = get(modeAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
   const contrastStrategy = get(contrastStrategyAtom)
@@ -204,7 +198,8 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const basePalette = getPaletteForHardware(cpcHardware)
 
   // 🎯 Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
-  const targetColors = CPC_MODE_CONFIG[mode].nColors
+  const modeConfig = get(effectiveModeConfigAtom)
+  const targetColors = modeConfig.nColors
 
   // 🎯 Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
   const quantifyToCPCPlus = (value: number): number => {
@@ -231,7 +226,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
             ] as Vector<'RGB'>
         )
 
-  console.log('🔍 [QUANTIZER DEBUG] Input params:', {
+  logger.debug('[QUANTIZER DEBUG] Input params:', {
     targetColors,
     basePaletteSize: basePalette.length,
     lockedColorsCount: quantifiedLockedVecs.length,
@@ -248,14 +243,15 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     contrastStrategy // 🎯 Utiliser la stratégie choisie par l'utilisateur
   )
 
-  console.log('🔍 [QUANTIZER DEBUG] Output palette:', palette)
+  logger.debug('[QUANTIZER DEBUG] Output palette:', palette)
 
   return palette
 })
 
 // 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
-  const mode = get(modeAtom)
+  const mode = get(derivedModeAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
   const quantizer = await get(quantizerAtom)
   const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
@@ -266,7 +262,7 @@ export const previewImageAtom = atom(async (get) => {
   if (!quantizer || !processed) return null
 
   // 🔍 DEBUG: Vérifier la palette avant dithering
-  console.log('🎨 [PREVIEW] Palette for dithering:', {
+  logger.debug('[PREVIEW] Palette for dithering:', {
     count: reduced.length,
     colors: reduced.map((c) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`),
     mode
@@ -274,7 +270,7 @@ export const previewImageAtom = atom(async (get) => {
 
   logger.time('🖼️ Preview Generation')
 
-  console.log('🔍 [BEFORE NORMALIZATION]', {
+  logger.debug('[BEFORE NORMALIZATION]', {
     resizeMode,
     processedWidth: processed.width,
     processedHeight: processed.height,
@@ -286,11 +282,11 @@ export const previewImageAtom = atom(async (get) => {
   const normalized =
     resizeMode === 'origin'
       ? processed // Utiliser directement l'image sans normalisation
-      : getVisualRegionNormalized(processed, mode, get(targetDimensionsAtom))
+      : getVisualRegionNormalized(processed, modeConfig)
 
   if (!normalized) return null
 
-  logger.debug('🔍 [AFTER NORMALIZATION]', {
+  logger.debug('[AFTER NORMALIZATION]', {
     normalizedWidth: normalized.width,
     normalizedHeight: normalized.height
   })
@@ -332,13 +328,12 @@ export const previewImageAtom = atom(async (get) => {
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {
     logger.time('  📐 Positioning (auto mode)')
-    const targetDimensions = get(targetDimensionsAtom)
+    const modeConfig = get(effectiveModeConfigAtom)
+    const targetWidth = modeConfig.width
+    const targetHeight = modeConfig.height
 
     // Si l'image est déjà à la taille cible, pas besoin de la repositionner
-    if (
-      remapped.width === targetDimensions.width &&
-      remapped.height === targetDimensions.height
-    ) {
+    if (remapped.width === targetWidth && remapped.height === targetHeight) {
       logger.timeEnd('  📐 Positioning (auto mode)')
       logger.timeEnd('🖼️ Preview Generation')
       return remapped
@@ -346,8 +341,8 @@ export const previewImageAtom = atom(async (get) => {
 
     // Créer un canvas à la taille cible
     const positionedCanvas = document.createElement('canvas')
-    positionedCanvas.width = targetDimensions.width
-    positionedCanvas.height = targetDimensions.height
+    positionedCanvas.width = targetWidth
+    positionedCanvas.height = targetHeight
     const ctx = positionedCanvas.getContext('2d')
     if (!ctx) {
       logger.warn('Failed to get canvas context for positioning')
@@ -365,16 +360,14 @@ export const previewImageAtom = atom(async (get) => {
     }, reduced[0])
 
     ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
-    ctx.fillRect(0, 0, targetDimensions.width, targetDimensions.height)
+    ctx.fillRect(0, 0, targetWidth, targetHeight)
 
     // Calculer la position selon l'option de centrage
     // centerImage = true : centré (dx/dy calculés)
     // centerImage = false : aligné en haut à gauche (dx=0, dy=0)
-    const dx = centerImage
-      ? Math.floor((targetDimensions.width - remapped.width) / 2)
-      : 0
+    const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
     const dy = centerImage
-      ? Math.floor((targetDimensions.height - remapped.height) / 2)
+      ? Math.floor((targetHeight - remapped.height) / 2)
       : 0
 
     // Créer un canvas temporaire pour l'image remappée
@@ -394,12 +387,7 @@ export const previewImageAtom = atom(async (get) => {
     ctx.drawImage(tempCanvas, dx, dy)
 
     // Récupérer l'ImageData finale
-    const positioned = ctx.getImageData(
-      0,
-      0,
-      targetDimensions.width,
-      targetDimensions.height
-    )
+    const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
     logger.timeEnd('  📐 Positioning (auto mode)')
     logger.timeEnd('🖼️ Preview Generation')
     return positioned
@@ -479,7 +467,7 @@ function quantifyCPCPlusWithLocked(
 export const reducedPaletteRgbAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
-  const mode = get(modeAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
 
   // Colors are already in RGB format, no conversion needed
   const projected = [...raw] // Create a copy to avoid mutating original
@@ -497,7 +485,7 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   }
 
   // S'assurer qu'on ne dépasse jamais la limite finale
-  const maxColors = CPC_MODE_CONFIG[mode].nColors
+  const maxColors = modeConfig.nColors
   if (projected.length > maxColors) {
     // Tronquer à maxColors (les couleurs lockées sont déjà en tête grâce au quantizer)
     projected.splice(maxColors)

@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/export-panel/export-config-dialog.tsx:90
+#: src/components/export-panel/export-config-dialog.tsx:97
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:92
 msgid "Annuler"
 msgstr "Cancelar"
@@ -22,7 +22,7 @@ msgstr "Cancelar"
 msgid "Aperçu"
 msgstr "Vista previa"
 
-#: src/components/image-preview/image-preview-view.tsx:36
+#: src/components/image-preview/image-preview-view.tsx:34
 msgid "Aucune image traitée"
 msgstr "Ninguna imagen procesada"
 
@@ -43,11 +43,20 @@ msgstr "Centrar imagen"
 msgid "Changer d'image"
 msgstr "Cambiar imagen"
 
-#: src/components/export-panel/export-config-dialog.tsx:83
+#: src/components/image-preview/image-preview.tsx:134
+msgid "Cliquer pour ouvrir dans un nouvel onglet"
+msgstr "Haga clic para abrir en una nueva pestaña"
+
+#: src/components/image-preview/image-preview.tsx:134
+#: src/components/image-preview/image-preview.tsx:134
+#~ msgid "Cliquer pour ouvrir en plein écran dans un nouvel onglet"
+#~ msgstr "Haga clic para abrir en pantalla completa en una nueva pestaña"
+
+#: src/components/export-panel/export-config-dialog.tsx:90
 msgid "Configuration de l'export"
 msgstr "Configuración de la exportación"
 
-#: src/components/export-panel/export-config-dialog.tsx:100
+#: src/components/export-panel/export-config-dialog.tsx:107
 msgid "Contenu du ZIP"
 msgstr "Contenido del ZIP"
 
@@ -63,11 +72,11 @@ msgstr "Convertidor de imágenes Amstrad CPC"
 msgid "Déverrouiller"
 msgstr "Desbloquear"
 
-#: src/components/export-panel/export-config-dialog.tsx:112
-msgid "Export SCR disponible uniquement en dimensions standard (160×200, 320×200, 640×200)"
-msgstr "Exportación SCR solo disponible para dimensiones estándar (160×200, 320×200, 640×200)"
+#: src/components/image-controls/image-controls-view.tsx:93
+msgid "Dimensions"
+msgstr "Dimensiones"
 
-#: src/components/export-panel/export-config-dialog.tsx:93
+#: src/components/export-panel/export-config-dialog.tsx:100
 #: src/components/export-panel/export-panel-view.tsx:20
 msgid "Exporter"
 msgstr "Exportar"
@@ -80,13 +89,13 @@ msgstr "Formatos soportados: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgid "Glissez & déposez une image ici"
 msgstr "Arrastra y suelta una imagen aquí"
 
-#: src/components/image-controls/image-controls-view.tsx:54
+#: src/components/image-controls/image-controls-view.tsx:69
 msgid "Hardware"
 msgstr "Hardware"
 
-#: src/components/target-dimensions/target-dimensions-view.tsx:82
-msgid "Height:"
-msgstr "Altura:"
+#: src/components/image-controls/custom-dimensions-input/custom-dimensions-input.tsx:143
+msgid "Hauteur"
+msgstr "Altura"
 
 #: src/app/components/source-section.tsx:24
 msgid "Image source"
@@ -96,15 +105,23 @@ msgstr "Imagen de origen"
 msgid "Intensité"
 msgstr "Intensidad"
 
-#: src/components/export-panel/export-config-dialog.tsx:153
+#: src/components/export-panel/export-config-dialog.tsx:167
 msgid "Label de la palette"
 msgstr "Etiqueta de la paleta"
 
-#: src/components/export-panel/export-config-dialog.tsx:145
+#: src/components/export-panel/export-config-dialog.tsx:159
 msgid "Label des données"
 msgstr "Etiqueta de los datos"
 
+#: src/components/image-controls/custom-dimensions-input/custom-dimensions-input.tsx:129
+msgid "Largeur"
+msgstr "Ancho"
+
 #: src/components/export-panel/export-config-dialog.tsx:119
+msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+msgstr "El formato SCR requiere dimensiones estándar (160x200, 320x200 o 640x200)"
+
+#: src/components/export-panel/export-config-dialog.tsx:126
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (secuencial)"
 
@@ -116,9 +133,13 @@ msgstr "Suavizado"
 msgid "Luminosité"
 msgstr "Brillo"
 
-#: src/components/image-controls/image-controls-view.tsx:66
-msgid "Mode"
-msgstr "Modo"
+#: src/components/image-controls/custom-dimensions-input/custom-dimensions-input.tsx:156
+msgid "Mémoire"
+msgstr "Memoria"
+
+#: src/components/image-controls/image-controls-view.tsx:65
+#~ msgid "Mode"
+#~ msgstr "Modo"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:38
 msgid "Mode de dithering"
@@ -128,7 +149,7 @@ msgstr "Modo de tramado"
 msgid "Mode de redimensionnement"
 msgstr "Modo de redimensionamiento"
 
-#: src/components/export-panel/export-config-dialog.tsx:163
+#: src/components/export-panel/export-config-dialog.tsx:177
 msgid "Nom du fichier ZIP"
 msgstr "Nombre del archivo ZIP"
 
@@ -140,21 +161,29 @@ msgstr "Original (sin escala)"
 msgid "ou cliquez pour sélectionner un fichier"
 msgstr "o haga clic para seleccionar un archivo"
 
-#: src/components/export-panel/export-config-dialog.tsx:124
+#: src/components/export-panel/export-config-dialog.tsx:131
 msgid "Palettes (firmware/hardware)"
 msgstr "Paletas (firmware/hardware)"
 
-#: src/components/export-panel/export-config-dialog.tsx:129
-msgid "PNG (aperçu)"
-msgstr "PNG (vista previa)"
+#: src/components/image-controls/image-controls-view.tsx:81
+msgid "Pixel Mode"
+msgstr "Modo de píxel"
+
+#: src/components/export-panel/export-config-dialog.tsx:97
+#~ msgid "PNG (aperçu)"
+#~ msgstr "PNG (vista previa)"
+
+#: src/components/export-panel/export-config-dialog.tsx:143
+msgid "PNG (aspect ratio CPC correct)"
+msgstr "PNG (relación de aspecto CPC correcta)"
+
+#: src/components/export-panel/export-config-dialog.tsx:136
+msgid "PNG (pixels carrés)"
+msgstr "PNG (píxeles cuadrados)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:22
 msgid "Posterisation"
 msgstr "Posterización"
-
-#: src/components/target-dimensions/target-dimensions-view.tsx:41
-msgid "Presets:"
-msgstr "Preajustes:"
 
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
@@ -177,7 +206,7 @@ msgstr "Rojo"
 msgid "Saturation"
 msgstr "Saturación"
 
-#: src/components/export-panel/export-config-dialog.tsx:106
+#: src/components/export-panel/export-config-dialog.tsx:113
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (formato CPC entrelazado)"
 
@@ -185,11 +214,11 @@ msgstr "SCR ASM (formato CPC entrelazado)"
 msgid "Sélection"
 msgstr "Selección"
 
-#: src/components/export-panel/export-config-dialog.tsx:85
+#: src/components/export-panel/export-config-dialog.tsx:92
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Seleccione los archivos a incluir en el archivo ZIP"
 
-#: src/components/export-panel/export-config-dialog.tsx:138
+#: src/components/export-panel/export-config-dialog.tsx:152
 msgid "Utiliser des labels personnalisés"
 msgstr "Usar etiquetas personalizadas"
 
@@ -201,10 +230,6 @@ msgstr "Confirmar"
 #: src/components/ui/rgb-slider/rgb-slider.tsx:112
 msgid "Vert"
 msgstr "Verde"
-
-#: src/components/target-dimensions/target-dimensions-view.tsx:62
-msgid "Width:"
-msgstr "Ancho:"
 
 #: src/components/source-selector/source-selector-view.tsx:71
 msgid "Zone de sélection"

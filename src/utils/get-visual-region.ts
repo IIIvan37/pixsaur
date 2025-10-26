@@ -1,5 +1,5 @@
 // 📁 utils/image/getVisualRegionNormalized.ts
-import { CPC_MODE_CONFIG, type CpcModeKey } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/app/store/config/types'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { logger } from '@/utils/logger'
 
@@ -31,24 +31,12 @@ export function getVisualRegion(
   return extractCtx.getImageData(sx, sy, sw, sh)
 }
 
-/**
- * Extracts and scales a region from source ImageData to fit CPC mode dimensions.
- * The region is uniformly scaled to fit within target dimensions, preserving aspect ratio.
- * Pixel shape correction is applied according to the CPC mode to match display proportions.
- *
- * @param src       The full source ImageData
- * @param mode      The CPC mode key (for aspect ratio correction)
- * @param customDimensions Optional custom dimensions (overrides mode config)
- * @returns         A new ImageData with centered, corrected scaled region
- */
 export function getVisualRegionNormalized(
   src: ImageData,
-  mode: CpcModeKey,
-  customDimensions?: { width: number; height: number }
+  modeConfig: CpcModeConfig
 ) {
-  const modeConfig = CPC_MODE_CONFIG[mode]
-  const targetW = customDimensions?.width ?? modeConfig.width
-  const targetH = customDimensions?.height ?? modeConfig.height
+  const targetW = modeConfig.width
+  const targetH = modeConfig.height
   // Step 2 — Compute the CPC pixel aspect ratio (used for visual correction)
   const pixelAspectRatio = {
     0: 2 / 1, // Mode 0: wide pixels

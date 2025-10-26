@@ -37,6 +37,7 @@ export interface ZipContentConfig {
   includeLinear: boolean // Include Linear ASM file
   includePalettes: boolean // Include palette files (firmware/hardware for Classic, CPC+ values for Plus)
   includePNG: boolean // Include PNG preview
+  includePNGCorrected: boolean // Include PNG with corrected aspect ratio
 }
 
 /**
@@ -65,7 +66,8 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
     includeSCR: true,
     includeLinear: true,
     includePalettes: true,
-    includePNG: true
+    includePNG: true,
+    includePNGCorrected: true
   },
   labels: {
     enabled: true,

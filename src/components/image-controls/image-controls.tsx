@@ -1,15 +1,17 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   cpcHardwareAtom,
-  modeAtom,
+  dimensionPresetAtom,
+  pixelModeAtom,
   setCpcHardwareAtom,
-  setModeAtom
+  setDimensionPresetAtom,
+  setPixelModeAtom
 } from '@/app/store/config/config'
 import { ImageControlsView } from './image-controls-view'
 
 /**
  * ImageControls is a container component that connects Jotai atoms for image configuration
- * (mode and hardware) to the presentational ImageControlsView component.
+ * (pixel mode, dimension preset, and hardware) to the presentational ImageControlsView component.
  * ColorSpace is now fixed to RGB for optimal GPU performance.
  *
  * It retrieves the current values and setter functions for each configuration option from the store,
@@ -19,14 +21,19 @@ import { ImageControlsView } from './image-controls-view'
  * @returns {JSX.Element} The rendered ImageControlsView with state and handlers injected.
  */
 export default function ImageControls() {
-  const mode = useAtomValue(modeAtom)
-  const onModeChange = useSetAtom(setModeAtom)
+  const pixelMode = useAtomValue(pixelModeAtom)
+  const onPixelModeChange = useSetAtom(setPixelModeAtom)
+  const dimensionPreset = useAtomValue(dimensionPresetAtom)
+  const onDimensionPresetChange = useSetAtom(setDimensionPresetAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const onCpcHardwareChange = useSetAtom(setCpcHardwareAtom)
+
   return (
     <ImageControlsView
-      mode={mode}
-      onModeChange={onModeChange}
+      pixelMode={pixelMode}
+      onPixelModeChange={onPixelModeChange}
+      dimensionPreset={dimensionPreset}
+      onDimensionPresetChange={onDimensionPresetChange}
       cpcHardware={cpcHardware}
       onCpcHardwareChange={onCpcHardwareChange}
     />

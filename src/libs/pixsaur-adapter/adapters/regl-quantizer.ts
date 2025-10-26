@@ -866,8 +866,8 @@ export class ReGLQuantizer {
         .sort((a, b) => b.count - a.count)
         .slice(0, 10)
 
-      console.log(
-        `🔍 [HISTOGRAM] Top 10 colors in ${histogram.length}-color histogram:`,
+      quantizerLogger.debug(
+        `[HISTOGRAM] Top 10 colors in ${histogram.length}-color histogram:`,
         topColors
       )
     }

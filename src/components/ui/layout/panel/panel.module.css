@@ -6,4 +6,5 @@
   margin-bottom: var(--spacing-sm);
   height: 100%;
   flex: 1;
+  overflow: visible;
 }

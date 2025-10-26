@@ -5,6 +5,7 @@
  * pour éliminer la duplication de code et centraliser les algorithmes.
  */
 
+import { logger } from '@/utils/logger'
 import type { DistanceFn, DistanceMetric } from '../metric/distance'
 import { getDistanceFn } from '../metric/distance'
 import { selectTopIndicesCore } from '../quant/select-to-indices'
@@ -207,8 +208,8 @@ export abstract class QuantizerBase {
     params: QuantizeParams
   ): void {
     if (result.selectedColors.length !== params.targetColors) {
-      console.warn(
-        `⚠️ [${this.getQuantizerType()}] Expected ${params.targetColors} colors, got ${result.selectedColors.length}`
+      logger.warn(
+        `[${this.getQuantizerType()}] Expected ${params.targetColors} colors, got ${result.selectedColors.length}`
       )
     }
 
