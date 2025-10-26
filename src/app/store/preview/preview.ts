@@ -9,6 +9,10 @@ import {
 } from '@/utils/get-visual-region'
 import { applyResize, type Selection } from '@/utils/image-resize'
 import { logger } from '@/utils/logger'
+import {
+  applyHorizontalSmoothing,
+  getPixelWidthForMode
+} from '@/utils/image-processing/horizontal-smoothing'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,
@@ -17,6 +21,8 @@ import {
   derivedModeAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
+  horizontalSmoothingAtom,
+  pixelModeAtom,
   resizeModeAtom
 } from '../config/config'
 import { selectionAtom, workingImageAtom } from '../image/image'
@@ -146,9 +152,28 @@ export const resizedImageAtom = atom(async (get) => {
   }
 })
 
-// 2. Extraction des données RGBA (utilise resizedImageAtom au lieu de croppedImageAtom)
+// 1ter. Lissage horizontal : applique le lissage APRÈS le resize
+export const smoothedImageAtom = atom(async (get) => {
+  const resized = await get(resizedImageAtom)
+  const horizontalSmoothing = get(horizontalSmoothingAtom)
+  const pixelMode = get(pixelModeAtom)
+
+  if (!resized) return null
+
+  // Appliquer le lissage horizontal si activé
+  if (horizontalSmoothing) {
+    const pixelWidth = getPixelWidthForMode(pixelMode)
+    if (pixelWidth > 1) {
+      return applyHorizontalSmoothing(resized, pixelWidth)
+    }
+  }
+
+  return resized
+})
+
+// 2. Extraction des données RGBA (utilise smoothedImageAtom au lieu de resizedImageAtom)
 export const croppedBufferAtom = atom(async (get) => {
-  const processed = await get(resizedImageAtom)
+  const processed = await get(smoothedImageAtom)
   if (!processed) return null
   return extractBuffer(processed)
 })
@@ -156,7 +181,7 @@ export const croppedBufferAtom = atom(async (get) => {
 // 3. Construction du quantizer sans mémoïsation
 export const quantizerAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
-  const processed = await get(resizedImageAtom)
+  const processed = await get(smoothedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = 'RGB' // Fixé sur RGB
   const contrastStrategy = get(contrastStrategyAtom)
@@ -181,7 +206,7 @@ export const quantizerAtom = atom(async (get) => {
 // 4. Quantization avec palette adaptateur
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
-  const processed = await get(resizedImageAtom)
+  const processed = await get(smoothedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
   const contrastStrategy = get(contrastStrategyAtom)
@@ -255,7 +280,7 @@ export const previewImageAtom = atom(async (get) => {
   const quantizer = await get(quantizerAtom)
   const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
-  const processed = await get(resizedImageAtom)
+  const processed = await get(smoothedImageAtom)
   const dithering = get(ditheringAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom) // Get center option

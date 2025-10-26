@@ -18,6 +18,10 @@ msgstr ""
 msgid "Annuler"
 msgstr "Annuler"
 
+#: src/components/image-controls/image-controls-view.tsx:119
+#~ msgid "Anti-Aliasing"
+#~ msgstr "Anti-Crénelage"
+
 #: src/app/components/preview-panel.tsx:27
 msgid "Aperçu"
 msgstr "Aperçu"
@@ -72,7 +76,7 @@ msgstr "Convertisseur d'images Amstrad CPC"
 msgid "Déverrouiller"
 msgstr "Déverrouiller"
 
-#: src/components/image-controls/image-controls-view.tsx:93
+#: src/components/image-controls/image-controls-view.tsx:100
 msgid "Dimensions"
 msgstr "Dimensions"
 
@@ -89,7 +93,7 @@ msgstr "Formats supportés : PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgid "Glissez & déposez une image ici"
 msgstr "Glissez & déposez une image ici"
 
-#: src/components/image-controls/image-controls-view.tsx:69
+#: src/components/image-controls/image-controls-view.tsx:76
 msgid "Hardware"
 msgstr "Matériel"
 
@@ -129,6 +133,10 @@ msgstr "Linear ASM (séquentiel)"
 msgid "Lissage"
 msgstr "Lissage"
 
+#: src/components/image-controls/image-controls-view.tsx:119
+msgid "Lissage horizontal"
+msgstr "Lissage horizontal"
+
 #: src/app/components/adjustements/adjustement.view.tsx:19
 msgid "Luminosité"
 msgstr "Luminosité"
@@ -165,7 +173,7 @@ msgstr "ou cliquez pour sélectionner un fichier"
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
-#: src/components/image-controls/image-controls-view.tsx:81
+#: src/components/image-controls/image-controls-view.tsx:88
 msgid "Pixel Mode"
 msgstr "Mode pixel"
 

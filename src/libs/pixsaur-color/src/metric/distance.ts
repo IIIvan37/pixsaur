@@ -25,6 +25,27 @@ export function euclideanDistance(a: Vector, b: Vector): number {
 export const cie76Distance = euclideanDistance
 
 /**
+ * Calculates the weighted RGB distance using perceptual coefficients.
+ * Reflects human eye sensitivity: ~2× more sensitive to green than red, ~5× more than blue.
+ * Based on ITU-R BT.601 (SDTV) luma coefficients.
+ *
+ * @param {Vector} a - The first color in RGB space [0-255].
+ * @param {Vector} b - The second color in RGB space [0-255].
+ * @returns {number} - The weighted RGB distance squared (for performance).
+ */
+export function weightedRGBDistance(a: Vector, b: Vector): number {
+  const [r1, g1, b1] = a
+  const [r2, g2, b2] = b
+
+  // ITU-R BT.601 luma coefficients (perceptual weights)
+  const dr = (r1 - r2) ** 2 * 0.299
+  const dg = (g1 - g2) ** 2 * 0.587
+  const db = (b1 - b2) ** 2 * 0.114
+
+  return dr + dg + db
+}
+
+/**
  * Calculates the Delta E 2000 distance between two colors in the Lab color space.
  *
  * @param {Vector} a - The first color in Lab space.
@@ -97,17 +118,22 @@ export function deltaE2000Distance(a: Vector, b: Vector): number {
 
 export type DistanceFn = (a: Vector, b: Vector) => number
 
-export type DistanceMetric = 'euclidean' | 'cie76' | 'deltaE2000'
+export type DistanceMetric =
+  | 'euclidean'
+  | 'weighted-rgb'
+  | 'cie76'
+  | 'deltaE2000'
 
 export const DISTANCE_METRICS_BY_COLORSPACE: Record<
   ColorSpace,
   DistanceMetric[]
 > = {
-  RGB: ['euclidean']
+  RGB: ['weighted-rgb', 'euclidean'] // weighted-rgb par défaut pour meilleure perception
 }
 
 const distanceFnFromMetric: Record<DistanceMetric, DistanceFn> = {
   euclidean: euclideanDistance,
+  'weighted-rgb': weightedRGBDistance,
   cie76: cie76Distance,
   deltaE2000: deltaE2000Distance
 }

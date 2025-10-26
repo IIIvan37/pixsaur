@@ -29,10 +29,13 @@ const HISTOGRAM_FRAGMENT_SHADER = `
   
   varying vec2 v_texCoord;
   
-  // ✅ Calcul de distance RGB euclidienne optimisée
+  // ✅ Distance RGB pondérée perceptuelle (ITU-R BT.601)
+  // Reflète la sensibilité de l'œil humain: Green (0.587) > Red (0.299) > Blue (0.114)
   float colorDistanceRGB(vec3 color1, vec3 color2) {
     vec3 diff = color1 - color2;
-    return length(diff);
+    vec3 weights = vec3(0.299, 0.587, 0.114);
+    vec3 weightedDiff = diff * diff * weights;
+    return sqrt(weightedDiff.r + weightedDiff.g + weightedDiff.b);
   }
   
   void main() {
@@ -81,10 +84,13 @@ const GPU_ACCELERATED_FRAGMENT_SHADER = `
   uniform vec2 u_imageSize;
   uniform int u_distanceMetric;
   
-  // ✅ Distance RGB euclidienne optimisée
+  // ✅ Distance RGB pondérée perceptuelle (ITU-R BT.601)
+  // Reflète la sensibilité de l'œil humain: Green (0.587) > Red (0.299) > Blue (0.114)
   float calculateDistanceRGB(vec3 color1, vec3 color2) {
     vec3 diff = color1 - color2;
-    return length(diff);
+    vec3 weights = vec3(0.299, 0.587, 0.114);
+    vec3 weightedDiff = diff * diff * weights;
+    return sqrt(weightedDiff.r + weightedDiff.g + weightedDiff.b);
   }
   
   // Fonction pour récupérer une couleur de la texture de palette (optimisée)
@@ -1423,14 +1429,18 @@ export class ReGLQuantizer {
   }
 
   /**
-   * � Calcule la distance entre deux couleurs selon l'espace colorimétrique
+   * 🎯 Calcule la distance entre deux couleurs avec poids perceptuels
+   * Utilise les coefficients ITU-R BT.601 (luma) pour refléter la sensibilité de l'œil humain
    */
   private calculateDistance(color1: Vector, color2: Vector): number {
-    // RGB - Distance euclidienne
+    // RGB - Distance pondérée perceptuelle
     const dr = color1[0] - color2[0]
     const dg = color1[1] - color2[1]
     const db = color1[2] - color2[2]
-    return Math.hypot(dr, dg, db)
+
+    // ITU-R BT.601 luma coefficients (perceptual weights)
+    // Green (0.587) > Red (0.299) > Blue (0.114)
+    return Math.sqrt(dr * dr * 0.299 + dg * dg * 0.587 + db * db * 0.114)
   }
 
   /**

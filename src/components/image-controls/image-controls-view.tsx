@@ -1,8 +1,10 @@
 import { Trans } from '@lingui/react/macro'
+import { useId } from 'react'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
 import type { CPCHardware } from '@/libs/types'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
+import { Switch } from '../ui/switch'
 import { ToggleButtonGroup } from '../ui/toggle-button-group'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
@@ -16,6 +18,8 @@ export type ImageControlsViewProps = {
   onDimensionPresetChange: (preset: DimensionPreset) => void
   cpcHardware: CPCHardware
   onCpcHardwareChange: (hardware: CPCHardware) => void
+  horizontalSmoothing: boolean
+  onHorizontalSmoothingChange: (enabled: boolean) => void
 }
 
 /**
@@ -38,8 +42,11 @@ export function ImageControlsView({
   dimensionPreset,
   onDimensionPresetChange,
   cpcHardware,
-  onCpcHardwareChange
+  onCpcHardwareChange,
+  horizontalSmoothing,
+  onHorizontalSmoothingChange
 }: Readonly<ImageControlsViewProps>) {
+  const horizontalSmoothingId = useId()
   // Pixel mode options (0, 1, 2)
   const pixelModeOptions: Array<{ value: PixelMode; label: string }> = [
     { value: 0, label: 'Mode 0' },
@@ -106,6 +113,17 @@ export function ImageControlsView({
       <DitheringSelector />
 
       <ProcessorSelector />
+
+      <Flex align='baseline' justify='between' style={{ width: '100%' }}>
+        <SectionTitle>
+          <Trans>Lissage horizontal</Trans>
+        </SectionTitle>
+        <Switch
+          checked={horizontalSmoothing}
+          onCheckedChange={onHorizontalSmoothingChange}
+          id={horizontalSmoothingId}
+        />
+      </Flex>
     </div>
   )
 }

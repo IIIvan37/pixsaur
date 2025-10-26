@@ -4,7 +4,10 @@ import {
   downscaleImage,
   type Selection
 } from '@/libs/pixsaur-adapter/io/downscale-image'
-import { configAtom, processorTypeAtom } from '../config/config'
+import {
+  configAtom,
+  processorTypeAtom
+} from '../config/config'
 
 const LOGICAL_WIDTH = 800
 

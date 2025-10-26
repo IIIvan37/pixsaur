@@ -244,6 +244,9 @@ export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
 
 export const smoothingAtom = atom<boolean>(true)
 
+// Horizontal smoothing (anti-aliasing) for CPC pixel modes
+export const horizontalSmoothingAtom = atom<boolean>(false)
+
 // Processor type selection (auto, cpu, gpu) - GPU par défaut pour de meilleures performances
 export const processorTypeAtom = atom<ProcessorType>('gpu')
 
