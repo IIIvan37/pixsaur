@@ -36,11 +36,11 @@ export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
       // Web browser: use standard file input
       const file = acceptedFiles[0]
       if (file?.type.startsWith('image/')) {
-        processImageFile(file).then(onImageLoaded)
+        processImageFile(file).then(onImageLoaded).catch(console.error)
       }
     },
     [onImageLoaded]
   )
 
-  return <ImageUploadView onUpload={handleUpload} />
+  return <ImageUploadView onUpload={handleUpload} isTauri={isTauri()} />
 })

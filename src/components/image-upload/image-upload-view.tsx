@@ -10,6 +10,7 @@ export type ImageUploadProps = {
   primaryText?: string
   secondaryText?: string
   helpText?: string
+  isTauri?: boolean
 }
 
 /**
@@ -21,13 +22,15 @@ export type ImageUploadProps = {
  * @param {string} [props.primaryText] - Main instructional text.
  * @param {string} [props.secondaryText] - Secondary instructional text.
  * @param {string} [props.helpText] - Helper text for supported formats.
+ * @param {boolean} [props.isTauri] - Whether running in Tauri (disables file input).
  * @returns {JSX.Element} The rendered component.
  */
 export const ImageUploadView = ({
   onUpload,
   primaryText,
   secondaryText,
-  helpText
+  helpText,
+  isTauri = false
 }: ImageUploadProps) => {
   const { _ } = useLingui()
   const uploadId = useId()
@@ -38,13 +41,23 @@ export const ImageUploadView = ({
       onUpload(files)
     }
   }
+  
+  const handleClick = () => {
+    // In Tauri mode, clicking triggers the native dialog via onUpload
+    if (isTauri) {
+      onUpload([])
+    }
+  }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: handleDrop,
     accept: {
       'image/*': []
     },
-    multiple: false
+    multiple: false,
+    noClick: isTauri, // Disable default click behavior in Tauri
+    noKeyboard: isTauri,
+    noDrag: isTauri // Disable drag in Tauri
   })
 
   const defaultPrimaryText = _(msg`Glissez & déposez une image ici`)
@@ -59,12 +72,15 @@ export const ImageUploadView = ({
       className={`${styles.dropzone} ${
         isDragActive ? styles.dropzoneActive : ''
       }`}
+      onClick={isTauri ? handleClick : undefined}
     >
-      <input
-        {...getInputProps()}
-        id={uploadId}
-        data-testid='image-upload-input'
-      />
+      {!isTauri && (
+        <input
+          {...getInputProps()}
+          id={uploadId}
+          data-testid='image-upload-input'
+        />
+      )}
       <UploadIcon className={styles.icon} />
       <p className={styles.primaryText}>{primaryText || defaultPrimaryText}</p>
       <p className={styles.secondaryText}>
