@@ -18,7 +18,6 @@ export const Updater = () => {
       if (update?.available) {
         setUpdateAvailable(true)
         setUpdateVersion(update.version)
-        console.log(`Update available: ${update.version}`)
       }
     } catch (error) {
       console.error('Failed to check for updates:', error)
@@ -35,7 +34,6 @@ export const Updater = () => {
       const update = await check()
       
       if (update?.available) {
-        console.log('Downloading and installing update...')
         await update.downloadAndInstall()
         
         // Relaunch the app to apply the update

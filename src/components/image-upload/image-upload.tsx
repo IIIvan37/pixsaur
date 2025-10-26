@@ -18,31 +18,17 @@ function isTauri(): boolean {
 export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
   const handleUpload = useCallback(
     async (acceptedFiles: File[]) => {
-      console.log('[ImageUpload] handleUpload called', {
-        isTauri: isTauri(),
-        filesCount: acceptedFiles.length
-      })
-      
       // In Tauri with empty array, use native dialog
       if (isTauri() && acceptedFiles.length === 0) {
-        console.log('[ImageUpload] Using Tauri native dialog')
         try {
           const { pickImageFileTauri } = await import('./tauri-file-picker')
           const dataUrl = await pickImageFileTauri()
           
           if (dataUrl) {
-            console.log('[ImageUpload] Image loaded via Tauri, creating Image element')
             const img = new Image()
-            img.onload = () => {
-              console.log('[ImageUpload] Image element loaded successfully')
-              onImageLoaded(img)
-            }
-            img.onerror = (e) => {
-              console.error('[ImageUpload] Image element failed to load:', e)
-            }
+            img.onload = () => onImageLoaded(img)
+            img.onerror = (e) => console.error('[ImageUpload] Image load failed:', e)
             img.src = dataUrl
-          } else {
-            console.log('[ImageUpload] User cancelled file selection')
           }
         } catch (error) {
           console.error('[ImageUpload] Failed to load image:', error)
@@ -56,7 +42,6 @@ export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
 
       // In Tauri, drag & drop is disabled - only native dialog works
       // In web mode, use standard FileReader
-      console.log('[ImageUpload] Using web FileReader')
       processImageFile(file).then(onImageLoaded).catch(console.error)
     },
     [onImageLoaded]
