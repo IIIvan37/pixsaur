@@ -81,9 +81,9 @@ export const getSvgDimensions = async (file: File) => {
 
 /**
  * Processes an image file and invokes a callback with the loaded image.
+ * Used for web browser environment only (Tauri uses native dialog)
  *
  * @param file - The image file to process.
- * @param onImageLoaded - Callback function to be called with the loaded image.
  */
 export const processImageFile = (file: File): Promise<HTMLImageElement> => {
   return new Promise((resolve, reject) => {
@@ -95,6 +95,7 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
       img.onload = () => resolve(img)
 
       img.src = reader.result as string
+      
       if (file.type === 'image/svg+xml') {
         logger.debug('Processing SVG file')
         getSvgDimensions(file)
@@ -102,7 +103,7 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
             img.width = dimensions.width
             img.height = dimensions.height
           })
-          .catch(reject)
+          .catch((error) => reject(error instanceof Error ? error : new Error(String(error))))
       }
     }
     reader.readAsDataURL(file)
