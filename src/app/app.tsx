@@ -10,7 +10,9 @@ import { I18nProviderWrapper } from './i18n-provider'
  * Check if running in Tauri environment
  */
 function isTauri(): boolean {
-  return typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+  return (
+    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+  )
 }
 
 export default function App() {

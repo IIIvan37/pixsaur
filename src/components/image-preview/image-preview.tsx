@@ -86,8 +86,9 @@ const ImagePreview = () => {
     if (!previewImage) return
 
     // Check if running in Tauri
-    const isTauri = typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-    
+    const isTauri =
+      typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+
     if (isTauri) {
       // In Tauri, don't open in new tab - it would open in system browser
       logger.debug('[ImagePreview] Canvas click ignored in Tauri mode')

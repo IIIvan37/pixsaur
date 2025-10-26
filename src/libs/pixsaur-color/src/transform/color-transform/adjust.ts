@@ -59,7 +59,7 @@ export function applyAdjustmentsInOnePass(
 
     // Étape 4: Exposure (stops)
     if (exposure !== 0) {
-      const expFactor = Math.pow(2, exposure)
+      const expFactor = 2 ** exposure
       r *= expFactor
       g *= expFactor
       b *= expFactor
@@ -98,9 +98,9 @@ export function applyAdjustmentsInOnePass(
 
     // Étape 7: Gamma correction
     if (gamma !== 1) {
-      r = Math.pow(Math.max(0, r / 255), 1 / gamma) * 255
-      g = Math.pow(Math.max(0, g / 255), 1 / gamma) * 255
-      b = Math.pow(Math.max(0, b / 255), 1 / gamma) * 255
+      r = Math.max(0, r / 255) ** (1 / gamma) * 255
+      g = Math.max(0, g / 255) ** (1 / gamma) * 255
+      b = Math.max(0, b / 255) ** (1 / gamma) * 255
     }
 
     // Étape 8: Contraste

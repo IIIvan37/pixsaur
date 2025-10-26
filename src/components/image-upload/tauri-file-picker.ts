@@ -33,7 +33,7 @@ export async function pickImageFileTauri(): Promise<string | null> {
 
     // Read file content
     const contents = await readFile(filePath)
-    
+
     // Detect MIME type from file extension
     const ext = filePath.split('.').pop()?.toLowerCase() || ''
     const mimeTypes: Record<string, string> = {

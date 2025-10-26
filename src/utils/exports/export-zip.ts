@@ -239,13 +239,17 @@ export async function exportZip(
 
   // 5. Finalisation et téléchargement
   const zipBlob = await zip.generateAsync({ type: 'blob' })
-  
+
   // Check if running in Tauri (desktop) or web
-  const isTauri = typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-  
+  const isTauri =
+    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+
   if (isTauri) {
     // Use Tauri's native file dialog and save
-    await saveZipFileTauri(zipBlob, `${config.filename || 'pixsaur-export'}.zip`)
+    await saveZipFileTauri(
+      zipBlob,
+      `${config.filename || 'pixsaur-export'}.zip`
+    )
   } else {
     // Use browser download
     const url = URL.createObjectURL(zipBlob)

@@ -12,7 +12,9 @@ export type ImageUploadProps = {
  */
 function isTauri(): boolean {
   // Check if we're in a Tauri context by trying to access window.__TAURI_INTERNALS__
-  return typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+  return (
+    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+  )
 }
 
 export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
@@ -23,11 +25,12 @@ export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
         try {
           const { pickImageFileTauri } = await import('./tauri-file-picker')
           const dataUrl = await pickImageFileTauri()
-          
+
           if (dataUrl) {
             const img = new Image()
             img.onload = () => onImageLoaded(img)
-            img.onerror = (e) => console.error('[ImageUpload] Image load failed:', e)
+            img.onerror = (e) =>
+              console.error('[ImageUpload] Image load failed:', e)
             img.src = dataUrl
           }
         } catch (error) {

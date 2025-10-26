@@ -95,7 +95,7 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
       img.onload = () => resolve(img)
 
       img.src = reader.result as string
-      
+
       if (file.type === 'image/svg+xml') {
         logger.debug('Processing SVG file')
         getSvgDimensions(file)
@@ -103,7 +103,9 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
             img.width = dimensions.width
             img.height = dimensions.height
           })
-          .catch((error) => reject(error instanceof Error ? error : new Error(String(error))))
+          .catch((error) =>
+            reject(error instanceof Error ? error : new Error(String(error)))
+          )
       }
     }
     reader.readAsDataURL(file)

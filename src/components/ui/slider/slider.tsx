@@ -44,13 +44,13 @@ export default function PixsaurSlider({
           <span className={styles.label}>{label}</span>
           {description && (
             <button
-              type="button"
+              type='button'
               className={styles.infoIcon}
               onMouseEnter={() => setDescTooltipVisible(true)}
               onMouseLeave={() => setDescTooltipVisible(false)}
               onFocus={() => setDescTooltipVisible(true)}
               onBlur={() => setDescTooltipVisible(false)}
-              aria-label="Information"
+              aria-label='Information'
             >
               ⓘ
             </button>

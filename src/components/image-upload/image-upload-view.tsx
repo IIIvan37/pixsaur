@@ -41,7 +41,7 @@ export const ImageUploadView = ({
       onUpload(files)
     }
   }
-  
+
   const handleClick = (e: React.MouseEvent) => {
     // In Tauri mode, prevent default and trigger native dialog
     if (isTauri) {
@@ -67,7 +67,7 @@ export const ImageUploadView = ({
   const defaultHelpText = _(
     msg`Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG`
   )
-  
+
   const rootProps = getRootProps()
 
   return (
@@ -77,7 +77,7 @@ export const ImageUploadView = ({
         isDragActive ? styles.dropzoneActive : ''
       }`}
       onClick={isTauri ? handleClick : rootProps.onClick}
-      role="button"
+      role='button'
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

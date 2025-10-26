@@ -1,6 +1,6 @@
-import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
-import { useEffect, useState, useCallback } from 'react'
+import { check } from '@tauri-apps/plugin-updater'
+import { useCallback, useEffect, useState } from 'react'
 
 /**
  * Auto-updater component for Tauri desktop app
@@ -14,7 +14,7 @@ export const Updater = () => {
   const checkForUpdates = useCallback(async () => {
     try {
       const update = await check()
-      
+
       if (update?.available) {
         setUpdateAvailable(true)
         setUpdateVersion(update.version)
@@ -32,10 +32,10 @@ export const Updater = () => {
     try {
       setDownloading(true)
       const update = await check()
-      
+
       if (update?.available) {
         await update.downloadAndInstall()
-        
+
         // Relaunch the app to apply the update
         await relaunch()
       }
@@ -50,22 +50,24 @@ export const Updater = () => {
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 20,
-      right: 20,
-      padding: '16px 24px',
-      background: '#4CAF50',
-      color: 'white',
-      borderRadius: 8,
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-      zIndex: 9999
-    }}>
+    <div
+      style={{
+        position: 'fixed',
+        top: 20,
+        right: 20,
+        padding: '16px 24px',
+        background: '#4CAF50',
+        color: 'white',
+        borderRadius: 8,
+        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+        zIndex: 9999
+      }}
+    >
       <p style={{ margin: 0, marginBottom: 8, fontWeight: 'bold' }}>
         Update available: v{updateVersion}
       </p>
       <button
-        type="button"
+        type='button'
         onClick={installUpdate}
         disabled={downloading}
         style={{

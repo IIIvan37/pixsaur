@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro'
-import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import type { AdjustementKey } from '@/app/store/config/types'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -35,7 +35,14 @@ const sections: AdjustmentSection[] = [
   {
     id: 'exposure',
     title: <Trans>Exposition & Tonalité</Trans>,
-    keys: ['exposure', 'brightness', 'contrast', 'highlights', 'shadows', 'gamma']
+    keys: [
+      'exposure',
+      'brightness',
+      'contrast',
+      'highlights',
+      'shadows',
+      'gamma'
+    ]
   },
   {
     id: 'effects',
@@ -46,80 +53,109 @@ const sections: AdjustmentSection[] = [
 
 // Définition des ajustements RGB (avec labels)
 const labels: RangeLabels[] = [
-  { 
-    key: 'red', 
+  {
+    key: 'red',
     label: <Trans>Rouge</Trans>,
     description: <Trans>Multiplie le canal rouge (0-2x)</Trans>
   },
-  { 
-    key: 'green', 
+  {
+    key: 'green',
     label: <Trans>Vert</Trans>,
     description: <Trans>Multiplie le canal vert (0-2x)</Trans>
   },
-  { 
-    key: 'blue', 
+  {
+    key: 'blue',
     label: <Trans>Bleu</Trans>,
     description: <Trans>Multiplie le canal bleu (0-2x)</Trans>
   },
-  { 
-    key: 'brightness', 
+  {
+    key: 'brightness',
     label: <Trans>Luminosité</Trans>,
     description: <Trans>Ajuste la clarté globale de l'image</Trans>
   },
-  { 
-    key: 'contrast', 
+  {
+    key: 'contrast',
     label: <Trans>Contraste</Trans>,
-    description: <Trans>Ajuste la différence entre les tons clairs et foncés</Trans>
+    description: (
+      <Trans>Ajuste la différence entre les tons clairs et foncés</Trans>
+    )
   },
-  { 
-    key: 'saturation', 
+  {
+    key: 'saturation',
     label: <Trans>Saturation</Trans>,
-    description: <Trans>Intensité des couleurs (0 = noir et blanc, 2 = très saturé)</Trans>
+    description: (
+      <Trans>Intensité des couleurs (0 = noir et blanc, 2 = très saturé)</Trans>
+    )
   },
-  { 
-    key: 'hue', 
+  {
+    key: 'hue',
     label: <Trans>Teinte</Trans>,
-    description: <Trans>Rotation des couleurs sur le cercle chromatique (-180° à +180°)</Trans>
+    description: (
+      <Trans>
+        Rotation des couleurs sur le cercle chromatique (-180° à +180°)
+      </Trans>
+    )
   },
-  { 
-    key: 'vibrance', 
+  {
+    key: 'vibrance',
     label: <Trans>Vibrance</Trans>,
-    description: <Trans>Saturation intelligente qui booste les couleurs ternes sans sur-saturer</Trans>
+    description: (
+      <Trans>
+        Saturation intelligente qui booste les couleurs ternes sans sur-saturer
+      </Trans>
+    )
   },
-  { 
-    key: 'temperature', 
+  {
+    key: 'temperature',
     label: <Trans>Température</Trans>,
     description: <Trans>Balance bleu/orange (-100 = froid, +100 = chaud)</Trans>
   },
-  { 
-    key: 'tint', 
+  {
+    key: 'tint',
     label: <Trans>Teinte colorée</Trans>,
-    description: <Trans>Balance vert/magenta pour corriger les dominantes de couleur</Trans>
+    description: (
+      <Trans>
+        Balance vert/magenta pour corriger les dominantes de couleur
+      </Trans>
+    )
   },
-  { 
-    key: 'gamma', 
+  {
+    key: 'gamma',
     label: <Trans>Gamma</Trans>,
-    description: <Trans>Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)</Trans>
+    description: (
+      <Trans>
+        Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)
+      </Trans>
+    )
   },
-  { 
-    key: 'exposure', 
+  {
+    key: 'exposure',
     label: <Trans>Exposition</Trans>,
-    description: <Trans>Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)</Trans>
+    description: (
+      <Trans>
+        Simule les stops photographiques (-3 à +3, ±1 = double/moitié de
+        lumière)
+      </Trans>
+    )
   },
-  { 
-    key: 'highlights', 
+  {
+    key: 'highlights',
     label: <Trans>Hautes lumières</Trans>,
     description: <Trans>Ajuste uniquement les zones claires de l'image</Trans>
   },
-  { 
-    key: 'shadows', 
+  {
+    key: 'shadows',
     label: <Trans>Ombres</Trans>,
     description: <Trans>Ajuste uniquement les zones sombres de l'image</Trans>
   },
-  { 
-    key: 'posterization', 
+  {
+    key: 'posterization',
     label: <Trans>Posterisation</Trans>,
-    description: <Trans>Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)</Trans>
+    description: (
+      <Trans>
+        Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)
+      </Trans>
+    )
   }
 ]
 
@@ -161,7 +197,7 @@ export const AdjustementsView = ({
   const renderSlider = (adj: RangeLabels) => {
     const settings = adjustments[adj.key]
     if (!settings) return null
-    
+
     return (
       <PixsaurSlider
         showTooltip
@@ -196,7 +232,7 @@ export const AdjustementsView = ({
           return (
             <div key={section.id} className={styles.section}>
               <button
-                type="button"
+                type='button'
                 className={styles.sectionHeader}
                 onClick={() => toggleSection(section.id)}
                 disabled={disabled}

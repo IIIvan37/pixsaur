@@ -40,7 +40,7 @@ export async function saveTauriFile(
   } else {
     uint8Data = data
   }
-  
+
   try {
     // Write file using Tauri's fs API
     await writeFile(filePath, uint8Data)
