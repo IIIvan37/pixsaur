@@ -2,6 +2,7 @@ import { atom } from 'jotai'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { CPCHardware } from '@/libs/types'
+import { logger } from '@/utils/logger'
 import { validateCustomDimensions } from '@/utils/validate-custom-dimensions'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
@@ -355,12 +356,12 @@ export const setTargetDimensionsAtom = atom(
     )
 
     if (validation.valid) {
-      console.log(
-        `✅ [TARGET DIMENSIONS] Mode ${mode}: ${newDimensions.width}×${newDimensions.height} = ${validation.kb.toFixed(2)} Ko (${validation.widthInBytes} bytes/line)`
+      logger.debug(
+        `[TARGET DIMENSIONS] Mode ${mode}: ${newDimensions.width}×${newDimensions.height} = ${validation.kb.toFixed(2)} Ko`
       )
     } else {
-      console.warn(
-        `⚠️ [TARGET DIMENSIONS] Mode ${mode} invalid:`,
+      logger.warn(
+        `[TARGET DIMENSIONS] Mode ${mode} invalid:`,
         validation.errors
       )
     }

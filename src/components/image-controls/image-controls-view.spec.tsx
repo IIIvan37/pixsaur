@@ -97,7 +97,7 @@ describe('ImageControlsView', () => {
   })
 
   it('should show target dimensions panel for mode 0', () => {
-    renderWithI18n(<ImageControlsView {...props} mode='0' />)
+    renderWithI18n(<ImageControlsView {...props} />)
 
     // Target dimensions panel is always visible in new architecture
     expect(screen.queryByLabelText(/Width/)).toBeInTheDocument()
@@ -105,7 +105,7 @@ describe('ImageControlsView', () => {
   })
 
   it('should show target dimensions panel for mode 1', () => {
-    renderWithI18n(<ImageControlsView {...props} mode='1' />)
+    renderWithI18n(<ImageControlsView {...props} />)
 
     // Target dimensions panel is always visible in new architecture
     expect(screen.queryByLabelText(/Width/)).toBeInTheDocument()
@@ -113,7 +113,7 @@ describe('ImageControlsView', () => {
   })
 
   it('should show target dimensions panel for mode 0 with presets', () => {
-    renderWithI18n(<ImageControlsView {...props} mode='0' />)
+    renderWithI18n(<ImageControlsView {...props} />)
 
     // Should find width/height inputs from TargetDimensions
     expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
@@ -121,14 +121,14 @@ describe('ImageControlsView', () => {
   })
 
   it('should show target dimensions panel for mode 1', () => {
-    renderWithI18n(<ImageControlsView {...props} mode='1' />)
+    renderWithI18n(<ImageControlsView {...props} />)
 
     expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
     expect(screen.getByLabelText(/Height/)).toBeInTheDocument()
   })
 
   it('should show target dimensions panel for mode 2', () => {
-    renderWithI18n(<ImageControlsView {...props} mode='2' />)
+    renderWithI18n(<ImageControlsView {...props} />)
 
     expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
     expect(screen.getByLabelText(/Height/)).toBeInTheDocument()

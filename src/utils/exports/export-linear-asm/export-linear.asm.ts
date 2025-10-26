@@ -1,11 +1,11 @@
-import type { CpcModeConfigWithDimensions } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/app/store/config/types'
 import { encodeByte } from '../encode-byte'
 
 const MAX_CHUNK_SIZE = 16 * 1024 // 16 Ko
 
 export function exportLinearAsm(
   indexBuf: Uint8Array,
-  modeConfig: CpcModeConfigWithDimensions
+  modeConfig: CpcModeConfig & { width: number; height: number }
 ): Uint8Array {
   const pixelsPerByte = [2, 4, 8][modeConfig.mode]
   const data = new Uint8Array(
