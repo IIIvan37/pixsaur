@@ -67,11 +67,11 @@ function resizeOrigin(
 ): HTMLCanvasElement {
   // Calculate target dimensions - use normalized size for aspect ratio correction
   const { width: targetWidth, height: targetHeight } = getNormalizedTargetSize(
-    config.cpcMode
+    config.modeConfig
   )
 
   console.log('🎯 [RESIZE ORIGIN]', {
-    cpcMode: config.cpcMode,
+    modeConfig: config.modeConfig,
     targetWidth,
     targetHeight,
     selectionWidth: selection.width,

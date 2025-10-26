@@ -4,6 +4,7 @@ import type { CPCHardware } from '@/libs/types'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
 import { ToggleButtonGroup } from '../ui/toggle-button-group'
+import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
 import styles from './image-controls.module.css'
 import { ProcessorSelector } from './processor-selector/processor-selector'
@@ -46,13 +47,14 @@ export function ImageControlsView({
     { value: 2, label: 'Mode 2' }
   ]
 
-  // Dimension preset options (standard, overscan)
+  // Dimension preset options (standard, overscan, custom)
   const dimensionPresetOptions: Array<{
     value: DimensionPreset
     label: string
   }> = [
     { value: 'standard', label: 'Standard' },
-    { value: 'overscan', label: 'Overscan' }
+    { value: 'overscan', label: 'Overscan' },
+    { value: 'custom', label: 'Custom' }
   ]
 
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
@@ -97,6 +99,9 @@ export function ImageControlsView({
           ariaLabelPrefix='Dimensions'
         />
       </Flex>
+
+      {/* Show custom dimensions input when custom preset is selected */}
+      {dimensionPreset === 'custom' && <CustomDimensionsInput />}
 
       <DitheringSelector />
 

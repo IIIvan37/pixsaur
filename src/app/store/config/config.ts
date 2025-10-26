@@ -8,12 +8,19 @@ import type { ResizeMode } from './resize-types'
 import type {
   AdjustementKey,
   ContrastStrategy,
+  CpcModeConfig,
   CpcModeKey,
+  CustomDimensions,
   DimensionPreset,
   PixelMode,
   ProcessorType
 } from './types'
-import { buildCpcModeKey, parseCpcModeKey } from './types'
+import {
+  buildCpcModeKey,
+  buildCustomModeConfig,
+  CPC_MODE_CONFIG,
+  parseCpcModeKey
+} from './types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {
@@ -66,15 +73,28 @@ export const modeAtom = atom<CpcModeKey>('0')
 // Pixel mode atom - controls pixel aspect ratio (0, 1, or 2)
 export const pixelModeAtom = atom<PixelMode>(0)
 
-// Dimension preset atom - controls dimensions (standard or overscan)
+// Dimension preset atom - controls dimensions (standard, overscan, or custom)
 export const dimensionPresetAtom = atom<DimensionPreset>('standard')
 
+// Custom dimensions atom - only used when dimensionPreset is 'custom'
+export const customDimensionsAtom = atom<CustomDimensions>({
+  width: 160,
+  height: 200
+})
+
 // Derived atom that combines pixelMode + dimensionPreset into legacy CpcModeKey
+// For 'custom' preset, returns the base mode ('0', '1', or '2')
 // This maintains backward compatibility with existing code
 export const derivedModeAtom = atom(
   (get) => {
     const pixelMode = get(pixelModeAtom)
     const dimensionPreset = get(dimensionPresetAtom)
+
+    // For custom dimensions, return base mode key
+    if (dimensionPreset === 'custom') {
+      return pixelMode.toString() as CpcModeKey
+    }
+
     return buildCpcModeKey(pixelMode, dimensionPreset)
   },
   (_get, set, payload: CpcModeKey) => {
@@ -85,18 +105,97 @@ export const derivedModeAtom = atom(
   }
 )
 
+// Helper: Get pixels per byte for a given mode
+const getPixelsPerByte = (mode: PixelMode): number => {
+  if (mode === 0) return 2 // Mode 0: 2 pixels per byte
+  if (mode === 1) return 4 // Mode 1: 4 pixels per byte
+  return 8 // Mode 2: 8 pixels per byte
+}
+
+// Helper: Calculate width step based on pixel mode
+const getWidthStepForMode = (mode: PixelMode): number => {
+  if (mode === 0) return 4
+  if (mode === 1) return 8
+  return 16
+}
+
 // Setter for pixel mode only
-export const setPixelModeAtom = atom(null, (_get, set, payload: PixelMode) => {
+// When in custom dimensions mode, adjusts width to maintain same byte count
+export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
+  const dimensionPreset = get(dimensionPresetAtom)
+  const previousMode = get(pixelModeAtom)
+
   set(pixelModeAtom, payload)
+
+  // If in custom mode and mode changed, adjust width to keep same byte count
+  if (dimensionPreset === 'custom' && previousMode !== payload) {
+    const currentDimensions = get(customDimensionsAtom)
+    const currentWidth = currentDimensions.width
+
+    // Calculate current byte width
+    const currentPixelsPerByte = getPixelsPerByte(previousMode)
+    const byteWidth = currentWidth / currentPixelsPerByte
+
+    // Calculate new pixel width for same byte count
+    const newPixelsPerByte = getPixelsPerByte(payload)
+    const newWidth = byteWidth * newPixelsPerByte
+
+    // Round to nearest valid step
+    const widthStep = getWidthStepForMode(payload)
+    const adjustedWidth = Math.round(newWidth / widthStep) * widthStep
+
+    // Clamp to valid range
+    const finalWidth = Math.max(4, Math.min(768, adjustedWidth))
+
+    set(customDimensionsAtom, {
+      ...currentDimensions,
+      width: finalWidth
+    })
+  }
 })
 
 // Setter for dimension preset only
+// When switching to 'custom', inherit current effective dimensions
 export const setDimensionPresetAtom = atom(
   null,
-  (_get, set, payload: DimensionPreset) => {
+  (get, set, payload: DimensionPreset) => {
+    const currentPreset = get(dimensionPresetAtom)
+
+    // If switching TO custom mode, inherit current dimensions
+    if (payload === 'custom' && currentPreset !== 'custom') {
+      const currentConfig = get(effectiveModeConfigAtom)
+      set(customDimensionsAtom, {
+        width: currentConfig.width,
+        height: currentConfig.height
+      })
+    }
+
     set(dimensionPresetAtom, payload)
   }
 )
+
+// Setter for custom dimensions
+export const setCustomDimensionsAtom = atom(
+  null,
+  (_get, set, payload: CustomDimensions) => {
+    set(customDimensionsAtom, payload)
+  }
+)
+
+// Derived atom that returns the complete CPC mode configuration
+// Handles custom dimensions when dimensionPreset is 'custom'
+export const effectiveModeConfigAtom = atom((get): CpcModeConfig => {
+  const pixelMode = get(pixelModeAtom)
+  const dimensionPreset = get(dimensionPresetAtom)
+  const customDimensions = get(customDimensionsAtom)
+
+  if (dimensionPreset === 'custom') {
+    return buildCustomModeConfig(pixelMode, customDimensions)
+  }
+
+  const modeKey = buildCpcModeKey(pixelMode, dimensionPreset)
+  return CPC_MODE_CONFIG[modeKey]
+})
 
 // ============================================================================
 // COLOR SPACE AND DITHERING

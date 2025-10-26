@@ -16,10 +16,9 @@ import {
   cpcHardwareAtom,
   derivedModeAtom,
   ditheringAtom,
+  effectiveModeConfigAtom,
   resizeModeAtom
 } from '../config/config'
-import type { CPCMode } from '../config/resize-types'
-import { CPC_MODE_CONFIG } from '../config/types'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
 
@@ -45,7 +44,7 @@ export const previewCanvasSizeAtom = atom((get) => {
   if (!containerWidth) return { width: 0, height: 0 }
 
   // Obtenir la configuration du mode CPC pour le pixel aspect ratio
-  const modeConfig = CPC_MODE_CONFIG[mode]
+  const modeConfig = get(effectiveModeConfigAtom)
 
   // En mode origin, utiliser les dimensions normalisées (160/320/640)
   // En mode auto, utiliser les dimensions du mode config
@@ -95,8 +94,7 @@ export const croppedImageAtom = atom(async (get) => {
 export const resizedImageAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const resizeMode = get(resizeModeAtom)
-  const cpcModeKey = get(derivedModeAtom)
-  const cpcMode = Number.parseInt(cpcModeKey, 10) as CPCMode
+  const modeConfig = get(effectiveModeConfigAtom)
   const centerImage = get(centerImageAtom)
 
   if (!cropped) {
@@ -127,7 +125,7 @@ export const resizedImageAtom = atom(async (get) => {
       relativeSelection,
       {
         mode: resizeMode,
-        cpcMode
+        modeConfig
       },
       centerImage
     )
@@ -184,7 +182,6 @@ export const quantizerAtom = atom(async (get) => {
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
   const processed = await get(resizedImageAtom)
-  const mode = get(derivedModeAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
   const contrastStrategy = get(contrastStrategyAtom)
@@ -201,7 +198,8 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const basePalette = getPaletteForHardware(cpcHardware)
 
   // 🎯 Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
-  const targetColors = CPC_MODE_CONFIG[mode].nColors
+  const modeConfig = get(effectiveModeConfigAtom)
+  const targetColors = modeConfig.nColors
 
   // 🎯 Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
   const quantifyToCPCPlus = (value: number): number => {
@@ -253,6 +251,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 // 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
   const mode = get(derivedModeAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
   const quantizer = await get(quantizerAtom)
   const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
@@ -283,7 +282,7 @@ export const previewImageAtom = atom(async (get) => {
   const normalized =
     resizeMode === 'origin'
       ? processed // Utiliser directement l'image sans normalisation
-      : getVisualRegionNormalized(processed, mode)
+      : getVisualRegionNormalized(processed, modeConfig)
 
   if (!normalized) return null
 
@@ -329,7 +328,7 @@ export const previewImageAtom = atom(async (get) => {
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {
     logger.time('  📐 Positioning (auto mode)')
-    const modeConfig = CPC_MODE_CONFIG[mode]
+    const modeConfig = get(effectiveModeConfigAtom)
     const targetWidth = modeConfig.width
     const targetHeight = modeConfig.height
 
@@ -468,7 +467,7 @@ function quantifyCPCPlusWithLocked(
 export const reducedPaletteRgbAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
-  const mode = get(derivedModeAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
 
   // Colors are already in RGB format, no conversion needed
   const projected = [...raw] // Create a copy to avoid mutating original
@@ -486,7 +485,7 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   }
 
   // S'assurer qu'on ne dépasse jamais la limite finale
-  const maxColors = CPC_MODE_CONFIG[mode].nColors
+  const maxColors = modeConfig.nColors
   if (projected.length > maxColors) {
     // Tronquer à maxColors (les couleurs lockées sont déjà en tête grâce au quantizer)
     projected.splice(maxColors)

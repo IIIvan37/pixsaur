@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ResizeConfig } from '@/app/store/config/resize-types'
+import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import { applyResize, extractSelection, type Selection } from './image-resize'
 
 // Mock canvas for testing (happy-dom doesn't support 2D context fully)
@@ -40,7 +41,7 @@ describe('image-resize', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'auto',
-        cpcMode: 0 // Mode 0: 160×200
+        modeConfig: CPC_MODE_CONFIG['0'] // Mode 0: 160×200
       }
 
       const result = applyResize(source, testSelection, config)
@@ -53,7 +54,7 @@ describe('image-resize', () => {
       const source = createMockCanvas(100, 100)
       const config: ResizeConfig = {
         mode: 'auto',
-        cpcMode: 1 // Mode 1: 320×200
+        modeConfig: CPC_MODE_CONFIG['1'] // Mode 1: 320×200
       }
 
       const result = applyResize(source, testSelection, config)
@@ -69,7 +70,7 @@ describe('image-resize', () => {
       const selection: Selection = { sx: 0, sy: 0, width: 50, height: 50 }
       const config: ResizeConfig = {
         mode: 'origin',
-        cpcMode: 0 // Mode 0: 320×200 (normalized with ratio)
+        modeConfig: CPC_MODE_CONFIG['0'] // Mode 0: 320×200 (normalized with ratio)
       }
 
       const result = applyResize(source, selection, config)
@@ -83,7 +84,7 @@ describe('image-resize', () => {
       const selection: Selection = { sx: 0, sy: 0, width: 200, height: 200 }
       const config: ResizeConfig = {
         mode: 'origin',
-        cpcMode: 1 // Mode 1: 320×200 (using mode 1 for different dimensions)
+        modeConfig: CPC_MODE_CONFIG['1'] // Mode 1: 320×200 (using mode 1 for different dimensions)
       }
 
       const result = applyResize(source, selection, config)

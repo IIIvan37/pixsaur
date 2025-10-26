@@ -1,8 +1,14 @@
 // Pixel mode represents ONLY the pixel aspect ratio (not dimensions)
 export type PixelMode = 0 | 1 | 2
 
-// Dimension preset type (standard or overscan)
-export type DimensionPreset = 'standard' | 'overscan'
+// Dimension preset type (standard, overscan, or custom)
+export type DimensionPreset = 'standard' | 'overscan' | 'custom'
+
+// Custom dimensions configuration
+export interface CustomDimensions {
+  width: number
+  height: number
+}
 
 // Legacy CpcModeKey for backward compatibility (will be deprecated)
 export type CpcModeKey =
@@ -89,18 +95,38 @@ export const CPC_MODE_CONFIG: Record<CpcModeKey, CpcModeConfig> = {
 
 /**
  * Helper function to build a CpcModeKey from pixel mode and dimension preset
+ * Note: This only works for 'standard' and 'overscan' presets, not 'custom'
  * @param pixelMode - The pixel aspect ratio mode (0, 1, or 2)
  * @param dimensionPreset - The dimension preset ('standard' or 'overscan')
  * @returns The combined CpcModeKey
  */
 export function buildCpcModeKey(
   pixelMode: PixelMode,
-  dimensionPreset: DimensionPreset
+  dimensionPreset: Exclude<DimensionPreset, 'custom'>
 ): CpcModeKey {
   if (dimensionPreset === 'standard') {
     return pixelMode.toString() as CpcModeKey
   }
   return `${pixelMode}-overscan` as CpcModeKey
+}
+
+/**
+ * Helper function to build CpcModeConfig from pixel mode and custom dimensions
+ * @param pixelMode - The pixel aspect ratio mode (0, 1, or 2)
+ * @param dimensions - Custom width and height
+ * @returns Complete CpcModeConfig for custom dimensions
+ */
+export function buildCustomModeConfig(
+  pixelMode: PixelMode,
+  dimensions: CustomDimensions
+): CpcModeConfig {
+  const baseConfig = CPC_MODE_CONFIG[pixelMode.toString() as CpcModeKey]
+  return {
+    ...baseConfig,
+    width: dimensions.width,
+    height: dimensions.height,
+    overscan: false // Custom dimensions don't use overscan flag
+  }
 }
 
 /**

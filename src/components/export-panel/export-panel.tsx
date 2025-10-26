@@ -1,7 +1,9 @@
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
-import { cpcHardwareAtom, derivedModeAtom } from '@/app/store/config/config'
-import { CPC_MODE_CONFIG } from '@/app/store/config/types'
+import {
+  cpcHardwareAtom,
+  effectiveModeConfigAtom
+} from '@/app/store/config/config'
 import {
   previewImageAtom,
   reducedPaletteRgbAtom
@@ -18,7 +20,7 @@ export default function ExportPanel() {
   const image = useAtomValue(previewImageAtom)
   const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
-  const mode = useAtomValue(derivedModeAtom)
+  const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const handleExport = async (config: ExportConfig) => {
@@ -89,8 +91,6 @@ export default function ExportPanel() {
     canvas.height = cleanImage.height
     const ctx = canvas.getContext('2d')
     ctx?.putImageData(cleanImage, 0, 0)
-
-    const modeConfig = CPC_MODE_CONFIG[mode]
 
     // Generate ZIP with selected content
     exportZip(

@@ -25,27 +25,16 @@ export function ImagePreviewView({
 }: ImagePreviewViewProps) {
   if (!image) {
     return (
-      <div className={styles.container}>
-        <div className={`${styles.container} ${styles.emptyContainer}`}>
-          <p className={styles.emptyText}>
-            <Trans>Aucune image traitée</Trans>
-          </p>
-        </div>
+      <div className={`${styles.container} ${styles.emptyContainer}`}>
+        <p className={styles.emptyText}>
+          <Trans>Aucune image traitée</Trans>
+        </p>
       </div>
     )
   }
 
   return (
-    <div
-      ref={containerRefCallback}
-      className={styles.container}
-      style={{
-        width: '100%',
-        alignSelf: 'stretch',
-
-        maxHeight: '100%' // permet de s'étendre au besoin
-      }}
-    >
+    <div ref={containerRefCallback} className={styles.container}>
       <canvas
         ref={ref}
         width={width}
@@ -53,7 +42,7 @@ export function ImagePreviewView({
         style={{
           width: '100%',
           height: '100%',
-
+          objectFit: 'contain',
           display: 'block'
         }}
       />
