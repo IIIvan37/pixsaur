@@ -85,6 +85,15 @@ const ImagePreview = () => {
   const handleCanvasClick = useCallback(() => {
     if (!previewImage) return
 
+    // Check if running in Tauri
+    const isTauri = typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+    
+    if (isTauri) {
+      // In Tauri, don't open in new tab - it would open in system browser
+      logger.debug('[ImagePreview] Canvas click ignored in Tauri mode')
+      return
+    }
+
     // Calculate aspect ratio correction based on mode
     const widthMultiplier = modeConfig.mode === 0 ? 2 : 1
     const heightMultiplier = modeConfig.mode === 2 ? 2 : 1
