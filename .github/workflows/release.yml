@@ -8,48 +8,95 @@ on:
 
 jobs:
   build:
+    runs-on: ${{ matrix.platform }}
+    
     strategy:
       fail-fast: false
       matrix:
         platform: [ubuntu-22.04, windows-latest, macos-latest]
-
-    runs-on: ${{ matrix.platform }}
     
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        run: |
+          git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY .
+          git checkout $GITHUB_SHA
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+        if: matrix.platform == 'ubuntu-22.04'
+
+      - name: Setup Node.js (Windows)
+        run: |
+          choco install nodejs --version=20.11.0 -y
+        if: matrix.platform == 'windows-latest'
+
+      - name: Setup Node.js (macOS)
+        run: |
+          brew install node@20
+        if: matrix.platform == 'macos-latest'
 
       - name: Install pnpm
-        run: npm install -g pnpm@10.11.0
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.11.0 --activate
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust (Ubuntu)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source "$HOME/.cargo/env"
 
-      - name: Install dependencies (Ubuntu only)
+      - name: Install Rust (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          choco install rust -y
+
+      - name: Install Rust (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source "$HOME/.cargo/env"
+
+      - name: Install system dependencies (Ubuntu)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y \
+            pkg-config \
+            libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: pnpm install
 
-      - name: Build application
+      - name: Build Tauri application
         run: pnpm tauri:build
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: pixsaur-${{ matrix.platform }}
-          path: |
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/release/bundle/macos/*.app
+      - name: Upload artifacts (Ubuntu)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          mkdir -p artifacts
+          cp src-tauri/target/release/bundle/appimage/*.AppImage artifacts/ || true
+          cp src-tauri/target/release/bundle/deb/*.deb artifacts/ || true
+
+      - name: Upload artifacts (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          mkdir artifacts
+          copy src-tauri\target\release\bundle\msi\*.msi artifacts\ || echo "No MSI"
+          copy src-tauri\target\release\bundle\nsis\*.exe artifacts\ || echo "No NSIS"
+
+      - name: Upload artifacts (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          mkdir -p artifacts
+          cp src-tauri/target/release/bundle/dmg/*.dmg artifacts/ || true
