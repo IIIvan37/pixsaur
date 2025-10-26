@@ -1,3 +1,10 @@
+// Pixel mode represents ONLY the pixel aspect ratio (not dimensions)
+export type PixelMode = 0 | 1 | 2
+
+// Dimension preset type (standard or overscan)
+export type DimensionPreset = 'standard' | 'overscan'
+
+// Legacy CpcModeKey for backward compatibility (will be deprecated)
 export type CpcModeKey =
   | '0'
   | '1'
@@ -77,6 +84,39 @@ export const CPC_MODE_CONFIG: Record<CpcModeKey, CpcModeConfig> = {
     nColors: 2,
     scaleX: 1,
     scaleY: 2
+  }
+}
+
+/**
+ * Helper function to build a CpcModeKey from pixel mode and dimension preset
+ * @param pixelMode - The pixel aspect ratio mode (0, 1, or 2)
+ * @param dimensionPreset - The dimension preset ('standard' or 'overscan')
+ * @returns The combined CpcModeKey
+ */
+export function buildCpcModeKey(
+  pixelMode: PixelMode,
+  dimensionPreset: DimensionPreset
+): CpcModeKey {
+  if (dimensionPreset === 'standard') {
+    return pixelMode.toString() as CpcModeKey
+  }
+  return `${pixelMode}-overscan` as CpcModeKey
+}
+
+/**
+ * Helper function to extract pixel mode and dimension preset from a CpcModeKey
+ * @param modeKey - The combined CpcModeKey
+ * @returns Object with pixelMode and dimensionPreset
+ */
+export function parseCpcModeKey(modeKey: CpcModeKey): {
+  pixelMode: PixelMode
+  dimensionPreset: DimensionPreset
+} {
+  const isOverscan = modeKey.includes('-overscan')
+  const pixelMode = Number.parseInt(modeKey[0], 10) as PixelMode
+  return {
+    pixelMode,
+    dimensionPreset: isOverscan ? 'overscan' : 'standard'
   }
 }
 

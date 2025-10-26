@@ -1,8 +1,8 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, it, vi } from 'vitest'
-import { renderWithI18n } from '@/utils/test-utils'
 import { CPCHardware } from '@/libs/types'
+import { renderWithI18n } from '@/utils/test-utils'
 import {
   ImageControlsView,
   type ImageControlsViewProps
@@ -38,40 +38,61 @@ vi.mock('@/components/ui/slider', () => ({
 }))
 
 describe('ImageControlsView', () => {
-  let onModeChange: ReturnType<typeof vi.fn>
+  let onPixelModeChange: ReturnType<typeof vi.fn>
+  let onDimensionPresetChange: ReturnType<typeof vi.fn>
   let onCpcHardwareChange: ReturnType<typeof vi.fn>
   let props: ImageControlsViewProps
 
   beforeEach(() => {
-    onModeChange = vi.fn()
+    onPixelModeChange = vi.fn()
+    onDimensionPresetChange = vi.fn()
     onCpcHardwareChange = vi.fn()
     props = {
-      mode: '0',
-      onModeChange,
+      pixelMode: 0,
+      onPixelModeChange,
+      dimensionPreset: 'standard',
+      onDimensionPresetChange,
       cpcHardware: CPCHardware.CLASSIC,
       onCpcHardwareChange
     }
   })
 
-  it('renders mode buttons and highlights the active one', () => {
+  it('renders pixel mode buttons and highlights the active one', () => {
     renderWithI18n(<ImageControlsView {...props} />)
-    expect(screen.getByRole('button', { name: /^Mode 0$/i })).toHaveAttribute(
-      'aria-pressed',
-      'true'
-    )
-    expect(screen.getByRole('button', { name: /^Mode 1$/i })).toHaveAttribute(
-      'aria-pressed',
-      'false'
-    )
-    expect(screen.getByRole('button', { name: /^Mode 2$/i })).toHaveAttribute(
-      'aria-pressed',
-      'false'
-    )
+    expect(
+      screen.getByRole('button', { name: /Pixel Mode Mode 0/i })
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(
+      screen.getByRole('button', { name: /Pixel Mode Mode 1/i })
+    ).toHaveAttribute('aria-pressed', 'false')
+    expect(
+      screen.getByRole('button', { name: /Pixel Mode Mode 2/i })
+    ).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('calls onModeChange when a mode button is clicked', async () => {
+  it('calls onPixelModeChange when a mode button is clicked', async () => {
     renderWithI18n(<ImageControlsView {...props} />)
-    await userEvent.click(screen.getByRole('button', { name: /Mode 2$/i }))
-    expect(onModeChange).toHaveBeenCalledWith('2')
+    await userEvent.click(
+      screen.getByRole('button', { name: /Pixel Mode Mode 2/i })
+    )
+    expect(onPixelModeChange).toHaveBeenCalledWith(2)
+  })
+
+  it('renders dimension preset buttons and highlights the active one', () => {
+    renderWithI18n(<ImageControlsView {...props} />)
+    expect(
+      screen.getByRole('button', { name: /Dimensions Standard/i })
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(
+      screen.getByRole('button', { name: /Dimensions Overscan/i })
+    ).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('calls onDimensionPresetChange when a dimension button is clicked', async () => {
+    renderWithI18n(<ImageControlsView {...props} />)
+    await userEvent.click(
+      screen.getByRole('button', { name: /Dimensions Overscan/i })
+    )
+    expect(onDimensionPresetChange).toHaveBeenCalledWith('overscan')
   })
 })

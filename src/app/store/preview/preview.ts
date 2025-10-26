@@ -14,8 +14,8 @@ import {
   centerImageAtom,
   contrastStrategyAtom,
   cpcHardwareAtom,
+  derivedModeAtom,
   ditheringAtom,
-  modeAtom,
   resizeModeAtom
 } from '../config/config'
 import type { CPCMode } from '../config/resize-types'
@@ -39,7 +39,7 @@ export const previewCanvasWidthAtom = atom<number | null>(null)
 
 export const previewCanvasSizeAtom = atom((get) => {
   const containerWidth = get(previewCanvasWidthAtom)
-  const mode = get(modeAtom)
+  const mode = get(derivedModeAtom)
   const resizeMode = get(resizeModeAtom)
 
   if (!containerWidth) return { width: 0, height: 0 }
@@ -95,7 +95,7 @@ export const croppedImageAtom = atom(async (get) => {
 export const resizedImageAtom = atom(async (get) => {
   const cropped = await get(croppedImageAtom)
   const resizeMode = get(resizeModeAtom)
-  const cpcModeKey = get(modeAtom)
+  const cpcModeKey = get(derivedModeAtom)
   const cpcMode = Number.parseInt(cpcModeKey, 10) as CPCMode
   const centerImage = get(centerImageAtom)
 
@@ -184,7 +184,7 @@ export const quantizerAtom = atom(async (get) => {
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
   const processed = await get(resizedImageAtom)
-  const mode = get(modeAtom)
+  const mode = get(derivedModeAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
   const contrastStrategy = get(contrastStrategyAtom)
@@ -252,7 +252,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 
 // 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
-  const mode = get(modeAtom)
+  const mode = get(derivedModeAtom)
   const quantizer = await get(quantizerAtom)
   const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
@@ -468,7 +468,7 @@ function quantifyCPCPlusWithLocked(
 export const reducedPaletteRgbAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
-  const mode = get(modeAtom)
+  const mode = get(derivedModeAtom)
 
   // Colors are already in RGB format, no conversion needed
   const projected = [...raw] // Create a copy to avoid mutating original

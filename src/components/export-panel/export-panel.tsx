@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
-import { cpcHardwareAtom, modeAtom } from '@/app/store/config/config'
+import { cpcHardwareAtom, derivedModeAtom } from '@/app/store/config/config'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import {
   previewImageAtom,
@@ -18,7 +18,7 @@ export default function ExportPanel() {
   const image = useAtomValue(previewImageAtom)
   const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
-  const mode = useAtomValue(modeAtom)
+  const mode = useAtomValue(derivedModeAtom)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const handleExport = async (config: ExportConfig) => {

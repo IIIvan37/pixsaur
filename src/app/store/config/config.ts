@@ -9,8 +9,11 @@ import type {
   AdjustementKey,
   ContrastStrategy,
   CpcModeKey,
+  DimensionPreset,
+  PixelMode,
   ProcessorType
 } from './types'
+import { buildCpcModeKey, parseCpcModeKey } from './types'
 
 // Valeurs par défaut (facteurs multiplicatifs)
 const defaultConfig: { [key in AdjustementKey]: number } & {
@@ -53,7 +56,52 @@ export const resetImageAdjustmentsAtom = atom(null, (_get, set) => {
 })
 
 // Atoms pour les autres paramètres de conversion
+// Legacy atom - will be deprecated in favor of separate pixelModeAtom + dimensionPresetAtom
 export const modeAtom = atom<CpcModeKey>('0')
+
+// ============================================================================
+// NEW: SEPARATED PIXEL MODE AND DIMENSION PRESET
+// ============================================================================
+
+// Pixel mode atom - controls pixel aspect ratio (0, 1, or 2)
+export const pixelModeAtom = atom<PixelMode>(0)
+
+// Dimension preset atom - controls dimensions (standard or overscan)
+export const dimensionPresetAtom = atom<DimensionPreset>('standard')
+
+// Derived atom that combines pixelMode + dimensionPreset into legacy CpcModeKey
+// This maintains backward compatibility with existing code
+export const derivedModeAtom = atom(
+  (get) => {
+    const pixelMode = get(pixelModeAtom)
+    const dimensionPreset = get(dimensionPresetAtom)
+    return buildCpcModeKey(pixelMode, dimensionPreset)
+  },
+  (_get, set, payload: CpcModeKey) => {
+    // When setting the derived mode, update both atoms
+    const { pixelMode, dimensionPreset } = parseCpcModeKey(payload)
+    set(pixelModeAtom, pixelMode)
+    set(dimensionPresetAtom, dimensionPreset)
+  }
+)
+
+// Setter for pixel mode only
+export const setPixelModeAtom = atom(null, (_get, set, payload: PixelMode) => {
+  set(pixelModeAtom, payload)
+})
+
+// Setter for dimension preset only
+export const setDimensionPresetAtom = atom(
+  null,
+  (_get, set, payload: DimensionPreset) => {
+    set(dimensionPresetAtom, payload)
+  }
+)
+
+// ============================================================================
+// COLOR SPACE AND DITHERING
+// ============================================================================
+
 export const colorSpaceAtom = atom<ColorSpace>('RGB')
 export const ditheringAtom = atom<DitheringConfig>({
   mode: 'floydSteinberg',

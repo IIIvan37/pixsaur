@@ -1,9 +1,7 @@
 // ✅ ImagePreviewView.tsx
 
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue } from 'jotai'
-import { modeAtom } from '@/app/store/config/config'
-import { CPC_MODE_CONFIG } from '@/app/store/config/types'
+import type React from 'react'
 import styles from './image-preview.module.css'
 
 export type ImagePreviewViewProps = {
@@ -25,9 +23,6 @@ export function ImagePreviewView({
   width,
   height
 }: ImagePreviewViewProps) {
-  const mode = useAtomValue(modeAtom)
-  const modeConfig = CPC_MODE_CONFIG[mode]
-
   if (!image) {
     return (
       <div className={styles.container}>
@@ -47,7 +42,7 @@ export function ImagePreviewView({
       style={{
         width: '100%',
         alignSelf: 'stretch',
-        aspectRatio: `${modeConfig.overscan ? 384 : 320} / ${modeConfig.height}`, // 320x200 ratio
+
         maxHeight: '100%' // permet de s'étendre au besoin
       }}
     >
