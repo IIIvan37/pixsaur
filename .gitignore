@@ -26,6 +26,9 @@ dist-ssr
 *.zip
 disk.dsk
 
+# Internal documentation (kept local only)
+docs/
+
 # Tauri build outputs
 src-tauri/target/
 src-tauri/Cargo.lock
