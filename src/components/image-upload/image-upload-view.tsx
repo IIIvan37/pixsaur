@@ -59,7 +59,7 @@ export const ImageUploadView = ({
     multiple: false,
     noClick: isTauri, // Disable default click behavior in Tauri
     noKeyboard: isTauri,
-    noDrag: isTauri // Disable drag in Tauri
+    noDrag: isTauri // Disable drag in Tauri - use native dialog only
   })
 
   const defaultPrimaryText = _(msg`Glissez & déposez une image ici`)

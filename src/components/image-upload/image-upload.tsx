@@ -23,8 +23,8 @@ export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
         filesCount: acceptedFiles.length
       })
       
-      // In Tauri, use native dialog instead of drag-and-drop
-      if (isTauri()) {
+      // In Tauri with empty array, use native dialog
+      if (isTauri() && acceptedFiles.length === 0) {
         console.log('[ImageUpload] Using Tauri native dialog')
         try {
           const { pickImageFileTauri } = await import('./tauri-file-picker')
@@ -50,12 +50,14 @@ export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
         return
       }
 
-      // Web browser: use standard file input
-      console.log('[ImageUpload] Using web FileReader')
+      // Handle dropped/selected file
       const file = acceptedFiles[0]
-      if (file?.type.startsWith('image/')) {
-        processImageFile(file).then(onImageLoaded).catch(console.error)
-      }
+      if (!file?.type.startsWith('image/')) return
+
+      // In Tauri, drag & drop is disabled - only native dialog works
+      // In web mode, use standard FileReader
+      console.log('[ImageUpload] Using web FileReader')
+      processImageFile(file).then(onImageLoaded).catch(console.error)
     },
     [onImageLoaded]
   )
