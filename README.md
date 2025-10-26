@@ -10,12 +10,35 @@
 - **Export** : scr, linear, palette, png...
 - **CPU/GPU architecture** : Adaptive processing with intelligent fallback
 
-## Installation
+## Download
+
+### Pre-built binaries
+
+Download the latest desktop application for your platform:
+
+- **Windows** : [pixsaur_x.x.x_x64-setup.exe](https://github.com/IIIvan37/pixsaur/releases/latest)
+- **macOS** : [pixsaur_x.x.x_x64.dmg](https://github.com/IIIvan37/pixsaur/releases/latest)
+- **Linux** : [pixsaur_x.x.x_amd64.AppImage](https://github.com/IIIvan37/pixsaur/releases/latest)
+
+### Web version
+
+Try the web version online: [https://iiivan37.github.io/pixsaur](https://iiivan37.github.io/pixsaur)
+
+## Development
+
+### Setup
 
 ```bash
 pnpm install
 pnpm dev          # Web (http://localhost:5173)
 pnpm tauri:dev    # Desktop
+```
+
+### Build
+
+```bash
+pnpm build              # Web build (dist/)
+pnpm tauri:build        # Desktop build (src-tauri/target/release/)
 ```
 
 ## Tech Stack

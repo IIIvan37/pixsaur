@@ -1,1 +1,0 @@
-rasm ./main.asm -o ./dist/pix
