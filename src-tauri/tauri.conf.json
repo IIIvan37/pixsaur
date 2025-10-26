@@ -28,11 +28,7 @@
         {
           "identifier": "main-capability",
           "windows": ["main"],
-          "permissions": [
-            "core:default",
-            "dialog:default",
-            "fs:default"
-          ]
+          "permissions": ["core:default", "dialog:default", "fs:default"]
         }
       ]
     }

@@ -17,16 +17,25 @@ Version desktop de Pixsaur utilisant **Tauri 2.x** pour une application native m
 
 ### Prérequis
 
+**Script d'installation automatique (recommandé)** :
+```bash
+# Lance l'installation des dépendances système
+./scripts/install-tauri-deps.sh
+```
+
 **Rust** (installé automatiquement si absent) :
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 ```
 
-**Dépendances système Linux** :
+**Dépendances système Linux (installation manuelle)** :
 ```bash
-# Ubuntu/Debian
-sudo apt install libwebkit2gtk-4.1-dev \
+# Ubuntu/Debian (24.04+)
+sudo apt update
+sudo apt install -y \
+  pkg-config \
+  libwebkit2gtk-4.1-dev \
   build-essential \
   curl \
   wget \
@@ -35,8 +44,21 @@ sudo apt install libwebkit2gtk-4.1-dev \
   libayatana-appindicator3-dev \
   librsvg2-dev
 
+# Ubuntu/Debian (anciennes versions)
+# Si libwebkit2gtk-4.1-dev n'existe pas, utilisez :
+sudo apt install -y \
+  pkg-config \
+  libwebkit2gtk-4.0-dev \
+  build-essential \
+  curl \
+  wget \
+  file \
+  libssl-dev \
+  libappindicator3-dev \
+  librsvg2-dev
+
 # Arch
-sudo pacman -S webkit2gtk-4.1 base-devel curl wget file openssl appmenu-gtk-module gtk3 libappindicator-gtk3 librsvg
+sudo pacman -S webkit2gtk-4.1 base-devel curl wget file openssl appmenu-gtk-module gtk3 libappindicator-gtk3 librsvg pkgconf
 ```
 
 ### Commandes

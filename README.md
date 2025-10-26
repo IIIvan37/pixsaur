@@ -35,12 +35,15 @@ Pixsaur est une application web moderne de traitement d'images spécialisée dan
 ## 🚀 Démarrage Rapide
 
 ```bash
-```bash
 # Installation
 pnpm install
 
-# Développement (http://localhost:5173)
+# Développement web (http://localhost:5173)
 pnpm dev
+
+# Desktop (Tauri) - Installe d'abord les dépendances :
+./scripts/install-tauri-deps.sh
+pnpm tauri:dev
 
 # Build production
 pnpm build
