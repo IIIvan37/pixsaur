@@ -13,6 +13,7 @@ import {
 } from './cpc-plus-format'
 import { exportLinearAsm } from './export-linear-asm/export-linear.asm'
 import { exportSCR } from './export-scr/export-scr'
+import { saveZipFileTauri } from './export-tauri'
 import { toASMData } from './to-asm-data'
 import type { ExportConfig } from './types'
 
@@ -238,10 +239,20 @@ export async function exportZip(
 
   // 5. Finalisation et téléchargement
   const zipBlob = await zip.generateAsync({ type: 'blob' })
-  const url = URL.createObjectURL(zipBlob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${config.filename || 'pixsaur-export'}.zip`
-  a.click()
-  URL.revokeObjectURL(url)
+  
+  // Check if running in Tauri (desktop) or web
+  const isTauri = typeof globalThis !== 'undefined' && '__TAURI__' in globalThis
+  
+  if (isTauri) {
+    // Use Tauri's native file dialog and save
+    await saveZipFileTauri(zipBlob, `${config.filename || 'pixsaur-export'}.zip`)
+  } else {
+    // Use browser download
+    const url = URL.createObjectURL(zipBlob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${config.filename || 'pixsaur-export'}.zip`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 }
