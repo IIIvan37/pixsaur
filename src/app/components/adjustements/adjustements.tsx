@@ -12,7 +12,7 @@ import type { RangeOption } from './types'
 
 export default function Adjustments() {
   const src = useAtomValue(workingImageAtom)
-  const { red, green, blue, brightness, contrast, saturation, posterization } =
+  const { red, green, blue, brightness, contrast, saturation, hue, posterization } =
     useAtomValue(configAtom)
 
   const setComponent = useSetAtom(setComponentAtom)
@@ -26,6 +26,7 @@ export default function Adjustments() {
     brightness: [brightness, 0, 2, 0.01],
     contrast: [contrast, 0, 2, 0.01],
     saturation: [saturation, 0, 2, 0.01],
+    hue: [hue, -180, 180, 1],
     posterization: [posterization, 2, 256, 1]
   }
 

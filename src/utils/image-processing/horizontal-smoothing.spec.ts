@@ -21,7 +21,9 @@ describe('getPixelWidthForMode', () => {
 describe('applyHorizontalSmoothing', () => {
   it('returns unchanged image for pixelWidth = 1', () => {
     const imageData = new ImageData(4, 1)
-    imageData.data.set([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 128, 128, 128, 255])
+    imageData.data.set([
+      255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 128, 128, 128, 255
+    ])
 
     const result = applyHorizontalSmoothing(imageData, 1)
 
@@ -32,10 +34,22 @@ describe('applyHorizontalSmoothing', () => {
     const imageData = new ImageData(4, 1)
     // Red, Green, Blue, White
     imageData.data.set([
-      255, 0, 0, 255, // Red
-      0, 255, 0, 255, // Green
-      0, 0, 255, 255, // Blue
-      255, 255, 255, 255 // White
+      255,
+      0,
+      0,
+      255, // Red
+      0,
+      255,
+      0,
+      255, // Green
+      0,
+      0,
+      255,
+      255, // Blue
+      255,
+      255,
+      255,
+      255 // White
     ])
 
     const result = applyHorizontalSmoothing(imageData, 2)
@@ -54,10 +68,22 @@ describe('applyHorizontalSmoothing', () => {
     const imageData = new ImageData(4, 1)
     // Red, Green, Blue, White
     imageData.data.set([
-      255, 0, 0, 255, // Red
-      0, 255, 0, 255, // Green
-      0, 0, 255, 255, // Blue
-      255, 255, 255, 255 // White
+      255,
+      0,
+      0,
+      255, // Red
+      0,
+      255,
+      0,
+      255, // Green
+      0,
+      0,
+      255,
+      255, // Blue
+      255,
+      255,
+      255,
+      255 // White
     ])
 
     const result = applyHorizontalSmoothing(imageData, 4)
@@ -76,9 +102,18 @@ describe('applyHorizontalSmoothing', () => {
   it('handles edges correctly without out-of-bounds access', () => {
     const imageData = new ImageData(3, 1)
     imageData.data.set([
-      255, 0, 0, 255, // Red
-      0, 255, 0, 255, // Green
-      0, 0, 255, 255 // Blue
+      255,
+      0,
+      0,
+      255, // Red
+      0,
+      255,
+      0,
+      255, // Green
+      0,
+      0,
+      255,
+      255 // Blue
     ])
 
     const result = applyHorizontalSmoothing(imageData, 4)
@@ -92,10 +127,22 @@ describe('applyHorizontalSmoothing', () => {
   it('preserves alpha channel correctly', () => {
     const imageData = new ImageData(4, 1)
     imageData.data.set([
-      255, 0, 0, 128, // Red with 50% opacity
-      0, 255, 0, 255, // Green with 100% opacity
-      0, 0, 255, 200, // Blue with ~78% opacity
-      128, 128, 128, 180 // Gray
+      255,
+      0,
+      0,
+      128, // Red with 50% opacity
+      0,
+      255,
+      0,
+      255, // Green with 100% opacity
+      0,
+      0,
+      255,
+      200, // Blue with ~78% opacity
+      128,
+      128,
+      128,
+      180 // Gray
     ])
 
     const result = applyHorizontalSmoothing(imageData, 2)
@@ -110,11 +157,23 @@ describe('applyHorizontalSmoothing', () => {
     const imageData = new ImageData(2, 2)
     imageData.data.set([
       // Row 1
-      255, 0, 0, 255, // Red
-      0, 255, 0, 255, // Green
+      255,
+      0,
+      0,
+      255, // Red
+      0,
+      255,
+      0,
+      255, // Green
       // Row 2
-      0, 0, 255, 255, // Blue
-      255, 255, 255, 255 // White
+      0,
+      0,
+      255,
+      255, // Blue
+      255,
+      255,
+      255,
+      255 // White
     ])
 
     const result = applyHorizontalSmoothing(imageData, 2)

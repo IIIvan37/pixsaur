@@ -19,6 +19,7 @@ const labels: RangeLabels[] = [
   { key: 'brightness', label: <Trans>Luminosité</Trans> },
   { key: 'contrast', label: <Trans>Contraste</Trans> },
   { key: 'saturation', label: <Trans>Saturation</Trans> },
+  { key: 'hue', label: <Trans>Teinte</Trans> },
   { key: 'posterization', label: <Trans>Posterisation</Trans> }
 ]
 

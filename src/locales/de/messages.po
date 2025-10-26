@@ -189,7 +189,7 @@ msgstr "PNG (korrektes CPC-Seitenverhältnis)"
 msgid "PNG (pixels carrés)"
 msgstr "PNG (quadratische Pixel)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:22
+#: src/app/components/adjustements/adjustement.view.tsx:23
 msgid "Posterisation"
 msgstr "Posterisierung"
 
@@ -201,7 +201,7 @@ msgstr "Prozessor"
 #~ msgid "Redimensionner"
 #~ msgstr "Größe ändern"
 
-#: src/app/components/adjustements/adjustement.view.tsx:48
+#: src/app/components/adjustements/adjustement.view.tsx:49
 msgid "Réinitialiser"
 msgstr "Zurücksetzen"
 
@@ -225,6 +225,10 @@ msgstr "Auswahl"
 #: src/components/export-panel/export-config-dialog.tsx:92
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
+
+#: src/app/components/adjustements/adjustement.view.tsx:22
+msgid "Teinte"
+msgstr "Farbton"
 
 #: src/components/export-panel/export-config-dialog.tsx:152
 msgid "Utiliser des labels personnalisés"

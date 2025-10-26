@@ -153,4 +153,5 @@ export type AdjustementKey =
   | 'brightness'
   | 'contrast'
   | 'saturation'
+  | 'hue'
   | 'posterization'

@@ -11,8 +11,16 @@ export const useImageAdjustement = () => {
   const downscaled = useAtomValue(downscaledAtom)
   const { imageProcessor, isInitialized } = useImageProcessors()
 
-  const { red, green, blue, brightness, contrast, saturation, posterization } =
-    useAtomValue(configAtom)
+  const {
+    red,
+    green,
+    blue,
+    brightness,
+    contrast,
+    saturation,
+    hue,
+    posterization
+  } = useAtomValue(configAtom)
 
   const data = useMemo(
     () => downscaled?.data || new Uint8ClampedArray(),
@@ -42,6 +50,7 @@ export const useImageAdjustement = () => {
             brightness,
             contrast,
             saturation,
+            hue,
             posterization
           }
         )
@@ -57,6 +66,7 @@ export const useImageAdjustement = () => {
       brightness,
       contrast,
       saturation,
+      hue,
       posterization,
       setSrc
     ]

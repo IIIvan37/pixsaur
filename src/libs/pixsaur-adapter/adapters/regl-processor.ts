@@ -101,6 +101,7 @@ export class ReGLProcessor implements ImageProcessor {
         uniform float u_brightness;   // Facteur brightness
         uniform float u_contrast;     // Facteur contrast
         uniform float u_saturation;   // Facteur saturation
+        uniform float u_hue;          // Rotation de teinte (0-1, représente -180 à +180 degrés)
         uniform float u_posterization; // Niveaux posterization
         
         varying vec2 v_texCoord;
@@ -190,8 +191,14 @@ export class ReGLProcessor implements ImageProcessor {
           // Étape 3: Contrast (pivot autour de 0.5)
           color = (color - 0.5) * u_contrast + 0.5;
           
-          // Étape 4: Saturation via HSL
+          // Étape 4: Saturation + Hue via HSL
           vec3 hsl = rgb2hsl(color);
+          
+          // Appliquer rotation de teinte
+          if (u_hue != 0.0) {
+            hsl.x = mod(hsl.x + u_hue, 1.0);
+          }
+          
           hsl.y = clamp(hsl.y * u_saturation, 0.0, 1.0);
           color = hsl2rgb(hsl);
           
@@ -228,6 +235,7 @@ export class ReGLProcessor implements ImageProcessor {
         u_brightness: (_context, props: any) => props.brightness,
         u_contrast: (_context, props: any) => props.contrast,
         u_saturation: (_context, props: any) => props.saturation,
+        u_hue: (_context, props: any) => (props.hue || 0) / 360.0, // -180/+180 degrés → -0.5/+0.5
         u_posterization: (_context, props: any) => props.posterization
       },
       primitive: 'triangle strip',
@@ -317,6 +325,7 @@ export class ReGLProcessor implements ImageProcessor {
           brightness: adjustments.brightness,
           contrast: adjustments.contrast,
           saturation: adjustments.saturation,
+          hue: adjustments.hue,
           posterization: adjustments.posterization
         }
 
@@ -365,6 +374,7 @@ export class ReGLProcessor implements ImageProcessor {
         brightness: adjustments.brightness,
         contrast: adjustments.contrast,
         saturation: adjustments.saturation,
+        hue: adjustments.hue,
         posterization: adjustments.posterization
       })
     })
@@ -416,6 +426,7 @@ export class ReGLProcessor implements ImageProcessor {
         brightness: adjustments.brightness,
         contrast: adjustments.contrast,
         saturation: adjustments.saturation,
+        hue: adjustments.hue,
         posterization: adjustments.posterization
       }
 

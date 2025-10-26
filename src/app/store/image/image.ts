@@ -4,10 +4,7 @@ import {
   downscaleImage,
   type Selection
 } from '@/libs/pixsaur-adapter/io/downscale-image'
-import {
-  configAtom,
-  processorTypeAtom
-} from '../config/config'
+import { configAtom, processorTypeAtom } from '../config/config'
 
 const LOGICAL_WIDTH = 800
 
@@ -61,6 +58,7 @@ export const workingImageAtom = atom(async (get) => {
     brightness: config.brightness,
     contrast: config.contrast,
     saturation: config.saturation,
+    hue: config.hue,
     posterization: config.posterization
   })
 

@@ -5,6 +5,7 @@ export function applyAdjustmentsInOnePass(
     brightness: number // facteur (1 = neutre)
     contrast: number // facteur (1 = neutre)
     saturation: number // facteur (1 = neutre)
+    hue: number // rotation de teinte en degrés (-180 à +180, 0 = neutre)
     posterization: number // nombre de niveaux (256 = neutre)
   }
 ): ImageData {
@@ -16,6 +17,7 @@ export function applyAdjustmentsInOnePass(
   const brightness = config.brightness
   const contrast = config.contrast
   const saturation = config.saturation
+  const hueShift = config.hue ?? 0 // Décalage de teinte en degrés
   const posterization = config.posterization ?? 256
 
   const posterizeStep = 255 / (posterization - 1)
@@ -36,7 +38,7 @@ export function applyAdjustmentsInOnePass(
     g = (g - 128) * contrast + 128
     b = (b - 128) * contrast + 128
 
-    // Étape 4 : Saturation via HSL
+    // Étape 4 : Saturation + Hue via HSL
     const rf = r / 255
     const gf = g / 255
     const bf = b / 255
@@ -62,6 +64,12 @@ export function applyAdjustmentsInOnePass(
           break
       }
       h /= 6
+    }
+
+    // Appliquer la rotation de teinte (hueShift en degrés)
+    if (hueShift !== 0) {
+      h = (h + hueShift / 360) % 1
+      if (h < 0) h += 1
     }
 
     s = Math.max(0, Math.min(1, s * saturation))

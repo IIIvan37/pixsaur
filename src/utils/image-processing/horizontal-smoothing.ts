@@ -1,15 +1,15 @@
 /**
  * Horizontal Smoothing for CPC Image Processing
- * 
+ *
  * Applies anti-aliasing by averaging pixels horizontally based on CPC pixel width.
  * Reduces the "blocky" appearance in low-resolution modes, especially Mode 0.
- * 
+ *
  * Based on ConvImgCpc implementation (ConvertBase.cs:97-116)
  */
 
 /**
  * Apply horizontal smoothing to an image based on CPC pixel width.
- * 
+ *
  * @param imageData - Source image data to smooth
  * @param pixelWidth - Width of CPC pixels in source pixels (1, 2, or 4)
  *   - Mode 2 (640×200): pixelWidth = 1 (fine pixels, minimal smoothing)
@@ -72,7 +72,7 @@ export function applyHorizontalSmoothing(
 
 /**
  * Get pixel width for a given CPC mode.
- * 
+ *
  * @param mode - CPC mode (0, 1, or 2)
  * @returns Pixel width multiplier for horizontal smoothing
  */

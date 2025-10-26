@@ -43,19 +43,23 @@ describe('ImageControlsView', () => {
   let onPixelModeChange: ReturnType<typeof vi.fn>
   let onDimensionPresetChange: ReturnType<typeof vi.fn>
   let onCpcHardwareChange: ReturnType<typeof vi.fn>
+  let onHorizontalSmoothingChange: ReturnType<typeof vi.fn>
   let props: ImageControlsViewProps
 
   beforeEach(() => {
     onPixelModeChange = vi.fn()
     onDimensionPresetChange = vi.fn()
     onCpcHardwareChange = vi.fn()
+    onHorizontalSmoothingChange = vi.fn()
     props = {
       pixelMode: 0,
       onPixelModeChange,
       dimensionPreset: 'standard',
       onDimensionPresetChange,
       cpcHardware: CPCHardware.CLASSIC,
-      onCpcHardwareChange
+      onCpcHardwareChange,
+      horizontalSmoothing: false,
+      onHorizontalSmoothingChange
     }
   })
 

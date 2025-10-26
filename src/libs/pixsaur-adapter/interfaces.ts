@@ -10,6 +10,7 @@ export interface AdjustmentConfig {
   brightness: number
   contrast: number
   saturation: number
+  hue: number // Rotation de teinte en degrés (-180 à +180)
   posterization: number
 }
 
