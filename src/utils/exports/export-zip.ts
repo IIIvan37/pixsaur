@@ -241,7 +241,7 @@ export async function exportZip(
   const zipBlob = await zip.generateAsync({ type: 'blob' })
   
   // Check if running in Tauri (desktop) or web
-  const isTauri = typeof globalThis !== 'undefined' && '__TAURI__' in globalThis
+  const isTauri = typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
   
   if (isTauri) {
     // Use Tauri's native file dialog and save
