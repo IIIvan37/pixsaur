@@ -1,4 +1,5 @@
 import { Trans } from '@lingui/react/macro'
+import { GitHubLogoIcon } from '@radix-ui/react-icons'
 import { LanguageSelector } from '@/components/language-selector'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { Updater } from '@/components/updater/updater'
@@ -34,7 +35,16 @@ export default function App() {
               <p className={styles.subtitle}>
                 <Trans>Convertisseur d'images Amstrad CPC</Trans>
               </p>
-              <div className={styles.langSwitcher}>
+              <div className={styles.headerActions}>
+                <a
+                  href='https://github.com/IIIvan37/pixsaur'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className={styles.githubLink}
+                  aria-label='View source code on GitHub'
+                >
+                  <GitHubLogoIcon width={20} height={20} />
+                </a>
                 <LanguageSelector />
               </div>
             </header>

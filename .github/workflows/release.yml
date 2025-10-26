@@ -174,13 +174,24 @@ jobs:
         run: |
           ls -R artifacts/
 
+      - name: Prepare release files
+        run: |
+          mkdir -p release-files
+          # Linux
+          find artifacts/pixsaur-linux -name "*.AppImage" -exec cp {} release-files/ \;
+          find artifacts/pixsaur-linux -name "*.deb" -exec cp {} release-files/ \;
+          # Windows
+          find artifacts/pixsaur-windows -name "*.exe" -exec cp {} release-files/ \;
+          find artifacts/pixsaur-windows -name "*.msi" -exec cp {} release-files/ \;
+          # macOS
+          find artifacts/pixsaur-macos -name "*.dmg" -exec cp {} release-files/ \;
+          # List final files
+          ls -lh release-files/
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            artifacts/pixsaur-linux/**/*
-            artifacts/pixsaur-windows/**/*
-            artifacts/pixsaur-macos/**/*
+          files: release-files/*
           body: |
             ## First Release
             
