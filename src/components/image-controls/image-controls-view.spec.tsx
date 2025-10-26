@@ -21,19 +21,21 @@ vi.mock('@/components/ui/slider', () => ({
   __esModule: true,
   default: (
     props: React.ComponentProps<'input'> & {
-      label: string
+      label: React.ReactNode
       onChange: (value: number) => void
     }
   ) => (
-    <input
-      type='range'
-      min={props.min}
-      max={props.max}
-      step={props.step}
-      value={props.value}
-      aria-label={props.label}
-      onChange={(e) => props.onChange(Number(e.target.value))}
-    />
+    <label>
+      {props.label}
+      <input
+        type='range'
+        min={props.min}
+        max={props.max}
+        step={props.step}
+        value={props.value}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+      />
+    </label>
   )
 }))
 
@@ -96,41 +98,20 @@ describe('ImageControlsView', () => {
     expect(onDimensionPresetChange).toHaveBeenCalledWith('overscan')
   })
 
-  it('should show target dimensions panel for mode 0', () => {
+  it('should not show custom dimensions inputs when preset is standard', () => {
     renderWithI18n(<ImageControlsView {...props} />)
 
-    // Target dimensions panel is always visible in new architecture
-    expect(screen.queryByLabelText(/Width/)).toBeInTheDocument()
-    expect(screen.queryByLabelText(/Height/)).toBeInTheDocument()
+    // Width/Height inputs are only visible in custom mode
+    expect(screen.queryByLabelText(/Width/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/Height/)).not.toBeInTheDocument()
   })
 
-  it('should show target dimensions panel for mode 1', () => {
-    renderWithI18n(<ImageControlsView {...props} />)
+  it('should show custom dimensions inputs when preset is custom', () => {
+    const customProps = { ...props, dimensionPreset: 'custom' as const }
+    renderWithI18n(<ImageControlsView {...customProps} />)
 
-    // Target dimensions panel is always visible in new architecture
-    expect(screen.queryByLabelText(/Width/)).toBeInTheDocument()
-    expect(screen.queryByLabelText(/Height/)).toBeInTheDocument()
-  })
-
-  it('should show target dimensions panel for mode 0 with presets', () => {
-    renderWithI18n(<ImageControlsView {...props} />)
-
-    // Should find width/height inputs from TargetDimensions
-    expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Height/)).toBeInTheDocument()
-  })
-
-  it('should show target dimensions panel for mode 1', () => {
-    renderWithI18n(<ImageControlsView {...props} />)
-
-    expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Height/)).toBeInTheDocument()
-  })
-
-  it('should show target dimensions panel for mode 2', () => {
-    renderWithI18n(<ImageControlsView {...props} />)
-
-    expect(screen.getByLabelText(/Width/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Height/)).toBeInTheDocument()
+    // Width/Height labels should be visible in custom mode
+    expect(screen.getByText(/Largeur/)).toBeInTheDocument()
+    expect(screen.getByText(/Hauteur/)).toBeInTheDocument()
   })
 })
