@@ -2,6 +2,7 @@ import { atom } from 'jotai'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { CPCHardware } from '@/libs/types'
+import { validateCustomDimensions } from '@/utils/validate-custom-dimensions'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
 import type { ResizeMode } from './resize-types'
@@ -307,3 +308,77 @@ export const setResizeModeAtom = atom(
 
 // Center image in target (when image is smaller than target dimensions)
 export const centerImageAtom = atom<boolean>(true)
+
+// ============================================================================
+// TARGET DIMENSIONS CONFIGURATION
+// ============================================================================
+
+export interface TargetDimensions {
+  readonly width: number
+  readonly height: number
+}
+
+// Target dimensions atom - stores the actual output dimensions for CPC
+// This is the single source of truth for image dimensions
+export const targetDimensionsAtom = atom<TargetDimensions>({
+  width: 160, // Default to Mode 0 standard
+  height: 200
+})
+
+// Validation result atom (derived from targetDimensionsAtom and modeAtom)
+export const targetDimensionsValidationAtom = atom((get) => {
+  const mode = get(modeAtom)
+  const dimensions = get(targetDimensionsAtom)
+
+  // Get base mode number (mode is now just '0', '1', or '2')
+  const baseMode = Number(mode) as 0 | 1 | 2
+  return validateCustomDimensions(dimensions.width, dimensions.height, baseMode)
+})
+
+// Setter for target dimensions with validation
+export const setTargetDimensionsAtom = atom(
+  null,
+  (get, set, payload: Partial<TargetDimensions>) => {
+    const current = get(targetDimensionsAtom)
+    const newDimensions = { ...current, ...payload }
+
+    // Always set the dimensions (validation is done separately)
+    set(targetDimensionsAtom, newDimensions)
+
+    // Log validation result for debugging
+    const mode = get(modeAtom)
+    const baseMode = Number(mode) as 0 | 1 | 2
+    const validation = validateCustomDimensions(
+      newDimensions.width,
+      newDimensions.height,
+      baseMode
+    )
+
+    if (validation.valid) {
+      console.log(
+        `✅ [TARGET DIMENSIONS] Mode ${mode}: ${newDimensions.width}×${newDimensions.height} = ${validation.kb.toFixed(2)} Ko (${validation.widthInBytes} bytes/line)`
+      )
+    } else {
+      console.warn(
+        `⚠️ [TARGET DIMENSIONS] Mode ${mode} invalid:`,
+        validation.errors
+      )
+    }
+  }
+)
+
+// Preset dimensions for quick selection (Standard + Overscan only)
+export const TARGET_DIMENSION_PRESETS = {
+  mode0: [
+    { name: 'Standard', width: 160, height: 200 }, // 80 bytes/line = 16Ko
+    { name: 'Overscan', width: 192, height: 280 } // 96 bytes/line = 26.25Ko
+  ],
+  mode1: [
+    { name: 'Standard', width: 320, height: 200 }, // 80 bytes/line = 16Ko
+    { name: 'Overscan', width: 384, height: 280 } // 96 bytes/line = 26.25Ko
+  ],
+  mode2: [
+    { name: 'Standard', width: 640, height: 200 }, // 80 bytes/line = 16Ko
+    { name: 'Overscan', width: 768, height: 280 } // 96 bytes/line = 26.25Ko
+  ]
+} as const
