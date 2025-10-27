@@ -71,71 +71,16 @@ jobs:
           node --version
           pnpm --version
 
-      - name: Build Tauri app
-        run: pnpm tauri build ${{ matrix.args }}
+      - uses: tauri-apps/tauri-action@v0.5.24
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
-      - name: List generated artifacts
-        run: |
-          echo "=== Listing all bundle artifacts ==="
-          find src-tauri/target -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.msi" -o -name "*.exe" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" || true
-          echo "=== Listing bundle directory structure ==="
-          ls -lR src-tauri/target/*/release/bundle/ 2>/dev/null || ls -lR src-tauri/target/release/bundle/ 2>/dev/null || true
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: matrix.platform == 'ubuntu-22.04'
         with:
-          draft: false
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Pixsaur v__VERSION__'
+          releaseBody: 'See the assets to download and install.'
+          releaseDraft: false
           prerelease: false
-          generate_release_notes: true
-
-      - name: Generate updater JSON
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          VERSION="${{ github.ref_name }}"
-          cat > latest.json << EOF
-          {
-            "version": "${VERSION#v}",
-            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${VERSION}",
-            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "platforms": {
-              "linux-x86_64": {
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/pixsaur_${VERSION#v}_amd64.AppImage.tar.gz",
-                "signature": ""
-              },
-              "windows-x86_64": {
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION#v}_x64-setup.nsis.zip",
-                "signature": ""
-              },
-              "darwin-aarch64": {
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION#v}_aarch64.app.tar.gz",
-                "signature": ""
-              },
-              "darwin-x86_64": {
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION#v}_x64.app.tar.gz",
-                "signature": ""
-              }
-            }
-          }
-          EOF
-
-      - name: Upload artifacts
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            src-tauri/target/*/release/bundle/dmg/*.dmg
-            src-tauri/target/*/release/bundle/macos/*.app.tar.gz
-            src-tauri/target/*/release/bundle/macos/*.app.tar.gz.sig
-            src-tauri/target/*/release/bundle/msi/*.msi
-            src-tauri/target/*/release/bundle/msi/*.msi.zip
-            src-tauri/target/*/release/bundle/msi/*.msi.zip.sig
-            src-tauri/target/*/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz.sig
-            src-tauri/target/release/bundle/rpm/*.rpm
-            latest.json
+          includeUpdaterJson: true
+          args: ${{ matrix.args }}
