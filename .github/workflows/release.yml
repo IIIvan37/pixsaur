@@ -77,19 +77,27 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - name: List build artifacts (Unix)
-        if: runner.os != 'Windows'
+      - name: List build artifacts (macOS)
+        if: runner.os == 'macOS'
         run: |
-          echo "=== Searching for build artifacts ==="
-          find src-tauri/target -type f \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.deb" -o -name "*.AppImage*" -o -name "*.rpm" \) 2>/dev/null | head -20 || true
-          echo "=== Bundle directory structure ==="
-          ls -la src-tauri/target/release/bundle/ 2>/dev/null || true
+          echo "=== Searching for macOS artifacts ==="
+          find src-tauri/target -type f \( -name "*.dmg" -o -name "*.app.tar.gz" \) 2>/dev/null || true
+          echo "=== Bundle directory contents ==="
+          ls -laR src-tauri/target/release/bundle/ 2>/dev/null || true
+          echo "=== All target subdirectories ==="
+          ls -la src-tauri/target/ 2>/dev/null || true
+
+      - name: List build artifacts (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "=== Searching for Linux artifacts ==="
+          find src-tauri/target -type f \( -name "*.deb" -o -name "*.AppImage*" -o -name "*.rpm" \) 2>/dev/null | head -10 || true
 
       - name: List build artifacts (Windows)
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          echo "=== Searching for MSI/EXE artifacts ==="
+          echo === Searching for MSI/EXE artifacts ===
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
