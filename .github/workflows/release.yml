@@ -80,11 +80,11 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
           releaseName: 'Pixsaur v__VERSION__'
           releaseDraft: false
           prerelease: false
-          includeRelease: true
+          includeRelease: ${{ startsWith(github.ref, 'refs/tags/') }}
           includeUpdaterJson: true
           tauriScript: pnpm tauri
           args: ${{ matrix.args }}
