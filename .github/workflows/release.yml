@@ -15,10 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-latest'
+          - platform: 'macos-14'  # macOS ARM64 (M1/M2/M3)
             args: '--target aarch64-apple-darwin'
-          - platform: 'macos-latest'
+          - platform: 'macos-13'  # macOS Intel (x86_64)
             args: '--target x86_64-apple-darwin'
+          - platform: 'macos-14'  # macOS Universal (both architectures)
+            args: '--target universal-apple-darwin'
           - platform: 'ubuntu-22.04'
             args: ''
           - platform: 'windows-latest'
@@ -52,7 +54,9 @@ jobs:
             libssl-dev \
             libgtk-3-dev \
             libayatana-appindicator3-dev \
-            librsvg2-dev
+            librsvg2-dev \
+            patchelf \
+            libfuse2
 
       - name: Install pnpm
         run: |
@@ -61,6 +65,14 @@ jobs:
 
       - name: Install frontend dependencies
         run: pnpm install
+
+      - name: Build info
+        run: |
+          echo "Platform: ${{ matrix.platform }}"
+          echo "Args: ${{ matrix.args }}"
+          rustc --version
+          node --version
+          pnpm --version
 
       - uses: tauri-apps/tauri-action@v0
         env:
