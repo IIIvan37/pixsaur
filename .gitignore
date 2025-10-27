@@ -47,3 +47,7 @@ src-tauri/Cargo.lock
 *.tmp
 *.temp
 .cache
+
+# Test coverage
+coverage/
+.nyc_output/
