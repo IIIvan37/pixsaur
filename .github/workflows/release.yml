@@ -77,6 +77,36 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
+      - name: Generate updater JSON
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          VERSION="${{ github.ref_name }}"
+          cat > latest.json << 'EOF'
+          {
+            "version": "${{ github.ref_name }}",
+            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}",
+            "pub_date": "${{ github.event.head_commit.timestamp }}",
+            "platforms": {
+              "linux-x86_64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/pixsaur_${{ github.ref_name }}_amd64.AppImage.tar.gz"
+              },
+              "windows-x86_64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Pixsaur_${{ github.ref_name }}_x64-setup.nsis.zip"
+              },
+              "darwin-x86_64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Pixsaur.app.tar.gz"
+              },
+              "darwin-aarch64": {
+                "signature": "",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Pixsaur.app.tar.gz"
+              }
+            }
+          }
+          EOF
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: matrix.platform == 'ubuntu-22.04'
@@ -102,3 +132,4 @@ jobs:
             src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
             src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz.sig
             src-tauri/target/release/bundle/rpm/*.rpm
+            latest.json
