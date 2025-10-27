@@ -81,27 +81,28 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           VERSION="${{ github.ref_name }}"
-          cat > latest.json << 'EOF'
+          VERSION_NUM="${VERSION#v}"
+          cat > latest.json << EOF
           {
-            "version": "${{ github.ref_name }}",
-            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}",
+            "version": "${VERSION}",
+            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${VERSION}",
             "pub_date": "${{ github.event.head_commit.timestamp }}",
             "platforms": {
               "linux-x86_64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/pixsaur_${{ github.ref_name }}_amd64.AppImage.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz"
               },
               "windows-x86_64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Pixsaur_${{ github.ref_name }}_x64-setup.nsis.zip"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip"
               },
               "darwin-x86_64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Pixsaur.app.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur.app.tar.gz"
               },
               "darwin-aarch64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Pixsaur.app.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur.app.tar.gz"
               }
             }
           }
