@@ -16,7 +16,20 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'happy-dom',
-    setupFiles: './vitest.setup.tsx'
+    setupFiles: './vitest.setup.tsx',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov', 'html'],
+      exclude: [
+        'node_modules/',
+        'src-tauri/',
+        'dist/',
+        '**/*.config.*',
+        '**/*.setup.*',
+        '**/wdyr.js',
+        '**/*.d.ts'
+      ]
+    }
   },
   resolve: {
     alias: {
