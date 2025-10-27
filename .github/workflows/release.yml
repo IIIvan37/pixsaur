@@ -137,7 +137,10 @@ jobs:
         with:
           fail_on_unmatched_files: false
           files: |
+            src-tauri/target/release/bundle/dmg/*.dmg
             src-tauri/target/*/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/release/bundle/macos/*.app.tar.gz.sig
             src-tauri/target/*/release/bundle/macos/*.app.tar.gz
             src-tauri/target/*/release/bundle/macos/*.app.tar.gz.sig
             src-tauri/target/release/bundle/msi/*.msi
