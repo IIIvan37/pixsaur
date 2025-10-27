@@ -89,7 +89,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          echo === Searching for MSI/EXE artifacts ===
+          echo "=== Searching for MSI/EXE artifacts ==="
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
