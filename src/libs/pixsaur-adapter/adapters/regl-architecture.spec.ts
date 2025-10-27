@@ -23,7 +23,7 @@ describe('ReGL Architecture Validation', () => {
   const createMockRegl = () => {
     const mockFBO = { destroy: vi.fn() }
     const mockTexture = { destroy: vi.fn(), width: 1, height: 1 }
-    
+
     return {
       _gl: createMockWebGL(),
       framebuffer: vi.fn(() => mockFBO),
