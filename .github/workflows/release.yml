@@ -68,20 +68,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'v__VERSION__'
-          releaseBody: |
-            ## Release v__VERSION__
-            
-            ### Features
-            - CPC palette quantization (27/4096 colors)
-            - RGB, Lab, XYZ color spaces
-            - Desktop application (Windows, macOS, Linux)
-            - Web version available at https://pixsaur.iiivan.org/
-            - SCR export format
-            - Auto-update support
-            
-            ### Downloads
-            See assets below for your platform.
+          releaseName: 'Pixsaur v__VERSION__'
           releaseDraft: false
           prerelease: false
+          includeRelease: true
           args: ${{ matrix.args }}
