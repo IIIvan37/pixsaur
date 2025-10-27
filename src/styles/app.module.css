@@ -67,16 +67,29 @@
 }
 
 @media (max-width: 768px) {
+  .content {
+    padding: var(--spacing-md);
+  }
+
   .header {
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
     align-items: center;
-    text-align: center;
-    padding-top: var(--spacing-xl);
+    padding-top: var(--spacing-md);
+  }
+
+  .title {
+    padding-top: var(--spacing-xs);
+  }
+
+  .subtitle {
+    padding-top: 0;
   }
 
   .headerActions {
-    position: absolute;
-    top: 0;
-    right: 0;
+    position: static;
+    width: 100%;
+    justify-content: center;
+    margin-top: var(--spacing-sm);
   }
 }
