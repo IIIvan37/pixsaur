@@ -10,6 +10,7 @@ describe('ReGL Architecture Validation', () => {
   const createMockWebGL = () => ({
     canvas: { width: 256, height: 256 },
     getExtension: () => null,
+    getSupportedExtensions: () => [],
     getParameter: (param: any) => {
       // Simuler les constantes WebGL basiques
       if (param === 0x0d33) return 2048 // MAX_TEXTURE_SIZE
@@ -18,15 +19,21 @@ describe('ReGL Architecture Validation', () => {
     MAX_TEXTURE_SIZE: 0x0d33
   })
 
+  // Mock complet regl instance
+  const createMockRegl = () => ({
+    _gl: createMockWebGL(),
+    framebuffer: () => ({ destroy: () => {} }),
+    texture: () => ({ destroy: () => {} }),
+    destroy: () => {}
+  })
+
   test('ReGLQuantizer should exist and be constructible', () => {
     // Test simple : vérifier que la classe existe et peut être instanciée
     expect(ReGLQuantizer).toBeDefined()
     expect(typeof ReGLQuantizer).toBe('function')
 
-    // Mock proper avec WebGL context
-    const mockRegl = {
-      _gl: createMockWebGL()
-    } as any
+    // Mock proper avec WebGL context et framebuffer
+    const mockRegl = createMockRegl() as any
 
     // Même sans GPU réel, la classe devrait pouvoir être créée
     expect(() => {
@@ -36,9 +43,7 @@ describe('ReGL Architecture Validation', () => {
   })
 
   test('ReGLQuantizer should have expected interface', () => {
-    const mockRegl = {
-      _gl: createMockWebGL()
-    } as any
+    const mockRegl = createMockRegl() as any
 
     const quantizer = new ReGLQuantizer(mockRegl)
 
