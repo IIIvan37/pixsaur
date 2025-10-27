@@ -85,4 +85,6 @@ jobs:
           releaseDraft: false
           prerelease: false
           includeRelease: true
+          includeUpdaterJson: true
+          tauriScript: pnpm tauri
           args: ${{ matrix.args }}
