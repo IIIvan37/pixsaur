@@ -87,10 +87,11 @@ jobs:
 
       - name: List build artifacts (Windows)
         if: runner.os == 'Windows'
+        shell: cmd
         run: |
           echo === Searching for MSI/EXE artifacts ===
-          dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
-          dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
+          if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
+          if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
       - name: Generate updater JSON
         if: matrix.platform == 'ubuntu-22.04'
