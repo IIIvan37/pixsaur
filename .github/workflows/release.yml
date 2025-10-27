@@ -7,37 +7,41 @@ on:
       - 'v*'
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-22.04
-    env:
-      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+          - platform: 'macos-latest'
+            args: '--target x86_64-apple-darwin'
+          - platform: 'ubuntu-22.04'
+            args: ''
+          - platform: 'windows-latest'
+            args: ''
 
-      - name: Setup Node.js
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
 
-      - name: Install pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@10.11.0 --activate
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Install Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustc --version
-
-      - name: Install system dependencies
+      - name: Install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            pkg-config \
             libwebkit2gtk-4.1-dev \
             libjavascriptcoregtk-4.1-dev \
             build-essential \
@@ -49,164 +53,35 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
 
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build Tauri application
-        run: |
-          source "$HOME/.cargo/env"
-          pnpm tauri:build
-
-      - name: List build output
-        run: |
-          ls -la src-tauri/target/release/bundle/ || echo "No bundle directory"
-
-      - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: pixsaur-linux
-          path: |
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/deb/*.deb
-
-  build-windows:
-    runs-on: windows-latest
-    env:
-      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install pnpm
-        run: npm install -g pnpm@10.11.0
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build Tauri application
-        run: pnpm tauri:build
-
-      - name: List build output
-        run: |
-          dir src-tauri\target\release\bundle\
-        shell: cmd
-
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: pixsaur-windows
-          path: |
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
-
-  build-macos:
-    runs-on: macos-latest
-    env:
-      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install pnpm
         run: |
           corepack enable
           corepack prepare pnpm@10.11.0 --activate
 
-      - name: Install Rust
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source "$HOME/.cargo/env"
-          rustc --version
-
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Build Tauri application
-        run: |
-          source "$HOME/.cargo/env"
-          pnpm tauri:build
-
-      - name: List build output
-        run: |
-          ls -la src-tauri/target/release/bundle/ || echo "No bundle directory"
-
-      - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          name: pixsaur-macos
-          path: |
-            src-tauri/target/release/bundle/dmg/*.dmg
-            src-tauri/target/release/bundle/macos/*.app
-
-  create-release:
-    needs: [build-linux, build-windows, build-macos]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: List artifacts
-        run: |
-          ls -R artifacts/
-
-      - name: Prepare release files
-        run: |
-          mkdir -p release-files
-          # Linux
-          find artifacts/pixsaur-linux -name "*.AppImage" -exec cp {} release-files/ \;
-          find artifacts/pixsaur-linux -name "*.deb" -exec cp {} release-files/ \;
-          # Windows
-          find artifacts/pixsaur-windows -name "*.exe" -exec cp {} release-files/ \;
-          find artifacts/pixsaur-windows -name "*.msi" -exec cp {} release-files/ \;
-          # macOS
-          find artifacts/pixsaur-macos -name "*.dmg" -exec cp {} release-files/ \;
-          # List final files
-          ls -lh release-files/
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: release-files/*
-          body: |
-            ## First Release
+          tagName: ${{ github.ref_name }}
+          releaseName: 'v__VERSION__'
+          releaseBody: |
+            ## Release v__VERSION__
             
             ### Features
             - CPC palette quantization (27/4096 colors)
             - RGB, Lab, XYZ color spaces
             - Desktop application (Windows, macOS, Linux)
-            - Web version available
+            - Web version available at https://pixsaur.iiivan.org/
             - SCR export format
+            - Auto-update support
             
             ### Downloads
-            - **Windows**: pixsaur_0.1.0_x64-setup.exe
-            - **macOS**: pixsaur_0.1.0_x64.dmg
-            - **Linux**: pixsaur_0.1.0_amd64.AppImage
-          draft: false
+            See assets below for your platform.
+          releaseDraft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          args: ${{ matrix.args }}
