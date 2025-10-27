@@ -22,7 +22,7 @@ Download the latest desktop application for your platform:
 
 ### Web version
 
-Try the web version online: [https://iiivan37.github.io/pixsaur](https://iiivan37.github.io/pixsaur)
+Try the web version online: [https://pixsaur.iiivan.org/](https://pixsaur.iiivan.org/)
 
 ## Development
 
