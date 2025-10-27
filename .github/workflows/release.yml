@@ -77,11 +77,25 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
-      - name: Debug - List artifacts after build
-        if: always()
+      - name: Debug - List artifacts after build (Unix)
+        if: always() && runner.os != 'Windows'
         run: |
           echo "=== All files in target directory ==="
           find src-tauri/target -type f \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.msi" -o -name "*.exe" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" \) 2>/dev/null || echo "No artifacts found"
           echo ""
           echo "=== Bundle directory structure ==="
           ls -lR src-tauri/target/*/release/bundle/ 2>/dev/null || ls -lR src-tauri/target/release/bundle/ 2>/dev/null || echo "No bundle directory"
+
+      - name: Debug - List artifacts after build (Windows)
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "=== All files in target directory ==="
+          Get-ChildItem -Path src-tauri\target -Recurse -Include *.msi,*.exe | Select-Object FullName
+          Write-Host ""
+          Write-Host "=== Bundle directory structure ==="
+          if (Test-Path src-tauri\target\release\bundle) {
+            Get-ChildItem -Path src-tauri\target\release\bundle -Recurse | Select-Object FullName
+          } else {
+            Write-Host "No bundle directory"
+          }
