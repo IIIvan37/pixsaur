@@ -83,4 +83,5 @@ jobs:
           releaseBody: 'See the assets to download and install.'
           releaseDraft: false
           prerelease: false
+          includeUpdaterJson: true
           args: ${{ matrix.args }}
