@@ -71,42 +71,22 @@ jobs:
           node --version
           pnpm --version
 
-      - name: Build Tauri app
-        run: pnpm tauri build ${{ matrix.args }}
+      - uses: tauri-apps/tauri-action@v0.5.24
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
-      - name: List and find artifacts
-        run: |
-          echo "=== Tree view of bundle directory ==="
-          ls -R src-tauri/target/ | grep -E "bundle|\.dmg|\.app|\.msi|\.exe|\.deb|\.AppImage|\.rpm" || true
-          echo ""
-          echo "=== Finding specific artifacts ==="
-          find src-tauri/target -type f \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.msi" -o -name "*.exe" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" \) 2>/dev/null || true
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: matrix.platform == 'ubuntu-22.04'
         with:
-          draft: false
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Pixsaur v__VERSION__'
+          releaseBody: 'See the assets to download and install.'
+          releaseDraft: false
           prerelease: false
-          generate_release_notes: true
+          includeUpdaterJson: true
+          args: ${{ matrix.args }}
 
-      - name: Upload artifacts
-        uses: softprops/action-gh-release@v2
-        with:
-          fail_on_unmatched_files: false
-          files: |
-            src-tauri/target/**/bundle/**/*.dmg
-            src-tauri/target/**/bundle/**/*.app.tar.gz
-            src-tauri/target/**/bundle/**/*.app.tar.gz.sig
-            src-tauri/target/**/bundle/**/*.msi
-            src-tauri/target/**/bundle/**/*.msi.zip
-            src-tauri/target/**/bundle/**/*.msi.zip.sig
-            src-tauri/target/**/bundle/**/*.exe
-            src-tauri/target/**/bundle/**/*.deb
-            src-tauri/target/**/bundle/**/*.AppImage
-            src-tauri/target/**/bundle/**/*.AppImage.tar.gz
-            src-tauri/target/**/bundle/**/*.AppImage.tar.gz.sig
-            src-tauri/target/**/bundle/**/*.rpm
+      - name: Debug - List artifacts after build
+        if: always()
+        run: |
+          echo "=== All files in target directory ==="
+          find src-tauri/target -type f \( -name "*.dmg" -o -name "*.app.tar.gz" -o -name "*.msi" -o -name "*.exe" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" \) 2>/dev/null || echo "No artifacts found"
