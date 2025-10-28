@@ -15,7 +15,7 @@ export const Updater = () => {
     try {
       const update = await check()
 
-      if (update) {
+      if (update != null) {
         setUpdateAvailable(true)
         setUpdateVersion(update.version)
       }
@@ -33,7 +33,7 @@ export const Updater = () => {
       setDownloading(true)
       const update = await check()
 
-      if (update) {
+      if (update != null) {
         await update.downloadAndInstall()
 
         // Relaunch the app to apply the update
