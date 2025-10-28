@@ -23,16 +23,17 @@ describe('ReGL Architecture Validation', () => {
   const createMockRegl = () => {
     const mockFBO = { destroy: vi.fn() }
     const mockTexture = { destroy: vi.fn(), width: 1, height: 1 }
-
-    return {
-      _gl: createMockWebGL(),
-      framebuffer: vi.fn(() => mockFBO),
-      texture: vi.fn(() => mockTexture),
-      destroy: vi.fn(),
-      // Mock pour éviter l'exécution réelle de commandes GPU
-      clear: vi.fn(),
-      read: vi.fn(() => new Uint8Array(4))
-    }
+    
+    // ReGL est une fonction callable avec des propriétés
+    const reglFn = vi.fn(() => ({})) as any
+    reglFn._gl = createMockWebGL()
+    reglFn.framebuffer = vi.fn(() => mockFBO)
+    reglFn.texture = vi.fn(() => mockTexture)
+    reglFn.destroy = vi.fn()
+    reglFn.clear = vi.fn()
+    reglFn.read = vi.fn(() => new Uint8Array(4))
+    
+    return reglFn
   }
 
   test('ReGLQuantizer should exist and be constructible', () => {
