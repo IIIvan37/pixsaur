@@ -18,7 +18,9 @@ Download the latest desktop application for your platform:
 
 - **Windows** : [pixsaur_x.x.x_x64-setup.exe](https://github.com/IIIvan37/pixsaur/releases/latest)
 - **macOS** : [pixsaur_x.x.x_x64.dmg](https://github.com/IIIvan37/pixsaur/releases/latest)
-- **Linux** : [pixsaur_x.x.x_amd64.AppImage](https://github.com/IIIvan37/pixsaur/releases/latest)
+- **Linux** : [pixsaur_x.x.x_amd64.deb](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_x86_64.rpm](https://github.com/IIIvan37/pixsaur/releases/latest)
+
+> **Note:** AppImage is not supported for now due to compatibility issues. Use the DEB or RPM package for Linux.
 
 ### Web version
 
