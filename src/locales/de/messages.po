@@ -56,7 +56,7 @@ msgstr "Auto (intelligente CPC-Anpassung)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:111
 msgid "Balance bleu/orange (-100 = froid, +100 = chaud)"
-msgstr ""
+msgstr "Blau/Orange-Balance (-100 = kalt, +100 = warm)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:117
 msgid "Balance vert/magenta pour corriger les dominantes de couleur"
@@ -89,7 +89,7 @@ msgstr "Klicken Sie, um in einem neuen Tab zu öffnen"
 
 #: src/components/image-upload/image-upload-view.tsx:185
 msgid "Cliquez pour sélectionner une image"
-msgstr ""
+msgstr "Klicken Sie, um ein Bild auszuwählen"
 
 #: src/components/export-panel/export-config-dialog.tsx:90
 msgid "Configuration de l'export"
@@ -263,7 +263,7 @@ msgstr "oder klicken Sie, um eine Datei auszuwählen"
 
 #: src/components/image-upload/image-upload-view.tsx:188
 msgid "Ou glissez-déposez un fichier (si supporté)"
-msgstr ""
+msgstr "Oder ziehen Sie eine Datei hierher (falls unterstützt)"
 
 #: src/components/export-panel/export-config-dialog.tsx:131
 msgid "Palettes (firmware/hardware)"
@@ -307,7 +307,7 @@ msgstr "Zurücksetzen"
 
 #: src/app/components/adjustements/adjustement.view.tsx:94
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
-msgstr ""
+msgstr "Farbrotation auf dem Farbkreis (-180° bis +180°)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:58
 #: src/components/ui/rgb-slider/rgb-slider.tsx:102
@@ -336,7 +336,7 @@ msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
 
 #: src/app/components/adjustements/adjustement.view.tsx:135
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
-msgstr ""
+msgstr "Simuliert Blendenstufen (-3 bis +3, ±1 = doppelt/halb Licht)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:92
 msgid "Teinte"
@@ -389,4 +389,4 @@ msgstr "Auswahlbereich"
 
 #: src/components/source-selector/source-selector-view.tsx:53
 msgid "Zone de sélection interactive"
-msgstr ""
+msgstr "Interaktive Auswahlzone"
