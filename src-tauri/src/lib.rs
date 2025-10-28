@@ -1,5 +1,6 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  use tauri::Manager;
   tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
@@ -13,6 +14,24 @@ pub fn run() {
             .build(),
         )?;
       }
+
+      // Create splash screen window
+      let splashscreen_window = app.get_webview_window("splashscreen").unwrap();
+
+      // Close splash screen after a short delay to show the main window
+      let main_window = app.get_webview_window("main").unwrap();
+      let splashscreen_window_clone = splashscreen_window.clone();
+
+      std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        if let Err(e) = splashscreen_window_clone.hide() {
+          eprintln!("Failed to hide splash screen: {}", e);
+        }
+        if let Err(e) = main_window.show() {
+          eprintln!("Failed to show main window: {}", e);
+        }
+      });
+
       Ok(())
     })
     .run(tauri::generate_context!())

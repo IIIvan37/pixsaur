@@ -12,6 +12,18 @@
   "app": {
     "windows": [
       {
+        "label": "splashscreen",
+        "url": "splashscreen.html",
+        "width": 400,
+        "height": 300,
+        "decorations": false,
+        "transparent": true,
+        "center": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true
+      },
+      {
+        "label": "main",
         "title": "Pixsaur - Amstrad CPC Image Converter",
         "width": 1400,
         "height": 900,
@@ -20,7 +32,8 @@
         "resizable": true,
         "fullscreen": false,
         "center": true,
-        "dragDropEnabled": true
+        "dragDropEnabled": true,
+        "visible": false
       }
     ],
     "security": {
