@@ -675,6 +675,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "data-url"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "be1e0bca6c3637f992fc1cc7cbc52a78c1ef6db076dbf1059c4323d6a2048376"
+
+[[package]]
 name = "deranged"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2759,6 +2765,7 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 name = "pixsaur"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "log",
  "serde",
  "serde_json",
@@ -4025,6 +4032,7 @@ dependencies = [
  "anyhow",
  "bytes",
  "cookie",
+ "data-url",
  "dirs",
  "dunce",
  "embed_plist",
