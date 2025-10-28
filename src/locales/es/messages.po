@@ -15,7 +15,7 @@ msgstr ""
 
 #: src/components/updater/updater.tsx:112
 msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
-msgstr ""
+msgstr "Una nueva versión de Pixsaur está disponible. Actualice ahora para obtener las últimas funciones y mejoras."
 
 #: src/app/components/adjustements/adjustement.view.tsx:74
 msgid "Ajuste la clarté globale de l'image"
@@ -171,7 +171,7 @@ msgstr "Imagen de origen"
 
 #: src/components/updater/updater.tsx:138
 msgid "Installing..."
-msgstr ""
+msgstr "Instalando..."
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:56
 msgid "Intensité"
@@ -195,7 +195,7 @@ msgstr "Ancho"
 
 #: src/components/updater/updater.tsx:124
 msgid "Later"
-msgstr ""
+msgstr "Más tarde"
 
 #: src/components/export-panel/export-config-dialog.tsx:119
 msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
@@ -352,15 +352,15 @@ msgstr "Temperatura"
 
 #: src/components/updater/updater.tsx:103
 msgid "Update Available"
-msgstr ""
+msgstr "Actualización disponible"
 
 #: src/components/updater/updater.tsx:84
 msgid "Update available: version {updateVersion}"
-msgstr ""
+msgstr "Actualización disponible: versión {updateVersion}"
 
 #: src/components/updater/updater.tsx:143
 msgid "Update Now"
-msgstr ""
+msgstr "Actualizar ahora"
 
 #: src/components/export-panel/export-config-dialog.tsx:152
 msgid "Utiliser des labels personnalisés"
@@ -372,7 +372,7 @@ msgstr "Confirmar"
 
 #: src/components/updater/updater.tsx:106
 msgid "Version {updateVersion}"
-msgstr ""
+msgstr "Versión {updateVersion}"
 
 #: src/app/components/adjustements/adjustement.view.tsx:63
 #: src/components/ui/rgb-slider/rgb-slider.tsx:112
