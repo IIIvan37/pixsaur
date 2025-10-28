@@ -31,6 +31,9 @@ export const Updater = () => {
   const installUpdate = async () => {
     try {
       setDownloading(true)
+      // Hide notification immediately after user clicks
+      setUpdateAvailable(false)
+
       const update = await check()
 
       if (update != null) {
@@ -42,6 +45,8 @@ export const Updater = () => {
     } catch (error) {
       console.error('Failed to install update:', error)
       setDownloading(false)
+      // Show notification again if update failed
+      setUpdateAvailable(true)
     }
   }
 
