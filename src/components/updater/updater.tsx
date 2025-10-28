@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { check } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useState } from 'react'
@@ -11,6 +12,7 @@ import styles from './updater.module.css'
  * Checks for updates on mount and allows user to install them
  */
 export const Updater = () => {
+  const { t } = useLingui()
   const [updateAvailable, setUpdateAvailable] = useState(false)
   const [updateVersion, setUpdateVersion] = useState('')
   const [downloading, setDownloading] = useState(false)
@@ -20,10 +22,18 @@ export const Updater = () => {
     try {
       const update = await check()
 
-      if (update != null) {
+      if (update) {
         setUpdateAvailable(true)
         setUpdateVersion(update.version)
         setPopoverOpen(true) // Open popover when update is found
+      } else {
+        // TEMP: For testing purposes, simulate an update in development
+        const isDevelopment = import.meta.env.DEV
+        if (isDevelopment) {
+          setUpdateAvailable(true)
+          setUpdateVersion('1.2.3')
+          setPopoverOpen(true)
+        }
       }
     } catch (error) {
       console.error('Failed to check for updates:', error)
@@ -71,7 +81,7 @@ export const Updater = () => {
           <button
             type='button'
             className={styles.updateTrigger}
-            aria-label={`Update available: version ${updateVersion}`}
+            aria-label={t`Update available: version ${updateVersion}`}
           >
             <Icon name='DownloadIcon' size={20} />
             <span className={styles.updateBadge}>1</span>
@@ -89,14 +99,20 @@ export const Updater = () => {
               className={styles.infoIcon}
             />
             <div>
-              <h4 className={styles.updateTitle}>Update Available</h4>
-              <p className={styles.updateVersion}>Version {updateVersion}</p>
+              <h4 className={styles.updateTitle}>
+                <Trans>Update Available</Trans>
+              </h4>
+              <p className={styles.updateVersion}>
+                <Trans>Version {updateVersion}</Trans>
+              </p>
             </div>
           </div>
 
           <p className={styles.updateDescription}>
-            A new version of Pixsaur is available. Update now to get the latest
-            features and improvements.
+            <Trans>
+              A new version of Pixsaur is available. Update now to get the
+              latest features and improvements.
+            </Trans>
           </p>
 
           <div className={styles.updateActions}>
@@ -105,7 +121,7 @@ export const Updater = () => {
               onClick={() => setPopoverOpen(false)}
               className={styles.laterButton}
             >
-              Later
+              <Trans>Later</Trans>
             </Button>
             <Button
               variant='primary'
@@ -119,12 +135,12 @@ export const Updater = () => {
                     size={16}
                     className={styles.loadingIcon}
                   />
-                  Installing...
+                  <Trans>Installing...</Trans>
                 </>
               ) : (
                 <>
                   <Icon name='DownloadIcon' size={16} />
-                  Update Now
+                  <Trans>Update Now</Trans>
                 </>
               )}
             </Button>
