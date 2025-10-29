@@ -819,7 +819,7 @@ export class ReGLQuantizer {
         const usedIndices = new Set(topIndices)
         const remainingIndices = basePalette
           .map((_, idx) => idx)
-          .filter(idx => !usedIndices.has(idx))
+          .filter((idx) => !usedIndices.has(idx))
 
         // Ajouter les couleurs restantes dans l'ordre de la palette
         const additionalNeeded = config.targetColors - topIndices.length

@@ -5,10 +5,10 @@
 ## Features
 
 - **CPC palette quantization** : 27 colors (Classic) or 4096 colors (Plus)
-- **Color spaces** : RGB, Lab, XYZ for maximum precision
-- **Dithering and adjustments** : Brightness, contrast, saturation in real-time
+- **Color spaces** : RGB
+- **Dithering and adjustments** : Brightness, contrast, saturation
 - **Export** : scr, linear, palette, png...
-- **CPU/GPU architecture** : Adaptive processing with intelligent fallback
+- **CPU/GPU architecture** : Adaptive processing with fallback
 
 ## Download
 
@@ -48,7 +48,7 @@ pnpm tauri:build        # Desktop build (src-tauri/target/release/)
 - **React 19** + TypeScript + Vite
 - **Jotai** - Atomic state management
 - **Tauri 2.9** - Cross-platform desktop
-- **pixsaur-color** - Custom colorimetric library (Lab, XYZ, RGB)
+- **pixsaur-color** - Custom colorimetric library (RGB)
 - **Biome** - Linting and formatting
 
 ## Contribution
