@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { exportSCR } from './export-scr'
+import { computeCPCAddress, exportSCR } from './export-scr'
 
 describe('exportSCR - Validation', () => {
   it('should reject custom dimensions for SCR export', () => {
@@ -176,5 +176,17 @@ describe('exportSCR - Validation', () => {
 
     // SCR format is always 16384 bytes
     expect(scr.length).toBe(16384)
+  })
+})
+
+describe('computeCPCAddress - Non-regression tests', () => {
+  it('should compute correct addresses for CPC screen interlacing', () => {
+    // Test some known addresses
+    expect(computeCPCAddress(0, 0)).toBe(0) // First pixel of first line
+    expect(computeCPCAddress(0, 1)).toBe(2048) // First pixel of second line (bank 1)
+    expect(computeCPCAddress(0, 2)).toBe(4096) // First pixel of third line (bank 2)
+    expect(computeCPCAddress(0, 7)).toBe(14336) // First pixel of eighth line (bank 7)
+    expect(computeCPCAddress(0, 8)).toBe(80) // First pixel of ninth line (bank 0, line 1)
+    expect(computeCPCAddress(0, 9)).toBe(2128) // First pixel of tenth line (bank 1, line 1)
   })
 })

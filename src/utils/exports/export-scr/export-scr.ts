@@ -1,7 +1,7 @@
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { encodeByte } from '../encode-byte'
 
-function computeCPCAddress(x: number, y: number): number {
+export function computeCPCAddress(x: number, y: number): number {
   return (y & 7) * 2048 + (y >> 3) * 80 + x
 }
 export function exportSCR(
