@@ -24,9 +24,11 @@ const getHeader = (
 ): string => {
   const pixelsPerByte = [2, 4, 8][modeConfig.mode]
   const hardwareType = isCPCPlus ? 'CPC+' : 'CPC Classic'
+  const paletteInfo = type === 'SCR' ? `; Palette data injected at offset 2000 (border at 2000, firmware colors at 2001-2016, hardware colors at 2017-2033)\n` : ''
   return `; ${type} Data created with Pixsaur - ${hardwareType}
 ; Mode ${modeConfig.mode} ${modeConfig.overscan ? 'Overscan' : ''} 
-; ${modeConfig.width}x${modeConfig.height} pixels, ${modeConfig.width / pixelsPerByte}x${modeConfig.height} bytes.\n\n`
+; ${modeConfig.width}x${modeConfig.height} pixels, ${modeConfig.width / pixelsPerByte}x${modeConfig.height} bytes.
+${paletteInfo}\n`
 }
 
 export async function exportZip(
@@ -47,6 +49,10 @@ export async function exportZip(
   const ctx = canvas.getContext('2d')
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
   if (!data) return
+
+  console.log(
+    `Canvas size: ${canvas.width}x${canvas.height}, ImageData size: ${data.width}x${data.height}`
+  )
 
   // Check if mode is standard (required for SCR format)
   // SCR format requires standard 16KB screen dimensions
