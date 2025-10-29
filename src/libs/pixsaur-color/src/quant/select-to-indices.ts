@@ -10,10 +10,40 @@ import { quantizerLogger } from '../../../../utils/logger'
  *
  * The function works as follows:
  * 1. It starts by including the valid preselected indices in the result, ensuring no duplicates.
- * 2. If the result is not yet filled to `topN`, it selects the remaining indices with the highest counts.
+ * 2. It starts by including the valid preselected indices in the result, ensuring no duplicates.
  * 3. If any count in `counts` meets or exceeds a threshold (10), then indices with counts below that threshold are ignored.
  * 4. The function ensures that the result contains at most `topN` indices.
  */
+
+// Helper functions for debugging CPC colors
+const CPC_COLOR_NAMES: Record<string, string> = {
+  '0,0,128': 'Blue',
+  '0,0,255': 'Bright Blue',
+  '0,128,255': 'Sky Blue',
+  '128,128,255': 'Pastel Blue',
+  '0,255,255': 'Bright Cyan',
+  '128,255,255': 'Pastel Cyan',
+  '255,0,0': 'Bright Red',
+  '128,0,0': 'Red',
+  '255,0,128': 'Purple',
+  '128,0,128': 'Magenta',
+  '255,0,255': 'Bright Magenta',
+  '128,0,255': 'Mauve',
+  '0,128,0': 'Green',
+  '0,255,0': 'Bright Green',
+  '128,255,0': 'Lime',
+  '128,128,0': 'Yellow',
+  '255,255,0': 'Bright Yellow',
+  '255,128,0': 'Orange',
+  '0,0,0': 'Black',
+  '255,255,255': 'Bright White',
+  '128,128,128': 'White'
+}
+
+function getCPCColorName(color: any[]): string {
+  const key = color.join(',')
+  return CPC_COLOR_NAMES[key] || `RGB(${color.join(',')})`
+}
 
 /**
  * Ajoute les indices pré-sélectionnés au résultat
@@ -143,6 +173,17 @@ function selectDiverseCandidates(
   // Trier par fréquence d'abord (plus importantes restent prioritaires)
   colorMetrics.sort((a, b) => b.count - a.count)
 
+  quantizerLogger.debug('🎨 Diversity Selection - Candidates by frequency:')
+  quantizerLogger.debug(
+    colorMetrics.slice(0, 10).map((m) => ({
+      idx: m.idx,
+      count: m.count,
+      hue: Math.round(m.hue),
+      luminance: m.luminance.toFixed(2),
+      name: getCPCColorName(basePalette[m.idx])
+    }))
+  )
+
   // ✅ DIVERSITÉ CHROMATIQUE: Sélection avec distance minimale entre couleurs
   const selected: number[] = []
 
@@ -152,10 +193,17 @@ function selectDiverseCandidates(
   const minColorDistance = targetCount <= 4 ? 60 : 30 // Distance minimale en degrés de teinte
   const minLuminanceDistance = targetCount <= 4 ? 0.3 : 0.15 // Distance minimale en luminance
 
+  quantizerLogger.debug(
+    `🎨 Diversity Selection - Parameters: targetCount=${targetCount}, minHueDist=${minColorDistance}, minLumDist=${minLuminanceDistance}`
+  )
+
   for (const candidate of colorMetrics) {
     if (selected.length === 0) {
       // Première couleur: prendre la plus fréquente
       selected.push(candidate.idx)
+      quantizerLogger.debug(
+        `🎨 Selected first color: ${getCPCColorName(basePalette[candidate.idx])} (idx ${candidate.idx})`
+      )
       continue
     }
 
@@ -174,12 +222,18 @@ function selectDiverseCandidates(
       // Couleurs trop similaires si teinte ET luminance proches
       if (hueDiff < minColorDistance && lumDiff < minLuminanceDistance) {
         tooSimilar = true
+        quantizerLogger.debug(
+          `🎨 Rejected ${getCPCColorName(basePalette[candidate.idx])}: too similar to ${getCPCColorName(basePalette[selectedIdx])} (hueDiff=${hueDiff.toFixed(1)}, lumDiff=${lumDiff.toFixed(2)})`
+        )
         break
       }
     }
 
     if (!tooSimilar) {
       selected.push(candidate.idx)
+      quantizerLogger.debug(
+        `🎨 Selected color: ${getCPCColorName(basePalette[candidate.idx])} (idx ${candidate.idx})`
+      )
     }
 
     // Si on a assez de couleurs diversifiées, arrêter
@@ -264,7 +318,12 @@ export function selectTopIndicesCore(
 export function selectTopIndices(
   counts: Uint32Array,
   preselectedIdx: number[],
-  topN: number
+  topN: number,
+  options?: {
+    threshold?: number
+    diversityMode?: boolean
+    basePalette?: readonly any[]
+  }
 ): number[] {
-  return selectTopIndicesCore(counts, preselectedIdx, topN)
+  return selectTopIndicesCore(counts, preselectedIdx, topN, options)
 }
