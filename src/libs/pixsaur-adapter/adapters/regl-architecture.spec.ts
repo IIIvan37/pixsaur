@@ -23,7 +23,7 @@ describe('ReGL Architecture Validation', () => {
   const createMockRegl = () => {
     const mockFBO = { destroy: vi.fn() }
     const mockTexture = { destroy: vi.fn(), width: 1, height: 1 }
-    
+
     // ReGL est une fonction callable avec des propriétés
     const reglFn = vi.fn(() => ({})) as any
     reglFn._gl = createMockWebGL()
@@ -32,7 +32,7 @@ describe('ReGL Architecture Validation', () => {
     reglFn.destroy = vi.fn()
     reglFn.clear = vi.fn()
     reglFn.read = vi.fn(() => new Uint8Array(4))
-    
+
     return reglFn
   }
 
