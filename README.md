@@ -5,10 +5,10 @@
 ## Features
 
 - **CPC palette quantization** : 27 colors (Classic) or 4096 colors (Plus)
-- **Color spaces** : RGB for maximum precision
-- **Dithering and adjustments** : Brightness, contrast, saturation in real-time
+- **Color spaces** : RGB
+- **Dithering and adjustments** : Brightness, contrast, saturation
 - **Export** : scr, linear, palette, png...
-- **CPU/GPU architecture** : Adaptive processing with intelligent fallback
+- **CPU/GPU architecture** : Adaptive processing with fallback
 
 ## Download
 
