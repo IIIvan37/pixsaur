@@ -1,14 +1,14 @@
-import { describe, it, expect } from 'vitest'
-import {
-  generateAmstradCPCPalette,
-  vectorToHex,
-  injectPaletteDataIntoSCR,
-  getHardwarePalette,
-  generateCPCPlusPalette,
-  getPaletteForHardware,
-  cpcPalette
-} from './cpc-palette'
+import { describe, expect, it } from 'vitest'
 import { CPCHardware } from '@/libs/types'
+import {
+  cpcPalette,
+  generateAmstradCPCPalette,
+  generateCPCPlusPalette,
+  getHardwarePalette,
+  getPaletteForHardware,
+  injectPaletteDataIntoSCR,
+  vectorToHex
+} from './cpc-palette'
 
 describe('CPC Palette', () => {
   describe('generateAmstradCPCPalette', () => {

@@ -33,7 +33,12 @@ const mockPalette = [
     hex: '00ff00',
     vector: new Float32Array([4, 5, 6])
   },
-  { index: 2, name: 'Bleu', hex: '0000ff', vector: new Float32Array([7, 8, 9]) }
+  {
+    index: 2,
+    name: 'Bleu',
+    hex: '0000ff',
+    vector: new Float32Array([7, 8, 9])
+  }
 ]
 
 const hex_rouge = '010203' // vectorToHex([1, 2, 3])
@@ -136,7 +141,10 @@ describe('ColorPaletteView', () => {
     )
     const bleuBtn = await screen.findByRole('button', { name: /Bleu/i })
     fireEvent.click(bleuBtn)
-    expect(onSetColor).toHaveBeenCalledWith({ index: 1, color: mockPalette[2] })
+    expect(onSetColor).toHaveBeenCalledWith({
+      index: 1,
+      color: mockPalette[2]
+    })
     // Popover should close
     await waitFor(() =>
       expect(screen.queryByRole('group')).not.toBeInTheDocument()
@@ -149,7 +157,9 @@ describe('ColorPaletteView', () => {
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
     // Rouge et Vert sont utilisés, Bleu ne l'est pas
-    const rougeBtn = screen.getByRole('button', { name: /Rouge \(utilisée\)/i })
+    const rougeBtn = screen.getByRole('button', {
+      name: /Rouge \(utilisée\)/i
+    })
     const vertBtn = screen.getByRole('button', { name: /Vert \(utilisée\)/i })
     const bleuBtn = screen.getByRole('button', { name: /^Bleu$/i })
     expect(rougeBtn).toBeDisabled()

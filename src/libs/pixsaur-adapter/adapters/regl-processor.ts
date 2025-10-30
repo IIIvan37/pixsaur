@@ -365,7 +365,17 @@ export class ReGLProcessor implements ImageProcessor {
     }
 
     // Fallback CPU
-    const config = {
+    return applyAdjustmentsInOnePass(
+      imageData,
+      this.createAdjustmentConfig(adjustments)
+    )
+  }
+
+  /**
+   * Crée la configuration d'ajustements pour applyAdjustmentsInOnePass
+   */
+  private createAdjustmentConfig(adjustments: AdjustmentConfig) {
+    return {
       rgb: adjustments.rgb,
       brightness: adjustments.brightness,
       contrast: adjustments.contrast,
@@ -380,8 +390,6 @@ export class ReGLProcessor implements ImageProcessor {
       shadows: adjustments.shadows,
       posterization: adjustments.posterization
     }
-
-    return applyAdjustmentsInOnePass(imageData, config)
   }
 
   /**
@@ -468,23 +476,10 @@ export class ReGLProcessor implements ImageProcessor {
     }
 
     // Fallback CPU
-    const config = {
-      rgb: adjustments.rgb,
-      brightness: adjustments.brightness,
-      contrast: adjustments.contrast,
-      saturation: adjustments.saturation,
-      hue: adjustments.hue,
-      vibrance: adjustments.vibrance,
-      temperature: adjustments.temperature,
-      tint: adjustments.tint,
-      gamma: adjustments.gamma,
-      exposure: adjustments.exposure,
-      highlights: adjustments.highlights,
-      shadows: adjustments.shadows,
-      posterization: adjustments.posterization
-    }
-
-    return applyAdjustmentsInOnePass(imageData, config)
+    return applyAdjustmentsInOnePass(
+      imageData,
+      this.createAdjustmentConfig(adjustments)
+    )
   }
 
   /**
