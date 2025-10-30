@@ -272,7 +272,6 @@ pub fn run() {
       .title("Pixsaur")
       .inner_size(700.0, 500.0)
       .decorations(false)
-      .transparent(true)
       .center()
       .always_on_top(true)
       .skip_taskbar(true)
