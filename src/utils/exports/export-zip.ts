@@ -251,7 +251,7 @@ async function exportSCRPlus(
   zip: JSZip,
   indexBuf: Uint8Array,
   modeConfig: CpcModeConfig,
-  cpcPlusPaletteValues: any,
+  cpcPlusPaletteValues: number[],
   config: ExportConfig,
   asmLabel: string,
   isStandardMode: boolean
@@ -289,7 +289,7 @@ async function exportSCRClassic(
 
 function exportPalettePlus(
   zip: JSZip,
-  cpcPlusPaletteValues: any,
+  cpcPlusPaletteValues: number[],
   modeConfig: CpcModeConfig,
   config: ExportConfig
 ) {
