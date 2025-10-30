@@ -53,7 +53,7 @@ export async function exportZip(
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
   if (!data) return
 
-  console.log(
+  logger.debug(
     `Canvas size: ${canvas.width}x${canvas.height}, ImageData size: ${data.width}x${data.height}`
   )
 
