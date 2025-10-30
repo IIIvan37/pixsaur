@@ -8,6 +8,15 @@ import PixsaurPopover from '../ui/popover/popover'
 import styles from './updater.module.css'
 
 /**
+ * Check if running in Tauri environment
+ */
+function isTauri(): boolean {
+  return (
+    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+  )
+}
+
+/**
  * Auto-updater component for Tauri desktop app
  * Checks for updates on mount and allows user to install them
  */
@@ -20,14 +29,16 @@ export const Updater = () => {
 
   const checkForUpdates = useCallback(async () => {
     try {
-      const update = await check()
+      if (isTauri()) {
+        const update = await check()
 
-      if (update) {
-        setUpdateAvailable(true)
-        setUpdateVersion(update.version)
-        setPopoverOpen(true) // Open popover when update is found
+        if (update) {
+          setUpdateAvailable(true)
+          setUpdateVersion(update.version)
+          setPopoverOpen(true) // Open popover when update is found
+        }
       } else {
-        // TEMP: For testing purposes, simulate an update in development
+        // In web development, simulate an update for testing
         const isDevelopment = import.meta.env.DEV
         if (isDevelopment) {
           setUpdateAvailable(true)
@@ -51,13 +62,22 @@ export const Updater = () => {
       setUpdateAvailable(false)
       setPopoverOpen(false)
 
-      const update = await check()
+      if (isTauri()) {
+        const update = await check()
 
-      if (update != null) {
-        await update.downloadAndInstall()
+        if (update != null) {
+          await update.downloadAndInstall()
 
-        // Relaunch the app to apply the update
-        await relaunch()
+          // Relaunch the app to apply the update
+          await relaunch()
+        }
+      } else {
+        // In web development, simulate successful update
+        console.log('Simulating update installation in development mode')
+        setTimeout(() => {
+          setDownloading(false)
+          // Could show a success message here
+        }, 2000)
       }
     } catch (error) {
       console.error('Failed to install update:', error)
@@ -90,6 +110,7 @@ export const Updater = () => {
         side='bottom'
         align='end'
         sideOffset={12}
+        variant='unstyled'
       >
         <div className={styles.updateContent}>
           <div className={styles.updateHeader}>

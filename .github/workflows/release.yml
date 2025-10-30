@@ -73,10 +73,7 @@ jobs:
 
       - name: Build Tauri manually
         run: pnpm tauri build ${{ matrix.args }}
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
+        
       - name: List build artifacts (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -136,7 +133,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: matrix.platform == 'ubuntu-22.04'
         with:
-          draft: false
+          draft: true
           prerelease: false
           generate_release_notes: true
 
