@@ -45,7 +45,15 @@ async function exportCPCPlusData(
 ) {
   const cpcPlusPaletteValues = paletteToCPCPlusValues(reducedPalette)
 
-  await exportSCRPlus(zip, indexBuf, modeConfig, cpcPlusPaletteValues, config, asmLabel, isStandardMode)
+  await exportSCRPlus(
+    zip,
+    indexBuf,
+    modeConfig,
+    cpcPlusPaletteValues,
+    config,
+    asmLabel,
+    isStandardMode
+  )
 
   await exportLinearData(zip, indexBuf, modeConfig, config, asmLabel, true)
 
@@ -61,7 +69,15 @@ async function exportCPCClassicData(
   asmLabel: string,
   isStandardMode: boolean
 ) {
-  await exportSCRClassic(zip, indexBuf, paletteFirmware, modeConfig, config, asmLabel, isStandardMode)
+  await exportSCRClassic(
+    zip,
+    indexBuf,
+    paletteFirmware,
+    modeConfig,
+    config,
+    asmLabel,
+    isStandardMode
+  )
 
   await exportLinearData(zip, indexBuf, modeConfig, config, asmLabel, false)
 
@@ -184,11 +200,27 @@ export async function exportZip(
       throw new Error('Reduced palette is required for CPC Plus export')
     }
 
-    await exportCPCPlusData(zip, indexBuf, modeConfig, reducedPalette, config, asmLabel, isStandardMode)
+    await exportCPCPlusData(
+      zip,
+      indexBuf,
+      modeConfig,
+      reducedPalette,
+      config,
+      asmLabel,
+      isStandardMode
+    )
   } else {
     // ===== CPC CLASSIC EXPORT =====
 
-    await exportCPCClassicData(zip, indexBuf, paletteFirmware, modeConfig, config, asmLabel, isStandardMode)
+    await exportCPCClassicData(
+      zip,
+      indexBuf,
+      paletteFirmware,
+      modeConfig,
+      config,
+      asmLabel,
+      isStandardMode
+    )
   }
 
   // Export PNG if enabled
