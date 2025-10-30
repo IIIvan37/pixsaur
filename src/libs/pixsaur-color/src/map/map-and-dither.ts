@@ -87,53 +87,130 @@ function applyAtkinsonDither(
     [0, 2]
   ]
 
+  const context: AtkinsonContext = {
+    width,
+    height,
+    errorBuf,
+    out,
+    pixel,
+    paletteCS,
+    paletteOut,
+    distFn,
+    intensity,
+    offsets
+  }
+
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const idx = y * width + x
-      const i3 = idx * 3
-      const i4 = idx * 4
-
-      pixel[0] = errorBuf[i3]
-      pixel[1] = errorBuf[i3 + 1]
-      pixel[2] = errorBuf[i3 + 2]
-
-      // Find nearest palette color
-      let best = 0
-      let bestD = Infinity
-      for (let p = 0; p < paletteCS.length; p++) {
-        const d = distFn(pixel, paletteCS[p])
-        if (d < bestD) {
-          bestD = d
-          best = p
-        }
-      }
-
-      const color = paletteOut[best]
-      out[i4 + 0] = color[0]
-      out[i4 + 1] = color[1]
-      out[i4 + 2] = color[2]
-      out[i4 + 3] = 255
-
-      // Compute error
-      const errR = (pixel[0] - paletteCS[best][0]) * intensity
-      const errG = (pixel[1] - paletteCS[best][1]) * intensity
-      const errB = (pixel[2] - paletteCS[best][2]) * intensity
-
-      // Distribute error (1/8 to each neighbor)
-      for (const [dx, dy] of offsets) {
-        const nx = x + dx
-        const ny = y + dy
-        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-          const nIdx = (ny * width + nx) * 3
-          errorBuf[nIdx + 0] += errR / 8
-          errorBuf[nIdx + 1] += errG / 8
-          errorBuf[nIdx + 2] += errB / 8
-        }
-      }
+      processAtkinsonPixel(x, y, context)
     }
   }
 
   return out
+}
+
+/**
+ * Context object for Atkinson dithering to reduce parameter count
+ */
+interface AtkinsonContext {
+  width: number
+  height: number
+  errorBuf: Float32Array
+  out: Uint8ClampedArray
+  pixel: Float32Array
+  paletteCS: Float32Array[]
+  paletteOut: Uint8ClampedArray[]
+  distFn: DistanceFn
+  intensity: number
+  offsets: number[][]
+}
+
+/**
+ * Helper function to process a single pixel in Atkinson dithering
+ * Reduces cognitive complexity by extracting pixel processing logic
+ */
+function processAtkinsonPixel(
+  x: number,
+  y: number,
+  context: AtkinsonContext
+): void {
+  const { width, errorBuf, out, pixel, paletteCS, paletteOut, distFn } = context
+
+  const idx = y * width + x
+  const i3 = idx * 3
+  const i4 = idx * 4
+
+  // Get pixel with accumulated error
+  pixel[0] = errorBuf[i3]
+  pixel[1] = errorBuf[i3 + 1]
+  pixel[2] = errorBuf[i3 + 2]
+
+  // Find nearest palette color
+  const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+
+  // Set output color
+  const color = paletteOut[bestIndex]
+  out[i4 + 0] = color[0]
+  out[i4 + 1] = color[1]
+  out[i4 + 2] = color[2]
+  out[i4 + 3] = 255
+
+  // Compute and distribute error
+  distributeAtkinsonError(x, y, pixel, paletteCS[bestIndex], context)
+}
+
+/**
+ * Helper function to distribute Atkinson dithering error
+ * Reduces cognitive complexity by extracting error diffusion logic
+ */
+function distributeAtkinsonError(
+  x: number,
+  y: number,
+  pixel: Float32Array,
+  paletteColor: Float32Array,
+  context: AtkinsonContext
+): void {
+  const { width, height, errorBuf, intensity, offsets } = context
+
+  // Compute error
+  const errR = (pixel[0] - paletteColor[0]) * intensity
+  const errG = (pixel[1] - paletteColor[1]) * intensity
+  const errB = (pixel[2] - paletteColor[2]) * intensity
+
+  // Distribute error (1/8 to each neighbor)
+  for (const [dx, dy] of offsets) {
+    const nx = x + dx
+    const ny = y + dy
+    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+      const nIdx = (ny * width + nx) * 3
+      errorBuf[nIdx + 0] += errR / 8
+      errorBuf[nIdx + 1] += errG / 8
+      errorBuf[nIdx + 2] += errB / 8
+    }
+  }
+}
+
+/**
+ * Helper function to find the nearest palette color
+ * Reduces cognitive complexity by extracting color matching logic
+ */
+function findNearestPaletteColor(
+  pixel: Float32Array,
+  paletteCS: Float32Array[],
+  distFn: DistanceFn
+): number {
+  let best = 0
+  let bestD = Infinity
+
+  for (let p = 0; p < paletteCS.length; p++) {
+    const d = distFn(pixel, paletteCS[p])
+    if (d < bestD) {
+      bestD = d
+      best = p
+    }
+  }
+
+  return best
 }
 
 export function applyYliluoma1Dither(
@@ -264,10 +341,10 @@ export function applyBayerDither(
   height: number,
   paletteCS: Float32Array[],
   paletteOut: Uint8ClampedArray[],
-  config: DitheringConfig,
-  distFn: DistanceFn,
-  mode: 'bayer2x2' | 'bayer4x4' | 'bayer8x8' | 'halftone4x4'
+  bayerConfig: BayerConfig,
+  distFn: DistanceFn
 ): Uint8ClampedArray {
+  const { config, mode } = bayerConfig
   const { intensity } = config
   const out = new Uint8ClampedArray(width * height * 4)
   const { size, matrix } = BAYER_MATRICES[mode]
@@ -286,17 +363,9 @@ export function applyBayerDither(
       pixelCS[1] = bufCS[i3 + 1] + threshold
       pixelCS[2] = bufCS[i3 + 2] + threshold
 
-      let bestI = 0
-      let bestD = Infinity
-      for (let p = 0; p < paletteCS.length; p++) {
-        const d = distFn(pixelCS, paletteCS[p])
-        if (d < bestD) {
-          bestD = d
-          bestI = p
-        }
-      }
+      const bestIndex = findNearestPaletteColor(pixelCS, paletteCS, distFn)
 
-      const rgb = paletteOut[bestI]
+      const rgb = paletteOut[bestIndex]
       out[i4 + 0] = rgb[0]
       out[i4 + 1] = rgb[1]
       out[i4 + 2] = rgb[2]
@@ -368,50 +437,124 @@ export function applyFloydSteinbergDither(
   const pixelCS = new Float32Array(3)
   const w3 = width * 3
 
+  // Floyd-Steinberg diffusion pattern: right 7/16, down-left 3/16, down 5/16, down-right 1/16
   const offsets = [3, -3 + w3, w3, 3 + w3]
   const weights = [7 / 16, 3 / 16, 5 / 16, 1 / 16].map((w) => w * intensity)
 
+  const context: FloydSteinbergContext = {
+    bufCS,
+    width,
+    height,
+    out,
+    pixelCS,
+    w3,
+    paletteCS,
+    paletteOut,
+    distFn,
+    offsets,
+    weights
+  }
+
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const idx3 = (y * width + x) * 3
-      pixelCS[0] = bufCS[idx3]
-      pixelCS[1] = bufCS[idx3 + 1]
-      pixelCS[2] = bufCS[idx3 + 2]
-
-      let bestI = 0
-      let bestD = Infinity
-      for (let p = 0; p < paletteCS.length; p++) {
-        const d = distFn(pixelCS, paletteCS[p])
-        if (d < bestD) {
-          bestD = d
-          bestI = p
-        }
-      }
-
-      const outIdx = (y * width + x) * 4
-      const color = paletteOut[bestI]
-      out[outIdx + 0] = color[0]
-      out[outIdx + 1] = color[1]
-      out[outIdx + 2] = color[2]
-      out[outIdx + 3] = 255
-
-      const err0 = pixelCS[0] - paletteCS[bestI][0]
-      const err1 = pixelCS[1] - paletteCS[bestI][1]
-      const err2 = pixelCS[2] - paletteCS[bestI][2]
-
-      for (let k = 0; k < 4; k++) {
-        const tx = x + (k === 0 || k === 3 ? 1 : -1)
-        const ty = y + (k > 1 ? 1 : 0)
-        if (tx < 0 || tx >= width || ty < 0 || ty >= height) continue
-        const t3 = idx3 + offsets[k]
-        bufCS[t3 + 0] += err0 * weights[k]
-        bufCS[t3 + 1] += err1 * weights[k]
-        bufCS[t3 + 2] += err2 * weights[k]
-      }
+      processFloydSteinbergPixel(x, y, context)
     }
   }
 
   return out
+}
+
+type BayerMode = 'bayer2x2' | 'bayer4x4' | 'bayer8x8' | 'halftone4x4'
+
+/**
+ * Context object for Bayer dithering to reduce parameter count
+ */
+interface BayerConfig {
+  config: DitheringConfig
+  mode: BayerMode
+}
+
+/**
+ * Context object for Floyd-Steinberg dithering to reduce parameter count
+ */
+interface FloydSteinbergContext {
+  bufCS: Float32Array
+  width: number
+  height: number
+  out: Uint8ClampedArray
+  pixelCS: Float32Array
+  w3: number
+  paletteCS: Float32Array[]
+  paletteOut: Uint8ClampedArray[]
+  distFn: DistanceFn
+  offsets: number[]
+  weights: number[]
+}
+
+/**
+ * Helper function to process a single pixel in Floyd-Steinberg dithering
+ * Reduces cognitive complexity by extracting pixel processing logic
+ */
+function processFloydSteinbergPixel(
+  x: number,
+  y: number,
+  context: FloydSteinbergContext
+): void {
+  const { bufCS, width, out, pixelCS, paletteCS, paletteOut, distFn } = context
+
+  const idx3 = (y * width + x) * 3
+
+  // Get current pixel value
+  pixelCS[0] = bufCS[idx3]
+  pixelCS[1] = bufCS[idx3 + 1]
+  pixelCS[2] = bufCS[idx3 + 2]
+
+  // Find nearest palette color
+  const bestIndex = findNearestPaletteColor(pixelCS, paletteCS, distFn)
+
+  // Set output color
+  const outIdx = (y * width + x) * 4
+  const color = paletteOut[bestIndex]
+  out[outIdx + 0] = color[0]
+  out[outIdx + 1] = color[1]
+  out[outIdx + 2] = color[2]
+  out[outIdx + 3] = 255
+
+  // Compute and distribute quantization error
+  distributeFloydSteinbergError(x, y, pixelCS, paletteCS[bestIndex], context)
+}
+
+/**
+ * Helper function to distribute Floyd-Steinberg dithering error
+ * Reduces cognitive complexity by extracting error diffusion logic
+ */
+function distributeFloydSteinbergError(
+  x: number,
+  y: number,
+  pixel: Float32Array,
+  paletteColor: Float32Array,
+  context: FloydSteinbergContext
+): void {
+  const { bufCS, width, height, offsets, weights } = context
+
+  const idx3 = (y * width + x) * 3
+
+  // Compute quantization error
+  const err0 = pixel[0] - paletteColor[0]
+  const err1 = pixel[1] - paletteColor[1]
+  const err2 = pixel[2] - paletteColor[2]
+
+  // Distribute error to neighboring pixels
+  for (let k = 0; k < 4; k++) {
+    const tx = x + (k === 0 || k === 3 ? 1 : -1)
+    const ty = y + (k > 1 ? 1 : 0)
+    if (tx >= 0 && tx < width && ty >= 0 && ty < height) {
+      const t3 = idx3 + offsets[k]
+      bufCS[t3 + 0] += err0 * weights[k]
+      bufCS[t3 + 1] += err1 * weights[k]
+      bufCS[t3 + 2] += err2 * weights[k]
+    }
+  }
 }
 
 type DitherFn = (
@@ -421,8 +564,7 @@ type DitherFn = (
   paletteCS: Float32Array[],
   paletteOut: Uint8ClampedArray[],
   config: DitheringConfig,
-  distFn: DistanceFn,
-  mode?: string
+  distFn: DistanceFn
 ) => Uint8ClampedArray
 
 const DITHER_MODES: Record<string, DitherFn> = {
@@ -448,67 +590,37 @@ const DITHER_MODES: Record<string, DitherFn> = {
       config.intensity
     ),
 
-  bayer2x2: (
-    bufCS,
-    width,
-    height,
-    paletteCS,
-    paletteOut,
-    config,
-    distFn,
-    mode
-  ) =>
+  bayer2x2: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
       paletteCS,
       paletteOut,
-      config,
-      distFn,
-      mode as 'bayer2x2'
+      { config, mode: 'bayer2x2' },
+      distFn
     ),
 
-  bayer4x4: (
-    bufCS,
-    width,
-    height,
-    paletteCS,
-    paletteOut,
-    config,
-    distFn,
-    mode
-  ) =>
+  bayer4x4: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
       paletteCS,
       paletteOut,
-      config,
-      distFn,
-      mode as 'bayer4x4'
+      { config, mode: 'bayer4x4' },
+      distFn
     ),
 
-  bayer8x8: (
-    bufCS,
-    width,
-    height,
-    paletteCS,
-    paletteOut,
-    config,
-    distFn,
-    mode
-  ) =>
+  bayer8x8: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
       paletteCS,
       paletteOut,
-      config,
-      distFn,
-      mode as 'bayer8x8'
+      { config, mode: 'bayer8x8' },
+      distFn
     ),
 
   ylioluma1: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
@@ -542,25 +654,15 @@ const DITHER_MODES: Record<string, DitherFn> = {
       config,
       distFn
     ),
-  halftone4x4: (
-    bufCS,
-    width,
-    height,
-    paletteCS,
-    paletteOut,
-    config,
-    distFn,
-    mode
-  ) =>
+  halftone4x4: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
       paletteCS,
       paletteOut,
-      config,
-      distFn,
-      mode as 'halftone4x4'
+      { config, mode: 'halftone4x4' },
+      distFn
     )
 }
 function buildPalette(
@@ -615,16 +717,7 @@ export function mapAndDither(
 
   const ditherFn = DITHER_MODES[mode]
   if (ditherFn) {
-    return ditherFn(
-      bufCS,
-      width,
-      height,
-      paletteCS,
-      paletteOut,
-      config,
-      distFn,
-      mode
-    )
+    return ditherFn(bufCS, width, height, paletteCS, paletteOut, config, distFn)
   } else {
     logger.warn(`Unsupported dithering mode: ${mode}`)
     return new Uint8ClampedArray(N * 4)

@@ -210,13 +210,10 @@ export class ReGLQuantizer {
 
     try {
       // 1. Upload data vers GPU
-      const uploadStart = performance.now()
       this.updateInputTexture(imageData)
       this.updatePaletteTexture(basePalette)
-      const uploadTime = performance.now() - uploadStart
 
       // 2. Calcul histogramme GPU (bypass pour CPC Plus avec modes optimisés)
-      const histogramStart = performance.now()
       const isCPCPlus = basePalette.length > 27
       const isCPCMode =
         config.targetColors === 16 ||
@@ -224,29 +221,16 @@ export class ReGLQuantizer {
         config.targetColors === 2 ||
         config.targetColors === 512
 
-      let histogram: number[]
-      let histogramTime: number
+      // Skip histogram computation for optimized CPC modes
       if (isCPCPlus && isCPCMode) {
-        // 🚀 CPC Plus: Bypass complet de l'histogramme
         adapterLogger.debug(
           `🚀 [ReGL] CPC Plus bypass: skipping histogram for ${config.targetColors} color mode`
         )
-        histogram = new Array(basePalette.length).fill(0) // Histogramme vide
-        histogramTime = 0 // Pas de temps pour l'histogramme
-      } else {
-        // 📊 Mode traditionnel: calcul de l'histogramme
-        histogram = await this.computeHistogramGPU(
-          imageData,
-          basePalette,
-          config
-        )
-        histogramTime = performance.now() - histogramStart
       }
 
       // 3. Sélection palette optimisée
       const selectionStart = performance.now()
       const selectedColors = await this.selectColorsGPU(
-        histogram,
         imageData,
         basePalette,
         preselected,
@@ -265,7 +249,7 @@ export class ReGLQuantizer {
       const totalGpuTime = performance.now() - gpuStart
 
       adapterLogger.debug(
-        `🎮 [ReGL] GPU quantization completed: ${selectedColors.length}/${config.targetColors} colors in ${totalGpuTime.toFixed(2)}ms (upload: ${uploadTime.toFixed(1)}ms, histogram: ${histogramTime.toFixed(1)}ms, selection: ${selectionTime.toFixed(1)}ms)`
+        `🎮 [ReGL] GPU quantization completed: ${selectedColors.length}/${config.targetColors} colors in ${totalGpuTime.toFixed(2)}ms (selection: ${selectionTime.toFixed(1)}ms)`
       )
 
       return selectedColors
@@ -482,161 +466,10 @@ export class ReGLQuantizer {
   }
 
   /**
-   * Calcul d'histogramme sur GPU avec support colorSpace complet
-   * ✅ Utilise le vrai GPU avec conversions XYZ/Lab
-   */
-  private async computeHistogramGPU(
-    imageData: ImageData,
-    basePalette: readonly Vector[],
-    config: ReGLQuantizeConfig
-  ): Promise<number[]> {
-    const gpuStart = performance.now()
-    adapterLogger.debug(
-      `🎮 [ReGL] Computing histogram (GPU-accelerated): ${imageData.width}x${imageData.height}, RGB ${config.distanceMetric}`
-    )
-
-    try {
-      // ✅ Utilise la palette passée en paramètre (Classic=27, Plus=4096)
-      const cpcPalette = basePalette.map((vector) => Array.from(vector))
-
-      const histogram = this.computeHistogramGPUAccelerated(
-        imageData,
-        cpcPalette,
-        config
-      )
-
-      const totalTime = performance.now() - gpuStart
-      const totalPixels = histogram.reduce((a, b) => a + b, 0)
-
-      adapterLogger.info(
-        `🎮 [ReGL] GPU histogram completed: ${totalPixels} pixels in ${totalTime.toFixed(2)}ms (true GPU with RGB)`
-      )
-
-      return histogram
-    } catch (error) {
-      adapterLogger.error('❌ [ReGL] GPU histogram calculation failed', error)
-      // Fallback vers CPU avec support colorSpace complet
-      return this.computeHistogramCPUOptimized(imageData, config, basePalette)
-    }
-  }
-
-  /**
-   * Version CPU ultra-optimisée pour l'histogramme
-   */
-  private computeHistogramCPUOptimized(
-    imageData: ImageData,
-    config: ReGLQuantizeConfig,
-    basePalette: readonly Vector[]
-  ): number[] {
-    const cpuStart = performance.now()
-    adapterLogger.debug('🖥️ [ReGL] Computing weighted histogram on CPU fallback')
-
-    const histogram = new Array(basePalette.length).fill(0)
-    const pixels = imageData.data
-
-    // ✅ CORRECTION: Utilise la basePalette passée (CPC Classic ou Plus)
-    const cpcPalette = basePalette.map((vector) => Array.from(vector))
-
-    // ✅ OPTIMISATION: GPU seulement pour grandes images et RGB simple
-    const pixelCount = imageData.width * imageData.height
-    if (this.shouldUseGPUForHistogram(pixelCount, config)) {
-      return this.computeHistogramGPUAccelerated(imageData, cpcPalette, config)
-    }
-
-    // ✅ HISTOGRAMME PONDÉRÉ: Chaque pixel contribue à toutes les couleurs de palette
-    for (let i = 0; i < pixels.length; i += 4) {
-      const r = pixels[i]
-      const g = pixels[i + 1]
-      const b = pixels[i + 2]
-
-      const weights = this.computeWeightedPixelContribution(r, g, b, cpcPalette)
-
-      // Ajouter les poids à l'histogramme
-      for (let j = 0; j < cpcPalette.length; j++) {
-        histogram[j] += weights[j]
-      }
-    }
-
-    const cpuTime = performance.now() - cpuStart
-    const totalPixels = histogram.reduce((a, b) => a + b, 0)
-    adapterLogger.debug(
-      `🖥️ [ReGL] CPU weighted histogram completed: ${totalPixels.toFixed(0)} weighted pixels processed in ${cpuTime.toFixed(2)}ms`
-    )
-
-    return histogram
-  }
-
-  /**
-   * Calcul d'histogramme GPU avec quantification CPC
-   * ✅ Complexité réduite en extrayant les helpers
-   */
-  private computeHistogramGPUAccelerated(
-    imageData: ImageData,
-    cpcPalette: number[][],
-    _config: ReGLQuantizeConfig
-  ): number[] {
-    // Pour l'instant, utiliser l'histogramme pondéré CPU même pour GPU
-    // Le shader GPU ne supporte pas encore l'histogramme pondéré complet
-    adapterLogger.debug(
-      '🎮 [ReGL] Using CPU-based weighted histogram for GPU path (shader upgrade pending)'
-    )
-    return this.computeHistogramCPUWeighted(imageData, cpcPalette)
-  }
-
-  /**
-   * Version CPU de l'histogramme pondéré (utilisée aussi pour GPU)
-   * ✅ OPTIMISÉ: Échantillonnage adaptatif pour les grandes images
-   */
-  private computeHistogramCPUWeighted(
-    imageData: ImageData,
-    cpcPalette: number[][]
-  ): number[] {
-    const histogram = new Array(cpcPalette.length).fill(0)
-    const pixels = imageData.data
-    const totalPixels = imageData.width * imageData.height
-
-    // 🎯 OPTIMISATION: Échantillonnage adaptatif pour les grandes images
-    const maxSamples = 50000 // Maximum 50k pixels pour l'histogramme
-    const sampleStep = Math.max(1, Math.floor(totalPixels / maxSamples))
-    const actualSamples = Math.floor(totalPixels / sampleStep)
-
-    adapterLogger.debug(
-      `🎯 [ReGL] Weighted histogram: ${totalPixels} total pixels, sampling ${actualSamples} (${((actualSamples / totalPixels) * 100).toFixed(1)}%)`
-    )
-
-    for (let i = 0; i < pixels.length; i += 4 * sampleStep) {
-      const r = pixels[i]
-      const g = pixels[i + 1]
-      const b = pixels[i + 2]
-
-      const weights = this.computeWeightedPixelContribution(r, g, b, cpcPalette)
-
-      // Ajouter les poids à l'histogramme
-      for (let j = 0; j < cpcPalette.length; j++) {
-        histogram[j] += weights[j]
-      }
-    }
-
-    // 🎯 AJUSTER: Corriger les poids pour représenter le nombre total de pixels
-    const scaleFactor = totalPixels / actualSamples
-    for (let j = 0; j < histogram.length; j++) {
-      histogram[j] *= scaleFactor
-    }
-
-    const totalWeightedPixels = histogram.reduce((a, b) => a + b, 0)
-    adapterLogger.debug(
-      `🎮 [ReGL] Weighted histogram: ${totalWeightedPixels.toFixed(0)} weighted pixels (${actualSamples} samples, ${((actualSamples / totalPixels) * 100).toFixed(1)}% coverage)`
-    )
-
-    return histogram
-  }
-
-  /**
    * Sélection optimisée des couleurs sur GPU (Phase 2)
    * ✅ Utilise la logique commune selectTopIndicesCore()
    */
   private async selectColorsGPU(
-    histogram: number[],
     imageData: ImageData,
     basePalette: readonly Vector[],
     preselected: readonly Vector[],
@@ -647,7 +480,10 @@ export class ReGLQuantizer {
     )
 
     // Convertir preselected en indices
-    const preselectedIndices = this.convertPreselectedToIndices(preselected, basePalette)
+    const preselectedIndices = this.convertPreselectedToIndices(
+      preselected,
+      basePalette
+    )
 
     // Détecter le mode et sélectionner les couleurs
     const topIndices = this.detectModeAndSelectColors(
@@ -1111,61 +947,6 @@ export class ReGLQuantizer {
     }
 
     return closestIndex
-  }
-
-  /**
-   * ✅ Helper: Détermine si le GPU doit être utilisé pour l'histogramme
-   */
-  private shouldUseGPUForHistogram(
-    pixelCount: number,
-    config: ReGLQuantizeConfig
-  ): boolean {
-    const gpuThreshold = config.gpuOptions?.minPixelsForGPU ?? 128 * 128
-    return this.capabilities.canUseGPU && pixelCount > gpuThreshold
-  }
-
-  /**
-   * ✅ Helper: Calcule la contribution pondérée d'un pixel à l'histogramme
-   */
-  private computeWeightedPixelContribution(
-    r: number,
-    g: number,
-    b: number,
-    cpcPalette: number[][]
-  ): number[] {
-    const weights = new Array(cpcPalette.length).fill(0)
-    let totalWeight = 0
-
-    // Calculer le poids pour chaque couleur de palette (inverse distance weighting)
-    for (let j = 0; j < cpcPalette.length; j++) {
-      const [pr, pg, pb] = cpcPalette[j]
-      const distance = Math.sqrt(
-        (r - pr) * (r - pr) + (g - pg) * (g - pg) + (b - pb) * (b - pb)
-      )
-
-      if (distance === 0) {
-        // Correspondance parfaite - tout le poids va à cette couleur
-        weights[j] = 1
-        totalWeight = 1
-        // On peut arrêter car c'est une correspondance parfaite
-        for (let k = 0; k < cpcPalette.length; k++) {
-          if (k !== j) weights[k] = 0
-        }
-        break
-      } else {
-        // Poids = 1 / (distance + epsilon) - donne plus de poids aux couleurs proches
-        const weight = 1 / (distance + 0.001) // epsilon pour éviter division par zéro
-        weights[j] = weight
-        totalWeight += weight
-      }
-    }
-
-    // Normaliser les poids
-    for (let j = 0; j < cpcPalette.length; j++) {
-      weights[j] /= totalWeight
-    }
-
-    return weights
   }
 
   /**

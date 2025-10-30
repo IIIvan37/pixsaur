@@ -153,11 +153,14 @@ export abstract class QuantizerBase {
     const sampleSize = Math.min(1000, data.length / 4)
     const step = Math.floor(data.length / (sampleSize * 4))
 
+    // Constante pour le hash (équivalent à multiplier par 31)
+    const HASH_MULTIPLIER = 31
+
     let hash = 0
     for (let i = 0; i < data.length; i += step * 4) {
-      hash = ((hash << 5) - hash + data[i]) | 0
-      hash = ((hash << 5) - hash + data[i + 1]) | 0
-      hash = ((hash << 5) - hash + data[i + 2]) | 0
+      hash = Math.trunc(hash * HASH_MULTIPLIER + data[i])
+      hash = Math.trunc(hash * HASH_MULTIPLIER + data[i + 1])
+      hash = Math.trunc(hash * HASH_MULTIPLIER + data[i + 2])
     }
 
     return `${width}x${height}-${hash.toString(36)}`
@@ -167,10 +170,10 @@ export abstract class QuantizerBase {
    * 🔧 LOGIQUE COMMUNE: Obtention de la fonction de distance
    * Single source pour la sélection des métriques
    */
-  protected getDistanceFunction(distanceMetric?: DistanceMetric): DistanceFn {
-    // RGB utilise euclidean par défaut
-    const metric = distanceMetric || 'euclidean'
-    return getDistanceFn('RGB', metric)
+  protected getDistanceFunction(
+    distanceMetric: DistanceMetric = 'euclidean'
+  ): DistanceFn {
+    return getDistanceFn('RGB', distanceMetric)
   }
 
   /**

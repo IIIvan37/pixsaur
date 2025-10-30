@@ -341,7 +341,12 @@ export const previewImageAtom = atom(async (get) => {
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {
     logger.time('  📐 Positioning (auto mode)')
-    const positioned = positionImageForAutoMode(remapped, modeConfig, reduced, centerImage)
+    const positioned = positionImageForAutoMode(
+      remapped,
+      modeConfig,
+      reduced,
+      centerImage
+    )
     logger.timeEnd('  📐 Positioning (auto mode)')
     logger.timeEnd('🖼️ Preview Generation')
     return positioned
@@ -498,9 +503,7 @@ function positionImageForAutoMode(
   ctx.fillRect(0, 0, targetWidth, targetHeight)
 
   const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
-  const dy = centerImage
-    ? Math.floor((targetHeight - remapped.height) / 2)
-    : 0
+  const dy = centerImage ? Math.floor((targetHeight - remapped.height) / 2) : 0
 
   const tempCanvas = document.createElement('canvas')
   tempCanvas.width = remapped.width
@@ -517,5 +520,3 @@ function positionImageForAutoMode(
   const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
   return positioned
 }
-
-

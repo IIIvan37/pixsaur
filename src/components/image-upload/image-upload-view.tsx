@@ -85,7 +85,7 @@ export const ImageUploadView = ({
           }
         }
       }}
-      type="button"
+      type='button'
     >
       {!isTauri && (
         <input

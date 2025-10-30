@@ -50,7 +50,11 @@ function buildPaletteMap(palette: Vector[]): Map<string, number> {
   return paletteMap
 }
 
-function quantizePixel(rgbaBuf: Uint8ClampedArray, offset: number, quantize: boolean): [number, number, number] {
+function quantizePixel(
+  rgbaBuf: Uint8ClampedArray,
+  offset: number,
+  quantize: boolean
+): [number, number, number] {
   const r = quantize ? quantizeCPC(rgbaBuf[offset]) : rgbaBuf[offset]
   const g = quantize ? quantizeCPC(rgbaBuf[offset + 1]) : rgbaBuf[offset + 1]
   const b = quantize ? quantizeCPC(rgbaBuf[offset + 2]) : rgbaBuf[offset + 2]
@@ -72,7 +76,9 @@ function findPaletteIndex(
     if (fallbackToDarkest) {
       return darkestColorIndex
     } else {
-      throw new Error(`Pixel RGB [${r}, ${g}, ${b}] non trouvé dans la palette.`)
+      throw new Error(
+        `Pixel RGB [${r}, ${g}, ${b}] non trouvé dans la palette.`
+      )
     }
   }
 
@@ -89,11 +95,20 @@ export function rgbToIndexBufferExact(
   const indices = new Uint8Array(length)
 
   const paletteMap = buildPaletteMap(palette)
-  const darkestColorIndex = fallbackToDarkest ? findDarkestColorIndex(palette) : 0
+  const darkestColorIndex = fallbackToDarkest
+    ? findDarkestColorIndex(palette)
+    : 0
 
   for (let i = 0; i < length; i++) {
     const [r, g, b] = quantizePixel(rgbaBuf, i * 4, quantize)
-    indices[i] = findPaletteIndex(r, g, b, paletteMap, fallbackToDarkest, darkestColorIndex)
+    indices[i] = findPaletteIndex(
+      r,
+      g,
+      b,
+      paletteMap,
+      fallbackToDarkest,
+      darkestColorIndex
+    )
   }
 
   return indices
