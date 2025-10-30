@@ -3,7 +3,6 @@ import '@testing-library/jest-dom'
 
 import { userEvent } from '@testing-library/user-event'
 import { beforeEach, describe, it, vi } from 'vitest'
-import { vectorToHex } from '@/palettes/cpc-palette'
 import {
   ColorPaletteView,
   type ColorPaletteViewProps
@@ -37,8 +36,8 @@ const mockPalette = [
   { index: 2, name: 'Bleu', hex: '0000ff', vector: new Float32Array([7, 8, 9]) }
 ]
 
-const hex_rouge = vectorToHex(mockPalette[0].vector)
-const hex_vert = vectorToHex(mockPalette[1].vector)
+const hex_rouge = '010203' // vectorToHex([1, 2, 3])
+const hex_vert = '040506' // vectorToHex([4, 5, 6])
 
 // Mock slots for palette view
 const filledSlot = { color: new Float32Array([1, 2, 3]), locked: false }

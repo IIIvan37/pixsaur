@@ -1,8 +1,5 @@
-
 import type { DistanceFn } from '../metric/distance'
 import type { Vector } from '../type'
-
-
 
 /**
  * Builds a weighted histogram where pixel contribution depends on mapping quality.

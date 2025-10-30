@@ -1,10 +1,6 @@
-import {
-
-  buildWeightedHistogram
-} from '../../src/histogram/build-histogram'
+import { buildWeightedHistogram } from '../../src/histogram/build-histogram'
 import { euclideanDistance } from '../../src/metric/distance'
 import type { Vector } from '../../src/type'
-
 
 describe('buildWeightedHistogram', () => {
   it('should weight pixel contributions based on distance to palette colors', () => {

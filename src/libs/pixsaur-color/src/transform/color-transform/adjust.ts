@@ -85,11 +85,7 @@ function applyTemperature(
   if (temperature === 0) return [r, g, b]
 
   const temp = temperature / 100
-  return [
-    r * (1 + temp * 0.3),
-    g,
-    b * (1 - temp * 0.3)
-  ]
+  return [r * (1 + temp * 0.3), g, b * (1 - temp * 0.3)]
 }
 
 function applyTint(

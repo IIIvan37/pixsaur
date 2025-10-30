@@ -421,7 +421,6 @@ import {
   getDistanceFn
 } from '../metric/distance'
 import type { DitheringConfig } from '../quant'
-import { getColorSpaceToRgbFn, getRgbToColorSpaceFn } from '../space'
 import type { ColorSpace, Vector } from '../type'
 
 export function applyFloydSteinbergDither(
@@ -696,7 +695,6 @@ export function mapAndDither(
   const { mode } = config
   const N = width * height
 
- 
   const distFn = getDistanceFn(
     colorSpace,
     DISTANCE_METRICS_BY_COLORSPACE[colorSpace][0]
@@ -710,9 +708,7 @@ export function mapAndDither(
     bufCS[j + 2] = cs[2]
   }
 
-  const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
-    Array.from(v)
-  )
+  const { paletteOut, paletteCS } = buildPalette(palette, (v) => Array.from(v))
 
   const ditherFn = DITHER_MODES[mode]
   if (ditherFn) {

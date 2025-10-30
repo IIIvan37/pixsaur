@@ -1,5 +1,5 @@
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { CPCColor, CPCPalette } from '@/libs/types'
+import type { CPCColor } from '@/libs/types'
 import { CPCHardware } from '@/libs/types'
 
 // Full CPC hardware palette
@@ -34,28 +34,16 @@ export const cpcFullPalette: CPCColor[] = [
 ]
 
 // Get the appropriate palette based on CPC mode
-export function getCPCPalette(): CPCPalette {
-  // Pour tous les modes, on retourne la palette complète
-  // Le nombre de couleurs utilisables sera limité par le composant ColorPalette
-  return cpcFullPalette
-}
-
 export function generateAmstradCPCPalette(): Vector[] {
   return cpcFullPalette.map((entry) => entry.vector)
 }
-// Helper functions for working with vectors
+
+// Helper function for working with vectors
 export function vectorToHex(vector: Vector): string {
   const [r, g, b] = vector
   return `${r.toString(16).padStart(2, '0')}${g
     .toString(16)
     .padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-}
-
-export function hexToVector(hex: string): Vector {
-  const r = Number.parseInt(hex.substring(0, 2), 16)
-  const g = Number.parseInt(hex.substring(2, 4), 16)
-  const b = Number.parseInt(hex.substring(4, 6), 16)
-  return [r, g, b]
 }
 
 const firmwareToHardware = [
@@ -143,25 +131,5 @@ export function getPaletteForHardware(hardware: CPCHardware): Vector[] {
       return generateCPCPlusPalette() // 4096 colors
     default:
       return generateAmstradCPCPalette() // Fallback to classic
-  }
-}
-
-/**
- * Get CPCColor palette based on hardware
- * Returns CPCColor[] format for UI components
- */
-export function getCPCPaletteByHardware(hardware: CPCHardware): CPCColor[] {
-  if (hardware === CPCHardware.PLUS) {
-    // Pour CPC Plus, générer dynamiquement les CPCColor depuis les 4096 couleurs
-    const vectors = generateCPCPlusPalette()
-    return vectors.map((vector, index) => ({
-      index,
-      name: `RGB(${vector[0]},${vector[1]},${vector[2]})`,
-      hex: `${vector[0].toString(16).padStart(2, '0')}${vector[1].toString(16).padStart(2, '0')}${vector[2].toString(16).padStart(2, '0')}`,
-      vector
-    }))
-  } else {
-    // CPC Classic: utiliser la palette statique existante
-    return cpcFullPalette
   }
 }
