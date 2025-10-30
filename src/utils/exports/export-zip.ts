@@ -5,7 +5,6 @@ import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
 } from '@/palettes/cpc-palette'
-import { logger } from '@/utils/logger'
 import {
   cpcPlusValuesToASM,
   injectCPCPlusPaletteIntoSCR,
@@ -107,16 +106,6 @@ async function exportPNGData(
 
   // Export PNG with correct aspect ratio
   if (config.content.includePNGCorrected) {
-    logger.debug('Creating corrected aspect PNG:', {
-      originalWidth: canvas.width,
-      originalHeight: canvas.height,
-      mode: modeConfig.mode,
-      widthMultiplier,
-      heightMultiplier,
-      correctedWidth: canvas.width * widthMultiplier,
-      correctedHeight: canvas.height * heightMultiplier
-    })
-
     const correctedCanvas = document.createElement('canvas')
     const correctedWidth = canvas.width * widthMultiplier
     const correctedHeight = canvas.height * heightMultiplier
@@ -149,7 +138,6 @@ async function exportPNGData(
       const correctedBlob = await new Promise<Blob | null>((resolve) => {
         correctedCanvas.toBlob(resolve, 'image/png')
       })
-      logger.debug('Corrected blob size:', correctedBlob?.size)
       if (correctedBlob) {
         zip.file('pixsaur_corrected_aspect.png', correctedBlob)
       }
@@ -175,10 +163,6 @@ export async function exportZip(
   const ctx = canvas.getContext('2d')
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
   if (!data) return
-
-  logger.debug(
-    `Canvas size: ${canvas.width}x${canvas.height}, ImageData size: ${data.width}x${data.height}`
-  )
 
   // Check if mode is standard (required for SCR format)
   // SCR format requires standard 16KB screen dimensions

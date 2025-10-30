@@ -4,7 +4,6 @@
  */
 
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { logger } from '@/utils/logger'
 import {
   selectBalancedSubset,
   selectContrastedSubset
@@ -32,10 +31,6 @@ export function selectByStrategy(
   params: SelectionParams
 ): Vector[] {
   const strategy = config.contrastStrategy ?? 'max'
-
-  logger.debug(
-    `[STRATEGY] Using strategy: ${strategy}, targetColors: ${config.targetColors}, condition: ${config.targetColors <= 4 && strategy === 'balanced'}`
-  )
 
   if (config.targetColors <= 4 && strategy === 'balanced') {
     return selectBalancedSubset(

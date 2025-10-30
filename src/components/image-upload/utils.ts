@@ -1,5 +1,3 @@
-import { logger } from '@/utils/logger'
-
 /**
  * Parse SVG viewBox attribute to extract dimensions
  */
@@ -97,7 +95,6 @@ export const processImageFile = (file: File): Promise<HTMLImageElement> => {
       img.src = reader.result as string
 
       if (file.type === 'image/svg+xml') {
-        logger.debug('Processing SVG file')
         getSvgDimensions(file)
           .then((dimensions) => {
             img.width = dimensions.width

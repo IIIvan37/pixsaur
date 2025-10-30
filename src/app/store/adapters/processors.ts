@@ -16,14 +16,8 @@ let isInitializing = false
 
 // Atome pour initialiser les adaptateurs de façon asynchrone (singleton)
 export const initializeProcessorsAtom = atom(null, async (_get, set) => {
-  const callStack = new Error().stack?.split('\n')[2]?.trim() || 'unknown'
-  adapterLogger.debug(
-    `🔧 [PROCESSORS] initializeProcessorsAtom called from: ${callStack}`
-  )
-
   // Si déjà en cours d'initialisation, attendre la promesse existante
   if (isInitializing && initializationPromise) {
-    adapterLogger.debug('🔄 [PROCESSORS] Already initializing, waiting...')
     await initializationPromise
     return
   }
@@ -32,9 +26,6 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
   const currentImage = _get(imageProcessorAtom)
   const currentPalette = _get(paletteProcessorAtom)
   if (currentImage && currentPalette) {
-    adapterLogger.debug(
-      '♻️ [PROCESSORS] Processors already initialized, skipping'
-    )
     return
   }
 
@@ -42,8 +33,6 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
 
   initializationPromise = (async () => {
     try {
-      adapterLogger.debug('Initializing image processors...')
-
       const processorType = _get(processorTypeAtom)
 
       // Créer les processeurs avec sélection automatique WebGL/CPU
@@ -87,14 +76,10 @@ export const disposeProcessorsAtom = atom(null, (get, set) => {
     paletteProcessor.dispose()
     set(paletteProcessorAtom, null)
   }
-
-  adapterLogger.debug('Processors disposed')
 })
 
 // Atome pour forcer la réinitialisation quand le type change
 export const reinitializeProcessorsAtom = atom(null, async (_get, set) => {
-  adapterLogger.debug('🔄 [PROCESSORS] Forcing reinitialization...')
-
   // Nettoyer les anciens processeurs
   set(disposeProcessorsAtom)
 
@@ -105,11 +90,7 @@ export const reinitializeProcessorsAtom = atom(null, async (_get, set) => {
 // Atome qui écoute les changements de processorType et recharge automatiquement
 export const processorTypeListenerAtom = atom(
   (get) => get(processorTypeAtom),
-  async (get, set, _payload) => {
-    const newType = get(processorTypeAtom)
-    adapterLogger.debug(
-      `🔄 [PROCESSORS] ProcessorType changed to: ${newType} - reinitializing...`
-    )
+  async (_get, set, _payload) => {
     await set(reinitializeProcessorsAtom)
   }
 )
@@ -135,7 +116,6 @@ export const processorFactory = {
           stencil: false
         }
       })
-      adapterLogger.debug('✅ [FACTORY] ReGL instance created successfully')
     } catch (error) {
       adapterLogger.warn(
         '⚠️ [FACTORY] Failed to create ReGL instance, falling back to CPU:',

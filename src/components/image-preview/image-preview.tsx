@@ -14,7 +14,6 @@ import {
   previewImageAtom
 } from '@/app/store/preview/preview'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
-import { logger } from '@/utils/logger'
 import { ImagePreviewView } from './image-preview-view'
 
 const ImagePreview = () => {
@@ -53,15 +52,6 @@ const ImagePreview = () => {
       if (tempCtx) {
         tempCtx.putImageData(previewImage, 0, 0)
 
-        logger.debug('[IMAGE PREVIEW DRAW]', {
-          sourceWidth: tempCanvas.width,
-          sourceHeight: tempCanvas.height,
-          destWidth: width,
-          destHeight: height,
-          canvasWidth: canvas.width,
-          canvasHeight: canvas.height
-        })
-
         // Dessiner le canvas temporaire sur le canvas de destination
         ctx.drawImage(
           tempCanvas,
@@ -91,7 +81,6 @@ const ImagePreview = () => {
 
     if (isTauri) {
       // In Tauri, don't open in new tab - it would open in system browser
-      logger.debug('[ImagePreview] Canvas click ignored in Tauri mode')
       return
     }
 

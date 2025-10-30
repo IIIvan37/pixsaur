@@ -12,7 +12,7 @@ import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { adapterLogger, paletteLogger, quantizerLogger } from '@/utils/logger'
+import { adapterLogger, paletteLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
 import { ReGLQuantizer } from './regl-quantizer'
 
@@ -43,14 +43,9 @@ export class ReGLProcessor implements ImageProcessor {
     // Évaluer si ReGL pourrait être utilisé
     this.reglCapabilities = this.evaluateReGLCapabilities()
 
-    adapterLogger.debug(
-      `[ADAPTER] ReGL constructor - regl instance: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
-    )
-
     // Phase 1: Setup optionnel de ReGL
     if (regl && this.reglCapabilities.canUseReGL) {
       try {
-        adapterLogger.debug('[ADAPTER] Initializing ReGL quantizer...')
         this.quantizer = new ReGLQuantizer(regl)
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
@@ -65,10 +60,6 @@ export class ReGLProcessor implements ImageProcessor {
         this.quantizer = undefined
         this.regl = undefined
       }
-    } else {
-      adapterLogger.debug(
-        `[ADAPTER] Skipping ReGL initialization - regl: ${!!regl}, canUseReGL: ${this.reglCapabilities.canUseReGL}`
-      )
     }
 
     // Toujours disponible avec fallback CPU
@@ -335,17 +326,12 @@ export class ReGLProcessor implements ImageProcessor {
           gl instanceof WebGL2RenderingContext ? 'WebGL 2.0' : 'WebGL 1.0'
         const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
 
-        adapterLogger.debug(
-          `🔍 [ADAPTER] WebGL capabilities detected: ${version}, max texture: ${maxTextureSize}px`
-        )
-
         return {
           canUseReGL: true,
           webglVersion: version,
           maxTextureSize
         }
       } else {
-        adapterLogger.debug('🔍 [ADAPTER] No WebGL support detected')
         return {
           canUseReGL: false,
           webglVersion: null,
@@ -375,45 +361,27 @@ export class ReGLProcessor implements ImageProcessor {
   ): Promise<ImageData> {
     // Essayer d'abord le GPU si disponible
     if (this.imageAdjustmentCommand && this.quantizer) {
-      return adapterLogger.timeAsync(
-        '🎮 ReGL GPU Image Adjustments',
-        async () => {
-          adapterLogger.debug(
-            `� [ADAPTER] Applying adjustments via GPU: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
-          )
-
-          return this.applyAdjustmentsGPU(imageData, adjustments)
-        }
-      )
+      return this.applyAdjustmentsGPU(imageData, adjustments)
     }
 
     // Fallback CPU
-    return adapterLogger.timeAsync(
-      'ReGL Image Adjustments (CPU fallback)',
-      async () => {
-        adapterLogger.debug(
-          `💻 [ADAPTER] Applying adjustments via CPU fallback: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}, posterization=${adjustments.posterization}, pixels=${imageData.width}x${imageData.height}`
-        )
+    const config = {
+      rgb: adjustments.rgb,
+      brightness: adjustments.brightness,
+      contrast: adjustments.contrast,
+      saturation: adjustments.saturation,
+      hue: adjustments.hue,
+      vibrance: adjustments.vibrance,
+      temperature: adjustments.temperature,
+      tint: adjustments.tint,
+      gamma: adjustments.gamma,
+      exposure: adjustments.exposure,
+      highlights: adjustments.highlights,
+      shadows: adjustments.shadows,
+      posterization: adjustments.posterization
+    }
 
-        const config = {
-          rgb: adjustments.rgb,
-          brightness: adjustments.brightness,
-          contrast: adjustments.contrast,
-          saturation: adjustments.saturation,
-          hue: adjustments.hue,
-          vibrance: adjustments.vibrance,
-          temperature: adjustments.temperature,
-          tint: adjustments.tint,
-          gamma: adjustments.gamma,
-          exposure: adjustments.exposure,
-          highlights: adjustments.highlights,
-          shadows: adjustments.shadows,
-          posterization: adjustments.posterization
-        }
-
-        return applyAdjustmentsInOnePass(imageData, config)
-      }
-    )
+    return applyAdjustmentsInOnePass(imageData, config)
   }
 
   /**
@@ -494,40 +462,29 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData {
-    const timerId = `ReGL Image Adjustments (Sync) ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-    return adapterLogger.timeSync(timerId, () => {
-      // Essayer d'abord le GPU si disponible
-      if (this.imageAdjustmentCommand && this.quantizer) {
-        adapterLogger.debug(
-          `🎮 [ADAPTER] Applying sync adjustments via GPU: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
-        )
+    // Essayer d'abord le GPU si disponible
+    if (this.imageAdjustmentCommand && this.quantizer) {
+      return this.applyAdjustmentsGPU(imageData, adjustments)
+    }
 
-        return this.applyAdjustmentsGPU(imageData, adjustments)
-      }
+    // Fallback CPU
+    const config = {
+      rgb: adjustments.rgb,
+      brightness: adjustments.brightness,
+      contrast: adjustments.contrast,
+      saturation: adjustments.saturation,
+      hue: adjustments.hue,
+      vibrance: adjustments.vibrance,
+      temperature: adjustments.temperature,
+      tint: adjustments.tint,
+      gamma: adjustments.gamma,
+      exposure: adjustments.exposure,
+      highlights: adjustments.highlights,
+      shadows: adjustments.shadows,
+      posterization: adjustments.posterization
+    }
 
-      // Fallback CPU
-      adapterLogger.debug(
-        `💻 [ADAPTER] Applying sync adjustments via CPU fallback: brightness=${adjustments.brightness}, contrast=${adjustments.contrast}, saturation=${adjustments.saturation}`
-      )
-
-      const config = {
-        rgb: adjustments.rgb,
-        brightness: adjustments.brightness,
-        contrast: adjustments.contrast,
-        saturation: adjustments.saturation,
-        hue: adjustments.hue,
-        vibrance: adjustments.vibrance,
-        temperature: adjustments.temperature,
-        tint: adjustments.tint,
-        gamma: adjustments.gamma,
-        exposure: adjustments.exposure,
-        highlights: adjustments.highlights,
-        shadows: adjustments.shadows,
-        posterization: adjustments.posterization
-      }
-
-      return applyAdjustmentsInOnePass(imageData, config)
-    })
+    return applyAdjustmentsInOnePass(imageData, config)
   }
 
   /**
@@ -543,81 +500,63 @@ export class ReGLProcessor implements ImageProcessor {
     preselected: Vector[],
     contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
-    const timerId = `ReGL Palette Quantization ${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
-    return adapterLogger.timeAsync(timerId, async () => {
-      adapterLogger.debug(
-        `[ADAPTER] Received contrastStrategy: ${contrastStrategy}, targetColors: ${targetColors}`
-      )
-      adapterLogger.debug(
-        `[ADAPTER] Starting ReGL quantization: colorSpace=RGB, targetColors=${targetColors}, bufferSize=${buffer.length}`
-      )
+    // RGB utilise euclidean distance
+    const distanceMetric: DistanceMetric = 'euclidean'
 
-      // RGB utilise euclidean distance
-      const distanceMetric: DistanceMetric = 'euclidean'
+    // Extraire dimensions depuis imageData
+    const dimensions =
+      'data' in imageData
+        ? { width: imageData.width, height: imageData.height }
+        : imageData
 
-      // Extraire dimensions depuis imageData
-      const dimensions =
-        'data' in imageData
-          ? { width: imageData.width, height: imageData.height }
-          : imageData
+    // Phase 1: Utiliser ReGLQuantizer si disponible
+    if (this.quantizer) {
+      try {
+        const fullImageData =
+          'data' in imageData
+            ? imageData
+            : new ImageData(
+                new Uint8ClampedArray(buffer),
+                imageData.width,
+                imageData.height
+              )
 
-      // Phase 1: Utiliser ReGLQuantizer si disponible
-      if (this.quantizer) {
-        try {
-          adapterLogger.debug('🎮 [ADAPTER] Using ReGL quantizer')
-
-          const fullImageData =
-            'data' in imageData
-              ? imageData
-              : new ImageData(
-                  new Uint8ClampedArray(buffer),
-                  imageData.width,
-                  imageData.height
-                )
-
-          const result = await this.quantizer.quantizePalette(
-            buffer,
-            fullImageData,
-            basePalette,
-            preselected,
-            {
-              distanceMetric,
-              targetColors,
-              contrastStrategy:
-                contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
-              gpuOptions: {
-                minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
-              }
+        const result = await this.quantizer.quantizePalette(
+          buffer,
+          fullImageData,
+          basePalette,
+          preselected,
+          {
+            distanceMetric,
+            targetColors,
+            contrastStrategy:
+              contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
+            gpuOptions: {
+              minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
             }
-          )
+          }
+        )
 
-          adapterLogger.debug(
-            `[ADAPTER] Final contrastStrategy passed: ${contrastStrategy || getDefaultStore().get(contrastStrategyAtom)}`
-          )
-
-          return [...result] // Conversion readonly -> mutable pour compatibilité
-        } catch (error) {
-          adapterLogger.warn(
-            '⚠️ [ADAPTER] ReGL quantization failed, falling back to CPU',
-            error
-          )
-          // Continue vers fallback CPU
-        }
+        return [...result] // Conversion readonly -> mutable pour compatibilité
+      } catch (error) {
+        adapterLogger.warn(
+          '⚠️ [ADAPTER] ReGL quantization failed, falling back to CPU',
+          error
+        )
+        // Continue vers fallback CPU
       }
+    }
 
-      // Fallback CPU (existant)
-      adapterLogger.debug('🖥️ [ADAPTER] Using CPU quantization fallback')
-
-      return this.quantizePaletteOptimized(
-        buffer,
-        dimensions,
-        targetColors,
-        basePalette,
-        preselected,
-        distanceMetric,
-        contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
-      )
-    })
+    // Fallback CPU (existant)
+    return this.quantizePaletteOptimized(
+      buffer,
+      dimensions,
+      targetColors,
+      basePalette,
+      preselected,
+      distanceMetric,
+      contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
+    )
   }
 
   /**
@@ -632,12 +571,6 @@ export class ReGLProcessor implements ImageProcessor {
     distanceMetric: DistanceMetric,
     contrastStrategy?: 'max' | 'balanced'
   ): Promise<Vector[]> {
-    quantizerLogger.debug(
-      `📊 [ADAPTER] Creating ReGL-ready quantizer with metric: ${distanceMetric}, basePalette=${basePalette.length} colors, preselected=${preselected.length} colors`
-    )
-
-    const startTime = performance.now()
-
     // Utiliser la signature correcte de createQuantizer
     const quantizer = createQuantizer({
       buf: buffer,
@@ -650,24 +583,8 @@ export class ReGLProcessor implements ImageProcessor {
       }
     })
 
-    const creationTime = performance.now()
-    quantizerLogger.debug(
-      `🔧 [ADAPTER] Quantizer Creation: ${(creationTime - startTime).toFixed(2)}ms`
-    )
-
-    const quantStart = performance.now()
-
     // Utiliser la signature correcte de quantize
     const palette = quantizer.quantize(targetColors)
-
-    const quantEnd = performance.now()
-    quantizerLogger.debug(
-      `⚡ [ADAPTER] Quantization Process: ${(quantEnd - quantStart).toFixed(2)}ms`
-    )
-
-    paletteLogger.debug(
-      `🎨 [ADAPTER] Quantization completed via ReGL adapter (CPU): ${palette.length}/${targetColors} colors for RGB`
-    )
 
     if (palette.length !== targetColors) {
       paletteLogger.warn(
@@ -684,9 +601,6 @@ export class ReGLProcessor implements ImageProcessor {
   dispose(): void {
     try {
       this.quantizer?.dispose()
-      adapterLogger.debug(
-        '🗑️ [ADAPTER] ReGL Processor disposed (GPU resources cleaned)'
-      )
     } catch (error) {
       adapterLogger.error(
         '❌ [ADAPTER] Error during ReGL processor disposal',

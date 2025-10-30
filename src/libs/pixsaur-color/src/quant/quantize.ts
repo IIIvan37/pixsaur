@@ -1,4 +1,3 @@
-import { quantizerLogger } from '../../../../utils/logger'
 import { buildWeightedHistogram } from '../histogram'
 import { mapAndDither } from '../map'
 import {
@@ -9,44 +8,6 @@ import {
 import type { Vector } from '../type'
 import { selectTopIndices, selectTopIndicesCore } from './select-to-indices'
 import { selectByStrategy } from './strategy-selector'
-
-// Helper functions for debugging CPC colors
-// CPC color name mapping for debugging
-const CPC_COLOR_NAMES = new Map<string, string>([
-  ['0,0,128', 'Blue'],
-  ['0,0,255', 'Bright Blue'],
-  ['0,128,255', 'Sky Blue'],
-  ['128,128,255', 'Pastel Blue'],
-  ['0,255,255', 'Bright Cyan'],
-  ['128,255,255', 'Pastel Cyan'],
-  ['255,0,0', 'Bright Red'],
-  ['128,0,0', 'Red'],
-  ['255,0,128', 'Purple'],
-  ['128,0,128', 'Magenta'],
-  ['255,0,255', 'Bright Magenta'],
-  ['128,0,255', 'Mauve'],
-  ['0,128,0', 'Green'],
-  ['0,255,0', 'Bright Green'],
-  ['128,255,0', 'Lime'],
-  ['128,128,0', 'Yellow'],
-  ['255,255,0', 'Bright Yellow'],
-  ['255,128,0', 'Orange'],
-  ['0,0,0', 'Black'],
-  ['255,255,255', 'Bright White'],
-  ['128,128,128', 'White']
-])
-
-function getCPCColorName(color: Vector): string {
-  const [r, g, b] = color
-  const key = `${r},${g},${b}`
-  return CPC_COLOR_NAMES.get(key) ?? `RGB(${r},${g},${b})`
-}
-
-function isBlueColor(color: Vector): boolean {
-  const [r, g, b] = color
-  // Consider a color blue if blue component is dominant and > 100
-  return b > 100 && b >= r && b >= g
-}
 
 export type DitheringMode =
   | 'floydSteinberg'
@@ -118,26 +79,6 @@ export function createQuantizer({
       buildWeightedHistogram(vecs.map(toW), workingPal, distFn)
     )
 
-    // DEBUG: Log histogram for analysis
-    quantizerLogger.info('🎨 Histogram analysis:')
-    const histogramEntries = workingPal
-      .map((color, idx) => ({
-        index: idx,
-        color,
-        count: counts[idx],
-        name: getCPCColorName(color) // Helper to identify CPC colors
-      }))
-      .sort((a, b) => b.count - a.count)
-
-    quantizerLogger.info(
-      'Top 10 colors by weight:',
-      histogramEntries.slice(0, 10)
-    )
-    quantizerLogger.info(
-      'Blue colors in histogram:',
-      histogramEntries.filter((entry) => isBlueColor(entry.color))
-    )
-
     // Calculate relative threshold based on image size (0.1% of pixels, minimum 1)
     const totalPixels = vecs.length
     const relativeThreshold = Math.max(1, Math.floor(totalPixels * 0.001))
@@ -154,16 +95,6 @@ export function createQuantizer({
       : selectTopIndices(counts, preIdx, 16, {
           threshold: relativeThreshold
         })
-
-    quantizerLogger.info('Selected indices:', idxs)
-    quantizerLogger.info(
-      'Selected colors:',
-      idxs.map((i) => ({
-        index: i,
-        color: workingPal[i],
-        name: getCPCColorName(workingPal[i])
-      }))
-    )
 
     const out = idxs.map((i: number) => workingPal[i])
 

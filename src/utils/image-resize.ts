@@ -5,7 +5,6 @@
 
 import type { ResizeConfig } from '@/app/store/config/resize-types'
 import { getNormalizedTargetSize } from '@/app/store/config/resize-types'
-import { logger } from './logger'
 
 export interface Selection {
   sx: number
@@ -70,15 +69,6 @@ function resizeOrigin(
   const { width: targetWidth, height: targetHeight } = getNormalizedTargetSize(
     config.modeConfig
   )
-
-  logger.debug('[RESIZE ORIGIN]', {
-    modeConfig: config.modeConfig,
-    targetWidth,
-    targetHeight,
-    selectionWidth: selection.width,
-    selectionHeight: selection.height,
-    centerImage
-  })
 
   const outputCanvas = document.createElement('canvas')
   outputCanvas.width = targetWidth
