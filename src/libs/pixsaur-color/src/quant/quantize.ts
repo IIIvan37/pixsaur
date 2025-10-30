@@ -11,31 +11,35 @@ import { selectTopIndices, selectTopIndicesCore } from './select-to-indices'
 import { selectByStrategy } from './strategy-selector'
 
 // Helper functions for debugging CPC colors
+// CPC color name mapping for debugging
+const CPC_COLOR_NAMES = new Map<string, string>([
+  ['0,0,128', 'Blue'],
+  ['0,0,255', 'Bright Blue'],
+  ['0,128,255', 'Sky Blue'],
+  ['128,128,255', 'Pastel Blue'],
+  ['0,255,255', 'Bright Cyan'],
+  ['128,255,255', 'Pastel Cyan'],
+  ['255,0,0', 'Bright Red'],
+  ['128,0,0', 'Red'],
+  ['255,0,128', 'Purple'],
+  ['128,0,128', 'Magenta'],
+  ['255,0,255', 'Bright Magenta'],
+  ['128,0,255', 'Mauve'],
+  ['0,128,0', 'Green'],
+  ['0,255,0', 'Bright Green'],
+  ['128,255,0', 'Lime'],
+  ['128,128,0', 'Yellow'],
+  ['255,255,0', 'Bright Yellow'],
+  ['255,128,0', 'Orange'],
+  ['0,0,0', 'Black'],
+  ['255,255,255', 'Bright White'],
+  ['128,128,128', 'White']
+])
+
 function getCPCColorName(color: Vector): string {
   const [r, g, b] = color
-  // Simple mapping based on known CPC colors
-  if (r === 0 && g === 0 && b === 128) return 'Blue'
-  if (r === 0 && g === 0 && b === 255) return 'Bright Blue'
-  if (r === 0 && g === 128 && b === 255) return 'Sky Blue'
-  if (r === 128 && g === 128 && b === 255) return 'Pastel Blue'
-  if (r === 0 && g === 255 && b === 255) return 'Bright Cyan'
-  if (r === 128 && g === 255 && b === 255) return 'Pastel Cyan'
-  if (r === 255 && g === 0 && b === 0) return 'Bright Red'
-  if (r === 128 && g === 0 && b === 0) return 'Red'
-  if (r === 255 && g === 0 && b === 128) return 'Purple'
-  if (r === 128 && g === 0 && b === 128) return 'Magenta'
-  if (r === 255 && g === 0 && b === 255) return 'Bright Magenta'
-  if (r === 128 && g === 0 && b === 255) return 'Mauve'
-  if (r === 0 && g === 128 && b === 0) return 'Green'
-  if (r === 0 && g === 255 && b === 0) return 'Bright Green'
-  if (r === 128 && g === 255 && b === 0) return 'Lime'
-  if (r === 128 && g === 128 && b === 0) return 'Yellow'
-  if (r === 255 && g === 255 && b === 0) return 'Bright Yellow'
-  if (r === 255 && g === 128 && b === 0) return 'Orange'
-  if (r === 0 && g === 0 && b === 0) return 'Black'
-  if (r === 255 && g === 255 && b === 255) return 'Bright White'
-  if (r === 128 && g === 128 && b === 128) return 'White'
-  return `RGB(${r},${g},${b})`
+  const key = `${r},${g},${b}`
+  return CPC_COLOR_NAMES.get(key) ?? `RGB(${r},${g},${b})`
 }
 
 function isBlueColor(color: Vector): boolean {
