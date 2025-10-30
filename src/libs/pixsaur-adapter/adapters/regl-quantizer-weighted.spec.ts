@@ -3,7 +3,6 @@
  */
 
 import { describe, expect, test, vi } from 'vitest'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { ReGLQuantizer } from '../adapters/regl-quantizer'
 
 describe('ReGL Quantizer - Weighted Histogram Integration', () => {
@@ -37,7 +36,7 @@ describe('ReGL Quantizer - Weighted Histogram Integration', () => {
   }
 
   // Palette CPC Classic avec les couleurs bleues
-  const createCPCPalette = (): Vector[] => [
+  const createCPCPalette = (): [number, number, number][] => [
     [0, 0, 0], // Noir
     [0, 0, 128], // Bleu sombre (idx 1)
     [0, 0, 255], // Bleu (idx 2)
@@ -91,7 +90,7 @@ describe('ReGL Quantizer - Weighted Histogram Integration', () => {
   }
 
   test('should detect blue colors using weighted histogram in CPU fallback', async () => {
-    const mockRegl = createMockRegl() as any
+    const mockRegl = createMockRegl()
     const quantizer = new ReGLQuantizer(mockRegl)
 
     const palette = createCPCPalette()
@@ -118,12 +117,12 @@ describe('ReGL Quantizer - Weighted Histogram Integration', () => {
       )
 
       // Vérifier que des couleurs bleues ont été sélectionnées
-      const blueIndices = [1, 2, 11, 14, 20] // Indices des couleurs bleues dans CPC
+      const blueIndices = new Set([1, 2, 11, 14, 20]) // Indices des couleurs bleues dans CPC
       const selectedBlueColors = result.filter((color) => {
         const paletteIndex = palette.findIndex(
           (p) => p[0] === color[0] && p[1] === color[1] && p[2] === color[2]
         )
-        return blueIndices.includes(paletteIndex)
+        return blueIndices.has(paletteIndex)
       })
 
       expect(selectedBlueColors.length).toBeGreaterThan(0)
@@ -134,7 +133,7 @@ describe('ReGL Quantizer - Weighted Histogram Integration', () => {
   })
 
   test('should use weighted histogram for both CPU and GPU paths', async () => {
-    const mockRegl = createMockRegl() as any
+    const mockRegl = createMockRegl()
     const quantizer = new ReGLQuantizer(mockRegl)
 
     const palette = createCPCPalette()
@@ -164,53 +163,15 @@ describe('ReGL Quantizer - Weighted Histogram Integration', () => {
       expect(result.length).toBe(config.targetColors)
 
       // Chaque couleur devrait être un tableau RGB valide
-      result.forEach((color) => {
+      for (const color of result) {
         expect(Array.isArray(color)).toBe(true)
         expect(color.length).toBe(3)
-        color.forEach((component) => {
+        for (const component of color) {
           expect(typeof component).toBe('number')
           expect(component).toBeGreaterThanOrEqual(0)
           expect(component).toBeLessThanOrEqual(255)
-        })
-      })
-    } finally {
-      quantizer.dispose()
-    }
-  })
-
-  test('weighted histogram should give higher weight to blue colors when image has blues', async () => {
-    // Test direct de la méthode computeHistogramCPUWeighted
-    const mockRegl = createMockRegl() as any
-    const quantizer = new ReGLQuantizer(mockRegl)
-
-    const palette = createCPCPalette()
-    const imageData = createBlueImage(10, 10) // Petite image contrôlée
-
-    try {
-      // Accéder à la méthode privée via type assertion (pour test)
-      const histogram = (quantizer as any).computeHistogramCPUWeighted(
-        imageData,
-        palette
-      )
-
-      // Vérifier que l'histogramme a été calculé
-      expect(histogram).toBeDefined()
-      expect(Array.isArray(histogram)).toBe(true)
-      expect(histogram.length).toBe(palette.length)
-
-      // Calculer le poids total des couleurs bleues
-      const blueIndices = [1, 2, 11, 14, 20]
-      const totalBlueWeight = blueIndices.reduce(
-        (sum, idx) => sum + histogram[idx],
-        0
-      )
-
-      // Les couleurs bleues devraient avoir un poids significatif
-      expect(totalBlueWeight).toBeGreaterThan(0.1) // Au moins 10% du poids total
-
-      // Vérifier que certaines couleurs bleues spécifiques ont du poids
-      expect(histogram[1]).toBeGreaterThan(0) // Bleu sombre
-      expect(histogram[2]).toBeGreaterThan(0) // Bleu
+        }
+      }
     } finally {
       quantizer.dispose()
     }

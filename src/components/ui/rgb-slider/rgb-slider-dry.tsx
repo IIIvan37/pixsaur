@@ -12,7 +12,7 @@ export interface RgbSliderProps {
 }
 
 /**
- * 🎮 RGB Slider Component - DRY Implementation
+ * RGB Slider Component - DRY Implementation
  *
  * Composant réutilisable pour ajuster les valeurs RGB avec sliders.
  * Utilise le composant PixsaurSlider existant pour éviter la duplication.

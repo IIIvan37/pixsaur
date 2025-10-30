@@ -1,5 +1,5 @@
 /**
- * 🧪 Tests pour le Logger Unifié DRY
+ * Tests pour le Logger Unifié DRY
  *
  * Ces tests valident que la refactorisation DRY fonctionne correctement
  * et que les performances sont maintenues ou améliorées.
@@ -14,7 +14,7 @@ import {
   UnifiedLogger
 } from '@/utils/logger/unified-logger'
 
-describe('🔄 Logger Unifié DRY', () => {
+describe('Logger Unifié DRY', () => {
   beforeEach(() => {
     // Reset configuration avant chaque test
     UnifiedLogger.configureAll({
@@ -31,7 +31,7 @@ describe('🔄 Logger Unifié DRY', () => {
     }
   })
 
-  describe('🏭 Factory Pattern (DRY)', () => {
+  describe('Factory Pattern (DRY)', () => {
     it('devrait créer une seule instance par module', () => {
       const logger1 = UnifiedLogger.getInstance('test')
       const logger2 = UnifiedLogger.getInstance('test')
@@ -55,7 +55,7 @@ describe('🔄 Logger Unifié DRY', () => {
     })
   })
 
-  describe('⚙️ Configuration Centralisée (DRY)', () => {
+  describe('Configuration Centralisée (DRY)', () => {
     it('devrait configurer tous les loggers en une fois', () => {
       UnifiedLogger.configureAll({ level: 'error', enabled: false })
 
@@ -128,7 +128,7 @@ describe('🔄 Logger Unifié DRY', () => {
     })
   })
 
-  describe('📊 Interface Cohérente (DRY)', () => {
+  describe('Interface Cohérente (DRY)', () => {
     it('devrait avoir la même interface pour tous les loggers', () => {
       const methods = [
         'debug',
@@ -168,7 +168,7 @@ describe('🔄 Logger Unifié DRY', () => {
     })
   })
 
-  describe('🚀 Performance Utilities (DRY)', () => {
+  describe('Performance Utilities (DRY)', () => {
     it('devrait fournir des utilitaires de performance', () => {
       expect(loggerPerformance.quantization).toBeInstanceOf(Function)
       expect(loggerPerformance.adaptation).toBeInstanceOf(Function)
@@ -186,7 +186,7 @@ describe('🔄 Logger Unifié DRY', () => {
     })
   })
 
-  describe('📈 Metrics de Comparaison', () => {
+  describe('Metrics de Comparaison', () => {
     it("devrait réduire le nombre d'instances", () => {
       // Avant: 6 classes différentes
       // Après: 1 classe réutilisée
@@ -213,7 +213,7 @@ describe('🔄 Logger Unifié DRY', () => {
   })
 })
 
-describe('🔄 Migration Compatibility', () => {
+describe('Migration Compatibility', () => {
   it("devrait maintenir l'API existante", () => {
     // Les loggers pré-configurés doivent exister
     expect(adapterLogger).toBeDefined()

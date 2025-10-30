@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🦖 Pixsaur Desktop - Installation des dépendances Tauri"
+echo "Pixsaur Desktop - Installation des dépendances Tauri"
 echo "========================================================="
 echo ""
 
@@ -11,29 +11,29 @@ if [ -f /etc/os-release ]; then
     OS=$ID
     VERSION=$VERSION_ID
 else
-    echo "❌ Impossible de détecter la distribution Linux"
+    echo "Error: Impossible de détecter la distribution Linux"
     exit 1
 fi
 
-echo "📋 Distribution détectée: $OS $VERSION"
+echo "Info: Distribution détectée: $OS $VERSION"
 echo ""
 
 # Vérifier si sudo est disponible
 if ! command -v sudo &> /dev/null; then
-    echo "❌ sudo n'est pas installé. Veuillez l'installer d'abord."
+    echo "Error: sudo n'est pas installé. Veuillez l'installer d'abord."
     exit 1
 fi
 
 install_ubuntu_debian() {
-    echo "📦 Installation des dépendances pour Ubuntu/Debian..."
+    echo "Installing Installation des dépendances pour Ubuntu/Debian..."
     
     # Mettre à jour la liste des paquets
-    echo "🔄 Mise à jour de la liste des paquets..."
+    echo "Updating Mise à jour de la liste des paquets..."
     sudo apt update
     
     # Essayer d'installer libwebkit2gtk-4.1-dev d'abord (Ubuntu 24.04+)
     if sudo apt-cache show libwebkit2gtk-4.1-dev &> /dev/null; then
-        echo "✅ Installation de libwebkit2gtk-4.1-dev (version moderne)"
+        echo "Success: Installation de libwebkit2gtk-4.1-dev (version moderne)"
         sudo apt install -y \
             pkg-config \
             libwebkit2gtk-4.1-dev \
@@ -45,7 +45,7 @@ install_ubuntu_debian() {
             libayatana-appindicator3-dev \
             librsvg2-dev
     else
-        echo "⚠️  libwebkit2gtk-4.1-dev non disponible, utilisation de la version 4.0"
+        echo "Warning: libwebkit2gtk-4.1-dev non disponible, utilisation de la version 4.0"
         sudo apt install -y \
             pkg-config \
             libwebkit2gtk-4.0-dev \
@@ -60,7 +60,7 @@ install_ubuntu_debian() {
 }
 
 install_arch() {
-    echo "📦 Installation des dépendances pour Arch Linux..."
+    echo "Installing Installation des dépendances pour Arch Linux..."
     sudo pacman -Syu --needed --noconfirm \
         webkit2gtk-4.1 \
         base-devel \
@@ -76,7 +76,7 @@ install_arch() {
 }
 
 install_fedora() {
-    echo "📦 Installation des dépendances pour Fedora..."
+    echo "Installing Installation des dépendances pour Fedora..."
     sudo dnf install -y \
         pkg-config \
         webkit2gtk4.1-devel \
@@ -89,7 +89,7 @@ install_fedora() {
 }
 
 install_opensuse() {
-    echo "📦 Installation des dépendances pour openSUSE..."
+    echo "Installing Installation des dépendances pour openSUSE..."
     sudo zypper install -y \
         pkg-config \
         webkit2gtk3-devel \
@@ -116,7 +116,7 @@ case "$OS" in
         install_opensuse
         ;;
     *)
-        echo "❌ Distribution non supportée: $OS"
+        echo "Error: Distribution non supportée: $OS"
         echo ""
         echo "Veuillez installer manuellement les dépendances suivantes:"
         echo "  - pkg-config"
@@ -131,9 +131,9 @@ case "$OS" in
 esac
 
 echo ""
-echo "✅ Dépendances système installées avec succès!"
+echo "Success: Dépendances système installées avec succès!"
 echo ""
-echo "📝 Prochaines étapes:"
+echo "Next steps:Prochaines étapes:"
 echo "  1. Assurez-vous que Rust est installé:"
 echo "     source \$HOME/.cargo/env"
 echo "     rustc --version"
@@ -145,4 +145,4 @@ echo ""
 echo "  3. Pour créer un build de production:"
 echo "     pnpm tauri:build"
 echo ""
-echo "🦖 Pixsaur Desktop est prêt!"
+echo "Pixsaur Desktop est prêt!"

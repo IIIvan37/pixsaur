@@ -1,7 +1,6 @@
-// 📁 utils/image/getVisualRegionNormalized.ts
+// utils/image/getVisualRegionNormalized.ts
 import type { CpcModeConfig } from '@/app/store/config/types'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
-import { logger } from '@/utils/logger'
 
 /**
  * Extracts and scales a rectangular region from an ImageData source.
@@ -49,7 +48,6 @@ export function getVisualRegionNormalized(
   const scaledW = Math.round(src.width * scale)
   const scaledH = Math.round(src.height * scale * pixelAspectRatio)
   if (scaledW === 0 || scaledH === 0) {
-    logger.debug('Skipped: scaled dimensions are zero', { scaledW, scaledH })
     return null
   }
   // Step 4 — Resize the selection to scaledW × scaledH

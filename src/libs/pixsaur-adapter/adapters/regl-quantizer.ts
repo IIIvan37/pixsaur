@@ -12,7 +12,7 @@ import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { adapterLogger, quantizerLogger } from '@/utils/logger'
+import { adapterLogger } from '@/utils/logger'
 
 /**
  * Shaders GLSL pour ReGL - Extraction pour améliorer la lisibilité
@@ -29,7 +29,7 @@ const HISTOGRAM_FRAGMENT_SHADER = `
   
   varying vec2 v_texCoord;
   
-  // ✅ Distance RGB pondérée perceptuelle (ITU-R BT.601)
+  // Distance RGB pondérée perceptuelle (ITU-R BT.601)
   // Reflète la sensibilité de l'œil humain: Green (0.587) > Red (0.299) > Blue (0.114)
   float colorDistanceRGB(vec3 color1, vec3 color2) {
     vec3 diff = color1 - color2;
@@ -77,7 +77,7 @@ const HISTOGRAM_VERTEX_SHADER = `
 
 /**
  * ReGL configuration that extends existing QuantizeConfig
- * ✅ Reuses pixsaur-color types instead of redefining
+ * Reuses pixsaur-color types instead of redefining
  */
 export interface ReGLQuantizeConfig extends QuantizeConfig {
   /** Target number of colors */
@@ -131,28 +131,24 @@ export class ReGLQuantizer {
     this.regl = regl
     this.capabilities = this.detectCapabilities()
 
-    adapterLogger.debug(
-      `🎮 [ReGL] Initializing quantizer: GPU=${this.capabilities.canUseGPU}, maxTexture=${this.capabilities.maxTextureSize}`
-    )
-
     if (this.capabilities.canUseGPU) {
       try {
         this.initializeGPUResources()
-        adapterLogger.info('✅ [ReGL] GPU resources initialized successfully')
+        adapterLogger.info(' [ReGL] GPU resources initialized successfully')
       } catch (error) {
         adapterLogger.warn(
-          '⚠️ [ReGL] GPU initialization failed, will use CPU fallback',
+          ' [ReGL] GPU initialization failed, will use CPU fallback',
           error
         )
       }
     } else {
-      adapterLogger.info('📱 [ReGL] GPU not available, using CPU fallback only')
+      adapterLogger.info(' [ReGL] GPU not available, using CPU fallback only')
     }
   }
 
   /**
    * Interface principale compatible avec createQuantizer()
-   * ✅ Utilise exactement les mêmes types que la version CPU
+   * Utilise exactement les mêmes types que la version CPU
    */
   async quantizePalette(
     buffer: Uint8ClampedArray,
@@ -164,12 +160,6 @@ export class ReGLQuantizer {
     if (this.isDisposed) {
       throw new Error('ReGL Quantizer has been disposed')
     }
-
-    const startTime = performance.now()
-
-    quantizerLogger.debug(
-      `🎯 [ReGL] Starting quantization: RGB, ${config.distanceMetric}, ${config.targetColors} colors, image=${imageData.width}x${imageData.height}`
-    )
 
     // ReGLQuantizer est purement GPU - pas de fallback interne
     if (!this.shouldUseGPU(imageData, config)) {
@@ -186,11 +176,6 @@ export class ReGLQuantizer {
       config
     )
 
-    const totalTime = performance.now() - startTime
-    quantizerLogger.debug(
-      `⚡ [ReGL] Total quantization time: ${totalTime.toFixed(2)}ms`
-    )
-
     return result
   }
 
@@ -204,89 +189,37 @@ export class ReGLQuantizer {
     preselected: readonly Vector[],
     config: ReGLQuantizeConfig
   ): Promise<readonly Vector[]> {
-    adapterLogger.debug('🎮 [ReGL] Starting GPU quantization (Phase 2)')
-
-    const gpuStart = performance.now()
-
     try {
       // 1. Upload data vers GPU
-      const uploadStart = performance.now()
       this.updateInputTexture(imageData)
       this.updatePaletteTexture(basePalette)
-      const uploadTime = performance.now() - uploadStart
 
       // 2. Calcul histogramme GPU (bypass pour CPC Plus avec modes optimisés)
-      const histogramStart = performance.now()
-      const isCPCPlus = basePalette.length > 27
-      const isCPCMode =
-        config.targetColors === 16 ||
-        config.targetColors === 4 ||
-        config.targetColors === 2 ||
-        config.targetColors === 512
-
-      let histogram: number[]
-      let histogramTime: number
-      if (isCPCPlus && isCPCMode) {
-        // 🚀 CPC Plus: Bypass complet de l'histogramme
-        adapterLogger.debug(
-          `🚀 [ReGL] CPC Plus bypass: skipping histogram for ${config.targetColors} color mode`
-        )
-        histogram = new Array(basePalette.length).fill(0) // Histogramme vide
-        histogramTime = 0 // Pas de temps pour l'histogramme
-      } else {
-        // 📊 Mode traditionnel: calcul de l'histogramme
-        histogram = await this.computeHistogramGPU(
-          imageData,
-          basePalette,
-          config
-        )
-        histogramTime = performance.now() - histogramStart
-      }
 
       // 3. Sélection palette optimisée
-      const selectionStart = performance.now()
       const selectedColors = await this.selectColorsGPU(
-        histogram,
         imageData,
         basePalette,
         preselected,
         config
       )
 
-      adapterLogger.info(
-        `🔍 [ReGL DEBUG] Selected ${selectedColors.length} colors from GPU:`,
-        selectedColors
-          .slice(0, Math.min(10, selectedColors.length))
-          .map((c) => `[${c[0]},${c[1]},${c[2]}]`)
-      )
-
-      const selectionTime = performance.now() - selectionStart
-
-      const totalGpuTime = performance.now() - gpuStart
-
-      adapterLogger.debug(
-        `🎮 [ReGL] GPU quantization completed: ${selectedColors.length}/${config.targetColors} colors in ${totalGpuTime.toFixed(2)}ms (upload: ${uploadTime.toFixed(1)}ms, histogram: ${histogramTime.toFixed(1)}ms, selection: ${selectionTime.toFixed(1)}ms)`
-      )
-
       return selectedColors
     } catch (error) {
-      adapterLogger.error('❌ [ReGL] GPU quantization error', error)
+      adapterLogger.error(' [ReGL] GPU quantization error', error)
       throw error
     }
   }
 
   /**
    * Détermine si utiliser GPU ou CPU selon la taille d'image et les capacités
-   * ✅ RÉACTIVÉ: Utilise vraie GPU avec shaders parallélisés
+   * RÉACTIVÉ: Utilise vraie GPU avec shaders parallélisés
    */
   private shouldUseGPU(
     imageData: ImageData,
     config: ReGLQuantizeConfig
   ): boolean {
     if (!this.capabilities.canUseGPU || !this.histogramCommand) {
-      adapterLogger.debug(
-        '🚫 [ReGL] GPU not available - missing capabilities or commands'
-      )
       return false
     }
 
@@ -294,10 +227,6 @@ export class ReGLQuantizer {
     const minPixelsForGPU = config.gpuOptions?.minPixelsForGPU ?? 128 * 128
 
     const shouldUse = pixels >= minPixelsForGPU
-
-    adapterLogger.debug(
-      `🤔 [ReGL] GPU decision: ${pixels} pixels, min=${minPixelsForGPU}, shouldUse=${shouldUse} (Real GPU implementation)`
-    )
 
     return shouldUse
   }
@@ -321,11 +250,6 @@ export class ReGLQuantizer {
       const ext = gl.getExtension(extName)
       if (ext) {
         availableExtensions.push(extName)
-        adapterLogger.debug(`✅ [ReGL] Extension ${extName} activated`)
-      } else {
-        adapterLogger.debug(
-          `ℹ️ [ReGL] Extension ${extName} not available (optional)`
-        )
       }
     }
 
@@ -347,8 +271,6 @@ export class ReGLQuantizer {
       canUseGPU,
       extensions: availableExtensions
     }
-
-    adapterLogger.debug('🔍 [ReGL] Capabilities detected:', capabilities)
 
     return capabilities
   }
@@ -402,10 +324,8 @@ export class ReGLQuantizer {
         count: 4,
         framebuffer: () => this.histogramFBO!
       })
-
-      adapterLogger.debug('🏗️ [ReGL] Basic GPU resources initialized (Phase 1)')
     } catch (error) {
-      adapterLogger.error('❌ [ReGL] Failed to initialize GPU resources', error)
+      adapterLogger.error(' [ReGL] Failed to initialize GPU resources', error)
       throw error
     }
   }
@@ -427,12 +347,8 @@ export class ReGLQuantizer {
         data: imageData.data,
         flipY: false
       })
-
-      adapterLogger.debug(
-        `📸 [ReGL] Input texture updated: ${imageData.width}x${imageData.height}`
-      )
     } catch (error) {
-      adapterLogger.error('❌ [ReGL] Failed to update input texture', error)
+      adapterLogger.error(' [ReGL] Failed to update input texture', error)
       throw error
     }
   }
@@ -443,7 +359,6 @@ export class ReGLQuantizer {
   private updatePaletteTexture(basePalette: readonly Vector[]): void {
     // Cache la palette pour éviter re-upload
     if (this.lastBasePalette === basePalette && this.cpcPaletteTexture) {
-      adapterLogger.debug('♻️ [ReGL] Reusing cached palette texture')
       return
     }
 
@@ -471,366 +386,54 @@ export class ReGLQuantizer {
       })
 
       this.lastBasePalette = basePalette
-
-      adapterLogger.debug(
-        `🎨 [ReGL] Palette texture updated: ${basePalette.length} colors`
-      )
     } catch (error) {
-      adapterLogger.error('❌ [ReGL] Failed to update palette texture', error)
+      adapterLogger.error(' [ReGL] Failed to update palette texture', error)
       throw error
     }
   }
 
   /**
-   * Calcul d'histogramme sur GPU avec support colorSpace complet
-   * ✅ Utilise le vrai GPU avec conversions XYZ/Lab
-   */
-  private async computeHistogramGPU(
-    imageData: ImageData,
-    basePalette: readonly Vector[],
-    config: ReGLQuantizeConfig
-  ): Promise<number[]> {
-    const gpuStart = performance.now()
-    adapterLogger.debug(
-      `🎮 [ReGL] Computing histogram (GPU-accelerated): ${imageData.width}x${imageData.height}, RGB ${config.distanceMetric}`
-    )
-
-    try {
-      // ✅ Utilise la palette passée en paramètre (Classic=27, Plus=4096)
-      const cpcPalette = basePalette.map((vector) => Array.from(vector))
-
-      const histogram = this.computeHistogramGPUAccelerated(
-        imageData,
-        cpcPalette,
-        config
-      )
-
-      const totalTime = performance.now() - gpuStart
-      const totalPixels = histogram.reduce((a, b) => a + b, 0)
-
-      adapterLogger.info(
-        `🎮 [ReGL] GPU histogram completed: ${totalPixels} pixels in ${totalTime.toFixed(2)}ms (true GPU with RGB)`
-      )
-
-      return histogram
-    } catch (error) {
-      adapterLogger.error('❌ [ReGL] GPU histogram calculation failed', error)
-      // Fallback vers CPU avec support colorSpace complet
-      return this.computeHistogramCPUOptimized(imageData, config, basePalette)
-    }
-  }
-
-  /**
-   * Version CPU ultra-optimisée pour l'histogramme
-   */
-  private computeHistogramCPUOptimized(
-    imageData: ImageData,
-    config: ReGLQuantizeConfig,
-    basePalette: readonly Vector[]
-  ): number[] {
-    const cpuStart = performance.now()
-    adapterLogger.debug('🖥️ [ReGL] Computing weighted histogram on CPU fallback')
-
-    const histogram = new Array(basePalette.length).fill(0)
-    const pixels = imageData.data
-
-    // ✅ CORRECTION: Utilise la basePalette passée (CPC Classic ou Plus)
-    const cpcPalette = basePalette.map((vector) => Array.from(vector))
-
-    // ✅ OPTIMISATION: Seuil GPU adaptatif selon la charge
-    const pixelCount = imageData.width * imageData.height
-    const gpuThreshold = config.gpuOptions?.minPixelsForGPU ?? 128 * 128
-
-    // ✅ OPTIMISATION: GPU seulement pour grandes images et RGB simple
-    const shouldUseGPU =
-      this.capabilities.canUseGPU && pixelCount > gpuThreshold // RGB est toujours supporté sur GPU
-
-    if (shouldUseGPU) {
-      return this.computeHistogramGPUAccelerated(imageData, cpcPalette, config)
-    }
-
-    // ✅ HISTOGRAMME PONDÉRÉ: Chaque pixel contribue à toutes les couleurs de palette
-    // avec un poids inversement proportionnel à la distance
-    for (let i = 0; i < pixels.length; i += 4) {
-      const r = pixels[i]
-      const g = pixels[i + 1]
-      const b = pixels[i + 2]
-
-      let totalWeight = 0
-      const weights = new Array(cpcPalette.length).fill(0)
-
-      // Calculer le poids pour chaque couleur de palette (inverse distance weighting)
-      for (let j = 0; j < cpcPalette.length; j++) {
-        const [pr, pg, pb] = cpcPalette[j]
-        const distance = Math.sqrt(
-          (r - pr) * (r - pr) + (g - pg) * (g - pg) + (b - pb) * (b - pb)
-        )
-
-        if (distance === 0) {
-          // Correspondance parfaite - tout le poids va à cette couleur
-          weights[j] = 1
-          totalWeight = 1
-          // On peut arrêter car c'est une correspondance parfaite
-          for (let k = 0; k < cpcPalette.length; k++) {
-            if (k !== j) weights[k] = 0
-          }
-          break
-        } else {
-          // Poids = 1 / (distance + epsilon) - donne plus de poids aux couleurs proches
-          const weight = 1 / (distance + 0.001) // epsilon pour éviter division par zéro
-          weights[j] = weight
-          totalWeight += weight
-        }
-      }
-
-      // Normaliser les poids et les ajouter à l'histogramme
-      for (let j = 0; j < cpcPalette.length; j++) {
-        histogram[j] += weights[j] / totalWeight
-      }
-    }
-
-    const cpuTime = performance.now() - cpuStart
-    const totalPixels = histogram.reduce((a, b) => a + b, 0)
-    adapterLogger.debug(
-      `🖥️ [ReGL] CPU weighted histogram completed: ${totalPixels.toFixed(0)} weighted pixels processed in ${cpuTime.toFixed(2)}ms`
-    )
-
-    return histogram
-  }
-
-  /**
-   * Calcul d'histogramme GPU avec quantification CPC
-   * ✅ Complexité réduite en extrayant les helpers
-   */
-  private computeHistogramGPUAccelerated(
-    imageData: ImageData,
-    cpcPalette: number[][],
-    _config: ReGLQuantizeConfig
-  ): number[] {
-    // Pour l'instant, utiliser l'histogramme pondéré CPU même pour GPU
-    // Le shader GPU ne supporte pas encore l'histogramme pondéré complet
-    adapterLogger.debug(
-      '🎮 [ReGL] Using CPU-based weighted histogram for GPU path (shader upgrade pending)'
-    )
-    return this.computeHistogramCPUWeighted(imageData, cpcPalette)
-  }
-
-  /**
-   * Version CPU de l'histogramme pondéré (utilisée aussi pour GPU)
-   * ✅ OPTIMISÉ: Échantillonnage adaptatif pour les grandes images
-   */
-  private computeHistogramCPUWeighted(
-    imageData: ImageData,
-    cpcPalette: number[][]
-  ): number[] {
-    const histogram = new Array(cpcPalette.length).fill(0)
-    const pixels = imageData.data
-    const totalPixels = imageData.width * imageData.height
-
-    // 🎯 OPTIMISATION: Échantillonnage adaptatif pour les grandes images
-    // Pour éviter les calculs trop coûteux, on échantillonne seulement une fraction des pixels
-    const maxSamples = 50000 // Maximum 50k pixels pour l'histogramme
-    const sampleStep = Math.max(1, Math.floor(totalPixels / maxSamples))
-    const actualSamples = Math.floor(totalPixels / sampleStep)
-
-    adapterLogger.debug(
-      `🎯 [ReGL] Weighted histogram: ${totalPixels} total pixels, sampling ${actualSamples} (${((actualSamples / totalPixels) * 100).toFixed(1)}%)`
-    )
-
-    for (let i = 0; i < pixels.length; i += 4 * sampleStep) {
-      const r = pixels[i]
-      const g = pixels[i + 1]
-      const b = pixels[i + 2]
-
-      let totalWeight = 0
-      const weights = new Array(cpcPalette.length).fill(0)
-
-      // Calculer le poids pour chaque couleur de palette (inverse distance weighting)
-      for (let j = 0; j < cpcPalette.length; j++) {
-        const [pr, pg, pb] = cpcPalette[j]
-        const distance = Math.sqrt(
-          (r - pr) * (r - pr) + (g - pg) * (g - pg) + (b - pb) * (b - pb)
-        )
-
-        if (distance === 0) {
-          // Correspondance parfaite - tout le poids va à cette couleur
-          weights[j] = 1
-          totalWeight = 1
-          // On peut arrêter car c'est une correspondance parfaite
-          for (let k = 0; k < cpcPalette.length; k++) {
-            if (k !== j) weights[k] = 0
-          }
-          break
-        } else {
-          // Poids = 1 / (distance + epsilon) - donne plus de poids aux couleurs proches
-          const weight = 1 / (distance + 0.001) // epsilon pour éviter division par zéro
-          weights[j] = weight
-          totalWeight += weight
-        }
-      }
-
-      // Normaliser les poids et les ajouter à l'histogramme
-      for (let j = 0; j < cpcPalette.length; j++) {
-        histogram[j] += weights[j] / totalWeight
-      }
-    }
-
-    // 🎯 AJUSTER: Corriger les poids pour représenter le nombre total de pixels
-    // Puisque nous avons échantillonné seulement une fraction, multiplier par le facteur d'échelle
-    const scaleFactor = totalPixels / actualSamples
-    for (let j = 0; j < histogram.length; j++) {
-      histogram[j] *= scaleFactor
-    }
-
-    const totalWeightedPixels = histogram.reduce((a, b) => a + b, 0)
-    adapterLogger.debug(
-      `🎮 [ReGL] Weighted histogram: ${totalWeightedPixels.toFixed(0)} weighted pixels (${actualSamples} samples, ${((actualSamples / totalPixels) * 100).toFixed(1)}% coverage)`
-    )
-
-    return histogram
-  }
-
-  /**
    * Sélection optimisée des couleurs sur GPU (Phase 2)
-   * ✅ Utilise la logique commune selectTopIndicesCore()
+   * Utilise la logique commune selectTopIndicesCore()
    */
   private async selectColorsGPU(
-    histogram: number[],
     imageData: ImageData,
     basePalette: readonly Vector[],
     preselected: readonly Vector[],
     config: ReGLQuantizeConfig
   ): Promise<readonly Vector[]> {
-    adapterLogger.debug(
-      `🎯 [ReGL] GPU color selection: ${config.targetColors} colors from ${basePalette.length} base palette`
+    // Convertir preselected en indices
+    const preselectedIndices = this.convertPreselectedToIndices(
+      preselected,
+      basePalette
     )
 
-    // Convertir preselected en indices pour utiliser l'algorithme commun
-    const preselectedIndices: number[] = []
-    for (const preselectedColor of preselected) {
-      const index = basePalette.findIndex(
-        (color) =>
-          color[0] === preselectedColor[0] &&
-          color[1] === preselectedColor[1] &&
-          color[2] === preselectedColor[2]
-      )
-      if (index >= 0) {
-        preselectedIndices.push(index)
-      }
-    }
+    // Détecter le mode et sélectionner les couleurs
+    const topIndices = this.detectModeAndSelectColors(
+      imageData,
+      basePalette,
+      preselectedIndices,
+      config
+    )
 
-    // ✅ PHASE 1: Détection du mode et sélection appropriée
-    const isMode0Based =
-      config.targetColors === 16 || config.targetColors === 512
-    const isMode1Based = config.targetColors === 4
-    const isMode2Based = config.targetColors === 2
-    const isCPCPlus = basePalette.length > 27
-    const actualTargetColors =
-      config.targetColors === 512 ? 16 : config.targetColors
-    const useOptimizedSelection = isMode0Based || isMode1Based || isMode2Based
-
-    let topIndices: number[]
-
-    if (isCPCPlus && useOptimizedSelection) {
-      // 🚀 CPC Plus: Bypass de l'histogramme + Sélection GPU optimisée
-      const getModeLabel = (targetColors: number): string => {
-        if (targetColors === 16) return '0'
-        if (targetColors === 4) return '1'
-        return '2'
-      }
-      const modeLabel = getModeLabel(config.targetColors)
-      adapterLogger.debug(
-        `🚀 [ReGL] CPC Plus Mode ${modeLabel}: GPU-accelerated diversity selection (bypassing histogram)`
-      )
-
-      // 🎯 Pour petites palettes (modes 1-2): sélectionner plus de candidats
-      // pour laisser selectByStrategy choisir les meilleurs contrastés
-      const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
-      const candidatesCount = Math.min(
-        actualTargetColors * candidateMultiplier,
-        Math.floor(basePalette.length * 0.01) // Max 1% de la palette (41 couleurs pour 4096)
-      )
-
-      topIndices = this.selectCPCPlusOptimized(
-        imageData,
-        basePalette,
-        candidatesCount,
-        config
-      )
-      adapterLogger.debug(
-        `⚡ [ReGL] CPC Plus optimized selection: ${topIndices.length} candidates from ${basePalette.length} palette (target: ${actualTargetColors})`
-      )
-    } else if (!isCPCPlus && useOptimizedSelection) {
-      // 🏆 CPC Classic: Bypass de l'histogramme + Sélection optimisée (nouvelle optimisation)
-      const getModeLabel = (targetColors: number): string => {
-        if (targetColors === 16) return '0'
-        if (targetColors === 4) return '1'
-        return '2'
-      }
-      const modeLabel = getModeLabel(config.targetColors)
-      adapterLogger.debug(
-        `🏆 [ReGL] CPC Classic Mode ${modeLabel}: Optimized diversity selection (bypassing histogram)`
-      )
-
-      // 🎯 Pour petites palettes (modes 1-2): sélectionner plus de candidats
-      // pour laisser selectByStrategy choisir les meilleurs contrastés
-      const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
-      const candidatesCount = Math.min(
-        actualTargetColors * candidateMultiplier,
-        Math.floor(basePalette.length * 0.5) // Max 50% de la palette CPC Classic (13-14 couleurs pour 27)
-      )
-
-      topIndices = this.selectCPCClassicOptimized(
-        imageData,
-        basePalette,
-        candidatesCount,
-        config
-      )
-      adapterLogger.debug(
-        `⚡ [ReGL] CPC Classic optimized selection: ${topIndices.length} candidates from ${basePalette.length} palette (target: ${actualTargetColors})`
-      )
-    } else {
-      // 📊 CPC Classic: Algorithme de diversité par luminance basé sur histogramme
-      const useDiversityMode = useOptimizedSelection
-      topIndices = selectTopIndicesCore(
-        histogram,
-        preselectedIndices,
-        actualTargetColors,
-        {
-          threshold: 10,
-          diversityMode: useDiversityMode,
-          basePalette: useDiversityMode ? basePalette : undefined
-        }
-      )
-      adapterLogger.debug(
-        `🎯 [ReGL] CPC Classic selection: ${actualTargetColors} colors, diversity mode: ${useDiversityMode}`
-      )
-    }
-
-    // ✅ OPTIMISATION: Pour modes 0 (16 couleurs), retourner directement (diversité suffisante)
-    // Pour modes 1-2 (4 ou 2 couleurs), appliquer les fonctions de contraste
+    // OPTIMISATION: Pour modes 0 (16 couleurs), retourner directement (diversité suffisante)
     const shouldApplyContrastFunctions = config.targetColors <= 4
+    const isCPCPlus = basePalette.length > 27
 
-    if (useOptimizedSelection && !shouldApplyContrastFunctions) {
+    if (!shouldApplyContrastFunctions) {
       // Pour le mode 0 (16 couleurs), s'assurer qu'on retourne exactement targetColors couleurs
       let finalIndices = topIndices
       if (topIndices.length < config.targetColors) {
-        // Compléter avec d'autres couleurs de la palette si nécessaire
         const usedIndices = new Set(topIndices)
         const remainingIndices = basePalette
           .map((_, idx) => idx)
           .filter((idx) => !usedIndices.has(idx))
 
-        // Ajouter les couleurs restantes dans l'ordre de la palette
         const additionalNeeded = config.targetColors - topIndices.length
         finalIndices = [
           ...topIndices,
           ...remainingIndices.slice(0, additionalNeeded)
         ]
-
-        adapterLogger.debug(
-          `🎯 [ReGL] Completed selection: ${topIndices.length} optimized + ${additionalNeeded} additional = ${finalIndices.length} colors`
-        )
       }
 
       const selectedColors = finalIndices.map(
@@ -838,12 +441,12 @@ export class ReGLQuantizer {
       )
       const hardwareLabel = isCPCPlus ? 'CPC Plus' : 'CPC Classic'
       adapterLogger.info(
-        `🎨 [ReGL] ${hardwareLabel} diversity (mode 0): returning ${selectedColors.length} colors directly`
+        `[ReGL] ${hardwareLabel} diversity (mode 0): returning ${selectedColors.length} colors directly`
       )
       return selectedColors
     }
 
-    // ✅ PHASE 2: Appliquer l'algorithme de contraste pour petites palettes (modes 1-2)
+    // PHASE 2: Appliquer l'algorithme de contraste pour petites palettes (modes 1-2)
     const candidateColors = topIndices.map(
       (idx: number) => [...basePalette[idx]] as Vector
     )
@@ -851,144 +454,28 @@ export class ReGLQuantizer {
       (idx: number) => [...basePalette[idx]] as Vector
     )
 
-    const hardwareLabel = isCPCPlus ? 'CPC Plus' : 'CPC Classic'
-    adapterLogger.debug(
-      `🎯 [ReGL] ${hardwareLabel}: Applying contrast functions for ${config.targetColors} colors (strategy: ${config.contrastStrategy || 'max'})`
-    )
     adapterLogger.info(
-      `📊 [ReGL] Candidates pool: ${candidateColors.length} colors (target: ${config.targetColors})`
+      `[ReGL] Candidates pool: ${candidateColors.length} colors (target: ${config.targetColors})`
     )
 
-    // 🔍 DEBUG: Afficher les candidats pour vérifier qu'ils sont divers
-    if (candidateColors.length <= 10) {
-      for (const [i, c] of candidateColors.entries()) {
-        adapterLogger.debug(`  Candidate ${i}: rgb(${c[0]}, ${c[1]}, ${c[2]})`)
-      }
-    }
-
-    // 🎯 Pour les petites palettes (modes 1-2): toujours garantir la présence du noir
-    // SAUF si on a déjà targetColors couleurs preselected (locked)
-    // Le noir est essentiel pour le dithering et les bordures
-    if (
-      config.targetColors <= 4 &&
-      preselectedColors.length < config.targetColors
-    ) {
-      const hasBlack = candidateColors.some(
-        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
-      )
-
-      // Vérifier aussi si le noir est déjà dans les preselected
-      const hasBlackInPreselected = preselectedColors.some(
-        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
-      )
-
-      if (!hasBlack && !hasBlackInPreselected) {
-        adapterLogger.info(
-          `⚫ [ReGL] Adding black to candidates for small palette (${config.targetColors} colors)`
-        )
-        // Trouver l'index du noir dans la palette de base
-        const blackIndex = basePalette.findIndex(
-          (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
-        )
-        if (blackIndex !== -1) {
-          candidateColors.unshift([0, 0, 0] as Vector)
-        }
-      }
-    }
-
-    // 🎯 Pour CPC Plus en mode balanced avec petites palettes:
-    // Filtrer les candidats pour privilégier les luminances moyennes (0.3-0.7)
-    // MAIS toujours garder le noir s'il est présent
-    if (
-      isCPCPlus &&
-      config.contrastStrategy === 'balanced' &&
-      config.targetColors <= 4
-    ) {
-      // Séparer le noir des autres candidats
-      const blackColor = candidateColors.find(
-        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
-      )
-      const nonBlackCandidates = candidateColors.filter(
-        (c) => !(c[0] === 0 && c[1] === 0 && c[2] === 0)
-      )
-
-      const withLuminance = nonBlackCandidates.map((c, i) => {
-        const [r, g, b] = c
-        const luminance =
-          0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
-        return { color: c, luminance, index: i }
-      })
-
-      // Trier par luminance proche de 0.5 (moyen)
-      withLuminance.sort((a, b) => {
-        const distA = Math.abs(a.luminance - 0.5)
-        const distB = Math.abs(b.luminance - 0.5)
-        return distA - distB
-      })
-
-      // Garder les candidats avec luminance moyenne (moins 1 slot pour le noir)
-      const slotsForNonBlack = blackColor
-        ? config.targetColors * 2 - 1
-        : config.targetColors * 2
-      const filteredNonBlack = withLuminance
-        .slice(0, Math.min(nonBlackCandidates.length, slotsForNonBlack))
-        .map((item) => item.color)
-
-      // Reconstruire la liste avec le noir en premier
-      const filteredCandidates = blackColor
-        ? [blackColor, ...filteredNonBlack]
-        : filteredNonBlack
-
-      adapterLogger.debug(
-        `🎨 [ReGL] Balanced mode: filtered ${filteredCandidates.length} candidates (black: ${blackColor ? 'yes' : 'no'}, medium luminance: ${filteredNonBlack.length})`
-      )
-
-      candidateColors.splice(0, candidateColors.length, ...filteredCandidates)
-    }
-
-    // Créer la fonction de distance pour RGB uniquement
-    const distanceFn = (a: Vector, b: Vector): number => {
-      // RGB euclidean
-      return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
-    }
-
-    // Fonction de conversion vers RGB (pas de conversion nécessaire pour RGB)
-    const toRGB = (v: Vector): Vector => {
-      // RGB, pas de conversion nécessaire
-      return v
-    }
-
-    // Utiliser le sélecteur de stratégie commun
-    const result = selectByStrategy(
-      {
-        contrastStrategy: config.contrastStrategy,
-        targetColors: config.targetColors
-      },
-      {
-        candidates: candidateColors,
-        preselected: preselectedColors,
-        targetColors: config.targetColors,
-        distanceFn: distanceFn,
-        toRGB: toRGB
-      }
+    // Appliquer les fonctions de contraste
+    const result = this.applyContrastFunctionsForSmallPalettes(
+      candidateColors,
+      preselectedColors,
+      config,
+      isCPCPlus
     )
 
-    // 🔍 DEBUG: Afficher les couleurs finalement sélectionnées
-    adapterLogger.debug(`✅ [ReGL] Final selection: ${result.length} colors`)
+    // DEBUG: Afficher les couleurs finalement sélectionnées
     for (const [i, c] of result.entries()) {
       adapterLogger.info(`  Final ${i}: rgb(${c[0]}, ${c[1]}, ${c[2]})`)
     }
 
-    adapterLogger.debug(
-      `🎯 [ReGL] GPU selection completed: ${result.length}/${config.targetColors} colors selected`
-    )
-
-    // RGB direct, pas de conversion nécessaire
     return result
   }
 
   /**
-   * 🏆 CPC Classic: Sélection optimisée sans histogramme
+   * CPC Classic: Sélection optimisée sans histogramme
    * Adapté pour la palette CPC Classic (27 couleurs) avec échantillonnage intelligent
    */
   private selectCPCClassicOptimized(
@@ -997,8 +484,6 @@ export class ReGLQuantizer {
     targetColors: number,
     config: ReGLQuantizeConfig
   ): number[] {
-    const start = performance.now()
-
     // Échantillonnage équilibré : qualité vs performance
     // Pour CPC Classic (27 couleurs), on peut utiliser plus d'échantillons que pour CPC Plus
     const sampledColors = this.sampleImageColors(imageData, 256) // 256 échantillons pour CPC Classic
@@ -1012,22 +497,14 @@ export class ReGLQuantizer {
       basePalette,
       targetColors,
       preselectedIndices,
-      config.contrastStrategy // 🎯 Passer la stratégie de contraste
-    )
-
-    const duration = performance.now() - start
-    adapterLogger.debug(
-      `🏆 [ReGL] CPC Classic selection: ${selected.length} colors in ${duration.toFixed(1)}ms (optimized)`
-    )
-    adapterLogger.debug(
-      `🔍 [ReGL] DEBUG: requested=${targetColors}, returned=${selected.length}, selected indices=[${selected.slice(0, 5).join(',')}${selected.length > 5 ? '...' : ''}]`
+      config.contrastStrategy // Passer la stratégie de contraste
     )
 
     return selected
   }
 
   /**
-   * 🚀 CPC Plus: Sélection optimisée GPU sans histogramme
+   * CPC Plus: Sélection optimisée GPU sans histogramme
    * Combine échantillonnage intelligent + GPU pour diversité maximale
    */
   private selectCPCPlusOptimized(
@@ -1036,8 +513,6 @@ export class ReGLQuantizer {
     targetColors: number,
     config: ReGLQuantizeConfig
   ): number[] {
-    const start = performance.now()
-
     // Échantillonnage équilibré : qualité vs performance
     const sampledColors = this.sampleImageColors(imageData, 128) // 128 échantillons pour un bon compromis
 
@@ -1050,22 +525,14 @@ export class ReGLQuantizer {
       basePalette,
       targetColors,
       preselectedIndices,
-      config.contrastStrategy // 🎯 Passer la stratégie de contraste
-    )
-
-    const duration = performance.now() - start
-    adapterLogger.debug(
-      `⚡ [ReGL] CPC Plus selection: ${selected.length} colors in ${duration.toFixed(1)}ms (optimized)`
-    )
-    adapterLogger.debug(
-      `🔍 [ReGL] DEBUG: requested=${targetColors}, returned=${selected.length}, selected indices=[${selected.slice(0, 5).join(',')}${selected.length > 5 ? '...' : ''}]`
+      config.contrastStrategy // Passer la stratégie de contraste
     )
 
     return selected
   }
 
   /**
-   * 📊 Échantillonnage intelligent de l'image
+   * Échantillonnage intelligent de l'image
    */
   private sampleImageColors(
     imageData: ImageData,
@@ -1092,7 +559,7 @@ export class ReGLQuantizer {
   }
 
   /**
-   * ✅ Helper: Analyse fréquence des couleurs dans les échantillons
+   * Helper: Analyse fréquence des couleurs dans les échantillons
    */
   private analyzeColorFrequency(
     sampledColors: Vector[],
@@ -1124,7 +591,7 @@ export class ReGLQuantizer {
   }
 
   /**
-   * ✅ Helper: Sélection par fréquence avec diversité minimale
+   * Helper: Sélection par fréquence avec diversité minimale
    */
   private selectFrequentColorsWithDiversity(
     colorFrequency: Array<{
@@ -1138,7 +605,7 @@ export class ReGLQuantizer {
     frequencyBudget: number,
     targetColors?: number
   ): void {
-    // 🎯 Distance minimale adaptative selon la taille de la palette cible
+    // Distance minimale adaptative selon la taille de la palette cible
     // Modes 1-2 (2-4 couleurs): nécessitent un contraste beaucoup plus élevé
     // Mode 0 (16 couleurs): distance plus faible acceptable
     const minDistance = targetColors && targetColors <= 4 ? 80 : 20
@@ -1170,7 +637,7 @@ export class ReGLQuantizer {
   }
 
   /**
-   * ✅ Helper: Sélection MaxMin Distance pour compléter la palette
+   * Helper: Sélection MaxMin Distance pour compléter la palette
    */
   private selectMaxMinDistanceColors(
     colorFrequency: Array<{
@@ -1217,9 +684,9 @@ export class ReGLQuantizer {
   }
 
   /**
-   * 🎯 Sélection rapide avec diversité maximale + espaces colorimetériques
-   * ✅ Complexité réduite en extrayant les helpers
-   * ✅ Stratégie adaptative selon contrastStrategy
+   * Sélection rapide avec diversité maximale + espaces colorimetriques
+   * Complexité réduite en extrayant les helpers
+   * Stratégie adaptative selon contrastStrategy
    */
   private selectDiverseColorsFast(
     sampledColors: Vector[],
@@ -1257,24 +724,16 @@ export class ReGLQuantizer {
     result.push(colorFrequency[0].index)
     selectedConverted.push(colorFrequency[0].converted)
 
-    // 🎯 Stratégie adaptative selon contrastStrategy
+    // Stratégie adaptative selon contrastStrategy
     // balanced: privilégie la fréquence (80%) pour garder les couleurs dominantes
     // max: équilibre fréquence (60%) et diversité (40%) pour plus de contraste
     const frequencyBudget = Math.floor(
       targetColors * (contrastStrategy === 'balanced' ? 0.8 : 0.6)
     )
 
-    adapterLogger.debug(
-      `🎯 [ReGL] CPC Plus strategy="${contrastStrategy}": frequencyBudget=${frequencyBudget}/${targetColors} (${contrastStrategy === 'balanced' ? '80%' : '60%'} frequency)`
-    )
-
-    // 🎯 Pour les petites palettes (2-4 couleurs) en mode "balanced":
+    // Pour les petites palettes (2-4 couleurs) en mode "balanced":
     // Prendre directement les couleurs les plus fréquentes (comme CPC Classic)
     if (contrastStrategy === 'balanced' && targetColors <= 4) {
-      adapterLogger.debug(
-        `🎨 [ReGL] Balanced mode with ${targetColors} colors: selecting colors with medium luminance (like CPC Classic)`
-      )
-
       // Calculer la luminance de chaque couleur
       const withLuminance = colorFrequency.map((c) => {
         const [r, g, b] = c.color
@@ -1298,13 +757,6 @@ export class ReGLQuantizer {
       const topBalanced = withLuminance.slice(0, targetColors - result.length)
       result.push(...topBalanced.map((c) => c.index))
 
-      const luminanceValues = topBalanced
-        .map((c) => c.luminance.toFixed(2))
-        .join(', ')
-      adapterLogger.debug(
-        `🎨 [ReGL] Selected colors with luminance: ${luminanceValues}`
-      )
-
       return result
     }
 
@@ -1314,7 +766,7 @@ export class ReGLQuantizer {
       selectedConverted,
       result,
       frequencyBudget,
-      targetColors // 🎯 Passer targetColors pour distance adaptative
+      targetColors // Passer targetColors pour distance adaptative
     )
 
     // Phase 2: Compléter avec MaxMin Distance sur toute la palette
@@ -1329,7 +781,7 @@ export class ReGLQuantizer {
   }
 
   /**
-   * 🎯 Calcule la distance entre deux couleurs avec poids perceptuels
+   * Calcule la distance entre deux couleurs avec poids perceptuels
    * Utilise les coefficients ITU-R BT.601 (luma) pour refléter la sensibilité de l'œil humain
    */
   private calculateDistance(color1: Vector, color2: Vector): number {
@@ -1344,7 +796,7 @@ export class ReGLQuantizer {
   }
 
   /**
-   * �🔍 Trouve l'index de la couleur la plus proche
+   * Trouve l'index de la couleur la plus proche
    */
   private findClosestColorIndex(
     pixel: Vector,
@@ -1366,6 +818,198 @@ export class ReGLQuantizer {
   }
 
   /**
+   * Helper: Convertit les couleurs pré-sélectionnées en indices
+   */
+  private convertPreselectedToIndices(
+    preselected: readonly Vector[],
+    basePalette: readonly Vector[]
+  ): number[] {
+    const preselectedIndices: number[] = []
+    for (const preselectedColor of preselected) {
+      const index = basePalette.findIndex(
+        (color) =>
+          color[0] === preselectedColor[0] &&
+          color[1] === preselectedColor[1] &&
+          color[2] === preselectedColor[2]
+      )
+      if (index >= 0) {
+        preselectedIndices.push(index)
+      }
+    }
+    return preselectedIndices
+  }
+
+  /**
+   * Helper: Détecte le mode et applique la logique de sélection appropriée
+   */
+  private detectModeAndSelectColors(
+    imageData: ImageData,
+    basePalette: readonly Vector[],
+    preselectedIndices: number[],
+    config: ReGLQuantizeConfig
+  ): number[] {
+    const isMode0Based =
+      config.targetColors === 16 || config.targetColors === 512
+    const isMode1Based = config.targetColors === 4
+    const isMode2Based = config.targetColors === 2
+    const isCPCPlus = basePalette.length > 27
+    const actualTargetColors =
+      config.targetColors === 512 ? 16 : config.targetColors
+    const useOptimizedSelection = isMode0Based || isMode1Based || isMode2Based
+
+    if (isCPCPlus && useOptimizedSelection) {
+      const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
+      const candidatesCount = Math.min(
+        actualTargetColors * candidateMultiplier,
+        Math.floor(basePalette.length * 0.01)
+      )
+
+      return this.selectCPCPlusOptimized(
+        imageData,
+        basePalette,
+        candidatesCount,
+        config
+      )
+    } else if (!isCPCPlus && useOptimizedSelection) {
+      const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
+      const candidatesCount = Math.min(
+        actualTargetColors * candidateMultiplier,
+        Math.floor(basePalette.length * 0.5)
+      )
+
+      return this.selectCPCClassicOptimized(
+        imageData,
+        basePalette,
+        candidatesCount,
+        config
+      )
+    } else {
+      // Utiliser l'histogramme avec diversité par luminance
+      return selectTopIndicesCore(
+        [], // histogram vide pour ce cas
+        preselectedIndices,
+        actualTargetColors,
+        {
+          threshold: 10,
+          diversityMode: useOptimizedSelection,
+          basePalette: useOptimizedSelection ? basePalette : undefined
+        }
+      )
+    }
+  }
+
+  /**
+   * Helper: Applique les fonctions de contraste pour petites palettes
+   */
+  private applyContrastFunctionsForSmallPalettes(
+    candidateColors: Vector[],
+    preselectedColors: Vector[],
+    config: ReGLQuantizeConfig,
+    isCPCPlus: boolean
+  ): Vector[] {
+    // Assurer la présence du noir
+    this.ensureBlackPresence(candidateColors, preselectedColors, config)
+
+    // Filtrage pour mode balanced CPC Plus
+    if (
+      isCPCPlus &&
+      config.contrastStrategy === 'balanced' &&
+      config.targetColors <= 4
+    ) {
+      candidateColors = this.filterBalancedCandidates(candidateColors, config)
+    }
+
+    // Fonctions de distance et conversion
+    const distanceFn = (a: Vector, b: Vector): number =>
+      Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+    const toRGB = (v: Vector): Vector => v
+
+    // Utiliser le sélecteur de stratégie commun
+    return selectByStrategy(
+      {
+        contrastStrategy: config.contrastStrategy,
+        targetColors: config.targetColors
+      },
+      {
+        candidates: candidateColors,
+        preselected: preselectedColors,
+        targetColors: config.targetColors,
+        distanceFn: distanceFn,
+        toRGB: toRGB
+      }
+    )
+  }
+
+  /**
+   * Helper: Assure la présence du noir dans les candidats
+   */
+  private ensureBlackPresence(
+    candidateColors: Vector[],
+    preselectedColors: Vector[],
+    config: ReGLQuantizeConfig
+  ): void {
+    if (
+      config.targetColors <= 4 &&
+      preselectedColors.length < config.targetColors
+    ) {
+      const hasBlack = candidateColors.some(
+        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+      )
+      const hasBlackInPreselected = preselectedColors.some(
+        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+      )
+
+      if (!hasBlack && !hasBlackInPreselected) {
+        adapterLogger.info(
+          `[ReGL] Adding black to candidates for small palette (${config.targetColors} colors)`
+        )
+        candidateColors.unshift([0, 0, 0] as Vector)
+      }
+    }
+  }
+
+  /**
+   * Helper: Filtre les candidats pour privilégier les luminances moyennes (mode balanced)
+   */
+  private filterBalancedCandidates(
+    candidateColors: Vector[],
+    config: ReGLQuantizeConfig
+  ): Vector[] {
+    const blackColor = candidateColors.find(
+      (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
+    )
+    const nonBlackCandidates = candidateColors.filter(
+      (c) => !(c[0] === 0 && c[1] === 0 && c[2] === 0)
+    )
+
+    const withLuminance = nonBlackCandidates.map((c) => {
+      const [r, g, b] = c
+      const luminance =
+        0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
+      return { color: c, luminance }
+    })
+
+    withLuminance.sort((a, b) => {
+      const distA = Math.abs(a.luminance - 0.5)
+      const distB = Math.abs(b.luminance - 0.5)
+      return distA - distB
+    })
+
+    const slotsForNonBlack = blackColor
+      ? config.targetColors * 2 - 1
+      : config.targetColors * 2
+    const filteredNonBlack = withLuminance
+      .slice(0, Math.min(nonBlackCandidates.length, slotsForNonBlack))
+      .map((item) => item.color)
+
+    const filteredCandidates = blackColor
+      ? [blackColor, ...filteredNonBlack]
+      : filteredNonBlack
+
+    return filteredCandidates
+  }
+
+  /**
    * Nettoyage des ressources
    */
   dispose(): void {
@@ -1379,15 +1023,13 @@ export class ReGLQuantizer {
       this.histogramFBO?.destroy()
 
       this.isDisposed = true
-
-      adapterLogger.debug('🧹 [ReGL] Quantizer resources disposed')
     } catch (error) {
-      adapterLogger.error('❌ [ReGL] Error during disposal', error)
+      adapterLogger.error('[ReGL] Error during disposal', error)
     }
   }
 }
 
-// ✅ Mappings statiques pour RGB uniquement
+// Mappings statiques pour RGB uniquement
 export const DISTANCE_METRIC_MAP = {
   euclidean: 0
 } as const

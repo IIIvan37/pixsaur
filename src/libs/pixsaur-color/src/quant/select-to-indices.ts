@@ -1,5 +1,3 @@
-import { quantizerLogger } from '../../../../utils/logger'
-
 /**
  * Selects the top indices from a given counts array, optionally including preselected indices.
  *
@@ -16,34 +14,6 @@ import { quantizerLogger } from '../../../../utils/logger'
  */
 
 // Helper functions for debugging CPC colors
-const CPC_COLOR_NAMES: Record<string, string> = {
-  '0,0,128': 'Blue',
-  '0,0,255': 'Bright Blue',
-  '0,128,255': 'Sky Blue',
-  '128,128,255': 'Pastel Blue',
-  '0,255,255': 'Bright Cyan',
-  '128,255,255': 'Pastel Cyan',
-  '255,0,0': 'Bright Red',
-  '128,0,0': 'Red',
-  '255,0,128': 'Purple',
-  '128,0,128': 'Magenta',
-  '255,0,255': 'Bright Magenta',
-  '128,0,255': 'Mauve',
-  '0,128,0': 'Green',
-  '0,255,0': 'Bright Green',
-  '128,255,0': 'Lime',
-  '128,128,0': 'Yellow',
-  '255,255,0': 'Bright Yellow',
-  '255,128,0': 'Orange',
-  '0,0,0': 'Black',
-  '255,255,255': 'Bright White',
-  '128,128,128': 'White'
-}
-
-function getCPCColorName(color: any[]): string {
-  const key = color.join(',')
-  return CPC_COLOR_NAMES[key] || `RGB(${color.join(',')})`
-}
 
 /**
  * Ajoute les indices pré-sélectionnés au résultat
@@ -116,8 +86,61 @@ function completeSelection(
 }
 
 /**
- * ✅ DIVERSITÉ AMÉLIORÉE: Sélection avec diversité chromatique ET de luminance
- * Pour CPC Plus: évite les couleurs trop similaires en teinte et luminance
+ * Calcule les métriques de couleur (luminance, teinte, saturation) pour un indice de couleur
+ */
+function getColorMetrics(colorIndex: number, basePalette: readonly any[]) {
+  if (!basePalette[colorIndex]) {
+    return { luminance: 0.5, hue: 0, saturation: 0 }
+  }
+  const [r, g, b] = basePalette[colorIndex]
+  const rNorm = r / 255
+  const gNorm = g / 255
+  const bNorm = b / 255
+
+  // Luminance (formule standard)
+  const luminance = 0.2126 * rNorm + 0.7152 * gNorm + 0.0722 * bNorm
+
+  // Calcul de la teinte (simplifié)
+  const max = Math.max(rNorm, gNorm, bNorm)
+  const min = Math.min(rNorm, gNorm, bNorm)
+  const delta = max - min
+
+  let hue = 0
+  if (delta !== 0) {
+    if (max === rNorm) hue = ((gNorm - bNorm) / delta) % 6
+    else if (max === gNorm) hue = (bNorm - rNorm) / delta + 2
+    else hue = (rNorm - gNorm) / delta + 4
+    hue = hue * 60
+    if (hue < 0) hue += 360
+  }
+
+  const saturation = max === 0 ? 0 : delta / max
+  return { luminance, hue, saturation }
+}
+
+/**
+ * Vérifie si deux couleurs sont trop similaires en teinte et luminance
+ */
+function areColorsTooSimilar(
+  candidateMetrics: { luminance: number; hue: number },
+  selectedMetrics: { luminance: number; hue: number },
+  minHueDistance: number,
+  minLuminanceDistance: number
+): boolean {
+  // Distance de teinte (circulaire)
+  let hueDiff = Math.abs(candidateMetrics.hue - selectedMetrics.hue)
+  if (hueDiff > 180) hueDiff = 360 - hueDiff
+
+  // Distance de luminance
+  const lumDiff = Math.abs(
+    candidateMetrics.luminance - selectedMetrics.luminance
+  )
+
+  return hueDiff < minHueDistance && lumDiff < minLuminanceDistance
+}
+
+/**
+ * DIVERSITÉ AMÉLIORÉE: Sélection avec diversité chromatique ET de luminance
  */
 function selectDiverseCandidates(
   candidates: number[],
@@ -127,127 +150,50 @@ function selectDiverseCandidates(
 ): number[] {
   if (candidates.length === 0) return []
 
-  // Calculer luminance ET teinte approximative des couleurs
-  const getColorMetrics = (colorIndex: number) => {
-    if (!basePalette[colorIndex]) {
-      return { luminance: 0.5, hue: 0, saturation: 0 }
-    }
-    const [r, g, b] = basePalette[colorIndex]
-    const rNorm = r / 255
-    const gNorm = g / 255
-    const bNorm = b / 255
-
-    // Luminance
-    const luminance = 0.2126 * rNorm + 0.7152 * gNorm + 0.0722 * bNorm
-
-    // HSL pour la teinte
-    const max = Math.max(rNorm, gNorm, bNorm)
-    const min = Math.min(rNorm, gNorm, bNorm)
-    const delta = max - min
-
-    let hue = 0
-    if (delta !== 0) {
-      if (max === rNorm) {
-        hue = ((gNorm - bNorm) / delta) % 6
-      } else if (max === gNorm) {
-        hue = (bNorm - rNorm) / delta + 2
-      } else {
-        hue = (rNorm - gNorm) / delta + 4
-      }
-      hue = hue * 60
-      if (hue < 0) hue += 360
-    }
-
-    const saturation = max === 0 ? 0 : delta / max
-
-    return { luminance, hue, saturation }
-  }
-
   // Calculer métriques pour tous les candidats
   const colorMetrics = candidates.map((idx) => ({
     idx,
     count: counts[idx] || 0,
-    ...getColorMetrics(idx)
+    ...getColorMetrics(idx, basePalette)
   }))
 
-  // Trier par fréquence d'abord (plus importantes restent prioritaires)
+  // Trier par fréquence d'abord
   colorMetrics.sort((a, b) => b.count - a.count)
 
-  quantizerLogger.debug('🎨 Diversity Selection - Candidates by frequency:')
-  quantizerLogger.debug(
-    colorMetrics.slice(0, 10).map((m) => ({
-      idx: m.idx,
-      count: m.count,
-      hue: Math.round(m.hue),
-      luminance: m.luminance.toFixed(2),
-      name: getCPCColorName(basePalette[m.idx])
-    }))
-  )
-
-  // ✅ DIVERSITÉ CHROMATIQUE: Sélection avec distance minimale entre couleurs
   const selected: number[] = []
-
-  // 🎯 Distance adaptative selon le nombre de candidats sélectionnés (= approximation de targetColors)
-  // Pour CPC Plus avec palettes très petites: distances TRÈS strictes
   const targetCount = candidates.length <= 8 ? candidates.length : 16
-  const minColorDistance = targetCount <= 4 ? 60 : 30 // Distance minimale en degrés de teinte
-  const minLuminanceDistance = targetCount <= 4 ? 0.3 : 0.15 // Distance minimale en luminance
+  const minHueDistance = targetCount <= 4 ? 60 : 30
+  const minLuminanceDistance = targetCount <= 4 ? 0.3 : 0.15
 
-  quantizerLogger.debug(
-    `🎨 Diversity Selection - Parameters: targetCount=${targetCount}, minHueDist=${minColorDistance}, minLumDist=${minLuminanceDistance}`
-  )
-
+  // Sélection avec diversité
   for (const candidate of colorMetrics) {
-    if (selected.length === 0) {
-      // Première couleur: prendre la plus fréquente
+    const isFirstColor = selected.length === 0
+    if (isFirstColor) {
       selected.push(candidate.idx)
-      quantizerLogger.debug(
-        `🎨 Selected first color: ${getCPCColorName(basePalette[candidate.idx])} (idx ${candidate.idx})`
-      )
       continue
     }
 
-    // Vérifier la distance avec les couleurs déjà sélectionnées
-    let tooSimilar = false
-    for (const selectedIdx of selected) {
-      const selectedMetrics = getColorMetrics(selectedIdx)
-
-      // Distance de teinte (circulaire)
-      let hueDiff = Math.abs(candidate.hue - selectedMetrics.hue)
-      if (hueDiff > 180) hueDiff = 360 - hueDiff
-
-      // Distance de luminance
-      const lumDiff = Math.abs(candidate.luminance - selectedMetrics.luminance)
-
-      // Couleurs trop similaires si teinte ET luminance proches
-      if (hueDiff < minColorDistance && lumDiff < minLuminanceDistance) {
-        tooSimilar = true
-        quantizerLogger.debug(
-          `🎨 Rejected ${getCPCColorName(basePalette[candidate.idx])}: too similar to ${getCPCColorName(basePalette[selectedIdx])} (hueDiff=${hueDiff.toFixed(1)}, lumDiff=${lumDiff.toFixed(2)})`
-        )
-        break
-      }
-    }
-
-    if (!tooSimilar) {
-      selected.push(candidate.idx)
-      quantizerLogger.debug(
-        `🎨 Selected color: ${getCPCColorName(basePalette[candidate.idx])} (idx ${candidate.idx})`
+    // Vérifier si la couleur est suffisamment différente
+    const isTooSimilar = selected.some((selectedIdx) => {
+      const selectedMetrics = getColorMetrics(selectedIdx, basePalette)
+      return areColorsTooSimilar(
+        candidate,
+        selectedMetrics,
+        minHueDistance,
+        minLuminanceDistance
       )
-    }
+    })
 
-    // Si on a assez de couleurs diversifiées, arrêter
-    if (selected.length >= Math.min(candidates.length, 12)) {
-      break
-    }
+    if (!isTooSimilar) selected.push(candidate.idx)
+
+    // Arrêter si on a assez de couleurs
+    if (selected.length >= Math.min(candidates.length, 12)) break
   }
 
-  // Compléter avec les couleurs restantes si nécessaire
+  // Compléter avec les couleurs restantes
   for (const candidate of colorMetrics) {
     if (selected.length >= candidates.length) break
-    if (!selected.includes(candidate.idx)) {
-      selected.push(candidate.idx)
-    }
+    if (!selected.includes(candidate.idx)) selected.push(candidate.idx)
   }
 
   return selected
@@ -255,9 +201,9 @@ function selectDiverseCandidates(
 
 /**
  * Core selection algorithm used by both CPU and GPU implementations
- * ✅ DRY principle: Single source of truth for color selection logic
- * ✅ Complexité réduite par décomposition en sous-fonctions
- * ✅ OPTIMISATION: Diversité améliorée pour mode 0 (16 couleurs)
+ * DRY principle: Single source of truth for color selection logic
+ * Complexité réduite par décomposition en sous-fonctions
+ * OPTIMISATION: Diversité améliorée pour mode 0 (16 couleurs)
  */
 export function selectTopIndicesCore(
   counts: ArrayLike<number>,
@@ -288,14 +234,10 @@ export function selectTopIndicesCore(
   // 2. Filtrer les candidats restants
   const candidates = filterCandidates(counts, used, threshold)
 
-  // 3. ✅ OPTIMISATION: Mode diversité pour palettes moyennes ET petites
+  // 3. OPTIMISATION: Mode diversité pour palettes moyennes ET petites
   // Petites palettes (2-4 couleurs): diversité CRITIQUE pour éviter couleurs trop proches
   // Palettes moyennes (8-16 couleurs): diversité pour répartition chromatique
   if (diversityMode && topN <= 16 && options?.basePalette) {
-    const modeLabel = topN <= 4 ? 'SMALL' : 'MEDIUM'
-    quantizerLogger.info(
-      `🎨 [DIVERSITY-${modeLabel}] Activating diversity mode for ${topN} colors from ${candidates.length} candidates`
-    )
     const diverseCandidates = selectDiverseCandidates(
       candidates,
       counts,
@@ -303,9 +245,6 @@ export function selectTopIndicesCore(
       result
     )
     completeSelection(diverseCandidates, result, topN)
-    quantizerLogger.info(
-      `🎨 [DIVERSITY] Selected ${result.length} colors with diversity optimization`
-    )
   } else {
     // 4. Mode standard: Trier par fréquence
     const sortedCandidates = sortAndLogCandidates(candidates, counts)

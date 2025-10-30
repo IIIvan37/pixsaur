@@ -18,7 +18,6 @@ import {
   centerImageAtom,
   contrastStrategyAtom,
   cpcHardwareAtom,
-  derivedModeAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
@@ -44,8 +43,6 @@ export const previewCanvasWidthAtom = atom<number | null>(null)
 
 export const previewCanvasSizeAtom = atom((get) => {
   const containerWidth = get(previewCanvasWidthAtom)
-  const mode = get(derivedModeAtom)
-  const resizeMode = get(resizeModeAtom)
 
   if (!containerWidth) return { width: 0, height: 0 }
 
@@ -66,21 +63,6 @@ export const previewCanvasSizeAtom = atom((get) => {
 
   const width = Math.floor(visualWidth * scale)
   const height = Math.floor(visualHeight * scale)
-
-  logger.debug('[PREVIEW CANVAS SIZE]', {
-    mode,
-    resizeMode,
-    canvasWidth,
-    canvasHeight,
-    scaleX: modeConfig.scaleX,
-    scaleY: modeConfig.scaleY,
-    visualWidth,
-    visualHeight,
-    containerWidth,
-    scale,
-    displayWidth: width,
-    displayHeight: height
-  })
 
   return { width, height }
 })
@@ -219,14 +201,14 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     return []
   }
 
-  // 🔍 DEBUG: Log des paramètres de quantification
+  // DEBUG: Log des paramètres de quantification
   const basePalette = getPaletteForHardware(cpcHardware)
 
-  // 🎯 Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
+  // Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
   const modeConfig = get(effectiveModeConfigAtom)
   const targetColors = modeConfig.nColors
 
-  // 🎯 Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
+  // Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
   const quantifyToCPCPlus = (value: number): number => {
     const val4bit = Math.round((value / 255) * 15)
     return Math.round((val4bit / 15) * 255)
@@ -251,34 +233,23 @@ export const reducedPaletteRawAtom = atom(async (get) => {
             ] as Vector<'RGB'>
         )
 
-  logger.debug('[QUANTIZER DEBUG] Input params:', {
-    targetColors,
-    basePaletteSize: basePalette.length,
-    lockedColorsCount: quantifiedLockedVecs.length,
-    lockedColors: quantifiedLockedVecs,
-    cpcHardware
-  })
-
   const palette = await paletteProcessor.quantizePalette(
     buf,
     processed,
     targetColors,
     basePalette,
     quantifiedLockedVecs,
-    contrastStrategy // 🎯 Utiliser la stratégie choisie par l'utilisateur
+    contrastStrategy // Utiliser la stratégie choisie par l'utilisateur
   )
-
-  logger.debug('[QUANTIZER DEBUG] Output palette:', palette)
 
   return palette
 })
 
 // 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
-  const mode = get(derivedModeAtom)
   const modeConfig = get(effectiveModeConfigAtom)
   const quantizer = await get(quantizerAtom)
-  const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
+  const reduced = await get(reducedPaletteRgbAtom) // Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const processed = await get(smoothedImageAtom)
   const dithering = get(ditheringAtom)
@@ -286,23 +257,7 @@ export const previewImageAtom = atom(async (get) => {
   const centerImage = get(centerImageAtom) // Get center option
   if (!quantizer || !processed) return null
 
-  // 🔍 DEBUG: Vérifier la palette avant dithering
-  logger.debug('[PREVIEW] Palette for dithering:', {
-    count: reduced.length,
-    colors: reduced.map((c) => `rgb(${c[0]}, ${c[1]}, ${c[2]})`),
-    mode
-  })
-
-  logger.time('🖼️ Preview Generation')
-
-  logger.debug('[BEFORE NORMALIZATION]', {
-    resizeMode,
-    processedWidth: processed.width,
-    processedHeight: processed.height,
-    willSkipNormalization: resizeMode === 'origin'
-  })
-
-  // 🎯 En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
+  // En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
   // On ne doit PAS appliquer getVisualRegionNormalized qui re-scale avec le pixel aspect ratio
   const normalized =
     resizeMode === 'origin'
@@ -311,114 +266,32 @@ export const previewImageAtom = atom(async (get) => {
 
   if (!normalized) return null
 
-  logger.debug('[AFTER NORMALIZATION]', {
-    normalizedWidth: normalized.width,
-    normalizedHeight: normalized.height
-  })
-
-  logger.time('  📐 Dithering')
-
   const previewBuffer = quantizer.dither(normalized, reduced, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
 
-  // 🔍 DEBUG: Analyser les couleurs réelles dans le buffer après dithering
-  const colorCounts = new Map<string, number>()
-  for (let i = 0; i < previewBuffer.length; i += 4) {
-    const r = previewBuffer[i]
-    const g = previewBuffer[i + 1]
-    const b = previewBuffer[i + 2]
-    const key = `${r},${g},${b}`
-    colorCounts.set(key, (colorCounts.get(key) || 0) + 1)
-  }
-  const top5 = Array.from(colorCounts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([color, count]) => `rgb(${color}):${count}`)
-  logger.info(`🔍 [PREVIEW] Top 5 colors after dithering: ${top5.join(' | ')}`)
-
-  logger.time('  🎯 Remapping')
-  // ✅ Le dithering retourne déjà un buffer RGB, pas besoin de remapping!
+  // Le dithering retourne déjà un buffer RGB, pas besoin de remapping!
   // Le remapImageDataToPalette était utilisé avant quand on avait des indices
   const remapped = new ImageData(
     new Uint8ClampedArray(previewBuffer),
     normalized.width,
     normalized.height
   )
-  logger.timeEnd('  🎯 Remapping')
 
-  // 🎯 Positionnement pour le mode auto (origin gère son propre centrage)
+  // Positionnement pour le mode auto (origin gère son propre centrage)
   // En mode auto, getVisualRegionNormalized retourne une ImageData de taille variable (scaledW × scaledH)
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {
-    logger.time('  📐 Positioning (auto mode)')
-    const modeConfig = get(effectiveModeConfigAtom)
-    const targetWidth = modeConfig.width
-    const targetHeight = modeConfig.height
-
-    // Si l'image est déjà à la taille cible, pas besoin de la repositionner
-    if (remapped.width === targetWidth && remapped.height === targetHeight) {
-      logger.timeEnd('  📐 Positioning (auto mode)')
-      logger.timeEnd('🖼️ Preview Generation')
-      return remapped
-    }
-
-    // Créer un canvas à la taille cible
-    const positionedCanvas = document.createElement('canvas')
-    positionedCanvas.width = targetWidth
-    positionedCanvas.height = targetHeight
-    const ctx = positionedCanvas.getContext('2d')
-    if (!ctx) {
-      logger.warn('Failed to get canvas context for positioning')
-      logger.timeEnd('  📐 Positioning (auto mode)')
-      logger.timeEnd('🖼️ Preview Generation')
-      return remapped
-    }
-
-    // Remplir avec la couleur la plus sombre de la palette (pour le padding)
-    const darkestColor = reduced.reduce((darkest, color) => {
-      const brightness = color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114
-      const darkestBrightness =
-        darkest[0] * 0.299 + darkest[1] * 0.587 + darkest[2] * 0.114
-      return brightness < darkestBrightness ? color : darkest
-    }, reduced[0])
-
-    ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
-    ctx.fillRect(0, 0, targetWidth, targetHeight)
-
-    // Calculer la position selon l'option de centrage
-    // centerImage = true : centré (dx/dy calculés)
-    // centerImage = false : aligné en haut à gauche (dx=0, dy=0)
-    const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
-    const dy = centerImage
-      ? Math.floor((targetHeight - remapped.height) / 2)
-      : 0
-
-    // Créer un canvas temporaire pour l'image remappée
-    const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = remapped.width
-    tempCanvas.height = remapped.height
-    const tempCtx = tempCanvas.getContext('2d')
-    if (!tempCtx) {
-      logger.warn('Failed to get temp canvas context')
-      logger.timeEnd('  📐 Positioning (auto mode)')
-      logger.timeEnd('🖼️ Preview Generation')
-      return remapped
-    }
-    tempCtx.putImageData(remapped, 0, 0)
-
-    // Dessiner l'image à la position calculée (centrée ou top-left selon centerImage)
-    ctx.drawImage(tempCanvas, dx, dy)
-
-    // Récupérer l'ImageData finale
-    const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
-    logger.timeEnd('  📐 Positioning (auto mode)')
-    logger.timeEnd('🖼️ Preview Generation')
+    const positioned = positionImageForAutoMode(
+      remapped,
+      modeConfig,
+      reduced,
+      centerImage
+    )
     return positioned
   }
 
-  logger.timeEnd('🖼️ Preview Generation')
   return remapped
 })
 
@@ -518,3 +391,53 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
 
   return projected
 })
+
+// Helper functions pour réduire la complexité cognitive
+function positionImageForAutoMode(
+  remapped: ImageData,
+  modeConfig: any,
+  reduced: any[],
+  centerImage: boolean
+): ImageData {
+  const targetWidth = modeConfig.width
+  const targetHeight = modeConfig.height
+
+  if (remapped.width === targetWidth && remapped.height === targetHeight) {
+    return remapped
+  }
+
+  const positionedCanvas = document.createElement('canvas')
+  positionedCanvas.width = targetWidth
+  positionedCanvas.height = targetHeight
+  const ctx = positionedCanvas.getContext('2d')
+  if (!ctx) {
+    return remapped
+  }
+
+  const darkestColor = reduced.reduce((darkest, color) => {
+    const brightness = color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114
+    const darkestBrightness =
+      darkest[0] * 0.299 + darkest[1] * 0.587 + darkest[2] * 0.114
+    return brightness < darkestBrightness ? color : darkest
+  }, reduced[0])
+
+  ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
+  ctx.fillRect(0, 0, targetWidth, targetHeight)
+
+  const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
+  const dy = centerImage ? Math.floor((targetHeight - remapped.height) / 2) : 0
+
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = remapped.width
+  tempCanvas.height = remapped.height
+  const tempCtx = tempCanvas.getContext('2d')
+  if (!tempCtx) {
+    return remapped
+  }
+  tempCtx.putImageData(remapped, 0, 0)
+
+  ctx.drawImage(tempCanvas, dx, dy)
+
+  const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
+  return positioned
+}
