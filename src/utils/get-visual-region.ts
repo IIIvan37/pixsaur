@@ -1,4 +1,4 @@
-// 📁 utils/image/getVisualRegionNormalized.ts
+// utils/image/getVisualRegionNormalized.ts
 import type { CpcModeConfig } from '@/app/store/config/types'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { logger } from '@/utils/logger'

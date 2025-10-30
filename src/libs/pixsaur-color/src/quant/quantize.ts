@@ -83,7 +83,7 @@ export function createQuantizer({
     const totalPixels = vecs.length
     const relativeThreshold = Math.max(1, Math.floor(totalPixels * 0.001))
 
-    // ✅ OPTIMISATION: Utiliser mode diversité pour les palettes moyennes (mode 0 = 16 couleurs)
+    // OPTIMISATION: Utiliser mode diversité pour les palettes moyennes (mode 0 = 16 couleurs)
     const useDiversityMode = limit >= 8 && limit <= 16
 
     const idxs = useDiversityMode

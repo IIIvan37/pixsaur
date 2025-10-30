@@ -1,18 +1,18 @@
-// ✅ ImagePreviewView.tsx
+// ImagePreviewView.tsx
 
-import { Trans } from '@lingui/react/macro'
-import type React from 'react'
-import styles from './image-preview.module.css'
+import { Trans } from "@lingui/react/macro";
+import type React from "react";
+import styles from "./image-preview.module.css";
 
 export type ImagePreviewViewProps = {
-  readonly containerRefCallback: (node: HTMLDivElement | null) => void
-  readonly ref: React.RefObject<HTMLCanvasElement | null>
-  readonly image: ImageData | null
-  readonly width: number
-  readonly height: number
-  readonly onClick?: () => void
-  readonly tooltip?: string
-}
+  readonly containerRefCallback: (node: HTMLDivElement | null) => void;
+  readonly ref: React.RefObject<HTMLCanvasElement | null>;
+  readonly image: ImageData | null;
+  readonly width: number;
+  readonly height: number;
+  readonly onClick?: () => void;
+  readonly tooltip?: string;
+};
 
 /**
  * ImagePreviewView component renders a canvas element to display an image preview.
@@ -25,7 +25,7 @@ export function ImagePreviewView({
   width,
   height,
   onClick,
-  tooltip
+  tooltip,
 }: ImagePreviewViewProps) {
   if (!image) {
     return (
@@ -34,7 +34,7 @@ export function ImagePreviewView({
           <Trans>Aucune image traitée</Trans>
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -46,13 +46,13 @@ export function ImagePreviewView({
         onClick={onClick}
         title={tooltip}
         style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          display: 'block',
-          cursor: onClick ? 'pointer' : 'default'
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          display: "block",
+          cursor: onClick ? "pointer" : "default",
         }}
       />
     </div>
-  )
+  );
 }

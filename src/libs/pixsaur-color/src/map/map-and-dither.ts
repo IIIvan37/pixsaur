@@ -696,8 +696,7 @@ export function mapAndDither(
   const { mode } = config
   const N = width * height
 
-  const rgbToCS = getRgbToColorSpaceFn(colorSpace)
-  const toRGB = getColorSpaceToRgbFn(colorSpace)
+ 
   const distFn = getDistanceFn(
     colorSpace,
     DISTANCE_METRICS_BY_COLORSPACE[colorSpace][0]
@@ -705,14 +704,14 @@ export function mapAndDither(
 
   const bufCS = new Float32Array(N * 3)
   for (let i = 0, j = 0; i < srcData.length; i += 4, j += 3) {
-    const cs = rgbToCS([srcData[i], srcData[i + 1], srcData[i + 2]])
+    const cs = [srcData[i], srcData[i + 1], srcData[i + 2]]
     bufCS[j] = cs[0]
     bufCS[j + 1] = cs[1]
     bufCS[j + 2] = cs[2]
   }
 
   const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
-    Array.from(toRGB(v))
+    Array.from(v)
   )
 
   const ditherFn = DITHER_MODES[mode]

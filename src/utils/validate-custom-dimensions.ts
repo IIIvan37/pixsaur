@@ -30,7 +30,7 @@ export interface ValidationResult {
  * ```typescript
  * const result = validateCustomDimensions(164, 248, 0)
  * if (result.valid) {
- *   console.log(`✅ ${result.kb.toFixed(2)} Ko`)
+ *   console.log(`${result.kb.toFixed(2)} Ko`)
  * } else {
  *   console.error(result.errors.join(', '))
  * }

@@ -108,7 +108,7 @@ export const getHardwarePalette = (palette: number[]) => {
 export const cpcPalette = generateAmstradCPCPalette()
 
 /**
- * 🎮 CPC Plus: Generate complete 4096-color palette
+ * CPC Plus: Generate complete 4096-color palette
  * Each component (R,G,B) uses 4 bits = 16 levels (0-15)
  * RGB values are scaled from 4-bit (0-15) to 8-bit (0-255)
  */
@@ -132,7 +132,7 @@ export function generateCPCPlusPalette(): Vector[] {
 }
 
 /**
- * 🎯 Dynamic palette selector based on CPC hardware
+ * Dynamic palette selector based on CPC hardware
  * Returns 27 colors for classic CPC or 4096 for CPC Plus
  */
 export function getPaletteForHardware(hardware: CPCHardware): Vector[] {
@@ -147,7 +147,7 @@ export function getPaletteForHardware(hardware: CPCHardware): Vector[] {
 }
 
 /**
- * 🎨 Get CPCColor palette based on hardware
+ * Get CPCColor palette based on hardware
  * Returns CPCColor[] format for UI components
  */
 export function getCPCPaletteByHardware(hardware: CPCHardware): CPCColor[] {

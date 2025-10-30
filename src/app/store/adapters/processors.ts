@@ -118,7 +118,7 @@ export const processorFactory = {
       })
     } catch (error) {
       adapterLogger.warn(
-        '⚠️ [FACTORY] Failed to create ReGL instance, falling back to CPU:',
+        '[FACTORY] Failed to create ReGL instance, falling back to CPU:',
         error
       )
     }

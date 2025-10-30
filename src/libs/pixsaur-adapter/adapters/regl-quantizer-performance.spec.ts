@@ -120,10 +120,10 @@ describe('Performance Test - Weighted Histogram Optimization', () => {
       const duration = endTime - startTime
 
       console.log(
-        `📊 Performance test: ${imageData.width}x${imageData.height} = ${imageData.width * imageData.height} pixels`
+        `Performance test: ${imageData.width}x${imageData.height} = ${imageData.width * imageData.height} pixels`
       )
       console.log(`⏱️  Duration: ${duration.toFixed(2)}ms`)
-      console.log(`📈 Result length: ${result.length}`)
+      console.log(`Result length: ${result.length}`)
 
       // Vérifier que c'est rapide (< 500ms pour 480k pixels)
       expect(duration).toBeLessThan(500)

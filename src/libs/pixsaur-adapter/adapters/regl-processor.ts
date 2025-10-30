@@ -50,11 +50,11 @@ export class ReGLProcessor implements ImageProcessor {
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
         adapterLogger.info(
-          '✅ [ADAPTER] ReGL quantizer and GPU adjustments initialized successfully'
+          '[ADAPTER] ReGL quantizer and GPU adjustments initialized successfully'
         )
       } catch (error) {
         adapterLogger.warn(
-          '⚠️ [ADAPTER] ReGL initialization failed, using CPU fallback',
+          '[ADAPTER] ReGL initialization failed, using CPU fallback',
           error
         )
         this.quantizer = undefined
@@ -66,7 +66,7 @@ export class ReGLProcessor implements ImageProcessor {
     this.isAvailable = true
 
     adapterLogger.info(
-      `🎮 [ADAPTER] ReGL processor initialized: GPU=${!!this.quantizer}, capabilities=${this.reglCapabilities.canUseReGL}`
+      `[ADAPTER] ReGL processor initialized: GPU=${!!this.quantizer}, capabilities=${this.reglCapabilities.canUseReGL}`
     )
   }
 
@@ -340,7 +340,7 @@ export class ReGLProcessor implements ImageProcessor {
       }
     } catch (error) {
       adapterLogger.warn(
-        '⚠️ [ADAPTER] Error evaluating WebGL capabilities:',
+        '[ADAPTER] Error evaluating WebGL capabilities:',
         error
       )
       return {
@@ -449,7 +449,7 @@ export class ReGLProcessor implements ImageProcessor {
 
     const totalTime = performance.now() - startTime
     adapterLogger.info(
-      `🎮 [ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
+      `[ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
     )
 
     return new ImageData(resultData, width, height)
@@ -540,7 +540,7 @@ export class ReGLProcessor implements ImageProcessor {
         return [...result] // Conversion readonly -> mutable pour compatibilité
       } catch (error) {
         adapterLogger.warn(
-          '⚠️ [ADAPTER] ReGL quantization failed, falling back to CPU',
+          '[ADAPTER] ReGL quantization failed, falling back to CPU',
           error
         )
         // Continue vers fallback CPU
@@ -588,7 +588,7 @@ export class ReGLProcessor implements ImageProcessor {
 
     if (palette.length !== targetColors) {
       paletteLogger.warn(
-        `⚠️ [ADAPTER] Expected ${targetColors} colors but got ${palette.length} for RGB`
+        `[ADAPTER] Expected ${targetColors} colors but got ${palette.length} for RGB`
       )
     }
 
@@ -603,7 +603,7 @@ export class ReGLProcessor implements ImageProcessor {
       this.quantizer?.dispose()
     } catch (error) {
       adapterLogger.error(
-        '❌ [ADAPTER] Error during ReGL processor disposal',
+        '[ADAPTER] Error during ReGL processor disposal',
         error
       )
     }

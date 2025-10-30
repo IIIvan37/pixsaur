@@ -201,14 +201,14 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     return []
   }
 
-  // 🔍 DEBUG: Log des paramètres de quantification
+  // DEBUG: Log des paramètres de quantification
   const basePalette = getPaletteForHardware(cpcHardware)
 
-  // 🎯 Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
+  // Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
   const modeConfig = get(effectiveModeConfigAtom)
   const targetColors = modeConfig.nColors
 
-  // 🎯 Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
+  // Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
   const quantifyToCPCPlus = (value: number): number => {
     const val4bit = Math.round((value / 255) * 15)
     return Math.round((val4bit / 15) * 255)
@@ -239,7 +239,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     targetColors,
     basePalette,
     quantifiedLockedVecs,
-    contrastStrategy // 🎯 Utiliser la stratégie choisie par l'utilisateur
+    contrastStrategy // Utiliser la stratégie choisie par l'utilisateur
   )
 
   return palette
@@ -249,7 +249,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 export const previewImageAtom = atom(async (get) => {
   const modeConfig = get(effectiveModeConfigAtom)
   const quantizer = await get(quantizerAtom)
-  const reduced = await get(reducedPaletteRgbAtom) // ✅ Utiliser la palette quantifiée
+  const reduced = await get(reducedPaletteRgbAtom) // Utiliser la palette quantifiée
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const processed = await get(smoothedImageAtom)
   const dithering = get(ditheringAtom)
@@ -257,7 +257,7 @@ export const previewImageAtom = atom(async (get) => {
   const centerImage = get(centerImageAtom) // Get center option
   if (!quantizer || !processed) return null
 
-  // 🎯 En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
+  // En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
   // On ne doit PAS appliquer getVisualRegionNormalized qui re-scale avec le pixel aspect ratio
   const normalized =
     resizeMode === 'origin'
@@ -271,7 +271,7 @@ export const previewImageAtom = atom(async (get) => {
     intensity: dithering.intensity
   })
 
-  // ✅ Le dithering retourne déjà un buffer RGB, pas besoin de remapping!
+  // Le dithering retourne déjà un buffer RGB, pas besoin de remapping!
   // Le remapImageDataToPalette était utilisé avant quand on avait des indices
   const remapped = new ImageData(
     new Uint8ClampedArray(previewBuffer),
@@ -279,7 +279,7 @@ export const previewImageAtom = atom(async (get) => {
     normalized.height
   )
 
-  // 🎯 Positionnement pour le mode auto (origin gère son propre centrage)
+  // Positionnement pour le mode auto (origin gère son propre centrage)
   // En mode auto, getVisualRegionNormalized retourne une ImageData de taille variable (scaledW × scaledH)
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {

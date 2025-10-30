@@ -140,7 +140,7 @@ function areColorsTooSimilar(
 }
 
 /**
- * ✅ DIVERSITÉ AMÉLIORÉE: Sélection avec diversité chromatique ET de luminance
+ * DIVERSITÉ AMÉLIORÉE: Sélection avec diversité chromatique ET de luminance
  */
 function selectDiverseCandidates(
   candidates: number[],
@@ -201,9 +201,9 @@ function selectDiverseCandidates(
 
 /**
  * Core selection algorithm used by both CPU and GPU implementations
- * ✅ DRY principle: Single source of truth for color selection logic
- * ✅ Complexité réduite par décomposition en sous-fonctions
- * ✅ OPTIMISATION: Diversité améliorée pour mode 0 (16 couleurs)
+ * DRY principle: Single source of truth for color selection logic
+ * Complexité réduite par décomposition en sous-fonctions
+ * OPTIMISATION: Diversité améliorée pour mode 0 (16 couleurs)
  */
 export function selectTopIndicesCore(
   counts: ArrayLike<number>,
@@ -234,7 +234,7 @@ export function selectTopIndicesCore(
   // 2. Filtrer les candidats restants
   const candidates = filterCandidates(counts, used, threshold)
 
-  // 3. ✅ OPTIMISATION: Mode diversité pour palettes moyennes ET petites
+  // 3. OPTIMISATION: Mode diversité pour palettes moyennes ET petites
   // Petites palettes (2-4 couleurs): diversité CRITIQUE pour éviter couleurs trop proches
   // Palettes moyennes (8-16 couleurs): diversité pour répartition chromatique
   if (diversityMode && topN <= 16 && options?.basePalette) {
