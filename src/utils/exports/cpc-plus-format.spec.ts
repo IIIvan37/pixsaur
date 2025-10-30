@@ -134,7 +134,7 @@ describe('CPC Plus Format Conversion', () => {
       [255, 128, 64]
     ]
 
-    testColors.forEach(([r, g, b]) => {
+    for (const [r, g, b] of testColors) {
       const cpcValue = rgbToCPCPlus(r, g, b)
       const [backR, backG, backB] = cpcPlusToRGB(cpcValue)
 
@@ -143,6 +143,6 @@ describe('CPC Plus Format Conversion', () => {
       expect(Math.abs(backR - r)).toBeLessThanOrEqual(16)
       expect(Math.abs(backG - g)).toBeLessThanOrEqual(16)
       expect(Math.abs(backB - b)).toBeLessThanOrEqual(16)
-    })
+    }
   })
 })
