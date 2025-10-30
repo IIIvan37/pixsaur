@@ -324,19 +324,7 @@ export const previewImageAtom = atom(async (get) => {
   })
 
   // 🔍 DEBUG: Analyser les couleurs réelles dans le buffer après dithering
-  const colorCounts = new Map<string, number>()
-  for (let i = 0; i < previewBuffer.length; i += 4) {
-    const r = previewBuffer[i]
-    const g = previewBuffer[i + 1]
-    const b = previewBuffer[i + 2]
-    const key = `${r},${g},${b}`
-    colorCounts.set(key, (colorCounts.get(key) || 0) + 1)
-  }
-  const top5 = Array.from(colorCounts.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([color, count]) => `rgb(${color}):${count}`)
-  logger.info(`🔍 [PREVIEW] Top 5 colors after dithering: ${top5.join(' | ')}`)
+  analyzePreviewColors(previewBuffer)
 
   logger.time('  🎯 Remapping')
   // ✅ Le dithering retourne déjà un buffer RGB, pas besoin de remapping!
@@ -353,66 +341,7 @@ export const previewImageAtom = atom(async (get) => {
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {
     logger.time('  📐 Positioning (auto mode)')
-    const modeConfig = get(effectiveModeConfigAtom)
-    const targetWidth = modeConfig.width
-    const targetHeight = modeConfig.height
-
-    // Si l'image est déjà à la taille cible, pas besoin de la repositionner
-    if (remapped.width === targetWidth && remapped.height === targetHeight) {
-      logger.timeEnd('  📐 Positioning (auto mode)')
-      logger.timeEnd('🖼️ Preview Generation')
-      return remapped
-    }
-
-    // Créer un canvas à la taille cible
-    const positionedCanvas = document.createElement('canvas')
-    positionedCanvas.width = targetWidth
-    positionedCanvas.height = targetHeight
-    const ctx = positionedCanvas.getContext('2d')
-    if (!ctx) {
-      logger.warn('Failed to get canvas context for positioning')
-      logger.timeEnd('  📐 Positioning (auto mode)')
-      logger.timeEnd('🖼️ Preview Generation')
-      return remapped
-    }
-
-    // Remplir avec la couleur la plus sombre de la palette (pour le padding)
-    const darkestColor = reduced.reduce((darkest, color) => {
-      const brightness = color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114
-      const darkestBrightness =
-        darkest[0] * 0.299 + darkest[1] * 0.587 + darkest[2] * 0.114
-      return brightness < darkestBrightness ? color : darkest
-    }, reduced[0])
-
-    ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
-    ctx.fillRect(0, 0, targetWidth, targetHeight)
-
-    // Calculer la position selon l'option de centrage
-    // centerImage = true : centré (dx/dy calculés)
-    // centerImage = false : aligné en haut à gauche (dx=0, dy=0)
-    const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
-    const dy = centerImage
-      ? Math.floor((targetHeight - remapped.height) / 2)
-      : 0
-
-    // Créer un canvas temporaire pour l'image remappée
-    const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = remapped.width
-    tempCanvas.height = remapped.height
-    const tempCtx = tempCanvas.getContext('2d')
-    if (!tempCtx) {
-      logger.warn('Failed to get temp canvas context')
-      logger.timeEnd('  📐 Positioning (auto mode)')
-      logger.timeEnd('🖼️ Preview Generation')
-      return remapped
-    }
-    tempCtx.putImageData(remapped, 0, 0)
-
-    // Dessiner l'image à la position calculée (centrée ou top-left selon centerImage)
-    ctx.drawImage(tempCanvas, dx, dy)
-
-    // Récupérer l'ImageData finale
-    const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
+    const positioned = positionImageForAutoMode(remapped, modeConfig, reduced, centerImage)
     logger.timeEnd('  📐 Positioning (auto mode)')
     logger.timeEnd('🖼️ Preview Generation')
     return positioned
@@ -518,3 +447,75 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
 
   return projected
 })
+
+// Helper functions pour réduire la complexité cognitive
+function analyzePreviewColors(previewBuffer: Uint8ClampedArray): void {
+  const colorCounts = new Map<string, number>()
+  for (let i = 0; i < previewBuffer.length; i += 4) {
+    const r = previewBuffer[i]
+    const g = previewBuffer[i + 1]
+    const b = previewBuffer[i + 2]
+    const key = `${r},${g},${b}`
+    colorCounts.set(key, (colorCounts.get(key) || 0) + 1)
+  }
+  const top5 = Array.from(colorCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([color, count]) => `rgb(${color}):${count}`)
+  logger.info(`🔍 [PREVIEW] Top 5 colors after dithering: ${top5.join(' | ')}`)
+}
+
+function positionImageForAutoMode(
+  remapped: ImageData,
+  modeConfig: any,
+  reduced: any[],
+  centerImage: boolean
+): ImageData {
+  const targetWidth = modeConfig.width
+  const targetHeight = modeConfig.height
+
+  if (remapped.width === targetWidth && remapped.height === targetHeight) {
+    return remapped
+  }
+
+  const positionedCanvas = document.createElement('canvas')
+  positionedCanvas.width = targetWidth
+  positionedCanvas.height = targetHeight
+  const ctx = positionedCanvas.getContext('2d')
+  if (!ctx) {
+    logger.warn('Failed to get canvas context for positioning')
+    return remapped
+  }
+
+  const darkestColor = reduced.reduce((darkest, color) => {
+    const brightness = color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114
+    const darkestBrightness =
+      darkest[0] * 0.299 + darkest[1] * 0.587 + darkest[2] * 0.114
+    return brightness < darkestBrightness ? color : darkest
+  }, reduced[0])
+
+  ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
+  ctx.fillRect(0, 0, targetWidth, targetHeight)
+
+  const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
+  const dy = centerImage
+    ? Math.floor((targetHeight - remapped.height) / 2)
+    : 0
+
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = remapped.width
+  tempCanvas.height = remapped.height
+  const tempCtx = tempCanvas.getContext('2d')
+  if (!tempCtx) {
+    logger.warn('Failed to get temp canvas context')
+    return remapped
+  }
+  tempCtx.putImageData(remapped, 0, 0)
+
+  ctx.drawImage(tempCanvas, dx, dy)
+
+  const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
+  return positioned
+}
+
+
