@@ -71,13 +71,12 @@ export const ImageUploadView = ({
   const rootProps = getRootProps()
 
   return (
-    <div
+    <button
       {...rootProps}
       className={`${styles.dropzone} ${
         isDragActive ? styles.dropzoneActive : ''
       }`}
       onClick={isTauri ? handleClick : rootProps.onClick}
-      role='button'
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -86,6 +85,7 @@ export const ImageUploadView = ({
           }
         }
       }}
+      type="button"
     >
       {!isTauri && (
         <input
@@ -100,6 +100,6 @@ export const ImageUploadView = ({
         {secondaryText || defaultSecondaryText}
       </p>
       <p className={styles.helpText}>{helpText || defaultHelpText}</p>
-    </div>
+    </button>
   )
 }
