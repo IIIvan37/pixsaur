@@ -26,7 +26,7 @@ export default function ExportPanel() {
   const handleExport = async (config: ExportConfig) => {
     if (!image?.data) return
 
-    // ✅ FIX: Ne pas "nettoyer" l'image - previewImageAtom contient déjà le dithering correct
+    // FIX: Ne pas "nettoyer" l'image - previewImageAtom contient déjà le dithering correct
     // const { remapImageDataToPalette } = await import('@/utils/exports/rgb-to-indexes')
     // const cleanImage = remapImageDataToPalette(image, reducedPalette)
     const cleanImage = image // Utiliser directement l'image avec dithering
@@ -60,7 +60,7 @@ export default function ExportPanel() {
         return index
       })
 
-      // ✅ FIX: Ne pas re-quantifier - l'image contient déjà le bon dithering
+      // FIX: Ne pas re-quantifier - l'image contient déjà le bon dithering
       const shouldQuantize = false
       indexBuf = rgbToIndexBufferExact(
         cleanImage.data,
@@ -68,7 +68,7 @@ export default function ExportPanel() {
         shouldQuantize
       )
 
-      // 🔧 FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
+      // FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
       indexBuf = correctColorIndicesForCPC(indexBuf)
     } else {
       // CPC Plus: Use index buffer (same as Classic) but no firmware palette needed
@@ -82,7 +82,7 @@ export default function ExportPanel() {
         fallbackToDarkest
       )
 
-      // 🔧 FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
+      // FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
       indexBuf = correctColorIndicesForCPC(indexBuf)
     }
 

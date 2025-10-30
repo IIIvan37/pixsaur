@@ -4,7 +4,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-sm);         /* déjà présent */
-  padding-bottom: var(--spacing-md);  /* ➕ espace sous les couleurs */
+  padding-bottom: var(--spacing-md);  /* espace sous les couleurs */
   box-shadow: 0 0 6px var(--color-accent);
   font-family: var(--font-family);
   font-size: var(--font-size-sm);

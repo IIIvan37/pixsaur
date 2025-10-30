@@ -156,7 +156,7 @@ export function CustomDimensionsInput() {
             <Trans>Mémoire</Trans>: {validation.kb.toFixed(2)} Ko / 64 Ko
           </>
         ) : (
-          <>{validation.errors.join(', ')}</>
+          validation.errors.join(', ')
         )}
       </div>
     </div>

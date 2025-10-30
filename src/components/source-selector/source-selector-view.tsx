@@ -49,7 +49,8 @@ export function SourceSelectorView({
   return (
     /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
     /* sonar-ignore-next-line */
-    <div
+    <section
+      aria-label={_(msg`Zone de sélection interactive`)}
       style={{
         position: 'absolute',
         top: 0,
@@ -145,6 +146,6 @@ export function SourceSelectorView({
           />
         )
       })}
-    </div>
+    </section>
   )
 }

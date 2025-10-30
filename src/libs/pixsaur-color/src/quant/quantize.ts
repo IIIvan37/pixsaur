@@ -1,4 +1,3 @@
-import { quantizerLogger } from '../../../../utils/logger'
 import { buildWeightedHistogram } from '../histogram'
 import { mapAndDither } from '../map'
 import {
@@ -9,40 +8,6 @@ import {
 import type { Vector } from '../type'
 import { selectTopIndices, selectTopIndicesCore } from './select-to-indices'
 import { selectByStrategy } from './strategy-selector'
-
-// Helper functions for debugging CPC colors
-function getCPCColorName(color: Vector): string {
-  const [r, g, b] = color
-  // Simple mapping based on known CPC colors
-  if (r === 0 && g === 0 && b === 128) return 'Blue'
-  if (r === 0 && g === 0 && b === 255) return 'Bright Blue'
-  if (r === 0 && g === 128 && b === 255) return 'Sky Blue'
-  if (r === 128 && g === 128 && b === 255) return 'Pastel Blue'
-  if (r === 0 && g === 255 && b === 255) return 'Bright Cyan'
-  if (r === 128 && g === 255 && b === 255) return 'Pastel Cyan'
-  if (r === 255 && g === 0 && b === 0) return 'Bright Red'
-  if (r === 128 && g === 0 && b === 0) return 'Red'
-  if (r === 255 && g === 0 && b === 128) return 'Purple'
-  if (r === 128 && g === 0 && b === 128) return 'Magenta'
-  if (r === 255 && g === 0 && b === 255) return 'Bright Magenta'
-  if (r === 128 && g === 0 && b === 255) return 'Mauve'
-  if (r === 0 && g === 128 && b === 0) return 'Green'
-  if (r === 0 && g === 255 && b === 0) return 'Bright Green'
-  if (r === 128 && g === 255 && b === 0) return 'Lime'
-  if (r === 128 && g === 128 && b === 0) return 'Yellow'
-  if (r === 255 && g === 255 && b === 0) return 'Bright Yellow'
-  if (r === 255 && g === 128 && b === 0) return 'Orange'
-  if (r === 0 && g === 0 && b === 0) return 'Black'
-  if (r === 255 && g === 255 && b === 255) return 'Bright White'
-  if (r === 128 && g === 128 && b === 128) return 'White'
-  return `RGB(${r},${g},${b})`
-}
-
-function isBlueColor(color: Vector): boolean {
-  const [r, g, b] = color
-  // Consider a color blue if blue component is dominant and > 100
-  return b > 100 && b >= r && b >= g
-}
 
 export type DitheringMode =
   | 'floydSteinberg'
@@ -114,31 +79,11 @@ export function createQuantizer({
       buildWeightedHistogram(vecs.map(toW), workingPal, distFn)
     )
 
-    // DEBUG: Log histogram for analysis
-    quantizerLogger.info('🎨 Histogram analysis:')
-    const histogramEntries = workingPal
-      .map((color, idx) => ({
-        index: idx,
-        color,
-        count: counts[idx],
-        name: getCPCColorName(color) // Helper to identify CPC colors
-      }))
-      .sort((a, b) => b.count - a.count)
-
-    quantizerLogger.info(
-      'Top 10 colors by weight:',
-      histogramEntries.slice(0, 10)
-    )
-    quantizerLogger.info(
-      'Blue colors in histogram:',
-      histogramEntries.filter((entry) => isBlueColor(entry.color))
-    )
-
     // Calculate relative threshold based on image size (0.1% of pixels, minimum 1)
     const totalPixels = vecs.length
     const relativeThreshold = Math.max(1, Math.floor(totalPixels * 0.001))
 
-    // ✅ OPTIMISATION: Utiliser mode diversité pour les palettes moyennes (mode 0 = 16 couleurs)
+    // OPTIMISATION: Utiliser mode diversité pour les palettes moyennes (mode 0 = 16 couleurs)
     const useDiversityMode = limit >= 8 && limit <= 16
 
     const idxs = useDiversityMode
@@ -150,16 +95,6 @@ export function createQuantizer({
       : selectTopIndices(counts, preIdx, 16, {
           threshold: relativeThreshold
         })
-
-    quantizerLogger.info('Selected indices:', idxs)
-    quantizerLogger.info(
-      'Selected colors:',
-      idxs.map((i) => ({
-        index: i,
-        color: workingPal[i],
-        name: getCPCColorName(workingPal[i])
-      }))
-    )
 
     const out = idxs.map((i: number) => workingPal[i])
 

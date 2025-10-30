@@ -1,4 +1,4 @@
-// ✅ ImagePreviewView.tsx
+// ImagePreviewView.tsx
 
 import { Trans } from '@lingui/react/macro'
 import type React from 'react'

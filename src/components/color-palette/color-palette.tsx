@@ -1,12 +1,11 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import type React from 'react'
-import { cpcHardwareAtom } from '@/app/store/config/config'
 import {
   onSetColorAtom,
   onToggleLockAtom,
   userPaletteAtom
 } from '@/app/store/palette/palette'
-import { getCPCPaletteByHardware } from '@/palettes/cpc-palette'
+import { cpcFullPalette } from '@/palettes/cpc-palette'
 import { ColorPaletteView } from './color-palette-view'
 
 /**
@@ -27,9 +26,8 @@ export const ColorPalette: React.FC = () => {
   // Handler to set a color for a slot
   const setColor = useSetAtom(onSetColorAtom)
 
-  // Get CPC hardware mode and corresponding palette
-  const cpcHardware = useAtomValue(cpcHardwareAtom)
-  const fullPalette = getCPCPaletteByHardware(cpcHardware)
+  // Get the full CPC palette for color selection
+  const fullPalette = cpcFullPalette
 
   return (
     <ColorPaletteView

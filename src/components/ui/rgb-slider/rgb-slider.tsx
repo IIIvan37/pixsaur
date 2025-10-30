@@ -16,7 +16,7 @@ export interface RgbSliderProps {
 }
 
 /**
- * 🎮 RGB Slider Component - Hardware-Aware Implementation
+ * RGB Slider Component - Hardware-Aware Implementation
  *
  * Composant réutilisable pour ajuster les valeurs RGB avec sliders.
  * Travaille en valeurs normalisées (0-15 pour Plus, 0-2 pour Classic)

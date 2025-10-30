@@ -7,9 +7,9 @@ import { Select, SelectItem } from '@/components/ui/select'
 import { isDevelopment } from '@/utils/is-development'
 
 const PROCESSOR_TYPES = [
-  { value: 'auto', label: '🤖 Auto (GPU puis CPU)', icon: '🤖' },
-  { value: 'gpu', label: '🎮 GPU (ReGL)', icon: '🎮' },
-  { value: 'cpu', label: '🖥️ CPU', icon: '🖥️' }
+  { value: 'auto', label: 'Auto (GPU puis CPU)' },
+  { value: 'gpu', label: 'GPU (ReGL)' },
+  { value: 'cpu', label: 'CPU' }
 ] as const
 
 export function ProcessorSelector() {

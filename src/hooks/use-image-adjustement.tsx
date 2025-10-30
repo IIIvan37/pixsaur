@@ -3,7 +3,6 @@ import debounce from 'lodash/debounce'
 import { useEffect, useMemo } from 'react'
 import { configAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
-import { adapterLogger } from '@/utils/logger'
 import { useImageProcessors } from './use-image-processors'
 
 export const useImageAdjustement = () => {
@@ -41,11 +40,6 @@ export const useImageAdjustement = () => {
           return
         }
 
-        if (process.env.NODE_ENV === 'development') {
-          adapterLogger.debug(
-            '🔧 [DEBUG] use-image-adjustement calling processor'
-          )
-        }
         const result = imageProcessor.applyAdjustmentsSync(
           new ImageData(
             new Uint8ClampedArray(data),

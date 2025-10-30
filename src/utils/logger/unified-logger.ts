@@ -1,5 +1,5 @@
 /**
- * 🔄 Logger Unifié DRY - Single Source of Truth pour le Logging
+ * Logger Unifié DRY - Single Source of Truth pour le Logging
  *
  * Ce module remplace les 6 loggers actuels par un système unifié qui élimine
  * la duplication de code et centralise la configuration.
@@ -58,16 +58,16 @@ export interface LoggerInterface {
  * Emojis standards pour chaque module (DRY pattern)
  */
 export const MODULE_EMOJIS = {
-  core: '🔧',
-  adapter: '🔄',
-  quantizer: '🎯',
-  palette: '🎨',
-  webgl: '🎮',
-  regl: '🎮',
-  factory: '🏭',
-  export: '📤',
-  import: '📥',
-  performance: '⚡'
+  core: 'core',
+  adapter: 'adapter',
+  quantizer: 'quantizer',
+  palette: 'palette',
+  webgl: 'webgl',
+  regl: 'webgl',
+  factory: 'factory',
+  export: 'export',
+  import: 'import',
+  performance: 'performance'
 } as const
 
 export type ModuleName = keyof typeof MODULE_EMOJIS
@@ -97,7 +97,7 @@ export class UnifiedLogger implements LoggerInterface {
     private readonly moduleName: string,
     initialConfig: Partial<LoggerConfig> = {}
   ) {
-    const emoji = MODULE_EMOJIS[moduleName as ModuleName] || '📋'
+    const emoji = MODULE_EMOJIS[moduleName as ModuleName] || 'default'
     this.config = {
       ...DEFAULT_LOGGER_CONFIG,
       prefix: `${emoji} [${moduleName.toUpperCase()}]`,
@@ -106,7 +106,7 @@ export class UnifiedLogger implements LoggerInterface {
   }
 
   /**
-   * 🏭 Factory Method - Single Point of Creation (DRY)
+   * factory Factory Method - Single Point of Creation (DRY)
    * Garantit une seule instance par module
    */
   static getInstance(
@@ -131,7 +131,7 @@ export class UnifiedLogger implements LoggerInterface {
   }
 
   /**
-   * 🔧 Configuration centralisée (DRY)
+   * core Configuration centralisée (DRY)
    */
   configure(config: Partial<LoggerConfig>): void {
     this.config = { ...this.config, ...config }
@@ -146,7 +146,7 @@ export class UnifiedLogger implements LoggerInterface {
   }
 
   /**
-   * 🔍 Vérification du niveau de log (DRY Logic)
+   * Vérification du niveau de log (DRY Logic)
    */
   private shouldLog(level: LoggerConfig['level']): boolean {
     if (!this.config.enabled) return false
@@ -159,7 +159,7 @@ export class UnifiedLogger implements LoggerInterface {
   }
 
   /**
-   * 🎨 Formatage des messages (DRY Logic)
+   * palette Formatage des messages (DRY Logic)
    */
   private formatMessage(...args: any[]): any[] {
     if (!this.config.prefix) return args
@@ -175,7 +175,7 @@ export class UnifiedLogger implements LoggerInterface {
   }
 
   // ===============================
-  // 📝 Core Logging Methods (DRY)
+  // Core Logging Methods (DRY)
   // ===============================
 
   debug(...args: any[]): void {
@@ -199,7 +199,7 @@ export class UnifiedLogger implements LoggerInterface {
   }
 
   // ===============================
-  // 📂 Grouping Methods (DRY)
+  // Grouping Methods (DRY)
   // ===============================
 
   group(label: string): void {
@@ -238,7 +238,7 @@ export class UnifiedLogger implements LoggerInterface {
         const endTime = globalThis.performance.now()
         const duration = endTime - startTime
         this.activeTimers.delete(timerKey)
-        this.info(`✅ ${name} completed in ${duration.toFixed(2)}ms`)
+        this.info(`completed ${name} completed in ${duration.toFixed(2)}ms`)
       }
     }
   }
@@ -251,7 +251,7 @@ export class UnifiedLogger implements LoggerInterface {
       return result
     } catch (error) {
       timer.end()
-      this.error(`❌ ${name} failed:`, error)
+      this.error(`failed ${name} failed:`, error)
       throw error
     }
   }
@@ -264,13 +264,13 @@ export class UnifiedLogger implements LoggerInterface {
       return result
     } catch (error) {
       timer.end()
-      this.error(`❌ ${name} failed:`, error)
+      this.error(`failed ${name} failed:`, error)
       throw error
     }
   }
 
   // ===============================
-  // 🛠️ Utility Methods
+  // Utility Methods
   // ===============================
 
   /**
@@ -313,7 +313,7 @@ export class UnifiedLogger implements LoggerInterface {
 }
 
 // ===============================
-// 🏭 Factory Functions (DRY Exports)
+// factory Factory Functions (DRY Exports)
 // ===============================
 
 /**
@@ -347,7 +347,7 @@ export const performance = {
 }
 
 /**
- * 🎯 AVANTAGES DE CETTE REFACTORISATION DRY:
+ * quantizer AVANTAGES DE CETTE REFACTORISATION DRY:
  *
  * 1. **Élimination Duplication**: 6 loggers → 1 classe réutilisable
  * 2. **Configuration Centralisée**: Une seule source de vérité

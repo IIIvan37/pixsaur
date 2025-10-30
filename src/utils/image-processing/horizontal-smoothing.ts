@@ -82,7 +82,6 @@ export function getPixelWidthForMode(mode: number): number {
       return 4 // Mode 0: 160×200, large pixels
     case 1:
       return 2 // Mode 1: 320×200, medium pixels
-    case 2:
     default:
       return 1 // Mode 2: 640×200, fine pixels (no smoothing)
   }
