@@ -46,9 +46,8 @@ export function SourceSelectorView({
     }
   }, [resizeHandle, hoveredHandle])
 
+  /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
   return (
-    /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
-    /* sonar-ignore-next-line */
     <section
       aria-label={_(msg`Zone de sélection interactive`)}
       style={{

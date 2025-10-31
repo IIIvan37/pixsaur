@@ -1,131 +1,131 @@
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
-import { Select, SelectItem } from "./select";
-import styles from "./select.module.css";
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
+import { Select, SelectItem } from './select'
+import styles from './select.module.css'
 
-describe("Select", () => {
-  it("renders with required props", () => {
+describe('Select', () => {
+  it('renders with required props', () => {
     render(
-      <Select value="option1" onValueChange={vi.fn()}>
-        <SelectItem value="option1">Option 1</SelectItem>
+      <Select value='option1' onValueChange={vi.fn()}>
+        <SelectItem value='option1'>Option 1</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toBeInTheDocument();
-    expect(trigger).toHaveClass(styles.trigger);
-  });
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toBeInTheDocument()
+    expect(trigger).toHaveClass(styles.trigger)
+  })
 
-  it("displays selected value", () => {
+  it('displays selected value', () => {
     render(
-      <Select value="option2" onValueChange={vi.fn()}>
-        <SelectItem value="option1">Option 1</SelectItem>
-        <SelectItem value="option2">Option 2</SelectItem>
+      <Select value='option2' onValueChange={vi.fn()}>
+        <SelectItem value='option1'>Option 1</SelectItem>
+        <SelectItem value='option2'>Option 2</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toHaveTextContent("Option 2");
-  });
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toHaveTextContent('Option 2')
+  })
 
-  it("renders trigger with chevron icon", () => {
+  it('renders trigger with chevron icon', () => {
     render(
-      <Select value="option1" onValueChange={vi.fn()}>
-        <SelectItem value="option1">Option 1</SelectItem>
+      <Select value='option1' onValueChange={vi.fn()}>
+        <SelectItem value='option1'>Option 1</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    const icon = trigger.querySelector(`.${styles.icon}`);
-    expect(icon).toBeInTheDocument();
-  });
+    const trigger = screen.getByRole('combobox')
+    const icon = trigger.querySelector(`.${styles.icon}`)
+    expect(icon).toBeInTheDocument()
+  })
 
-  it("supports keyboard navigation", async () => {
-    const user = userEvent.setup();
-    const handleChange = vi.fn();
+  it('supports keyboard navigation', async () => {
+    const user = userEvent.setup()
+    const handleChange = vi.fn()
 
     render(
-      <Select value="option1" onValueChange={handleChange}>
-        <SelectItem value="option1">Option 1</SelectItem>
-        <SelectItem value="option2">Option 2</SelectItem>
+      <Select value='option1' onValueChange={handleChange}>
+        <SelectItem value='option1'>Option 1</SelectItem>
+        <SelectItem value='option2'>Option 2</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    trigger.focus();
-    await user.keyboard("{Enter}");
+    const trigger = screen.getByRole('combobox')
+    trigger.focus()
+    await user.keyboard('{Enter}')
     // The actual selection may not work in test environment due to portal rendering
-  });
+  })
 
-  it("has proper accessibility attributes", () => {
+  it('has proper accessibility attributes', () => {
     render(
-      <Select value="option1" onValueChange={vi.fn()}>
-        <SelectItem value="option1">Option 1</SelectItem>
+      <Select value='option1' onValueChange={vi.fn()}>
+        <SelectItem value='option1'>Option 1</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toHaveAttribute("aria-expanded", "false");
-    expect(trigger).toHaveAttribute("aria-autocomplete", "none");
-  });
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveAttribute('aria-autocomplete', 'none')
+  })
 
-  it("renders with empty value", () => {
+  it('renders with empty value', () => {
     render(
-      <Select value="" onValueChange={vi.fn()}>
-        <SelectItem value="option1">Option 1</SelectItem>
+      <Select value='' onValueChange={vi.fn()}>
+        <SelectItem value='option1'>Option 1</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toBeInTheDocument();
-  });
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toBeInTheDocument()
+  })
 
-  it("renders multiple items", () => {
+  it('renders multiple items', () => {
     render(
-      <Select value="option1" onValueChange={vi.fn()}>
-        <SelectItem value="option1">Option 1</SelectItem>
-        <SelectItem value="option2">Option 2</SelectItem>
-        <SelectItem value="option3">Option 3</SelectItem>
+      <Select value='option1' onValueChange={vi.fn()}>
+        <SelectItem value='option1'>Option 1</SelectItem>
+        <SelectItem value='option2'>Option 2</SelectItem>
+        <SelectItem value='option3'>Option 3</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toHaveTextContent("Option 1");
-  });
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toHaveTextContent('Option 1')
+  })
 
-  it("renders with custom content", () => {
+  it('renders with custom content', () => {
     render(
-      <Select value="test" onValueChange={vi.fn()}>
-        <SelectItem value="test">Test Content</SelectItem>
+      <Select value='test' onValueChange={vi.fn()}>
+        <SelectItem value='test'>Test Content</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toHaveTextContent("Test Content");
-  });
-});
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toHaveTextContent('Test Content')
+  })
+})
 
-describe("SelectItem", () => {
-  it("renders with required props", () => {
+describe('SelectItem', () => {
+  it('renders with required props', () => {
     render(
-      <Select value="option1" onValueChange={vi.fn()}>
-        <SelectItem value="test">Test Item</SelectItem>
+      <Select value='option1' onValueChange={vi.fn()}>
+        <SelectItem value='test'>Test Item</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toBeInTheDocument();
-  });
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toBeInTheDocument()
+  })
 
-  it("displays children content", () => {
+  it('displays children content', () => {
     render(
-      <Select value="test" onValueChange={vi.fn()}>
-        <SelectItem value="test">Test Content</SelectItem>
+      <Select value='test' onValueChange={vi.fn()}>
+        <SelectItem value='test'>Test Content</SelectItem>
       </Select>
-    );
+    )
 
-    const trigger = screen.getByRole("combobox");
-    expect(trigger).toHaveTextContent("Test Content");
-  });
-});
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toHaveTextContent('Test Content')
+  })
+})

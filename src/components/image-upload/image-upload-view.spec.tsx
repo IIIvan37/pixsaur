@@ -6,7 +6,6 @@ import { ImageUploadView } from './image-upload-view'
 let files: File[] = []
 
 vi.mock('react-dropzone', () => ({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useDropzone: (opts: any) => ({
     getRootProps: () => ({}),
     getInputProps: () => ({

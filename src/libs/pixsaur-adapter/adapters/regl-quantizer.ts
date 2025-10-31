@@ -39,6 +39,9 @@ export interface ReGLQuantizeConfig extends QuantizeConfig {
   /** Threshold for adaptive filtering (default: 10) */
   readonly threshold?: number
 
+  /** Whether threshold is relative to palette size (default: false) */
+  readonly isRelativeThreshold?: boolean
+
   /** GPU performance options */
   readonly gpuOptions?: {
     readonly batchSize?: number
@@ -840,7 +843,8 @@ export class ReGLQuantizer {
         preselectedIndices,
         actualTargetColors,
         {
-          threshold: 10,
+          threshold: config.threshold ?? 10,
+          isRelativeThreshold: config.isRelativeThreshold ?? false,
           diversityMode: useOptimizedSelection,
           basePalette: useOptimizedSelection ? basePalette : undefined
         }

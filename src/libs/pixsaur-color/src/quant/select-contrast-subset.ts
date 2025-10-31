@@ -47,7 +47,6 @@ export function isBright(color: Vector): boolean {
  * @param distance - Distance function in working space
  * @param toRGB - Projection function to RGB (for luminance test)
  */
-// eslint-disable-next-line sonarjs/cognitive-complexity
 export function selectContrastedSubset(
   candidates: readonly Vector[],
   preselected: Vector[],
@@ -115,7 +114,6 @@ export function selectContrastedSubset(
  * @param distance - Fonction de distance dans l'espace de travail
  * @param toRGB - Fonction de conversion vers RGB pour test de luminance
  */
-// eslint-disable-next-line sonarjs/cognitive-complexity
 export function selectBalancedSubset(
   candidates: readonly Vector[],
   preselected: Vector[],

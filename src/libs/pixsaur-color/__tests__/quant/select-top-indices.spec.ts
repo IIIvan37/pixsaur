@@ -117,6 +117,39 @@ describe('selectTopIndicesCore', () => {
     // No counts meet threshold of 20, so no filtering applied
     expect(result).toEqual([3, 1])
   })
+
+  it('should handle relative threshold correctly', () => {
+    const counts = [5, 15, 25, 8, 30, 2, 18]
+    // With relative threshold 0.5 and max count 30, threshold becomes 15
+    const result = selectTopIndicesCore(counts, [], 4, {
+      threshold: 0.5,
+      isRelativeThreshold: true
+    })
+    // Should only include counts >= 15 (25, 30, 18)
+    expect(result).toEqual([4, 2, 6, 1])
+  })
+
+  it('should handle relative threshold with small values', () => {
+    const counts = [1, 2, 3, 4, 5]
+    // With relative threshold 0.8 and max count 5, threshold becomes 4
+    const result = selectTopIndicesCore(counts, [], 3, {
+      threshold: 0.8,
+      isRelativeThreshold: true
+    })
+    // Should only include counts >= 4 (4, 5)
+    expect(result).toEqual([4, 3])
+  })
+
+  it('should fallback to absolute threshold when relative gives no results', () => {
+    const counts = [1, 2, 3, 4, 5]
+    // With relative threshold 0.9 and max count 5, threshold becomes 4
+    const result = selectTopIndicesCore(counts, [], 3, {
+      threshold: 0.9,
+      isRelativeThreshold: true
+    })
+    // Should only include counts >= 4 (4, 5)
+    expect(result).toEqual([4, 3])
+  })
 })
 
 describe('selectTopIndices - comprehensive edge cases', () => {

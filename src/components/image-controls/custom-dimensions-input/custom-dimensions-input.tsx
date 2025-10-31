@@ -31,7 +31,6 @@ function useDebouncedCallback<T extends (...args: any[]) => void>(
         callbackRef.current(...args)
       }, delay)
     }) as T,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
 }

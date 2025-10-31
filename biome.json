@@ -61,5 +61,17 @@
       "!**/coverage",
       "!**/.pnpm-store"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.spec.tsx", "**/*.spec.ts"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useUniqueElementIds": "off"
+          }
+        }
+      }
+    }
+  ]
 }
