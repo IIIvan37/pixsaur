@@ -1,21 +1,21 @@
-import { Trans } from "@lingui/react/macro";
-import PixsaurSlider from "@/components/ui/slider/slider";
-import styles from "./custom-dimensions-input.module.css";
+import { Trans } from '@lingui/react/macro'
+import PixsaurSlider from '@/components/ui/slider/slider'
+import styles from './custom-dimensions-input.module.css'
 
 export interface CustomDimensionsInputViewProps {
-  readonly localWidth: number;
-  readonly localHeight: number;
-  readonly maxWidth: number;
-  readonly maxHeight: number;
-  readonly widthStep: number;
-  readonly bytesPerLine: number;
+  readonly localWidth: number
+  readonly localHeight: number
+  readonly maxWidth: number
+  readonly maxHeight: number
+  readonly widthStep: number
+  readonly bytesPerLine: number
   readonly validation: {
-    readonly valid: boolean;
-    readonly kb: number;
-    readonly errors: readonly string[];
-  };
-  readonly onWidthChange: (value: number) => void;
-  readonly onHeightChange: (value: number) => void;
+    readonly valid: boolean
+    readonly kb: number
+    readonly errors: readonly string[]
+  }
+  readonly onWidthChange: (value: number) => void
+  readonly onHeightChange: (value: number) => void
 }
 
 export function CustomDimensionsInputView({
@@ -27,7 +27,7 @@ export function CustomDimensionsInputView({
   bytesPerLine,
   validation,
   onWidthChange,
-  onHeightChange,
+  onHeightChange
 }: CustomDimensionsInputViewProps) {
   return (
     <div className={styles.container}>
@@ -40,7 +40,7 @@ export function CustomDimensionsInputView({
           onChange={onWidthChange}
           label={
             <>
-              <Trans>Largeur</Trans> ({localWidth}px / {bytesPerLine.toFixed(0)}{" "}
+              <Trans>Largeur</Trans> ({localWidth}px / {bytesPerLine.toFixed(0)}{' '}
               octets)
             </>
           }
@@ -70,9 +70,9 @@ export function CustomDimensionsInputView({
             <Trans>Mémoire</Trans>: {validation.kb.toFixed(2)} Ko / 64 Ko
           </>
         ) : (
-          validation.errors.join(", ")
+          validation.errors.join(', ')
         )}
       </div>
     </div>
-  );
+  )
 }
