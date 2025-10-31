@@ -14,6 +14,8 @@ export type DitheringMode =
   | 'bayer2x2'
   | 'bayer4x4'
   | 'bayer8x8'
+  | 'atkinson'
+  | 'halftone4x4'
   | 'ylioluma1'
   | 'ylioluma2'
 
