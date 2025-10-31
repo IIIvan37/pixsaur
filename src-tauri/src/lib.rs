@@ -19,6 +19,9 @@ pub fn run() {
           tauri_plugin_log::Builder::default()
             .level(log::LevelFilter::Info)
             .target(tauri_plugin_log::Target::new(
+              tauri_plugin_log::TargetKind::LogDir { file_name: Some("pixsaur.log".to_string()) },
+            ))
+            .target(tauri_plugin_log::Target::new(
               tauri_plugin_log::TargetKind::Stdout,
             ))
             .build(),
