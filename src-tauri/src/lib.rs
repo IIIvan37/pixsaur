@@ -1,3 +1,5 @@
+use tauri::Manager;
+
 #[tauri::command]
 fn log_to_file(message: String) {
   println!("[PIXSAUR] {}", message);
