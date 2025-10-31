@@ -4,9 +4,15 @@ import { ditheringAtom } from '@/app/store/config/config'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
+import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import styles from './dithering-selector.module.css'
 
-const MODES = [
+type DitheringModeOption = {
+  value: DitheringMode
+  label: string
+}
+
+const MODES: readonly DitheringModeOption[] = [
   { value: 'floydSteinberg', label: 'Floyd–Steinberg' },
   { value: 'bayer2x2', label: 'Bayer 2x2' },
   { value: 'bayer4x4', label: 'Bayer 4x4' },

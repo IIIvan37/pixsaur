@@ -14,6 +14,7 @@ import {
   previewImageAtom
 } from '@/app/store/preview/preview'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
+import { getAspectRatioMultipliers } from '@/utils/cpc-calculations'
 import { ImagePreviewView } from './image-preview-view'
 
 const ImagePreview = () => {
@@ -85,8 +86,9 @@ const ImagePreview = () => {
     }
 
     // Calculate aspect ratio correction based on mode
-    const widthMultiplier = modeConfig.mode === 0 ? 2 : 1
-    const heightMultiplier = modeConfig.mode === 2 ? 2 : 1
+    const { widthMultiplier, heightMultiplier } = getAspectRatioMultipliers(
+      modeConfig.mode
+    )
 
     // Create a canvas with the actual image dimensions (not display dimensions)
     const sourceCanvas = document.createElement('canvas')

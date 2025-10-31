@@ -2,6 +2,7 @@ import { atom } from 'jotai'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import { CPCHardware } from '@/libs/types'
+import { getWidthStepForMode } from '@/utils/cpc-calculations'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
 import type { ResizeMode } from './resize-types'
@@ -113,20 +114,6 @@ export const derivedModeAtom = atom(
   }
 )
 
-// Helper: Get pixels per byte for a given mode
-const getPixelsPerByte = (mode: PixelMode): number => {
-  if (mode === 0) return 2 // Mode 0: 2 pixels per byte
-  if (mode === 1) return 4 // Mode 1: 4 pixels per byte
-  return 8 // Mode 2: 8 pixels per byte
-}
-
-// Helper: Calculate width step based on pixel mode
-const getWidthStepForMode = (mode: PixelMode): number => {
-  if (mode === 0) return 4
-  if (mode === 1) return 8
-  return 16
-}
-
 // Setter for pixel mode only
 // When in custom dimensions mode, adjusts width to maintain same byte count
 export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
@@ -141,11 +128,11 @@ export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
     const currentWidth = currentDimensions.width
 
     // Calculate current byte width
-    const currentPixelsPerByte = getPixelsPerByte(previousMode)
+    const currentPixelsPerByte = getWidthStepForMode(previousMode)
     const byteWidth = currentWidth / currentPixelsPerByte
 
     // Calculate new pixel width for same byte count
-    const newPixelsPerByte = getPixelsPerByte(payload)
+    const newPixelsPerByte = getWidthStepForMode(payload)
     const newWidth = byteWidth * newPixelsPerByte
 
     // Round to nearest valid step

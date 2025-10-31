@@ -8,15 +8,9 @@ import {
 } from '@/app/store/config/config'
 import type { CustomDimensions } from '@/app/store/config/types'
 import PixsaurSlider from '@/components/ui/slider/slider'
+import { getPixelsPerByte, getWidthStepForMode } from '@/utils/cpc-calculations'
 import { validateCustomDimensions } from '@/utils/validate-custom-dimensions'
 import styles from './custom-dimensions-input.module.css'
-
-// Helper: Calculate width step based on pixel mode
-const getWidthStepForMode = (mode: number): number => {
-  if (mode === 0) return 4
-  if (mode === 1) return 8
-  return 16
-}
 
 // Debounce hook with ref
 function useDebouncedCallback<T extends (...args: any[]) => void>(
@@ -95,11 +89,6 @@ export function CustomDimensionsInput() {
 
   // Calculate max values based on 64KB limit
   // For a given height, what's the maximum width that fits in 64KB?
-  const getPixelsPerByte = (mode: number): number => {
-    if (mode === 0) return 2
-    if (mode === 1) return 4
-    return 8
-  }
   const pixelsPerByte = getPixelsPerByte(pixelMode)
   const maxBytes = 65536
 
