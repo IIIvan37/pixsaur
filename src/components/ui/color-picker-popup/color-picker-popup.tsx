@@ -1,22 +1,22 @@
-import { Trans } from "@lingui/react/macro";
-import { useState } from "react";
-import type { Vector } from "@/libs/pixsaur-color/src/type";
-import Button from "../button";
-import Flex from "../flex";
-import { RgbSlider } from "../rgb-slider";
-import styles from "./color-picker-popup.module.css";
+import { Trans } from '@lingui/react/macro'
+import { useState } from 'react'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import Button from '../button'
+import Flex from '../flex'
+import { RgbSlider } from '../rgb-slider'
+import styles from './color-picker-popup.module.css'
 
 export interface ColorPickerPopupProps {
   /** Initial color */
-  readonly initialColor: Vector;
+  readonly initialColor: Vector
   /** Indicates if the color is locked */
-  readonly isLocked: boolean;
+  readonly isLocked: boolean
   /** Callback called when a new color is confirmed */
-  readonly onColorConfirm: (color: Vector) => void;
+  readonly onColorConfirm: (color: Vector) => void
   /** Callback to toggle lock */
-  readonly onToggleLock: () => void;
+  readonly onToggleLock: () => void
   /** Callback to close the popup */
-  readonly onClose: () => void;
+  readonly onClose: () => void
 }
 
 /**
@@ -33,28 +33,28 @@ export function ColorPickerPopup({
   isLocked,
   onColorConfirm,
   onToggleLock,
-  onClose,
+  onClose
 }: ColorPickerPopupProps) {
   // État local pour la couleur en cours d'édition
-  const [workingColor, setWorkingColor] = useState<Vector>(initialColor);
+  const [workingColor, setWorkingColor] = useState<Vector>(initialColor)
 
   const handleConfirm = () => {
-    onColorConfirm(workingColor);
-    onClose();
-  };
+    onColorConfirm(workingColor)
+    onClose()
+  }
 
   const handleCancel = () => {
     // Restaurer la couleur initiale
-    setWorkingColor(initialColor);
-    onClose();
-  };
+    setWorkingColor(initialColor)
+    onClose()
+  }
 
   const handleUnlock = () => {
-    onToggleLock();
-    onClose(); // Fermer la popup après déverrouillage
-  };
+    onToggleLock()
+    onClose() // Fermer la popup après déverrouillage
+  }
 
-  const [r, g, b] = workingColor;
+  const [r, g, b] = workingColor
 
   return (
     <div className={styles.popup}>
@@ -75,7 +75,7 @@ export function ColorPickerPopup({
           <RgbSlider
             value={workingColor}
             onChange={setWorkingColor}
-            label=""
+            label=''
             showPreview={false}
           />
         </div>
@@ -83,11 +83,11 @@ export function ColorPickerPopup({
         {/* Actions */}
         <div className={styles.actions}>
           {/* Boutons de validation/annulation */}
-          <Flex direction="row" justify="space-between" align="center">
-            <Button variant="secondary" onClick={handleCancel}>
+          <Flex direction='row' justify='space-between' align='center'>
+            <Button variant='secondary' onClick={handleCancel}>
               <Trans>Annuler</Trans>
             </Button>
-            <Button variant="primary" onClick={handleConfirm}>
+            <Button variant='primary' onClick={handleConfirm}>
               <Trans>Valider</Trans>
             </Button>
           </Flex>
@@ -98,7 +98,7 @@ export function ColorPickerPopup({
           <div className={styles.lockActions}>
             <Button
               className={styles.lockButton}
-              variant="secondary"
+              variant='secondary'
               onClick={handleUnlock}
             >
               <Trans>Déverrouiller</Trans>
@@ -107,5 +107,5 @@ export function ColorPickerPopup({
         )}
       </div>
     </div>
-  );
+  )
 }

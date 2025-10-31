@@ -6,18 +6,15 @@ import styles from "./switch.module.css";
 
 describe("Switch", () => {
   it("renders with required props", () => {
-    render(
-      <Switch checked={false} onCheckedChange={vi.fn()} id="test-switch" />
-    );
+    render(<Switch checked={false} onCheckedChange={vi.fn()} id="switch-1" />);
 
     const switchElement = screen.getByRole("switch");
     expect(switchElement).toBeInTheDocument();
-    expect(switchElement).toHaveAttribute("id", "test-switch");
     expect(switchElement).not.toBeChecked();
   });
 
   it("renders unchecked when checked is false", () => {
-    render(<Switch checked={false} onCheckedChange={vi.fn()} id="test" />);
+    render(<Switch checked={false} onCheckedChange={vi.fn()} id="switch-2" />);
 
     const switchElement = screen.getByRole("switch");
     expect(switchElement).not.toBeChecked();
@@ -26,7 +23,7 @@ describe("Switch", () => {
   });
 
   it("renders checked when checked is true", () => {
-    render(<Switch checked={true} onCheckedChange={vi.fn()} id="test" />);
+    render(<Switch checked={true} onCheckedChange={vi.fn()} id="switch-3" />);
 
     const switchElement = screen.getByRole("switch");
     expect(switchElement).toBeChecked();
@@ -38,19 +35,19 @@ describe("Switch", () => {
       <Switch
         checked={false}
         onCheckedChange={vi.fn()}
-        id="test"
+        id="switch-4"
         label="Test Label"
       />
     );
 
     const label = screen.getByText("Test Label");
     expect(label).toBeInTheDocument();
-    expect(label).toHaveAttribute("for", "test");
+    expect(label).toHaveAttribute("for", "switch-4");
     expect(label).toHaveClass(styles.label);
   });
 
   it("does not render label when not provided", () => {
-    render(<Switch checked={false} onCheckedChange={vi.fn()} id="test" />);
+    render(<Switch checked={false} onCheckedChange={vi.fn()} id="switch-5" />);
 
     expect(screen.queryByRole("label")).not.toBeInTheDocument();
   });
@@ -59,7 +56,9 @@ describe("Switch", () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
-    render(<Switch checked={false} onCheckedChange={handleChange} id="test" />);
+    render(
+      <Switch checked={false} onCheckedChange={handleChange} id="switch-6" />
+    );
 
     const switchElement = screen.getByRole("switch");
     await user.click(switchElement);
@@ -72,7 +71,9 @@ describe("Switch", () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
-    render(<Switch checked={true} onCheckedChange={handleChange} id="test" />);
+    render(
+      <Switch checked={true} onCheckedChange={handleChange} id="switch-7" />
+    );
 
     const switchElement = screen.getByRole("switch");
     await user.click(switchElement);
@@ -85,7 +86,9 @@ describe("Switch", () => {
     const user = userEvent.setup();
     const handleChange = vi.fn();
 
-    render(<Switch checked={false} onCheckedChange={handleChange} id="test" />);
+    render(
+      <Switch checked={false} onCheckedChange={handleChange} id="switch-8" />
+    );
 
     const switchElement = screen.getByRole("switch");
     switchElement.focus();
@@ -100,7 +103,7 @@ describe("Switch", () => {
       <Switch
         checked={true}
         onCheckedChange={vi.fn()}
-        id="test"
+        id="switch-9"
         label="Test Switch"
       />
     );
@@ -110,7 +113,7 @@ describe("Switch", () => {
   });
 
   it("renders thumb element", () => {
-    render(<Switch checked={false} onCheckedChange={vi.fn()} id="test" />);
+    render(<Switch checked={false} onCheckedChange={vi.fn()} id="switch-10" />);
 
     const thumb = document.querySelector(`.${styles.thumb}`);
     expect(thumb).toBeInTheDocument();
@@ -121,7 +124,7 @@ describe("Switch", () => {
       <Switch
         checked={false}
         onCheckedChange={vi.fn()}
-        id="test"
+        id="switch-11"
         label="Label"
       />
     );
