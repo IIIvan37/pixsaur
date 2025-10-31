@@ -70,7 +70,9 @@
   },
   "plugins": {
     "updater": {
-      "endpoints": ["https://localhost:8443/latest.json"],
+      "endpoints": [
+        "https://github.com/IIIvan37/pixsaur/releases/latest/download/latest.json"
+      ],
       "pubkey": ""
     }
   }

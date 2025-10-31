@@ -14,13 +14,16 @@ export interface LoggerConfig {
   prefix: string
   /** Enable performance measurements */
   enableTiming: boolean
+  /** Enable Tauri logging (for production debugging) */
+  enableTauriLogging: boolean
 }
 
 const DEFAULT_CONFIG: LoggerConfig = {
   enabled: import.meta.env.DEV,
   level: 'info',
   prefix: '[Pixsaur]',
-  enableTiming: true
+  enableTiming: true,
+  enableTauriLogging: false
 }
 
 class PerformanceLogger {
@@ -29,6 +32,25 @@ class PerformanceLogger {
 
   constructor(config: Partial<LoggerConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config }
+  }
+
+  /**
+   * Log to Tauri backend (for production debugging)
+   */
+  private async logToTauri(level: string, ...args: any[]): Promise<void> {
+    if (!this.config.enableTauriLogging) return
+
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const message = `${this.config.prefix} [${level.toUpperCase()}] ${args
+        .map((arg) =>
+          typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+        )
+        .join(' ')}`
+      await invoke('log_to_file', { message })
+    } catch (_error) {
+      // Silently fail if Tauri logging is not available
+    }
   }
 
   /**
@@ -118,6 +140,7 @@ class PerformanceLogger {
   info(...args: any[]): void {
     if (!this.config.enabled || !this.shouldLog('info')) return
     console.info(this.config.prefix, ...args)
+    this.logToTauri('info', ...args)
   }
 
   /**
@@ -126,6 +149,7 @@ class PerformanceLogger {
   warn(...args: any[]): void {
     if (!this.config.enabled || !this.shouldLog('warn')) return
     console.warn(this.config.prefix, ...args)
+    this.logToTauri('warn', ...args)
   }
 
   /**
@@ -134,6 +158,7 @@ class PerformanceLogger {
   error(...args: any[]): void {
     if (!this.config.enabled || !this.shouldLog('error')) return
     console.error(this.config.prefix, ...args)
+    this.logToTauri('error', ...args)
   }
 
   /**
@@ -190,6 +215,15 @@ export const adapterLogger = createLogger({ prefix: '[Adapter]' })
 export const webglLogger = createLogger({ prefix: '[WebGL]' })
 export const quantizerLogger = createLogger({ prefix: '[Quantizer]' })
 export const paletteLogger = createLogger({ prefix: '[Palette]' })
+
+// Logger pour l'updater (peut être activé en production pour le debugging)
+export const updaterLogger = createLogger({
+  prefix: '[Updater]',
+  enabled:
+    import.meta.env.DEV ||
+    localStorage.getItem('PIXSAUR_DEBUG_UPDATER') === 'true',
+  enableTauriLogging: true
+})
 
 // Helper pour mesurer les performances critiques
 export const measure = {
