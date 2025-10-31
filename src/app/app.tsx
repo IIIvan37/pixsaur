@@ -4,12 +4,14 @@ import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
 import styles from '@/styles/app.module.css'
+import { isDevelopment } from '@/utils/is-development'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
 
 /**
  * Check if running in Tauri environment
  */
+
 function isTauri(): boolean {
   return (
     typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
@@ -17,10 +19,14 @@ function isTauri(): boolean {
 }
 
 export default function App() {
+  const tauri = isTauri()
+  const dev = isDevelopment()
+  console.log('[APP] isTauri:', tauri, 'isDevelopment:', dev)
+  // alert(`isTauri: ${tauri}, isDevelopment: ${dev}`)
   return (
     <I18nProviderWrapper>
       <ThemeProvider>
-        {isTauri() && <Updater />}
+        {(dev || tauri) && <Updater />}
         <main className={styles.container}>
           <div className={styles.content}>
             <header className={styles.header}>

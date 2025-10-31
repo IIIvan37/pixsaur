@@ -1,9 +1,10 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Pixsaur",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "identifier": "com.iiiivan37.pixsaur",
   "build": {
+    "removeUnusedCommands": true,
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "pnpm dev",
@@ -12,6 +13,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Pixsaur - Amstrad CPC Image Converter",
         "width": 1400,
         "height": 900,
@@ -19,7 +21,9 @@
         "minHeight": 768,
         "resizable": true,
         "fullscreen": false,
-        "center": true
+        "center": true,
+        "dragDropEnabled": true,
+        "visible": false
       }
     ],
     "security": {
@@ -69,7 +73,7 @@
       "endpoints": [
         "https://github.com/IIIvan37/pixsaur/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEVBM0VBRkU2RkU5NDI3NzUKUldSMUo1VCs1cTgrNmhlM2Fkc3BhU1FDN0ZxMHdyYjB6TG9VbnNxb1RnSnVDMjJLQndkRWk1TT0K"
+      "pubkey": ""
     }
   }
 }

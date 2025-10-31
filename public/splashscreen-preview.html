@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixsaur Splash Screen Preview</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+            color: #00DF3A;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Inconsolata', monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* CRT effect overlay */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 255, 0, 0.03) 0px,
+                rgba(0, 255, 0, 0.03) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        .logo-container {
+            position: relative;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo {
+            width: 200px;
+            height: 200px;
+            animation: pulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(0, 255, 0, 0.3));
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        .logo-glow {
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.1) 0%, transparent 70%);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            0% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            100% {
+                transform: scale(1.1);
+                opacity: 0.6;
+            }
+        }
+
+        .app-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #00FF00;
+            text-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            letter-spacing: -0.05em;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #00CC00;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+        }
+
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .loading-bar {
+            width: 300px;
+            height: 4px;
+            background: rgba(0, 223, 58, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #00FF00, #00CC00, #00FF00);
+            border-radius: 2px;
+            animation: loading 2s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+        }
+
+        @keyframes loading {
+            0% {
+                width: 0%;
+                transform: translateX(0);
+            }
+            50% {
+                width: 100%;
+                transform: translateX(0);
+            }
+            100% {
+                width: 100%;
+                transform: translateX(100%);
+            }
+        }
+
+        .loading-text {
+            font-size: 1rem;
+            color: #00DF3A;
+            opacity: 0.8;
+            animation: blink 1.5s ease-in-out infinite;
+            font-weight: 400;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .terminal-lines {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            right: 2rem;
+            font-size: 0.8rem;
+            color: #00AA00;
+            opacity: 0.7;
+            text-align: left;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .terminal-line {
+            margin-bottom: 0.3rem;
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        .terminal-line:nth-child(1) { animation-delay: 0.2s; opacity: 0; }
+        .terminal-line:nth-child(2) { animation-delay: 0.4s; opacity: 0; }
+        .terminal-line:nth-child(3) { animation-delay: 0.6s; opacity: 0; }
+
+        @keyframes fadeIn {
+            to { opacity: 0.7; }
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .app-title {
+                font-size: 2.5rem;
+            }
+
+            .logo {
+                width: 150px;
+                height: 150px;
+            }
+
+            .logo-glow {
+                width: 170px;
+                height: 170px;
+            }
+
+            .loading-bar {
+                width: 250px;
+            }
+        }
+
+        /* Preview info */
+        .preview-info {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00FF00;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            border: 1px solid #00FF00;
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-info">
+        Aperçu du Splash Screen<br>
+        Taille: 800x600px (simulée)
+    </div>
+
+    <div class="container">
+        <div class="logo-container">
+            <div class="logo-glow"></div>
+            <img src="./pixsaur_logo_512.png" alt="Pixsaur Logo" class="logo">
+        </div>
+
+        <h1 class="app-title">Pixsaur</h1>
+        <p class="subtitle">Amstrad CPC Image Converter</p>
+
+        <div class="loading-container">
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <p class="loading-text">Loading application...</p>
+        </div>
+    </div>
+
+    <div class="terminal-lines">
+        <div class="terminal-line">$ Initializing Pixsaur...</div>
+        <div class="terminal-line">$ Loading image processing modules...</div>
+        <div class="terminal-line">$ Ready for Amstrad CPC conversion</div>
+    </div>
+</body>
+</html>

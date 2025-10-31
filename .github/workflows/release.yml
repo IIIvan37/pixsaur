@@ -53,7 +53,18 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libfuse2
+            libfuse2 \
+            jq
+
+      - name: Install dependencies (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          brew install jq
+
+      - name: Install dependencies (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          choco install jq
 
       - name: Install pnpm
         run: |
@@ -62,6 +73,27 @@ jobs:
 
       - name: Install frontend dependencies
         run: pnpm install
+
+      - name: Update version files
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NUM="${VERSION#v}"
+          
+          echo "Updating version to ${VERSION_NUM} in package.json and tauri.conf.json"
+          
+          # Update package.json
+          jq ".version = \"${VERSION_NUM}\"" package.json > package.json.tmp && mv package.json.tmp package.json
+          
+          # Update tauri.conf.json
+          jq ".version = \"${VERSION_NUM}\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          
+          # Commit the version changes
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add package.json src-tauri/tauri.conf.json
+          git commit -m "chore: bump version to ${VERSION_NUM}" || echo "No changes to commit"
+          git push origin HEAD:${{ github.ref_name }} || echo "Push failed, continuing..."
 
       - name: Build info
         run: |
@@ -73,10 +105,7 @@ jobs:
 
       - name: Build Tauri manually
         run: pnpm tauri build ${{ matrix.args }}
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
+        
       - name: List build artifacts (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -114,7 +143,7 @@ jobs:
             "platforms": {
               "linux-x86_64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.deb"
               },
               "windows-x86_64": {
                 "signature": "",
@@ -136,7 +165,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: matrix.platform == 'ubuntu-22.04'
         with:
-          draft: false
+          draft: true
           prerelease: false
           generate_release_notes: true
 

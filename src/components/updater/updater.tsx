@@ -1,26 +1,55 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { relaunch } from '@tauri-apps/plugin-process'
 import { check } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useState } from 'react'
+import Button from '../ui/button/button'
+import Icon from '../ui/icon'
+import PixsaurPopover from '../ui/popover/popover'
+import { updaterLogger } from '@/utils/logger'
+import styles from './updater.module.css'
+
+/**
+ * Check if running in Tauri environment
+ */
+function isTauri(): boolean {
+  return (
+    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
+  )
+}
 
 /**
  * Auto-updater component for Tauri desktop app
  * Checks for updates on mount and allows user to install them
  */
 export const Updater = () => {
+  const { t } = useLingui()
   const [updateAvailable, setUpdateAvailable] = useState(false)
   const [updateVersion, setUpdateVersion] = useState('')
   const [downloading, setDownloading] = useState(false)
+  const [popoverOpen, setPopoverOpen] = useState(false)
 
   const checkForUpdates = useCallback(async () => {
     try {
-      const update = await check()
+      updaterLogger.info('Checking for updates...')
 
-      if (update) {
-        setUpdateAvailable(true)
-        setUpdateVersion(update.version)
+      if (isTauri()) {
+        updaterLogger.info('Running in Tauri environment, calling updater API')
+        const update = await check()
+
+        if (update) {
+          updaterLogger.info(`Update available: ${update.version}`)
+          setUpdateAvailable(true)
+          setUpdateVersion(update.version)
+          setPopoverOpen(true)
+        } else {
+          updaterLogger.info('No updates available')
+        }
+      } else {
+        updaterLogger.info('Running in web environment (development mode)')
+        // Updates not available in web mode
       }
-    } catch (error) {
-      console.error('Failed to check for updates:', error)
+    } catch (_error) {
+      updaterLogger.error('Failed to check for updates')
     }
   }, [])
 
@@ -30,18 +59,39 @@ export const Updater = () => {
 
   const installUpdate = async () => {
     try {
+      updaterLogger.info('Starting update installation')
       setDownloading(true)
-      const update = await check()
+      setUpdateAvailable(false)
+      setPopoverOpen(false)
 
-      if (update) {
-        await update.downloadAndInstall()
+      if (isTauri()) {
+        updaterLogger.info('Checking for update again before installation')
+        const update = await check()
 
-        // Relaunch the app to apply the update
-        await relaunch()
+        if (update != null) {
+          updaterLogger.info(
+            `Starting download and install of version ${update.version}`
+          )
+          await update.downloadAndInstall()
+          updaterLogger.info('Download and install completed, relaunching app')
+          await relaunch()
+        } else {
+          updaterLogger.warn('No update available during install attempt')
+          setDownloading(false)
+          setUpdateAvailable(true)
+          setPopoverOpen(true)
+        }
+      } else {
+        updaterLogger.info('Simulating update installation in development mode')
+        setTimeout(() => {
+          setDownloading(false)
+        }, 2000)
       }
-    } catch (error) {
-      console.error('Failed to install update:', error)
+    } catch (_error) {
+      updaterLogger.error('Failed to install update')
       setDownloading(false)
+      setUpdateAvailable(true)
+      setPopoverOpen(true)
     }
   }
 
@@ -50,38 +100,81 @@ export const Updater = () => {
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 20,
-        right: 20,
-        padding: '16px 24px',
-        background: '#4CAF50',
-        color: 'white',
-        borderRadius: 8,
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        zIndex: 9999
-      }}
-    >
-      <p style={{ margin: 0, marginBottom: 8, fontWeight: 'bold' }}>
-        Update available: v{updateVersion}
-      </p>
-      <button
-        type='button'
-        onClick={installUpdate}
-        disabled={downloading}
-        style={{
-          background: 'white',
-          color: '#4CAF50',
-          border: 'none',
-          padding: '8px 16px',
-          borderRadius: 4,
-          cursor: downloading ? 'wait' : 'pointer',
-          fontWeight: 'bold'
-        }}
+    <div className={styles.updaterContainer}>
+      <PixsaurPopover
+        open={popoverOpen}
+        onOpenChange={setPopoverOpen}
+        trigger={
+          <button
+            type='button'
+            className={styles.updateTrigger}
+            aria-label={t`Update available: version ${updateVersion}`}
+          >
+            <Icon name='DownloadIcon' size={20} />
+            <span className={styles.updateBadge}>1</span>
+          </button>
+        }
+        side='bottom'
+        align='end'
+        sideOffset={12}
+        variant='unstyled'
       >
-        {downloading ? 'Installing...' : 'Update Now'}
-      </button>
+        <div className={styles.updateContent}>
+          <div className={styles.updateHeader}>
+            <Icon
+              name='InfoCircledIcon'
+              size={20}
+              className={styles.infoIcon}
+            />
+            <div>
+              <h4 className={styles.updateTitle}>
+                <Trans>Update Available</Trans>
+              </h4>
+              <p className={styles.updateVersion}>
+                <Trans>Version {updateVersion}</Trans>
+              </p>
+            </div>
+          </div>
+
+          <p className={styles.updateDescription}>
+            <Trans>
+              A new version of Pixsaur is available. Update now to get the
+              latest features and improvements.
+            </Trans>
+          </p>
+
+          <div className={styles.updateActions}>
+            <Button
+              variant='secondary'
+              onClick={() => setPopoverOpen(false)}
+              className={styles.laterButton}
+            >
+              <Trans>Later</Trans>
+            </Button>
+            <Button
+              variant='primary'
+              onClick={installUpdate}
+              disabled={downloading}
+            >
+              {downloading ? (
+                <>
+                  <Icon
+                    name='ReloadIcon'
+                    size={16}
+                    className={styles.loadingIcon}
+                  />
+                  <Trans>Installing...</Trans>
+                </>
+              ) : (
+                <>
+                  <Icon name='DownloadIcon' size={16} />
+                  <Trans>Update Now</Trans>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </PixsaurPopover>
     </div>
   )
 }

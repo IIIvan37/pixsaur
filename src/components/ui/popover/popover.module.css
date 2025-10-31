@@ -8,7 +8,7 @@
   box-shadow: 0 0 6px var(--color-accent);
   font-family: var(--font-family);
   font-size: var(--font-size-sm);
-  max-width: 300px;
+ 
   z-index: 50;
   animation: fadeIn 0.2s ease;
 }

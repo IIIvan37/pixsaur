@@ -33,6 +33,7 @@
 .dropzoneActive {
   animation: pulseBorder 1s infinite ease-in-out;
   background-color: rgba(0, 255, 0, 0.05);
+  cursor: copy;
 }
 
 .icon {

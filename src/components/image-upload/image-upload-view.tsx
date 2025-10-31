@@ -1,6 +1,7 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
-import { useId } from 'react'
+import { Window } from '@tauri-apps/api/window'
+import { useEffect, useId, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
 import Icon from '@/components/ui/icon'
 import styles from './image-upload.module.css'
@@ -11,6 +12,30 @@ export type ImageUploadProps = {
   secondaryText?: string
   helpText?: string
   isTauri?: boolean
+}
+
+// Constants
+const IMAGE_EXTENSIONS = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'webp', 'svg']
+
+/**
+ * Detects the current environment characteristics
+ */
+const detectEnvironment = (isTauriProp: boolean) => {
+  const isTauriEnv =
+    typeof globalThis !== 'undefined' &&
+    ('__TAURI__' in globalThis || isTauriProp)
+  const userAgent = navigator.userAgent.toLowerCase()
+  const isLinux =
+    userAgent.includes('linux') ||
+    userAgent.includes('wsl') ||
+    (typeof process !== 'undefined' && process.platform === 'linux')
+  const isWSL =
+    userAgent.includes('wsl') ||
+    (typeof process !== 'undefined' &&
+      process.platform === 'linux' &&
+      userAgent.includes('microsoft'))
+
+  return { isTauriEnv, isLinux, isWSL }
 }
 
 /**
@@ -35,6 +60,85 @@ export const ImageUploadView = ({
   const { _ } = useLingui()
   const uploadId = useId()
 
+  // Detect environment once at render
+  const { isTauriEnv, isLinux, isWSL } = detectEnvironment(isTauri)
+
+  // Helper function to process a dragged file
+  const processFile = async (filePath: string, cb: (files: File[]) => void) => {
+    try {
+      const { readFile } = await import('@tauri-apps/plugin-fs')
+      const buffer = await readFile(filePath)
+      const fileName = filePath.split('/').pop() || 'image'
+      const file = new File([buffer], fileName, {
+        type: 'image/*'
+      })
+      cb([file])
+    } catch (error) {
+      // Log error for debugging but don't crash the app
+      console.warn('[ImageUpload] Failed to process file:', filePath, error)
+    }
+  }
+
+  // Helper function to handle drag-drop events
+  const handleDragDropEvent = async (
+    event: unknown,
+    cb: (files: File[]) => void
+  ) => {
+    const dragEvent = event as { payload: { paths: string[] } }
+    if (dragEvent?.payload?.paths?.length > 0) {
+      const filePath = dragEvent.payload.paths[0]
+      await processFile(filePath, cb)
+    }
+  }
+
+  // Strategy pattern for upload
+  const strategy = useRef<{
+    init: (cb: (files: File[]) => void) => void | Promise<void>
+    dropzoneProps: any
+  }>({
+    init: () => {},
+    dropzoneProps: {}
+  })
+
+  if (isTauriEnv && (isLinux || isWSL)) {
+    strategy.current = {
+      init: async (cb: (files: File[]) => void) => {
+        const win = await Window.getByLabel('main')
+        if (win) {
+          win.listen('tauri://drag-drop', async (event: unknown) => {
+            await handleDragDropEvent(event, cb)
+          })
+
+          // Also try onDragDropEvent if available
+          if (win.onDragDropEvent) {
+            win.onDragDropEvent(async (event: unknown) => {
+              await handleDragDropEvent(event, cb)
+            })
+          }
+        } else {
+          // Window not found
+        }
+      },
+      dropzoneProps: {
+        noClick: true,
+        noKeyboard: true
+      }
+    }
+  } else if (isTauriEnv) {
+    strategy.current = {
+      init: () => {},
+      dropzoneProps: {
+        noClick: true,
+        noKeyboard: true
+      }
+    }
+  }
+
+  useEffect(() => {
+    strategy.current.init(onUpload)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onUpload])
+
   const handleDrop = (files: File[]) => {
     // Only call onUpload if at least one file is selected
     if (files.length > 0) {
@@ -42,12 +146,29 @@ export const ImageUploadView = ({
     }
   }
 
-  const handleClick = (e: React.MouseEvent) => {
-    // In Tauri mode, prevent default and trigger native dialog
+  const handleClick = async (e: React.MouseEvent) => {
+    // In Tauri mode, open native file dialog
     if (isTauri) {
       e.preventDefault()
       e.stopPropagation()
-      onUpload([]) // Empty array triggers native dialog in Tauri
+      try {
+        const { open } = await import('@tauri-apps/plugin-dialog')
+        const selected = await open({
+          multiple: false,
+          filters: [
+            {
+              name: 'Images',
+              extensions: IMAGE_EXTENSIONS
+            }
+          ]
+        })
+        if (selected && typeof selected === 'string') {
+          await processFile(selected, onUpload)
+        }
+      } catch (error) {
+        // Log error for debugging but don't crash the app
+        console.warn('[ImageUpload] Failed to open file dialog:', error)
+      }
     }
   }
 
@@ -57,13 +178,15 @@ export const ImageUploadView = ({
       'image/*': []
     },
     multiple: false,
-    noClick: isTauri, // Disable default click behavior in Tauri
-    noKeyboard: isTauri,
-    noDrag: isTauri // Disable drag in Tauri - use native dialog only
+    ...strategy.current.dropzoneProps
   })
 
-  const defaultPrimaryText = _(msg`Glissez & déposez une image ici`)
-  const defaultSecondaryText = _(msg`ou cliquez pour sélectionner un fichier`)
+  const defaultPrimaryText = isTauri
+    ? _(msg`Cliquez pour sélectionner une image`)
+    : _(msg`Glissez & déposez une image ici`)
+  const defaultSecondaryText = isTauri
+    ? _(msg`Ou glissez-déposez un fichier (si supporté)`)
+    : _(msg`ou cliquez pour sélectionner un fichier`)
   const defaultHelpText = _(
     msg`Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG`
   )
@@ -72,20 +195,32 @@ export const ImageUploadView = ({
 
   return (
     <button
+      type='button'
       {...rootProps}
       className={`${styles.dropzone} ${
         isDragActive ? styles.dropzoneActive : ''
       }`}
       onClick={isTauri ? handleClick : rootProps.onClick}
       tabIndex={0}
-      onKeyDown={(e) => {
+      onKeyDown={(e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
           if (isTauri) {
-            handleClick(e as any)
+            handleClick(e as unknown as React.MouseEvent)
           }
         }
       }}
-      type='button'
+      onDragEnter={(e) => {
+        if (rootProps.onDragEnter) rootProps.onDragEnter(e)
+      }}
+      onDragOver={(e) => {
+        if (rootProps.onDragOver) rootProps.onDragOver(e)
+      }}
+      onDragLeave={(e) => {
+        if (rootProps.onDragLeave) rootProps.onDragLeave(e)
+      }}
+      onDrop={(e) => {
+        if (rootProps.onDrop) rootProps.onDrop(e)
+      }}
     >
       {!isTauri && (
         <input
