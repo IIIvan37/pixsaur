@@ -18,6 +18,9 @@ pub fn run() {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
             .level(log::LevelFilter::Info)
+            .target(tauri_plugin_log::Target::new(
+              tauri_plugin_log::TargetKind::Stdout,
+            ))
             .build(),
         )?;
       }
