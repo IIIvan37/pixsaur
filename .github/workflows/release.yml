@@ -75,6 +75,7 @@ jobs:
         run: pnpm install
 
       - name: Update version files
+        shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
@@ -86,9 +87,14 @@ jobs:
           
           # Update tauri.conf.json
           jq ".version = \"${VERSION_NUM}\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          
+          # Export variables for subsequent steps
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_ENV
 
       - name: Commit version changes
         if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -132,6 +138,7 @@ jobs:
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
       - name: Generate updater JSON
+        shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
