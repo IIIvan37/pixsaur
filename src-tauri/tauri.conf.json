@@ -24,6 +24,22 @@
         "center": true,
         "dragDropEnabled": true,
         "visible": false
+      },
+      {
+        "label": "debug",
+        "title": "Pixsaur Debug Console",
+        "width": 800,
+        "height": 600,
+        "minWidth": 600,
+        "minHeight": 400,
+        "resizable": true,
+        "fullscreen": false,
+        "center": false,
+        "decorations": true,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "visible": false,
+        "url": "debug.html"
       }
     ],
     "security": {
@@ -31,7 +47,7 @@
       "capabilities": [
         {
           "identifier": "main-capability",
-          "windows": ["main"],
+          "windows": ["main", "debug"],
           "permissions": [
             "core:default",
             "dialog:default",
