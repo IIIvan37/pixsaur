@@ -215,7 +215,9 @@ function selectDiverseCandidates(
   colorMetrics.sort((a, b) => b.count - a.count)
 
   const selected: number[] = []
-  const { minHueDistance, minLuminanceDistance } = calculateDiversityParams(candidates.length)
+  const { minHueDistance, minLuminanceDistance } = calculateDiversityParams(
+    candidates.length
+  )
 
   // Sélection avec diversité
   for (const candidate of colorMetrics) {
@@ -225,7 +227,15 @@ function selectDiverseCandidates(
       continue
     }
 
-    if (canAddColorForDiversity(candidate, selected, basePalette, minHueDistance, minLuminanceDistance)) {
+    if (
+      canAddColorForDiversity(
+        candidate,
+        selected,
+        basePalette,
+        minHueDistance,
+        minLuminanceDistance
+      )
+    ) {
       selected.push(candidate.idx)
     }
 
@@ -255,7 +265,12 @@ function performSelection(
   const { diversityMode = false, basePalette } = options || {}
 
   if (diversityMode && topN <= 16 && basePalette) {
-    const diverseCandidates = selectDiverseCandidates(candidates, counts, basePalette, result)
+    const diverseCandidates = selectDiverseCandidates(
+      candidates,
+      counts,
+      basePalette,
+      result
+    )
     completeSelection(diverseCandidates, result, topN)
   } else {
     const sortedCandidates = sortAndLogCandidates(candidates, counts)
@@ -314,7 +329,12 @@ export function selectTopIndicesCore(
   }
 
   // 2. Filtrer les candidats restants
-  const candidates = filterCandidates(counts, used, threshold, isRelativeThreshold)
+  const candidates = filterCandidates(
+    counts,
+    used,
+    threshold,
+    isRelativeThreshold
+  )
 
   // 3. Effectuer la sélection selon le mode
   performSelection(candidates, counts, result, topN, options)
