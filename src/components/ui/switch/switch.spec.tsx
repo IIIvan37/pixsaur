@@ -1,54 +1,132 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { Switch } from './switch'
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { Switch } from "./switch";
+import styles from "./switch.module.css";
 
-describe('Switch', () => {
-  it('renders with label', () => {
-    const testId = crypto.randomUUID()
+describe("Switch", () => {
+  it("renders with required props", () => {
+    render(
+      <Switch checked={false} onCheckedChange={vi.fn()} id="test-switch" />
+    );
+
+    const switchElement = screen.getByRole("switch");
+    expect(switchElement).toBeInTheDocument();
+    expect(switchElement).toHaveAttribute("id", "test-switch");
+    expect(switchElement).not.toBeChecked();
+  });
+
+  it("renders unchecked when checked is false", () => {
+    render(<Switch checked={false} onCheckedChange={vi.fn()} id="test" />);
+
+    const switchElement = screen.getByRole("switch");
+    expect(switchElement).not.toBeChecked();
+    expect(switchElement).toHaveClass(styles.root);
+    expect(switchElement).not.toHaveClass(styles.rootChecked);
+  });
+
+  it("renders checked when checked is true", () => {
+    render(<Switch checked={true} onCheckedChange={vi.fn()} id="test" />);
+
+    const switchElement = screen.getByRole("switch");
+    expect(switchElement).toBeChecked();
+    expect(switchElement).toHaveClass(styles.root, styles.rootChecked);
+  });
+
+  it("renders label when provided", () => {
     render(
       <Switch
         checked={false}
-        onCheckedChange={() => {}}
-        label='Enable feature'
-        id={testId}
+        onCheckedChange={vi.fn()}
+        id="test"
+        label="Test Label"
       />
-    )
-    expect(screen.getByLabelText('Enable feature')).toBeInTheDocument()
-  })
+    );
 
-  it('renders without label', () => {
-    const testId = crypto.randomUUID()
-    render(<Switch checked={false} onCheckedChange={() => {}} id={testId} />)
-    // Should still render the switch input
-    expect(screen.getByRole('switch')).toBeInTheDocument()
-  })
+    const label = screen.getByText("Test Label");
+    expect(label).toBeInTheDocument();
+    expect(label).toHaveAttribute("for", "test");
+    expect(label).toHaveClass(styles.label);
+  });
 
-  it('calls onCheckedChange when toggled', () => {
-    const handleChange = vi.fn()
-    const testId = crypto.randomUUID()
-    render(
-      <Switch
-        checked={false}
-        onCheckedChange={handleChange}
-        label='Toggle me'
-        id={testId}
-      />
-    )
-    const switchEl = screen.getByRole('switch')
-    fireEvent.click(switchEl)
-    expect(handleChange).toHaveBeenCalled()
-  })
+  it("does not render label when not provided", () => {
+    render(<Switch checked={false} onCheckedChange={vi.fn()} id="test" />);
 
-  it('is checked when checked prop is true', () => {
-    const testId = crypto.randomUUID()
+    expect(screen.queryByRole("label")).not.toBeInTheDocument();
+  });
+
+  it("calls onCheckedChange when clicked", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+
+    render(<Switch checked={false} onCheckedChange={handleChange} id="test" />);
+
+    const switchElement = screen.getByRole("switch");
+    await user.click(switchElement);
+
+    expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(handleChange).toHaveBeenCalledWith(true);
+  });
+
+  it("calls onCheckedChange with correct value when toggling from checked to unchecked", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+
+    render(<Switch checked={true} onCheckedChange={handleChange} id="test" />);
+
+    const switchElement = screen.getByRole("switch");
+    await user.click(switchElement);
+
+    expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(handleChange).toHaveBeenCalledWith(false);
+  });
+
+  it("supports keyboard interaction", async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+
+    render(<Switch checked={false} onCheckedChange={handleChange} id="test" />);
+
+    const switchElement = screen.getByRole("switch");
+    switchElement.focus();
+    await user.keyboard("{Enter}");
+
+    expect(handleChange).toHaveBeenCalledTimes(1);
+    expect(handleChange).toHaveBeenCalledWith(true);
+  });
+
+  it("has proper accessibility attributes", () => {
     render(
       <Switch
         checked={true}
-        onCheckedChange={() => {}}
-        label='Checked'
-        id={testId}
+        onCheckedChange={vi.fn()}
+        id="test"
+        label="Test Switch"
       />
-    )
-    const switchEl = screen.getByRole('switch')
-    expect(switchEl).toHaveAttribute('aria-checked', 'true')
-  })
-})
+    );
+
+    const switchElement = screen.getByRole("switch");
+    expect(switchElement).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("renders thumb element", () => {
+    render(<Switch checked={false} onCheckedChange={vi.fn()} id="test" />);
+
+    const thumb = document.querySelector(`.${styles.thumb}`);
+    expect(thumb).toBeInTheDocument();
+  });
+
+  it("applies correct wrapper styling", () => {
+    render(
+      <Switch
+        checked={false}
+        onCheckedChange={vi.fn()}
+        id="test"
+        label="Label"
+      />
+    );
+
+    const wrapper = document.querySelector(`.${styles.wrapper}`);
+    expect(wrapper).toBeInTheDocument();
+  });
+});
