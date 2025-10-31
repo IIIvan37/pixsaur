@@ -1,17 +1,17 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { getDefaultStore } from 'jotai'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { processorTypeAtom } from '@/app/store/config/config'
-import {
-  imageProcessorAtom,
-  paletteProcessorAtom,
-  initializeProcessorsAtom,
-  disposeProcessorsAtom,
-  reinitializeProcessorsAtom,
-  processorTypeListenerAtom,
-  processorFactory
-} from '../processors'
-import { adapterLogger } from '@/utils/logger'
 import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
+import { adapterLogger } from '@/utils/logger'
+import {
+  disposeProcessorsAtom,
+  imageProcessorAtom,
+  initializeProcessorsAtom,
+  paletteProcessorAtom,
+  processorFactory,
+  processorTypeListenerAtom,
+  reinitializeProcessorsAtom
+} from '../processors'
 
 // Mock the logger
 vi.mock('@/utils/logger', () => ({
@@ -31,7 +31,7 @@ vi.mock('regl', () => ({
 
 // Mock ReGLProcessor
 vi.mock('@/libs/pixsaur-adapter/adapters/regl-processor', () => {
-  const MockReGLProcessor = vi.fn(function(this: any, regl?: any) {
+  const MockReGLProcessor = vi.fn(function (this: any, regl?: any) {
     this.type = regl ? 'regl' : 'cpu'
     this.isAvailable = true
     this.dispose = vi.fn()
@@ -162,14 +162,20 @@ describe('Processor Store Adapters', () => {
         throw new Error('Processor creation failed')
       })
 
-      await expect(store.set(initializeProcessorsAtom)).rejects.toThrow('Processor creation failed')
+      await expect(store.set(initializeProcessorsAtom)).rejects.toThrow(
+        'Processor creation failed'
+      )
     })
 
     it('should log processor types', async () => {
       await store.set(initializeProcessorsAtom)
 
-      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith('Image processor: WebGL (GPU)')
-      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith('Palette processor: WebGL (GPU)')
+      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith(
+        'Image processor: WebGL (GPU)'
+      )
+      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith(
+        'Palette processor: WebGL (GPU)'
+      )
     })
 
     it('should log CPU fallback', async () => {
@@ -177,8 +183,12 @@ describe('Processor Store Adapters', () => {
 
       await store.set(initializeProcessorsAtom)
 
-      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith('Image processor: CPU')
-      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith('Palette processor: CPU')
+      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith(
+        'Image processor: CPU'
+      )
+      expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith(
+        'Palette processor: CPU'
+      )
     })
   })
 
@@ -297,7 +307,10 @@ describe('Processor Store Adapters', () => {
       await expect(store.set(initializeProcessorsAtom)).rejects.toThrow()
 
       // Should be able to try again - reset to normal constructor
-      vi.mocked(ReGLProcessor).mockImplementation(function(this: any, regl?: any) {
+      vi.mocked(ReGLProcessor).mockImplementation(function (
+        this: any,
+        regl?: any
+      ) {
         this.type = regl ? 'regl' : 'cpu'
         this.isAvailable = true
         this.dispose = vi.fn()

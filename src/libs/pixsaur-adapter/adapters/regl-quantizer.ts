@@ -13,10 +13,7 @@ import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-i
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger } from '@/utils/logger'
-import {
-  histogramFragmentShader,
-  histogramVertexShader
-} from '../shaders'
+import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 
 /**
  * Shaders GLSL pour ReGL - Extraction pour améliorer la lisibilité

@@ -3,6 +3,7 @@ import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
+import { quantifyToCPCPlus, quantizeCPC } from '@/utils/cpc-calculations'
 import {
   getVisualRegion,
   getVisualRegionNormalized
@@ -13,7 +14,6 @@ import {
 } from '@/utils/image-processing/horizontal-smoothing'
 import { applyResize, type Selection } from '@/utils/image-resize'
 import { logger } from '@/utils/logger'
-import { quantizeCPC, quantifyToCPCPlus } from '@/utils/cpc-calculations'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,

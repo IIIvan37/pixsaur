@@ -37,7 +37,9 @@ export function quantizeCPC(value: number): number {
   const cpcValues = [0, 128, 255]
   return cpcValues.reduce(
     (prev, curr) =>
-      Math.abs(curr - clampedValue) < Math.abs(prev - clampedValue) ? curr : prev,
+      Math.abs(curr - clampedValue) < Math.abs(prev - clampedValue)
+        ? curr
+        : prev,
     cpcValues[0]
   )
 }

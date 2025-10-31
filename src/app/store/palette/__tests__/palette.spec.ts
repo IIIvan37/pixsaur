@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest'
 import { createStore } from 'jotai'
-import {
-  userPaletteAtom,
-  setReducedPaletteAtom,
-  onToggleLockAtom,
-  onSetColorAtom,
-  lockedVectorsAtom,
-  lockedSlotsAtom
-} from '../palette'
-import { pixelModeAtom, dimensionPresetAtom } from '../../config/config'
+import { beforeEach, describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { dimensionPresetAtom, pixelModeAtom } from '../../config/config'
+import {
+  lockedSlotsAtom,
+  lockedVectorsAtom,
+  onSetColorAtom,
+  onToggleLockAtom,
+  setReducedPaletteAtom,
+  userPaletteAtom
+} from '../palette'
 import type { PaletteSlot } from '../types'
 
 describe('Palette Store', () => {
@@ -23,7 +23,9 @@ describe('Palette Store', () => {
     it('should initialize with 16 empty slots', () => {
       const palette = store.get(userPaletteAtom)
       expect(palette).toHaveLength(16)
-      expect(palette.every(slot => slot.color === null && slot.locked === false)).toBe(true)
+      expect(
+        palette.every((slot) => slot.color === null && slot.locked === false)
+      ).toBe(true)
     })
 
     it('should allow setting palette with custom slots', () => {
@@ -57,7 +59,11 @@ describe('Palette Store', () => {
       expect(palette[0]).toEqual({ color: [255, 0, 0], locked: false })
       expect(palette[1]).toEqual({ color: [0, 255, 0], locked: false })
       expect(palette[2]).toEqual({ color: [0, 0, 255], locked: false })
-      expect(palette.slice(3, 16).every(slot => slot.color === null && !slot.locked)).toBe(true)
+      expect(
+        palette
+          .slice(3, 16)
+          .every((slot) => slot.color === null && !slot.locked)
+      ).toBe(true)
     })
 
     it('should preserve locked slots when setting reduced palette', () => {
@@ -72,7 +78,7 @@ describe('Palette Store', () => {
       const reducedColors: Vector<'RGB'>[] = [
         [0, 0, 255], // This should be filtered out as it's already locked
         [255, 255, 0], // This should be added
-        [255, 0, 255]  // This should be added
+        [255, 0, 255] // This should be added
       ]
 
       store.set(setReducedPaletteAtom, reducedColors)
@@ -101,8 +107,14 @@ describe('Palette Store', () => {
       store.set(setReducedPaletteAtom, reducedColors)
 
       const palette = store.get(userPaletteAtom)
-      expect(palette.slice(0, 4).every(slot => slot.color !== null)).toBe(true)
-      expect(palette.slice(4, 16).every(slot => slot.color === null && !slot.locked)).toBe(true)
+      expect(palette.slice(0, 4).every((slot) => slot.color !== null)).toBe(
+        true
+      )
+      expect(
+        palette
+          .slice(4, 16)
+          .every((slot) => slot.color === null && !slot.locked)
+      ).toBe(true)
     })
 
     it('should filter out colors that are already locked', () => {

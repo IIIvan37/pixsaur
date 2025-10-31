@@ -2,12 +2,12 @@
  * Tests pour ReGLProcessor - Adaptateur ReGL avec fallback CPU
  */
 
-import { describe, expect, test, vi, beforeEach } from 'vitest'
 import type REGL from 'regl'
-import { ReGLProcessor } from './regl-processor'
-import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
+import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import type { AdjustmentConfig } from '../interfaces'
+import { ReGLProcessor } from './regl-processor'
 
 // Mock des dépendances
 vi.mock('@/libs/pixsaur-color/src/transform/color-transform/adjust')
@@ -23,7 +23,10 @@ vi.mock('jotai', () => ({
 }))
 
 // Helper pour créer un mock canvas WebGL
-const createMockCanvas = (webglVersion: 'webgl2' | 'webgl' | null, maxTextureSize = 1024) => ({
+const createMockCanvas = (
+  webglVersion: 'webgl2' | 'webgl' | null,
+  maxTextureSize = 1024
+) => ({
   getContext: vi.fn((contextType: string) => {
     if (webglVersion && contextType === webglVersion) {
       return {
@@ -105,7 +108,7 @@ describe('ReGLProcessor', () => {
       // Le quantizer devrait être initialisé si ReGL est fourni
     })
 
-    test('devrait gérer l\'échec d\'initialisation ReGL gracieusement', () => {
+    test("devrait gérer l'échec d'initialisation ReGL gracieusement", () => {
       // Mock ReGL qui échoue
       const failingRegl = {
         ...mockRegl,
@@ -130,7 +133,7 @@ describe('ReGLProcessor', () => {
       expect(capabilities.currentMode).toBe('cpu-fallback')
     })
 
-    test('devrait gérer l\'absence de WebGL', () => {
+    test("devrait gérer l'absence de WebGL", () => {
       // Mock document sans WebGL
       const originalCreateElement = document.createElement
       const mockCanvasNoWebGL = createMockCanvas(null)
@@ -163,7 +166,10 @@ describe('ReGLProcessor', () => {
       const mockApplyAdjustments = vi.mocked(applyAdjustmentsInOnePass)
       mockApplyAdjustments.mockReturnValue(mockResult)
 
-      const result = await processor.applyAdjustments(imageData, mockAdjustmentConfig)
+      const result = await processor.applyAdjustments(
+        imageData,
+        mockAdjustmentConfig
+      )
 
       expect(mockApplyAdjustments).toHaveBeenCalledWith(
         imageData,
@@ -183,7 +189,10 @@ describe('ReGLProcessor', () => {
       const mockApplyAdjustments = vi.mocked(applyAdjustmentsInOnePass)
       mockApplyAdjustments.mockReturnValue(mockResult)
 
-      const result = processor.applyAdjustmentsSync(imageData, mockAdjustmentConfig)
+      const result = processor.applyAdjustmentsSync(
+        imageData,
+        mockAdjustmentConfig
+      )
 
       expect(mockApplyAdjustments).toHaveBeenCalledWith(
         imageData,
@@ -202,7 +211,10 @@ describe('ReGLProcessor', () => {
       const dimensions = { width: 2, height: 1 }
       const basePalette: any[] = []
       const preselected: any[] = []
-      const mockPalette = [[255, 0, 0], [0, 255, 0]]
+      const mockPalette = [
+        [255, 0, 0],
+        [0, 255, 0]
+      ]
 
       const mockQuantizer = {
         quantize: vi.fn(() => mockPalette)
@@ -288,7 +300,10 @@ describe('ReGLProcessor', () => {
         writable: true
       })
 
-      const result = await processor.applyAdjustments(imageData, mockAdjustmentConfig)
+      const result = await processor.applyAdjustments(
+        imageData,
+        mockAdjustmentConfig
+      )
 
       expect(result).toBeInstanceOf(ImageData)
       expect(result.width).toBe(2)
@@ -321,7 +336,10 @@ describe('ReGLProcessor', () => {
         writable: true
       })
 
-      const result = processor.applyAdjustmentsSync(imageData, mockAdjustmentConfig)
+      const result = processor.applyAdjustmentsSync(
+        imageData,
+        mockAdjustmentConfig
+      )
 
       expect(result).toBeInstanceOf(ImageData)
     })
@@ -402,7 +420,9 @@ describe('ReGLProcessor', () => {
   describe('Configuration des ajustements', () => {
     test('createAdjustmentConfig devrait mapper correctement les propriétés', () => {
       const processor = new ReGLProcessor()
-      const config = (processor as any).createAdjustmentConfig(mockAdjustmentConfig)
+      const config = (processor as any).createAdjustmentConfig(
+        mockAdjustmentConfig
+      )
 
       expect(config).toEqual({
         rgb: mockAdjustmentConfig.rgb,
@@ -440,7 +460,7 @@ describe('ReGLProcessor', () => {
       expect(typeof capabilities.maxTextureSize).toBe('number')
     })
 
-    test('devrait gérer les erreurs lors de l\'évaluation des capacités', () => {
+    test("devrait gérer les erreurs lors de l'évaluation des capacités", () => {
       // Mock document qui throw une erreur
       const originalCreateElement = document.createElement
       Object.defineProperty(document, 'createElement', {
@@ -475,7 +495,7 @@ describe('ReGLProcessor', () => {
       expect(processor.isAvailable).toBe(true)
     })
 
-    test('devrait gérer l\'échec d\'initialisation GPU gracieusement', () => {
+    test("devrait gérer l'échec d'initialisation GPU gracieusement", () => {
       const failingRegl = {
         ...mockRegl,
         texture: vi.fn(() => {
@@ -548,16 +568,18 @@ describe('ReGLProcessor', () => {
       mockCreateQuantizer.mockReturnValue(mockQuantizer as any)
 
       // Ne devrait pas throw avec des dimensions invalides
-      await expect(processor.quantizePalette(
-        buffer,
-        invalidDimensions,
-        1,
-        basePalette,
-        preselected
-      )).resolves.toBeDefined()
+      await expect(
+        processor.quantizePalette(
+          buffer,
+          invalidDimensions,
+          1,
+          basePalette,
+          preselected
+        )
+      ).resolves.toBeDefined()
     })
 
-    test('devrait gérer les configurations d\'ajustement partielles', async () => {
+    test("devrait gérer les configurations d'ajustement partielles", async () => {
       const processor = new ReGLProcessor()
       const imageData = new ImageData(2, 2)
       const partialConfig: AdjustmentConfig = {
@@ -579,7 +601,9 @@ describe('ReGLProcessor', () => {
       const mockApplyAdjustments = vi.mocked(applyAdjustmentsInOnePass)
       mockApplyAdjustments.mockReturnValue(new ImageData(2, 2))
 
-      await expect(processor.applyAdjustments(imageData, partialConfig)).resolves.toBeDefined()
+      await expect(
+        processor.applyAdjustments(imageData, partialConfig)
+      ).resolves.toBeDefined()
       expect(mockApplyAdjustments).toHaveBeenCalled()
     })
   })
@@ -616,7 +640,7 @@ describe('ReGLProcessor', () => {
       // Les logs de performance sont gérés par adapterLogger, mocké au niveau global
     })
 
-    test('devrait logger les informations d\'initialisation', () => {
+    test("devrait logger les informations d'initialisation", () => {
       const processor = new ReGLProcessor(mockRegl)
       // Les logs d'initialisation sont gérés par adapterLogger
       expect(processor.isAvailable).toBe(true)
@@ -624,7 +648,7 @@ describe('ReGLProcessor', () => {
   })
 
   describe('Interface ImageProcessor', () => {
-    test('devrait implémenter l\'interface ImageProcessor correctement', () => {
+    test("devrait implémenter l'interface ImageProcessor correctement", () => {
       const processor = new ReGLProcessor()
 
       expect(processor.type).toBe('regl')

@@ -14,11 +14,8 @@ import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/co
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, paletteLogger } from '@/utils/logger'
 import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
+import { imageAdjustmentFragmentShader, simpleVertexShader } from '../shaders'
 import { ReGLQuantizer } from './regl-quantizer'
-import {
-  imageAdjustmentFragmentShader,
-  simpleVertexShader
-} from '../shaders'
 
 /**
  * Adaptateur ReGL pour le traitement d'images
@@ -160,7 +157,6 @@ export class ReGLProcessor implements ImageProcessor {
       }
     }
   }
-
 
   async applyAdjustments(
     imageData: ImageData,

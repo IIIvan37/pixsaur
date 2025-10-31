@@ -1,4 +1,7 @@
-import { rgbToIndexBufferExact, remapImageDataToPalette } from './rgb-to-indexes'
+import {
+  remapImageDataToPalette,
+  rgbToIndexBufferExact
+} from './rgb-to-indexes'
 
 describe('rgbToIndexBufferExact', () => {
   it('returns correct indices for exact palette matches', () => {
@@ -106,8 +109,14 @@ describe('rgbToIndexBufferExact', () => {
 
     // Colors that need quantization: [100, 100, 100] -> [128, 128, 128] (gray)
     const rgba = new Uint8ClampedArray([
-      100, 100, 100, 255, // Should quantize to gray (index 1)
-      200, 200, 200, 255  // Should quantize to white (index 2)
+      100,
+      100,
+      100,
+      255, // Should quantize to gray (index 1)
+      200,
+      200,
+      200,
+      255 // Should quantize to white (index 2)
     ])
 
     const result = rgbToIndexBufferExact(rgba, palette, true)
@@ -117,12 +126,18 @@ describe('rgbToIndexBufferExact', () => {
   it('does not quantize colors when quantize is false', () => {
     const palette = [
       [100, 100, 100], // Exact match for first pixel
-      [200, 200, 200]  // Exact match for second pixel
+      [200, 200, 200] // Exact match for second pixel
     ] as [number, number, number][]
 
     const rgba = new Uint8ClampedArray([
-      100, 100, 100, 255, // Exact match
-      200, 200, 200, 255  // Exact match
+      100,
+      100,
+      100,
+      255, // Exact match
+      200,
+      200,
+      200,
+      255 // Exact match
     ])
 
     const result = rgbToIndexBufferExact(rgba, palette, false)
@@ -148,10 +163,10 @@ describe('rgbToIndexBufferExact', () => {
     const rgba = new Uint8ClampedArray(size * 4)
     for (let i = 0; i < size; i++) {
       const colorIndex = i % 3
-      rgba[i * 4] = colorIndex === 0 ? 255 : 0     // R
+      rgba[i * 4] = colorIndex === 0 ? 255 : 0 // R
       rgba[i * 4 + 1] = colorIndex === 1 ? 255 : 0 // G
       rgba[i * 4 + 2] = colorIndex === 2 ? 255 : 0 // B
-      rgba[i * 4 + 3] = 255                         // A
+      rgba[i * 4 + 3] = 255 // A
     }
 
     const result = rgbToIndexBufferExact(rgba, palette)
@@ -164,7 +179,7 @@ describe('rgbToIndexBufferExact', () => {
 describe('remapImageDataToPalette', () => {
   it('remaps ImageData pixels to closest palette colors', () => {
     const palette = [
-      [0, 0, 0],     // Black
+      [0, 0, 0], // Black
       [255, 255, 255] // White
     ] as [number, number, number][]
 
@@ -172,10 +187,22 @@ describe('remapImageDataToPalette', () => {
     const width = 2
     const height = 2
     const data = new Uint8ClampedArray([
-      128, 128, 128, 255, // Gray -> should map to white (closer to 255)
-      64, 64, 64, 255,    // Dark gray -> should map to black (closer to 0)
-      192, 192, 192, 255, // Light gray -> should map to white
-      0, 0, 0, 255        // Black -> exact match
+      128,
+      128,
+      128,
+      255, // Gray -> should map to white (closer to 255)
+      64,
+      64,
+      64,
+      255, // Dark gray -> should map to black (closer to 0)
+      192,
+      192,
+      192,
+      255, // Light gray -> should map to white
+      0,
+      0,
+      0,
+      255 // Black -> exact match
     ])
     const imgData = new ImageData(data, width, height)
 
@@ -188,9 +215,9 @@ describe('remapImageDataToPalette', () => {
     // Check that pixels are now in the palette
     const resultData = Array.from(result.data)
     expect(resultData.slice(0, 3)).toEqual([255, 255, 255]) // First pixel mapped to white
-    expect(resultData.slice(4, 7)).toEqual([0, 0, 0])       // Second pixel mapped to black
+    expect(resultData.slice(4, 7)).toEqual([0, 0, 0]) // Second pixel mapped to black
     expect(resultData.slice(8, 11)).toEqual([255, 255, 255]) // Third pixel mapped to white
-    expect(resultData.slice(12, 15)).toEqual([0, 0, 0])      // Fourth pixel stays black
+    expect(resultData.slice(12, 15)).toEqual([0, 0, 0]) // Fourth pixel stays black
   })
 
   it('preserves alpha channel', () => {
@@ -206,15 +233,24 @@ describe('remapImageDataToPalette', () => {
 
   it('uses color caching for performance', () => {
     const palette = [
-      [0, 0, 0],       // Black
-      [255, 255, 255]  // White
+      [0, 0, 0], // Black
+      [255, 255, 255] // White
     ] as [number, number, number][]
 
     // Create ImageData with repeated colors that are closer to black
     const data = new Uint8ClampedArray([
-      50, 50, 50, 255, // Same dark color repeated - closer to black
-      50, 50, 50, 255,
-      50, 50, 50, 255
+      50,
+      50,
+      50,
+      255, // Same dark color repeated - closer to black
+      50,
+      50,
+      50,
+      255,
+      50,
+      50,
+      50,
+      255
     ])
     const imgData = new ImageData(data, 3, 1)
 
@@ -251,9 +287,9 @@ describe('remapImageDataToPalette', () => {
 
   it('finds closest color using Euclidean distance', () => {
     const palette = [
-      [255, 0, 0],   // Red
-      [0, 255, 0],   // Green
-      [0, 0, 255]    // Blue
+      [255, 0, 0], // Red
+      [0, 255, 0], // Green
+      [0, 0, 255] // Blue
     ] as [number, number, number][]
 
     // Lime green color (50, 200, 50) - clearly closest to green (0, 255, 0)

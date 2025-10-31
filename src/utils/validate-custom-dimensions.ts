@@ -8,7 +8,6 @@
  * - Total memory must not exceed 64 Ko
  */
 
-import type { PixelMode } from '@/app/store/config/types'
 import { getPixelsPerByte, getWidthStepForMode } from '@/utils/cpc-calculations'
 
 export type CpcMode = 0 | 1 | 2

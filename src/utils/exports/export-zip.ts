@@ -1,11 +1,14 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { CPCHardware } from '@/libs/types'
-import { getAspectRatioMultipliers, getPixelsPerByte } from '@/utils/cpc-calculations'
 import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
 } from '@/palettes/cpc-palette'
+import {
+  getAspectRatioMultipliers,
+  getPixelsPerByte
+} from '@/utils/cpc-calculations'
 import {
   cpcPlusValuesToASM,
   injectCPCPlusPaletteIntoSCR,

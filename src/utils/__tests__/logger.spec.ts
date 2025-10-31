@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  logger,
-  createLogger,
   adapterLogger,
-  webglLogger,
-  quantizerLogger,
-  paletteLogger,
+  createLogger,
+  type LoggerConfig,
+  logger,
   measure,
-  type LoggerConfig
+  paletteLogger,
+  quantizerLogger,
+  webglLogger
 } from '@/utils/logger'
 
 // Mock console methods
@@ -16,7 +16,9 @@ const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {})
 const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 const consoleGroupSpy = vi.spyOn(console, 'group').mockImplementation(() => {})
-const consoleGroupEndSpy = vi.spyOn(console, 'groupEnd').mockImplementation(() => {})
+const consoleGroupEndSpy = vi
+  .spyOn(console, 'groupEnd')
+  .mockImplementation(() => {})
 
 // Mock performance.now
 const performanceNowSpy = vi.spyOn(performance, 'now')
@@ -25,7 +27,11 @@ describe('Logger Functionality', () => {
   let testLogger: ReturnType<typeof createLogger>
 
   beforeEach(() => {
-    testLogger = createLogger({ enabled: true, level: 'debug', enableTiming: true })
+    testLogger = createLogger({
+      enabled: true,
+      level: 'debug',
+      enableTiming: true
+    })
     vi.clearAllMocks()
     performanceNowSpy.mockClear()
   })
@@ -33,7 +39,7 @@ describe('Logger Functionality', () => {
   afterEach(() => {
     // Clear timers if the logger has that method
     if ('clearTimers' in testLogger) {
-      (testLogger as any).clearTimers()
+      ;(testLogger as any).clearTimers()
     }
   })
 
@@ -74,7 +80,10 @@ describe('Logger Functionality', () => {
 
     it('should log warning messages', () => {
       testLogger.warn('warning message')
-      expect(consoleWarnSpy).toHaveBeenCalledWith('[Pixsaur]', 'warning message')
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
+        'warning message'
+      )
     })
 
     it('should log error messages', () => {
@@ -92,8 +101,8 @@ describe('Logger Functionality', () => {
       const warnLogger = createLogger({ enabled: true, level: 'warn' })
 
       warnLogger.debug('debug') // should not log
-      warnLogger.info('info')   // should not log
-      warnLogger.warn('warn')   // should log
+      warnLogger.info('info') // should not log
+      warnLogger.warn('warn') // should log
       warnLogger.error('error') // should log
 
       expect(consoleDebugSpy).not.toHaveBeenCalled()
@@ -104,7 +113,9 @@ describe('Logger Functionality', () => {
 
     it('should handle multiple arguments', () => {
       testLogger.info('message', 123, { key: 'value' })
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[Pixsaur]', 'message', 123, { key: 'value' })
+      expect(consoleInfoSpy).toHaveBeenCalledWith('[Pixsaur]', 'message', 123, {
+        key: 'value'
+      })
     })
   })
 
@@ -144,13 +155,19 @@ describe('Logger Functionality', () => {
       const duration = testLogger.timeEnd('test-timer')
 
       expect(duration).toBe(100)
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[Pixsaur]', 'test-timer: 100.00ms')
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
+        'test-timer: 100.00ms'
+      )
     })
 
     it('should warn when ending non-existent timer', () => {
       const duration = testLogger.timeEnd('non-existent')
       expect(duration).toBeUndefined()
-      expect(consoleWarnSpy).toHaveBeenCalledWith('[Pixsaur]', 'Timer "non-existent" not found')
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
+        'Timer "non-existent" not found'
+      )
     })
 
     it('should not time when timing disabled', () => {
@@ -178,7 +195,10 @@ describe('Logger Functionality', () => {
       const result = testLogger.timeSync('sync-test', () => 'result')
 
       expect(result).toBe('result')
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[Pixsaur]', 'sync-test: 20.00ms')
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
+        'sync-test: 20.00ms'
+      )
     })
 
     it('should rethrow errors from sync function', () => {
@@ -191,7 +211,11 @@ describe('Logger Functionality', () => {
         testLogger.timeSync('sync-test', failingFn)
       }).toThrow(error)
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[Pixsaur]', 'sync-test failed:', error)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
+        'sync-test failed:',
+        error
+      )
     })
 
     it('should not measure when timing disabled', () => {
@@ -214,30 +238,42 @@ describe('Logger Functionality', () => {
       performanceNowSpy.mockReturnValueOnce(1030) // end
 
       const asyncFn = async () => {
-        await new Promise(resolve => setTimeout(resolve, 1))
+        await new Promise((resolve) => setTimeout(resolve, 1))
         return 'result'
       }
 
       const result = await testLogger.timeAsync('async-test', asyncFn)
 
       expect(result).toBe('result')
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[Pixsaur]', 'async-test: 30.00ms')
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
+        'async-test: 30.00ms'
+      )
     })
 
     it('should rethrow errors from async function', async () => {
       const error = new Error('async error')
 
-      await expect(testLogger.timeAsync('async-test', async () => {
-        throw error
-      })).rejects.toThrow(error)
+      await expect(
+        testLogger.timeAsync('async-test', async () => {
+          throw error
+        })
+      ).rejects.toThrow(error)
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[Pixsaur]', 'async-test failed:', error)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
+        'async-test failed:',
+        error
+      )
     })
 
     it('should not measure when timing disabled', async () => {
       const noTimingLogger = createLogger({ enableTiming: false })
 
-      const result = await noTimingLogger.timeAsync('async-test', async () => 'result')
+      const result = await noTimingLogger.timeAsync(
+        'async-test',
+        async () => 'result'
+      )
 
       expect(result).toBe('result')
       expect(performanceNowSpy).not.toHaveBeenCalled()
@@ -287,7 +323,7 @@ describe('Logger Functionality', () => {
       const warnLogger = createLogger({ enabled: true, level: 'warn' })
 
       warnLogger.debug('debug') // below warn
-      warnLogger.info('info')   // below warn
+      warnLogger.info('info') // below warn
 
       expect(consoleDebugSpy).not.toHaveBeenCalled()
       expect(consoleInfoSpy).not.toHaveBeenCalled()
@@ -378,7 +414,10 @@ describe('Specialized Loggers', () => {
 
   it('should have quantizer logger with correct prefix', () => {
     quantizerLogger.info('quantizer message')
-    expect(consoleInfoSpy).toHaveBeenCalledWith('[Quantizer]', 'quantizer message')
+    expect(consoleInfoSpy).toHaveBeenCalledWith(
+      '[Quantizer]',
+      'quantizer message'
+    )
   })
 
   it('should have palette logger with correct prefix', () => {
@@ -407,7 +446,10 @@ describe('Performance Measurement Helpers', () => {
       const result = measure.quantization(() => 'quantized')
 
       expect(result).toBe('quantized')
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[Quantizer]', 'Total Quantization: 10.00ms')
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        '[Quantizer]',
+        'Total Quantization: 10.00ms'
+      )
     })
   })
 
@@ -419,7 +461,10 @@ describe('Performance Measurement Helpers', () => {
       const result = measure.adaptation(() => 'adapted')
 
       expect(result).toBe('adapted')
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[Adapter]', 'Processor Adaptation: 20.00ms')
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        '[Adapter]',
+        'Processor Adaptation: 20.00ms'
+      )
     })
   })
 
@@ -431,7 +476,10 @@ describe('Performance Measurement Helpers', () => {
       const result = measure.webgl(() => 'webgl result')
 
       expect(result).toBe('webgl result')
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[WebGL]', 'WebGL Operation: 30.00ms')
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        '[WebGL]',
+        'WebGL Operation: 30.00ms'
+      )
     })
   })
 
@@ -443,7 +491,10 @@ describe('Performance Measurement Helpers', () => {
       const result = measure.palette(() => 'palette result')
 
       expect(result).toBe('palette result')
-      expect(consoleInfoSpy).toHaveBeenCalledWith('[Palette]', 'Palette Generation: 40.00ms')
+      expect(consoleInfoSpy).toHaveBeenCalledWith(
+        '[Palette]',
+        'Palette Generation: 40.00ms'
+      )
     })
   })
 

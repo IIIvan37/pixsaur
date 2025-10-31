@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { ReGLQuantizer, type ReGLQuantizeConfig } from '../regl-quantizer'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { type ReGLQuantizeConfig, ReGLQuantizer } from '../regl-quantizer'
 
 // Mock REGL with WebGL context
 const mockRegl = {
@@ -24,7 +24,7 @@ const mockRegl = {
   _gl: {
     getExtension: vi.fn(),
     getParameter: vi.fn(() => 4096),
-    MAX_TEXTURE_SIZE: 0x84D1 // WebGL constant
+    MAX_TEXTURE_SIZE: 0x84d1 // WebGL constant
   }
 }
 
@@ -58,10 +58,10 @@ describe('ReGLQuantizer', () => {
     // Create test data
     testImageData = new ImageData(4, 4)
     for (let i = 0; i < testImageData.data.length; i += 4) {
-      testImageData.data[i] = Math.random() * 255     // R
+      testImageData.data[i] = Math.random() * 255 // R
       testImageData.data[i + 1] = Math.random() * 255 // G
       testImageData.data[i + 2] = Math.random() * 255 // B
-      testImageData.data[i + 3] = 255                 // A
+      testImageData.data[i + 3] = 255 // A
     }
 
     testConfig = {
@@ -74,13 +74,28 @@ describe('ReGLQuantizer', () => {
     }
 
     basePalette = [
-      [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0], [0, 0, 255],
-      [255, 255, 0], [0, 255, 255], [255, 0, 255], [128, 128, 128],
-      [64, 64, 64], [192, 192, 192], [255, 128, 0], [128, 255, 0],
-      [0, 255, 128], [128, 0, 255], [255, 0, 128]
+      [0, 0, 0],
+      [255, 255, 255],
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255],
+      [255, 255, 0],
+      [0, 255, 255],
+      [255, 0, 255],
+      [128, 128, 128],
+      [64, 64, 64],
+      [192, 192, 192],
+      [255, 128, 0],
+      [128, 255, 0],
+      [0, 255, 128],
+      [128, 0, 255],
+      [255, 0, 128]
     ]
 
-    preselectedColors = [[0, 0, 0], [255, 255, 255]]
+    preselectedColors = [
+      [0, 0, 0],
+      [255, 255, 255]
+    ]
   })
 
   afterEach(() => {
@@ -172,7 +187,9 @@ describe('ReGLQuantizer', () => {
       for (const config of configs) {
         // Mock the GPU quantization to return expected colors
         const mockQuantizeGPU = vi.spyOn(quantizer as any, 'quantizeGPU')
-        mockQuantizeGPU.mockResolvedValue(basePalette.slice(0, config.targetColors))
+        mockQuantizeGPU.mockResolvedValue(
+          basePalette.slice(0, config.targetColors)
+        )
 
         const result = await quantizer.quantizePalette(
           new Uint8ClampedArray(testImageData.data),
@@ -189,7 +206,10 @@ describe('ReGLQuantizer', () => {
 
     it('should handle preselected colors', async () => {
       const mockQuantizeGPU = vi.spyOn(quantizer as any, 'quantizeGPU')
-      mockQuantizeGPU.mockResolvedValue([...preselectedColors, ...basePalette.slice(0, 14)])
+      mockQuantizeGPU.mockResolvedValue([
+        ...preselectedColors,
+        ...basePalette.slice(0, 14)
+      ])
 
       const result = await quantizer.quantizePalette(
         new Uint8ClampedArray(testImageData.data),
@@ -232,13 +252,19 @@ describe('ReGLQuantizer', () => {
 
     it('should use GPU for large images', () => {
       const largeImageData = new ImageData(100, 100)
-      const shouldUse = (quantizer as any).shouldUseGPU(largeImageData, testConfig)
+      const shouldUse = (quantizer as any).shouldUseGPU(
+        largeImageData,
+        testConfig
+      )
       expect(shouldUse).toBe(true)
     })
 
     it('should not use GPU for very small images', () => {
       const smallImageData = new ImageData(1, 1)
-      const shouldUse = (quantizer as any).shouldUseGPU(smallImageData, testConfig)
+      const shouldUse = (quantizer as any).shouldUseGPU(
+        smallImageData,
+        testConfig
+      )
       expect(shouldUse).toBe(false)
     })
 
@@ -247,7 +273,10 @@ describe('ReGLQuantizer', () => {
       mockRegl._gl.getExtension.mockReturnValue(null)
       const noGPUQuantizer = new ReGLQuantizer(mockRegl as any)
 
-      const shouldUse = (noGPUQuantizer as any).shouldUseGPU(testImageData, testConfig)
+      const shouldUse = (noGPUQuantizer as any).shouldUseGPU(
+        testImageData,
+        testConfig
+      )
       expect(shouldUse).toBe(false)
 
       noGPUQuantizer.dispose()
@@ -260,11 +289,17 @@ describe('ReGLQuantizer', () => {
       }
 
       const smallImage = new ImageData(10, 10) // 100 pixels
-      const shouldUse = (quantizer as any).shouldUseGPU(smallImage, configWithMinPixels)
+      const shouldUse = (quantizer as any).shouldUseGPU(
+        smallImage,
+        configWithMinPixels
+      )
       expect(shouldUse).toBe(false)
 
       const largeImage = new ImageData(200, 200) // 40000 pixels
-      const shouldUseLarge = (quantizer as any).shouldUseGPU(largeImage, configWithMinPixels)
+      const shouldUseLarge = (quantizer as any).shouldUseGPU(
+        largeImage,
+        configWithMinPixels
+      )
       expect(shouldUseLarge).toBe(true)
     })
   })
@@ -273,7 +308,11 @@ describe('ReGLQuantizer', () => {
     it('should detect capabilities correctly', () => {
       mockRegl.hasExtension.mockReturnValue(true)
       mockRegl._gl.getExtension.mockImplementation((ext: string) => {
-        return ['EXT_color_buffer_float', 'WEBGL_color_buffer_float'].includes(ext) ? {} : null
+        return ['EXT_color_buffer_float', 'WEBGL_color_buffer_float'].includes(
+          ext
+        )
+          ? {}
+          : null
       })
 
       quantizer = new ReGLQuantizer(mockRegl as any)
@@ -331,21 +370,27 @@ describe('ReGLQuantizer', () => {
     })
 
     it('should update input texture', () => {
-      const updateInputTexture = (quantizer as any).updateInputTexture.bind(quantizer)
+      const updateInputTexture = (quantizer as any).updateInputTexture.bind(
+        quantizer
+      )
       updateInputTexture(testImageData)
 
       expect(mockRegl.texture).toHaveBeenCalled()
     })
 
     it('should update palette texture', () => {
-      const updatePaletteTexture = (quantizer as any).updatePaletteTexture.bind(quantizer)
+      const updatePaletteTexture = (quantizer as any).updatePaletteTexture.bind(
+        quantizer
+      )
       updatePaletteTexture(basePalette)
 
       expect(mockRegl.texture).toHaveBeenCalled()
     })
 
     it('should cache palette texture', () => {
-      const updatePaletteTexture = (quantizer as any).updatePaletteTexture.bind(quantizer)
+      const updatePaletteTexture = (quantizer as any).updatePaletteTexture.bind(
+        quantizer
+      )
 
       // First call
       updatePaletteTexture(basePalette)
@@ -361,7 +406,11 @@ describe('ReGLQuantizer', () => {
     beforeEach(() => {
       mockRegl.hasExtension.mockReturnValue(true)
       mockRegl._gl.getExtension.mockImplementation((ext: string) => {
-        return ['EXT_color_buffer_float', 'WEBGL_color_buffer_float'].includes(ext) ? {} : null
+        return ['EXT_color_buffer_float', 'WEBGL_color_buffer_float'].includes(
+          ext
+        )
+          ? {}
+          : null
       })
       mockRegl._gl.getParameter.mockReturnValue(4096)
       quantizer = new ReGLQuantizer(mockRegl as any)
@@ -389,7 +438,7 @@ describe('ReGLQuantizer', () => {
       const invalidImageData = new ImageData(0, 0)
 
       expect(() => {
-        (quantizer as any).updateInputTexture(invalidImageData)
+        ;(quantizer as any).updateInputTexture(invalidImageData)
       }).not.toThrow() // Should handle gracefully
     })
   })
@@ -435,7 +484,10 @@ describe('ReGLQuantizer', () => {
         }
       }
 
-      const shouldUse = (quantizer as any).shouldUseGPU(testImageData, configWithGPUOptions)
+      const shouldUse = (quantizer as any).shouldUseGPU(
+        testImageData,
+        configWithGPUOptions
+      )
       expect(typeof shouldUse).toBe('boolean')
     })
   })

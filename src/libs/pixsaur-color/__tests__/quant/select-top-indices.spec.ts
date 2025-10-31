@@ -1,4 +1,7 @@
-import { selectTopIndices, selectTopIndicesCore } from '../../src/quant/select-to-indices'
+import {
+  selectTopIndices,
+  selectTopIndicesCore
+} from '../../src/quant/select-to-indices'
 
 describe('selectTopIndices', () => {
   it('retourne [] si topN ≤ 0 ou palette vide', () => {
@@ -48,11 +51,11 @@ describe('selectTopIndicesCore', () => {
   it('should handle diversity mode with base palette', () => {
     const counts = [10, 20, 15, 25, 5]
     const basePalette = [
-      [0, 0, 0],       // Black
-      [255, 0, 0],     // Red
-      [0, 255, 0],     // Green
-      [0, 0, 255],     // Blue
-      [128, 128, 128]  // Gray
+      [0, 0, 0], // Black
+      [255, 0, 0], // Red
+      [0, 255, 0], // Green
+      [0, 0, 255], // Blue
+      [128, 128, 128] // Gray
     ]
 
     const result = selectTopIndicesCore(counts, [], 3, {
@@ -170,17 +173,17 @@ describe('selectTopIndices - comprehensive edge cases', () => {
 
 describe('selectTopIndices - diversity mode', () => {
   const basePalette = [
-    [0, 0, 0],       // 0: Black
+    [0, 0, 0], // 0: Black
     [255, 255, 255], // 1: White
-    [255, 0, 0],     // 2: Red
-    [0, 255, 0],     // 3: Green
-    [0, 0, 255],     // 4: Blue
-    [255, 255, 0],   // 5: Yellow
-    [255, 0, 255],   // 6: Magenta
-    [0, 255, 255],   // 7: Cyan
+    [255, 0, 0], // 2: Red
+    [0, 255, 0], // 3: Green
+    [0, 0, 255], // 4: Blue
+    [255, 255, 0], // 5: Yellow
+    [255, 0, 255], // 6: Magenta
+    [0, 255, 255], // 7: Cyan
     [128, 128, 128], // 8: Gray
-    [64, 64, 64],    // 9: Dark gray
-    [192, 192, 192]  // 10: Light gray
+    [64, 64, 64], // 9: Dark gray
+    [192, 192, 192] // 10: Light gray
   ]
 
   it('should select diverse colors for small palettes', () => {

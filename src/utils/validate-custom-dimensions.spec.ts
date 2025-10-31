@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-  validateCustomDimensions,
-  type ValidationResult
+  type ValidationResult,
+  validateCustomDimensions
 } from './validate-custom-dimensions'
 
 describe('validateCustomDimensions', () => {
@@ -147,7 +147,9 @@ describe('validateCustomDimensions', () => {
       expect(result.valid).toBe(false)
       expect(result.errors).toHaveLength(3)
       expect(result.errors).toContain('Largeur doit être multiple de 16')
-      expect(result.errors).toContain('Largeur en octets (12.5) doit être paire')
+      expect(result.errors).toContain(
+        'Largeur en octets (12.5) doit être paire'
+      )
       expect(result.errors).toContain('Hauteur doit être multiple de 8')
     })
 
@@ -180,7 +182,9 @@ describe('validateCustomDimensions', () => {
       const result: ValidationResult = validateCustomDimensions(10000, 10000, 2)
 
       expect(result.valid).toBe(false)
-      expect(result.errors.some(error => error.includes('Mémoire'))).toBe(true)
+      expect(result.errors.some((error) => error.includes('Mémoire'))).toBe(
+        true
+      )
     })
   })
 })

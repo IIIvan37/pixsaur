@@ -1,9 +1,9 @@
 import {
-  selectContrastedSubset,
-  selectBalancedSubset,
-  luminance,
+  isBright,
   isDark,
-  isBright
+  luminance,
+  selectBalancedSubset,
+  selectContrastedSubset
 } from '../../src/quant/select-contrast-subset'
 import type { Vector } from '../../src/type'
 
@@ -134,25 +134,13 @@ describe('selectBalancedSubset', () => {
   })
 
   it('should return all available colors if fewer than needed', () => {
-    const result = selectBalancedSubset(
-      [red],
-      [black],
-      3,
-      dist,
-      (v) => v
-    )
+    const result = selectBalancedSubset([red], [black], 3, dist, (v) => v)
     expect(result).toEqual([black, red])
   })
 
   it('should select balanced colors prioritizing contrast and luminance diversity', () => {
     const candidates = [black, white, red, green, blue, gray]
-    const result = selectBalancedSubset(
-      candidates,
-      [],
-      4,
-      dist,
-      (v) => v
-    )
+    const result = selectBalancedSubset(candidates, [], 4, dist, (v) => v)
 
     expect(result.length).toBe(4)
     expect(result).toEqual(expect.arrayContaining([black, white])) // Should include extremes
@@ -195,24 +183,12 @@ describe('selectBalancedSubset', () => {
   })
 
   it('should handle empty candidates array', () => {
-    const result = selectBalancedSubset(
-      [],
-      [black, white],
-      2,
-      dist,
-      (v) => v
-    )
+    const result = selectBalancedSubset([], [black, white], 2, dist, (v) => v)
     expect(result).toEqual([black, white])
   })
 
   it('should handle single candidate', () => {
-    const result = selectBalancedSubset(
-      [red],
-      [black],
-      2,
-      dist,
-      (v) => v
-    )
+    const result = selectBalancedSubset([red], [black], 2, dist, (v) => v)
     expect(result).toEqual([black, red])
   })
 })
@@ -226,14 +202,11 @@ describe('selectContrastedSubset - comprehensive tests', () => {
   const gray: Vector = [128, 128, 128]
 
   it('should handle large candidate sets efficiently', () => {
-    const candidates = Array.from({ length: 10 }, (_, i) => [i * 25, i * 25, i * 25] as Vector)
-    const result = selectContrastedSubset(
-      candidates,
-      [],
-      5,
-      dist,
-      (v) => v
+    const candidates = Array.from(
+      { length: 10 },
+      (_, i) => [i * 25, i * 25, i * 25] as Vector
     )
+    const result = selectContrastedSubset(candidates, [], 5, dist, (v) => v)
     expect(result.length).toBe(5)
   })
 
@@ -252,13 +225,7 @@ describe('selectContrastedSubset - comprehensive tests', () => {
 
   it('should handle duplicate colors in candidates', () => {
     const candidates = [black, black, white, white, red]
-    const result = selectContrastedSubset(
-      candidates,
-      [],
-      3,
-      dist,
-      (v) => v
-    )
+    const result = selectContrastedSubset(candidates, [], 3, dist, (v) => v)
     expect(result.length).toBe(3)
   })
 
@@ -304,13 +271,7 @@ describe('selectContrastedSubset - comprehensive tests', () => {
       [103, 103, 103]
     ] as Vector[]
 
-    const result = selectContrastedSubset(
-      similarColors,
-      [],
-      2,
-      dist,
-      (v) => v
-    )
+    const result = selectContrastedSubset(similarColors, [], 2, dist, (v) => v)
     expect(result.length).toBe(2)
   })
 

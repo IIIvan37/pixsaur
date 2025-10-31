@@ -1,11 +1,11 @@
-import {
-  extractBuffer,
-  bufferToVectors,
-  createQuantizer
-} from '../../src/quant/quantize'
 import { buildWeightedHistogram } from '../../src/histogram'
 import { mapAndDither } from '../../src/map'
 import { getDistanceFn } from '../../src/metric/distance'
+import {
+  bufferToVectors,
+  createQuantizer,
+  extractBuffer
+} from '../../src/quant/quantize'
 
 // Mock des dépendances
 vi.mock('../../src/histogram')
@@ -20,7 +20,7 @@ describe('quantize.ts', () => {
   })
 
   describe('extractBuffer', () => {
-    it('devrait extraire le buffer d\'un ImageData', () => {
+    it("devrait extraire le buffer d'un ImageData", () => {
       const data = new Uint8ClampedArray([255, 128, 64, 255, 0, 255, 0, 255])
       const imageData = new ImageData(data, 2, 1)
 
@@ -44,9 +44,18 @@ describe('quantize.ts', () => {
   describe('bufferToVectors', () => {
     it('devrait convertir un buffer RGBA en vecteurs RGB', () => {
       const buffer = new Uint8ClampedArray([
-        255, 128, 64, 255,  // Rouge
-        0, 255, 0, 255,     // Vert
-        0, 0, 255, 255      // Bleu
+        255,
+        128,
+        64,
+        255, // Rouge
+        0,
+        255,
+        0,
+        255, // Vert
+        0,
+        0,
+        255,
+        255 // Bleu
       ])
 
       const result = bufferToVectors(buffer)
@@ -88,7 +97,11 @@ describe('quantize.ts', () => {
 
     it('devrait créer un quantizer avec les bonnes méthodes', () => {
       const buffer = new Uint8ClampedArray([255, 0, 0, 255, 0, 255, 0, 255])
-      const basePalette = [[255, 0, 0], [0, 255, 0], [0, 0, 255]] as any[]
+      const basePalette = [
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255]
+      ] as any[]
       const preselected = [[255, 0, 0]] as any[]
       const quantConfig = {
         distanceMetric: 'euclidean' as const,
@@ -127,9 +140,18 @@ describe('quantize.ts', () => {
     })
 
     it('devrait gérer les pré-sélections correctement', () => {
-      const buffer = new Uint8ClampedArray([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255])
-      const basePalette = [[255, 0, 0], [0, 255, 0], [0, 0, 255]] as any[]
-      const preselected = [[255, 0, 0], [0, 0, 255]] as any[] // Indices 0 et 2
+      const buffer = new Uint8ClampedArray([
+        255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255
+      ])
+      const basePalette = [
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255]
+      ] as any[]
+      const preselected = [
+        [255, 0, 0],
+        [0, 0, 255]
+      ] as any[] // Indices 0 et 2
       const quantConfig = {
         distanceMetric: 'euclidean' as const,
         contrastStrategy: 'balanced' as const
@@ -148,7 +170,10 @@ describe('quantize.ts', () => {
 
     it('devrait ignorer les pré-sélections non trouvées dans la palette', () => {
       const buffer = new Uint8ClampedArray([255, 0, 0, 255])
-      const basePalette = [[255, 0, 0], [0, 255, 0]] as any[]
+      const basePalette = [
+        [255, 0, 0],
+        [0, 255, 0]
+      ] as any[]
       const preselected = [[0, 0, 255]] as any[] // Couleur non dans basePalette
       const quantConfig = {
         distanceMetric: 'euclidean' as const
@@ -180,7 +205,11 @@ describe('quantize.ts', () => {
           quantConfig
         })
 
-        const imageData = new ImageData(new Uint8ClampedArray([255, 0, 0, 255]), 1, 1)
+        const imageData = new ImageData(
+          new Uint8ClampedArray([255, 0, 0, 255]),
+          1,
+          1
+        )
         const reducedPalette = [[255, 0, 0]] as any[]
         const dithering = { mode: 'floydSteinberg' as const, intensity: 0.5 }
 

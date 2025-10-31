@@ -9,9 +9,9 @@ describe('adjust.ts', () => {
       input.data[1] = 128 // G pixel 1
       input.data[2] = 128 // B pixel 1
       input.data[3] = 255 // A pixel 1
-      input.data[4] = 64  // R pixel 2
-      input.data[5] = 64  // G pixel 2
-      input.data[6] = 64  // B pixel 2
+      input.data[4] = 64 // R pixel 2
+      input.data[5] = 64 // G pixel 2
+      input.data[6] = 64 // B pixel 2
       input.data[7] = 255 // A pixel 2
 
       const config = {
@@ -42,7 +42,7 @@ describe('adjust.ts', () => {
       expect(result.data[7]).toBe(255)
     })
 
-    it('devrait gérer les valeurs neutres (pas d\'ajustement)', () => {
+    it("devrait gérer les valeurs neutres (pas d'ajustement)", () => {
       const input = new ImageData(1, 1)
       input.data[0] = 100
       input.data[1] = 150
@@ -127,7 +127,7 @@ describe('adjust.ts', () => {
     })
   })
 
-  describe('Fonctions d\'ajustement individuelles', () => {
+  describe("Fonctions d'ajustement individuelles", () => {
     // Note: Les fonctions helper sont privées, donc on les teste via applyAdjustmentsInOnePass
     // ou on pourrait les exporter si nécessaire pour les tests
 
@@ -221,7 +221,7 @@ describe('adjust.ts', () => {
       expect(result.data[1]).toBeGreaterThan(result.data[2])
     })
 
-    it('devrait appliquer l\'exposition', () => {
+    it("devrait appliquer l'exposition", () => {
       const input = new ImageData(1, 1)
       input.data[0] = 64 // valeur sombre
       input.data[1] = 64

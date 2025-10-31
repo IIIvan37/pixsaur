@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
-  getWidthStepForMode,
   getAspectRatioMultipliers,
   getPixelsPerByte,
-  quantizeCPC,
-  quantifyToCPCPlus
+  getWidthStepForMode,
+  quantifyToCPCPlus,
+  quantizeCPC
 } from './cpc-calculations'
 
 describe('cpc-calculations', () => {

@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  mapAndDither,
-  applyNoDither,
-  applyFloydSteinbergDither,
-  applyBayerDither,
-  applyYliluoma1Dither,
-  applyYliluoma2Dither
-} from '../map-and-dither'
-import type { Vector } from '../../type'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { getDistanceFn } from '../../metric/distance'
+import type { Vector } from '../../type'
+import {
+  applyBayerDither,
+  applyFloydSteinbergDither,
+  applyNoDither,
+  applyYliluoma1Dither,
+  applyYliluoma2Dither,
+  mapAndDither
+} from '../map-and-dither'
 
 // Mock logger to avoid console output in tests
 vi.mock('@/utils/logger', () => ({
@@ -27,19 +27,31 @@ describe('Map and Dither', () => {
   beforeEach(() => {
     // Create a simple 2x2 test image (red, green, blue, white)
     testImageData = new Uint8ClampedArray([
-      255, 0, 0, 255,    // red
-      0, 255, 0, 255,    // green
-      0, 0, 255, 255,    // blue
-      255, 255, 255, 255 // white
+      255,
+      0,
+      0,
+      255, // red
+      0,
+      255,
+      0,
+      255, // green
+      0,
+      0,
+      255,
+      255, // blue
+      255,
+      255,
+      255,
+      255 // white
     ])
 
     // Simple palette with basic colors
     testPalette = [
-      [0, 0, 0],      // black
+      [0, 0, 0], // black
       [255, 255, 255], // white
-      [255, 0, 0],    // red
-      [0, 255, 0],    // green
-      [0, 0, 255]     // blue
+      [255, 0, 0], // red
+      [0, 255, 0], // green
+      [0, 0, 255] // blue
     ]
   })
 
@@ -203,9 +215,17 @@ describe('Map and Dither', () => {
 
   describe('applyNoDither', () => {
     it('should map colors to nearest palette colors without dithering', () => {
-      const bufCS = new Float32Array([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255])
-      const paletteCS = [new Float32Array([0, 0, 0]), new Float32Array([255, 255, 255])]
-      const paletteOut = [new Uint8ClampedArray([0, 0, 0, 255]), new Uint8ClampedArray([255, 255, 255, 255])]
+      const bufCS = new Float32Array([
+        255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255
+      ])
+      const paletteCS = [
+        new Float32Array([0, 0, 0]),
+        new Float32Array([255, 255, 255])
+      ]
+      const paletteOut = [
+        new Uint8ClampedArray([0, 0, 0, 255]),
+        new Uint8ClampedArray([255, 255, 255, 255])
+      ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
       const result = applyNoDither(bufCS, 2, 2, paletteCS, paletteOut, distFn)
@@ -218,11 +238,25 @@ describe('Map and Dither', () => {
   describe('applyFloydSteinbergDither', () => {
     it('should apply Floyd-Steinberg dithering algorithm', () => {
       const bufCS = new Float32Array([128, 128, 128, 200, 200, 200])
-      const paletteCS = [new Float32Array([0, 0, 0]), new Float32Array([255, 255, 255])]
-      const paletteOut = [new Uint8ClampedArray([0, 0, 0, 255]), new Uint8ClampedArray([255, 255, 255, 255])]
+      const paletteCS = [
+        new Float32Array([0, 0, 0]),
+        new Float32Array([255, 255, 255])
+      ]
+      const paletteOut = [
+        new Uint8ClampedArray([0, 0, 0, 255]),
+        new Uint8ClampedArray([255, 255, 255, 255])
+      ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
-      const result = applyFloydSteinbergDither(bufCS, 2, 1, paletteCS, paletteOut, distFn, 0.5)
+      const result = applyFloydSteinbergDither(
+        bufCS,
+        2,
+        1,
+        paletteCS,
+        paletteOut,
+        distFn,
+        0.5
+      )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
       expect(result.length).toBe(8)
@@ -231,9 +265,17 @@ describe('Map and Dither', () => {
 
   describe('applyBayerDither', () => {
     it('should apply Bayer 2x2 dithering', () => {
-      const bufCS = new Float32Array([128, 128, 128, 128, 128, 128, 128, 128, 128])
-      const paletteCS = [new Float32Array([0, 0, 0]), new Float32Array([255, 255, 255])]
-      const paletteOut = [new Uint8ClampedArray([0, 0, 0, 255]), new Uint8ClampedArray([255, 255, 255, 255])]
+      const bufCS = new Float32Array([
+        128, 128, 128, 128, 128, 128, 128, 128, 128
+      ])
+      const paletteCS = [
+        new Float32Array([0, 0, 0]),
+        new Float32Array([255, 255, 255])
+      ]
+      const paletteOut = [
+        new Uint8ClampedArray([0, 0, 0, 255]),
+        new Uint8ClampedArray([255, 255, 255, 255])
+      ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
       const result = applyBayerDither(
@@ -252,8 +294,14 @@ describe('Map and Dither', () => {
 
     it('should apply Bayer 4x4 dithering', () => {
       const bufCS = new Float32Array([128, 128, 128, 128, 128, 128])
-      const paletteCS = [new Float32Array([0, 0, 0]), new Float32Array([255, 255, 255])]
-      const paletteOut = [new Uint8ClampedArray([0, 0, 0, 255]), new Uint8ClampedArray([255, 255, 255, 255])]
+      const paletteCS = [
+        new Float32Array([0, 0, 0]),
+        new Float32Array([255, 255, 255])
+      ]
+      const paletteOut = [
+        new Uint8ClampedArray([0, 0, 0, 255]),
+        new Uint8ClampedArray([255, 255, 255, 255])
+      ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
       const result = applyBayerDither(
@@ -274,8 +322,14 @@ describe('Map and Dither', () => {
   describe('applyYliluoma1Dither', () => {
     it('should apply Yliluoma 1 dithering', () => {
       const bufCS = new Float32Array([128, 128, 128, 200, 200, 200])
-      const paletteCS = [new Float32Array([0, 0, 0]), new Float32Array([255, 255, 255])]
-      const paletteOut = [new Uint8ClampedArray([0, 0, 0, 255]), new Uint8ClampedArray([255, 255, 255, 255])]
+      const paletteCS = [
+        new Float32Array([0, 0, 0]),
+        new Float32Array([255, 255, 255])
+      ]
+      const paletteOut = [
+        new Uint8ClampedArray([0, 0, 0, 255]),
+        new Uint8ClampedArray([255, 255, 255, 255])
+      ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
       const result = applyYliluoma1Dither(
@@ -296,8 +350,14 @@ describe('Map and Dither', () => {
   describe('applyYliluoma2Dither', () => {
     it('should apply Yliluoma 2 dithering', () => {
       const bufCS = new Float32Array([128, 128, 128, 200, 200, 200])
-      const paletteCS = [new Float32Array([0, 0, 0]), new Float32Array([255, 255, 255])]
-      const paletteOut = [new Uint8ClampedArray([0, 0, 0, 255]), new Uint8ClampedArray([255, 255, 255, 255])]
+      const paletteCS = [
+        new Float32Array([0, 0, 0]),
+        new Float32Array([255, 255, 255])
+      ]
+      const paletteOut = [
+        new Uint8ClampedArray([0, 0, 0, 255]),
+        new Uint8ClampedArray([255, 255, 255, 255])
+      ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
       const result = applyYliluoma2Dither(

@@ -1,48 +1,48 @@
-import { describe, it, expect, beforeEach } from 'vitest'
 import { createStore } from 'jotai'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { CPCHardware } from '@/libs/types'
+import { userPaletteAtom } from '../../palette/palette'
 import {
-  // Basic atoms
-  pixelModeAtom,
-  dimensionPresetAtom,
-  customDimensionsAtom,
-  modeAtom,
-  // Setter atoms
-  setPixelModeAtom,
-  setDimensionPresetAtom,
-  setCustomDimensionsAtom,
-  setModeAtom,
+  centerImageAtom,
+  clearLastChangedKeyAtom,
   // Color and dithering atoms
   colorSpaceAtom,
-  ditheringAtom,
-  setDitheringAtom,
-  setColorSpaceAtom,
-  // Processing atoms
-  smoothingAtom,
-  horizontalSmoothingAtom,
-  processorTypeAtom,
-  setProcessorTypeAtom,
-  contrastStrategyAtom,
-  setContrastStrategyAtom,
-  // Hardware atoms
-  cpcHardwareAtom,
-  setCpcHardwareAtom,
-  // Resize atoms
-  resizeModeAtom,
-  setResizeModeAtom,
-  centerImageAtom,
-  // Derived atoms
-  effectiveModeConfigAtom,
   // Other atoms
   configAtom,
+  contrastStrategyAtom,
+  // Hardware atoms
+  cpcHardwareAtom,
+  customDimensionsAtom,
+  dimensionPresetAtom,
+  ditheringAtom,
+  // Derived atoms
+  effectiveModeConfigAtom,
+  horizontalSmoothingAtom,
+  modeAtom,
+  // Basic atoms
+  pixelModeAtom,
+  processorTypeAtom,
   resetImageAdjustmentsAtom,
-  clearLastChangedKeyAtom,
+  // Resize atoms
+  resizeModeAtom,
+  setColorSpaceAtom,
   setComponentAtom,
+  setContrastStrategyAtom,
+  setCpcHardwareAtom,
+  setCustomDimensionsAtom,
+  setDimensionPresetAtom,
+  setDitheringAtom,
+  setModeAtom,
+  // Setter atoms
+  setPixelModeAtom,
+  setProcessorTypeAtom,
+  setResizeModeAtom,
+  // Processing atoms
+  smoothingAtom,
   // Constants
   TARGET_DIMENSION_PRESETS
 } from '../config'
-import { userPaletteAtom } from '../../palette/palette'
 import type { CustomDimensions } from '../types'
-import { CPCHardware } from '@/libs/types'
 
 describe('Config Store', () => {
   let store: ReturnType<typeof createStore>
@@ -300,7 +300,7 @@ describe('Config Store', () => {
 
       // All colors should be unlocked
       const updatedPalette = store.get(userPaletteAtom)
-      expect(updatedPalette.every(slot => !slot.locked)).toBe(true)
+      expect(updatedPalette.every((slot) => !slot.locked)).toBe(true)
     })
   })
 
@@ -375,51 +375,51 @@ describe('Config Store', () => {
       expect(store.get(configAtom).lastChangedKey).toBe('brightness')
     })
   })
-    it('should have correct standard dimensions for mode 0', () => {
-      expect(TARGET_DIMENSION_PRESETS.mode0[0]).toEqual({
-        name: 'Standard',
-        width: 160,
-        height: 200
-      })
-    })
-
-    it('should have correct overscan dimensions for mode 0', () => {
-      expect(TARGET_DIMENSION_PRESETS.mode0[1]).toEqual({
-        name: 'Overscan',
-        width: 192,
-        height: 280
-      })
-    })
-
-    it('should have correct standard dimensions for mode 1', () => {
-      expect(TARGET_DIMENSION_PRESETS.mode1[0]).toEqual({
-        name: 'Standard',
-        width: 320,
-        height: 200
-      })
-    })
-
-    it('should have correct overscan dimensions for mode 1', () => {
-      expect(TARGET_DIMENSION_PRESETS.mode1[1]).toEqual({
-        name: 'Overscan',
-        width: 384,
-        height: 280
-      })
-    })
-
-    it('should have correct standard dimensions for mode 2', () => {
-      expect(TARGET_DIMENSION_PRESETS.mode2[0]).toEqual({
-        name: 'Standard',
-        width: 640,
-        height: 200
-      })
-    })
-
-    it('should have correct overscan dimensions for mode 2', () => {
-      expect(TARGET_DIMENSION_PRESETS.mode2[1]).toEqual({
-        name: 'Overscan',
-        width: 768,
-        height: 280
-      })
+  it('should have correct standard dimensions for mode 0', () => {
+    expect(TARGET_DIMENSION_PRESETS.mode0[0]).toEqual({
+      name: 'Standard',
+      width: 160,
+      height: 200
     })
   })
+
+  it('should have correct overscan dimensions for mode 0', () => {
+    expect(TARGET_DIMENSION_PRESETS.mode0[1]).toEqual({
+      name: 'Overscan',
+      width: 192,
+      height: 280
+    })
+  })
+
+  it('should have correct standard dimensions for mode 1', () => {
+    expect(TARGET_DIMENSION_PRESETS.mode1[0]).toEqual({
+      name: 'Standard',
+      width: 320,
+      height: 200
+    })
+  })
+
+  it('should have correct overscan dimensions for mode 1', () => {
+    expect(TARGET_DIMENSION_PRESETS.mode1[1]).toEqual({
+      name: 'Overscan',
+      width: 384,
+      height: 280
+    })
+  })
+
+  it('should have correct standard dimensions for mode 2', () => {
+    expect(TARGET_DIMENSION_PRESETS.mode2[0]).toEqual({
+      name: 'Standard',
+      width: 640,
+      height: 200
+    })
+  })
+
+  it('should have correct overscan dimensions for mode 2', () => {
+    expect(TARGET_DIMENSION_PRESETS.mode2[1]).toEqual({
+      name: 'Overscan',
+      width: 768,
+      height: 280
+    })
+  })
+})
