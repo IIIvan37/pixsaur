@@ -151,19 +151,68 @@
                 // Test updater check
                 addLog('info', 'Testing updater functionality...');
 
-                // This will be called from the main window
-                if (window.__TAURI__) {
-                    addLog('info', 'Tauri API available, testing updater...');
-                    // The actual updater test will be done from the main window
+                // Try to communicate with main window using Tauri events
+                addLog('info', 'Sending request to main window...');
+
+                // Since we can't access Tauri APIs directly, we'll use a workaround
+                // Send message to main window via a global function that might be available
+                if (window.sendToMainWindow) {
+                    window.sendToMainWindow({
+                        type: 'DEBUG_REQUEST',
+                        action: 'TEST_UPDATER',
+                        requestId: Date.now()
+                    });
                 } else {
-                    addLog('warn', 'Tauri API not available in debug window');
+                    // Fallback: try to use Tauri APIs if available
+                    try {
+                        const { getCurrentWindow } = await import('https://esm.sh/@tauri-apps/api@2.9.0/window');
+                        const currentWindow = getCurrentWindow();
+
+                        addLog('info', `Current window: ${currentWindow.label}`);
+
+                        // Emit event to main window
+                        await currentWindow.emitTo('main', 'debug-request', {
+                            action: 'TEST_UPDATER',
+                            requestId: Date.now()
+                        });
+
+                        // Listen for response
+                        const unlisten = await currentWindow.listen('debug-response', (event) => {
+                            unlisten();
+                            const data = event.payload;
+                            if (data.error) {
+                                addLog('error', 'Updater test failed:', data.error);
+                                statusSpan.textContent = 'Test failed';
+                            } else {
+                                const result = data.result;
+                                if (result.available) {
+                                    addLog('info', `Update available: version ${result.version}`);
+                                } else {
+                                    addLog('info', 'No updates available');
+                                }
+                                statusSpan.textContent = 'Test completed';
+                            }
+                            testUpdaterBtn.disabled = false;
+                        });
+
+                        // Timeout after 10 seconds
+                        setTimeout(() => {
+                            unlisten();
+                            addLog('error', 'Updater test timed out');
+                            statusSpan.textContent = 'Test timed out';
+                            testUpdaterBtn.disabled = false;
+                        }, 10000);
+
+                    } catch (tauriError) {
+                        addLog('error', 'Tauri communication failed:', tauriError);
+                        statusSpan.textContent = 'Communication failed';
+                        testUpdaterBtn.disabled = false;
+                    }
                 }
 
-                statusSpan.textContent = 'Test completed';
             } catch (error) {
                 addLog('error', 'Updater test failed:', error);
                 statusSpan.textContent = 'Test failed';
-            } finally {
                 testUpdaterBtn.disabled = false;
             }
         });
