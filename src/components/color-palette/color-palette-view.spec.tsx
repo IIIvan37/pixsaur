@@ -2,7 +2,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 
 import { userEvent } from '@testing-library/user-event'
+import { createStore, Provider } from 'jotai'
 import { beforeEach, describe, it, vi } from 'vitest'
+import { cpcHardwareAtom } from '@/app/store/config/config'
+import { CPCHardware } from '@/libs/types'
 import {
   ColorPaletteView,
   type ColorPaletteViewProps
@@ -195,6 +198,94 @@ describe('ColorPaletteView', () => {
 
     await waitFor(() => {
       expect(screen.queryByRole('group')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('CPC Plus mode', () => {
+    it('renders ColorPickerPopup for CPC Plus mode when slot has color', () => {
+      const store = createStore()
+      store.set(cpcHardwareAtom, CPCHardware.PLUS)
+
+      render(
+        <Provider store={store}>
+          <ColorPaletteView {...props} />
+        </Provider>
+      )
+
+      // Click on filled slot to open popover
+      fireEvent.click(
+        screen.getByRole('button', { name: `#${hex_rouge} déverrouillée` })
+      )
+
+      // Should render ColorPickerPopup instead of ColorGridView
+      // Check for RGB sliders which are specific to ColorPickerPopup
+      expect(screen.getAllByRole('slider')).toHaveLength(3)
+    })
+
+    it('renders ColorPickerPopup for CPC Plus mode when slot is empty', () => {
+      const store = createStore()
+      store.set(cpcHardwareAtom, CPCHardware.PLUS)
+
+      render(
+        <Provider store={store}>
+          <ColorPaletteView {...props} />
+        </Provider>
+      )
+
+      // Click on empty slot to open popover
+      fireEvent.click(
+        screen.getByRole('button', { name: /Ajouter une couleur/i })
+      )
+
+      // Should render ColorPickerPopup instead of ColorGridView
+      // Check for RGB sliders which are specific to ColorPickerPopup
+      expect(screen.getAllByRole('slider')).toHaveLength(3)
+    })
+  })
+
+  describe('Classic mode', () => {
+    it('renders ColorGridView for Classic mode', () => {
+      const store = createStore()
+      store.set(cpcHardwareAtom, CPCHardware.CLASSIC)
+
+      render(
+        <Provider store={store}>
+          <ColorPaletteView {...props} />
+        </Provider>
+      )
+
+      // Click on empty slot to open popover
+      fireEvent.click(
+        screen.getByRole('button', { name: /Ajouter une couleur/i })
+      )
+
+      // Should render ColorGridView
+      expect(
+        screen.getByRole('group', { name: /Options de couleur/i })
+      ).toBeInTheDocument()
+    })
+  })
+
+  describe('Classic mode', () => {
+    it('renders ColorGridView for Classic mode', () => {
+      const store = createStore()
+      store.set(cpcHardwareAtom, CPCHardware.CLASSIC)
+
+      render(
+        <Provider store={store}>
+          <ColorPaletteView {...props} />
+        </Provider>
+      )
+
+      // Click on empty slot to open popover
+      fireEvent.click(
+        screen.getByRole('button', { name: /Ajouter une couleur/i })
+      )
+
+      // Should render ColorGridView
+      expect(
+        screen.getByRole('group', { name: /Options de couleur/i })
+      ).toBeInTheDocument()
     })
   })
 })

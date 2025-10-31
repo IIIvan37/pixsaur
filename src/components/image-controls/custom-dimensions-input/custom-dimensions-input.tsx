@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -7,10 +6,9 @@ import {
   setCustomDimensionsAtom
 } from '@/app/store/config/config'
 import type { CustomDimensions } from '@/app/store/config/types'
-import PixsaurSlider from '@/components/ui/slider/slider'
 import { getPixelsPerByte, getWidthStepForMode } from '@/utils/cpc-calculations'
 import { validateCustomDimensions } from '@/utils/validate-custom-dimensions'
-import styles from './custom-dimensions-input.module.css'
+import { CustomDimensionsInputView } from './custom-dimensions-input-view'
 
 // Debounce hook with ref
 function useDebouncedCallback<T extends (...args: any[]) => void>(
@@ -105,49 +103,16 @@ export function CustomDimensionsInput() {
   const maxHeight = Math.floor(maxHeightForWidth / 8) * 8
 
   return (
-    <div className={styles.container}>
-      <div className={styles.slidersGrid}>
-        <PixsaurSlider
-          min={4}
-          max={maxWidth}
-          step={widthStep}
-          value={localWidth}
-          onChange={handleWidthChange}
-          label={
-            <>
-              <Trans>Largeur</Trans> ({localWidth}px / {bytesPerLine.toFixed(0)}{' '}
-              octets)
-            </>
-          }
-        />
-
-        <PixsaurSlider
-          min={8}
-          max={maxHeight}
-          step={8}
-          value={localHeight}
-          onChange={handleHeightChange}
-          label={
-            <>
-              <Trans>Hauteur</Trans> ({localHeight}px)
-            </>
-          }
-        />
-      </div>
-
-      <div
-        className={
-          validation.valid ? styles.validationOk : styles.validationError
-        }
-      >
-        {validation.valid ? (
-          <>
-            <Trans>Mémoire</Trans>: {validation.kb.toFixed(2)} Ko / 64 Ko
-          </>
-        ) : (
-          validation.errors.join(', ')
-        )}
-      </div>
-    </div>
+    <CustomDimensionsInputView
+      localWidth={localWidth}
+      localHeight={localHeight}
+      maxWidth={maxWidth}
+      maxHeight={maxHeight}
+      widthStep={widthStep}
+      bytesPerLine={bytesPerLine}
+      validation={validation}
+      onWidthChange={handleWidthChange}
+      onHeightChange={handleHeightChange}
+    />
   )
 }

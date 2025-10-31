@@ -7,6 +7,40 @@ import { messages as frMessages } from './src/locales/fr/messages'
 i18n.load('fr', frMessages)
 i18n.activate('fr')
 
+// Mock Lingui hooks and components globally
+vi.mock('@lingui/react', () => ({
+  useLingui: () => ({
+    _: (key: string | { id: string }) => {
+      // Handle both string keys and Lingui macro objects
+      const messageKey = typeof key === 'string' ? key : key.id
+      // Use the actual messages object for translation
+      const messages = frMessages as Record<string, string[]>
+      return messages[messageKey]?.[0] || messageKey
+    }
+  }),
+  Trans: ({ children, id }: { children?: React.ReactNode; id?: string }) => {
+    // Return children if present, otherwise translate id using messages
+    if (children) return children
+
+    const messages = frMessages as Record<string, string[]>
+    return messages[id || '']?.[0] || id
+  },
+  msg: (key: string) => key, // Mock msg to return the key directly
+  I18nProvider: ({ children }: { children: React.ReactNode }) => children
+}))
+
+// Mock @lingui/core/macro
+vi.mock('@lingui/core/macro', () => ({
+  msg: (strings: TemplateStringsArray, ...values: any[]) => {
+    // Reconstruct the message key from template literal
+    const key = strings.reduce((result, string, i) => {
+      return result + string + (values[i] || '')
+    }, '')
+    // Return an object with id property like Lingui macros do
+    return { id: key }
+  }
+}))
+
 globalThis.ImageData =
   globalThis.ImageData ||
   class {

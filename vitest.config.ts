@@ -3,9 +3,10 @@ import { lingui } from '@lingui/vite-plugin'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
-    lingui(),
+    // Only apply lingui plugin when not in test mode
+    ...(mode === 'test' ? [] : [lingui()]),
     react({
       babel: {
         presets: ['jotai/babel/preset'],
@@ -37,4 +38,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src')
     }
   }
-})
+}))

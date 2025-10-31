@@ -1,8 +1,8 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
-import { UploadIcon } from '@radix-ui/react-icons'
 import { useId } from 'react'
 import { useDropzone } from 'react-dropzone'
+import Icon from '@/components/ui/icon'
 import styles from './image-upload.module.css'
 
 export type ImageUploadProps = {
@@ -94,7 +94,7 @@ export const ImageUploadView = ({
           data-testid='image-upload-input'
         />
       )}
-      <UploadIcon className={styles.icon} />
+      <Icon name='UploadIcon' className={styles.icon} />
       <p className={styles.primaryText}>{primaryText || defaultPrimaryText}</p>
       <p className={styles.secondaryText}>
         {secondaryText || defaultSecondaryText}

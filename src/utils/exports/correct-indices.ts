@@ -9,7 +9,7 @@ export function correctColorIndicesForCPC(indices: Uint8Array): Uint8Array {
     const originalIndex = indices[i]
 
     // Extraire les bits individuels
-    const b0 = (originalIndex >> 0) & 1 // bit 0
+    const b0 = originalIndex & 1 // bit 0
     const b1 = (originalIndex >> 1) & 1 // bit 1
     const b2 = (originalIndex >> 2) & 1 // bit 2
     const b3 = (originalIndex >> 3) & 1 // bit 3
