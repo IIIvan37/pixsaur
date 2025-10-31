@@ -37,7 +37,10 @@ export function extractBuffer(imageData: ImageData): Uint8ClampedArray {
 export function bufferToVectors(data: Uint8ClampedArray): Vector<'RGB'>[] {
   const vectors: Vector<'RGB'>[] = []
   for (let i = 0; i < data.length; i += 4) {
-    vectors.push([data[i], data[i + 1], data[i + 2]])
+    // Ignorer les pixels partiels (moins de 4 octets)
+    if (i + 3 < data.length) {
+      vectors.push([data[i], data[i + 1], data[i + 2]])
+    }
   }
   return vectors
 }
