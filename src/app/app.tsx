@@ -19,10 +19,14 @@ function isTauri(): boolean {
 }
 
 export default function App() {
+  const tauri = isTauri()
+  const dev = isDevelopment()
+  console.log('[APP] isTauri:', tauri, 'isDevelopment:', dev)
+  // alert(`isTauri: ${tauri}, isDevelopment: ${dev}`)
   return (
     <I18nProviderWrapper>
       <ThemeProvider>
-        {(isDevelopment() || isTauri()) && <Updater />}
+        {(dev || tauri) && <Updater />}
         <main className={styles.container}>
           <div className={styles.content}>
             <header className={styles.header}>
