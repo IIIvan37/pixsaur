@@ -75,7 +75,6 @@ jobs:
         run: pnpm install
 
       - name: Update version files
-        if: matrix.platform == 'ubuntu-22.04'
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
@@ -88,12 +87,14 @@ jobs:
           # Update tauri.conf.json
           jq ".version = \"${VERSION_NUM}\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
           
-          # Commit the version changes
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add package.json src-tauri/tauri.conf.json
-          git commit -m "chore: bump version to ${VERSION_NUM}" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref_name }} || echo "Push failed, continuing..."
+          # Commit the version changes (only from ubuntu to avoid conflicts)
+          if [ "${{ matrix.platform }}" == "ubuntu-22.04" ]; then
+            git config --global user.name 'github-actions[bot]'
+            git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+            git add package.json src-tauri/tauri.conf.json
+            git commit -m "chore: bump version to ${VERSION_NUM}" || echo "No changes to commit"
+            git push origin HEAD:${{ github.ref_name }} || echo "Push failed, continuing..."
+          fi
 
       - name: Build info
         run: |
@@ -131,7 +132,6 @@ jobs:
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
       - name: Generate updater JSON
-        if: matrix.platform == 'ubuntu-22.04'
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
@@ -168,6 +168,7 @@ jobs:
           draft: true
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: false
 
       - name: Upload artifacts
         uses: softprops/action-gh-release@v2
