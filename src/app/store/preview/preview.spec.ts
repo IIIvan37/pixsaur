@@ -1,23 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { quantizeCPC } from '@/utils/cpc-calculations'
 
 // Test de la fonction de quantification CPC isolément
 describe('CPC Quantization Logic', () => {
-  const quantizeCPC = (value: number): number => {
-    const levels = [0, 128, 255]
-    let best = levels[0]
-    let bestDist = Math.abs(value - best)
-
-    for (const lvl of levels) {
-      const dist = Math.abs(value - lvl)
-      if (dist < bestDist) {
-        bestDist = dist
-        best = lvl
-      }
-    }
-
-    return best
-  }
-
   it('should quantize values correctly', () => {
     // Test exact matches
     expect(quantizeCPC(0)).toBe(0)

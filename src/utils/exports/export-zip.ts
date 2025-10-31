@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { CPCHardware } from '@/libs/types'
+import { getAspectRatioMultipliers, getPixelsPerByte } from '@/utils/cpc-calculations'
 import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
@@ -21,7 +22,7 @@ const getHeader = (
   type: string,
   isCPCPlus: boolean
 ): string => {
-  const pixelsPerByte = [2, 4, 8][modeConfig.mode]
+  const pixelsPerByte = getPixelsPerByte(modeConfig.mode)
   const hardwareType = isCPCPlus ? 'CPC+' : 'CPC Classic'
   const paletteInfo =
     type === 'SCR'
@@ -93,8 +94,9 @@ async function exportPNGData(
   // Mode 0: 2 pixels/byte, PAR = 2.0 (wide pixels) - double width
   // Mode 1: 4 pixels/byte, PAR = 1.0 (square pixels) - no change
   // Mode 2: 8 pixels/byte, narrow pixels - double height instead
-  const widthMultiplier = modeConfig.mode === 0 ? 2 : 1
-  const heightMultiplier = modeConfig.mode === 2 ? 2 : 1
+  const { widthMultiplier, heightMultiplier } = getAspectRatioMultipliers(
+    modeConfig.mode
+  )
 
   // Export original PNG (square pixels)
   if (config.content.includePNG) {

@@ -13,6 +13,7 @@ import {
 } from '@/utils/image-processing/horizontal-smoothing'
 import { applyResize, type Selection } from '@/utils/image-resize'
 import { logger } from '@/utils/logger'
+import { quantizeCPC, quantifyToCPCPlus } from '@/utils/cpc-calculations'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,
@@ -26,18 +27,6 @@ import {
 } from '../config/config'
 import { selectionAtom, workingImageAtom } from '../image/image'
 import { lockedVectorsAtom } from '../palette/palette'
-
-/**
- * Quantifie une valeur RGB (0-255) vers CPC Classic (0, 128, 255)
- */
-function quantizeCPC(value: number): number {
-  const cpcValues = [0, 128, 255]
-  return cpcValues.reduce(
-    (prev, curr) =>
-      Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev,
-    cpcValues[0]
-  )
-}
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -209,11 +198,6 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const targetColors = modeConfig.nColors
 
   // Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
-  const quantifyToCPCPlus = (value: number): number => {
-    const val4bit = Math.round((value / 255) * 15)
-    return Math.round((val4bit / 15) * 255)
-  }
-
   const quantifiedLockedVecs =
     cpcHardware === 'plus'
       ? lockedVecs.map(
@@ -338,11 +322,6 @@ function quantifyCPCPlusWithLocked(
   lockedColorKeys: Set<string>
 ): void {
   // Quantifier selon le format CPC Plus (4-bit par composante)
-  const quantifyToCPCPlus = (value: number): number => {
-    // Convertir 8-bit vers 4-bit puis retour vers 8-bit
-    const val4bit = Math.round((value / 255) * 15)
-    return Math.round((val4bit / 15) * 255)
-  }
 
   for (const color of projected) {
     const colorKey = `${color[0]},${color[1]},${color[2]}`

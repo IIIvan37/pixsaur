@@ -8,7 +8,9 @@
  * - Total memory must not exceed 64 Ko
  */
 
-/** CPC mode number */
+import type { PixelMode } from '@/app/store/config/types'
+import { getPixelsPerByte, getWidthStepForMode } from '@/utils/cpc-calculations'
+
 export type CpcMode = 0 | 1 | 2
 
 export interface ValidationResult {
@@ -44,8 +46,8 @@ export function validateCustomDimensions(
   const errors: string[] = []
 
   // Mode-specific constraints
-  const widthStep = getWidthStep(mode)
-  const pixelsPerByte = [2, 4, 8][mode] // Mode 0=2px/byte, Mode 1=4px/byte, Mode 2=8px/byte
+  const widthStep = getWidthStepForMode(mode)
+  const pixelsPerByte = getPixelsPerByte(mode)
 
   // 1. Width must be multiple of widthStep (4, 8, or 16)
   if (width % widthStep !== 0) {
@@ -78,23 +80,4 @@ export function validateCustomDimensions(
     kb: totalKb,
     errors
   }
-}
-
-/**
- * Gets the width step constraint for a CPC mode
- *
- * @param mode - CPC mode (0, 1, or 2)
- * @returns Width step (4, 8, or 16)
- */
-export function getWidthStep(mode: CpcMode): number {
-  return [4, 8, 16][mode]
-}
-
-/**
- * Gets the height step constraint (always 8 for CPC)
- *
- * @returns Height step (8)
- */
-export function getHeightStep(): number {
-  return 8
 }
