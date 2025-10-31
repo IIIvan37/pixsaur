@@ -161,10 +161,7 @@ export class ReGLProcessor implements ImageProcessor {
     }
   }
 
-  /**
-   * Applique les ajustements d'image avec CPU fallback
-   * FUTURE ENHANCEMENT: Remplacer par vraie accélération ReGL dans le futur
-   */
+
   async applyAdjustments(
     imageData: ImageData,
     adjustments: AdjustmentConfig

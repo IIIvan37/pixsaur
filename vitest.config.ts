@@ -27,7 +27,8 @@ export default defineConfig({
         '**/*.config.*',
         '**/*.setup.*',
         '**/wdyr.js',
-        '**/*.d.ts'
+        '**/*.d.ts',
+        '**/*.css'
       ]
     }
   },
