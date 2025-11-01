@@ -25,8 +25,15 @@ sign_file() {
     
     cd "$project_root"
     if command -v pnpm &> /dev/null; then
-        # Utiliser printf au lieu de echo pour éviter d'ajouter des retours à la ligne
-        printf "%s" "$TAURI_SIGNING_PRIVATE_KEY" | pnpm tauri signer sign "${current_dir}/${file}" --private-key-path /dev/stdin
+        # Créer un fichier temporaire pour la clé privée (stdin ne fonctionne pas bien en CI)
+        local temp_key=$(mktemp)
+        printf "%s" "$TAURI_SIGNING_PRIVATE_KEY" > "$temp_key"
+        
+        # Signer le fichier avec la clé depuis le fichier temporaire
+        pnpm tauri signer sign "${current_dir}/${file}" --private-key-path "$temp_key"
+        
+        # Supprimer le fichier temporaire
+        rm -f "$temp_key"
     else
         echo "Warning: pnpm not found, cannot sign file"
     fi
