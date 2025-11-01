@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo "🔍 Running TypeScript checks..."
+npx tsc --noEmit
+
+echo "🔍 Running biome checks..."
+npx @biomejs/biome check . --write
+
+echo "✅ Pre-commit checks passed!"

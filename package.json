@@ -9,6 +9,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
+    "typecheck:comprehensive": "node scripts/typecheck-comprehensive.js",
+    "typecheck:vscode": "node scripts/typecheck-vscode-like.js",
     "lint": "biome lint .",
     "lint:fix": "biome lint . --write",
     "format": "biome format .",
@@ -21,7 +23,8 @@
     "i18n:compile": "lingui compile",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@lingui/core": "^5.5.1",
@@ -70,11 +73,14 @@
     "babel-plugin-macros": "^3.1.0",
     "bun-types": "^1.2.11",
     "chalk": "^5.4.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
     "postcss": "^8.5.3",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "vite": "^6.3.1",
     "vitest": "^4.0.4"
   },
+
   "packageManager": "pnpm@10.11.0"
 }
