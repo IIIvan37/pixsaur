@@ -6,10 +6,9 @@ on:
       - "v*"
 
 jobs:
-  release:
+  build-platforms:
     permissions:
       contents: write
-      discussions: write
     strategy:
       fail-fast: false
       matrix:
@@ -148,116 +147,6 @@ jobs:
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
-      - name: Wait and download signatures with retries
-        if: matrix.platform == 'ubuntu-22.04'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION_NUM="${VERSION#v}"
-
-          mkdir -p /tmp/sigs
-
-          echo "Waiting for other platforms to upload signatures..."
-          echo "Will retry every 30 seconds for up to 3 minutes"
-
-          # Retry logic: try 6 times with 30s between attempts (total 3 minutes)
-          for attempt in {1..6}; do
-            echo ""
-            echo "Attempt $attempt/6..."
-            
-            # Try to download all signatures
-            gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null && echo "✓ Downloaded x64 sig" || echo "✗ x64 sig not found yet"
-            gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null && echo "✓ Downloaded aarch64 sig" || echo "✗ aarch64 sig not found yet"
-            gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" --dir /tmp/sigs --clobber 2>/dev/null && echo "✓ Downloaded Windows sig" || echo "✗ Windows sig not found yet"
-            
-            # Count how many signatures we have
-            SIG_COUNT=$(ls -1 /tmp/sigs/*.sig 2>/dev/null | wc -l)
-            echo "Found $SIG_COUNT/3 signature files"
-            
-            # If we have all 3, break
-            if [ "$SIG_COUNT" -eq 3 ]; then
-              echo "✅ All signatures downloaded!"
-              break
-            fi
-            
-            # If not last attempt, wait
-            if [ $attempt -lt 6 ]; then
-              echo "Waiting 30 seconds before next attempt..."
-              sleep 30
-            else
-              echo "⚠️  Timeout: Not all signatures found after 3 minutes"
-              echo "Proceeding with available signatures..."
-            fi
-          done
-
-          echo ""
-          echo "Final downloaded files:"
-          ls -la /tmp/sigs/
-
-      - name: Generate updater JSON
-        if: matrix.platform == 'ubuntu-22.04'
-        shell: bash
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION_NUM="${VERSION#v}"
-
-          # Read signatures from .sig files for updater artifacts
-          # Tauri updater needs the .tar.gz versions, not the raw installers
-          LINUX_SIG=""
-          WINDOWS_SIG=""
-          DARWIN_X64_SIG=""
-          DARWIN_AARCH64_SIG=""
-
-          # For AppImage updater
-          if [ -f "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" ]; then
-            LINUX_SIG=$(cat "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig")
-          fi
-
-          # For macOS updater (downloaded from release)
-          if [ -f "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig" ]; then
-            DARWIN_X64_SIG=$(cat "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig")
-          fi
-
-          if [ -f "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig" ]; then
-            DARWIN_AARCH64_SIG=$(cat "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig")
-          fi
-
-          # For Windows updater (downloaded from release)
-          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" ]; then
-            WINDOWS_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig")
-          fi
-
-          cat > latest.json << EOF
-          {
-            "version": "${VERSION}",
-            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${VERSION}",
-            "pub_date": "${{ github.event.head_commit.timestamp }}",
-            "platforms": {
-              "linux-x86_64": {
-                "signature": "${LINUX_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz"
-              },
-              "windows-x86_64": {
-                "signature": "${WINDOWS_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip"
-              },
-              "darwin-x86_64": {
-                "signature": "${DARWIN_X64_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_x64.app.tar.gz"
-              },
-              "darwin-aarch64": {
-                "signature": "${DARWIN_AARCH64_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_aarch64.app.tar.gz"
-              }
-            }
-          }
-          EOF
-
-          echo "Generated latest.json:"
-          cat latest.json
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: matrix.platform == 'ubuntu-22.04'
@@ -304,4 +193,96 @@ jobs:
             src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
             src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz.sig
             src-tauri/target/release/bundle/rpm/*.rpm
-            latest.json
+
+  generate-updater-json:
+    needs: build-platforms
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all signatures from release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NUM="${VERSION#v}"
+
+          mkdir -p /tmp/sigs
+
+          echo "Downloading signatures from release ${VERSION}..."
+
+          # Download all signatures - they should all be available now since we used needs:
+          gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber
+          gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber
+          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" --dir /tmp/sigs --clobber
+          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" --dir /tmp/sigs --clobber
+
+          echo ""
+          echo "Downloaded files:"
+          ls -la /tmp/sigs/
+
+      - name: Generate updater JSON
+        shell: bash
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NUM="${VERSION#v}"
+
+          # Read signatures from downloaded files
+          LINUX_SIG=""
+          WINDOWS_SIG=""
+          DARWIN_X64_SIG=""
+          DARWIN_AARCH64_SIG=""
+
+          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" ]; then
+            LINUX_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig")
+          fi
+
+          if [ -f "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig" ]; then
+            DARWIN_X64_SIG=$(cat "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig")
+          fi
+
+          if [ -f "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig" ]; then
+            DARWIN_AARCH64_SIG=$(cat "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig")
+          fi
+
+          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" ]; then
+            WINDOWS_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig")
+          fi
+
+          cat > latest.json << EOF
+          {
+            "version": "${VERSION}",
+            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${VERSION}",
+            "pub_date": "${{ github.event.head_commit.timestamp }}",
+            "platforms": {
+              "linux-x86_64": {
+                "signature": "${LINUX_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz"
+              },
+              "windows-x86_64": {
+                "signature": "${WINDOWS_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip"
+              },
+              "darwin-x86_64": {
+                "signature": "${DARWIN_X64_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_x64.app.tar.gz"
+              },
+              "darwin-aarch64": {
+                "signature": "${DARWIN_AARCH64_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_aarch64.app.tar.gz"
+              }
+            }
+          }
+          EOF
+
+          echo "Generated latest.json:"
+          cat latest.json
+
+      - name: Upload updater JSON to release
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: false
+          files: latest.json
