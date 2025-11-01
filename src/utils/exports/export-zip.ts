@@ -5,16 +5,18 @@ import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
 } from '@/palettes/cpc-palette'
-import {
-  getAspectRatioMultipliers,
-  getPixelsPerByte
-} from '@/utils/cpc-calculations'
+import { getPixelsPerByte } from '@/utils/cpc-calculations'
 import {
   cpcPlusValuesToASM,
   injectCPCPlusPaletteIntoSCR,
   paletteToCPCPlusValues
 } from './cpc-plus-format'
 import { exportLinearAsm } from './export-linear-asm/export-linear.asm'
+import {
+  canvasToPNGBlob,
+  createCorrectedAspectCanvas,
+  createSquarePixelsCanvas
+} from './export-png-utils'
 import { exportSCR } from './export-scr/export-scr'
 import { saveZipFileTauri } from './export-tauri'
 import { toASMData } from './to-asm-data'
@@ -87,66 +89,46 @@ async function exportCPCClassicData(
   exportPalettesClassic(zip, paletteFirmware, config)
 }
 
+/**
+ * Export PNG with native CPC dimensions (1:1 square pixels)
+ */
+async function exportSquarePixelsPNG(
+  zip: JSZip,
+  canvas: HTMLCanvasElement,
+  modeConfig: CpcModeConfig
+) {
+  const nativeCanvas = createSquarePixelsCanvas(canvas, modeConfig)
+  const blob = await canvasToPNGBlob(nativeCanvas)
+  zip.file('pixsaur.png', blob)
+}
+
+/**
+ * Export PNG with corrected CPC aspect ratio
+ */
+async function exportCorrectedAspectPNG(
+  zip: JSZip,
+  canvas: HTMLCanvasElement,
+  modeConfig: CpcModeConfig
+) {
+  const correctedCanvas = createCorrectedAspectCanvas(canvas, modeConfig)
+  const correctedBlob = await canvasToPNGBlob(correctedCanvas)
+  zip.file('pixsaur_corrected_aspect.png', correctedBlob)
+}
+
 async function exportPNGData(
   zip: JSZip,
   canvas: HTMLCanvasElement,
   modeConfig: CpcModeConfig,
   config: ExportConfig
 ) {
-  // Calculate aspect ratio correction based on mode
-  // Mode 0: 2 pixels/byte, PAR = 2.0 (wide pixels) - double width
-  // Mode 1: 4 pixels/byte, PAR = 1.0 (square pixels) - no change
-  // Mode 2: 8 pixels/byte, narrow pixels - double height instead
-  const { widthMultiplier, heightMultiplier } = getAspectRatioMultipliers(
-    modeConfig.mode
-  )
-
-  // Export original PNG (square pixels)
+  // Export original PNG (square pixels - 1:1 ratio)
   if (config.content.includePNG) {
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((b) => resolve(b!), 'image/png')
-    })
-    zip.file('pixsaur.png', blob)
+    await exportSquarePixelsPNG(zip, canvas, modeConfig)
   }
 
   // Export PNG with correct aspect ratio
   if (config.content.includePNGCorrected) {
-    const correctedCanvas = document.createElement('canvas')
-    const correctedWidth = canvas.width * widthMultiplier
-    const correctedHeight = canvas.height * heightMultiplier
-    correctedCanvas.width = correctedWidth
-    correctedCanvas.height = correctedHeight
-    const correctedCtx = correctedCanvas.getContext('2d', {
-      alpha: false
-    })
-    if (correctedCtx) {
-      // Fill with black background first
-      correctedCtx.fillStyle = '#000000'
-      correctedCtx.fillRect(0, 0, correctedWidth, correctedHeight)
-
-      // Disable smoothing for pixel-perfect scaling
-      correctedCtx.imageSmoothingEnabled = false
-
-      // Draw the original canvas scaled
-      correctedCtx.drawImage(
-        canvas,
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-        0,
-        0,
-        correctedWidth,
-        correctedHeight
-      )
-
-      const correctedBlob = await new Promise<Blob | null>((resolve) => {
-        correctedCanvas.toBlob(resolve, 'image/png')
-      })
-      if (correctedBlob) {
-        zip.file('pixsaur_corrected_aspect.png', correctedBlob)
-      }
-    }
+    await exportCorrectedAspectPNG(zip, canvas, modeConfig)
   }
 }
 
