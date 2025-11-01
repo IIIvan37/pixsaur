@@ -75,7 +75,6 @@ export function DitheringSelector() {
           onValueChange={(value) => {
             const newMode = value as DitheringMode;
             setCfg({
-              ...cfg,
               mode: newMode,
               intensity: getDefaultIntensity(newMode),
             });

@@ -41,8 +41,8 @@
 .descriptionTooltip {
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
-  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
   min-width: 200px;
   max-width: 320px;
   background-color: rgba(0, 0, 0, 0.95);
