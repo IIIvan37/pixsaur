@@ -18,8 +18,10 @@ async fn test_updater(app: tauri::AppHandle) -> Result<String, String> {
   println!("[PIXSAUR] Testing updater from main window");
 
   let updater = app.updater().map_err(|e| format!("Failed to get updater: {:?}", e))?;
+  println!("[PIXSAUR] Updater obtained, checking for updates...");
   match updater.check().await {
     Ok(update) => {
+      println!("[PIXSAUR] Updater check completed");
       if let Some(update) = update {
         println!("[PIXSAUR] Update available: {}", update.version);
         Ok(format!("{{\"available\": true, \"version\": \"{}\"}}", update.version))
@@ -41,6 +43,7 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_process::init())
+    .plugin(tauri_plugin_shell::init())
     .invoke_handler(tauri::generate_handler![log_to_file, open_debug_window, test_updater])
     .setup(|app| {
       // Enable logging in debug builds or when PIXSAUR_DEBUG env var is set

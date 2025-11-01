@@ -1,7 +1,7 @@
 {
   "name": "pixsaur",
   "private": true,
-  "version": "0.1.18",
+  "version": "0.1.17",
   "type": "module",
   "scripts": {
     "test": "vitest",
@@ -37,6 +37,7 @@
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-fs": "^2.4.2",
     "@tauri-apps/plugin-process": "^2.3.0",
+    "@tauri-apps/plugin-shell": "^2.3.3",
     "@tauri-apps/plugin-updater": "^2.9.0",
     "clsx": "^2.1.1",
     "jotai": "^2.12.4",
