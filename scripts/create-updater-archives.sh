@@ -49,7 +49,16 @@ elif [ "$PLATFORM" = "windows" ]; then
         if [ -f "$exe" ]; then
             zipname="${exe%.exe}.nsis.zip"
             echo "Creating ${zipname}"
-            zip "$zipname" "$exe"
+            
+            # Utiliser PowerShell sur Windows (disponible dans Git Bash)
+            if command -v powershell.exe &> /dev/null; then
+                powershell.exe -Command "Compress-Archive -Path '$exe' -DestinationPath '$zipname' -Force"
+            elif command -v 7z &> /dev/null; then
+                7z a "$zipname" "$exe"
+            else
+                echo "Error: No compression tool available (tried powershell, 7z)"
+                exit 1
+            fi
             
             # Si une signature existe pour l'exe original, on la copie
             if [ -f "${exe}.sig" ]; then
@@ -66,7 +75,15 @@ elif [ "$PLATFORM" = "windows" ]; then
             if [ -f "$msi" ]; then
                 zipname="${msi}.zip"
                 echo "Creating ${zipname}"
-                zip "$zipname" "$msi"
+                
+                if command -v powershell.exe &> /dev/null; then
+                    powershell.exe -Command "Compress-Archive -Path '$msi' -DestinationPath '$zipname' -Force"
+                elif command -v 7z &> /dev/null; then
+                    7z a "$zipname" "$msi"
+                else
+                    echo "Error: No compression tool available (tried powershell, 7z)"
+                    exit 1
+                fi
                 
                 if [ -f "${msi}.sig" ]; then
                     echo "Copying signature to ${zipname}.sig"
