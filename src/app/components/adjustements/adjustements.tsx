@@ -1,17 +1,17 @@
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from 'jotai'
 import {
   configAtom,
   resetImageAdjustmentsAtom,
-  setComponentAtom,
-} from "@/app/store/config/config";
-import type { AdjustementKey } from "@/app/store/config/types";
-import { workingImageAtom } from "@/app/store/image/image";
-import { logger } from "@/utils/logger";
-import { AdjustementsView } from "./adjustement.view";
-import type { RangeOption } from "./types";
+  setComponentAtom
+} from '@/app/store/config/config'
+import type { AdjustementKey } from '@/app/store/config/types'
+import { workingImageAtom } from '@/app/store/image/image'
+import { logger } from '@/utils/logger'
+import { AdjustementsView } from './adjustement.view'
+import type { RangeOption } from './types'
 
 export default function Adjustments() {
-  const src = useAtomValue(workingImageAtom);
+  const src = useAtomValue(workingImageAtom)
   const {
     red,
     green,
@@ -27,11 +27,11 @@ export default function Adjustments() {
     exposure,
     highlights,
     shadows,
-    posterization,
-  } = useAtomValue(configAtom);
+    posterization
+  } = useAtomValue(configAtom)
 
-  const setComponent = useSetAtom(setComponentAtom);
-  const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom);
+  const setComponent = useSetAtom(setComponentAtom)
+  const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
   // Define the adjustments with their min, max, and step values
 
   const adjustments: RangeOption = {
@@ -49,26 +49,26 @@ export default function Adjustments() {
     exposure: [exposure, -3, 3, 0.1],
     highlights: [highlights, -100, 100, 1],
     shadows: [shadows, -100, 100, 1],
-    posterization: [posterization, 2, 256, 1],
-  };
+    posterization: [posterization, 2, 256, 1]
+  }
 
   const handleChange = ({
     key,
-    value,
+    value
   }: {
-    key: AdjustementKey;
-    value: number;
+    key: AdjustementKey
+    value: number
   }) => {
-    setComponent({ key, value });
-  };
+    setComponent({ key, value })
+  }
 
   const handleReset = () => {
     if (!src?.data) {
-      logger.warn("No source image available for reset");
-      return;
+      logger.warn('No source image available for reset')
+      return
     }
-    resetAdjustments();
-  };
+    resetAdjustments()
+  }
 
   return (
     <AdjustementsView
@@ -77,5 +77,5 @@ export default function Adjustments() {
       onChange={handleChange}
       onReset={handleReset}
     />
-  );
+  )
 }
