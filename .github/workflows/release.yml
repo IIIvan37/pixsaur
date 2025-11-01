@@ -99,6 +99,15 @@ jobs:
           node --version
           pnpm --version
 
+      - name: Install zip on Windows
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          choco install zip -y
+          # Vérifier que zip est disponible
+          which zip
+          zip --version
+
       - name: Build Tauri manually
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
