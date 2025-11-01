@@ -97,57 +97,26 @@ elif [ "$PLATFORM" = "macos" ]; then
     done
     
 elif [ "$PLATFORM" = "windows" ]; then
-    echo "Processing Windows NSIS installers..."
-    cd src-tauri/target/release/bundle/nsis
+    echo "Processing Windows installers..."
+    echo "Note: Tauri v2 with createUpdaterArtifacts=true uses .exe and .msi files directly"
+    echo "No zip compression needed - signing installers directly"
     
+    # Sign NSIS installer
+    cd src-tauri/target/release/bundle/nsis
     for exe in *-setup.exe; do
         if [ -f "$exe" ]; then
-            zipname="${exe%.exe}.nsis.zip"
-            echo "Creating ${zipname}"
-            
-            # Utiliser zip standard en priorité (le plus compatible avec Tauri)
-            if command -v zip &> /dev/null; then
-                # zip standard avec compression normale (store ou deflate level 6)
-                zip -6 "$zipname" "$exe"
-            elif command -v 7z &> /dev/null; then
-                # 7z avec méthode Deflate et niveau de compression normal
-                7z a -tzip -mm=Deflate -mx=6 "$zipname" "$exe"
-            elif command -v powershell.exe &> /dev/null; then
-                # PowerShell en dernier recours
-                powershell.exe -Command "Compress-Archive -Path '$exe' -DestinationPath '$zipname' -CompressionLevel Optimal -Force"
-            else
-                echo "Error: No compression tool available (tried zip, 7z, powershell)"
-                exit 1
-            fi
-            
-            # Re-signer l'archive
-            sign_file "${zipname}"
+            echo "Signing ${exe} directly (no zip needed for Tauri v2)"
+            sign_file "${exe}"
         fi
     done
     
-    # MSI (si nécessaire)
+    # Sign MSI installer
     if [ -d "../msi" ]; then
         cd ../msi
         for msi in *.msi; do
             if [ -f "$msi" ]; then
-                zipname="${msi}.zip"
-                echo "Creating ${zipname}"
-                
-                if command -v zip &> /dev/null; then
-                    # zip standard avec compression normale
-                    zip -6 "$zipname" "$msi"
-                elif command -v 7z &> /dev/null; then
-                    # 7z avec méthode Deflate et niveau normal
-                    7z a -tzip -mm=Deflate -mx=6 "$zipname" "$msi"
-                elif command -v powershell.exe &> /dev/null; then
-                    powershell.exe -Command "Compress-Archive -Path '$msi' -DestinationPath '$zipname' -CompressionLevel Optimal -Force"
-                else
-                    echo "Error: No compression tool available (tried zip, 7z, powershell)"
-                    exit 1
-                fi
-                
-                # Re-signer l'archive MSI
-                sign_file "${zipname}"
+                echo "Signing ${msi} directly (no zip needed for Tauri v2)"
+                sign_file "${msi}"
             fi
         done
     fi
