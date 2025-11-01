@@ -81,10 +81,6 @@
     "vite": "^6.3.1",
     "vitest": "^4.0.4"
   },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json}": [
-      "npx @biomejs/biome check --write"
-    ]
-  },
+
   "packageManager": "pnpm@10.11.0"
 }
