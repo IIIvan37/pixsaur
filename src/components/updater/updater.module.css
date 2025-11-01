@@ -139,6 +139,36 @@
   color: var(--color-error);
 }
 
+.progressContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.progressBar {
+  flex: 1;
+  height: 8px;
+  background-color: var(--color-muted);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-hover, var(--color-accent)) 100%);
+  transition: width 0.3s ease;
+  border-radius: var(--radius-full);
+}
+
+.progressText {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-foreground);
+  min-width: 45px;
+  text-align: right;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
