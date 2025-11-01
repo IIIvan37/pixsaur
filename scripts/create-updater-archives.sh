@@ -18,12 +18,18 @@ sign_file() {
     fi
     
     echo "Signing ${file}..."
-    # Utiliser tauri signer sign depuis le CLI Tauri
-    if command -v cargo &> /dev/null; then
-        echo "$TAURI_SIGNING_PRIVATE_KEY" | cargo tauri signer sign "${file}" --private-key-path /dev/stdin
+    # Utiliser pnpm tauri signer (installé via @tauri-apps/cli)
+    # On doit retourner au répertoire racine du projet pour que pnpm fonctionne
+    local current_dir=$(pwd)
+    local project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
+    
+    cd "$project_root"
+    if command -v pnpm &> /dev/null; then
+        echo "$TAURI_SIGNING_PRIVATE_KEY" | pnpm tauri signer sign "${current_dir}/${file}" --private-key-path /dev/stdin
     else
-        echo "Warning: cargo not found, cannot sign file"
+        echo "Warning: pnpm not found, cannot sign file"
     fi
+    cd "$current_dir"
 }
 
 if [ "$PLATFORM" = "linux" ]; then
