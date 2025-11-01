@@ -121,6 +121,24 @@
   }
 }
 
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  background-color: var(--color-error-background, rgba(239, 68, 68, 0.1));
+  color: var(--color-error);
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.errorIcon {
+  flex-shrink: 0;
+  color: var(--color-error);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
