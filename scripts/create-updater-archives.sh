@@ -105,18 +105,18 @@ elif [ "$PLATFORM" = "windows" ]; then
             zipname="${exe%.exe}.nsis.zip"
             echo "Creating ${zipname}"
             
-            # Utiliser 7z avec compression Deflate (compatible Tauri) ou zip standard
-            if command -v 7z &> /dev/null; then
-                # 7z avec méthode Deflate (la plus compatible)
-                7z a -tzip -mm=Deflate "$zipname" "$exe"
-            elif command -v zip &> /dev/null; then
-                # zip standard (toujours compatible)
-                zip "$zipname" "$exe"
+            # Utiliser zip standard en priorité (le plus compatible avec Tauri)
+            if command -v zip &> /dev/null; then
+                # zip standard avec compression normale (store ou deflate level 6)
+                zip -6 "$zipname" "$exe"
+            elif command -v 7z &> /dev/null; then
+                # 7z avec méthode Deflate et niveau de compression normal
+                7z a -tzip -mm=Deflate -mx=6 "$zipname" "$exe"
             elif command -v powershell.exe &> /dev/null; then
-                # PowerShell en dernier recours, avec CompressionLevel Optimal
+                # PowerShell en dernier recours
                 powershell.exe -Command "Compress-Archive -Path '$exe' -DestinationPath '$zipname' -CompressionLevel Optimal -Force"
             else
-                echo "Error: No compression tool available (tried 7z, zip, powershell)"
+                echo "Error: No compression tool available (tried zip, 7z, powershell)"
                 exit 1
             fi
             
@@ -133,16 +133,16 @@ elif [ "$PLATFORM" = "windows" ]; then
                 zipname="${msi}.zip"
                 echo "Creating ${zipname}"
                 
-                if command -v 7z &> /dev/null; then
-                    # 7z avec méthode Deflate (la plus compatible)
-                    7z a -tzip -mm=Deflate "$zipname" "$msi"
-                elif command -v zip &> /dev/null; then
-                    # zip standard (toujours compatible)
-                    zip "$zipname" "$msi"
+                if command -v zip &> /dev/null; then
+                    # zip standard avec compression normale
+                    zip -6 "$zipname" "$msi"
+                elif command -v 7z &> /dev/null; then
+                    # 7z avec méthode Deflate et niveau normal
+                    7z a -tzip -mm=Deflate -mx=6 "$zipname" "$msi"
                 elif command -v powershell.exe &> /dev/null; then
                     powershell.exe -Command "Compress-Archive -Path '$msi' -DestinationPath '$zipname' -CompressionLevel Optimal -Force"
                 else
-                    echo "Error: No compression tool available (tried 7z, zip, powershell)"
+                    echo "Error: No compression tool available (tried zip, 7z, powershell)"
                     exit 1
                 fi
                 
