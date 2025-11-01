@@ -156,12 +156,12 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
-          
+
           mkdir -p /tmp/sigs
-          
+
           echo "Waiting for other platforms to upload signatures..."
           echo "Will retry every 30 seconds for up to 3 minutes"
-          
+
           # Retry logic: try 6 times with 30s between attempts (total 3 minutes)
           for attempt in {1..6}; do
             echo ""
@@ -191,10 +191,12 @@ jobs:
               echo "Proceeding with available signatures..."
             fi
           done
-          
+
           echo ""
           echo "Final downloaded files:"
-          ls -la /tmp/sigs/      - name: Generate updater JSON
+          ls -la /tmp/sigs/
+
+      - name: Generate updater JSON
         if: matrix.platform == 'ubuntu-22.04'
         shell: bash
         run: |
