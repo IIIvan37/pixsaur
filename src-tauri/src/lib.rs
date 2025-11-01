@@ -61,6 +61,14 @@ pub fn run() {
       // Show main window immediately
       main_window.show().unwrap();
 
+      // Quit app when main window is closed
+      let app_handle = app.handle().clone();
+      main_window.on_window_event(move |event| {
+        if let tauri::WindowEvent::CloseRequested { .. } = event {
+          app_handle.exit(0);
+        }
+      });
+
       // Listen for debug window requests
       let app_handle = app.handle().clone();
       let main_window_clone = main_window.clone();
