@@ -80,33 +80,17 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Update version files
+      - name: Set version variables
         shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
           
-          echo "Updating version to ${VERSION_NUM} in package.json and tauri.conf.json"
-          
-          # Update package.json
-          jq ".version = \"${VERSION_NUM}\"" package.json > package.json.tmp && mv package.json.tmp package.json
-          
-          # Update tauri.conf.json
-          jq ".version = \"${VERSION_NUM}\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+          echo "Building version ${VERSION_NUM}"
           
           # Export variables for subsequent steps
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_ENV
-
-      - name: Commit version changes
-        if: matrix.platform == 'ubuntu-22.04'
-        shell: bash
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add package.json src-tauri/tauri.conf.json
-          git commit -m "chore: bump version to ${{ github.ref_name }}" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref_name }} || echo "Push failed, continuing..."
 
       - name: Build info
         run: |
