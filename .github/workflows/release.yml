@@ -148,70 +148,6 @@ jobs:
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
       - name: Create Release
-
-      - name: Generate updater JSON
-        if: matrix.platform == 'ubuntu-22.04'
-        shell: bash
-        run: |
-          VERSION="${{ github.ref_name }}"
-          VERSION_NUM="${VERSION#v}"
-
-          # Read signatures from .sig files for updater artifacts
-          # Tauri updater needs the .tar.gz versions, not the raw installers
-          LINUX_SIG=""
-          WINDOWS_SIG=""
-          DARWIN_X64_SIG=""
-          DARWIN_AARCH64_SIG=""
-
-          # For AppImage updater
-          if [ -f "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" ]; then
-            LINUX_SIG=$(cat "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig")
-          fi
-
-          # For macOS updater (downloaded from release)
-          if [ -f "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig" ]; then
-            DARWIN_X64_SIG=$(cat "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig")
-          fi
-
-          if [ -f "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig" ]; then
-            DARWIN_AARCH64_SIG=$(cat "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig")
-          fi
-
-          # For Windows updater (downloaded from release)
-          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" ]; then
-            WINDOWS_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig")
-          fi
-
-          cat > latest.json << EOF
-          {
-            "version": "${VERSION}",
-            "notes": "See release notes at https://github.com/${{ github.repository }}/releases/tag/${VERSION}",
-            "pub_date": "${{ github.event.head_commit.timestamp }}",
-            "platforms": {
-              "linux-x86_64": {
-                "signature": "${LINUX_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz"
-              },
-              "windows-x86_64": {
-                "signature": "${WINDOWS_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip"
-              },
-              "darwin-x86_64": {
-                "signature": "${DARWIN_X64_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_x64.app.tar.gz"
-              },
-              "darwin-aarch64": {
-                "signature": "${DARWIN_AARCH64_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_aarch64.app.tar.gz"
-              }
-            }
-          }
-          EOF
-
-          echo "Generated latest.json:"
-          cat latest.json
-
-      - name: Create Release
         uses: softprops/action-gh-release@v2
         if: matrix.platform == 'ubuntu-22.04'
         with:
@@ -277,7 +213,7 @@ jobs:
           mkdir -p /tmp/sigs
 
           echo "Downloading signatures from release ${VERSION}..."
-          
+
           # Download all signatures - they should all be available now since we used needs:
           gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber
           gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber
