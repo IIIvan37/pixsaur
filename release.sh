@@ -1,21 +1,36 @@
 #!/bin/bash
 
 # Script de release automatique pour Pixsaur
-# Usage: ./release.sh <version> [draft]
-# Exemple: ./release.sh 0.1.16 draft
+# Usage: ./release.sh <version>
+# Exemple: ./release.sh 0.1.16
 
 set -e
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <version> [draft]"
-    echo "Example: $0 0.1.16 draft"
+    echo "Usage: $0 <version>"
+    echo "Example: $0 0.1.16"
     exit 1
 fi
 
 VERSION=$1
-DRAFT_FLAG=${2:-"release"}
+BRANCH_NAME="chore/bump-version-${VERSION}"
 
 echo "🚀 Creating Pixsaur release v$VERSION"
+
+# Vérifier qu'on est sur main et à jour
+echo "🔍 Checking current branch..."
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+    echo "❌ Error: Must be on main branch (currently on $CURRENT_BRANCH)"
+    exit 1
+fi
+
+echo "📥 Pulling latest changes..."
+git pull --rebase
+
+# Créer une nouvelle branche pour le bump de version
+echo "🌿 Creating branch $BRANCH_NAME..."
+git checkout -b "$BRANCH_NAME"
 
 # Mettre à jour les versions dans les fichiers
 echo "📝 Updating version files..."
@@ -25,24 +40,32 @@ jq ".version = \"$VERSION\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.js
 # Commiter les changements
 echo "💾 Committing version changes..."
 git add package.json src-tauri/tauri.conf.json
-git commit -m "chore: bump version to $VERSION" || echo "No changes to commit"
+git commit -m "chore: bump version to $VERSION"
 
-# Pousser les changements
-echo "⬆️ Pushing changes..."
-git push
+# Pousser la branche
+echo "⬆️ Pushing branch..."
+git push -u origin "$BRANCH_NAME"
 
-# Créer le tag
+# Créer et merger la PR
+echo "🔀 Creating and merging PR..."
+gh pr create --title "chore: bump version to $VERSION" --body "Bump version to $VERSION for next release." --base main
+gh pr merge --squash --delete-branch
+
+# Retourner sur main et pull
+echo "🔄 Returning to main branch..."
+git checkout main
+git pull --rebase
+
+# Créer et pousser le tag
 echo "🏷️ Creating tag v$VERSION..."
 git tag "v$VERSION"
 git push origin "v$VERSION"
 
+echo ""
 echo "✅ Release v$VERSION created!"
 echo ""
-echo "Le workflow GitHub Actions va maintenant construire les assets pour toutes les plateformes."
-echo "La release sera créée automatiquement en draft."
-
-if [ "$DRAFT_FLAG" = "draft" ]; then
-    echo "📋 Release will be created as DRAFT"
-else
-    echo "🚀 Release will be published immediately"
-fi
+echo "🚀 GitHub Actions workflow is now building the release assets."
+echo "📦 The release will be created automatically as draft."
+echo ""
+echo "Monitor the workflow at:"
+echo "https://github.com/IIIvan37/pixsaur/actions"
