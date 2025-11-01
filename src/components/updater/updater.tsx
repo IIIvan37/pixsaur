@@ -1,19 +1,19 @@
-import { Trans, useLingui } from '@lingui/react/macro'
-import { check } from '@tauri-apps/plugin-updater'
-import { useCallback, useEffect, useState } from 'react'
-import { updaterLogger } from '@/utils/logger'
-import Button from '../ui/button/button'
-import Icon from '../ui/icon'
-import PixsaurPopover from '../ui/popover/popover'
-import styles from './updater.module.css'
+import { Trans, useLingui } from "@lingui/react/macro";
+import { check } from "@tauri-apps/plugin-updater";
+import { useCallback, useEffect, useState } from "react";
+import { updaterLogger } from "@/utils/logger";
+import Button from "../ui/button/button";
+import Icon from "../ui/icon";
+import PixsaurPopover from "../ui/popover/popover";
+import styles from "./updater.module.css";
 
 /**
  * Check if running in Tauri environment
  */
 function isTauri(): boolean {
   return (
-    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-  )
+    typeof globalThis !== "undefined" && "__TAURI_INTERNALS__" in globalThis
+  );
 }
 
 /**
@@ -21,102 +21,126 @@ function isTauri(): boolean {
  * Checks for updates on mount and allows user to install them
  */
 export const Updater = () => {
-  const { t } = useLingui()
-  const [updateAvailable, setUpdateAvailable] = useState(false)
-  const [updateVersion, setUpdateVersion] = useState('')
-  const [downloading, setDownloading] = useState(false)
-  const [popoverOpen, setPopoverOpen] = useState(false)
+  const { t } = useLingui();
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [updateVersion, setUpdateVersion] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const checkForUpdates = useCallback(async () => {
     try {
-      updaterLogger.info('Checking for updates...')
+      updaterLogger.info("Checking for updates...");
 
       if (isTauri()) {
-        updaterLogger.info('Running in Tauri environment, calling updater API')
-        const update = await check()
+        updaterLogger.info("Running in Tauri environment, calling updater API");
+        const update = await check();
 
         if (update) {
-          updaterLogger.info(`Update available: ${update.version}`)
-          setUpdateAvailable(true)
-          setUpdateVersion(update.version)
-          setPopoverOpen(true)
+          updaterLogger.info(`Update available: ${update.version}`);
+          updaterLogger.info(`Current version: ${update.currentVersion}`);
+          updaterLogger.info(`Update date: ${update.date}`);
+          updaterLogger.info(`Update body: ${update.body}`);
+          setUpdateAvailable(true);
+          setUpdateVersion(update.version);
+          setPopoverOpen(true);
         } else {
-          updaterLogger.info('No updates available')
+          updaterLogger.info("No updates available");
         }
       } else {
-        updaterLogger.info('Running in web environment (development mode)')
+        updaterLogger.info("Running in web environment (development mode)");
         // Updates not available in web mode
       }
-    } catch (_error) {
-      updaterLogger.error('Failed to check for updates')
+    } catch (error) {
+      updaterLogger.error("Failed to check for updates:", error);
+      setError(
+        error instanceof Error ? error.message : "Unknown error occurred"
+      );
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    checkForUpdates()
-  }, [checkForUpdates])
+    checkForUpdates();
+  }, [checkForUpdates]);
 
   const installUpdate = async () => {
     try {
-      updaterLogger.info('Starting update download and installation...')
-      setDownloading(true)
+      updaterLogger.info("Starting update download and installation...");
+      updaterLogger.info(`User Agent: ${navigator.userAgent}`);
+      setDownloading(true);
+      setError(null);
 
       if (isTauri()) {
-        const update = await check()
+        const update = await check();
 
         if (!update) {
-          updaterLogger.warn('No update found during installation attempt')
-          setDownloading(false)
-          return
+          updaterLogger.warn("No update found during installation attempt");
+          setDownloading(false);
+          setError("No update available");
+          return;
         }
 
-        updaterLogger.info(`Downloading update ${update.version}...`)
+        updaterLogger.info(`Downloading update ${update.version}...`);
+        updaterLogger.info(`Download URL: ${JSON.stringify(update)}`);
+
+        let downloadComplete = false;
 
         // Download and install with progress tracking
         await update.downloadAndInstall((event) => {
           switch (event.event) {
-            case 'Started':
+            case "Started":
               updaterLogger.info(
                 `Started downloading ${event.data.contentLength} bytes`
-              )
-              break
-            case 'Progress': {
+              );
+              break;
+            case "Progress": {
               // Log progress every 10% to avoid spam
-              const downloaded = event.data.chunkLength
+              const downloaded = event.data.chunkLength;
               if (downloaded % 1000000 < 100000) {
                 // Log roughly every MB
-                updaterLogger.info(`Download progress: ${downloaded} bytes`)
+                updaterLogger.info(`Download progress: ${downloaded} bytes`);
               }
-              break
+              break;
             }
-            case 'Finished':
-              updaterLogger.info('Download finished, installing...')
-              break
+            case "Finished":
+              updaterLogger.info("Download finished, installing...");
+              downloadComplete = true;
+              break;
           }
-        })
+        });
 
-        updaterLogger.info('Update installed successfully')
+        if (!downloadComplete) {
+          throw new Error("Download did not complete successfully");
+        }
+
+        updaterLogger.info(
+          "Update installed successfully, preparing to relaunch..."
+        );
 
         // Relaunch the app to apply the update
-        const { relaunch } = await import('@tauri-apps/plugin-process')
-        updaterLogger.info('Relaunching application...')
-        await relaunch()
+        const { relaunch } = await import("@tauri-apps/plugin-process");
+        updaterLogger.info("Relaunching application...");
+        await relaunch();
       } else {
         // In web mode, just log
-        updaterLogger.info('Would download and install update in production')
-        setDownloading(false)
-        setUpdateAvailable(false)
-        setPopoverOpen(false)
+        updaterLogger.info("Would download and install update in production");
+        setDownloading(false);
+        setUpdateAvailable(false);
+        setPopoverOpen(false);
       }
     } catch (error) {
-      updaterLogger.error('Failed to download and install update:', error)
-      setDownloading(false)
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      updaterLogger.error("Failed to download and install update:", error);
+      updaterLogger.error("Error details:", errorMessage);
+      setDownloading(false);
+      setError(errorMessage);
       // Keep notification visible so user can try again
     }
-  }
+  };
 
   if (!updateAvailable) {
-    return null
+    return null;
   }
 
   return (
@@ -126,23 +150,23 @@ export const Updater = () => {
         onOpenChange={setPopoverOpen}
         trigger={
           <button
-            type='button'
+            type="button"
             className={styles.updateTrigger}
             aria-label={t`Update available: version ${updateVersion}`}
           >
-            <Icon name='DownloadIcon' size={20} />
+            <Icon name="DownloadIcon" size={20} />
             <span className={styles.updateBadge}>1</span>
           </button>
         }
-        side='bottom'
-        align='end'
+        side="bottom"
+        align="end"
         sideOffset={12}
-        variant='unstyled'
+        variant="unstyled"
       >
         <div className={styles.updateContent}>
           <div className={styles.updateHeader}>
             <Icon
-              name='InfoCircledIcon'
+              name="InfoCircledIcon"
               size={20}
               className={styles.infoIcon}
             />
@@ -163,23 +187,30 @@ export const Updater = () => {
             </Trans>
           </p>
 
+          {error && (
+            <div className={styles.errorMessage}>
+              <Icon name="Cross2Icon" size={16} className={styles.errorIcon} />
+              <span>{error}</span>
+            </div>
+          )}
+
           <div className={styles.updateActions}>
             <Button
-              variant='secondary'
+              variant="secondary"
               onClick={() => setPopoverOpen(false)}
               className={styles.laterButton}
             >
               <Trans>Later</Trans>
             </Button>
             <Button
-              variant='primary'
+              variant="primary"
               onClick={installUpdate}
               disabled={downloading}
             >
               {downloading ? (
                 <>
                   <Icon
-                    name='ReloadIcon'
+                    name="ReloadIcon"
                     size={16}
                     className={styles.loadingIcon}
                   />
@@ -187,7 +218,7 @@ export const Updater = () => {
                 </>
               ) : (
                 <>
-                  <Icon name='DownloadIcon' size={16} />
+                  <Icon name="DownloadIcon" size={16} />
                   <Trans>Install Update</Trans>
                 </>
               )}
@@ -196,5 +227,5 @@ export const Updater = () => {
         </div>
       </PixsaurPopover>
     </div>
-  )
-}
+  );
+};

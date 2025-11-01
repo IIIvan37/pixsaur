@@ -3,7 +3,7 @@ name: Release Desktop Apps
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
@@ -14,14 +14,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'macos-14'  # macOS ARM64 (M1/M2/M3) - native build
-            args: ''
-          - platform: 'macos-13'  # macOS Intel (x86_64) - native build
-            args: ''
-          - platform: 'ubuntu-22.04'
-            args: ''
-          - platform: 'windows-latest'
-            args: ''
+          - platform: "macos-14" # macOS ARM64 (M1/M2/M3) - native build
+            args: ""
+          - platform: "macos-13" # macOS Intel (x86_64) - native build
+            args: ""
+          - platform: "ubuntu-22.04"
+            args: ""
+          - platform: "windows-latest"
+            args: ""
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -85,9 +85,9 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
-          
+
           echo "Building version ${VERSION_NUM}"
-          
+
           # Export variables for subsequent steps
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_ENV
@@ -104,7 +104,7 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: pnpm tauri build ${{ matrix.args }}
-        
+
       - name: List build artifacts (macOS)
         if: runner.os == 'macOS'
         run: |
@@ -135,13 +135,19 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
-          
-          # Read signatures from .sig files (will be empty for first build, filled later)
+
+          # Read signatures from .sig files for updater artifacts
+          # Tauri updater needs the .tar.gz versions, not the raw installers
           LINUX_SIG=""
-          if [ -f "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.sig" ]; then
-            LINUX_SIG=$(cat "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.sig")
+          WINDOWS_SIG=""
+          DARWIN_X64_SIG=""
+          DARWIN_AARCH64_SIG=""
+
+          # For AppImage updater
+          if [ -f "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" ]; then
+            LINUX_SIG=$(cat "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig")
           fi
-          
+
           cat > latest.json << EOF
           {
             "version": "${VERSION}",
@@ -150,24 +156,24 @@ jobs:
             "platforms": {
               "linux-x86_64": {
                 "signature": "${LINUX_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.AppImage"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz"
               },
               "windows-x86_64": {
-                "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.exe"
+                "signature": "${WINDOWS_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip"
               },
               "darwin-x86_64": {
-                "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64.dmg"
+                "signature": "${DARWIN_X64_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_x64.app.tar.gz"
               },
               "darwin-aarch64": {
-                "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_aarch64.dmg"
+                "signature": "${DARWIN_AARCH64_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_aarch64.app.tar.gz"
               }
             }
           }
           EOF
-          
+
           echo "Generated latest.json:"
           cat latest.json
 

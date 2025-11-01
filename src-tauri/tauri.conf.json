@@ -86,6 +86,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "entitlements": null,
+      "exceptionDomain": null,
+      "signingIdentity": null,
+      "hardenedRuntime": true
+    },
     "linux": {
       "deb": {
         "depends": [
@@ -108,7 +115,8 @@
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY4MTk0OTlDMUQ5RjRCQjMKUldTelM1OGRuRWtaK0JIcy8vVFo0aHhwdkgxUDFaSkZyWkZ6bkk0c25wOWpiU2V0UG9sR0VPeGwK",
       "windows": {
         "installMode": "passive"
-      }
+      },
+      "dialog": true
     },
     "shell": {
       "open": true
