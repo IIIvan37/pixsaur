@@ -1,11 +1,10 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { relaunch } from '@tauri-apps/plugin-process'
 import { check } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useState } from 'react'
+import { updaterLogger } from '@/utils/logger'
 import Button from '../ui/button/button'
 import Icon from '../ui/icon'
 import PixsaurPopover from '../ui/popover/popover'
-import { updaterLogger } from '@/utils/logger'
 import styles from './updater.module.css'
 
 /**
@@ -59,39 +58,60 @@ export const Updater = () => {
 
   const installUpdate = async () => {
     try {
-      updaterLogger.info('Starting update installation')
+      updaterLogger.info('Starting update download and installation...')
       setDownloading(true)
-      setUpdateAvailable(false)
-      setPopoverOpen(false)
 
       if (isTauri()) {
-        updaterLogger.info('Checking for update again before installation')
         const update = await check()
 
-        if (update != null) {
-          updaterLogger.info(
-            `Starting download and install of version ${update.version}`
-          )
-          await update.downloadAndInstall()
-          updaterLogger.info('Download and install completed, relaunching app')
-          await relaunch()
-        } else {
-          updaterLogger.warn('No update available during install attempt')
+        if (!update) {
+          updaterLogger.warn('No update found during installation attempt')
           setDownloading(false)
-          setUpdateAvailable(true)
-          setPopoverOpen(true)
+          return
         }
+
+        updaterLogger.info(`Downloading update ${update.version}...`)
+
+        // Download and install with progress tracking
+        await update.downloadAndInstall((event) => {
+          switch (event.event) {
+            case 'Started':
+              updaterLogger.info(
+                `Started downloading ${event.data.contentLength} bytes`
+              )
+              break
+            case 'Progress': {
+              // Log progress every 10% to avoid spam
+              const downloaded = event.data.chunkLength
+              if (downloaded % 1000000 < 100000) {
+                // Log roughly every MB
+                updaterLogger.info(`Download progress: ${downloaded} bytes`)
+              }
+              break
+            }
+            case 'Finished':
+              updaterLogger.info('Download finished, installing...')
+              break
+          }
+        })
+
+        updaterLogger.info('Update installed successfully')
+
+        // Relaunch the app to apply the update
+        const { relaunch } = await import('@tauri-apps/plugin-process')
+        updaterLogger.info('Relaunching application...')
+        await relaunch()
       } else {
-        updaterLogger.info('Simulating update installation in development mode')
-        setTimeout(() => {
-          setDownloading(false)
-        }, 2000)
+        // In web mode, just log
+        updaterLogger.info('Would download and install update in production')
+        setDownloading(false)
+        setUpdateAvailable(false)
+        setPopoverOpen(false)
       }
-    } catch (_error) {
-      updaterLogger.error('Failed to install update')
+    } catch (error) {
+      updaterLogger.error('Failed to download and install update:', error)
       setDownloading(false)
-      setUpdateAvailable(true)
-      setPopoverOpen(true)
+      // Keep notification visible so user can try again
     }
   }
 
@@ -138,8 +158,8 @@ export const Updater = () => {
 
           <p className={styles.updateDescription}>
             <Trans>
-              A new version of Pixsaur is available. Update now to get the
-              latest features and improvements.
+              A new version of Pixsaur is available. Click below to download and
+              install it automatically.
             </Trans>
           </p>
 
@@ -163,12 +183,12 @@ export const Updater = () => {
                     size={16}
                     className={styles.loadingIcon}
                   />
-                  <Trans>Installing...</Trans>
+                  <Trans>Downloading...</Trans>
                 </>
               ) : (
                 <>
                   <Icon name='DownloadIcon' size={16} />
-                  <Trans>Update Now</Trans>
+                  <Trans>Install Update</Trans>
                 </>
               )}
             </Button>

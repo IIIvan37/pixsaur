@@ -1,4 +1,6 @@
 import { Trans } from '@lingui/react/macro'
+import { invoke } from '@tauri-apps/api/core'
+import { useEffect } from 'react'
 import { LanguageSelector } from '@/components/language-selector'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
@@ -23,6 +25,79 @@ export default function App() {
   const dev = isDevelopment()
   console.log('[APP] isTauri:', tauri, 'isDevelopment:', dev)
   // alert(`isTauri: ${tauri}, isDevelopment: ${dev}`)
+
+  // Add F12 shortcut to open debug window
+  useEffect(() => {
+    if (!tauri) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'F12') {
+        event.preventDefault()
+        invoke('open_debug_window')
+          .then(() => console.log('[APP] Debug window opened'))
+          .catch((error) =>
+            console.error('[APP] Failed to open debug window:', error)
+          )
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [tauri])
+
+  // Listen for messages from debug window
+  useEffect(() => {
+    if (!tauri) return
+
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data && event.data.type === 'DEBUG_REQUEST') {
+        console.log('[APP] Received debug request:', event.data)
+
+        if (event.data.action === 'TEST_UPDATER') {
+          try {
+            const result = await invoke('test_updater')
+            console.log('[APP] Updater test result:', result)
+
+            // Send response back to debug window
+            const { WebviewWindow } = await import(
+              '@tauri-apps/api/webviewWindow'
+            )
+            const debugWindow = await WebviewWindow.getByLabel('debug')
+
+            if (debugWindow) {
+              await debugWindow.emit('debug-response', {
+                result: JSON.parse(result as string),
+                requestId: event.data.requestId
+              })
+            }
+          } catch (error) {
+            console.error('[APP] Updater test failed:', error)
+
+            // Send error response back to debug window
+            try {
+              const { WebviewWindow } = await import(
+                '@tauri-apps/api/webviewWindow'
+              )
+              const debugWindow = await WebviewWindow.getByLabel('debug')
+
+              if (debugWindow) {
+                await debugWindow.emit('debug-response', {
+                  error: error instanceof Error ? error.message : String(error),
+                  requestId: event.data.requestId
+                })
+              }
+            } catch (emitError) {
+              console.error('[APP] Failed to send error response:', emitError)
+            }
+          }
+        }
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [tauri])
+
   return (
     <I18nProviderWrapper>
       <ThemeProvider>

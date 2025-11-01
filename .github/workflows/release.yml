@@ -51,10 +51,16 @@ jobs:
             libssl-dev \
             libgtk-3-dev \
             libayatana-appindicator3-dev \
+            jq
+
+      - name: Install AppImage build dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get install -y \
             librsvg2-dev \
             patchelf \
-            libfuse2 \
-            jq
+            fuse \
+            libfuse2
 
       - name: Install dependencies (macOS)
         if: startsWith(matrix.platform, 'macos')
@@ -74,26 +80,17 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Update version files
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Set version variables
+        shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
           
-          echo "Updating version to ${VERSION_NUM} in package.json and tauri.conf.json"
+          echo "Building version ${VERSION_NUM}"
           
-          # Update package.json
-          jq ".version = \"${VERSION_NUM}\"" package.json > package.json.tmp && mv package.json.tmp package.json
-          
-          # Update tauri.conf.json
-          jq ".version = \"${VERSION_NUM}\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
-          
-          # Commit the version changes
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add package.json src-tauri/tauri.conf.json
-          git commit -m "chore: bump version to ${VERSION_NUM}" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref_name }} || echo "Push failed, continuing..."
+          # Export variables for subsequent steps
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "VERSION_NUM=${VERSION_NUM}" >> $GITHUB_ENV
 
       - name: Build info
         run: |
@@ -104,6 +101,8 @@ jobs:
           pnpm --version
 
       - name: Build Tauri manually
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: pnpm tauri build ${{ matrix.args }}
         
       - name: List build artifacts (macOS)
@@ -132,9 +131,17 @@ jobs:
 
       - name: Generate updater JSON
         if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
+          
+          # Read signatures from .sig files (will be empty for first build, filled later)
+          LINUX_SIG=""
+          if [ -f "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.sig" ]; then
+            LINUX_SIG=$(cat "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.sig")
+          fi
+          
           cat > latest.json << EOF
           {
             "version": "${VERSION}",
@@ -142,24 +149,27 @@ jobs:
             "pub_date": "${{ github.event.head_commit.timestamp }}",
             "platforms": {
               "linux-x86_64": {
-                "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.deb"
+                "signature": "${LINUX_SIG}",
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.AppImage"
               },
               "windows-x86_64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.exe"
               },
               "darwin-x86_64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur.app.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64.dmg"
               },
               "darwin-aarch64": {
                 "signature": "",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur.app.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_aarch64.dmg"
               }
             }
           }
           EOF
+          
+          echo "Generated latest.json:"
+          cat latest.json
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -168,6 +178,7 @@ jobs:
           draft: true
           prerelease: false
           generate_release_notes: true
+          fail_on_unmatched_files: false
 
       - name: Upload artifacts
         uses: softprops/action-gh-release@v2

@@ -141,6 +141,8 @@ class PerformanceLogger {
     if (!this.config.enabled || !this.shouldLog('info')) return
     console.info(this.config.prefix, ...args)
     this.logToTauri('info', ...args)
+    // Send to debug window if available
+    sendLogToDebugWindow('info', `${this.config.prefix} ${args.join(' ')}`)
   }
 
   /**
@@ -150,6 +152,8 @@ class PerformanceLogger {
     if (!this.config.enabled || !this.shouldLog('warn')) return
     console.warn(this.config.prefix, ...args)
     this.logToTauri('warn', ...args)
+    // Send to debug window if available
+    sendLogToDebugWindow('warn', `${this.config.prefix} ${args.join(' ')}`)
   }
 
   /**
@@ -159,6 +163,8 @@ class PerformanceLogger {
     if (!this.config.enabled || !this.shouldLog('error')) return
     console.error(this.config.prefix, ...args)
     this.logToTauri('error', ...args)
+    // Send to debug window if available
+    sendLogToDebugWindow('error', `${this.config.prefix} ${args.join(' ')}`)
   }
 
   /**
@@ -224,6 +230,27 @@ export const updaterLogger = createLogger({
     localStorage.getItem('PIXSAUR_DEBUG_UPDATER') === 'true',
   enableTauriLogging: true
 })
+
+// Fonction pour envoyer les logs à la fenêtre de debug
+async function sendLogToDebugWindow(level: string, message: string) {
+  try {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+      // Essayer d'envoyer à la fenêtre de debug si elle existe
+      const debugWindow = (
+        window as any
+      ).__TAURI__.window?.WebviewWindow?.getByLabel('debug')
+      if (debugWindow) {
+        await debugWindow.postMessage({
+          type: 'LOG_MESSAGE',
+          level,
+          message: `${message}`
+        })
+      }
+    }
+  } catch (_error) {
+    // Silently fail if debug window is not available
+  }
+}
 
 // Helper pour mesurer les performances critiques
 export const measure = {
