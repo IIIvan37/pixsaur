@@ -148,6 +148,35 @@ jobs:
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
+      - name: Wait for other platforms to upload signatures
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          echo "Waiting 60 seconds for macOS and Windows builds to upload their signatures..."
+          sleep 60
+
+      - name: Download signatures from release
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NUM="${VERSION#v}"
+
+          echo "Downloading signature files from release ${VERSION}..."
+          mkdir -p /tmp/sigs
+
+          # Download macOS signatures
+          gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null || echo "x64 sig not found"
+          gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null || echo "aarch64 sig not found"
+
+          # Download Windows signature
+          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" --dir /tmp/sigs --clobber 2>/dev/null || echo "Windows sig not found"
+
+          echo "Downloaded files:"
+          ls -la /tmp/sigs/
+
       - name: Generate updater JSON
         if: matrix.platform == 'ubuntu-22.04'
         shell: bash
@@ -165,6 +194,20 @@ jobs:
           # For AppImage updater
           if [ -f "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" ]; then
             LINUX_SIG=$(cat "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig")
+          fi
+
+          # For macOS updater (downloaded from release)
+          if [ -f "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig" ]; then
+            DARWIN_X64_SIG=$(cat "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig")
+          fi
+
+          if [ -f "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig" ]; then
+            DARWIN_AARCH64_SIG=$(cat "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig")
+          fi
+
+          # For Windows updater (downloaded from release)
+          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" ]; then
+            WINDOWS_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig")
           fi
 
           cat > latest.json << EOF
