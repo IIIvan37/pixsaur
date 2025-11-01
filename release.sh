@@ -56,13 +56,32 @@ echo "🔄 Returning to main branch..."
 git checkout main
 git pull --rebase
 
-# Créer et pousser le tag
+# Générer le changelog depuis le dernier tag
+echo "📝 Generating changelog..."
+PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+
+if [ -z "$PREVIOUS_TAG" ]; then
+    echo "ℹ️  No previous tag found, generating full changelog..."
+    CHANGELOG=$(git log --pretty=format:"- %s" --no-merges)
+else
+    echo "ℹ️  Generating changelog since $PREVIOUS_TAG..."
+    CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" --no-merges)
+fi
+
+# Créer et pousser le tag avec le changelog
 echo "🏷️ Creating tag v$VERSION..."
-git tag "v$VERSION"
+git tag -a "v$VERSION" -m "Release v$VERSION
+
+## Changes
+
+$CHANGELOG"
 git push origin "v$VERSION"
 
 echo ""
 echo "✅ Release v$VERSION created!"
+echo ""
+echo "📋 Changelog:"
+echo "$CHANGELOG"
 echo ""
 echo "🚀 GitHub Actions workflow is now building the release assets."
 echo "📦 The release will be created automatically as draft."
