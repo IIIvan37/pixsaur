@@ -9,20 +9,35 @@ PLATFORM=$2
 
 echo "Creating updater archives for version ${VERSION} on ${PLATFORM}"
 
+# Fonction pour signer un fichier avec la clé Tauri
+sign_file() {
+    local file=$1
+    if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+        echo "Warning: TAURI_SIGNING_PRIVATE_KEY not set, skipping signature"
+        return
+    fi
+    
+    echo "Signing ${file}..."
+    # Utiliser tauri signer sign depuis le CLI Tauri
+    if command -v cargo &> /dev/null; then
+        echo "$TAURI_SIGNING_PRIVATE_KEY" | cargo tauri signer sign "${file}" --private-key-path /dev/stdin
+    else
+        echo "Warning: cargo not found, cannot sign file"
+    fi
+}
+
 if [ "$PLATFORM" = "linux" ]; then
     echo "Processing Linux AppImage..."
     cd src-tauri/target/release/bundle/appimage
     
     for appimage in *.AppImage; do
         if [ -f "$appimage" ]; then
-            echo "Creating ${appimage}.tar.gz"
-            tar -czf "${appimage}.tar.gz" "$appimage"
+            tarfile="${appimage}.tar.gz"
+            echo "Creating ${tarfile}"
+            tar -czf "${tarfile}" "$appimage"
             
-            # Si une signature existe pour l'AppImage original, on la copie
-            if [ -f "${appimage}.sig" ]; then
-                echo "Copying signature to ${appimage}.tar.gz.sig"
-                cp "${appimage}.sig" "${appimage}.tar.gz.sig"
-            fi
+            # Re-signer l'archive (pas l'original)
+            sign_file "${tarfile}"
         fi
     done
     
@@ -48,11 +63,8 @@ elif [ "$PLATFORM" = "macos" ]; then
             echo "Creating ${tarname}"
             tar -czf "${tarname}" "$app"
             
-            # Copier la signature si elle existe
-            if [ -f "${appname}.app.tar.gz.sig" ]; then
-                echo "Copying signature to ${tarname}.sig"
-                cp "${appname}.app.tar.gz.sig" "${tarname}.sig"
-            fi
+            # Re-signer l'archive
+            sign_file "${tarname}"
         fi
     done
     
@@ -75,11 +87,8 @@ elif [ "$PLATFORM" = "windows" ]; then
                 exit 1
             fi
             
-            # Si une signature existe pour l'exe original, on la copie
-            if [ -f "${exe}.sig" ]; then
-                echo "Copying signature to ${zipname}.sig"
-                cp "${exe}.sig" "${zipname}.sig"
-            fi
+            # Re-signer l'archive
+            sign_file "${zipname}"
         fi
     done
     
@@ -100,10 +109,8 @@ elif [ "$PLATFORM" = "windows" ]; then
                     exit 1
                 fi
                 
-                if [ -f "${msi}.sig" ]; then
-                    echo "Copying signature to ${zipname}.sig"
-                    cp "${msi}.sig" "${zipname}.sig"
-                fi
+                # Re-signer l'archive MSI
+                sign_file "${zipname}"
             fi
         done
     fi
