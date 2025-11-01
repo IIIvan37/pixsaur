@@ -29,8 +29,8 @@ sign_file() {
         local temp_key=$(mktemp)
         printf "%s" "$TAURI_SIGNING_PRIVATE_KEY" > "$temp_key"
         
-        # Signer le fichier avec la clé depuis le fichier temporaire
-        pnpm tauri signer sign "${current_dir}/${file}" --private-key-path "$temp_key"
+        # Signer le fichier avec la clé depuis le fichier temporaire avec mot de passe vide
+        pnpm tauri signer sign "${current_dir}/${file}" --private-key-path "$temp_key" --password ""
         
         # Supprimer le fichier temporaire
         rm -f "$temp_key"
