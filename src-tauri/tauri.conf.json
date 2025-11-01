@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Pixsaur",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "identifier": "com.iiiivan37.pixsaur",
   "build": {
     "removeUnusedCommands": true,
@@ -47,7 +47,10 @@
       "capabilities": [
         {
           "identifier": "main-capability",
-          "windows": ["main", "debug"],
+          "windows": [
+            "main",
+            "debug"
+          ],
           "permissions": [
             "core:default",
             "dialog:default",
@@ -67,7 +70,14 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["deb", "rpm", "appimage", "dmg", "msi", "nsis"],
+    "targets": [
+      "deb",
+      "rpm",
+      "appimage",
+      "dmg",
+      "msi",
+      "nsis"
+    ],
     "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
