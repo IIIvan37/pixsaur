@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Pixsaur",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "identifier": "com.iiiivan37.pixsaur",
   "build": {
     "removeUnusedCommands": true,
