@@ -25,6 +25,13 @@ export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 // Contrast selection strategy for small palettes (modes 1-2)
 export type ContrastStrategy = 'max' | 'balanced'
 
+// Palette selection strategy for color quantization
+export type PaletteStrategy =
+  | 'frequency' // Original: frequency-based with diversity (default)
+  | 'balanced-score' // Multi-criteria scoring (frequency + diversity + contrast)
+  | 'perceptual' // Luminance-aware selection
+  | 'adaptive' // Adaptive based on image analysis
+
 // This file defines types and constants related to CPC modes and color adjustments.
 export type CpcModeConfig = {
   overscan: boolean

@@ -7,7 +7,10 @@
 // Import pour accéder à l'atome de stratégie de contraste
 import { getDefaultStore } from 'jotai'
 import type REGL from 'regl'
-import { contrastStrategyAtom } from '@/app/store/config/config'
+import {
+  contrastStrategyAtom,
+  paletteStrategyAtom
+} from '@/app/store/config/config'
 import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
@@ -296,7 +299,8 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    contrastStrategy?: 'max' | 'balanced'
+    contrastStrategy?: 'max' | 'balanced',
+    paletteStrategy?: 'frequency' | 'balanced-score' | 'perceptual' | 'adaptive'
   ): Promise<Vector[]> {
     // RGB utilise euclidean distance
     const distanceMetric: DistanceMetric = 'euclidean'
@@ -329,6 +333,8 @@ export class ReGLProcessor implements ImageProcessor {
             targetColors,
             contrastStrategy:
               contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
+            paletteStrategy:
+              paletteStrategy || getDefaultStore().get(paletteStrategyAtom),
             gpuOptions: {
               minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
             }
@@ -353,7 +359,12 @@ export class ReGLProcessor implements ImageProcessor {
       basePalette,
       preselected,
       distanceMetric,
-      contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
+      {
+        contrastStrategy:
+          contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
+        paletteStrategy:
+          paletteStrategy || getDefaultStore().get(paletteStrategyAtom)
+      }
     )
   }
 
@@ -367,7 +378,14 @@ export class ReGLProcessor implements ImageProcessor {
     basePalette: Vector[],
     preselected: Vector[],
     distanceMetric: DistanceMetric,
-    contrastStrategy?: 'max' | 'balanced'
+    strategies: {
+      contrastStrategy?: 'max' | 'balanced'
+      paletteStrategy?:
+        | 'frequency'
+        | 'balanced-score'
+        | 'perceptual'
+        | 'adaptive'
+    }
   ): Promise<Vector[]> {
     // Utiliser la signature correcte de createQuantizer
     const quantizer = createQuantizer({
@@ -376,8 +394,7 @@ export class ReGLProcessor implements ImageProcessor {
       preselected,
       quantConfig: {
         distanceMetric,
-        contrastStrategy:
-          contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
+        contrastStrategy: strategies.contrastStrategy
       }
     })
 

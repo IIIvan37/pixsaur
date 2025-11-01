@@ -9,6 +9,7 @@ import { ToggleButtonGroup } from '../ui/toggle-button-group'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
 import styles from './image-controls.module.css'
+import { PaletteStrategySelector } from './palette-strategy-selector/palette-strategy-selector'
 import { ProcessorSelector } from './processor-selector/processor-selector'
 
 export type ImageControlsViewProps = {
@@ -111,6 +112,8 @@ export function ImageControlsView({
       {dimensionPreset === 'custom' && <CustomDimensionsInput />}
 
       <DitheringSelector />
+
+      <PaletteStrategySelector />
 
       <ProcessorSelector />
 

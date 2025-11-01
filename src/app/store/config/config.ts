@@ -13,6 +13,7 @@ import type {
   CpcModeKey,
   CustomDimensions,
   DimensionPreset,
+  PaletteStrategy,
   PixelMode,
   ProcessorType
 } from './types'
@@ -261,6 +262,17 @@ export const setContrastStrategyAtom = atom(
   null,
   (_get, set, payload: ContrastStrategy) => {
     set(contrastStrategyAtom, payload)
+  }
+)
+
+// Palette strategy selection for color quantization
+export const paletteStrategyAtom = atom<PaletteStrategy>('frequency')
+
+// Setter for palette strategy
+export const setPaletteStrategyAtom = atom(
+  null,
+  (_get, set, payload: PaletteStrategy) => {
+    set(paletteStrategyAtom, payload)
   }
 )
 

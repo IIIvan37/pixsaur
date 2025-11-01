@@ -22,6 +22,7 @@ import {
   ditheringAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
+  paletteStrategyAtom,
   pixelModeAtom,
   resizeModeAtom
 } from '../config/config'
@@ -217,14 +218,26 @@ export const reducedPaletteRawAtom = atom(async (get) => {
             ] as Vector<'RGB'>
         )
 
+  const paletteStrategy = get(paletteStrategyAtom)
+
+  logger.info('[Preview] Quantizing palette', {
+    targetColors,
+    contrastStrategy,
+    paletteStrategy,
+    hardware: cpcHardware
+  })
+
   const palette = await paletteProcessor.quantizePalette(
     buf,
     processed,
     targetColors,
     basePalette,
     quantifiedLockedVecs,
-    contrastStrategy // Utiliser la stratégie choisie par l'utilisateur
+    contrastStrategy, // Utiliser la stratégie de contraste choisie par l'utilisateur
+    paletteStrategy // Utiliser la stratégie de sélection de palette choisie
   )
+
+  logger.info('[Preview] Palette quantized', { colorsCount: palette.length })
 
   return palette
 })

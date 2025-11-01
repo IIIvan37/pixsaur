@@ -62,7 +62,8 @@ export interface ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    contrastStrategy?: 'max' | 'balanced'
+    contrastStrategy?: 'max' | 'balanced',
+    paletteStrategy?: 'frequency' | 'balanced-score' | 'perceptual' | 'adaptive'
   ): Promise<Vector[]>
 
   /**
