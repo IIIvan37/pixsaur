@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Script AppRun pour améliorer la compatibilité AppImage
-# Basé sur la solution de l'utilisateur Arch Linux
-# Avec corrections pour les problèmes EGL sur Arch Linux
+# Script AppRun pour améliorer la compatibilité AppImage sur toutes les distributions Linux
+# Résout les problèmes EGL/WebKit/GTK couramment rencontrés sur diverses distros
+# (Arch Linux, Fedora, Debian, Ubuntu, OpenSUSE, etc.)
 
 cd "$(dirname "$0")"
 

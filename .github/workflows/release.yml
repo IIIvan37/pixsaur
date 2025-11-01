@@ -176,11 +176,9 @@ jobs:
           fail_on_unmatched_files: false
           files: |
             src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/msi/*.msi.zip
-            src-tauri/target/release/bundle/msi/*.msi.zip.sig
+            src-tauri/target/release/bundle/msi/*.msi.sig
             src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/nsis/*.nsis.zip
-            src-tauri/target/release/bundle/nsis/*.nsis.zip.sig
+            src-tauri/target/release/bundle/nsis/*.exe.sig
 
       - name: Upload Linux artifacts
         if: matrix.platform == 'ubuntu-22.04'
@@ -217,7 +215,7 @@ jobs:
           # Download all signatures - they should all be available now since we used needs:
           gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber
           gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber
-          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" --dir /tmp/sigs --clobber
+          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.exe.sig" --dir /tmp/sigs --clobber
           gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" --dir /tmp/sigs --clobber
 
           echo ""
@@ -248,8 +246,8 @@ jobs:
             DARWIN_AARCH64_SIG=$(cat "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig")
           fi
 
-          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" ]; then
-            WINDOWS_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig")
+          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.exe.sig" ]; then
+            WINDOWS_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.exe.sig")
           fi
 
           cat > latest.json << EOF
@@ -264,7 +262,7 @@ jobs:
               },
               "windows-x86_64": {
                 "signature": "${WINDOWS_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64-setup.exe"
               },
               "darwin-x86_64": {
                 "signature": "${DARWIN_X64_SIG}",
