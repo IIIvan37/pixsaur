@@ -68,6 +68,7 @@
   "bundle": {
     "active": true,
     "targets": ["deb", "rpm", "appimage", "dmg", "msi", "nsis"],
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -94,11 +95,8 @@
       "endpoints": [
         "https://github.com/IIIvan37/pixsaur/releases/latest/download/latest.json"
       ],
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY4MTk0OTlDMUQ5RjRCQjMKUldTelM1OGRuRWtaK0JIcy8vVFo0aHhwdkgxUDFaSkZyWkZ6bkk0c25wOWpiU2V0UG9sR0VPeGwK",
       "windows": {
-        "installMode": "passive"
-      },
-      "linux": {
         "installMode": "passive"
       }
     },

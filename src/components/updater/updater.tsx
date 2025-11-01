@@ -58,27 +58,58 @@ export const Updater = () => {
 
   const installUpdate = async () => {
     try {
-      updaterLogger.info('Opening GitHub releases page for manual download')
+      updaterLogger.info('Starting update download and installation...')
       setDownloading(true)
 
       if (isTauri()) {
-        // Open GitHub releases page in default browser using shell plugin's open API
-        const { open } = await import('@tauri-apps/plugin-shell')
-        await open('https://github.com/IIIvan37/pixsaur/releases/latest')
+        const update = await check()
 
-        setDownloading(false)
-        setUpdateAvailable(false) // Hide notification after opening
-        setPopoverOpen(false)
-        updaterLogger.info('GitHub releases page opened successfully')
+        if (!update) {
+          updaterLogger.warn('No update found during installation attempt')
+          setDownloading(false)
+          return
+        }
+
+        updaterLogger.info(`Downloading update ${update.version}...`)
+
+        // Download and install with progress tracking
+        await update.downloadAndInstall((event) => {
+          switch (event.event) {
+            case 'Started':
+              updaterLogger.info(
+                `Started downloading ${event.data.contentLength} bytes`
+              )
+              break
+            case 'Progress': {
+              // Log progress every 10% to avoid spam
+              const downloaded = event.data.chunkLength
+              if (downloaded % 1000000 < 100000) {
+                // Log roughly every MB
+                updaterLogger.info(`Download progress: ${downloaded} bytes`)
+              }
+              break
+            }
+            case 'Finished':
+              updaterLogger.info('Download finished, installing...')
+              break
+          }
+        })
+
+        updaterLogger.info('Update installed successfully')
+
+        // Relaunch the app to apply the update
+        const { relaunch } = await import('@tauri-apps/plugin-process')
+        updaterLogger.info('Relaunching application...')
+        await relaunch()
       } else {
         // In web mode, just log
-        updaterLogger.info('Would open GitHub releases page in production')
+        updaterLogger.info('Would download and install update in production')
         setDownloading(false)
         setUpdateAvailable(false)
         setPopoverOpen(false)
       }
     } catch (error) {
-      updaterLogger.error('Failed to open GitHub releases page:', error)
+      updaterLogger.error('Failed to download and install update:', error)
       setDownloading(false)
       // Keep notification visible so user can try again
     }
@@ -127,8 +158,8 @@ export const Updater = () => {
 
           <p className={styles.updateDescription}>
             <Trans>
-              A new version of Pixsaur is available. Please download and install
-              manually from GitHub releases.
+              A new version of Pixsaur is available. Click below to download and
+              install it automatically.
             </Trans>
           </p>
 
@@ -152,12 +183,12 @@ export const Updater = () => {
                     size={16}
                     className={styles.loadingIcon}
                   />
-                  <Trans>Opening...</Trans>
+                  <Trans>Downloading...</Trans>
                 </>
               ) : (
                 <>
                   <Icon name='DownloadIcon' size={16} />
-                  <Trans>View Release</Trans>
+                  <Trans>Install Update</Trans>
                 </>
               )}
             </Button>

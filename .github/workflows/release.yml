@@ -117,6 +117,9 @@ jobs:
           pnpm --version
 
       - name: Build Tauri manually
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: pnpm tauri build ${{ matrix.args }}
         
       - name: List build artifacts (macOS)
@@ -144,10 +147,18 @@ jobs:
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
       - name: Generate updater JSON
+        if: matrix.platform == 'ubuntu-22.04'
         shell: bash
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
+          
+          # Read signatures from .sig files (will be empty for first build, filled later)
+          LINUX_SIG=""
+          if [ -f "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.sig" ]; then
+            LINUX_SIG=$(cat "src-tauri/target/release/bundle/appimage/Pixsaur_${VERSION_NUM}_amd64.AppImage.sig")
+          fi
+          
           cat > latest.json << EOF
           {
             "version": "${VERSION}",
@@ -155,7 +166,7 @@ jobs:
             "pub_date": "${{ github.event.head_commit.timestamp }}",
             "platforms": {
               "linux-x86_64": {
-                "signature": "",
+                "signature": "${LINUX_SIG}",
                 "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_amd64.AppImage"
               },
               "windows-x86_64": {
@@ -173,6 +184,9 @@ jobs:
             }
           }
           EOF
+          
+          echo "Generated latest.json:"
+          cat latest.json
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
