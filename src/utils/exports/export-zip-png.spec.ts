@@ -19,12 +19,11 @@ function createMockCanvas(width: number, height: number): HTMLCanvasElement {
 }
 
 describe('export-zip PNG exports', () => {
-
   describe('PNG exports integration', () => {
     it('should export both square and corrected PNG files for mode 0', async () => {
       // This is an integration test that would need to import and call exportZip
       // For now, we verify the utilities work correctly with the expected dimensions
-      
+
       const sourceCanvas = createMockCanvas(320, 200)
       const modeConfig: CpcModeConfig = {
         overscan: false,
@@ -37,13 +36,14 @@ describe('export-zip PNG exports', () => {
       }
 
       // Import the utilities
-      const { 
-        createSquarePixelsCanvas, 
-        createCorrectedAspectCanvas 
-      } = await import('./export-png-utils')
+      const { createSquarePixelsCanvas, createCorrectedAspectCanvas } =
+        await import('./export-png-utils')
 
       const squareCanvas = createSquarePixelsCanvas(sourceCanvas, modeConfig)
-      const correctedCanvas = createCorrectedAspectCanvas(sourceCanvas, modeConfig)
+      const correctedCanvas = createCorrectedAspectCanvas(
+        sourceCanvas,
+        modeConfig
+      )
 
       // Verify dimensions for mode 0
       expect(squareCanvas.width).toBe(160) // Native CPC width
@@ -64,13 +64,14 @@ describe('export-zip PNG exports', () => {
         scaleY: 1
       }
 
-      const { 
-        createSquarePixelsCanvas, 
-        createCorrectedAspectCanvas 
-      } = await import('./export-png-utils')
+      const { createSquarePixelsCanvas, createCorrectedAspectCanvas } =
+        await import('./export-png-utils')
 
       const squareCanvas = createSquarePixelsCanvas(sourceCanvas, modeConfig)
-      const correctedCanvas = createCorrectedAspectCanvas(sourceCanvas, modeConfig)
+      const correctedCanvas = createCorrectedAspectCanvas(
+        sourceCanvas,
+        modeConfig
+      )
 
       // Mode 1: square pixels, no correction needed
       expect(squareCanvas.width).toBe(320)
@@ -91,13 +92,14 @@ describe('export-zip PNG exports', () => {
         scaleY: 2
       }
 
-      const { 
-        createSquarePixelsCanvas, 
-        createCorrectedAspectCanvas 
-      } = await import('./export-png-utils')
+      const { createSquarePixelsCanvas, createCorrectedAspectCanvas } =
+        await import('./export-png-utils')
 
       const squareCanvas = createSquarePixelsCanvas(sourceCanvas, modeConfig)
-      const correctedCanvas = createCorrectedAspectCanvas(sourceCanvas, modeConfig)
+      const correctedCanvas = createCorrectedAspectCanvas(
+        sourceCanvas,
+        modeConfig
+      )
 
       // Verify dimensions for mode 2
       expect(squareCanvas.width).toBe(640) // Native CPC width
@@ -118,13 +120,14 @@ describe('export-zip PNG exports', () => {
         scaleY: 1
       }
 
-      const { 
-        createSquarePixelsCanvas, 
-        createCorrectedAspectCanvas 
-      } = await import('./export-png-utils')
+      const { createSquarePixelsCanvas, createCorrectedAspectCanvas } =
+        await import('./export-png-utils')
 
       const squareCanvas = createSquarePixelsCanvas(sourceCanvas, modeConfig)
-      const correctedCanvas = createCorrectedAspectCanvas(sourceCanvas, modeConfig)
+      const correctedCanvas = createCorrectedAspectCanvas(
+        sourceCanvas,
+        modeConfig
+      )
 
       // Overscan mode 0
       expect(squareCanvas.width).toBe(192)
@@ -142,11 +145,11 @@ describe('export-zip PNG exports', () => {
 
       for (const testCase of testCases) {
         const sourceCanvas = createMockCanvas(320, 200)
-        
+
         // Determine dimensions based on mode
         let width: number
         let nColors: number
-        
+
         if (testCase.mode === 0) {
           width = 160
           nColors = 16
@@ -157,7 +160,7 @@ describe('export-zip PNG exports', () => {
           width = 640
           nColors = 2
         }
-        
+
         const modeConfig: CpcModeConfig = {
           overscan: false,
           mode: testCase.mode as 0 | 1 | 2,
@@ -168,13 +171,14 @@ describe('export-zip PNG exports', () => {
           scaleY: testCase.mode === 2 ? 2 : 1
         }
 
-        const { 
-          createSquarePixelsCanvas, 
-          createCorrectedAspectCanvas 
-        } = await import('./export-png-utils')
+        const { createSquarePixelsCanvas, createCorrectedAspectCanvas } =
+          await import('./export-png-utils')
 
         const squareCanvas = createSquarePixelsCanvas(sourceCanvas, modeConfig)
-        const correctedCanvas = createCorrectedAspectCanvas(sourceCanvas, modeConfig)
+        const correctedCanvas = createCorrectedAspectCanvas(
+          sourceCanvas,
+          modeConfig
+        )
 
         // Verify aspect ratio relationship
         const widthRatio = correctedCanvas.width / squareCanvas.width
@@ -200,8 +204,8 @@ describe('export-zip PNG exports', () => {
         scaleY: 1
       }
 
-      const { 
-        createSquarePixelsCanvas, 
+      const {
+        createSquarePixelsCanvas,
         createCorrectedAspectCanvas,
         canvasToPNGBlob
       } = await import('./export-png-utils')
@@ -216,7 +220,10 @@ describe('export-zip PNG exports', () => {
       expect(squareBlob).toBeInstanceOf(Blob)
 
       // Step 3: Create corrected aspect canvas
-      const correctedCanvas = createCorrectedAspectCanvas(sourceCanvas, modeConfig)
+      const correctedCanvas = createCorrectedAspectCanvas(
+        sourceCanvas,
+        modeConfig
+      )
       expect(correctedCanvas.width).toBe(320)
       expect(correctedCanvas.height).toBe(200)
 
