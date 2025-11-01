@@ -4,8 +4,6 @@
 
 ## Features
 
-
-
 - **CPC palette quantization** : 27 colors (Classic) or 4096 colors (Plus)
 - **Color spaces** : RGB
 - **Dithering and adjustments** : Brightness, contrast, saturation
@@ -14,16 +12,13 @@
 
 ## Download
 
-
 ### Pre-built binaries
 
 Download the latest desktop application for your platform:
 
 - **Windows** : [pixsaur_x.x.x_x64-setup.exe](https://github.com/IIIvan37/pixsaur/releases/latest)
-- **macOS** : [pixsaur_x.x.x_x64.dmg](https://github.com/IIIvan37/pixsaur/releases/latest)
-- **Linux** : [pixsaur_x.x.x_amd64.deb](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_x86_64.rpm](https://github.com/IIIvan37/pixsaur/releases/latest)
-
-> **Note:** AppImage is not supported for now due to compatibility issues. Use the DEB or RPM package for Linux.
+- **macOS** : [pixsaur_x.x.x_x64.dmg](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_aarch64.dmg](https://github.com/IIIvan37/pixsaur/releases/latest)
+- **Linux** : [pixsaur_x.x.x_amd64.AppImage](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_amd64.deb](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_x86_64.rpm](https://github.com/IIIvan37/pixsaur/releases/latest)
 
 ### Web version
 
@@ -31,38 +26,108 @@ Try the web version online: [https://pixsaur.iiivan.org/](https://pixsaur.iiivan
 
 ## Development
 
-### System Dependencies for Tauri
+### Quick Setup (Automated)
 
-Before starting desktop development with Tauri, install the following dependencies based on your platform.
+For **macOS** and **Linux**, we provide an automated setup script that installs everything you need:
 
-#### Linux (Debian/Ubuntu)
-
-Run the installation script:
 ```bash
-./scripts/install-tauri-deps.sh
+git clone https://github.com/IIIvan37/pixsaur.git
+cd pixsaur
+./scripts/setup-dev-environment.sh
 ```
 
-This script will automatically detect your distribution and install all required dependencies.
+This script will automatically install:
 
-If you prefer manual installation:
+- System dependencies (Xcode CLI Tools for macOS, GTK/WebKit for Linux)
+- Node.js (via Homebrew on macOS)
+- pnpm
+- Rust
+- Project dependencies (pnpm install)
+
+**Supported distributions**: Ubuntu, Debian, Linux Mint, Pop!\_OS, Elementary, Arch, Manjaro, Fedora, RHEL, CentOS, openSUSE
+
+After installation, run:
+
 ```bash
-sudo apt update
-sudo apt install build-essential curl
+source $HOME/.cargo/env  # Load Rust environment
+pnpm tauri:dev           # Start development
+```
+
+### Manual Setup
+
+If you prefer manual installation or are on Windows:
+
+#### Prerequisites
+
+- **Node.js** (v18 or later) - [Download](https://nodejs.org/)
+- **pnpm** (v8 or later) - `npm install -g pnpm`
+- **Rust** (latest stable) - [Install rustup](https://rustup.rs/)
+- **Git** - For cloning the repository
+
+#### Clone the Repository
+
+```bash
+git clone https://github.com/IIIvan37/pixsaur.git
+cd pixsaur
+pnpm install
+```
+
+#### System Dependencies
+
+<details>
+<summary><strong>macOS</strong></summary>
+
+```bash
+xcode-select --install
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
-sudo apt install libgtk-3-dev libglib2.0-dev pkg-config libwebkit2gtk-4.1-dev
 ```
 
-If you use another distribution, install the equivalents of: GTK3, GLib2, pkg-config, build-essential, curl, Rust.
+</details>
 
-If an error about a `.pc` file appears, add the directory to the environment variable:
+<details>
+<summary><strong>Windows</strong></summary>
+
+1. Install [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)
+2. Install [Node.js](https://nodejs.org/)
+3. Install [Rust](https://rustup.rs/)
+4. Install pnpm: `npm install -g pnpm`
+5. Restart your terminal
+
+</details>
+
+<details>
+<summary><strong>Linux (Ubuntu/Debian)</strong></summary>
+
 ```bash
-export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
+# System dependencies
+sudo apt update
+sudo apt install build-essential curl wget file libssl-dev pkg-config
+
+# Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+
+# WebKit2GTK (try 4.1 first, fallback to 4.0)
+sudo apt install libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libgtk-3-dev || \
+sudo apt install libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev libgtk-3-dev
 ```
 
-After installing dependencies on your platform, run:
+</details>
+
+#### Run Development Server
+
+Desktop app (Tauri):
+
 ```bash
-pnpm tauri dev
+pnpm tauri:dev
+```
+
+Web version only:
+
+```bash
+pnpm dev
+# Open http://localhost:5173
 ```
 
 ### Available Scripts
