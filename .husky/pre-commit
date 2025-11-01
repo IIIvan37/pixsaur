@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Ensure we use the correct Node.js version if nvm is available
+if command -v nvm >/dev/null 2>&1; then
+  echo "📋 Using Node.js version from .nvmrc"
+  nvm use
+fi
+
+# Run lint-staged for formatted files
+echo "🎨 Running code formatting and linting..."
+npx lint-staged
+
+# Run comprehensive TypeScript checking
+echo "🔍 Running comprehensive TypeScript checks..."
+npx tsc --noEmit
+
+# Run basic biome check on all files
+echo "🔍 Running biome check..."
+npx @biomejs/biome check .
+
+# Run Radix imports check if available
+if [ -f "scripts/check-radix-imports.js" ]; then
+  echo "🔍 Checking Radix imports..."
+  node scripts/check-radix-imports.js
+fi
+
+echo "✅ All pre-commit checks passed!"
