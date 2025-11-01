@@ -148,14 +148,7 @@ jobs:
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
 
-      - name: Wait for other platforms to upload signatures
-        if: matrix.platform == 'ubuntu-22.04'
-        shell: bash
-        run: |
-          echo "Waiting 60 seconds for macOS and Windows builds to upload their signatures..."
-          sleep 60
-
-      - name: Download signatures from release
+      - name: Wait and download signatures with retries
         if: matrix.platform == 'ubuntu-22.04'
         shell: bash
         env:
@@ -163,21 +156,45 @@ jobs:
         run: |
           VERSION="${{ github.ref_name }}"
           VERSION_NUM="${VERSION#v}"
-
-          echo "Downloading signature files from release ${VERSION}..."
+          
           mkdir -p /tmp/sigs
-
-          # Download macOS signatures
-          gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null || echo "x64 sig not found"
-          gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null || echo "aarch64 sig not found"
-
-          # Download Windows signature
-          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" --dir /tmp/sigs --clobber 2>/dev/null || echo "Windows sig not found"
-
-          echo "Downloaded files:"
-          ls -la /tmp/sigs/
-
-      - name: Generate updater JSON
+          
+          echo "Waiting for other platforms to upload signatures..."
+          echo "Will retry every 30 seconds for up to 3 minutes"
+          
+          # Retry logic: try 6 times with 30s between attempts (total 3 minutes)
+          for attempt in {1..6}; do
+            echo ""
+            echo "Attempt $attempt/6..."
+            
+            # Try to download all signatures
+            gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null && echo "✓ Downloaded x64 sig" || echo "✗ x64 sig not found yet"
+            gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null && echo "✓ Downloaded aarch64 sig" || echo "✗ aarch64 sig not found yet"
+            gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.nsis.zip.sig" --dir /tmp/sigs --clobber 2>/dev/null && echo "✓ Downloaded Windows sig" || echo "✗ Windows sig not found yet"
+            
+            # Count how many signatures we have
+            SIG_COUNT=$(ls -1 /tmp/sigs/*.sig 2>/dev/null | wc -l)
+            echo "Found $SIG_COUNT/3 signature files"
+            
+            # If we have all 3, break
+            if [ "$SIG_COUNT" -eq 3 ]; then
+              echo "✅ All signatures downloaded!"
+              break
+            fi
+            
+            # If not last attempt, wait
+            if [ $attempt -lt 6 ]; then
+              echo "Waiting 30 seconds before next attempt..."
+              sleep 30
+            else
+              echo "⚠️  Timeout: Not all signatures found after 3 minutes"
+              echo "Proceeding with available signatures..."
+            fi
+          done
+          
+          echo ""
+          echo "Final downloaded files:"
+          ls -la /tmp/sigs/      - name: Generate updater JSON
         if: matrix.platform == 'ubuntu-22.04'
         shell: bash
         run: |
