@@ -28,16 +28,31 @@ if [ "$PLATFORM" = "linux" ]; then
     
 elif [ "$PLATFORM" = "macos" ]; then
     echo "Processing macOS .app bundles..."
+    
+    # Détecter l'architecture
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "arm64" ]; then
+        ARCH_SUFFIX="_aarch64"
+    elif [ "$ARCH" = "x86_64" ]; then
+        ARCH_SUFFIX="_x64"
+    else
+        ARCH_SUFFIX=""
+    fi
+    
     cd src-tauri/target/release/bundle/macos
     
     for app in *.app; do
         if [ -d "$app" ]; then
             appname=$(basename "$app" .app)
-            echo "Creating ${appname}.app.tar.gz"
-            tar -czf "${appname}.app.tar.gz" "$app"
+            tarname="${appname}${ARCH_SUFFIX}.app.tar.gz"
+            echo "Creating ${tarname}"
+            tar -czf "${tarname}" "$app"
             
-            # Tauri devrait déjà avoir créé la signature pour .app.tar.gz
-            # Si pas, on la génère (nécessite la clé privée)
+            # Copier la signature si elle existe
+            if [ -f "${appname}.app.tar.gz.sig" ]; then
+                echo "Copying signature to ${tarname}.sig"
+                cp "${appname}.app.tar.gz.sig" "${tarname}.sig"
+            fi
         fi
     done
     
