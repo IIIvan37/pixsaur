@@ -107,6 +107,7 @@ jobs:
 
       - name: Build Tauri manually
         timeout-minutes: 45
+        shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
