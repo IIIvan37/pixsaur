@@ -5,9 +5,9 @@
  * Utilise les mêmes paramètres que le language server de VSCode
  */
 
-import { execSync } from 'node:child_process';
+import { execSync } from 'node:child_process'
 
-console.log('🔍 Running VSCode-like TypeScript diagnostics...');
+console.log('🔍 Running VSCode-like TypeScript diagnostics...')
 
 try {
   // Options similaires à celles utilisées par VSCode TypeScript
@@ -17,29 +17,33 @@ try {
     '--skipLibCheck', // VSCode skip les lib par défaut
     '--allowSyntheticDefaultImports',
     '--esModuleInterop',
-    '--forceConsistentCasingInFileNames',  
-    '--moduleResolution', 'bundler',
-    '--allowImportingTsExtensions', 
+    '--forceConsistentCasingInFileNames',
+    '--moduleResolution',
+    'bundler',
+    '--allowImportingTsExtensions',
     '--verbatimModuleSyntax'
-  ].join(' ');
+  ].join(' ')
 
-  console.log('📋 Checking main project...');
-  execSync(`npx tsc ${tscOptions}`, { 
+  console.log('📋 Checking main project...')
+  execSync(`npx tsc ${tscOptions}`, {
     stdio: 'inherit',
     encoding: 'utf8'
-  });
+  })
 
-  console.log('📋 Checking with strict mode...');
-  execSync(`npx tsc ${tscOptions} --strict`, { 
-    stdio: 'inherit', 
+  console.log('📋 Checking with strict mode...')
+  execSync(`npx tsc ${tscOptions} --strict`, {
+    stdio: 'inherit',
     encoding: 'utf8'
-  });
+  })
 
-  console.log('✅ No TypeScript diagnostics found!');
-  
-} catch (error) {
-  console.error('❌ TypeScript diagnostics found - similar to VSCode Problems tab');
-  process.exit(1);
+  console.log('✅ No TypeScript diagnostics found!')
+} catch (_error) {
+  console.error(
+    '❌ TypeScript diagnostics found - similar to VSCode Problems tab'
+  )
+  process.exit(1)
 }
 
-console.log('\n💡 Tip: These are the same checks VSCode runs in the Problems tab');
+console.log(
+  '\n💡 Tip: These are the same checks VSCode runs in the Problems tab'
+)
