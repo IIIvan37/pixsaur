@@ -680,26 +680,18 @@ export class ReGLQuantizer {
 
     const remainingSlots = targetColors - result.length
     if (colorFrequency.length <= remainingSlots) {
+      adapterLogger.info(
+        '[ReGLQuantizer] Not enough candidates, returning all',
+        {
+          candidates: colorFrequency.length,
+          needed: remainingSlots
+        }
+      )
       return [...result, ...colorFrequency.map((c) => c.index)]
     }
 
-    const selectedConverted: Vector[] = result.map(
-      (idx) => [...basePalette[idx]] as Vector
-    )
-
-    // Première couleur: la plus fréquente
-    result.push(colorFrequency[0].index)
-    selectedConverted.push(colorFrequency[0].converted)
-
-    // Stratégie adaptative selon contrastStrategy
-    // balanced: privilégie la fréquence (80%) pour garder les couleurs dominantes
-    // max: équilibre fréquence (60%) et diversité (40%) pour plus de contraste
-    const frequencyBudget = Math.floor(
-      targetColors * (contrastStrategy === 'balanced' ? 0.8 : 0.6)
-    )
-
-    // Utiliser la nouvelle stratégie de sélection de palette
-    if (targetColors <= 4) {
+    // Utiliser la nouvelle stratégie de sélection de palette AVANT d'ajouter quoi que ce soit
+    if (targetColors <= 4 && result.length === 0) {
       adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
         strategy: paletteStrategy,
         targetColors,
@@ -741,8 +733,34 @@ export class ReGLQuantizer {
           break
       }
 
+      adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {
+        strategy: paletteStrategy,
+        selectedIndices: strategyResult.selectedIndices
+      })
+
       return strategyResult.selectedIndices
     }
+
+    const selectedConverted: Vector[] = result.map(
+      (idx) => [...basePalette[idx]] as Vector
+    )
+
+    // Première couleur: la plus fréquente
+    result.push(colorFrequency[0].index)
+    selectedConverted.push(colorFrequency[0].converted)
+
+    // Stratégie adaptative selon contrastStrategy
+    // balanced: privilégie la fréquence (80%) pour garder les couleurs dominantes
+    // max: équilibre fréquence (60%) et diversité (40%) pour plus de contraste
+    const frequencyBudget = Math.floor(
+      targetColors * (contrastStrategy === 'balanced' ? 0.8 : 0.6)
+    )
+
+    // Legacy path should not be reached anymore for small palettes
+    adapterLogger.warn('[ReGLQuantizer] Using legacy selection path', {
+      targetColors,
+      resultLength: result.length
+    })
 
     // Pour les palettes plus grandes (mode 0), garder l'ancien algorithme
     // Pour les petites palettes (2-4 couleurs) en mode "balanced" (legacy):
