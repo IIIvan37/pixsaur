@@ -1,11 +1,10 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { relaunch } from '@tauri-apps/plugin-process'
 import { check } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useState } from 'react'
+import { updaterLogger } from '@/utils/logger'
 import Button from '../ui/button/button'
 import Icon from '../ui/icon'
 import PixsaurPopover from '../ui/popover/popover'
-import { updaterLogger } from '@/utils/logger'
 import styles from './updater.module.css'
 
 /**

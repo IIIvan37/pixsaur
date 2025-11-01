@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Pixsaur
+Comment=Amstrad CPC Image Converter
+Exec=pixsaur
+Icon=pixsaur
+Type=Application
+Categories=Graphics;Utility;
+Terminal=false
