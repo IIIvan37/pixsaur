@@ -1,9 +1,9 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, it, vi } from 'vitest'
+import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import { renderWithI18n } from '@/utils/test-utils'
 import { DitheringSelector, getDefaultIntensity } from './dithering-selector'
-import type { DitheringMode } from '@/libs/pixsaur-color/src'
 
 // Mock the jotai atom
 const mockDitheringAtom = {

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Script AppRun pour améliorer la compatibilité AppImage
+# Basé sur la solution de l'utilisateur Arch Linux
+# Avec corrections pour les problèmes EGL sur Arch Linux
+
+cd "$(dirname "$0")"
+
+# Set environment variables for better compatibility
+export APPDIR="$(dirname "$(readlink -f "$0")")"
+
+# Fix EGL issues on Arch Linux and other distributions
+export LIBGL_ALWAYS_SOFTWARE=0
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
+
+# Try hardware acceleration first, fallback to software rendering if needed
+export WEBKIT_DISABLE_DMABUF_RENDERER=1
+
+# Ensure proper library path resolution
+export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${LD_LIBRARY_PATH}"
+
+# WebKit/GTK specific fixes
+export WEBKIT_FORCE_SANDBOX=0
+export WEBKIT_DISABLE_TBS=1
+
+# Execute the main binary with error handling
+if ! ./pixsaur "$@" 2>/dev/null; then
+    echo "Hardware acceleration failed, trying software rendering..."
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export WEBKIT_DISABLE_COMPOSITING_MODE=1
+    exec ./pixsaur "$@"
+else
+    exec ./pixsaur "$@"
+fi
