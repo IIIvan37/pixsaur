@@ -25,7 +25,8 @@ sign_file() {
     
     cd "$project_root"
     if command -v pnpm &> /dev/null; then
-        echo "$TAURI_SIGNING_PRIVATE_KEY" | pnpm tauri signer sign "${current_dir}/${file}" --private-key-path /dev/stdin
+        # Utiliser printf au lieu de echo pour éviter d'ajouter des retours à la ligne
+        printf "%s" "$TAURI_SIGNING_PRIVATE_KEY" | pnpm tauri signer sign "${current_dir}/${file}" --private-key-path /dev/stdin
     else
         echo "Warning: pnpm not found, cannot sign file"
     fi
