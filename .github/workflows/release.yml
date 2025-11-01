@@ -160,12 +160,12 @@ jobs:
           mkdir -p /tmp/sigs
 
           echo "Waiting for other platforms to upload signatures..."
-          echo "Will retry every 30 seconds for up to 3 minutes"
+          echo "Will retry every 30 seconds for up to 6 minutes"
 
-          # Retry logic: try 6 times with 30s between attempts (total 3 minutes)
-          for attempt in {1..6}; do
+          # Retry logic: try 12 times with 30s between attempts (total 6 minutes)
+          for attempt in {1..12}; do
             echo ""
-            echo "Attempt $attempt/6..."
+            echo "Attempt $attempt/12..."
             
             # Try to download all signatures
             gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber 2>/dev/null && echo "✓ Downloaded x64 sig" || echo "✗ x64 sig not found yet"
@@ -183,11 +183,11 @@ jobs:
             fi
             
             # If not last attempt, wait
-            if [ $attempt -lt 6 ]; then
+            if [ $attempt -lt 12 ]; then
               echo "Waiting 30 seconds before next attempt..."
               sleep 30
             else
-              echo "⚠️  Timeout: Not all signatures found after 3 minutes"
+              echo "⚠️  Timeout: Not all signatures found after 6 minutes"
               echo "Proceeding with available signatures..."
             fi
           done
