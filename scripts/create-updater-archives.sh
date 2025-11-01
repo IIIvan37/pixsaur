@@ -30,7 +30,21 @@ sign_file() {
         printf "%s" "$TAURI_SIGNING_PRIVATE_KEY" > "$temp_key"
         
         # Signer le fichier avec la clé depuis le fichier temporaire avec mot de passe vide
-        pnpm tauri signer sign "${current_dir}/${file}" --private-key-path "$temp_key" --password ""
+        # Important: utiliser --password "" (avec double quotes) pour mot de passe vide
+        if pnpm tauri signer sign "${current_dir}/${file}" --private-key-path "$temp_key" --password ""; then
+            echo "✓ Signature created: ${file}.sig"
+        else
+            echo "✗ Failed to sign ${file}"
+            rm -f "$temp_key"
+            exit 1
+        fi
+        
+        # Vérifier que le fichier .sig a été créé
+        if [ ! -f "${current_dir}/${file}.sig" ]; then
+            echo "✗ Signature file not found: ${file}.sig"
+            rm -f "$temp_key"
+            exit 1
+        fi
         
         # Supprimer le fichier temporaire
         rm -f "$temp_key"
