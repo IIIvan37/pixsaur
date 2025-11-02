@@ -148,13 +148,11 @@ export const ColorPaletteView = ({
                   variant={isClassicMode ? 'default' : 'unstyled'}
                   trigger={
                     <ColorSlot
-                      idx={idx}
                       color={slot.color}
                       locked={slot.locked}
                       buttonRef={(el) => {
                         if (el) buttonRefs.current[idx] = el
                       }}
-                      onToggleLock={onToggleLock}
                       onOpenPopover={() => {
                         setOpenPopoverIndex(idx)
                       }}
