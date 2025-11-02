@@ -9,11 +9,9 @@ import { ColorButton } from './color-button'
 import styles from './color-slot.module.css'
 
 type ColorSlotProps = {
-  idx: number
   color: Vector<'RGB'>
   locked: boolean
   buttonRef: (el: HTMLButtonElement | null) => void
-  onToggleLock: (idx: number) => void
   onOpenPopover?: () => void
   focused?: boolean
 }

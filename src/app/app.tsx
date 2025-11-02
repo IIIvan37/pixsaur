@@ -42,61 +42,58 @@ export default function App() {
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    globalThis.addEventListener('keydown', handleKeyDown)
+    return () => globalThis.removeEventListener('keydown', handleKeyDown)
   }, [tauri])
 
   // Listen for messages from debug window
   useEffect(() => {
     if (!tauri) return
 
-    const handleMessage = async (event: MessageEvent) => {
-      if (event.data && event.data.type === 'DEBUG_REQUEST') {
-        console.log('[APP] Received debug request:', event.data)
+    // Helper function to send response to debug window
+    const sendDebugResponse = async (data: unknown) => {
+      try {
+        const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow')
+        const debugWindow = await WebviewWindow.getByLabel('debug')
 
-        if (event.data.action === 'TEST_UPDATER') {
-          try {
-            const result = await invoke('test_updater')
-            console.log('[APP] Updater test result:', result)
-
-            // Send response back to debug window
-            const { WebviewWindow } = await import(
-              '@tauri-apps/api/webviewWindow'
-            )
-            const debugWindow = await WebviewWindow.getByLabel('debug')
-
-            if (debugWindow) {
-              await debugWindow.emit('debug-response', {
-                result: JSON.parse(result as string),
-                requestId: event.data.requestId
-              })
-            }
-          } catch (error) {
-            console.error('[APP] Updater test failed:', error)
-
-            // Send error response back to debug window
-            try {
-              const { WebviewWindow } = await import(
-                '@tauri-apps/api/webviewWindow'
-              )
-              const debugWindow = await WebviewWindow.getByLabel('debug')
-
-              if (debugWindow) {
-                await debugWindow.emit('debug-response', {
-                  error: error instanceof Error ? error.message : String(error),
-                  requestId: event.data.requestId
-                })
-              }
-            } catch (emitError) {
-              console.error('[APP] Failed to send error response:', emitError)
-            }
-          }
+        if (debugWindow) {
+          await debugWindow.emit('debug-response', data)
         }
+      } catch (error) {
+        console.error('[APP] Failed to send debug response:', error)
       }
     }
 
-    window.addEventListener('message', handleMessage)
-    return () => window.removeEventListener('message', handleMessage)
+    // Helper function to handle updater test
+    const handleUpdaterTest = async (requestId: string) => {
+      try {
+        const result = await invoke('test_updater')
+        console.log('[APP] Updater test result:', result)
+        await sendDebugResponse({
+          result: JSON.parse(result as string),
+          requestId
+        })
+      } catch (error) {
+        console.error('[APP] Updater test failed:', error)
+        await sendDebugResponse({
+          error: error instanceof Error ? error.message : String(error),
+          requestId
+        })
+      }
+    }
+
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type !== 'DEBUG_REQUEST') return
+
+      console.log('[APP] Received debug request:', event.data)
+
+      if (event.data.action === 'TEST_UPDATER') {
+        await handleUpdaterTest(event.data.requestId)
+      }
+    }
+
+    globalThis.addEventListener('message', handleMessage)
+    return () => globalThis.removeEventListener('message', handleMessage)
   }, [tauri])
 
   return (

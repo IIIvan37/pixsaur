@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import clsx from 'clsx'
 import type * as React from 'react'
 import type { PaletteSlot } from '@/app/store/palette/types'
@@ -29,6 +30,7 @@ export function ColorGridView({
   optionRefs,
   onClose
 }: ColorGridViewProps) {
+  const { t } = useLingui()
   // Helper to check if a color is used in the palette (excluding current slot)
   const isColorUsed = (s: PaletteSlot, pc: CPCColor, index: number) => {
     return (
@@ -43,13 +45,10 @@ export function ColorGridView({
       className='popover'
       style={{ position: 'relative', minHeight: 140, maxHeight: 260 }}
     >
-      {/* @sonar-ignore-next-line a11y/useSemanticElements: Custom color grid requires visual display - select not suitable */}
-      {/* biome-ignore lint/a11y/useSemanticElements: Custom color grid layout incompatible with fieldset */}
-      <div
-        className={styles.colorGrid}
-        role='group'
-        aria-label='Options de couleur'
-      >
+      <fieldset className={styles.colorGrid}>
+        <legend className='sr-only'>
+          <Trans>Options de couleur</Trans>
+        </legend>
         {fullPalette.map((pc: CPCColor, optionIndex: number) => {
           const isUsed = slots.some((s: PaletteSlot, i: number) =>
             isColorUsed(s, pc, i)
@@ -63,7 +62,7 @@ export function ColorGridView({
                   styles.colorOption,
                   isUsed && styles.colorOptionUsed
                 )}
-                title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
+                title={isUsed ? `${pc.name} (${t`utilisée`})` : pc.name}
                 aria-selected={focusedColorIndex === optionIndex}
                 disabled={isUsed}
                 tabIndex={focusedColorIndex === optionIndex ? 0 : -1}
@@ -77,7 +76,7 @@ export function ColorGridView({
             </div>
           )
         })}
-      </div>
+      </fieldset>
       {/* Affiche le bouton lock uniquement si le slot est rempli */}
       {slot.color && (
         <Button
@@ -88,7 +87,11 @@ export function ColorGridView({
             onClose()
           }}
         >
-          {slot.locked ? 'Déverrouiller' : 'Verrouiller'}
+          {slot.locked ? (
+            <Trans>Déverrouiller</Trans>
+          ) : (
+            <Trans>Verrouiller</Trans>
+          )}
         </Button>
       )}
     </div>

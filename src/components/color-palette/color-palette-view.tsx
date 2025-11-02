@@ -23,7 +23,9 @@ function vectorToCPCColor(vector: Vector, index: number): CPCColor {
   return {
     index,
     name: `RGB(${r},${g},${b})`,
-    hex: `${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`,
+    hex: `${r.toString(16).padStart(2, '0')}${g
+      .toString(16)
+      .padStart(2, '0')}${b.toString(16).padStart(2, '0')}`,
     vector
   }
 }
@@ -54,10 +56,10 @@ function findFirstEnabledColor(
  * @property fullPalette - Array of all available colors
  */
 export type ColorPaletteViewProps = {
-  slots: PaletteSlot[]
-  onToggleLock: (idx: number) => void
-  onSetColor: (params: { index: number; color: CPCColor }) => void
-  fullPalette: CPCColor[]
+  readonly slots: PaletteSlot[]
+  readonly onToggleLock: (idx: number) => void
+  readonly onSetColor: (params: { index: number; color: CPCColor }) => void
+  readonly fullPalette: CPCColor[]
 }
 
 export const ColorPaletteView = ({
@@ -145,16 +147,14 @@ export const ColorPaletteView = ({
                   onOpenChange={(open) =>
                     setOpenPopoverIndex(open ? idx : null)
                   }
-                  variant={!isClassicMode ? 'unstyled' : 'default'}
+                  variant={isClassicMode ? 'default' : 'unstyled'}
                   trigger={
                     <ColorSlot
-                      idx={idx}
                       color={slot.color}
                       locked={slot.locked}
                       buttonRef={(el) => {
                         if (el) buttonRefs.current[idx] = el
                       }}
-                      onToggleLock={onToggleLock}
                       onOpenPopover={() => {
                         setOpenPopoverIndex(idx)
                       }}

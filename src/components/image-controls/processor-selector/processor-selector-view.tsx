@@ -44,7 +44,7 @@ export const ProcessorSelectorView = ({
         </label>
 
         <label
-          className={`${styles.option} ${!hasWebGL ? styles.disabled : ''}`}
+          className={`${styles.option} ${hasWebGL ? '' : styles.disabled}`}
         >
           <input
             type='radio'
