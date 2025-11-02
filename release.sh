@@ -37,28 +37,35 @@ echo "📝 Updating version files..."
 jq ".version = \"$VERSION\"" package.json > package.json.tmp && mv package.json.tmp package.json
 jq ".version = \"$VERSION\"" src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
 
-# Commiter les changements
-echo "💾 Committing version changes..."
-git add package.json src-tauri/tauri.conf.json
-git commit -m "chore: bump version to $VERSION"
+# Vérifier s'il y a des changements
+if ! git diff --quiet package.json src-tauri/tauri.conf.json; then
+  # Commiter les changements
+  echo "💾 Committing version changes..."
+  git add package.json src-tauri/tauri.conf.json
+  git commit -m "chore: bump version to $VERSION"
 
-# Pousser la branche
-echo "⬆️ Pushing branch..."
-git push -u origin "$BRANCH_NAME"
+  # Pousser la branche
+  echo "⬆️ Pushing branch..."
+  git push -u origin "$BRANCH_NAME"
 
-# Créer et merger la PR
-echo "🔀 Creating and merging PR..."
-gh pr create --title "chore: bump version to $VERSION" --body "Bump version to $VERSION for next release." --base main
-gh pr merge --squash --delete-branch
+  # Créer et merger la PR
+  echo "🔀 Creating and merging PR..."
+  gh pr create --title "chore: bump version to $VERSION" --body "Bump version to $VERSION for next release." --base main
+  gh pr merge --squash --delete-branch
 
-# Retourner sur main et pull
-echo "🔄 Returning to main branch..."
-git checkout main
-git pull --rebase
+  # Retourner sur main et pull
+  echo "🔄 Returning to main branch..."
+  git checkout main
+  git pull --rebase
 
-# Supprimer la branche locale
-echo "🗑️ Cleaning up local branch..."
-git branch -D "$BRANCH_NAME" 2>/dev/null || true
+  # Supprimer la branche locale
+  echo "🗑️ Cleaning up local branch..."
+  git branch -D "$BRANCH_NAME" 2>/dev/null || true
+else
+  echo "ℹ️  Version already set to $VERSION, skipping PR..."
+  git checkout main
+  git branch -D "$BRANCH_NAME" 2>/dev/null || true
+fi
 
 # Générer le changelog depuis le dernier tag
 echo "📝 Generating changelog..."
