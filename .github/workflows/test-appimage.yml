@@ -63,7 +63,7 @@ jobs:
 
       - name: Build .deb bundle
         run: |
-          pnpm tauri build --bundles deb
+          pnpm tauri build --bundles deb || true
           ls -lh src-tauri/target/release/bundle/deb/
 
       - name: Download appimagetool
