@@ -15,24 +15,38 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Wait for tag to be available in GitHub API
+      - name: Wait for tag to be fully indexed in GitHub API
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ github.ref_name }}"
-          echo "Waiting for tag ${TAG} to be available in GitHub API..."
+          echo "Waiting for tag ${TAG} to be fully indexed in GitHub API..."
           
-          for i in {1..30}; do
+          # Wait for tag to appear in API
+          TAG_FOUND=false
+          for i in {1..60}; do
             if gh api repos/${{ github.repository }}/git/refs/tags/${TAG} &>/dev/null; then
-              echo "✓ Tag ${TAG} is available"
+              echo "✓ Tag ${TAG} found in git refs API"
+              TAG_FOUND=true
               break
             fi
-            echo "  Attempt $i/30: Tag not yet available, waiting 2s..."
+            echo "  Attempt $i/60: Tag not yet in git refs, waiting 2s..."
             sleep 2
           done
           
-          # Verify tag is available
+          if [ "$TAG_FOUND" = false ]; then
+            echo "❌ Tag not found after 120s"
+            exit 1
+          fi
+          
+          # Extra wait to ensure tag is fully propagated (avoid untagged releases)
+          echo "Waiting additional 10s for full propagation..."
+          sleep 10
+          
+          # Verify tag details
           gh api repos/${{ github.repository }}/git/refs/tags/${TAG} --jq '{ref, sha: .object.sha}'
+          
+          echo "✓ Tag is ready for release creation"
       
       - name: Create draft release
         env:
