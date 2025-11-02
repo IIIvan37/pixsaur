@@ -13,10 +13,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. placeholder {0}: pc.name
 #: src/components/color-palette/color-grid/color-grid-view.tsx:65
-msgid "{0} (utilisée)"
-msgstr "{0} (used)"
+#~ msgid "{0} (utilisée)"
+#~ msgstr "{0} (used)"
 
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
@@ -132,7 +131,7 @@ msgstr "ZIP Contents"
 msgid "Contraste"
 msgstr "Contrast"
 
-#: src/app/app.tsx:114
+#: src/app/app.tsx:119
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Image Converter"
 
@@ -144,7 +143,7 @@ msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgid "Couleur & Température"
 msgstr "Color & Temperature"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:91
+#: src/components/color-palette/color-grid/color-grid-view.tsx:94
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
 msgid "Déverrouiller"
 msgstr "Unlock"
@@ -345,7 +344,7 @@ msgstr "ZIP File Name"
 msgid "Ombres"
 msgstr "Shadows"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:50
+#: src/components/color-palette/color-grid/color-grid-view.tsx:51
 msgid "Options de couleur"
 msgstr "Color options"
 
@@ -477,6 +476,10 @@ msgstr "Update available: version {updateVersion}"
 #~ msgid "Update Now"
 #~ msgstr "Update Now"
 
+#: src/components/color-palette/color-grid/color-grid-view.tsx:67
+msgid "utilisée"
+msgstr "utilisée"
+
 #: src/components/export-panel/export-config-dialog.tsx:152
 msgid "Utiliser des labels personnalisés"
 msgstr "Use custom labels"
@@ -485,7 +488,7 @@ msgstr "Use custom labels"
 msgid "Valider"
 msgstr "Confirm"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:93
+#: src/components/color-palette/color-grid/color-grid-view.tsx:96
 msgid "Verrouiller"
 msgstr "Lock"
 

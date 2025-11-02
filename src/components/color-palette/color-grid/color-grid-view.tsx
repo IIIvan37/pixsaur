@@ -62,7 +62,7 @@ export function ColorGridView({
                   styles.colorOption,
                   isUsed && styles.colorOptionUsed
                 )}
-                title={isUsed ? t`${pc.name} (utilisée)` : pc.name}
+                title={isUsed ? `${pc.name} (${t`utilisée`})` : pc.name}
                 aria-selected={focusedColorIndex === optionIndex}
                 disabled={isUsed}
                 tabIndex={focusedColorIndex === optionIndex ? 0 : -1}
