@@ -166,6 +166,26 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): Promise<ImageData> {
+    return this.applyAdjustmentsInternal(imageData, adjustments)
+  }
+
+  /**
+   * Version synchrone pour compatibility avec Jotai atoms
+   */
+  applyAdjustmentsSync(
+    imageData: ImageData,
+    adjustments: AdjustmentConfig
+  ): ImageData {
+    return this.applyAdjustmentsInternal(imageData, adjustments)
+  }
+
+  /**
+   * Logique interne commune pour les ajustements (synchrone)
+   */
+  private applyAdjustmentsInternal(
+    imageData: ImageData,
+    adjustments: AdjustmentConfig
+  ): ImageData {
     // Essayer d'abord le GPU si disponible
     if (this.imageAdjustmentCommand && this.quantizer) {
       return this.applyAdjustmentsGPU(imageData, adjustments)
@@ -268,25 +288,6 @@ export class ReGLProcessor implements ImageProcessor {
     )
 
     return new ImageData(resultData, width, height)
-  }
-
-  /**
-   * Version synchrone pour compatibility avec Jotai atoms
-   */
-  applyAdjustmentsSync(
-    imageData: ImageData,
-    adjustments: AdjustmentConfig
-  ): ImageData {
-    // Essayer d'abord le GPU si disponible
-    if (this.imageAdjustmentCommand && this.quantizer) {
-      return this.applyAdjustmentsGPU(imageData, adjustments)
-    }
-
-    // Fallback CPU
-    return applyAdjustmentsInOnePass(
-      imageData,
-      this.createAdjustmentConfig(adjustments)
-    )
   }
 
   /**

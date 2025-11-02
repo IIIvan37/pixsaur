@@ -178,8 +178,9 @@ function selectByBalancedScoreCore(
   }))
 
   if (result.length === 0 && candidates.length > 0) {
-    const first = candidates.reduce((prev, curr) =>
-      curr.frequency > prev.frequency ? curr : prev
+    const first = candidates.reduce(
+      (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
+      candidates[0]
     )
     result.push(first.index)
   }
@@ -238,8 +239,9 @@ function selectByBalancedScoreCore(
     } else {
       const remaining = candidates.filter((c) => !result.includes(c.index))
       if (remaining.length > 0) {
-        const fallback = remaining.reduce((prev, curr) =>
-          curr.frequency > prev.frequency ? curr : prev
+        const fallback = remaining.reduce(
+          (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
+          remaining[0]
         )
         result.push(fallback.index)
       }
@@ -306,7 +308,7 @@ function selectByPerceptualCore(
   withLuminance.sort((a, b) => b.frequency - a.frequency)
 
   const numBins = Math.min(targetColors, 4)
-  const binSize = 1.0 / numBins
+  const binSize = 1 / numBins
 
   for (let bin = 0; bin < numBins && result.length < targetColors; bin++) {
     const minLum = bin * binSize
@@ -394,7 +396,7 @@ export const selectByDiversityFirstMax: PaletteStrategyFunction = (
     candidates,
     targetColors,
     preselectedIndices,
-    0.0
+    0
   )
 }
 
@@ -412,8 +414,9 @@ function selectByDiversityFirstCore(
   }
 
   if (result.length === 0 && candidates.length > 0) {
-    const first = candidates.reduce((prev, curr) =>
-      curr.frequency > prev.frequency ? curr : prev
+    const first = candidates.reduce(
+      (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
+      candidates[0]
     )
     result.push(first.index)
   }
@@ -471,9 +474,9 @@ function selectByDiversityFirstCore(
         balanceBonus = 0.3
 
       // Bonus saturation pour CPC Plus : favoriser les couleurs saturées
-      const saturationBonus = !isCPCClassic
-        ? calculateSaturation(candidate.color) * 0.3
-        : 0
+      const saturationBonus = isCPCClassic
+        ? 0
+        : calculateSaturation(candidate.color) * 0.3
 
       const freqScore = frequencyWeight > 0 ? candidate.frequency / maxFreq : 0
 
@@ -585,14 +588,29 @@ function selectByDiversityFirstCore(
 
 /**
  * adaptive : Choix dynamique selon l'image
+ * Analyse les caractéristiques des candidats pour choisir la meilleure stratégie
  */
 export const selectByAdaptive: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
 ): StrategyResult => {
-  // TODO: Analyser l'image pour choisir la meilleure stratégie
-  // Pour l'instant, utiliser balanced-score-balanced
+  // Analyser la distribution des candidats
+  const avgFrequency =
+    candidates.reduce((sum, c) => sum + c.frequency, 0) / candidates.length
+  const maxFrequency = Math.max(...candidates.map((c) => c.frequency))
+  const frequencyVariance = maxFrequency / avgFrequency
+
+  // Si une couleur domine fortement (variance > 3), privilégier la fréquence
+  if (frequencyVariance > 3) {
+    return selectByFrequencyBalanced(
+      candidates,
+      targetColors,
+      preselectedIndices
+    )
+  }
+
+  // Sinon, utiliser balanced-score pour un bon compromis
   return selectByBalancedScoreBalanced(
     candidates,
     targetColors,

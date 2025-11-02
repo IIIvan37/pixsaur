@@ -709,11 +709,6 @@ export class ReGLQuantizer {
         scores?: Map<number, number>
       }
       switch (paletteStrategy) {
-        case 'frequency-balanced':
-          strategyResult = selectByFrequencyBalanced(candidates, targetColors, [
-            ...preselectedIndices
-          ])
-          break
         case 'frequency-max':
           strategyResult = selectByFrequencyMax(candidates, targetColors, [
             ...preselectedIndices
@@ -760,6 +755,7 @@ export class ReGLQuantizer {
             ...preselectedIndices
           ])
           break
+        case 'frequency-balanced':
         default:
           strategyResult = selectByFrequencyBalanced(candidates, targetColors, [
             ...preselectedIndices
