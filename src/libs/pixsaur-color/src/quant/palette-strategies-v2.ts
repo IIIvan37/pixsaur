@@ -52,22 +52,22 @@ function calculateSaturation(color: Vector): number {
 /**
  * frequency-balanced : Fréquence prioritaire (80%) avec diversité modérée
  */
-export function selectByFrequencyBalanced(
+export const selectByFrequencyBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByFrequencyCore(candidates, targetColors, preselectedIndices, 60)
 }
 
 /**
  * frequency-max : Équilibre fréquence/diversité (60%/40%)
  */
-export function selectByFrequencyMax(
+export const selectByFrequencyMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByFrequencyCore(candidates, targetColors, preselectedIndices, 40)
 }
 
@@ -129,11 +129,11 @@ function selectByFrequencyCore(
 /**
  * balanced-score-balanced : Fréquence dominante (50% freq, 25% div, 25% lum)
  */
-export function selectByBalancedScoreBalanced(
+export const selectByBalancedScoreBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByBalancedScoreCore(
     candidates,
     targetColors,
@@ -145,11 +145,11 @@ export function selectByBalancedScoreBalanced(
 /**
  * balanced-score-max : Contraste prioritaire (30% freq, 35% div, 35% lum)
  */
-export function selectByBalancedScoreMax(
+export const selectByBalancedScoreMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByBalancedScoreCore(
     candidates,
     targetColors,
@@ -257,11 +257,11 @@ function selectByBalancedScoreCore(
 /**
  * perceptual-balanced : Luminance bins avec fréquence prioritaire
  */
-export function selectByPerceptualBalanced(
+export const selectByPerceptualBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByPerceptualCore(
     candidates,
     targetColors,
@@ -273,11 +273,11 @@ export function selectByPerceptualBalanced(
 /**
  * perceptual-max : Luminance bins avec diversité prioritaire
  */
-export function selectByPerceptualMax(
+export const selectByPerceptualMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByPerceptualCore(
     candidates,
     targetColors,
@@ -369,11 +369,11 @@ function selectByPerceptualCore(
 /**
  * diversity-first-balanced : Diversité dominante avec légère fréquence (90%/10%)
  */
-export function selectByDiversityFirstBalanced(
+export const selectByDiversityFirstBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByDiversityFirstCore(
     candidates,
     targetColors,
@@ -385,11 +385,11 @@ export function selectByDiversityFirstBalanced(
 /**
  * diversity-first-max : Diversité pure (100% diversité, 0% fréquence)
  */
-export function selectByDiversityFirstMax(
+export const selectByDiversityFirstMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   return selectByDiversityFirstCore(
     candidates,
     targetColors,
@@ -586,11 +586,11 @@ function selectByDiversityFirstCore(
 /**
  * adaptive : Choix dynamique selon l'image
  */
-export function selectByAdaptive(
+export const selectByAdaptive: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
-): StrategyResult {
+): StrategyResult => {
   // TODO: Analyser l'image pour choisir la meilleure stratégie
   // Pour l'instant, utiliser balanced-score-balanced
   return selectByBalancedScoreBalanced(
