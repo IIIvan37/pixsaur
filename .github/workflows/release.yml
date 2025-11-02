@@ -291,8 +291,8 @@ jobs:
           echo "Downloading signatures from release ${VERSION}..."
 
           # Download all signatures - they should all be available now since we used needs:
-          gh release download ${VERSION} --pattern "Pixsaur_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber
-          gh release download ${VERSION} --pattern "Pixsaur_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber
+          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64.app.tar.gz.sig" --dir /tmp/sigs --clobber
+          gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_aarch64.app.tar.gz.sig" --dir /tmp/sigs --clobber
           gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_x64-setup.exe.sig" --dir /tmp/sigs --clobber
           gh release download ${VERSION} --pattern "Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig" --dir /tmp/sigs --clobber
 
@@ -316,12 +316,12 @@ jobs:
             LINUX_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_amd64.AppImage.tar.gz.sig")
           fi
 
-          if [ -f "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig" ]; then
-            DARWIN_X64_SIG=$(cat "/tmp/sigs/Pixsaur_x64.app.tar.gz.sig")
+          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64.app.tar.gz.sig" ]; then
+            DARWIN_X64_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64.app.tar.gz.sig")
           fi
 
-          if [ -f "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig" ]; then
-            DARWIN_AARCH64_SIG=$(cat "/tmp/sigs/Pixsaur_aarch64.app.tar.gz.sig")
+          if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_aarch64.app.tar.gz.sig" ]; then
+            DARWIN_AARCH64_SIG=$(cat "/tmp/sigs/Pixsaur_${VERSION_NUM}_aarch64.app.tar.gz.sig")
           fi
 
           if [ -f "/tmp/sigs/Pixsaur_${VERSION_NUM}_x64-setup.exe.sig" ]; then
@@ -344,11 +344,11 @@ jobs:
               },
               "darwin-x86_64": {
                 "signature": "${DARWIN_X64_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_x64.app.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_x64.app.tar.gz"
               },
               "darwin-aarch64": {
                 "signature": "${DARWIN_AARCH64_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_aarch64.app.tar.gz"
+                "url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/Pixsaur_${VERSION_NUM}_aarch64.app.tar.gz"
               }
             }
           }
