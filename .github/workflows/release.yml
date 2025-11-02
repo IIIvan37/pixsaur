@@ -106,11 +106,25 @@ jobs:
           node --version
           pnpm --version
 
+      - name: Free up disk space (Linux only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h
+          echo "=== Removing unnecessary files ==="
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          echo "=== Disk space after cleanup ==="
+          df -h
+
       - name: Build Tauri manually
         timeout-minutes: 45
         shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          CARGO_INCREMENTAL: ${{ matrix.platform == 'ubuntu-22.04' && '0' || '1' }}
         run: |
           echo "=== Starting Tauri build at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
           echo "Platform: ${{ matrix.platform }}"
