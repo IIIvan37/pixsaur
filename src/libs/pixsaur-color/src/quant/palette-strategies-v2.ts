@@ -1,6 +1,6 @@
 /**
- * Stratégies de sélection de palette pour quantification couleur
- * Permet de comparer différentes approches pour les modes 1-2 (2-4 couleurs)
+ * Stratégies de sélection de palette v2 - Avec contraste intégré
+ * Remplace les anciennes stratégies en intégrant directement les modes balanced/max
  */
 
 import { weightedRGBDistance } from '../metric/distance'
@@ -16,25 +16,57 @@ export interface ColorCandidate {
 
 export interface StrategyResult {
   selectedIndices: number[]
-  scores?: Map<number, number> // Scores de chaque couleur sélectionnée
+  scores?: Map<number, number>
 }
 
-/**
- * Calcule la distance euclidienne pondérée entre deux couleurs
- * Utilise weightedRGBDistance déjà définie dans metric/distance.ts
- */
 function calculatePerceptualDistance(color1: Vector, color2: Vector): number {
   return Math.sqrt(weightedRGBDistance(color1, color2))
 }
 
 /**
- * Stratégie frequency-balanced : Fréquence prioritaire (80%) avec diversité minimale
- * Garde les couleurs dominantes de l'image avec une diversité modérée
+ * Calcule la saturation d'une couleur (0-1)
+ * Saturation = (Max - Min) / Max (si Max > 0)
+ */
+function calculateSaturation(color: Vector): number {
+  const r = color[0] / 255
+  const g = color[1] / 255
+  const b = color[2] / 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  return max > 0 ? (max - min) / max : 0
+}
+
+// ============================================================================
+// FREQUENCY STRATEGIES
+// ============================================================================
+
+/**
+ * frequency-balanced : Fréquence prioritaire (80%) avec diversité modérée
  */
 export function selectByFrequencyBalanced(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
+): StrategyResult {
+  return selectByFrequencyCore(candidates, targetColors, preselectedIndices, 60)
+}
+
+/**
+ * frequency-max : Équilibre fréquence/diversité (60%/40%)
+ */
+export function selectByFrequencyMax(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult {
+  return selectByFrequencyCore(candidates, targetColors, preselectedIndices, 40)
+}
+
+function selectByFrequencyCore(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[],
+  minDistance: number
 ): StrategyResult {
   const result = [...preselectedIndices]
   const selectedConverted: Vector[] = result.map(
@@ -47,17 +79,12 @@ export function selectByFrequencyBalanced(
     return { selectedIndices: result.slice(0, targetColors) }
   }
 
-  // Trier par fréquence
   const sorted = [...candidates].sort((a, b) => b.frequency - a.frequency)
-
-  // Distance minimale adaptative
-  const minDistance = targetColors <= 4 ? 80 : 20
 
   for (const candidate of sorted) {
     if (result.includes(candidate.index)) continue
     if (result.length >= targetColors) break
 
-    // Vérifier la diversité
     let isDiverse = true
     for (const selectedColor of selectedConverted) {
       if (
@@ -86,14 +113,47 @@ export function selectByFrequencyBalanced(
   return { selectedIndices: result }
 }
 
+// ============================================================================
+// BALANCED-SCORE STRATEGIES
+// ============================================================================
+
 /**
- * Stratégie "balanced-score" : Scoring multicritère
- * Combine fréquence (40%), diversité chromatique (30%), contraste luminance (30%)
+ * balanced-score-balanced : Fréquence dominante (50% freq, 25% div, 25% lum)
  */
-export function selectByBalancedScore(
+export function selectByBalancedScoreBalanced(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
+): StrategyResult {
+  return selectByBalancedScoreCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    { frequency: 0.5, diversity: 0.25, luminance: 0.25 }
+  )
+}
+
+/**
+ * balanced-score-max : Contraste prioritaire (30% freq, 35% div, 35% lum)
+ */
+export function selectByBalancedScoreMax(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult {
+  return selectByBalancedScoreCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    { frequency: 0.3, diversity: 0.35, luminance: 0.35 }
+  )
+}
+
+function selectByBalancedScoreCore(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[],
+  weights: { frequency: number; diversity: number; luminance: number }
 ): StrategyResult {
   const result = [...preselectedIndices]
   const scores = new Map<number, number>()
@@ -102,14 +162,12 @@ export function selectByBalancedScore(
     return { selectedIndices: result.slice(0, targetColors), scores }
   }
 
-  // Calculer les métriques pour chaque candidat
   const maxFreq = Math.max(...candidates.map((c) => c.frequency))
   const luminances = candidates.map((c) => ({
     index: c.index,
     luminance: calculateLuminance(c.color)
   }))
 
-  // Première couleur : la plus fréquente
   if (result.length === 0 && candidates.length > 0) {
     const first = candidates.reduce((prev, curr) =>
       curr.frequency > prev.frequency ? curr : prev
@@ -117,7 +175,6 @@ export function selectByBalancedScore(
     result.push(first.index)
   }
 
-  // Sélection itérative avec scoring
   while (result.length < targetColors && candidates.length > 0) {
     let bestScore = -Infinity
     let bestCandidate: ColorCandidate | null = null
@@ -125,10 +182,8 @@ export function selectByBalancedScore(
     for (const candidate of candidates) {
       if (result.includes(candidate.index)) continue
 
-      // 1. Score de fréquence (0-1) - 40%
       const freqScore = candidate.frequency / maxFreq
 
-      // 2. Score de diversité chromatique (0-1) - 30%
       const selectedColors = result.map(
         (idx) => candidates.find((c) => c.index === idx)!.converted
       )
@@ -137,34 +192,29 @@ export function selectByBalancedScore(
         const dist = calculatePerceptualDistance(candidate.converted, selected)
         minColorDist = Math.min(minColorDist, dist)
       }
-      // Normaliser : distance maximale théorique = sqrt(255² * (0.299+0.587+0.114)) ≈ 255
       const diversityScore = Math.min(1, minColorDist / 255)
 
-      // 3. Score de contraste de luminance (0-1) - 30%
       const candidateLum = calculateLuminance(candidate.color)
       const selectedLuminances = result.map(
         (idx) => luminances.find((l) => l.index === idx)!.luminance
       )
-
       let minLumDist = Infinity
       for (const selectedLum of selectedLuminances) {
         const dist = Math.abs(candidateLum - selectedLum)
         minLumDist = Math.min(minLumDist, dist)
       }
-      const luminanceScore = minLumDist // Déjà entre 0 et 1
+      const luminanceScore = minLumDist
 
-      // Vérifier qu'on a au moins une couleur sombre et une claire
       const hasDark = selectedLuminances.some((l) => l < 0.3)
       const hasBright = selectedLuminances.some((l) => l > 0.7)
       let balanceBonus = 0
       if (!hasDark && candidateLum < 0.3) balanceBonus = 0.2
       if (!hasBright && candidateLum > 0.7) balanceBonus = 0.2
 
-      // Score final pondéré
       const totalScore =
-        freqScore * 0.4 +
-        diversityScore * 0.3 +
-        luminanceScore * 0.3 +
+        freqScore * weights.frequency +
+        diversityScore * weights.diversity +
+        luminanceScore * weights.luminance +
         balanceBonus
 
       if (totalScore > bestScore) {
@@ -177,7 +227,6 @@ export function selectByBalancedScore(
       result.push(bestCandidate.index)
       scores.set(bestCandidate.index, bestScore)
     } else {
-      // Aucun candidat trouvé, prendre le plus fréquent restant
       const remaining = candidates.filter((c) => !result.includes(c.index))
       if (remaining.length > 0) {
         const fallback = remaining.reduce((prev, curr) =>
@@ -192,14 +241,47 @@ export function selectByBalancedScore(
   return { selectedIndices: result, scores }
 }
 
+// ============================================================================
+// PERCEPTUAL STRATEGIES
+// ============================================================================
+
 /**
- * Stratégie "perceptual" : Basée sur la distribution de luminance
- * Privilégie les couleurs qui couvrent bien le spectre de luminance
+ * perceptual-balanced : Luminance bins avec fréquence prioritaire
  */
-export function selectByPerceptual(
+export function selectByPerceptualBalanced(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
+): StrategyResult {
+  return selectByPerceptualCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    true
+  )
+}
+
+/**
+ * perceptual-max : Luminance bins avec diversité prioritaire
+ */
+export function selectByPerceptualMax(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult {
+  return selectByPerceptualCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    false
+  )
+}
+
+function selectByPerceptualCore(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[],
+  prioritizeFrequency: boolean
 ): StrategyResult {
   const result = [...preselectedIndices]
 
@@ -207,20 +289,16 @@ export function selectByPerceptual(
     return { selectedIndices: result.slice(0, targetColors) }
   }
 
-  // Calculer la luminance de tous les candidats
   const withLuminance = candidates.map((c) => ({
     ...c,
     luminance: calculateLuminance(c.color)
   }))
 
-  // Trier par fréquence d'abord
   withLuminance.sort((a, b) => b.frequency - a.frequency)
 
-  // Diviser le spectre de luminance en tranches
   const numBins = Math.min(targetColors, 4)
   const binSize = 1.0 / numBins
 
-  // Sélectionner au moins une couleur par tranche de luminance
   for (let bin = 0; bin < numBins && result.length < targetColors; bin++) {
     const minLum = bin * binSize
     const maxLum = (bin + 1) * binSize
@@ -233,8 +311,34 @@ export function selectByPerceptual(
     )
 
     if (inBin.length > 0) {
-      // Prendre la plus fréquente de cette tranche
-      result.push(inBin[0].index)
+      if (prioritizeFrequency) {
+        // Balanced: prendre la plus fréquente
+        result.push(inBin[0].index)
+      } else {
+        // Max: prendre la plus diverse
+        let bestCandidate = inBin[0]
+        if (result.length > 0) {
+          let maxMinDist = -Infinity
+          for (const candidate of inBin) {
+            const selectedColors = result.map(
+              (idx) => candidates.find((c) => c.index === idx)!.converted
+            )
+            let minDist = Infinity
+            for (const selected of selectedColors) {
+              const dist = calculatePerceptualDistance(
+                candidate.converted,
+                selected
+              )
+              minDist = Math.min(minDist, dist)
+            }
+            if (minDist > maxMinDist) {
+              maxMinDist = minDist
+              bestCandidate = candidate
+            }
+          }
+        }
+        result.push(bestCandidate.index)
+      }
     }
   }
 
@@ -249,34 +353,47 @@ export function selectByPerceptual(
   return { selectedIndices: result }
 }
 
+// ============================================================================
+// DIVERSITY-FIRST STRATEGIES
+// ============================================================================
+
 /**
- * Stratégie "adaptive" : Choix dynamique selon l'image
- * TODO: Analyser l'image pour choisir la meilleure stratégie
- * Pour l'instant, utilise balanced-score comme fallback
+ * diversity-first-balanced : Diversité dominante avec légère fréquence (90%/10%)
  */
-export function selectByAdaptive(
+export function selectByDiversityFirstBalanced(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
 ): StrategyResult {
-  // TODO: Implémenter l'analyse de l'image
-  // - Calculer la variance des couleurs
-  // - Détecter si l'image est sombre/claire/contrastée
-  // - Choisir la stratégie optimale
-
-  // Pour l'instant, utiliser balanced-score
-  return selectByBalancedScore(candidates, targetColors, preselectedIndices)
+  return selectByDiversityFirstCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    0.1
+  )
 }
 
 /**
- * Stratégie "diversity-first" : Maximise la diversité avant la fréquence
- * Optimisée pour CPC Plus (4096 couleurs) où la couverture de l'espace colorimétrique
- * est plus importante que la fréquence des couleurs dans l'image source
+ * diversity-first-max : Diversité pure (100% diversité, 0% fréquence)
  */
-export function selectByDiversityFirst(
+export function selectByDiversityFirstMax(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[] = []
+): StrategyResult {
+  return selectByDiversityFirstCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    0.0
+  )
+}
+
+function selectByDiversityFirstCore(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[],
+  frequencyWeight: number
 ): StrategyResult {
   const result = [...preselectedIndices]
   const scores = new Map<number, number>()
@@ -285,7 +402,6 @@ export function selectByDiversityFirst(
     return { selectedIndices: result.slice(0, targetColors), scores }
   }
 
-  // Si pas de présélection, commencer par la couleur la plus fréquente
   if (result.length === 0 && candidates.length > 0) {
     const first = candidates.reduce((prev, curr) =>
       curr.frequency > prev.frequency ? curr : prev
@@ -293,13 +409,10 @@ export function selectByDiversityFirst(
     result.push(first.index)
   }
 
-  // Adapter les distances minimales selon le nombre de candidats disponibles
-  // CPC Classic (27 couleurs) nécessite des seuils plus bas que CPC Plus (4096 couleurs)
   const isCPCClassic = candidates.length <= 27
-  const MIN_COLOR_DISTANCE = isCPCClassic ? 50 : 140 // 20% vs 55% de différence
-  const MIN_LUMINANCE_DISTANCE = isCPCClassic ? 0.15 : 0.35 // 15% vs 35%
+  const MIN_COLOR_DISTANCE = isCPCClassic ? 50 : 140
+  const MIN_LUMINANCE_DISTANCE = isCPCClassic ? 0.15 : 0.35
 
-  // Sélection itérative : maximiser la distance au plus proche voisin
   while (result.length < targetColors && candidates.length > 0) {
     let bestScore = -Infinity
     let bestCandidate: ColorCandidate | null = null
@@ -311,23 +424,22 @@ export function selectByDiversityFirst(
       calculateLuminance(candidates.find((c) => c.index === idx)!.color)
     )
 
+    const maxFreq =
+      frequencyWeight > 0 ? Math.max(...candidates.map((c) => c.frequency)) : 1
+
     for (const candidate of candidates) {
       if (result.includes(candidate.index)) continue
 
-      // 1. Distance chromatique minimum
       let minColorDist = Infinity
       for (const selected of selectedColors) {
         const dist = calculatePerceptualDistance(candidate.converted, selected)
         minColorDist = Math.min(minColorDist, dist)
       }
 
-      // Rejeter si trop proche chromatiquement
       if (minColorDist < MIN_COLOR_DISTANCE) continue
 
-      // Score de diversité chromatique (70%)
       const diversityScore = Math.min(1, minColorDist / 255)
 
-      // 2. Distance de luminance minimum
       const candidateLum = calculateLuminance(candidate.color)
       let minLumDist = Infinity
       for (const selectedLum of selectedLuminances) {
@@ -335,13 +447,10 @@ export function selectByDiversityFirst(
         minLumDist = Math.min(minLumDist, dist)
       }
 
-      // Rejeter si trop proche en luminance
       if (minLumDist < MIN_LUMINANCE_DISTANCE) continue
 
-      // Score de contraste de luminance (30%)
       const luminanceScore = minLumDist
 
-      // 3. Bonus pour équilibre des extrêmes
       const hasDark = selectedLuminances.some((l) => l < 0.25)
       const hasBright = selectedLuminances.some((l) => l > 0.75)
       const hasMid = selectedLuminances.some((l) => l >= 0.4 && l <= 0.6)
@@ -352,9 +461,19 @@ export function selectByDiversityFirst(
       if (!hasMid && candidateLum >= 0.4 && candidateLum <= 0.6)
         balanceBonus = 0.3
 
-      // Score final : 100% diversité (fréquence ignorée)
+      // Bonus saturation pour CPC Plus : favoriser les couleurs saturées
+      const saturationBonus = !isCPCClassic
+        ? calculateSaturation(candidate.color) * 0.3
+        : 0
+
+      const freqScore = frequencyWeight > 0 ? candidate.frequency / maxFreq : 0
+
       const totalScore =
-        diversityScore * 0.7 + luminanceScore * 0.3 + balanceBonus
+        diversityScore * (0.7 - frequencyWeight) +
+        luminanceScore * 0.3 +
+        freqScore * frequencyWeight +
+        balanceBonus +
+        saturationBonus
 
       if (totalScore > bestScore) {
         bestScore = totalScore
@@ -366,8 +485,7 @@ export function selectByDiversityFirst(
       result.push(bestCandidate.index)
       scores.set(bestCandidate.index, bestScore)
     } else {
-      // Si aucun candidat ne respecte les distances minimales,
-      // assouplir les contraintes progressivement jusqu'à trouver une couleur
+      // Fallback progressif
       let relaxFactor = 0.7
       let foundCandidate = false
 
@@ -410,7 +528,6 @@ export function selectByDiversityFirst(
           }
         }
 
-        // Si toujours rien, réduire encore les contraintes
         if (!foundCandidate) {
           relaxFactor -= 0.15
         }
@@ -420,7 +537,7 @@ export function selectByDiversityFirst(
         result.push(bestCandidate.index)
         scores.set(bestCandidate.index, bestScore)
       } else {
-        // En dernier recours, prendre la couleur la plus diverse sans contrainte
+        // Dernier recours : la plus diverse sans contrainte
         let maxDiversity = -Infinity
         for (const candidate of candidates) {
           if (result.includes(candidate.index)) continue
@@ -444,7 +561,6 @@ export function selectByDiversityFirst(
           result.push(bestCandidate.index)
           scores.set(bestCandidate.index, 0)
         } else {
-          // Vraiment aucune couleur disponible, arrêter
           break
         }
       }
@@ -452,4 +568,25 @@ export function selectByDiversityFirst(
   }
 
   return { selectedIndices: result, scores }
+}
+
+// ============================================================================
+// ADAPTIVE STRATEGY
+// ============================================================================
+
+/**
+ * adaptive : Choix dynamique selon l'image
+ */
+export function selectByAdaptive(
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult {
+  // TODO: Analyser l'image pour choisir la meilleure stratégie
+  // Pour l'instant, utiliser balanced-score-balanced
+  return selectByBalancedScoreBalanced(
+    candidates,
+    targetColors,
+    preselectedIndices
+  )
 }
