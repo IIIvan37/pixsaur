@@ -56,6 +56,10 @@ echo "🔄 Returning to main branch..."
 git checkout main
 git pull --rebase
 
+# Supprimer la branche locale
+echo "🗑️ Cleaning up local branch..."
+git branch -D "$BRANCH_NAME" 2>/dev/null || true
+
 # Générer le changelog depuis le dernier tag
 echo "📝 Generating changelog..."
 PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
