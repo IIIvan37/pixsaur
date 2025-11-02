@@ -94,7 +94,6 @@
       },
       "appimage": {
         "files": {
-          "AppRun": "./",
           "pixsaur.desktop": "./"
         },
         "bundleMediaFramework": false
