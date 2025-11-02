@@ -13,10 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref }}
           fetch-depth: 0
       
-      - name: Fetch tags
-        run: git fetch --tags --force
+      - name: Verify tag
+        run: |
+          echo "GitHub ref: ${{ github.ref }}"
+          echo "GitHub ref_name: ${{ github.ref_name }}"
+          git describe --tags --exact-match
       
       - name: Create Release
         uses: softprops/action-gh-release@v2
