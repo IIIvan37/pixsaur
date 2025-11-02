@@ -9,6 +9,7 @@ jobs:
   build-platforms:
     permissions:
       contents: write
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -18,7 +19,14 @@ jobs:
           - platform: "macos-13" # macOS Intel (x86_64) - native build
             args: ""
           - platform: "ubuntu-22.04"
-            args: ""
+            args: "--bundles appimage"
+            bundle-type: "appimage"
+          - platform: "ubuntu-22.04"
+            args: "--bundles deb"
+            bundle-type: "deb"
+          - platform: "ubuntu-22.04"
+            args: "--bundles rpm"
+            bundle-type: "rpm"
           - platform: "windows-latest"
             args: ""
 
@@ -35,6 +43,35 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ startsWith(matrix.platform, 'macos') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        if: matrix.platform != 'ubuntu-22.04'
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install dependencies (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          brew install jq
+
+      - name: Install jq on Windows
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          choco install jq
+
+      - name: Free disk space (appimage only)
+        if: matrix.bundle-type == 'appimage'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -61,15 +98,20 @@ jobs:
             fuse \
             libfuse2
 
-      - name: Install dependencies (macOS)
-        if: startsWith(matrix.platform, 'macos')
+      - name: Pre-download AppImage tools (appimage only)
+        if: matrix.bundle-type == 'appimage'
         run: |
-          brew install jq
-
-      - name: Install dependencies (Windows)
-        if: matrix.platform == 'windows-latest'
-        run: |
-          choco install jq
+          mkdir -p ~/.cache/tauri
+          echo "Downloading linuxdeploy tools with retry..."
+          for i in {1..5}; do
+            curl -L -o ~/.cache/tauri/linuxdeploy-x86_64.AppImage https://github.com/tauri-apps/binary-releases/releases/download/linuxdeploy/linuxdeploy-x86_64.AppImage && break || sleep 10
+          done
+          for i in {1..5}; do
+            curl -L -o ~/.cache/tauri/linuxdeploy-plugin-appimage-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage && break || sleep 10
+          done
+          chmod +x ~/.cache/tauri/*.AppImage
+          echo "Downloads completed successfully"
+          ls -lh ~/.cache/tauri/
 
       - name: Install pnpm
         run: |
@@ -100,12 +142,30 @@ jobs:
           pnpm --version
 
       - name: Build Tauri manually
+        timeout-minutes: 45
+        shell: bash
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: pnpm tauri build ${{ matrix.args }}
+          CARGO_INCREMENTAL: ${{ matrix.platform == 'ubuntu-22.04' && '0' || '1' }}
+        run: |
+          echo "=== Starting Tauri build at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
+          echo "Platform: ${{ matrix.platform }}"
+          
+          # Set linuxdeploy paths for AppImage builds
+          if [ "${{ matrix.bundle-type }}" = "appimage" ]; then
+            export LINUXDEPLOY="$HOME/.cache/tauri/linuxdeploy-x86_64.AppImage"
+            export LINUXDEPLOY_PLUGIN_APPIMAGE="$HOME/.cache/tauri/linuxdeploy-plugin-appimage-x86_64.AppImage"
+            echo "Using pre-downloaded linuxdeploy tools:"
+            echo "  LINUXDEPLOY=$LINUXDEPLOY"
+            echo "  LINUXDEPLOY_PLUGIN_APPIMAGE=$LINUXDEPLOY_PLUGIN_APPIMAGE"
+          fi
+          
+          pnpm tauri build ${{ matrix.args }}
+          
+          echo "=== Build completed at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
 
       - name: Create updater archives (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.bundle-type == 'appimage'
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: ./scripts/create-updater-archives.sh ${{ env.VERSION_NUM }} linux
@@ -149,7 +209,7 @@ jobs:
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.bundle-type == 'appimage'
         with:
           draft: true
           prerelease: false
@@ -180,16 +240,30 @@ jobs:
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/nsis/*.exe.sig
 
-      - name: Upload Linux artifacts
-        if: matrix.platform == 'ubuntu-22.04'
+      - name: Upload Linux AppImage artifacts
+        if: matrix.bundle-type == 'appimage'
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: false
+          files: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
+            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz.sig
+
+      - name: Upload Linux deb artifacts
+        if: matrix.bundle-type == 'deb'
         uses: softprops/action-gh-release@v2
         with:
           fail_on_unmatched_files: false
           files: |
             src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz.sig
+
+      - name: Upload Linux rpm artifacts
+        if: matrix.bundle-type == 'rpm'
+        uses: softprops/action-gh-release@v2
+        with:
+          fail_on_unmatched_files: false
+          files: |
             src-tauri/target/release/bundle/rpm/*.rpm
 
   generate-updater-json:

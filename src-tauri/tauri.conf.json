@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Pixsaur",
-  "version": "0.1.30",
+  "version": "0.1.31",
   "identifier": "com.iiiivan37.pixsaur",
   "build": {
     "removeUnusedCommands": true,
@@ -93,7 +93,7 @@
       },
       "appimage": {
         "files": {
-          "../AppRun": "./"
+          "AppRun": "./"
         },
         "bundleMediaFramework": false
       }
