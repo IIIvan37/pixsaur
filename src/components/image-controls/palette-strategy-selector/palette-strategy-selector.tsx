@@ -1,14 +1,16 @@
-import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
 import {
   effectiveModeConfigAtom,
   paletteStrategyAtom
 } from '@/app/store/config/config'
-import Flex from '@/components/ui/flex'
-import { Select, SelectItem } from '@/components/ui/select'
+import type { PaletteStrategy } from '@/app/store/config/types'
 import { logger } from '@/utils/logger'
+import {
+  type PaletteStrategyOption,
+  PaletteStrategySelectorView
+} from './palette-strategy-selector-view'
 
-const PALETTE_STRATEGIES = [
+const PALETTE_STRATEGIES: readonly PaletteStrategyOption[] = [
   {
     value: 'frequency-balanced',
     label: 'Fréquence Équilibrée',
@@ -60,12 +62,12 @@ export function PaletteStrategySelector() {
   const [paletteStrategy, setPaletteStrategy] = useAtom(paletteStrategyAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
 
-  const handleStrategyChange = (value: string) => {
+  const handleStrategyChange = (value: PaletteStrategy) => {
     logger.info('[PaletteStrategy] Changing strategy', {
       from: paletteStrategy,
       to: value
     })
-    setPaletteStrategy(value as typeof paletteStrategy)
+    setPaletteStrategy(value)
   }
 
   // Visible uniquement pour les modes avec moins de 16 couleurs (mode 1: 4 couleurs, mode 2: 2 couleurs)
@@ -78,42 +80,11 @@ export function PaletteStrategySelector() {
   )
 
   return (
-    <Flex
-      gap='var(--spacing-md)'
-      wrap='wrap'
-      justify='flex-start'
-      align='flex-start'
-    >
-      <Flex direction='column' gap='var(--spacing-xs)' align='start'>
-        <div
-          style={{
-            fontFamily: 'var(--font-family)',
-            fontSize: 'var(--font-size-sm)',
-            color: 'var(--color-foreground)'
-          }}
-        >
-          <Trans>Stratégie de palette</Trans>
-        </div>
-        <Select value={paletteStrategy} onValueChange={handleStrategyChange}>
-          {PALETTE_STRATEGIES.map((strategy) => (
-            <SelectItem key={strategy.value} value={strategy.value}>
-              {strategy.label}
-            </SelectItem>
-          ))}
-        </Select>
-        {currentStrategy && (
-          <div
-            style={{
-              fontFamily: 'var(--font-family)',
-              fontSize: 'var(--font-size-xs)',
-              color: 'var(--color-muted)',
-              marginTop: 'var(--spacing-xs)'
-            }}
-          >
-            {currentStrategy.description}
-          </div>
-        )}
-      </Flex>
-    </Flex>
+    <PaletteStrategySelectorView
+      strategies={PALETTE_STRATEGIES}
+      currentStrategy={paletteStrategy}
+      currentDescription={currentStrategy?.description}
+      onStrategyChange={handleStrategyChange}
+    />
   )
 }
