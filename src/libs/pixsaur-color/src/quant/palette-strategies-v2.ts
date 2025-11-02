@@ -140,6 +140,161 @@ function calculateLuminanceBalanceBonus(
   return 0
 }
 
+/**
+ * Calcule le score équilibré d'un candidat pour la stratégie balanced-score
+ */
+function calculateBalancedScore(
+  candidate: ColorCandidate,
+  selectedColors: Vector[],
+  selectedLuminances: number[],
+  maxFreq: number,
+  weights: { frequency: number; diversity: number; luminance: number }
+): number {
+  const freqScore = candidate.frequency / maxFreq
+
+  const minColorDist = calculateMinColorDistance(candidate, selectedColors)
+  const diversityScore = Math.min(1, minColorDist / 255)
+
+  const candidateLum = calculateLuminance(candidate.color)
+  let minLumDist = Infinity
+  for (const selectedLum of selectedLuminances) {
+    const dist = Math.abs(candidateLum - selectedLum)
+    minLumDist = Math.min(minLumDist, dist)
+  }
+  const luminanceScore = minLumDist
+
+  const hasDark = selectedLuminances.some((l) => l < 0.3)
+  const hasBright = selectedLuminances.some((l) => l > 0.7)
+  let balanceBonus = 0
+  if (!hasDark && candidateLum < 0.3) balanceBonus = 0.2
+  if (!hasBright && candidateLum > 0.7) balanceBonus = 0.2
+
+  return (
+    freqScore * weights.frequency +
+    diversityScore * weights.diversity +
+    luminanceScore * weights.luminance +
+    balanceBonus
+  )
+}
+
+interface DiversityScoreParams {
+  candidate: ColorCandidate
+  selectedColors: Vector[]
+  selectedLuminances: number[]
+  frequencyWeight: number
+  maxFreq: number
+  isCPCClassic: boolean
+  minColorDistance: number
+  minLuminanceDistance: number
+}
+
+/**
+ * Calcule le score de diversité pour la stratégie diversity-first
+ */
+function calculateDiversityScore(params: DiversityScoreParams): number | null {
+  const minColorDist = calculateMinColorDistance(
+    params.candidate,
+    params.selectedColors
+  )
+  if (minColorDist < params.minColorDistance) return null
+
+  const diversityScore = Math.min(1, minColorDist / 255)
+
+  const candidateLum = calculateLuminance(params.candidate.color)
+  const minLumDist = calculateMinLuminanceDistance(
+    params.candidate,
+    params.selectedLuminances
+  )
+
+  if (minLumDist < params.minLuminanceDistance) return null
+
+  const luminanceScore = minLumDist
+
+  const balanceBonus = calculateLuminanceBalanceBonus(
+    candidateLum,
+    params.selectedLuminances
+  )
+
+  const saturationBonus = params.isCPCClassic
+    ? 0
+    : calculateSaturation(params.candidate.color) * 0.3
+
+  const freqScore =
+    params.frequencyWeight > 0 ? params.candidate.frequency / params.maxFreq : 0
+
+  return (
+    diversityScore * (0.7 - params.frequencyWeight) +
+    luminanceScore * 0.3 +
+    freqScore * params.frequencyWeight +
+    balanceBonus +
+    saturationBonus
+  )
+}
+
+/**
+ * Tentative de trouver un candidat avec critères assouplis (fallback progressif)
+ */
+function findCandidateWithRelaxedCriteria(
+  candidates: ColorCandidate[],
+  result: number[],
+  selectedColors: Vector[],
+  selectedLuminances: number[],
+  MIN_COLOR_DISTANCE: number,
+  MIN_LUMINANCE_DISTANCE: number
+): { candidate: ColorCandidate; score: number } | null {
+  let relaxFactor = 0.7
+  let bestScore = -Infinity
+  let bestCandidate: ColorCandidate | null = null
+
+  while (!bestCandidate && relaxFactor > 0.2) {
+    const relaxedMinColorDist = MIN_COLOR_DISTANCE * relaxFactor
+    const relaxedMinLumDist = MIN_LUMINANCE_DISTANCE * relaxFactor
+
+    for (const candidate of candidates) {
+      if (result.includes(candidate.index)) continue
+
+      const minColorDist = calculateMinColorDistance(candidate, selectedColors)
+      if (minColorDist < relaxedMinColorDist) continue
+
+      const minLumDist = calculateMinLuminanceDistance(
+        candidate,
+        selectedLuminances
+      )
+      if (minLumDist < relaxedMinLumDist) continue
+
+      const diversityScore = Math.min(1, minColorDist / 255)
+      const totalScore = diversityScore * 0.7 + minLumDist * 0.3
+
+      if (totalScore > bestScore) {
+        bestScore = totalScore
+        bestCandidate = candidate
+      }
+    }
+
+    if (!bestCandidate) {
+      relaxFactor -= 0.15
+    }
+  }
+
+  return bestCandidate ? { candidate: bestCandidate, score: bestScore } : null
+}
+
+/**
+ * Trouve le candidat le plus fréquent parmi les restants (fallback simple)
+ */
+function findMostFrequentRemaining(
+  candidates: ColorCandidate[],
+  result: number[]
+): ColorCandidate | null {
+  const remaining = candidates.filter((c) => !result.includes(c.index))
+  if (remaining.length === 0) return null
+
+  return remaining.reduce(
+    (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
+    remaining[0]
+  )
+}
+
 // ============================================================================
 // FREQUENCY STRATEGIES
 // ============================================================================
@@ -279,43 +434,23 @@ function selectByBalancedScoreCore(
     let bestScore = -Infinity
     let bestCandidate: ColorCandidate | null = null
 
+    const selectedColors = result.map(
+      (idx) => candidates.find((c) => c.index === idx)!.converted
+    )
+    const selectedLuminances = result.map(
+      (idx) => luminances.find((l) => l.index === idx)!.luminance
+    )
+
     for (const candidate of candidates) {
       if (result.includes(candidate.index)) continue
 
-      const freqScore = candidate.frequency / maxFreq
-
-      const selectedColors = result.map(
-        (idx) => candidates.find((c) => c.index === idx)!.converted
+      const totalScore = calculateBalancedScore(
+        candidate,
+        selectedColors,
+        selectedLuminances,
+        maxFreq,
+        weights
       )
-      let minColorDist = Infinity
-      for (const selected of selectedColors) {
-        const dist = calculatePerceptualDistance(candidate.converted, selected)
-        minColorDist = Math.min(minColorDist, dist)
-      }
-      const diversityScore = Math.min(1, minColorDist / 255)
-
-      const candidateLum = calculateLuminance(candidate.color)
-      const selectedLuminances = result.map(
-        (idx) => luminances.find((l) => l.index === idx)!.luminance
-      )
-      let minLumDist = Infinity
-      for (const selectedLum of selectedLuminances) {
-        const dist = Math.abs(candidateLum - selectedLum)
-        minLumDist = Math.min(minLumDist, dist)
-      }
-      const luminanceScore = minLumDist
-
-      const hasDark = selectedLuminances.some((l) => l < 0.3)
-      const hasBright = selectedLuminances.some((l) => l > 0.7)
-      let balanceBonus = 0
-      if (!hasDark && candidateLum < 0.3) balanceBonus = 0.2
-      if (!hasBright && candidateLum > 0.7) balanceBonus = 0.2
-
-      const totalScore =
-        freqScore * weights.frequency +
-        diversityScore * weights.diversity +
-        luminanceScore * weights.luminance +
-        balanceBonus
 
       if (totalScore > bestScore) {
         bestScore = totalScore
@@ -327,12 +462,8 @@ function selectByBalancedScoreCore(
       result.push(bestCandidate.index)
       scores.set(bestCandidate.index, bestScore)
     } else {
-      const remaining = candidates.filter((c) => !result.includes(c.index))
-      if (remaining.length > 0) {
-        const fallback = remaining.reduce(
-          (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
-          remaining[0]
-        )
+      const fallback = findMostFrequentRemaining(candidates, result)
+      if (fallback) {
         result.push(fallback.index)
       }
       break
@@ -513,41 +644,18 @@ function selectByDiversityFirstCore(
     for (const candidate of candidates) {
       if (result.includes(candidate.index)) continue
 
-      const minColorDist = calculateMinColorDistance(candidate, selectedColors)
-      if (minColorDist < MIN_COLOR_DISTANCE) continue
-
-      const diversityScore = Math.min(1, minColorDist / 255)
-
-      const candidateLum = calculateLuminance(candidate.color)
-      const minLumDist = calculateMinLuminanceDistance(
+      const totalScore = calculateDiversityScore({
         candidate,
-        selectedLuminances
-      )
+        selectedColors,
+        selectedLuminances,
+        frequencyWeight,
+        maxFreq,
+        isCPCClassic,
+        minColorDistance: MIN_COLOR_DISTANCE,
+        minLuminanceDistance: MIN_LUMINANCE_DISTANCE
+      })
 
-      if (minLumDist < MIN_LUMINANCE_DISTANCE) continue
-
-      const luminanceScore = minLumDist
-
-      const balanceBonus = calculateLuminanceBalanceBonus(
-        candidateLum,
-        selectedLuminances
-      )
-
-      // Bonus saturation pour CPC Plus : favoriser les couleurs saturées
-      const saturationBonus = isCPCClassic
-        ? 0
-        : calculateSaturation(candidate.color) * 0.3
-
-      const freqScore = frequencyWeight > 0 ? candidate.frequency / maxFreq : 0
-
-      const totalScore =
-        diversityScore * (0.7 - frequencyWeight) +
-        luminanceScore * 0.3 +
-        freqScore * frequencyWeight +
-        balanceBonus +
-        saturationBonus
-
-      if (totalScore > bestScore) {
+      if (totalScore !== null && totalScore > bestScore) {
         bestScore = totalScore
         bestCandidate = candidate
       }
@@ -558,48 +666,18 @@ function selectByDiversityFirstCore(
       scores.set(bestCandidate.index, bestScore)
     } else {
       // Fallback progressif
-      let relaxFactor = 0.7
-      let foundCandidate = false
+      const relaxedResult = findCandidateWithRelaxedCriteria(
+        candidates,
+        result,
+        selectedColors,
+        selectedLuminances,
+        MIN_COLOR_DISTANCE,
+        MIN_LUMINANCE_DISTANCE
+      )
 
-      while (!foundCandidate && relaxFactor > 0.2) {
-        const relaxedMinColorDist = MIN_COLOR_DISTANCE * relaxFactor
-        const relaxedMinLumDist = MIN_LUMINANCE_DISTANCE * relaxFactor
-
-        for (const candidate of candidates) {
-          if (result.includes(candidate.index)) continue
-
-          const minColorDist = calculateMinColorDistance(
-            candidate,
-            selectedColors
-          )
-
-          if (minColorDist < relaxedMinColorDist) continue
-
-          const minLumDist = calculateMinLuminanceDistance(
-            candidate,
-            selectedLuminances
-          )
-
-          if (minLumDist < relaxedMinLumDist) continue
-
-          const diversityScore = Math.min(1, minColorDist / 255)
-          const totalScore = diversityScore * 0.7 + minLumDist * 0.3
-
-          if (totalScore > bestScore) {
-            bestScore = totalScore
-            bestCandidate = candidate
-            foundCandidate = true
-          }
-        }
-
-        if (!foundCandidate) {
-          relaxFactor -= 0.15
-        }
-      }
-
-      if (bestCandidate) {
-        result.push(bestCandidate.index)
-        scores.set(bestCandidate.index, bestScore)
+      if (relaxedResult) {
+        result.push(relaxedResult.candidate.index)
+        scores.set(relaxedResult.candidate.index, relaxedResult.score)
       } else {
         // Dernier recours : la plus diverse sans contrainte
         const excludedIndices = new Set(result)
