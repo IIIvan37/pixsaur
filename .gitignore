@@ -29,8 +29,12 @@ disk.dsk
 # Internal documentation (kept local only)
 docs/
 
-# AppImage build documentation
+# AppImage build artifacts and documentation
 appimage_howto_/
+appimage_howto_*/
+build/
+*.AppImage
+squashfs-root/
 
 # Tauri build outputs
 src-tauri/target/

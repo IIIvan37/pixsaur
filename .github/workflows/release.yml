@@ -61,18 +61,6 @@ jobs:
         run: |
           choco install jq
 
-      - name: Free disk space (appimage only)
-        if: matrix.bundle-type == 'appimage'
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
-
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
@@ -97,21 +85,6 @@ jobs:
             patchelf \
             fuse \
             libfuse2
-
-      - name: Pre-download AppImage tools (appimage only)
-        if: matrix.bundle-type == 'appimage'
-        run: |
-          mkdir -p ~/.cache/tauri
-          echo "Downloading linuxdeploy tools with retry..."
-          for i in {1..5}; do
-            curl -L -o ~/.cache/tauri/linuxdeploy-x86_64.AppImage https://github.com/tauri-apps/binary-releases/releases/download/linuxdeploy/linuxdeploy-x86_64.AppImage && break || sleep 10
-          done
-          for i in {1..5}; do
-            curl -L -o ~/.cache/tauri/linuxdeploy-plugin-appimage-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage && break || sleep 10
-          done
-          chmod +x ~/.cache/tauri/*.AppImage
-          echo "Downloads completed successfully"
-          ls -lh ~/.cache/tauri/
 
       - name: Install pnpm
         run: |
@@ -141,15 +114,16 @@ jobs:
           node --version
           pnpm --version
 
-      - name: Build Tauri binary (AppImage - manual build)
+      - name: Build .deb bundle (AppImage will be extracted from this)
         if: matrix.bundle-type == 'appimage'
         timeout-minutes: 45
         shell: bash
         run: |
-          echo "=== Starting Tauri binary build at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
-          pnpm build
-          cd src-tauri && cargo build --release
-          echo "=== Binary build completed at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
+          echo "=== Building .deb with Tauri (includes frontend) at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
+          pnpm tauri build --bundles deb
+          echo "=== .deb build completed at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
+          echo "=== Checking .deb was created ==="
+          ls -lh src-tauri/target/release/bundle/deb/
 
       - name: Download appimagetool (AppImage only)
         if: matrix.bundle-type == 'appimage'
@@ -158,11 +132,11 @@ jobs:
           chmod +x appimagetool-x86_64.AppImage
           sudo mv appimagetool-x86_64.AppImage /usr/local/bin/appimagetool
 
-      - name: Build AppImage manually
+      - name: Build AppImage from .deb
         if: matrix.bundle-type == 'appimage'
         shell: bash
         run: |
-          echo "=== Building AppImage manually ==="
+          echo "=== Building AppImage from .deb (contains embedded frontend) ==="
           chmod +x scripts/build-appimage.sh
           ./scripts/build-appimage.sh ${{ env.VERSION_NUM }}
           
@@ -268,9 +242,9 @@ jobs:
         with:
           fail_on_unmatched_files: false
           files: |
-            /tmp/cargo-target/release/bundle/appimage/*.AppImage
-            /tmp/cargo-target/release/bundle/appimage/*.AppImage.tar.gz
-            /tmp/cargo-target/release/bundle/appimage/*.AppImage.tar.gz.sig
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
+            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz.sig
 
       - name: Upload Linux deb artifacts
         if: matrix.bundle-type == 'deb'
