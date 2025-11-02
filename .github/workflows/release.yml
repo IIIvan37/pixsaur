@@ -252,9 +252,9 @@ jobs:
         with:
           fail_on_unmatched_files: false
           files: |
-            src-tauri/target/release/bundle/appimage/*.AppImage
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz
-            src-tauri/target/release/bundle/appimage/*.AppImage.tar.gz.sig
+            /tmp/cargo-target/release/bundle/appimage/*.AppImage
+            /tmp/cargo-target/release/bundle/appimage/*.AppImage.tar.gz
+            /tmp/cargo-target/release/bundle/appimage/*.AppImage.tar.gz.sig
 
       - name: Upload Linux deb artifacts
         if: matrix.bundle-type == 'deb'
