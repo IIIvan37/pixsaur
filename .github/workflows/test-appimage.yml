@@ -52,8 +52,13 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Build Tauri binary only
-        run: pnpm build && cd src-tauri && cargo build --release
+      - name: Build Tauri with .deb bundle (includes frontend build)
+        run: |
+          pnpm tauri build --bundles deb || true
+          echo "=== Checking .deb was created ==="
+          ls -lh src-tauri/target/release/bundle/deb/
+          echo "=== Checking binary size ==="
+          ls -lh src-tauri/target/release/pixsaur
 
       - name: Download appimagetool
         run: |
@@ -65,9 +70,9 @@ jobs:
         run: |
           chmod +x scripts/build-appimage.sh
 
-      - name: Build AppImage
+      - name: Build AppImage from .deb
         run: |
-          ./scripts/build-appimage.sh 0.0.0-test
+          ./scripts/build-appimage.sh
 
       - name: List artifacts
         run: |
