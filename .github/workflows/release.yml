@@ -6,39 +6,7 @@ on:
       - "v*"
 
 jobs:
-  create-release:
-    runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-          fetch-depth: 0
-      
-      - name: Verify tag exists
-        run: |
-          echo "GitHub ref: ${{ github.ref }}"
-          echo "GitHub ref_name: ${{ github.ref_name }}"
-          echo "GitHub sha: ${{ github.sha }}"
-          git describe --tags --exact-match
-          git show-ref --tags | grep ${{ github.ref_name }}
-      
-      - name: Create Release via GitHub API
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api repos/${{ github.repository }}/releases \
-            -X POST \
-            -f tag_name="${{ github.ref_name }}" \
-            -f name="${{ github.ref_name }}" \
-            -F draft=true \
-            -F prerelease=false \
-            -F generate_release_notes=true \
-            --jq '{id: .id, tag_name: .tag_name, html_url: .html_url}'
-
   build-platforms:
-    needs: create-release
     permissions:
       contents: write
     timeout-minutes: 60
@@ -242,6 +210,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
             src-tauri/target/release/bundle/dmg/*.dmg
@@ -256,6 +227,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
             src-tauri/target/release/bundle/msi/*.msi
@@ -268,6 +242,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
             src-tauri/target/release/bundle/appimage/*.AppImage
@@ -279,6 +256,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
             src-tauri/target/release/bundle/deb/*.deb
@@ -288,6 +268,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
             src-tauri/target/release/bundle/rpm/*.rpm
