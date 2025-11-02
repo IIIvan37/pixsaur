@@ -4,19 +4,20 @@
  * ReGL simplifiera la gestion WebGL quand l'implémentation GPU sera prête
  */
 
-// Import pour accéder à l'atome de stratégie de contraste
+// Import pour accéder à l'atome de stratégie de palette
 import { getDefaultStore } from 'jotai'
 import type REGL from 'regl'
-import {
-  contrastStrategyAtom,
-  paletteStrategyAtom
-} from '@/app/store/config/config'
+import { paletteStrategyAtom } from '@/app/store/config/config'
 import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, paletteLogger } from '@/utils/logger'
-import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
+import type {
+  AdjustmentConfig,
+  ImageProcessor,
+  PaletteStrategy
+} from '../interfaces'
 import { imageAdjustmentFragmentShader, simpleVertexShader } from '../shaders'
 import { ReGLQuantizer } from './regl-quantizer'
 
@@ -299,8 +300,7 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    contrastStrategy?: 'max' | 'balanced',
-    paletteStrategy?: 'frequency' | 'balanced-score' | 'perceptual' | 'adaptive'
+    paletteStrategy?: PaletteStrategy
   ): Promise<Vector[]> {
     // RGB utilise euclidean distance
     const distanceMetric: DistanceMetric = 'euclidean'
@@ -331,8 +331,7 @@ export class ReGLProcessor implements ImageProcessor {
           {
             distanceMetric,
             targetColors,
-            contrastStrategy:
-              contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
+            contrastStrategy: undefined, // Obsolete, ignored
             paletteStrategy:
               paletteStrategy || getDefaultStore().get(paletteStrategyAtom),
             gpuOptions: {
@@ -358,13 +357,7 @@ export class ReGLProcessor implements ImageProcessor {
       targetColors,
       basePalette,
       preselected,
-      distanceMetric,
-      {
-        contrastStrategy:
-          contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
-        paletteStrategy:
-          paletteStrategy || getDefaultStore().get(paletteStrategyAtom)
-      }
+      distanceMetric
     )
   }
 
@@ -377,15 +370,7 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    distanceMetric: DistanceMetric,
-    strategies: {
-      contrastStrategy?: 'max' | 'balanced'
-      paletteStrategy?:
-        | 'frequency'
-        | 'balanced-score'
-        | 'perceptual'
-        | 'adaptive'
-    }
+    distanceMetric: DistanceMetric
   ): Promise<Vector[]> {
     // Utiliser la signature correcte de createQuantizer
     const quantizer = createQuantizer({
@@ -394,7 +379,7 @@ export class ReGLProcessor implements ImageProcessor {
       preselected,
       quantConfig: {
         distanceMetric,
-        contrastStrategy: strategies.contrastStrategy
+        contrastStrategy: undefined // Obsolete parameter
       }
     })
 

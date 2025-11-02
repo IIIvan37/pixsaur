@@ -1,6 +1,10 @@
+import type { PaletteStrategy } from '@/app/store/config/types'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
+
+// Re-export PaletteStrategy for convenience
+export type { PaletteStrategy }
 
 /**
  * Configuration pour les ajustements d'image
@@ -62,20 +66,8 @@ export interface ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    contrastStrategy?: 'max' | 'balanced', // Deprecated, kept for backward compatibility
-    paletteStrategy?:
-      | 'frequency-balanced'
-      | 'frequency-max'
-      | 'balanced-score-balanced'
-      | 'balanced-score-max'
-      | 'perceptual-balanced'
-      | 'perceptual-max'
-      | 'diversity-first-balanced'
-      | 'diversity-first-max'
-      | 'adaptive'
-  ): Promise<Vector[]>
-
-  /**
+    paletteStrategy?: PaletteStrategy
+  ): Promise<Vector[]> /**
    * Nettoie les ressources (WebGL contexts, etc.)
    */
   dispose(): void

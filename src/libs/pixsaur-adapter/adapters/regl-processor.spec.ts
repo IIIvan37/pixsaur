@@ -14,15 +14,11 @@ vi.mock('@/libs/pixsaur-color/src/transform/color-transform/adjust')
 vi.mock('@/libs/pixsaur-color/src/quant/quantize')
 vi.mock('@/utils/logger')
 vi.mock('@/app/store/config/config', () => ({
-  contrastStrategyAtom: vi.fn(),
   paletteStrategyAtom: vi.fn()
 }))
 vi.mock('jotai', () => ({
   getDefaultStore: vi.fn(() => ({
-    get: vi.fn((atom) => {
-      // Return appropriate defaults based on atom type
-      return atom === 'contrastStrategyAtom' ? 'balanced' : 'frequency-balanced'
-    })
+    get: vi.fn(() => 'frequency-balanced')
   }))
 }))
 
@@ -240,7 +236,7 @@ describe('ReGLProcessor', () => {
         preselected,
         quantConfig: expect.objectContaining({
           distanceMetric: 'euclidean',
-          contrastStrategy: 'frequency-balanced' // Default is now frequency-balanced since it uses paletteStrategy
+          contrastStrategy: undefined // Obsolete parameter
         })
       })
       expect(mockQuantizer.quantize).toHaveBeenCalledWith(2)

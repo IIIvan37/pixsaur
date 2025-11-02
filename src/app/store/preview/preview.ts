@@ -228,7 +228,6 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     targetColors,
     basePalette,
     quantifiedLockedVecs,
-    undefined, // contrastStrategy is deprecated, always pass undefined
     paletteStrategy // Utiliser la stratégie de sélection de palette choisie
   )
 
