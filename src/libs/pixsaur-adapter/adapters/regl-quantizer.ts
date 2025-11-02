@@ -470,7 +470,6 @@ export class ReGLQuantizer {
       basePalette,
       actualTargetColors,
       preselectedIndices,
-      config.contrastStrategy, // Passer la stratégie de contraste
       config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
     )
 
@@ -503,7 +502,6 @@ export class ReGLQuantizer {
       basePalette,
       actualTargetColors,
       preselectedIndices,
-      config.contrastStrategy, // Passer la stratégie de contraste
       config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
     )
 
@@ -665,14 +663,13 @@ export class ReGLQuantizer {
   /**
    * Sélection rapide avec diversité maximale + espaces colorimetriques
    * Complexité réduite en extrayant les helpers
-   * Stratégie adaptative selon contrastStrategy et paletteStrategy
+   * Stratégie adaptative selon paletteStrategy
    */
   private selectDiverseColorsFast(
     sampledColors: Vector[],
     basePalette: readonly Vector[],
     targetColors: number,
     preselectedIndices: readonly number[] = [],
-    contrastStrategy: 'max' | 'balanced' = 'max',
     paletteStrategy: PaletteStrategy = 'frequency-balanced'
   ): number[] {
     // Commencer par les couleurs présélectionnées (priorité absolue)
@@ -801,12 +798,10 @@ export class ReGLQuantizer {
     result.push(colorFrequency[0].index)
     selectedConverted.push(colorFrequency[0].converted)
 
-    // Stratégie adaptative selon contrastStrategy
-    // balanced: privilégie la fréquence (80%) pour garder les couleurs dominantes
-    // max: équilibre fréquence (60%) et diversité (40%) pour plus de contraste
-    const frequencyBudget = Math.floor(
-      targetColors * (contrastStrategy === 'balanced' ? 0.8 : 0.6)
-    )
+    // Ancien code de sélection adaptatif - remplacé par les stratégies v2
+    // Cette branche ne devrait jamais être exécutée car targetColors <= 4 utilise les stratégies v2
+    // Kept as fallback for targetColors > 4
+    const frequencyBudget = Math.floor(targetColors * 0.7)
 
     // Phase 1: Ajouter les couleurs fréquentes avec diversité minimale
     this.selectFrequentColorsWithDiversity(
