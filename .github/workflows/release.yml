@@ -6,7 +6,24 @@ on:
       - "v*"
 
 jobs:
+  create-release:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: true
+          prerelease: false
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+
   build-platforms:
+    needs: create-release
     permissions:
       contents: write
     timeout-minutes: 60
@@ -204,16 +221,6 @@ jobs:
           echo === Searching for MSI/EXE artifacts ===
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.msi 2>nul
           if exist src-tauri\target\release\bundle dir /s /b src-tauri\target\release\bundle\*.exe 2>nul
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: matrix.bundle-type == 'appimage'
-        with:
-          tag_name: ${{ github.ref_name }}
-          draft: true
-          prerelease: false
-          generate_release_notes: true
-          fail_on_unmatched_files: false
 
       - name: Upload macOS artifacts
         if: startsWith(matrix.platform, 'macos')
