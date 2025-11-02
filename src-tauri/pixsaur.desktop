@@ -8,4 +8,4 @@ Icon=pixsaur
 Name=Pixsaur
 Terminal=false
 Type=Application
-MimeType=image/png;image/jpeg;
+MimeType=image/png;image/jpeg;image/jpg;image/gif;image/bmp;image/webp;image/tiff;image/svg+xml;
