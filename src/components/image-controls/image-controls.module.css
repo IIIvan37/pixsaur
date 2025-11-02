@@ -2,8 +2,22 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
   gap: var(--spacing-sm);
   width: 100%;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 /* Styles dupliqués supprimés - maintenant gérés par ToggleButtonGroup */

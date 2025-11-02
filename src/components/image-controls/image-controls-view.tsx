@@ -72,60 +72,68 @@ export function ImageControlsView({
 
   return (
     <div className={styles.controlsContainer}>
-      <Flex align='center'>
-        <SectionTitle>
-          <Trans>Hardware</Trans>
-        </SectionTitle>
-        <ToggleButtonGroup
-          options={hardwareOptions}
-          value={cpcHardware}
-          onChange={onCpcHardwareChange}
-          ariaLabelPrefix='Hardware'
-        />
-      </Flex>
+      {/* Configuration matérielle et mode */}
+      <div className={styles.section}>
+        <Flex align='center'>
+          <SectionTitle>
+            <Trans>Hardware</Trans>
+          </SectionTitle>
+          <ToggleButtonGroup
+            options={hardwareOptions}
+            value={cpcHardware}
+            onChange={onCpcHardwareChange}
+            ariaLabelPrefix='Hardware'
+          />
+        </Flex>
 
-      <Flex align='center'>
-        <SectionTitle>
-          <Trans>Pixel Mode</Trans>
-        </SectionTitle>
-        <ToggleButtonGroup
-          options={pixelModeOptions}
-          value={pixelMode}
-          onChange={onPixelModeChange}
-          ariaLabelPrefix='Pixel Mode'
-        />
-      </Flex>
+        <Flex align='center'>
+          <SectionTitle>
+            <Trans>Pixel Mode</Trans>
+          </SectionTitle>
+          <ToggleButtonGroup
+            options={pixelModeOptions}
+            value={pixelMode}
+            onChange={onPixelModeChange}
+            ariaLabelPrefix='Pixel Mode'
+          />
+        </Flex>
 
-      <Flex align='center'>
-        <SectionTitle>
-          <Trans>Dimensions</Trans>
-        </SectionTitle>
-        <ToggleButtonGroup
-          options={dimensionPresetOptions}
-          value={dimensionPreset}
-          onChange={onDimensionPresetChange}
-          ariaLabelPrefix='Dimensions'
-        />
-      </Flex>
+        <Flex align='center'>
+          <SectionTitle>
+            <Trans>Dimensions</Trans>
+          </SectionTitle>
+          <ToggleButtonGroup
+            options={dimensionPresetOptions}
+            value={dimensionPreset}
+            onChange={onDimensionPresetChange}
+            ariaLabelPrefix='Dimensions'
+          />
+        </Flex>
 
-      {/* Show custom dimensions input when custom preset is selected */}
-      {dimensionPreset === 'custom' && <CustomDimensionsInput />}
+        {/* Show custom dimensions input when custom preset is selected */}
+        {dimensionPreset === 'custom' && <CustomDimensionsInput />}
+      </div>
 
+      {/* Sélection de palette */}
       <PaletteStrategySelector />
 
-      <DitheringSelector />
+      {/* Traitement d'image */}
+      <div className={styles.section}>
+        <DitheringSelector />
 
-      <Flex align='baseline' justify='between' style={{ width: '100%' }}>
-        <SectionTitle>
-          <Trans>Lissage horizontal</Trans>
-        </SectionTitle>
-        <Switch
-          checked={horizontalSmoothing}
-          onCheckedChange={onHorizontalSmoothingChange}
-          id={horizontalSmoothingId}
-        />
-      </Flex>
+        <Flex align='baseline' justify='between' style={{ width: '100%' }}>
+          <SectionTitle>
+            <Trans>Lissage horizontal</Trans>
+          </SectionTitle>
+          <Switch
+            checked={horizontalSmoothing}
+            onCheckedChange={onHorizontalSmoothingChange}
+            id={horizontalSmoothingId}
+          />
+        </Flex>
+      </div>
 
+      {/* Options avancées */}
       <ProcessorSelector />
     </div>
   )
