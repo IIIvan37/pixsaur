@@ -97,7 +97,8 @@ elif [ "$PLATFORM" = "macos" ]; then
     for app in *.app; do
         if [ -d "$app" ]; then
             appname=$(basename "$app" .app)
-            tarname="${appname}${ARCH_SUFFIX}.app.tar.gz"
+            # Include version in filename: Pixsaur_1.0.0_x64.app.tar.gz
+            tarname="${appname}_${VERSION}${ARCH_SUFFIX}.app.tar.gz"
             echo "Creating ${tarname}"
             tar -czf "${tarname}" "$app"
             
