@@ -43,13 +43,8 @@ export function ColorGridView({
       className='popover'
       style={{ position: 'relative', minHeight: 140, maxHeight: 260 }}
     >
-      {/* @sonar-ignore-next-line a11y/useSemanticElements: Custom color grid requires visual display - select not suitable */}
-      {/* biome-ignore lint/a11y/useSemanticElements: Custom color grid layout incompatible with fieldset */}
-      <div
-        className={styles.colorGrid}
-        role='group'
-        aria-label='Options de couleur'
-      >
+      <fieldset className={styles.colorGrid}>
+        <legend className='sr-only'>Options de couleur</legend>
         {fullPalette.map((pc: CPCColor, optionIndex: number) => {
           const isUsed = slots.some((s: PaletteSlot, i: number) =>
             isColorUsed(s, pc, i)
@@ -77,7 +72,7 @@ export function ColorGridView({
             </div>
           )
         })}
-      </div>
+      </fieldset>
       {/* Affiche le bouton lock uniquement si le slot est rempli */}
       {slot.color && (
         <Button
