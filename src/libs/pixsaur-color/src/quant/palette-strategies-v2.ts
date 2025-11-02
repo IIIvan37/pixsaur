@@ -45,6 +45,101 @@ function calculateSaturation(color: Vector): number {
   return max > 0 ? (max - min) / max : 0
 }
 
+/**
+ * Complète le résultat avec les candidats restants les plus fréquents
+ */
+function fillRemainingSlots(
+  result: number[],
+  candidates: ColorCandidate[],
+  targetColors: number
+): void {
+  const sorted = [...candidates].sort((a, b) => b.frequency - a.frequency)
+  for (const candidate of sorted) {
+    if (result.length >= targetColors) break
+    if (!result.includes(candidate.index)) {
+      result.push(candidate.index)
+    }
+  }
+}
+
+/**
+ * Sélectionne le candidat avec le score de diversité le plus élevé
+ */
+function selectMostDiverseCandidate(
+  candidates: ColorCandidate[],
+  selectedColors: Vector[],
+  excludedIndices: Set<number>
+): ColorCandidate | null {
+  let maxMinDist = -Infinity
+  let bestCandidate: ColorCandidate | null = null
+
+  for (const candidate of candidates) {
+    if (excludedIndices.has(candidate.index)) continue
+
+    let minDist = Infinity
+    for (const selected of selectedColors) {
+      const dist = calculatePerceptualDistance(candidate.converted, selected)
+      minDist = Math.min(minDist, dist)
+    }
+
+    if (minDist > maxMinDist) {
+      maxMinDist = minDist
+      bestCandidate = candidate
+    }
+  }
+
+  return bestCandidate
+}
+
+/**
+ * Calcule la distance de couleur minimale entre un candidat et les couleurs sélectionnées
+ */
+function calculateMinColorDistance(
+  candidate: ColorCandidate,
+  selectedColors: Vector[]
+): number {
+  let minDist = Infinity
+  for (const selected of selectedColors) {
+    const dist = calculatePerceptualDistance(candidate.converted, selected)
+    minDist = Math.min(minDist, dist)
+  }
+  return minDist
+}
+
+/**
+ * Calcule la distance de luminance minimale entre un candidat et les luminances sélectionnées
+ */
+function calculateMinLuminanceDistance(
+  candidate: ColorCandidate,
+  selectedLuminances: number[]
+): number {
+  const candidateLum = calculateLuminance(candidate.color)
+  let minDist = Infinity
+  for (const selectedLum of selectedLuminances) {
+    const dist = Math.abs(candidateLum - selectedLum)
+    minDist = Math.min(minDist, dist)
+  }
+  return minDist
+}
+
+/**
+ * Calcule le bonus de balance basé sur les luminances déjà sélectionnées
+ */
+function calculateLuminanceBalanceBonus(
+  candidateLum: number,
+  selectedLuminances: number[]
+): number {
+  const hasDark = selectedLuminances.some((l) => l < 0.25)
+  const hasBright = selectedLuminances.some((l) => l > 0.75)
+  const hasMid = selectedLuminances.some((l) => l >= 0.4 && l <= 0.6)
+
+  if (!hasDark && candidateLum < 0.25) return 0.5
+  if (!hasBright && candidateLum > 0.75) return 0.5
+  if (!hasMid && candidateLum >= 0.4 && candidateLum <= 0.6) return 0.3
+
+  return 0
+}
+
 // ============================================================================
 // FREQUENCY STRATEGIES
 // ============================================================================
@@ -112,12 +207,7 @@ function selectByFrequencyCore(
   }
 
   // Compléter si nécessaire
-  for (const candidate of sorted) {
-    if (result.length >= targetColors) break
-    if (!result.includes(candidate.index)) {
-      result.push(candidate.index)
-    }
-  }
+  fillRemainingSlots(result, candidates, targetColors)
 
   return { selectedIndices: result }
 }
@@ -327,39 +417,20 @@ function selectByPerceptualCore(
         result.push(inBin[0].index)
       } else {
         // Max: prendre la plus diverse
-        let bestCandidate = inBin[0]
-        if (result.length > 0) {
-          let maxMinDist = -Infinity
-          for (const candidate of inBin) {
-            const selectedColors = result.map(
-              (idx) => candidates.find((c) => c.index === idx)!.converted
-            )
-            let minDist = Infinity
-            for (const selected of selectedColors) {
-              const dist = calculatePerceptualDistance(
-                candidate.converted,
-                selected
-              )
-              minDist = Math.min(minDist, dist)
-            }
-            if (minDist > maxMinDist) {
-              maxMinDist = minDist
-              bestCandidate = candidate
-            }
-          }
-        }
+        const selectedColors = result.map(
+          (idx) => candidates.find((c) => c.index === idx)!.converted
+        )
+        const excludedIndices = new Set(result)
+        const bestCandidate =
+          selectMostDiverseCandidate(inBin, selectedColors, excludedIndices) ||
+          inBin[0]
         result.push(bestCandidate.index)
       }
     }
   }
 
   // Compléter avec les plus fréquentes restantes
-  for (const candidate of withLuminance) {
-    if (result.length >= targetColors) break
-    if (!result.includes(candidate.index)) {
-      result.push(candidate.index)
-    }
-  }
+  fillRemainingSlots(result, candidates, targetColors)
 
   return { selectedIndices: result }
 }
@@ -442,36 +513,25 @@ function selectByDiversityFirstCore(
     for (const candidate of candidates) {
       if (result.includes(candidate.index)) continue
 
-      let minColorDist = Infinity
-      for (const selected of selectedColors) {
-        const dist = calculatePerceptualDistance(candidate.converted, selected)
-        minColorDist = Math.min(minColorDist, dist)
-      }
-
+      const minColorDist = calculateMinColorDistance(candidate, selectedColors)
       if (minColorDist < MIN_COLOR_DISTANCE) continue
 
       const diversityScore = Math.min(1, minColorDist / 255)
 
       const candidateLum = calculateLuminance(candidate.color)
-      let minLumDist = Infinity
-      for (const selectedLum of selectedLuminances) {
-        const dist = Math.abs(candidateLum - selectedLum)
-        minLumDist = Math.min(minLumDist, dist)
-      }
+      const minLumDist = calculateMinLuminanceDistance(
+        candidate,
+        selectedLuminances
+      )
 
       if (minLumDist < MIN_LUMINANCE_DISTANCE) continue
 
       const luminanceScore = minLumDist
 
-      const hasDark = selectedLuminances.some((l) => l < 0.25)
-      const hasBright = selectedLuminances.some((l) => l > 0.75)
-      const hasMid = selectedLuminances.some((l) => l >= 0.4 && l <= 0.6)
-
-      let balanceBonus = 0
-      if (!hasDark && candidateLum < 0.25) balanceBonus = 0.5
-      if (!hasBright && candidateLum > 0.75) balanceBonus = 0.5
-      if (!hasMid && candidateLum >= 0.4 && candidateLum <= 0.6)
-        balanceBonus = 0.3
+      const balanceBonus = calculateLuminanceBalanceBonus(
+        candidateLum,
+        selectedLuminances
+      )
 
       // Bonus saturation pour CPC Plus : favoriser les couleurs saturées
       const saturationBonus = isCPCClassic
@@ -508,25 +568,17 @@ function selectByDiversityFirstCore(
         for (const candidate of candidates) {
           if (result.includes(candidate.index)) continue
 
-          let minColorDist = Infinity
-          for (const selected of selectedColors) {
-            const dist = calculatePerceptualDistance(
-              candidate.converted,
-              selected
-            )
-            minColorDist = Math.min(minColorDist, dist)
-          }
+          const minColorDist = calculateMinColorDistance(
+            candidate,
+            selectedColors
+          )
 
           if (minColorDist < relaxedMinColorDist) continue
 
-          const candidateLum = calculateLuminance(candidate.color)
-          let minLumDist = Infinity
-          for (const selectedLum of selectedLuminances) {
-            minLumDist = Math.min(
-              minLumDist,
-              Math.abs(candidateLum - selectedLum)
-            )
-          }
+          const minLumDist = calculateMinLuminanceDistance(
+            candidate,
+            selectedLuminances
+          )
 
           if (minLumDist < relaxedMinLumDist) continue
 
@@ -550,24 +602,12 @@ function selectByDiversityFirstCore(
         scores.set(bestCandidate.index, bestScore)
       } else {
         // Dernier recours : la plus diverse sans contrainte
-        let maxDiversity = -Infinity
-        for (const candidate of candidates) {
-          if (result.includes(candidate.index)) continue
-
-          let minColorDist = Infinity
-          for (const selected of selectedColors) {
-            const dist = calculatePerceptualDistance(
-              candidate.converted,
-              selected
-            )
-            minColorDist = Math.min(minColorDist, dist)
-          }
-
-          if (minColorDist > maxDiversity) {
-            maxDiversity = minColorDist
-            bestCandidate = candidate
-          }
-        }
+        const excludedIndices = new Set(result)
+        bestCandidate = selectMostDiverseCandidate(
+          candidates,
+          selectedColors,
+          excludedIndices
+        )
 
         if (bestCandidate) {
           result.push(bestCandidate.index)

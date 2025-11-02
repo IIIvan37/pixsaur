@@ -755,8 +755,8 @@ export class ReGLQuantizer {
             ...preselectedIndices
           ])
           break
-        case 'frequency-balanced':
         default:
+          // Default to frequency-balanced strategy
           strategyResult = selectByFrequencyBalanced(candidates, targetColors, [
             ...preselectedIndices
           ])
