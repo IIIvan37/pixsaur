@@ -61,7 +61,7 @@ jobs:
           choco install jq
 
       - name: Free up disk space (Linux only)
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-22.04' && matrix.bundle-type != 'appimage'
         run: |
           echo "Before cleanup:"
           df -h /
