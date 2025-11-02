@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import clsx from 'clsx'
 import type * as React from 'react'
 import type { PaletteSlot } from '@/app/store/palette/types'
@@ -29,6 +30,7 @@ export function ColorGridView({
   optionRefs,
   onClose
 }: ColorGridViewProps) {
+  const { t } = useLingui()
   // Helper to check if a color is used in the palette (excluding current slot)
   const isColorUsed = (s: PaletteSlot, pc: CPCColor, index: number) => {
     return (
@@ -44,7 +46,9 @@ export function ColorGridView({
       style={{ position: 'relative', minHeight: 140, maxHeight: 260 }}
     >
       <fieldset className={styles.colorGrid}>
-        <legend className='sr-only'>Options de couleur</legend>
+        <legend className='sr-only'>
+          <Trans>Options de couleur</Trans>
+        </legend>
         {fullPalette.map((pc: CPCColor, optionIndex: number) => {
           const isUsed = slots.some((s: PaletteSlot, i: number) =>
             isColorUsed(s, pc, i)
@@ -58,7 +62,7 @@ export function ColorGridView({
                   styles.colorOption,
                   isUsed && styles.colorOptionUsed
                 )}
-                title={`${pc.name}${isUsed ? ' (utilisée)' : ''}`}
+                title={isUsed ? t`${pc.name} (utilisée)` : pc.name}
                 aria-selected={focusedColorIndex === optionIndex}
                 disabled={isUsed}
                 tabIndex={focusedColorIndex === optionIndex ? 0 : -1}
@@ -83,7 +87,11 @@ export function ColorGridView({
             onClose()
           }}
         >
-          {slot.locked ? 'Déverrouiller' : 'Verrouiller'}
+          {slot.locked ? (
+            <Trans>Déverrouiller</Trans>
+          ) : (
+            <Trans>Verrouiller</Trans>
+          )}
         </Button>
       )}
     </div>

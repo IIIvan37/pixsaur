@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. placeholder {0}: pc.name
+#: src/components/color-palette/color-grid/color-grid-view.tsx:65
+msgid "{0} (utilisée)"
+msgstr "{0} (usada)"
+
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
 msgstr "Una nueva versión de Pixsaur está disponible. Haga clic a continuación para descargarla e instalarla automáticamente."
@@ -128,7 +133,7 @@ msgstr "Contenido del ZIP"
 msgid "Contraste"
 msgstr "Contraste"
 
-#: src/app/app.tsx:117
+#: src/app/app.tsx:114
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Convertidor de imágenes Amstrad CPC"
 
@@ -140,11 +145,12 @@ msgstr "Corrección no lineal del brillo (0.1-3.0, 1.0 = neutro)"
 msgid "Couleur & Température"
 msgstr "Color & Temperatura"
 
+#: src/components/color-palette/color-grid/color-grid-view.tsx:91
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
 msgid "Déverrouiller"
 msgstr "Desbloquear"
 
-#: src/components/image-controls/image-controls-view.tsx:101
+#: src/components/image-controls/image-controls-view.tsx:103
 msgid "Dimensions"
 msgstr "Dimensiones"
 
@@ -211,7 +217,7 @@ msgstr "Gamma"
 msgid "Glissez & déposez une image ici"
 msgstr "Arrastra y suelta una imagen aquí"
 
-#: src/components/image-controls/image-controls-view.tsx:77
+#: src/components/image-controls/image-controls-view.tsx:79
 msgid "Hardware"
 msgstr "Hardware"
 
@@ -271,7 +277,7 @@ msgstr "Linear ASM (secuencial)"
 msgid "Lissage"
 msgstr "Suavizado"
 
-#: src/components/image-controls/image-controls-view.tsx:122
+#: src/components/image-controls/image-controls-view.tsx:126
 msgid "Lissage horizontal"
 msgstr "Suavizado horizontal"
 
@@ -340,6 +346,10 @@ msgstr "Nombre del archivo ZIP"
 msgid "Ombres"
 msgstr "Sombras"
 
+#: src/components/color-palette/color-grid/color-grid-view.tsx:50
+msgid "Options de couleur"
+msgstr "Opciones de color"
+
 #: src/components/image-resize/image-resize-panel.tsx:61
 msgid "Origin (No Scale)"
 msgstr "Original (sin escala)"
@@ -366,7 +376,7 @@ msgstr "Perceptual Equilibrado"
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptual Contraste"
 
-#: src/components/image-controls/image-controls-view.tsx:89
+#: src/components/image-controls/image-controls-view.tsx:91
 msgid "Pixel Mode"
 msgstr "Modo de píxel"
 
@@ -408,7 +418,6 @@ msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=norm
 msgstr "Reduce el número de niveles de color para un efecto de póster (256=normal, 128=ligero, 64=moderado, 32=fuerte, 16=muy fuerte, 8=extremo, 4=monocromo, 2=binario)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:223
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:120
 msgid "Réinitialiser"
 msgstr "Restablecer"
 
@@ -476,6 +485,10 @@ msgstr "Usar etiquetas personalizadas"
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
 msgid "Valider"
 msgstr "Confirmar"
+
+#: src/components/color-palette/color-grid/color-grid-view.tsx:93
+msgid "Verrouiller"
+msgstr "Bloquear"
 
 #: src/components/updater/updater-view.tsx:64
 msgid "Version"
