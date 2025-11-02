@@ -147,7 +147,8 @@ jobs:
         shell: bash
         run: |
           echo "=== Starting Tauri binary build at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
-          pnpm tauri build --bundles none
+          pnpm build
+          cd src-tauri && cargo build --release
           echo "=== Binary build completed at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
 
       - name: Download appimagetool (AppImage only)

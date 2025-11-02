@@ -19,7 +19,7 @@ mkdir -p "${APPDIR}/usr/share/icons/hicolor/256x256/apps"
 # 1. Check if binary exists
 if [ ! -f "src-tauri/target/release/${APP_NAME}" ]; then
   echo "ERROR: Binary not found at src-tauri/target/release/${APP_NAME}"
-  echo "Run 'pnpm tauri build --bundles none' first"
+  echo "Run 'pnpm build && cd src-tauri && cargo build --release' first"
   exit 1
 fi
 

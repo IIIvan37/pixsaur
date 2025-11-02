@@ -53,7 +53,7 @@ jobs:
         run: pnpm install
 
       - name: Build Tauri binary only
-        run: pnpm tauri build --bundles none
+        run: pnpm build && cd src-tauri && cargo build --release
 
       - name: Download appimagetool
         run: |
