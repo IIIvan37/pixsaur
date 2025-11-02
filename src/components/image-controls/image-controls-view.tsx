@@ -111,11 +111,9 @@ export function ImageControlsView({
       {/* Show custom dimensions input when custom preset is selected */}
       {dimensionPreset === 'custom' && <CustomDimensionsInput />}
 
-      <DitheringSelector />
-
       <PaletteStrategySelector />
 
-      <ProcessorSelector />
+      <DitheringSelector />
 
       <Flex align='baseline' justify='between' style={{ width: '100%' }}>
         <SectionTitle>
@@ -127,6 +125,8 @@ export function ImageControlsView({
           id={horizontalSmoothingId}
         />
       </Flex>
+
+      <ProcessorSelector />
     </div>
   )
 }
