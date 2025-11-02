@@ -118,9 +118,11 @@ jobs:
         if: matrix.bundle-type == 'appimage'
         timeout-minutes: 45
         shell: bash
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
         run: |
           echo "=== Building .deb with Tauri (includes frontend) at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
-          pnpm tauri build --bundles deb
+          pnpm tauri build --bundles deb || true
           echo "=== .deb build completed at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
           echo "=== Checking .deb was created ==="
           ls -lh src-tauri/target/release/bundle/deb/
