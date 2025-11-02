@@ -4,6 +4,7 @@
 
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
+import { invariant } from '@/utils/invariant'
 import { logger } from '@/utils/logger'
 
 /**
@@ -29,13 +30,13 @@ export async function pickImageFileTauri(): Promise<string | null> {
     }
 
     // Get file path (selected is a string when multiple: false)
-    const filePath = selected as string
+    invariant(typeof selected === 'string', 'Expected a single file path')
 
     // Read file content
-    const contents = await readFile(filePath)
+    const contents = await readFile(selected)
 
     // Detect MIME type from file extension
-    const ext = filePath.split('.').pop()?.toLowerCase() || ''
+    const ext = selected.split('.').pop()?.toLowerCase() || ''
     const mimeTypes: Record<string, string> = {
       png: 'image/png',
       jpg: 'image/jpeg',

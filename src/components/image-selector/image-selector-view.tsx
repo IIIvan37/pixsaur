@@ -1,10 +1,10 @@
 import { SourceSelector } from '../source-selector'
 
 export type ImageSelectorViewProps = {
-  canvasWidth: number
-  canvasHeight: number
-  src: ImageData | null
-  refCallback: (node: HTMLCanvasElement | null) => void
+  readonly canvasWidth: number
+  readonly canvasHeight: number
+  readonly src: ImageData | null
+  readonly refCallback: (node: HTMLCanvasElement | null) => void
 }
 
 /**
