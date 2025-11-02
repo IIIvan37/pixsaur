@@ -364,3 +364,26 @@ jobs:
         with:
           fail_on_unmatched_files: false
           files: latest.json
+
+      - name: Update release description with download links
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          
+          # Generate the downloads section
+          ./scripts/generate-release-body.sh ${VERSION} > /tmp/downloads.md
+          
+          # Get current release notes
+          gh release view ${VERSION} --json body --jq .body > /tmp/current_body.md
+          
+          # Combine: downloads section + separator + current notes
+          echo "" > /tmp/new_body.md
+          cat /tmp/downloads.md >> /tmp/new_body.md
+          echo "" >> /tmp/new_body.md
+          echo "---" >> /tmp/new_body.md
+          echo "" >> /tmp/new_body.md
+          cat /tmp/current_body.md >> /tmp/new_body.md
+          
+          # Update release description
+          gh release edit ${VERSION} --notes-file /tmp/new_body.md
