@@ -78,6 +78,18 @@ jobs:
         run: |
           choco install jq
 
+      - name: Free up disk space (Linux only)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Install pnpm
         run: |
           corepack enable
@@ -105,18 +117,6 @@ jobs:
           rustc --version
           node --version
           pnpm --version
-
-      - name: Free up disk space (Linux only)
-        if: matrix.platform == 'ubuntu-22.04'
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
 
       - name: Build Tauri manually
         timeout-minutes: 45
