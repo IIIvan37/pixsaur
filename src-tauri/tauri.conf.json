@@ -90,12 +90,6 @@
           "libgtk-3-0",
           "libayatana-appindicator3-1"
         ]
-      },
-      "appimage": {
-        "files": {
-          "AppRun": "./"
-        },
-        "bundleMediaFramework": false
       }
     }
   },
