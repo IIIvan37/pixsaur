@@ -43,6 +43,28 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
 
+      - name: Install dependencies (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          brew install jq
+
+      - name: Install dependencies (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          choco install jq
+
+      - name: Free up disk space (Linux only)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
@@ -67,28 +89,6 @@ jobs:
             patchelf \
             fuse \
             libfuse2
-
-      - name: Install dependencies (macOS)
-        if: startsWith(matrix.platform, 'macos')
-        run: |
-          brew install jq
-
-      - name: Install dependencies (Windows)
-        if: matrix.platform == 'windows-latest'
-        run: |
-          choco install jq
-
-      - name: Free up disk space (Linux only)
-        if: matrix.platform == 'ubuntu-22.04'
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
 
       - name: Install pnpm
         run: |
