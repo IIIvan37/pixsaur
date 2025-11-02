@@ -103,24 +103,16 @@ git tag -a "v$VERSION" -m "Release v$VERSION
 $CHANGELOG"
 git push origin "v$VERSION"
 
-# Créer la release draft sur GitHub AVANT que le workflow ne démarre
-echo "📦 Creating draft release on GitHub..."
-sleep 2  # Attendre que le tag soit visible dans l'API GitHub
-
-gh release create "v$VERSION" \
-  --draft \
-  --title "v$VERSION" \
-  --notes "$CHANGELOG" \
-  --verify-tag
-
 echo ""
-echo "✅ Release v$VERSION created!"
+echo "✅ Tag v$VERSION created and pushed!"
 echo ""
 echo "📋 Changelog:"
 echo "$CHANGELOG"
 echo ""
-echo "🚀 GitHub Actions workflow is now building the release assets."
-echo "📦 The release draft is ready at: https://github.com/IIIvan37/pixsaur/releases/tag/v$VERSION"
+echo "🚀 GitHub Actions workflow will:"
+echo "   1. Wait for tag to be indexed"
+echo "   2. Create the draft release"
+echo "   3. Build and upload all platform assets"
 echo ""
 echo "Monitor the workflow at:"
 echo "https://github.com/IIIvan37/pixsaur/actions"
