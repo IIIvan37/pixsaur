@@ -4,16 +4,20 @@
  * ReGL simplifiera la gestion WebGL quand l'implémentation GPU sera prête
  */
 
-// Import pour accéder à l'atome de stratégie de contraste
+// Import pour accéder à l'atome de stratégie de palette
 import { getDefaultStore } from 'jotai'
 import type REGL from 'regl'
-import { contrastStrategyAtom } from '@/app/store/config/config'
+import { paletteStrategyAtom } from '@/app/store/config/config'
 import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { adapterLogger, paletteLogger } from '@/utils/logger'
-import type { AdjustmentConfig, ImageProcessor } from '../interfaces'
+import type {
+  AdjustmentConfig,
+  ImageProcessor,
+  PaletteStrategy
+} from '../interfaces'
 import { imageAdjustmentFragmentShader, simpleVertexShader } from '../shaders'
 import { ReGLQuantizer } from './regl-quantizer'
 
@@ -162,6 +166,26 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): Promise<ImageData> {
+    return this.applyAdjustmentsInternal(imageData, adjustments)
+  }
+
+  /**
+   * Version synchrone pour compatibility avec Jotai atoms
+   */
+  applyAdjustmentsSync(
+    imageData: ImageData,
+    adjustments: AdjustmentConfig
+  ): ImageData {
+    return this.applyAdjustmentsInternal(imageData, adjustments)
+  }
+
+  /**
+   * Logique interne commune pour les ajustements (synchrone)
+   */
+  private applyAdjustmentsInternal(
+    imageData: ImageData,
+    adjustments: AdjustmentConfig
+  ): ImageData {
     // Essayer d'abord le GPU si disponible
     if (this.imageAdjustmentCommand && this.quantizer) {
       return this.applyAdjustmentsGPU(imageData, adjustments)
@@ -267,25 +291,6 @@ export class ReGLProcessor implements ImageProcessor {
   }
 
   /**
-   * Version synchrone pour compatibility avec Jotai atoms
-   */
-  applyAdjustmentsSync(
-    imageData: ImageData,
-    adjustments: AdjustmentConfig
-  ): ImageData {
-    // Essayer d'abord le GPU si disponible
-    if (this.imageAdjustmentCommand && this.quantizer) {
-      return this.applyAdjustmentsGPU(imageData, adjustments)
-    }
-
-    // Fallback CPU
-    return applyAdjustmentsInOnePass(
-      imageData,
-      this.createAdjustmentConfig(adjustments)
-    )
-  }
-
-  /**
    * Quantification de palette avec ReGL ou CPU fallback
    * Phase 1: Utilise ReGLQuantizer si disponible, sinon fallback CPU
    * Colorspace fixé sur RGB pour optimisation GPU
@@ -296,7 +301,7 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    contrastStrategy?: 'max' | 'balanced'
+    paletteStrategy?: PaletteStrategy
   ): Promise<Vector[]> {
     // RGB utilise euclidean distance
     const distanceMetric: DistanceMetric = 'euclidean'
@@ -327,8 +332,9 @@ export class ReGLProcessor implements ImageProcessor {
           {
             distanceMetric,
             targetColors,
-            contrastStrategy:
-              contrastStrategy || getDefaultStore().get(contrastStrategyAtom),
+            contrastStrategy: undefined, // Obsolete, ignored
+            paletteStrategy:
+              paletteStrategy || getDefaultStore().get(paletteStrategyAtom),
             gpuOptions: {
               minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
             }
@@ -352,8 +358,7 @@ export class ReGLProcessor implements ImageProcessor {
       targetColors,
       basePalette,
       preselected,
-      distanceMetric,
-      contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
+      distanceMetric
     )
   }
 
@@ -366,8 +371,7 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    distanceMetric: DistanceMetric,
-    contrastStrategy?: 'max' | 'balanced'
+    distanceMetric: DistanceMetric
   ): Promise<Vector[]> {
     // Utiliser la signature correcte de createQuantizer
     const quantizer = createQuantizer({
@@ -376,8 +380,7 @@ export class ReGLProcessor implements ImageProcessor {
       preselected,
       quantConfig: {
         distanceMetric,
-        contrastStrategy:
-          contrastStrategy || getDefaultStore().get(contrastStrategyAtom)
+        contrastStrategy: undefined // Obsolete parameter
       }
     })
 

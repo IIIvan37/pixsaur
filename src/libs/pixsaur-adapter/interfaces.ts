@@ -1,5 +1,6 @@
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 
+export type { PaletteStrategy } from '@/app/store/config/types'
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
 /**
@@ -62,10 +63,8 @@ export interface ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    contrastStrategy?: 'max' | 'balanced'
-  ): Promise<Vector[]>
-
-  /**
+    paletteStrategy?: PaletteStrategy
+  ): Promise<Vector[]> /**
    * Nettoie les ressources (WebGL contexts, etc.)
    */
   dispose(): void

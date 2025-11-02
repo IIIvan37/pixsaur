@@ -17,11 +17,11 @@ import { logger } from '@/utils/logger'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,
-  contrastStrategyAtom,
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
+  paletteStrategyAtom,
   pixelModeAtom,
   resizeModeAtom
 } from '../config/config'
@@ -155,7 +155,6 @@ export const quantizerAtom = atom(async (get) => {
   const processed = await get(smoothedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = 'RGB' // Fixé sur RGB
-  const contrastStrategy = get(contrastStrategyAtom)
   const cpcHardware = get(cpcHardwareAtom)
   if (!buf || !processed) return null
 
@@ -167,8 +166,7 @@ export const quantizerAtom = atom(async (get) => {
     basePalette: getPaletteForHardware(cpcHardware),
     preselected: lockedVecs,
     quantConfig: {
-      distanceMetric,
-      contrastStrategy
+      distanceMetric
     }
   })
   return quantizer
@@ -180,7 +178,6 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const processed = await get(smoothedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
-  const contrastStrategy = get(contrastStrategyAtom)
 
   if (!buf || !processed) return []
 
@@ -217,14 +214,24 @@ export const reducedPaletteRawAtom = atom(async (get) => {
             ] as Vector<'RGB'>
         )
 
+  const paletteStrategy = get(paletteStrategyAtom)
+
+  logger.info('[Preview] Quantizing palette', {
+    targetColors,
+    paletteStrategy,
+    hardware: cpcHardware
+  })
+
   const palette = await paletteProcessor.quantizePalette(
     buf,
     processed,
     targetColors,
     basePalette,
     quantifiedLockedVecs,
-    contrastStrategy // Utiliser la stratégie choisie par l'utilisateur
+    paletteStrategy // Utiliser la stratégie de sélection de palette choisie
   )
+
+  logger.info('[Preview] Palette quantized', { colorsCount: palette.length })
 
   return palette
 })

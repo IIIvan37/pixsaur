@@ -22,8 +22,17 @@ export type CpcModeKey =
 // Processor types for image processing
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
-// Contrast selection strategy for small palettes (modes 1-2)
-export type ContrastStrategy = 'max' | 'balanced'
+// Palette selection strategy for color quantization
+export type PaletteStrategy =
+  | 'frequency-balanced' // Original: frequency + diversity, mode balanced (80% freq)
+  | 'frequency-max' // Original: frequency + diversity, max contrast (60% freq)
+  | 'balanced-score-balanced' // Multi-criteria: 50% freq, 25% diversity, 25% luminance
+  | 'balanced-score-max' // Multi-criteria: 30% freq, 35% diversity, 35% luminance
+  | 'perceptual-balanced' // Luminance bins with frequency priority
+  | 'perceptual-max' // Luminance bins with diversity priority
+  | 'diversity-first-balanced' // Diversity max with slight frequency (90% div, 10% freq)
+  | 'diversity-first-max' // Pure diversity (100% div, 0% freq)
+  | 'adaptive' // Adaptive based on image analysis
 
 // This file defines types and constants related to CPC modes and color adjustments.
 export type CpcModeConfig = {

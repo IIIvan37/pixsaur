@@ -13,13 +13,18 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/updater/updater.tsx:184
+#: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
 msgstr "Eine neue Version von Pixsaur ist verfügbar. Klicken Sie unten, um sie automatisch herunterzuladen und zu installieren."
 
 #: src/components/updater/updater.tsx:112
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "Eine neue Version von Pixsaur ist verfügbar. Aktualisieren Sie jetzt, um die neuesten Funktionen und Verbesserungen zu erhalten."
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:143
+msgid "palette.strategy.adaptive.label"
+msgstr "Adaptiv"
 
 #: src/app/components/adjustements/adjustement.view.tsx:74
 msgid "Ajuste la clarté globale de l'image"
@@ -29,11 +34,11 @@ msgstr "Passt die globale Helligkeit des Bildes an"
 msgid "Ajuste la différence entre les tons clairs et foncés"
 msgstr "Passt den Unterschied zwischen hellen und dunklen Tönen an"
 
-#: src/app/components/adjustements/adjustement.view.tsx:146
+#: src/app/components/adjustements/adjustement.view.tsx:144
 msgid "Ajuste uniquement les zones claires de l'image"
 msgstr "Passt nur die hellen Bereiche des Bildes an"
 
-#: src/app/components/adjustements/adjustement.view.tsx:151
+#: src/app/components/adjustements/adjustement.view.tsx:149
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Passt nur die dunklen Bereiche des Bildes an"
 
@@ -58,13 +63,28 @@ msgstr "Kein verarbeitetes Bild"
 msgid "Auto (Smart CPC adapt)"
 msgstr "Auto (intelligente CPC-Anpassung)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:112
+#: src/app/components/adjustements/adjustement.view.tsx:111
 msgid "Balance bleu/orange (-100 = froid, +100 = chaud)"
 msgstr "Blau/Orange-Balance (-100 = kalt, +100 = warm)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:119
+#: src/app/components/adjustements/adjustement.view.tsx:117
 msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Grün/Magenta-Balance zur Korrektur von Farbstichen"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:68
+msgid "palette.strategy.balanced-score-max.label"
+msgstr "Score Kontrast Max"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:44
+msgid "palette.strategy.frequency-max.desc"
+msgstr "Ausgewogene Frequenz (60%) und Vielfalt (40%)"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:53
+msgid "palette.strategy.balanced-score-balanced.label"
+msgstr "Ausgewogener Score"
 
 #: src/app/components/adjustements/adjustement.view.tsx:68
 #: src/components/ui/rgb-slider/rgb-slider.tsx:60
@@ -111,7 +131,7 @@ msgstr "Kontrast"
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Bildkonverter"
 
-#: src/app/components/adjustements/adjustement.view.tsx:128
+#: src/app/components/adjustements/adjustement.view.tsx:126
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Nichtlineare Helligkeitskorrektur (0.1-3.0, 1.0 = neutral)"
 
@@ -123,13 +143,28 @@ msgstr "Farbe & Temperatur"
 msgid "Déverrouiller"
 msgstr "Entsperren"
 
-#: src/components/image-controls/image-controls-view.tsx:100
+#: src/components/image-controls/image-controls-view.tsx:101
 msgid "Dimensions"
 msgstr "Abmessungen"
 
-#: src/components/updater/updater.tsx:217
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
+msgid "palette.strategy.diversity-first-balanced.label"
+msgstr "Vielfalt Ausgewogen"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:119
+msgid "palette.strategy.diversity-first-balanced.desc"
+msgstr "Dominante Vielfalt (90%) mit leichter Frequenz (10%)"
+
+#: src/components/updater/updater-view.tsx:116
 msgid "Downloading..."
 msgstr "Herunterladen..."
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:146
+msgid "palette.strategy.adaptive.desc"
+msgstr "Dynamische Strategie basierend auf dem Bild"
 
 #: src/app/components/adjustements/adjustement.view.tsx:49
 msgid "Effets"
@@ -140,7 +175,7 @@ msgstr "Effekte"
 msgid "Exporter"
 msgstr "Exportieren"
 
-#: src/app/components/adjustements/adjustement.view.tsx:135
+#: src/app/components/adjustements/adjustement.view.tsx:133
 msgid "Exposition"
 msgstr "Belichtung"
 
@@ -152,7 +187,22 @@ msgstr "Belichtung & Tonalität"
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Unterstützte Formate: PNG, JPEG, GIF, BMP, WEBP, SVG"
 
-#: src/app/components/adjustements/adjustement.view.tsx:126
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:23
+msgid "palette.strategy.frequency-balanced.label"
+msgstr "Frequenz Ausgewogen"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:38
+msgid "palette.strategy.frequency-max.label"
+msgstr "Frequenz Kontrast"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:29
+msgid "palette.strategy.frequency-balanced.desc"
+msgstr "Frequenzpriorität (80%) mit mäßiger Vielfalt"
+
+#: src/app/components/adjustements/adjustement.view.tsx:124
 msgid "Gamma"
 msgstr "Gamma"
 
@@ -160,11 +210,11 @@ msgstr "Gamma"
 msgid "Glissez & déposez une image ici"
 msgstr "Ziehen Sie ein Bild hierher"
 
-#: src/components/image-controls/image-controls-view.tsx:76
+#: src/components/image-controls/image-controls-view.tsx:77
 msgid "Hardware"
 msgstr "Hardware"
 
-#: src/app/components/adjustements/adjustement.view.tsx:145
+#: src/app/components/adjustements/adjustement.view.tsx:143
 msgid "Hautes lumières"
 msgstr "Lichter"
 
@@ -176,7 +226,7 @@ msgstr "Höhe"
 msgid "Image source"
 msgstr "Quellbild"
 
-#: src/components/updater/updater.tsx:222
+#: src/components/updater/updater-view.tsx:121
 msgid "Install Update"
 msgstr "Update installieren"
 
@@ -204,7 +254,7 @@ msgstr "Daten-Label"
 msgid "Largeur"
 msgstr "Breite"
 
-#: src/components/updater/updater.tsx:203
+#: src/components/updater/updater-view.tsx:102
 msgid "Later"
 msgstr "Später"
 
@@ -220,13 +270,28 @@ msgstr "Linear ASM (sequenziell)"
 msgid "Lissage"
 msgstr "Glättung"
 
-#: src/components/image-controls/image-controls-view.tsx:119
+#: src/components/image-controls/image-controls-view.tsx:122
 msgid "Lissage horizontal"
 msgstr "Horizontale Glättung"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:104
+msgid "palette.strategy.perceptual-max.desc"
+msgstr "Luminanz-Bins mit Vielfaltspriorität"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:89
+msgid "palette.strategy.perceptual-balanced.desc"
+msgstr "Luminanz-Bins mit Frequenzpriorität"
 
 #: src/app/components/adjustements/adjustement.view.tsx:73
 msgid "Luminosité"
 msgstr "Helligkeit"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:134
+msgid "palette.strategy.diversity-first-max.desc"
+msgstr "Maximale Vielfalt (100%), Frequenz ignoriert"
 
 #: src/components/image-controls/custom-dimensions-input/custom-dimensions-input-view.tsx:70
 msgid "Mémoire"
@@ -245,6 +310,16 @@ msgstr "Dithering-Modus"
 msgid "Mode de redimensionnement"
 msgstr "Größenänderungsmodus"
 
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:59
+msgid "palette.strategy.balanced-score-balanced.desc"
+msgstr "Multi-Kriterien ausgewogen (50% Freq, 25% Div, 25% Lum)"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:74
+msgid "palette.strategy.balanced-score-max.desc"
+msgstr "Multi-Kriterien mit Kontrast (30% Freq, 35% Div, 35% Lum)"
+
 #: src/app/components/adjustements/adjustement.view.tsx:69
 msgid "Multiplie le canal bleu (0-2x)"
 msgstr "Multipliziert den Blaukanal (0-2x)"
@@ -261,7 +336,7 @@ msgstr "Multipliziert den Grünkanal (0-2x)"
 msgid "Nom du fichier ZIP"
 msgstr "ZIP-Dateiname"
 
-#: src/app/components/adjustements/adjustement.view.tsx:150
+#: src/app/components/adjustements/adjustement.view.tsx:148
 msgid "Ombres"
 msgstr "Schatten"
 
@@ -281,7 +356,17 @@ msgstr "Oder ziehen Sie eine Datei hierher (falls unterstützt)"
 msgid "Palettes (firmware/hardware)"
 msgstr "Paletten (Firmware/Hardware)"
 
-#: src/components/image-controls/image-controls-view.tsx:88
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:83
+msgid "palette.strategy.perceptual-balanced.label"
+msgstr "Perzeptuell Ausgewogen"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:98
+msgid "palette.strategy.perceptual-max.label"
+msgstr "Perzeptuell Kontrast"
+
+#: src/components/image-controls/image-controls-view.tsx:89
 msgid "Pixel Mode"
 msgstr "Pixelmodus"
 
@@ -297,13 +382,18 @@ msgstr "PNG (korrektes CPC-Seitenverhältnis)"
 msgid "PNG (pixels carrés)"
 msgstr "PNG (quadratische Pixel)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:155
+#: src/app/components/adjustements/adjustement.view.tsx:153
 msgid "Posterisation"
 msgstr "Posterisierung"
 
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
 msgstr "Prozessor"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:128
+msgid "palette.strategy.diversity-first-max.label"
+msgstr "Reine Vielfalt"
 
 #: src/components/source-selector/source-selector-view.tsx:112
 #~ msgid "Redimensionner"
@@ -313,11 +403,11 @@ msgstr "Prozessor"
 #~ msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)"
 #~ msgstr "Reduziert die Anzahl der Farbstufen für einen Postereffekt (2-256)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:157
+#: src/app/components/adjustements/adjustement.view.tsx:155
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 msgstr "Reduziert die Anzahl der Farbstufen für einen Postereffekt (256=normal, 128=leicht, 64=mäßig, 32=stark, 16=sehr stark, 8=extrem, 4=monochrom, 2=binär)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:225
+#: src/app/components/adjustements/adjustement.view.tsx:223
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:120
 msgid "Réinitialiser"
 msgstr "Zurücksetzen"
@@ -351,7 +441,7 @@ msgstr "Auswahl"
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
 
-#: src/app/components/adjustements/adjustement.view.tsx:137
+#: src/app/components/adjustements/adjustement.view.tsx:135
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simuliert Blendenstufen (-3 bis +3, ±1 = doppelt/halb Licht)"
 
@@ -359,7 +449,7 @@ msgstr "Simuliert Blendenstufen (-3 bis +3, ±1 = doppelt/halb Licht)"
 msgid "Teinte"
 msgstr "Farbton"
 
-#: src/app/components/adjustements/adjustement.view.tsx:117
+#: src/app/components/adjustements/adjustement.view.tsx:115
 msgid "Teinte colorée"
 msgstr "Farbstich"
 
@@ -367,11 +457,11 @@ msgstr "Farbstich"
 msgid "Température"
 msgstr "Temperatur"
 
-#: src/components/updater/updater.tsx:175
+#: src/components/updater/updater-view.tsx:61
 msgid "Update Available"
 msgstr "Update verfügbar"
 
-#: src/components/updater/updater.tsx:155
+#: src/components/updater/updater-view.tsx:41
 msgid "Update available: version {updateVersion}"
 msgstr "Update verfügbar: Version {updateVersion}"
 
@@ -387,9 +477,13 @@ msgstr "Benutzerdefinierte Labels verwenden"
 msgid "Valider"
 msgstr "Bestätigen"
 
+#: src/components/updater/updater-view.tsx:64
+msgid "Version"
+msgstr "Version"
+
 #: src/components/updater/updater.tsx:178
-msgid "Version {updateVersion}"
-msgstr "Version {updateVersion}"
+#~ msgid "Version {updateVersion}"
+#~ msgstr "Version {updateVersion}"
 
 #: src/app/components/adjustements/adjustement.view.tsx:63
 #: src/components/ui/rgb-slider/rgb-slider.tsx:59

@@ -9,6 +9,7 @@ import { ToggleButtonGroup } from '../ui/toggle-button-group'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 import { DitheringSelector } from './dithering-selector/dithering-selector'
 import styles from './image-controls.module.css'
+import { PaletteStrategySelector } from './palette-strategy-selector/palette-strategy-selector'
 import { ProcessorSelector } from './processor-selector/processor-selector'
 
 export type ImageControlsViewProps = {
@@ -71,59 +72,69 @@ export function ImageControlsView({
 
   return (
     <div className={styles.controlsContainer}>
-      <Flex align='center'>
-        <SectionTitle>
-          <Trans>Hardware</Trans>
-        </SectionTitle>
-        <ToggleButtonGroup
-          options={hardwareOptions}
-          value={cpcHardware}
-          onChange={onCpcHardwareChange}
-          ariaLabelPrefix='Hardware'
-        />
-      </Flex>
+      {/* Configuration matérielle et mode */}
+      <div className={styles.section}>
+        <Flex align='center'>
+          <SectionTitle>
+            <Trans>Hardware</Trans>
+          </SectionTitle>
+          <ToggleButtonGroup
+            options={hardwareOptions}
+            value={cpcHardware}
+            onChange={onCpcHardwareChange}
+            ariaLabelPrefix='Hardware'
+          />
+        </Flex>
 
-      <Flex align='center'>
-        <SectionTitle>
-          <Trans>Pixel Mode</Trans>
-        </SectionTitle>
-        <ToggleButtonGroup
-          options={pixelModeOptions}
-          value={pixelMode}
-          onChange={onPixelModeChange}
-          ariaLabelPrefix='Pixel Mode'
-        />
-      </Flex>
+        <Flex align='center'>
+          <SectionTitle>
+            <Trans>Pixel Mode</Trans>
+          </SectionTitle>
+          <ToggleButtonGroup
+            options={pixelModeOptions}
+            value={pixelMode}
+            onChange={onPixelModeChange}
+            ariaLabelPrefix='Pixel Mode'
+          />
+        </Flex>
 
-      <Flex align='center'>
-        <SectionTitle>
-          <Trans>Dimensions</Trans>
-        </SectionTitle>
-        <ToggleButtonGroup
-          options={dimensionPresetOptions}
-          value={dimensionPreset}
-          onChange={onDimensionPresetChange}
-          ariaLabelPrefix='Dimensions'
-        />
-      </Flex>
+        <Flex align='center'>
+          <SectionTitle>
+            <Trans>Dimensions</Trans>
+          </SectionTitle>
+          <ToggleButtonGroup
+            options={dimensionPresetOptions}
+            value={dimensionPreset}
+            onChange={onDimensionPresetChange}
+            ariaLabelPrefix='Dimensions'
+          />
+        </Flex>
 
-      {/* Show custom dimensions input when custom preset is selected */}
-      {dimensionPreset === 'custom' && <CustomDimensionsInput />}
+        {/* Show custom dimensions input when custom preset is selected */}
+        {dimensionPreset === 'custom' && <CustomDimensionsInput />}
+      </div>
 
-      <DitheringSelector />
+      {/* Sélection de palette */}
+      <PaletteStrategySelector />
 
+      {/* Traitement d'image */}
+      <div className={styles.section}>
+        <DitheringSelector />
+
+        <Flex align='center' justify='between' style={{ width: '100%' }}>
+          <SectionTitle>
+            <Trans>Lissage horizontal</Trans>
+          </SectionTitle>
+          <Switch
+            checked={horizontalSmoothing}
+            onCheckedChange={onHorizontalSmoothingChange}
+            id={horizontalSmoothingId}
+          />
+        </Flex>
+      </div>
+
+      {/* Options avancées */}
       <ProcessorSelector />
-
-      <Flex align='baseline' justify='between' style={{ width: '100%' }}>
-        <SectionTitle>
-          <Trans>Lissage horizontal</Trans>
-        </SectionTitle>
-        <Switch
-          checked={horizontalSmoothing}
-          onCheckedChange={onHorizontalSmoothingChange}
-          id={horizontalSmoothingId}
-        />
-      </Flex>
     </div>
   )
 }

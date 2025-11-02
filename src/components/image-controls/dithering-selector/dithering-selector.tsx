@@ -98,28 +98,6 @@ export function DitheringSelector() {
           step={1}
           disabled={cfg.mode === 'ylioluma2'}
         />
-        {cfg.mode !== 'ylioluma2' && (
-          <button
-            type='button'
-            onClick={() => {
-              const defaultIntensity =
-                cfg.mode === 'none' ? 0.5 : getDefaultIntensity(cfg.mode)
-              setCfg({ ...cfg, intensity: defaultIntensity })
-            }}
-            style={{
-              marginTop: 'var(--spacing-xs)',
-              fontSize: 'var(--font-size-xs)',
-              padding: '2px 8px',
-              backgroundColor: 'var(--color-background-secondary)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--border-radius-sm)',
-              color: 'var(--color-foreground)',
-              cursor: 'pointer'
-            }}
-          >
-            <Trans>Réinitialiser</Trans>
-          </button>
-        )}
       </div>
     </Flex>
   )

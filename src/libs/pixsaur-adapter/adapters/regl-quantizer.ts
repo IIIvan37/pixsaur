@@ -8,6 +8,19 @@
  */
 
 import type REGL from 'regl'
+import type { PaletteStrategy } from '@/app/store/config/types'
+import {
+  type ColorCandidate,
+  selectByAdaptive,
+  selectByBalancedScoreBalanced,
+  selectByBalancedScoreMax,
+  selectByDiversityFirstBalanced,
+  selectByDiversityFirstMax,
+  selectByFrequencyBalanced,
+  selectByFrequencyMax,
+  selectByPerceptualBalanced,
+  selectByPerceptualMax
+} from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
@@ -41,6 +54,9 @@ export interface ReGLQuantizeConfig extends QuantizeConfig {
 
   /** Whether threshold is relative to palette size (default: false) */
   readonly isRelativeThreshold?: boolean
+
+  /** Palette selection strategy (default: 'frequency') */
+  readonly paletteStrategy?: PaletteStrategy
 
   /** GPU performance options */
   readonly gpuOptions?: {
@@ -434,7 +450,7 @@ export class ReGLQuantizer {
   private selectCPCClassicOptimized(
     imageData: ImageData,
     basePalette: readonly Vector[],
-    targetColors: number,
+    _candidatesCount: number,
     config: ReGLQuantizeConfig
   ): number[] {
     // Échantillonnage équilibré : qualité vs performance
@@ -444,13 +460,17 @@ export class ReGLQuantizer {
     // Récupérer les indices présélectionnés (couleurs lockées)
     const preselectedIndices = config.preselectedIndices || []
 
+    // Use actual targetColors from config, not the candidatesCount passed as parameter
+    const actualTargetColors =
+      config.targetColors === 512 ? 16 : config.targetColors
+
     // CPU: Calcul rapide des couleurs dominantes avec diversité (incluant les présélectionnées)
     const selected = this.selectDiverseColorsFast(
       sampledColors,
       basePalette,
-      targetColors,
+      actualTargetColors,
       preselectedIndices,
-      config.contrastStrategy // Passer la stratégie de contraste
+      config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
     )
 
     return selected
@@ -463,7 +483,7 @@ export class ReGLQuantizer {
   private selectCPCPlusOptimized(
     imageData: ImageData,
     basePalette: readonly Vector[],
-    targetColors: number,
+    _candidatesCount: number,
     config: ReGLQuantizeConfig
   ): number[] {
     // Échantillonnage équilibré : qualité vs performance
@@ -472,13 +492,17 @@ export class ReGLQuantizer {
     // Récupérer les indices présélectionnés (couleurs lockées)
     const preselectedIndices = config.preselectedIndices || []
 
+    // Use actual targetColors from config, not the candidatesCount passed as parameter
+    const actualTargetColors =
+      config.targetColors === 512 ? 16 : config.targetColors
+
     // CPU: Calcul rapide des couleurs dominantes avec diversité (incluant les présélectionnées)
     const selected = this.selectDiverseColorsFast(
       sampledColors,
       basePalette,
-      targetColors,
+      actualTargetColors,
       preselectedIndices,
-      config.contrastStrategy // Passer la stratégie de contraste
+      config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
     )
 
     return selected
@@ -639,14 +663,14 @@ export class ReGLQuantizer {
   /**
    * Sélection rapide avec diversité maximale + espaces colorimetriques
    * Complexité réduite en extrayant les helpers
-   * Stratégie adaptative selon contrastStrategy
+   * Stratégie adaptative selon paletteStrategy
    */
   private selectDiverseColorsFast(
     sampledColors: Vector[],
     basePalette: readonly Vector[],
     targetColors: number,
     preselectedIndices: readonly number[] = [],
-    contrastStrategy: 'max' | 'balanced' = 'max'
+    paletteStrategy: PaletteStrategy = 'frequency-balanced'
   ): number[] {
     // Commencer par les couleurs présélectionnées (priorité absolue)
     const result: number[] = [...preselectedIndices]
@@ -664,8 +688,101 @@ export class ReGLQuantizer {
       usedIndices
     )
 
+    // Utiliser la nouvelle stratégie de sélection de palette pour les petites palettes
+    // IMPORTANT: Doit être fait AVANT tout return early
+    if (targetColors <= 4) {
+      adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
+        strategy: paletteStrategy,
+        targetColors,
+        candidatesCount: colorFrequency.length
+      })
+
+      const candidates: ColorCandidate[] = colorFrequency.map((c) => ({
+        index: c.index,
+        frequency: c.frequency,
+        color: c.color,
+        converted: c.converted
+      }))
+
+      let strategyResult: {
+        selectedIndices: number[]
+        scores?: Map<number, number>
+      }
+      switch (paletteStrategy) {
+        case 'frequency-max':
+          strategyResult = selectByFrequencyMax(candidates, targetColors, [
+            ...preselectedIndices
+          ])
+          break
+        case 'balanced-score-balanced':
+          strategyResult = selectByBalancedScoreBalanced(
+            candidates,
+            targetColors,
+            [...preselectedIndices]
+          )
+          break
+        case 'balanced-score-max':
+          strategyResult = selectByBalancedScoreMax(candidates, targetColors, [
+            ...preselectedIndices
+          ])
+          break
+        case 'perceptual-balanced':
+          strategyResult = selectByPerceptualBalanced(
+            candidates,
+            targetColors,
+            [...preselectedIndices]
+          )
+          break
+        case 'perceptual-max':
+          strategyResult = selectByPerceptualMax(candidates, targetColors, [
+            ...preselectedIndices
+          ])
+          break
+        case 'diversity-first-balanced':
+          strategyResult = selectByDiversityFirstBalanced(
+            candidates,
+            targetColors,
+            [...preselectedIndices]
+          )
+          break
+        case 'diversity-first-max':
+          strategyResult = selectByDiversityFirstMax(candidates, targetColors, [
+            ...preselectedIndices
+          ])
+          break
+        case 'adaptive':
+          strategyResult = selectByAdaptive(candidates, targetColors, [
+            ...preselectedIndices
+          ])
+          break
+        default:
+          // Default to frequency-balanced strategy
+          strategyResult = selectByFrequencyBalanced(candidates, targetColors, [
+            ...preselectedIndices
+          ])
+          break
+      }
+
+      adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {
+        strategy: paletteStrategy,
+        selectedIndices: strategyResult.selectedIndices
+      })
+
+      return strategyResult.selectedIndices
+    }
+
+    // Pour les palettes plus grandes (mode 0: 16 couleurs), utiliser l'ancien algorithme
     const remainingSlots = targetColors - result.length
-    if (colorFrequency.length <= remainingSlots) {
+
+    // Check si on a assez de candidats (seulement pour mode 0)
+    if (colorFrequency.length <= remainingSlots && targetColors > 4) {
+      adapterLogger.info(
+        '[ReGLQuantizer] Not enough candidates, returning all',
+        {
+          candidates: colorFrequency.length,
+          needed: remainingSlots
+        }
+      )
       return [...result, ...colorFrequency.map((c) => c.index)]
     }
 
@@ -677,41 +794,10 @@ export class ReGLQuantizer {
     result.push(colorFrequency[0].index)
     selectedConverted.push(colorFrequency[0].converted)
 
-    // Stratégie adaptative selon contrastStrategy
-    // balanced: privilégie la fréquence (80%) pour garder les couleurs dominantes
-    // max: équilibre fréquence (60%) et diversité (40%) pour plus de contraste
-    const frequencyBudget = Math.floor(
-      targetColors * (contrastStrategy === 'balanced' ? 0.8 : 0.6)
-    )
-
-    // Pour les petites palettes (2-4 couleurs) en mode "balanced":
-    // Prendre directement les couleurs les plus fréquentes (comme CPC Classic)
-    if (contrastStrategy === 'balanced' && targetColors <= 4) {
-      // Calculer la luminance de chaque couleur
-      const withLuminance = colorFrequency.map((c) => {
-        const [r, g, b] = c.color
-        const luminance =
-          0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
-        return { ...c, luminance }
-      })
-
-      // Privilégier les couleurs avec luminance moyenne (0.3-0.7) car elles fonctionnent mieux avec le noir
-      // Trier par: luminance proche de 0.5 (moyen) + fréquence
-      withLuminance.sort((a, b) => {
-        const lumDistA = Math.abs(a.luminance - 0.5)
-        const lumDistB = Math.abs(b.luminance - 0.5)
-        // Si les luminances sont similaires, privilégier la fréquence
-        if (Math.abs(lumDistA - lumDistB) < 0.1) {
-          return b.frequency - a.frequency
-        }
-        return lumDistA - lumDistB
-      })
-
-      const topBalanced = withLuminance.slice(0, targetColors - result.length)
-      result.push(...topBalanced.map((c) => c.index))
-
-      return result
-    }
+    // Ancien code de sélection adaptatif - remplacé par les stratégies v2
+    // Cette branche ne devrait jamais être exécutée car targetColors <= 4 utilise les stratégies v2
+    // Kept as fallback for targetColors > 4
+    const frequencyBudget = Math.floor(targetColors * 0.7)
 
     // Phase 1: Ajouter les couleurs fréquentes avec diversité minimale
     this.selectFrequentColorsWithDiversity(
