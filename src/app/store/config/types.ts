@@ -22,9 +22,6 @@ export type CpcModeKey =
 // Processor types for image processing
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
-// Contrast selection strategy for small palettes (modes 1-2)
-export type ContrastStrategy = 'max' | 'balanced'
-
 // Palette selection strategy for color quantization
 export type PaletteStrategy =
   | 'frequency-balanced' // Original: frequency + diversity, mode balanced (80% freq)

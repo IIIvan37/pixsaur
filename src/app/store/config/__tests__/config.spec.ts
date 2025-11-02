@@ -9,7 +9,6 @@ import {
   colorSpaceAtom,
   // Other atoms
   configAtom,
-  contrastStrategyAtom,
   // Hardware atoms
   cpcHardwareAtom,
   customDimensionsAtom,
@@ -27,7 +26,6 @@ import {
   resizeModeAtom,
   setColorSpaceAtom,
   setComponentAtom,
-  setContrastStrategyAtom,
   setCpcHardwareAtom,
   setCustomDimensionsAtom,
   setDimensionPresetAtom,
@@ -261,17 +259,11 @@ describe('Config Store', () => {
       expect(store.get(smoothingAtom)).toBe(true)
       expect(store.get(horizontalSmoothingAtom)).toBe(false)
       expect(store.get(processorTypeAtom)).toBe('gpu')
-      expect(store.get(contrastStrategyAtom)).toBe('balanced')
     })
 
     it('should set processor type with setProcessorTypeAtom', () => {
       store.set(setProcessorTypeAtom, 'cpu')
       expect(store.get(processorTypeAtom)).toBe('cpu')
-    })
-
-    it('should set contrast strategy with setContrastStrategyAtom', () => {
-      store.set(setContrastStrategyAtom, 'max')
-      expect(store.get(contrastStrategyAtom)).toBe('max')
     })
   })
 

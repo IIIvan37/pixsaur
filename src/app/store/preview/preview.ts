@@ -17,7 +17,6 @@ import { logger } from '@/utils/logger'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,
-  contrastStrategyAtom,
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
@@ -156,7 +155,6 @@ export const quantizerAtom = atom(async (get) => {
   const processed = await get(smoothedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = 'RGB' // Fixé sur RGB
-  const contrastStrategy = get(contrastStrategyAtom)
   const cpcHardware = get(cpcHardwareAtom)
   if (!buf || !processed) return null
 
@@ -168,8 +166,7 @@ export const quantizerAtom = atom(async (get) => {
     basePalette: getPaletteForHardware(cpcHardware),
     preselected: lockedVecs,
     quantConfig: {
-      distanceMetric,
-      contrastStrategy
+      distanceMetric
     }
   })
   return quantizer
@@ -181,7 +178,6 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const processed = await get(smoothedImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
-  const contrastStrategy = get(contrastStrategyAtom)
 
   if (!buf || !processed) return []
 
@@ -222,7 +218,6 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 
   logger.info('[Preview] Quantizing palette', {
     targetColors,
-    contrastStrategy,
     paletteStrategy,
     hardware: cpcHardware
   })
@@ -233,7 +228,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     targetColors,
     basePalette,
     quantifiedLockedVecs,
-    contrastStrategy, // Utiliser la stratégie de contraste choisie par l'utilisateur
+    undefined, // contrastStrategy is deprecated, always pass undefined
     paletteStrategy // Utiliser la stratégie de sélection de palette choisie
   )
 

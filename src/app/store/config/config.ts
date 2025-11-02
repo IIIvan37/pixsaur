@@ -8,7 +8,6 @@ import type { PaletteSlot } from '../palette/types'
 import type { ResizeMode } from './resize-types'
 import type {
   AdjustementKey,
-  ContrastStrategy,
   CpcModeConfig,
   CpcModeKey,
   CustomDimensions,
@@ -251,17 +250,6 @@ export const setProcessorTypeAtom = atom(
   null,
   (_get, set, payload: ProcessorType) => {
     set(processorTypeAtom, payload)
-  }
-)
-
-// Contrast strategy selection for small palettes (modes 1-2)
-export const contrastStrategyAtom = atom<ContrastStrategy>('balanced')
-
-// Setter for contrast strategy
-export const setContrastStrategyAtom = atom(
-  null,
-  (_get, set, payload: ContrastStrategy) => {
-    set(contrastStrategyAtom, payload)
   }
 )
 
