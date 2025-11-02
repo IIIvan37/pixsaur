@@ -56,7 +56,12 @@ sign_file() {
 
 if [ "$PLATFORM" = "linux" ]; then
     echo "Processing Linux AppImage..."
-    cd src-tauri/target/release/bundle/appimage
+    # Support both default target/ and custom CARGO_TARGET_DIR (e.g., /tmp/cargo-target)
+    if [ -d "/tmp/cargo-target/release/bundle/appimage" ]; then
+        cd /tmp/cargo-target/release/bundle/appimage
+    else
+        cd src-tauri/target/release/bundle/appimage
+    fi
     
     for appimage in *.AppImage; do
         if [ -f "$appimage" ]; then
