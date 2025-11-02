@@ -6,7 +6,49 @@ on:
       - "v*"
 
 jobs:
+  create-release:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Wait for tag to be available in GitHub API
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "Waiting for tag ${TAG} to be available in GitHub API..."
+          
+          for i in {1..30}; do
+            if gh api repos/${{ github.repository }}/git/refs/tags/${TAG} &>/dev/null; then
+              echo "✓ Tag ${TAG} is available"
+              break
+            fi
+            echo "  Attempt $i/30: Tag not yet available, waiting 2s..."
+            sleep 2
+          done
+          
+          # Verify tag is available
+          gh api repos/${{ github.repository }}/git/refs/tags/${TAG} --jq '{ref, sha: .object.sha}'
+      
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          
+          gh release create "${TAG}" \
+            --draft \
+            --title "${TAG}" \
+            --generate-notes
+          
+          echo "✓ Release created: https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+
   build-platforms:
+    needs: create-release
     permissions:
       contents: write
     timeout-minutes: 60
