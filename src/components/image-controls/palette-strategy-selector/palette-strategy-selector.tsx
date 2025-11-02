@@ -1,4 +1,7 @@
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { useAtom, useAtomValue } from 'jotai'
+import { useMemo } from 'react'
 import {
   effectiveModeConfigAtom,
   paletteStrategyAtom
@@ -10,57 +13,150 @@ import {
   PaletteStrategySelectorView
 } from './palette-strategy-selector-view'
 
-const PALETTE_STRATEGIES: readonly PaletteStrategyOption[] = [
-  {
-    value: 'frequency-balanced',
-    label: 'Fréquence Équilibrée',
-    description: 'Fréquence prioritaire (80%) avec diversité modérée'
-  },
-  {
-    value: 'frequency-max',
-    label: 'Fréquence Contraste',
-    description: 'Équilibre fréquence (60%) et diversité (40%)'
-  },
-  {
-    value: 'balanced-score-balanced',
-    label: 'Score Équilibré',
-    description: 'Multi-critères équilibrés (50% freq, 25% div, 25% lum)'
-  },
-  {
-    value: 'balanced-score-max',
-    label: 'Score Contraste Max',
-    description: 'Multi-critères avec contraste (30% freq, 35% div, 35% lum)'
-  },
-  {
-    value: 'perceptual-balanced',
-    label: 'Perceptuel Équilibré',
-    description: 'Bins de luminance avec fréquence prioritaire'
-  },
-  {
-    value: 'perceptual-max',
-    label: 'Perceptuel Contraste',
-    description: 'Bins de luminance avec diversité prioritaire'
-  },
-  {
-    value: 'diversity-first-balanced',
-    label: 'Diversité Équilibrée',
-    description: 'Diversité dominante (90%) avec légère fréquence (10%)'
-  },
-  {
-    value: 'diversity-first-max',
-    label: 'Diversité Pure',
-    description: 'Diversité maximale (100%), fréquence ignorée'
-  },
-  {
-    value: 'adaptive',
-    label: 'Adaptatif',
-    description: "Stratégie dynamique selon l'image"
-  }
-] as const
+const getPaletteStrategies = (
+  _: (message: { id: string; message?: string }) => string
+): readonly PaletteStrategyOption[] =>
+  [
+    {
+      value: 'frequency-balanced',
+      label: _(
+        msg({
+          id: 'palette.strategy.frequency-balanced.label',
+          message: 'Frequency Balanced'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.frequency-balanced.desc',
+          message: 'Frequency priority (80%) with moderate diversity'
+        })
+      )
+    },
+    {
+      value: 'frequency-max',
+      label: _(
+        msg({
+          id: 'palette.strategy.frequency-max.label',
+          message: 'Frequency Contrast'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.frequency-max.desc',
+          message: 'Balanced frequency (60%) and diversity (40%)'
+        })
+      )
+    },
+    {
+      value: 'balanced-score-balanced',
+      label: _(
+        msg({
+          id: 'palette.strategy.balanced-score-balanced.label',
+          message: 'Balanced Score'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.balanced-score-balanced.desc',
+          message: 'Multi-criteria balanced (50% freq, 25% div, 25% lum)'
+        })
+      )
+    },
+    {
+      value: 'balanced-score-max',
+      label: _(
+        msg({
+          id: 'palette.strategy.balanced-score-max.label',
+          message: 'Balanced Contrast Max'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.balanced-score-max.desc',
+          message: 'Multi-criteria with contrast (30% freq, 35% div, 35% lum)'
+        })
+      )
+    },
+    {
+      value: 'perceptual-balanced',
+      label: _(
+        msg({
+          id: 'palette.strategy.perceptual-balanced.label',
+          message: 'Perceptual Balanced'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.perceptual-balanced.desc',
+          message: 'Luminance bins with frequency priority'
+        })
+      )
+    },
+    {
+      value: 'perceptual-max',
+      label: _(
+        msg({
+          id: 'palette.strategy.perceptual-max.label',
+          message: 'Perceptual Contrast'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.perceptual-max.desc',
+          message: 'Luminance bins with diversity priority'
+        })
+      )
+    },
+    {
+      value: 'diversity-first-balanced',
+      label: _(
+        msg({
+          id: 'palette.strategy.diversity-first-balanced.label',
+          message: 'Diversity Balanced'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.diversity-first-balanced.desc',
+          message: 'Dominant diversity (90%) with slight frequency (10%)'
+        })
+      )
+    },
+    {
+      value: 'diversity-first-max',
+      label: _(
+        msg({
+          id: 'palette.strategy.diversity-first-max.label',
+          message: 'Pure Diversity'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.diversity-first-max.desc',
+          message: 'Maximum diversity (100%), frequency ignored'
+        })
+      )
+    },
+    {
+      value: 'adaptive',
+      label: _(
+        msg({ id: 'palette.strategy.adaptive.label', message: 'Adaptive' })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.adaptive.desc',
+          message: 'Dynamic strategy based on image'
+        })
+      )
+    }
+  ] as const
 
 export function PaletteStrategySelector() {
+  const { _ } = useLingui()
   const [paletteStrategy, setPaletteStrategy] = useAtom(paletteStrategyAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
+
+  const paletteStrategies = useMemo(() => getPaletteStrategies(_), [_])
 
   const handleStrategyChange = (value: PaletteStrategy) => {
     logger.info('[PaletteStrategy] Changing strategy', {
@@ -75,13 +171,13 @@ export function PaletteStrategySelector() {
     return null
   }
 
-  const currentStrategy = PALETTE_STRATEGIES.find(
+  const currentStrategy = paletteStrategies.find(
     (s) => s.value === paletteStrategy
   )
 
   return (
     <PaletteStrategySelectorView
-      strategies={PALETTE_STRATEGIES}
+      strategies={paletteStrategies}
       currentStrategy={paletteStrategy}
       currentDescription={currentStrategy?.description}
       onStrategyChange={handleStrategyChange}
