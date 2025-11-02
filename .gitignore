@@ -29,6 +29,9 @@ disk.dsk
 # Internal documentation (kept local only)
 docs/
 
+# AppImage build documentation
+appimage_howto_/
+
 # Tauri build outputs
 src-tauri/target/
 src-tauri/Cargo.lock
