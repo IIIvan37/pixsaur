@@ -52,19 +52,13 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Build frontend
-        run: pnpm build
-
-      - name: Build Tauri binary with embedded frontend
-        run: |
-          cd src-tauri
-          cargo build --release
-          ls -lh target/release/pixsaur
-
-      - name: Build .deb bundle
+      - name: Build Tauri with .deb bundle (includes frontend build)
         run: |
           pnpm tauri build --bundles deb || true
+          echo "=== Checking .deb was created ==="
           ls -lh src-tauri/target/release/bundle/deb/
+          echo "=== Checking binary size ==="
+          ls -lh src-tauri/target/release/pixsaur
 
       - name: Download appimagetool
         run: |
