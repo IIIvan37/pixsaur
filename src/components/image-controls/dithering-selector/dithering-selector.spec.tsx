@@ -211,18 +211,8 @@ describe('DitheringSelector', () => {
     })
   })
 
-  it('should reset intensity to default when reset button is clicked', () => {
-    renderWithI18n(<DitheringSelector />)
-
-    const resetButton = screen.getByRole('button', { name: /réinitialiser/i })
-
-    fireEvent.click(resetButton)
-
-    expect(mockSetDitheringAtom).toHaveBeenCalledWith({
-      ...mockDitheringAtom,
-      intensity: 0.5 // Default for floydSteinberg
-    })
-  })
+  // Test removed: reset button no longer exists in the UI
+  // Default intensity is automatically applied when mode changes
 
   it('should set correct default intensity for each mode when changed', async () => {
     const user = userEvent.setup()
