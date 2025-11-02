@@ -147,17 +147,23 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           CARGO_INCREMENTAL: ${{ matrix.platform == 'ubuntu-22.04' && '0' || '1' }}
+          CARGO_TARGET_DIR: ${{ matrix.bundle-type == 'appimage' && '/tmp/cargo-target' || 'target' }}
         run: |
           echo "=== Starting Tauri build at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
           echo "Platform: ${{ matrix.platform }}"
           
-          # Set linuxdeploy paths for AppImage builds
+          # For AppImage: use /tmp for cargo target to have more space
           if [ "${{ matrix.bundle-type }}" = "appimage" ]; then
+            echo "=== Disk space before build ==="
+            df -h /tmp
+            df -h .
+            
             export LINUXDEPLOY="$HOME/.cache/tauri/linuxdeploy-x86_64.AppImage"
             export LINUXDEPLOY_PLUGIN_APPIMAGE="$HOME/.cache/tauri/linuxdeploy-plugin-appimage-x86_64.AppImage"
             echo "Using pre-downloaded linuxdeploy tools:"
             echo "  LINUXDEPLOY=$LINUXDEPLOY"
             echo "  LINUXDEPLOY_PLUGIN_APPIMAGE=$LINUXDEPLOY_PLUGIN_APPIMAGE"
+            echo "  CARGO_TARGET_DIR=$CARGO_TARGET_DIR"
           fi
           
           pnpm tauri build ${{ matrix.args }}
