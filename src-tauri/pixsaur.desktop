@@ -1,8 +1,9 @@
 [Desktop Entry]
-Categories=Graphics;
+Categories=Graphics;Utility;
 Comment=Amstrad CPC Image Converter - Desktop Application
-Exec=AppRun
+Exec=AppRun %U
 StartupNotify=true
+StartupWMClass=pixsaur
 Icon=pixsaur
 Name=Pixsaur
 Terminal=false

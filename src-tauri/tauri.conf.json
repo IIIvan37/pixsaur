@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Pixsaur",
-  "version": "0.1.31",
+  "version": "0.1.32",
   "identifier": "com.iiiivan37.pixsaur",
   "build": {
     "removeUnusedCommands": true,
@@ -89,7 +89,8 @@
           "libwebkit2gtk-4.1-0",
           "libgtk-3-0",
           "libayatana-appindicator3-1"
-        ]
+        ],
+        "desktopTemplate": "pixsaur.desktop"
       }
     }
   },

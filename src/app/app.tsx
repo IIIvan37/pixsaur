@@ -5,6 +5,7 @@ import { LanguageSelector } from '@/components/language-selector'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
+import { VersionDisplay } from '@/components/version-display'
 import styles from '@/styles/app.module.css'
 import { isDevelopment } from '@/utils/is-development'
 import ImageConverter from './components/image-converter/image-converter'
@@ -105,6 +106,10 @@ export default function App() {
         <main className={styles.container}>
           <div className={styles.content}>
             <header className={styles.header}>
+              <div className={styles.headerLeft}>
+                <VersionDisplay />
+              </div>
+
               <img
                 src='pixsaur_logo_512.png'
                 width='32'
