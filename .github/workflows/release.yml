@@ -61,18 +61,6 @@ jobs:
         run: |
           choco install jq
 
-      - name: Free disk space (appimage only)
-        if: matrix.bundle-type == 'appimage'
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: true
-
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
         run: |
@@ -97,21 +85,6 @@ jobs:
             patchelf \
             fuse \
             libfuse2
-
-      - name: Pre-download AppImage tools (appimage only)
-        if: matrix.bundle-type == 'appimage'
-        run: |
-          mkdir -p ~/.cache/tauri
-          echo "Downloading linuxdeploy tools with retry..."
-          for i in {1..5}; do
-            curl -L -o ~/.cache/tauri/linuxdeploy-x86_64.AppImage https://github.com/tauri-apps/binary-releases/releases/download/linuxdeploy/linuxdeploy-x86_64.AppImage && break || sleep 10
-          done
-          for i in {1..5}; do
-            curl -L -o ~/.cache/tauri/linuxdeploy-plugin-appimage-x86_64.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage && break || sleep 10
-          done
-          chmod +x ~/.cache/tauri/*.AppImage
-          echo "Downloads completed successfully"
-          ls -lh ~/.cache/tauri/
 
       - name: Install pnpm
         run: |
