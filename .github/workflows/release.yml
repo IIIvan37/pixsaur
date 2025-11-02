@@ -39,13 +39,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ github.ref_name }}"
+          COMMIT_SHA="${{ github.sha }}"
           
-          gh release create "${TAG}" \
-            --draft \
-            --title "${TAG}" \
-            --generate-notes
+          # Use API directly to specify target_commitish
+          gh api repos/${{ github.repository }}/releases \
+            -X POST \
+            -f tag_name="${TAG}" \
+            -f target_commitish="${COMMIT_SHA}" \
+            -f name="${TAG}" \
+            -F draft=true \
+            -F prerelease=false \
+            -F generate_release_notes=true \
+            --jq '{id, tag_name, html_url}'
           
-          echo "✓ Release created: https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+          echo "✓ Release created for tag ${TAG}"
 
   build-platforms:
     needs: create-release
