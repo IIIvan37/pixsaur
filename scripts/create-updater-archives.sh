@@ -21,7 +21,7 @@ sign_file() {
     # Utiliser pnpm tauri signer (installé via @tauri-apps/cli)
     # On doit retourner au répertoire racine du projet pour que pnpm fonctionne
     local current_dir=$(pwd)
-    local project_root=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
+    local project_root="${PROJECT_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || echo ".")}"
     
     cd "$project_root"
     if command -v pnpm &> /dev/null; then
@@ -56,6 +56,11 @@ sign_file() {
 
 if [ "$PLATFORM" = "linux" ]; then
     echo "Processing Linux AppImage..."
+    
+    # Sauvegarder le chemin du projet AVANT de changer de répertoire
+    PROJECT_ROOT=$(pwd)
+    export PROJECT_ROOT
+    
     # Support both default target/ and custom CARGO_TARGET_DIR (e.g., /tmp/cargo-target)
     if [ -d "/tmp/cargo-target/release/bundle/appimage" ]; then
         cd /tmp/cargo-target/release/bundle/appimage
