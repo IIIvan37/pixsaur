@@ -21,6 +21,12 @@
   position: relative;
 }
 
+.headerLeft {
+  position: absolute;
+  left: 0;
+  z-index: 10;
+}
+
 .title {
   font-size: var(--font-size-heading);
   font-weight: bold;

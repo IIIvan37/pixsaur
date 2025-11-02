@@ -1,0 +1,26 @@
+.version {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-accentHover);
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  font-weight: normal;
+}
+
+.version:hover {
+  opacity: 0.9;
+}
+
+.devBadge {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: var(--color-accent);
+  color: var(--color-background);
+  border-radius: var(--radius-xs);
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
