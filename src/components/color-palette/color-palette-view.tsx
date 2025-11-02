@@ -145,7 +145,7 @@ export const ColorPaletteView = ({
                   onOpenChange={(open) =>
                     setOpenPopoverIndex(open ? idx : null)
                   }
-                  variant={!isClassicMode ? 'unstyled' : 'default'}
+                  variant={isClassicMode ? 'default' : 'unstyled'}
                   trigger={
                     <ColorSlot
                       idx={idx}
