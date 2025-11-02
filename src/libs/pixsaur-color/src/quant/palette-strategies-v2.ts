@@ -19,6 +19,15 @@ export interface StrategyResult {
   scores?: Map<number, number>
 }
 
+/**
+ * Interface commune pour toutes les fonctions de stratégie de palette
+ */
+export type PaletteStrategyFunction = (
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices?: number[]
+) => StrategyResult
+
 function calculatePerceptualDistance(color1: Vector, color2: Vector): number {
   return Math.sqrt(weightedRGBDistance(color1, color2))
 }
