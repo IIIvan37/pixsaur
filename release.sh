@@ -79,11 +79,19 @@ else
     CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" --no-merges)
 fi
 
-# Supprimer le tag existant s'il existe
+# Supprimer le tag existant s'il existe (local et distant)
 echo "🏷️ Creating tag v$VERSION..."
+git fetch --tags 2>/dev/null || true
+
+# Vérifier le tag local
 if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-  echo "⚠️  Tag v$VERSION already exists, deleting..."
+  echo "⚠️  Local tag v$VERSION already exists, deleting..."
   git tag -d "v$VERSION"
+fi
+
+# Vérifier et supprimer le tag distant
+if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION"; then
+  echo "⚠️  Remote tag v$VERSION already exists, deleting..."
   git push origin ":refs/tags/v$VERSION" 2>/dev/null || true
 fi
 
