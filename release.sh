@@ -68,8 +68,15 @@ else
     CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" --no-merges)
 fi
 
-# Créer et pousser le tag avec le changelog
+# Supprimer le tag existant s'il existe
 echo "🏷️ Creating tag v$VERSION..."
+if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+  echo "⚠️  Tag v$VERSION already exists, deleting..."
+  git tag -d "v$VERSION"
+  git push origin ":refs/tags/v$VERSION" 2>/dev/null || true
+fi
+
+# Créer et pousser le tag avec le changelog
 git tag -a "v$VERSION" -m "Release v$VERSION
 
 ## Changes
