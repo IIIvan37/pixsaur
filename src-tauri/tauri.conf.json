@@ -47,7 +47,10 @@
       "capabilities": [
         {
           "identifier": "main-capability",
-          "windows": ["main", "debug"],
+          "windows": [
+            "main",
+            "debug"
+          ],
           "permissions": [
             "core:default",
             "dialog:default",
@@ -67,7 +70,15 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "deb", "rpm", "appimage", "dmg", "msi", "nsis"],
+    "targets": [
+      "app",
+      "deb",
+      "rpm",
+      "appimage",
+      "dmg",
+      "msi",
+      "nsis"
+    ],
     "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
