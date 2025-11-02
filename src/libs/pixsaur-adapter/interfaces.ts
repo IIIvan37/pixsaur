@@ -1,10 +1,7 @@
-import type { PaletteStrategy } from '@/app/store/config/types'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 
+export type { PaletteStrategy } from '@/app/store/config/types'
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
-
-// Re-export PaletteStrategy for convenience
-export type { PaletteStrategy }
 
 /**
  * Configuration pour les ajustements d'image
