@@ -3,7 +3,31 @@
 
 set -e
 
-APPIMAGE_PATH="${1:-Pixsaur.AppImage}"
+APPIMAGE_PATH="${1}"
+
+# Download latest release if no path provided
+if [ -z "$APPIMAGE_PATH" ]; then
+    echo "📥 Downloading latest AppImage release..."
+    
+    # Get latest release download URL
+    DOWNLOAD_URL=$(curl -s https://api.github.com/repos/IIIvan37/pixsaur/releases/latest | \
+                   grep "browser_download_url.*AppImage\"" | \
+                   grep -v ".tar.gz" | \
+                   cut -d : -f 2,3 | \
+                   tr -d \")
+    
+    if [ -z "$DOWNLOAD_URL" ]; then
+        echo "Error: Could not find AppImage in latest release"
+        exit 1
+    fi
+    
+    APPIMAGE_PATH="Pixsaur_latest.AppImage"
+    echo "   Downloading from: $DOWNLOAD_URL"
+    curl -L -o "$APPIMAGE_PATH" "$DOWNLOAD_URL"
+    chmod +x "$APPIMAGE_PATH"
+    echo "   ✓ Downloaded to: $APPIMAGE_PATH"
+    echo ""
+fi
 
 if [ ! -f "$APPIMAGE_PATH" ]; then
     echo "Error: AppImage not found at $APPIMAGE_PATH"
