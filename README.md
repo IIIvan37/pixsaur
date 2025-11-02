@@ -1,28 +1,63 @@
 # Pixsaur
 
-**Image converter for Amstrad CPC** - Web and desktop application with palette quantization, dithering, and multi-format exports.
+**Image converter for Amstrad CPC**
+
+Transform modern images into authentic Amstrad CPC graphics with advanced palette quantization, dithering algorithms, and multiple export formats.
+
+[Try Web Version](https://pixsaur.iiivan.org/) • [Download Desktop App](https://github.com/IIIvan37/pixsaur/releases/latest) • [Report Bug](https://github.com/IIIvan37/pixsaur/issues)
+
+---
 
 ## Features
 
-- **CPC palette quantization** : 27 colors (Classic) or 4096 colors (Plus)
-- **Color spaces** : RGB
-- **Dithering and adjustments** : Brightness, contrast, saturation
-- **Export** : scr, linear, palette, png...
-- **CPU/GPU architecture** : Adaptive processing with fallback
+### CPC Palette Support
 
-## Download
+- **Classic CPC**: 27 colors mode for authentic retro graphics
+- **CPC Plus**: 4096 colors palette for enhanced visuals
+- Real-time palette quantization with perceptual color matching
 
-### Pre-built binaries
+### Image Processing
 
-Download the latest desktop application for your platform:
+- **Multiple dithering algorithms**: Floyd-Steinberg, Atkinson, Sierra, and more
+- **Adjustments**: Brightness, contrast, saturation controls
+- **Adaptive processing**: Automatic CPU/GPU fallback for optimal performance
 
-- **Windows** : [pixsaur_x.x.x_x64-setup.exe](https://github.com/IIIvan37/pixsaur/releases/latest)
-- **macOS** : [pixsaur_x.x.x_x64.dmg](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_aarch64.dmg](https://github.com/IIIvan37/pixsaur/releases/latest)
-- **Linux** : [pixsaur_x.x.x_amd64.AppImage](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_amd64.deb](https://github.com/IIIvan37/pixsaur/releases/latest) / [pixsaur_x.x.x_x86_64.rpm](https://github.com/IIIvan37/pixsaur/releases/latest)
+### Export Formats
 
-### Web version
+- **SCR**: Native Amstrad CPC screen format
+- **Linear**: Raw pixel data
+- **Palette**: Color palette extraction
+- **PNG**: Preview with applied effects
+- And more...
 
-Try the web version online: [https://pixsaur.iiivan.org/](https://pixsaur.iiivan.org/)
+### Multi-Platform
+
+- **Desktop app**: Windows, macOS (Intel & Apple Silicon), Linux (AppImage, deb, rpm)
+- **Web version**: Works in any modern browser
+- **Auto-updates**: Built-in updater keeps your desktop app current
+
+## Installation
+
+### Desktop Application
+
+Download the latest version for your platform:
+
+| Platform                | Download                                                                                                                                                                                                  |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Windows**             | [.exe installer](https://github.com/IIIvan37/pixsaur/releases/latest) (recommended) or [.msi package](https://github.com/IIIvan37/pixsaur/releases/latest)                                                |
+| **macOS Intel**         | [.dmg](https://github.com/IIIvan37/pixsaur/releases/latest) (x64)                                                                                                                                         |
+| **macOS Apple Silicon** | [.dmg](https://github.com/IIIvan37/pixsaur/releases/latest) (M1/M2/M3)                                                                                                                                    |
+| **Linux**               | [.AppImage](https://github.com/IIIvan37/pixsaur/releases/latest) (universal) or [.deb](https://github.com/IIIvan37/pixsaur/releases/latest) / [.rpm](https://github.com/IIIvan37/pixsaur/releases/latest) |
+
+> **Tip**: The desktop app includes automatic updates! You'll be notified when new versions are available.
+
+### Web Version
+
+No installation required! Try Pixsaur directly in your browser:
+
+**[pixsaur.iiivan.org](https://pixsaur.iiivan.org/)**
+
+Works on any device with a modern web browser.
 
 ## Development
 
@@ -153,16 +188,44 @@ pnpm dev
 
 ## Tech Stack
 
-- **React 19** + TypeScript + Vite
+### Frontend
+
+- **React 19** - Modern UI library
+- **TypeScript** - Type-safe development
+- **Vite** - Lightning-fast build tool
 - **Jotai** - Atomic state management
-- **Tauri 2.9** - Cross-platform desktop
-- **pixsaur-color** - Custom colorimetric library (RGB)
-- **Biome** - Linting and formatting
 
-## Contribution
+### Desktop
 
-Contributions are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+- **Tauri 2** - Lightweight cross-platform framework
+- **Rust** - High-performance backend
+
+### Image Processing
+
+- **pixsaur-color** - Custom colorimetric library (RGB color space)
+- **WebGL** - GPU-accelerated processing with CPU fallback
+
+### Code Quality
+
+- **Biome** - Ultra-fast linting and formatting
+- **Vitest** - Unit testing framework
+- **TypeScript** - Static type checking
+
+## Contributing
+
+We welcome contributions! Whether it's:
+
+- Bug reports
+- Feature requests
+- Documentation improvements
+- Code contributions
+
+Please read our [Contributing Guide](./CONTRIBUTING.md) to get started.
 
 ## License
 
-MIT License - See [LICENSE](./LICENSE) for details
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+---
+
+Made for the Amstrad CPC community
