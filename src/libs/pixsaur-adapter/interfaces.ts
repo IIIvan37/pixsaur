@@ -1,3 +1,4 @@
+import type { PaletteStrategy } from '@/app/store/config/types'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 export type { PaletteStrategy } from '@/app/store/config/types'
@@ -64,7 +65,9 @@ export interface ImageProcessor {
     basePalette: Vector[],
     preselected: Vector[],
     paletteStrategy?: PaletteStrategy
-  ): Promise<Vector[]> /**
+  ): Promise<Vector[]>
+
+  /**
    * Nettoie les ressources (WebGL contexts, etc.)
    */
   dispose(): void
