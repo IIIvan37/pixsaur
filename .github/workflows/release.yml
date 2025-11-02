@@ -95,6 +95,17 @@ jobs:
             fuse \
             libfuse2
 
+      - name: Free disk space (appimage only)
+        if: matrix.bundle-type == 'appimage'
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo apt-get clean
+          sudo docker image prune --all --force || true
+          echo "=== Disk space after cleanup ==="
+          df -h
+
       - name: Pre-download AppImage tools (appimage only)
         if: matrix.bundle-type == 'appimage'
         run: |
@@ -147,6 +158,15 @@ jobs:
         run: |
           echo "=== Starting Tauri build at $(date -u +"%Y-%m-%d %H:%M:%S UTC") ==="
           echo "Platform: ${{ matrix.platform }}"
+          
+          # Set linuxdeploy paths for AppImage builds
+          if [ "${{ matrix.bundle-type }}" = "appimage" ]; then
+            export LINUXDEPLOY="$HOME/.cache/tauri/linuxdeploy-x86_64.AppImage"
+            export LINUXDEPLOY_PLUGIN_APPIMAGE="$HOME/.cache/tauri/linuxdeploy-plugin-appimage-x86_64.AppImage"
+            echo "Using pre-downloaded linuxdeploy tools:"
+            echo "  LINUXDEPLOY=$LINUXDEPLOY"
+            echo "  LINUXDEPLOY_PLUGIN_APPIMAGE=$LINUXDEPLOY_PLUGIN_APPIMAGE"
+          fi
           
           pnpm tauri build ${{ matrix.args }}
           
