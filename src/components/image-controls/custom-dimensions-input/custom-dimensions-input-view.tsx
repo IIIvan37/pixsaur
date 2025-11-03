@@ -33,7 +33,7 @@ export function CustomDimensionsInputView({
     <div className={styles.container}>
       <div className={styles.slidersGrid}>
         <PixsaurSlider
-          min={4}
+          min={widthStep}
           max={maxWidth}
           step={widthStep}
           value={localWidth}

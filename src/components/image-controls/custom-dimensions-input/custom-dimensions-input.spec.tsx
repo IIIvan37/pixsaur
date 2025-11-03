@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { createStore, Provider } from 'jotai'
 import { customDimensionsAtom, pixelModeAtom } from '@/app/store/config/config'
 import type { PixelMode } from '@/app/store/config/types'
@@ -23,6 +23,10 @@ const renderWithProvider = (initialValues?: {
 }
 
 describe('CustomDimensionsInput', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -135,5 +139,111 @@ describe('CustomDimensionsInput', () => {
 
     // MODE1 should have different calculations
     expect(screen.getByText(/160/)).toBeInTheDocument()
+  })
+
+  it('validates width step based on pixel mode - mode 0', () => {
+    // Mode 0: width step = 4
+    const store = createStore()
+    store.set(customDimensionsAtom, { width: 320, height: 200 })
+    store.set(pixelModeAtom, 0)
+
+    render(
+      <Provider store={store}>
+        <CustomDimensionsInput />
+      </Provider>
+    )
+
+    const sliders = screen.getAllByRole('slider')
+    const widthSlider = sliders[0] // First slider is width
+
+    expect(widthSlider?.getAttribute('aria-valuemin')).toBe('4')
+    expect(widthSlider?.getAttribute('aria-valuenow')).toBe('320')
+  })
+
+  it('validates width step based on pixel mode - mode 1', () => {
+    // Mode 1: width step = 8
+    const store = createStore()
+    store.set(customDimensionsAtom, { width: 320, height: 200 })
+    store.set(pixelModeAtom, 1)
+
+    render(
+      <Provider store={store}>
+        <CustomDimensionsInput />
+      </Provider>
+    )
+
+    const sliders = screen.getAllByRole('slider')
+    const widthSlider = sliders[0] // First slider is width
+    expect(widthSlider?.getAttribute('aria-valuemin')).toBe('8')
+    expect(widthSlider?.getAttribute('aria-valuenow')).toBe('320')
+  })
+
+  it('validates width step based on pixel mode - mode 2', () => {
+    // Mode 2: width step = 16
+    const store = createStore()
+    store.set(customDimensionsAtom, { width: 320, height: 200 })
+    store.set(pixelModeAtom, 2)
+
+    render(
+      <Provider store={store}>
+        <CustomDimensionsInput />
+      </Provider>
+    )
+
+    const sliders = screen.getAllByRole('slider')
+    const widthSlider = sliders[0] // First slider is width
+    expect(widthSlider?.getAttribute('aria-valuemin')).toBe('16')
+    expect(widthSlider?.getAttribute('aria-valuenow')).toBe('320')
+  })
+
+  it('shows validation error immediately for invalid width', () => {
+    renderWithProvider({
+      customDimensions: { width: 199, height: 200 },
+      pixelMode: 2
+    })
+
+    // Width 199 is invalid for mode 2 (requires multiple of 16)
+    expect(
+      screen.getByText(/Largeur doit être multiple de 16/)
+    ).toBeInTheDocument()
+  })
+
+  it('clears validation error immediately when correcting invalid width', async () => {
+    const { rerender } = renderWithProvider({
+      customDimensions: { width: 199, height: 200 },
+      pixelMode: 2
+    })
+
+    // Initially shows error
+    expect(
+      screen.getByText(/Largeur doit être multiple de 16/)
+    ).toBeInTheDocument()
+
+    // Update to valid width
+    const store = createStore()
+    store.set(customDimensionsAtom, { width: 192, height: 200 })
+    store.set(pixelModeAtom, 2)
+    rerender(
+      <Provider store={store}>
+        <CustomDimensionsInput />
+      </Provider>
+    )
+
+    // Error should be cleared
+    expect(
+      screen.queryByText(/Largeur doit être multiple de 16/)
+    ).not.toBeInTheDocument()
+  })
+
+  it('validates width in bytes must be even', () => {
+    renderWithProvider({
+      customDimensions: { width: 20, height: 200 },
+      pixelMode: 2 // Mode 2: 8 pixels/byte, so 20px = 2.5 bytes
+    })
+
+    // Should show error about width in bytes being odd
+    expect(
+      screen.getByText(/Largeur en octets.*doit être paire/)
+    ).toBeInTheDocument()
   })
 })
