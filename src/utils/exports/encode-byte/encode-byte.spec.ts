@@ -3,10 +3,12 @@ import { encodeByte } from './encode-byte'
 
 describe('encodeByte - Amstrad CPC modes', () => {
   // Mode 0 tests
-  it('Mode 0: pixels 13 (1101) + 6 (0110) → 0x9E', () => {
+  it('Mode 0: pixels 13 (1101) + 6 (0110) → 0xB6 (after Img2CPC correction)', () => {
     const indexBuf = new Uint8Array([13, 6])
     const result = encodeByte(indexBuf, 0, 0, 0, 2)
-    expect(result).toBe(0x9e)
+    // After correction: 13→11 (1011), 6→6 (0110)
+    // Encoding 11+6: b1b0b3b2b1b0b3b2 = 10110110 = 0xB6
+    expect(result).toBe(0xb6)
   })
 
   it('Mode 0: pixels 0 + 0 → 0x00', () => {
