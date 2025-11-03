@@ -9,7 +9,7 @@ import {
   reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
-import { correctColorIndicesForCPC } from '@/utils/exports/correct-indices'
+
 import { exportZip } from '@/utils/exports/export-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 import type { ExportConfig } from '@/utils/exports/types'
@@ -47,7 +47,7 @@ export default function ExportPanel() {
       const cpcPalette = getPaletteForHardware(cpcHardware)
 
       // Find indexes of the palette in amstrad cpc palette
-      paletteFirmware = reducedPalette.map((colorData: any) => {
+      const originalPaletteIndices = reducedPalette.map((colorData: any) => {
         const color = Array.isArray(colorData)
           ? colorData
           : Array.from(colorData)
@@ -68,8 +68,26 @@ export default function ExportPanel() {
         shouldQuantize
       )
 
-      // FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
-      indexBuf = correctColorIndicesForCPC(indexBuf)
+      // Mode 0 (16 colors) needs palette reorganization for Img2CPC format
+      // The color index correction is now applied directly in encodeByte for mode 0
+      // Modes 1 (4 colors) and 2 (2 colors) work with direct indices
+      const isMode0 = reducedPalette.length === 16
+
+      if (isMode0) {
+        // Mode 0: Réorganiser la palette pour correspondre aux indices corrigés
+        paletteFirmware = new Array(16).fill(0)
+        for (let i = 0; i < originalPaletteIndices.length; i++) {
+          const b0 = i & 1
+          const b1 = (i >> 1) & 1
+          const b2 = (i >> 2) & 1
+          const b3 = (i >> 3) & 1
+          const correctedIndex = b0 | (b2 << 1) | (b1 << 2) | (b3 << 3)
+          paletteFirmware[correctedIndex] = originalPaletteIndices[i]
+        }
+      } else {
+        // Modes 1 et 2: Utiliser les indices directs
+        paletteFirmware = originalPaletteIndices
+      }
     } else {
       // CPC Plus: Use index buffer (same as Classic) but no firmware palette needed
       // The palette will be exported as GRB values instead
@@ -81,9 +99,6 @@ export default function ExportPanel() {
         shouldQuantize,
         fallbackToDarkest
       )
-
-      // FIX: Corriger les indices pour correspondre au format Img2CPC (échange bits 1-2)
-      indexBuf = correctColorIndicesForCPC(indexBuf)
     }
 
     const canvas = document.createElement('canvas')

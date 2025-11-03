@@ -58,3 +58,7 @@ src-tauri/Cargo.lock
 # Test coverage
 coverage/
 .nyc_output/
+
+# Build artifacts
+.netlify/
+public/wasm/
