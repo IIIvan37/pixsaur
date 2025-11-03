@@ -7,3 +7,7 @@ export {
   generateScrDskTemplate,
   type ScrDskTemplateOptions
 } from './dsk-templates'
+export {
+  generateScrLoaderTemplate,
+  type ScrLoaderTemplateOptions
+} from './scr-loader-template'
