@@ -5,6 +5,8 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  # Include RASM binary in function deployment
+  included_files = ["functions/lib/rasm"]
 
 [[redirects]]
   from = "/*"

@@ -1,7 +1,8 @@
 import { Trans } from '@lingui/react/macro'
 import { invoke } from '@tauri-apps/api/core'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { LanguageSelector } from '@/components/language-selector'
+import { RasmTester } from '@/components/rasm-tester'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
@@ -26,6 +27,9 @@ export default function App() {
   const dev = isDevelopment()
   console.log('[APP] isTauri:', tauri, 'isDevelopment:', dev)
   // alert(`isTauri: ${tauri}, isDevelopment: ${dev}`)
+
+  // Simple router state for testing RASM
+  const [showRasmTester, setShowRasmTester] = useState(false)
 
   // Add F12 shortcut to open debug window
   useEffect(() => {
@@ -119,6 +123,23 @@ export default function App() {
                 <Trans>Convertisseur d'images Amstrad CPC</Trans>
               </p>
               <div className={styles.headerActions}>
+                {dev && (
+                  <button
+                    type='button'
+                    onClick={() => setShowRasmTester(!showRasmTester)}
+                    style={{
+                      marginRight: '1rem',
+                      padding: '0.5rem 1rem',
+                      background: '#3b82f6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showRasmTester ? 'Main App' : 'Test RASM'}
+                  </button>
+                )}
                 <a
                   href='https://github.com/IIIvan37/pixsaur'
                   target='_blank'
@@ -132,7 +153,7 @@ export default function App() {
               </div>
             </header>
 
-            <ImageConverter />
+            {showRasmTester ? <RasmTester /> : <ImageConverter />}
 
             <footer className={styles.footer}></footer>
           </div>
