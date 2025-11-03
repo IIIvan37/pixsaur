@@ -1,7 +1,7 @@
 import type JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { generateScrDskTemplate } from '../dsk-templates'
 import { exportSCR } from '../export-scr/export-scr'
+import { generateScrDskTemplate } from '../templates'
 import { toASMData } from '../to-asm-data'
 import type { ExportConfig } from '../types'
 import { getHeader } from './utils'
