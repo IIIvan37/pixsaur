@@ -221,7 +221,8 @@ export async function createRasmInstance(): Promise<RasmInstance> {
           if (binary) module.FS.unlink(outputFile)
           if (symbolData) module.FS.unlink(symbolFile)
           if (snapshot) module.FS.unlink(snapshotFile)
-          if (dsk) module.FS.unlink(dskFile)
+          // Don't delete DSK file - it may be reused for multiple SAVE operations
+          // if (dsk) module.FS.unlink(dskFile)
         } catch {
           // Ignore cleanup errors
         }

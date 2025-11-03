@@ -1,14 +1,12 @@
 import type JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { exportSCR } from '../export-scr/export-scr'
-import { generateScrDskTemplate } from '../templates'
-import { toASMData } from '../to-asm-data'
+import { generateScrDskTemplate, generateScrLoaderClassic } from '../templates'
 import type { ExportConfig } from '../types'
-import { getHeader } from './utils'
+import { generateSCRAsmClassic } from './export-scr'
 
 /**
- * Export DSK file with SCR data
- * Generates a DSK disk image containing the screen file
+ * Export DSK file with SCR data and loader
+ * Generates a DSK disk image containing the screen file and an ASM loader
  */
 export async function exportDsk(
   zip: JSZip,
@@ -16,17 +14,22 @@ export async function exportDsk(
   modeConfig: CpcModeConfig,
   config: ExportConfig,
   asmLabel: string,
-  isStandardMode: boolean
+  isStandardMode: boolean,
+  paletteFirmware: number[]
 ) {
   if (!config.content.includeDSK || !isStandardMode) {
     return
   }
 
-  // 1. Generate SCR ASM file (without palette injection for DSK)
-  const scr = exportSCR(indexBuf, modeConfig)
-  const asmResult = toASMData(scr, asmLabel)
+  // 1. Generate SCR ASM file with palette injection for DSK
+  const scrAsmContent = generateSCRAsmClassic(
+    indexBuf,
+    modeConfig,
+    paletteFirmware,
+    asmLabel
+  )
 
-  if (typeof asmResult !== 'string') {
+  if (!scrAsmContent) {
     console.warn(
       'DSK export: SCR data is too large and was chunked. DSK export skipped.'
     )
@@ -34,10 +37,16 @@ export async function exportDsk(
   }
 
   const scrAsmFilename = `${asmLabel}.asm`
-  const scrAsmContent = getHeader(modeConfig, 'SCR', false) + asmResult
   const dskFilename = `${config.filename || 'pixsaur'}.dsk`
 
-  // 2. Generate DSK template that includes the SCR ASM
+  // 2. Generate loader ASM code
+  const loaderAsmCode = generateScrLoaderClassic({
+    dskFilename,
+    screenFilename: 'IMAGE.SCR',
+    mode: modeConfig.mode
+  })
+
+  // 3. Generate DSK template that includes the SCR ASM
   const dskTemplateCode = generateScrDskTemplate({
     scrAsmFilename,
     scrLabel: asmLabel,
@@ -45,7 +54,7 @@ export async function exportDsk(
     screenFilename: 'IMAGE.SCR'
   })
 
-  // 3. Assemble with RASM to create the DSK
+  // 4. Assemble with RASM to create the DSK
   try {
     // Create RASM instance and get access to the module
     const { createRasmInstance } = await import('@/libs/rasm-wasm')
@@ -56,7 +65,32 @@ export async function exportDsk(
     rasmModule.FS.writeFile(`/${scrAsmFilename}`, scrAsmContent)
     console.log(`[DSK] Wrote ${scrAsmFilename} to RASM virtual filesystem`)
 
-    // Now assemble the DSK template
+    // Write the loader ASM file to RASM's virtual filesystem
+    const loaderAsmFilename = 'loader.asm'
+    rasmModule.FS.writeFile(`/${loaderAsmFilename}`, loaderAsmCode)
+    console.log(`[DSK] Wrote ${loaderAsmFilename} to RASM virtual filesystem`)
+
+    // Assemble the loader first
+    const loaderResult = await rasmInstance.assemble(loaderAsmCode, {
+      outputFile: 'loader.bin',
+      exportType: 'dsk',
+      dskFile: dskFilename
+    })
+
+    if (!loaderResult.success) {
+      console.error('Loader assembly failed:', loaderResult.output)
+      return
+    }
+
+    console.log('[DSK] Loader assembled successfully')
+
+    // Write the DSK back to filesystem so the next assembly can add to it
+    if (loaderResult.dsk) {
+      rasmModule.FS.writeFile(`/${dskFilename}`, loaderResult.dsk)
+      console.log('[DSK] DSK with loader written to filesystem for reuse')
+    }
+
+    // Now assemble the DSK template with SCR data
     const result = await rasmInstance.assemble(dskTemplateCode, {
       outputFile: 'output.bin',
       exportType: 'dsk',

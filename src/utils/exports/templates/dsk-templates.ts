@@ -56,6 +56,6 @@ export function generateScrDskTemplate(options: ScrDskTemplateOptions): string {
     start
     include "${scrAsmFilename}"
 
-    SAVE '${screenFilename}',${scrLabel},$ - start,DSK,'${dskFilename}'
+    SAVE '${screenFilename}', ${scrLabel}, $ - start, DSK, '${dskFilename}'
   `
 }

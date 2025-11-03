@@ -7,6 +7,28 @@ import { toASMData } from '../to-asm-data'
 import type { ExportConfig } from '../types'
 import { getHeader } from './utils'
 
+/**
+ * Generate SCR ASM content with palette injection for CPC Classic
+ * This is a pure generation function that doesn't write to ZIP
+ * @returns ASM content string or null if data is too large
+ */
+export function generateSCRAsmClassic(
+  indexBuf: Uint8Array,
+  modeConfig: CpcModeConfig,
+  paletteFirmware: number[],
+  asmLabel: string
+): string | null {
+  const scr = exportSCR(indexBuf, modeConfig)
+  injectPaletteDataIntoSCR(scr, paletteFirmware)
+  const asmResult = toASMData(scr, asmLabel)
+
+  if (typeof asmResult !== 'string') {
+    return null
+  }
+
+  return getHeader(modeConfig, 'SCR', false) + asmResult
+}
+
 export async function exportSCRPlus(
   zip: JSZip,
   indexBuf: Uint8Array,
@@ -37,11 +59,13 @@ export async function exportSCRClassic(
   isStandardMode: boolean
 ) {
   if (config.content.includeSCR && isStandardMode) {
-    const scr = exportSCR(indexBuf, modeConfig)
-    injectPaletteDataIntoSCR(scr, paletteFirmware)
-    const asmResult = toASMData(scr, asmLabel)
-    if (typeof asmResult === 'string') {
-      const asmText = getHeader(modeConfig, 'SCR', false) + asmResult
+    const asmText = generateSCRAsmClassic(
+      indexBuf,
+      modeConfig,
+      paletteFirmware,
+      asmLabel
+    )
+    if (asmText) {
       zip.file(`${asmLabel}.asm`, asmText)
     }
   }

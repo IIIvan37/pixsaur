@@ -39,8 +39,9 @@ async function exportCPCPlusData(
 
   exportPalettePlus(zip, cpcPlusPaletteValues, modeConfig, config)
 
-  // Export DSK if enabled
-  await exportDsk(zip, indexBuf, modeConfig, config, asmLabel, isStandardMode)
+  // Export DSK if enabled (Classic only for now)
+  // TODO: Add CPC Plus DSK export support
+  // await exportDsk(zip, indexBuf, modeConfig, config, asmLabel, isStandardMode, paletteFirmware)
 }
 
 async function exportCPCClassicData(
@@ -67,7 +68,15 @@ async function exportCPCClassicData(
   exportPalettesClassic(zip, paletteFirmware, config)
 
   // Export DSK if enabled
-  await exportDsk(zip, indexBuf, modeConfig, config, asmLabel, isStandardMode)
+  await exportDsk(
+    zip,
+    indexBuf,
+    modeConfig,
+    config,
+    asmLabel,
+    isStandardMode,
+    paletteFirmware
+  )
 }
 
 export async function exportZip(

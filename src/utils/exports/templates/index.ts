@@ -8,6 +8,7 @@ export {
   type ScrDskTemplateOptions
 } from './dsk-templates'
 export {
-  generateScrLoaderTemplate,
+  generateScrLoaderClassic,
+  generateScrLoaderPlus,
   type ScrLoaderTemplateOptions
 } from './scr-loader-template'

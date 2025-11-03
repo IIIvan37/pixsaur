@@ -1,12 +1,22 @@
 /**
  * SCR Loader Template Generator for Amstrad CPC
  * Generates Z80 assembly code to load and display a SCR file from disk
+ *
+ * Note: The SCR file already contains the palette data injected at specific offsets:
+ * - Classic: offset 2000 (border), 2001-2016 (firmware), 2017-2033 (hardware)
+ * - Plus: offset 2000 (border), 2001-2032 (CPC+ palette values)
  */
 
 /**
  * Options for SCR loader template
  */
 export interface ScrLoaderTemplateOptions {
+  /**
+   * Output DSK filename
+   * Example: "pixsaur.dsk"
+   */
+  dskFilename: string
+
   /**
    * Filename of the SCR file on the DSK
    * Example: "IMAGE.SCR"
@@ -17,44 +27,161 @@ export interface ScrLoaderTemplateOptions {
    * CPC graphics mode (0, 1, or 2)
    */
   mode: 0 | 1 | 2
-
-  /**
-   * Palette data (firmware color indices 0-26)
-   * Array of 16 values for the 16 ink colors
-   */
-  palette: number[]
-
-  /**
-   * Include border color setting
-   * Default: true
-   */
-  includeBorder?: boolean
 }
 
 /**
- * Generate ASM loader code for SCR file
- * This loader sets the palette, loads the SCR file, and displays it
+ * Format filename for CPC AMSDOS (8.3 format with spaces)
+ * Name: 8 chars max, Extension: 3 chars max
+ * Example: "IMAGE.SCR" -> "IMAGE   SCR"
+ */
+function formatAmsdosFilename(filename: string): string {
+  // Split name and extension
+  const lastDot = filename.lastIndexOf('.')
+  let name = ''
+  let ext = ''
+
+  if (lastDot === -1) {
+    name = filename
+  } else {
+    name = filename.substring(0, lastDot)
+    ext = filename.substring(lastDot + 1)
+  }
+
+  // Pad name to 8 characters
+  name = name.substring(0, 8).padEnd(8, ' ')
+  // Pad extension to 3 characters
+  ext = ext.substring(0, 3).padEnd(3, ' ')
+
+  return name + ext
+}
+
+/**
+ * Generate ASM loader code for CPC Classic SCR file
+ * The SCR file contains palette data at offset 2000
  *
  * @param options - SCR loader template options
  * @returns Z80 assembly source code as string
- *
- * @example
- * ```typescript
- * const asmCode = generateScrLoaderTemplate({
- *   screenFilename: "IMAGE.SCR",
- *   mode: 1,
- *   palette: [0, 26, 6, 8, 24, 18, 2, 11, 26, 0, 6, 8, 24, 18, 2, 11]
- * })
- * ```
  */
-export function generateScrLoaderTemplate(
+export function generateScrLoaderClassic(
   options: ScrLoaderTemplateOptions
 ): string {
-  const { screenFilename, mode, palette, includeBorder = true } = options
+  const { dskFilename, screenFilename, mode } = options
+  const formattedFilename = screenFilename
 
-  // Border color is palette[16] if present, otherwise palette[0]
-  const borderColor = palette.length > 16 ? palette[16] : palette[0]
+  console.log('Formatted AMSDOS filename:', `"${formattedFilename}"`)
+  return `
+;; firmware function to open a file for reading
+buffer equ start - 2048
+cas_in_open equ #bc77
+;; firmware function to read an entire file (must have a AMSDOS header)
+;; the file must have been opened for reading
+cas_in_direct equ #bc83
+;; firmware function to close a file opened for reading
+cas_in_close equ #bc7a
 
+    org  #4000     ; start of code
+start:
+    call load_file
+
+
+    ld  a, ${mode}		; graphics mode
+    call #bc0e		; SCR_SET_MODE
+; set border color
+    ld  hl, data+2000
+    ld  b, (hl)
+    ld  c, b
+    call #bc38		; SCR_SET_BORDER
+    ld  b, #10		; loop counter
+; read palette from memory
+    ld  hl, data+2000+16
+Loop1:
+    push hl
+    push bc
+    ld  a, b
+    dec a
+    and #0f
+    ld  b, (hl)
+    ld  c, b
+    call #bc32		; SCR_SET_INK
+    pop bc
+    pop hl
+    dec hl
+    djnz Loop1
+
+; set image bytes
+    ld	de, #c000   ; DE = screen
+    ld	hl, data     ; HL = image data
+    ld 	bc, #4000   ; BC = # of bytes
+    ldir            ; copy
+
+    ret
+
+load_file
+;; B = length of the filename in characters
+ld b, end_filename-filename
+
+;; HL = address of the start of the filename
+ld hl, filename
+
+;; DE = address of a 2k buffer
+;; 
+;; in disc mode: this buffer is not used when CAS IN DIRECT
+;; firmware function is used, so it is safe to put it anywhere
+;; you want.
+ld de, buffer
+
+;; firmware function to open a file for reading
+call cas_in_open
+
+;; cas_in_open returns:
+;; if file was opened successfully:
+;; - carry is true 
+;; - HL contains address of the file's AMSDOS header
+;; - DE contains the load address of the file (from the header)
+;; - BC contains the length of the file (from the file header)
+;; - A contains the file type (2 for binary files)
+
+;; firmware function to load the entire file
+;; this will work with files that have a AMSDOS header (ASCII
+;; files do not have a header)
+
+;; HL = load address
+
+ld hl,data
+;; read file
+call cas_in_direct
+
+;; firmware function to close a file opened for reading
+jp cas_in_close
+
+
+;; the filename to load
+;; disc filenames are 11 characters (8.3 format with spaces)
+;; 8 characters for name, and 3 characters for extension
+filename
+defb "${formattedFilename}"
+end_filename
+
+
+data:
+   
+    SAVE 'LOADER.BIN', start, $ - start, DSK, '${dskFilename}'
+`
+}
+
+/**
+ * Generate ASM loader code for CPC Plus SCR file
+ * The SCR file contains CPC+ palette data at offset 2000
+ *
+ * @param options - SCR loader template options
+ * @returns Z80 assembly source code as string
+ */
+export function generateScrLoaderPlus(
+  options: ScrLoaderTemplateOptions
+): string {
+  const { dskFilename, screenFilename, mode } = options
+
+  // TODO: Add your ASM code here
   return `
     org #8000
     run $
@@ -64,55 +191,15 @@ start:
     ld a,${mode}
     call #bc0e          ; MC_SET_MODE
 
-${
-  includeBorder
-    ? `    ; Set border color
-    ld b,${borderColor}
-    ld c,${borderColor}
-    call #bc38          ; SCR_SET_BORDER
-`
-    : ''
-}
-    ; Set palette
-    ld hl,palette_data
-    ld b,16             ; 16 colors to set
-    ld c,0              ; Start at pen 0
-.palette_loop:
-    ld a,c
-    push bc
-    push hl
-    ld b,(hl)           ; Get firmware color index
-    call #bc32          ; SCR_SET_INK
-    pop hl
-    pop bc
-    inc hl
-    inc c
-    djnz .palette_loop
+    ; TODO: Load SCR file and extract CPC+ palette from offset 2000
+    ; TODO: Set border color from palette[0]
+    ; TODO: Set 16 ink colors from palette[1-16] (CPC+ hardware registers)
+    ; TODO: Copy screen data to #C000
 
-    ; Load SCR file to screen memory
-    ld hl,filename
-    ld de,#c000         ; Screen memory address
-    ld bc,16384         ; SCR file size (16KB)
-    call load_file
-    
-    ; Wait for key press
-.wait_key:
-    call #bb06          ; KM_READ_CHAR
-    jr nc,.wait_key
-    
     ret
 
-; Load file from disk
-; HL = filename address
-; DE = load address
-; BC = file size
-load_file:
-    ; TODO: Implement CAS_IN_OPEN / CAS_IN_DIRECT / CAS_IN_CLOSE
-    ; For now, assume file is already loaded at #c000
-    ret
-
-palette_data:
-${palette.map((color, index) => `    db ${color}              ; Ink ${index}`).join('\n')}
+dsk_filename:
+    db "${dskFilename}",0
 
 filename:
     db "${screenFilename}",0
