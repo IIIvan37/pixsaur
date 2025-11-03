@@ -60,7 +60,8 @@
       "!**/.next",
       "!**/coverage",
       "!**/.pnpm-store"
-    ]
+    ],
+    "ignoreUnknown": true
   },
   "overrides": [
     {
@@ -71,6 +72,15 @@
             "useUniqueElementIds": "off"
           }
         }
+      }
+    },
+    {
+      "includes": ["public/wasm/**"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": false
       }
     }
   ]

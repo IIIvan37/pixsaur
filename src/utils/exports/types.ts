@@ -38,6 +38,19 @@ export interface ZipContentConfig {
   includePalettes: boolean // Include palette files (firmware/hardware for Classic, CPC+ values for Plus)
   includePNG: boolean // Include PNG preview
   includePNGCorrected: boolean // Include PNG with corrected aspect ratio
+  includeDSK: boolean // Include DSK disk image with SCR + BASIC loader
+}
+
+/**
+ * DSK generation options
+ */
+export interface DskGeneratorOptions {
+  scrData: Uint8Array // SCR screen data (16KB)
+  palette: number[] // CPC palette (firmware indices 0-26)
+  mode: 0 | 1 | 2 // CPC graphics mode
+  screenFilename?: string // Filename for .SCR on DSK (default: "IMAGE.SCR")
+  basicFilename?: string // Filename for BASIC loader (default: "LOADER.BAS")
+  dskFilename?: string // Output DSK filename (default: "pixsaur.dsk")
 }
 
 /**
@@ -67,7 +80,8 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
     includeLinear: true,
     includePalettes: true,
     includePNG: true,
-    includePNGCorrected: true
+    includePNGCorrected: true,
+    includeDSK: false // Disabled by default (requires standard mode)
   },
   labels: {
     enabled: true,

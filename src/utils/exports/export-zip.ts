@@ -11,6 +11,7 @@ import {
   injectCPCPlusPaletteIntoSCR,
   paletteToCPCPlusValues
 } from './cpc-plus-format'
+import { generateScrDskTemplate } from './dsk-templates'
 import { exportLinearAsm } from './export-linear-asm/export-linear.asm'
 import {
   canvasToPNGBlob,
@@ -63,6 +64,9 @@ async function exportCPCPlusData(
   await exportLinearData(zip, indexBuf, modeConfig, config, asmLabel, true)
 
   exportPalettePlus(zip, cpcPlusPaletteValues, modeConfig, config)
+
+  // Export DSK if enabled
+  await exportDsk(zip, indexBuf, modeConfig, config, asmLabel, isStandardMode)
 }
 
 async function exportCPCClassicData(
@@ -87,6 +91,9 @@ async function exportCPCClassicData(
   await exportLinearData(zip, indexBuf, modeConfig, config, asmLabel, false)
 
   exportPalettesClassic(zip, paletteFirmware, config)
+
+  // Export DSK if enabled
+  await exportDsk(zip, indexBuf, modeConfig, config, asmLabel, isStandardMode)
 }
 
 /**
@@ -332,5 +339,76 @@ function exportPalettesClassic(
     if (typeof paletteHardwareResult === 'string') {
       zip.file(`${paletteLabel}_hardware.asm`, paletteHardwareResult)
     }
+  }
+}
+
+/**
+ * Export DSK file with SCR data
+ * Generates a DSK disk image containing the screen file
+ */
+async function exportDsk(
+  zip: JSZip,
+  indexBuf: Uint8Array,
+  modeConfig: CpcModeConfig,
+  config: ExportConfig,
+  asmLabel: string,
+  isStandardMode: boolean
+) {
+  if (!config.content.includeDSK || !isStandardMode) {
+    return
+  }
+
+  // 1. Generate SCR ASM file (without palette injection for DSK)
+  const scr = exportSCR(indexBuf, modeConfig)
+  const asmResult = toASMData(scr, asmLabel)
+
+  if (typeof asmResult !== 'string') {
+    console.warn(
+      'DSK export: SCR data is too large and was chunked. DSK export skipped.'
+    )
+    return
+  }
+
+  const scrAsmFilename = `${asmLabel}.asm`
+  const scrAsmContent = getHeader(modeConfig, 'SCR', false) + asmResult
+  const dskFilename = `${config.filename || 'pixsaur'}.dsk`
+
+  // 2. Generate DSK template that includes the SCR ASM
+  const dskTemplateCode = generateScrDskTemplate({
+    scrAsmFilename,
+    scrLabel: asmLabel,
+    dskFilename,
+    screenFilename: 'IMAGE.SCR'
+  })
+
+  // 3. Assemble with RASM to create the DSK
+  // We need to write the SCR file before assembling
+  try {
+    // Create RASM instance and get access to the module
+    const { createRasmInstance } = await import('@/libs/rasm-wasm')
+    const rasmInstance = await createRasmInstance()
+    const rasmModule = rasmInstance.getModule()
+
+    // Write the SCR ASM file to RASM's virtual filesystem
+    rasmModule.FS.writeFile(`/${scrAsmFilename}`, scrAsmContent)
+    console.log(`[DSK] Wrote ${scrAsmFilename} to RASM virtual filesystem`)
+
+    // Now assemble the DSK template
+    // Pass the DSK filename so RASM knows where to look for it
+    const result = await rasmInstance.assemble(dskTemplateCode, {
+      outputFile: 'output.bin',
+      exportType: 'dsk',
+      dskFile: dskFilename
+    })
+
+    if (result.success && result.dsk) {
+      // Add the DSK file to the ZIP
+      zip.file(dskFilename, result.dsk)
+      console.log('DSK file generated successfully')
+    } else {
+      console.error('DSK generation failed:', result.output)
+    }
+  } catch (error) {
+    console.error('Error during DSK assembly:', error)
   }
 }

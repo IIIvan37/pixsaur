@@ -17,7 +17,7 @@ Cela clone RASM v2.3.9, compile avec Emscripten et copie les artefacts dans `pub
 ### Basic Assembly
 
 ```typescript
-import { assemble } from '@/libs/rasm-wasm';
+import { assemble } from "@/libs/rasm-wasm";
 
 const code = `
   org #8000
@@ -29,9 +29,9 @@ const code = `
 const result = await assemble(code);
 
 if (result.success && result.binary) {
-  console.log('Binary:', result.binary);
+  console.log("Binary:", result.binary);
 } else {
-  console.error('Error:', result.output);
+  console.error("Error:", result.output);
 }
 ```
 
@@ -40,11 +40,11 @@ if (result.success && result.binary) {
 ```typescript
 const result = await assemble(code, {
   symbols: true,
-  symbolFile: 'output.sym'
+  symbolFile: "output.sym",
 });
 
 if (result.success && result.symbols) {
-  console.log('Symbols:', result.symbols);
+  console.log("Symbols:", result.symbols);
 }
 ```
 
@@ -52,17 +52,17 @@ if (result.success && result.symbols) {
 
 ```typescript
 const result = await assemble(code, {
-  exportType: 'snapshot',
-  snapshotFile: 'program.sna'
+  exportType: "snapshot",
+  snapshotFile: "program.sna",
 });
 
 if (result.success && result.snapshot) {
   // Download the snapshot
   const blob = new Blob([result.snapshot]);
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
-  a.download = 'program.sna';
+  a.download = "program.sna";
   a.click();
 }
 ```
@@ -71,8 +71,8 @@ if (result.success && result.snapshot) {
 
 ```typescript
 const result = await assemble(code, {
-  exportType: 'dsk',
-  dskFile: 'disk.dsk'
+  exportType: "dsk",
+  dskFile: "disk.dsk",
 });
 
 if (result.success && result.dsk) {
@@ -145,6 +145,7 @@ rasm.dispose();
 ## Build from Source
 
 Requirements:
+
 - Emscripten SDK (emsdk)
 
 ```bash
@@ -161,6 +162,7 @@ cd /path/to/pixsaur
 ```
 
 The script will:
+
 1. Clone RASM v2.3.9
 2. Compile with all compression libraries
 3. Copy artifacts to `public/wasm/`

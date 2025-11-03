@@ -40,15 +40,22 @@ export default function ExportConfigDialog({
         modeConfig.width === 640 &&
         modeConfig.height === 200))
 
-  // Automatically uncheck SCR if mode is not standard
+  // Automatically uncheck SCR and DSK if mode is not standard
   useEffect(() => {
-    if (!isStandardMode && config.content.includeSCR) {
-      setConfig((prev) => ({
-        ...prev,
-        content: { ...prev.content, includeSCR: false }
-      }))
+    if (!isStandardMode) {
+      const needsUpdate = config.content.includeSCR || config.content.includeDSK
+      if (needsUpdate) {
+        setConfig((prev) => ({
+          ...prev,
+          content: {
+            ...prev.content,
+            includeSCR: false,
+            includeDSK: false
+          }
+        }))
+      }
     }
-  }, [isStandardMode, config.content.includeSCR])
+  }, [isStandardMode, config.content.includeSCR, config.content.includeDSK])
 
   const handleConfirm = () => {
     onConfirm(config)
@@ -141,6 +148,19 @@ export default function ExportConfigDialog({
               updateContent('includePNGCorrected', e.target.checked)
             }
             label={_(msg`PNG (aspect ratio CPC correct)`)}
+          />
+          <Checkbox
+            checked={config.content.includeDSK}
+            onChange={(e) => updateContent('includeDSK', e.target.checked)}
+            label={_(msg`Disquette DSK (image écran)`)}
+            disabled={!isStandardMode}
+            title={
+              isStandardMode
+                ? undefined
+                : _(
+                    msg`Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)`
+                  )
+            }
           />
         </div>
       </div>

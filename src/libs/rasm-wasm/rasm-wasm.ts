@@ -97,6 +97,8 @@ export async function createRasmInstance(): Promise<RasmInstance> {
   return {
     isReady: () => !!module,
 
+    getModule: () => module,
+
     assemble: async (
       code: string,
       options: AssembleOptions = {}
