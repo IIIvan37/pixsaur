@@ -1,0 +1,19 @@
+[build]
+  command = "pnpm build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables for functions
+[context.production.environment]
+  NODE_VERSION = "18"
+
+[context.deploy-preview.environment]
+  NODE_VERSION = "18"
