@@ -77,8 +77,8 @@ export function CustomDimensionsInput() {
   }
 
   const validation = validateCustomDimensions(
-    customDimensions.width,
-    customDimensions.height,
+    localWidth,
+    localHeight,
     pixelMode
   )
 
