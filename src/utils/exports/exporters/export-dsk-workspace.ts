@@ -1,6 +1,6 @@
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import { generateDskImageFilename } from '@/utils/amsdos-filename'
-import { generateScrDskTemplate, generateScrLoaderClassic } from '../templates'
+import { generateScrDskTemplate } from '../templates'
 import { generateSCRAsmClassic } from './export-scr'
 
 /**
@@ -71,30 +71,8 @@ export async function exportDskWorkspace(
       // Write SCR ASM file to virtual filesystem
       rasmModule.FS.writeFile(`/${scrAsmFilename}`, scrAsmContent)
 
-      // Generate loader for this image
-      const loaderAsmCode = generateScrLoaderClassic({
-        dskFilename,
-        screenFilename: scrFilename,
-        mode: image.mode
-      })
-
-      const loaderAsmFilename = `loader${imageIndex}.asm`
-      rasmModule.FS.writeFile(`/${loaderAsmFilename}`, loaderAsmCode)
-
-      // Assemble loader
-      const loaderResult = await rasmInstance.assemble(loaderAsmCode, {
-        outputFile: `loader${imageIndex}.bin`,
-        exportType: 'dsk',
-        dskFile: dskFilename
-      })
-
-      if (!loaderResult.success) {
-        console.error(
-          `[DSK Workspace] Loader assembly failed for ${image.name}:`,
-          loaderResult.output
-        )
-        continue
-      }
+      // For workspace export, we only save the SCR files without loaders
+      // Users can load them manually from BASIC or create their own loader
 
       // Generate DSK template code to save SCR to DSK
       const dskTemplateCode = generateScrDskTemplate({
