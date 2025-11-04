@@ -11,6 +11,7 @@ import {
 } from '@/app/store/preview/preview'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
+import { sanitizeAmsdosFilename } from '@/utils/amsdos-filename'
 import { downloadFile } from '@/utils/download-file'
 import { exportDskWorkspace } from '@/utils/exports/exporters/export-dsk-workspace'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
@@ -68,8 +69,12 @@ export default function DskWorkspacePanel() {
           paletteFirmware = originalPaletteIndices
         }
 
+        // Generate a timestamped name and sanitize to AMSDOS 8.3 format
+        const timestamp = Date.now().toString().slice(-6) // Use last 6 digits
+        const suggestedName = `IMG_${timestamp}.SCR`
+
         return {
-          name: `IMAGE_${Date.now()}.SCR`,
+          name: sanitizeAmsdosFilename(suggestedName),
           scrData: rgbToIndexBufferExact(image.data, reducedPalette, false),
           mode: modeConfig.mode,
           width: modeConfig.width,

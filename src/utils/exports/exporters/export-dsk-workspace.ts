@@ -1,4 +1,5 @@
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { generateDskImageFilename } from '@/utils/amsdos-filename'
 import { generateScrDskTemplate, generateScrLoaderClassic } from '../templates'
 import { generateSCRAsmClassic } from './export-scr'
 
@@ -30,7 +31,7 @@ export async function exportDskWorkspace(
     for (let i = 0; i < images.length; i++) {
       const image = images[i]
       const imageIndex = i + 1
-      const scrFilename = `IMG${imageIndex.toString().padStart(2, '0')}.SCR`
+      const scrFilename = generateDskImageFilename(imageIndex)
       const asmLabel = `image${imageIndex}`
 
       console.log(
