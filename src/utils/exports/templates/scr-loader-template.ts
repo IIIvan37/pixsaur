@@ -184,14 +184,12 @@ scr_set_mode equ #bc0e      ; set graphics mode
 scr_set_border equ #bc38    ; set border color
 scr_set_ink equ #bc32       ; set ink color
 
-buffer equ #8000            ; temporary buffer for file operations
-
     org #4000               ; loader address
     
 start:
     ;; Get filename parameter passed from BASIC
     ;; When called with CALL &4000, @"filename"
-    ;; The address of the string is passed on the stack
+    ;; The address of the string descriptor is passed on the stack
     pop hl                  ; return address
     pop de                  ; address of string descriptor
     push de                 ; restore stack
@@ -210,7 +208,7 @@ start:
     
     ;; Now B = length, HL = filename address
     ;; Save for later use
-    ld (filename_len), bc
+    ld (filename_len), a
     ld (filename_addr), hl
     
     ;; Load the file
@@ -224,11 +222,12 @@ start:
 
 load_file:
     ;; B = length of filename
-    ld bc, (filename_len)
+    ld a, (filename_len)
+    ld b, a
     ;; HL = address of filename
     ld hl, (filename_addr)
     ;; DE = buffer address (not used by CAS IN DIRECT)
-    ld de, buffer
+    ld de, #8000
     
     ;; Open file for reading
     call cas_in_open
@@ -282,7 +281,7 @@ palette_loop:
     ret
 
 ;; Variables
-filename_len: dw 0
+filename_len: db 0
 filename_addr: dw 0
 
 ;; Data buffer (16KB for screen + palette)
