@@ -10,5 +10,6 @@ export {
 export {
   generateScrLoaderClassic,
   generateScrLoaderPlus,
+  generateUniversalScrLoader,
   type ScrLoaderTemplateOptions
 } from './scr-loader-template'

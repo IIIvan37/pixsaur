@@ -1,6 +1,9 @@
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import { generateDskImageFilename } from '@/utils/amsdos-filename'
-import { generateScrDskTemplate } from '../templates'
+import {
+  generateScrDskTemplate,
+  generateUniversalScrLoader
+} from '../templates'
 import { generateSCRAsmClassic } from './export-scr'
 
 /**
@@ -26,6 +29,25 @@ export async function exportDskWorkspace(
     console.log(
       `[DSK Workspace] Starting DSK export with ${images.length} image(s)`
     )
+
+    // Generate and add universal loader first
+    console.log('[DSK Workspace] Adding universal loader to DSK')
+    const loaderAsmCode = generateUniversalScrLoader(dskFilename)
+    const loaderResult = await rasmInstance.assemble(loaderAsmCode, {
+      outputFile: 'loader.bin',
+      exportType: 'dsk',
+      dskFile: dskFilename
+    })
+
+    if (!loaderResult.success) {
+      console.error(
+        '[DSK Workspace] Universal loader assembly failed:',
+        loaderResult.output
+      )
+      return null
+    }
+
+    console.log('[DSK Workspace] Universal loader added successfully')
 
     // Process each image (first one creates the DSK, others append to it)
     for (let i = 0; i < images.length; i++) {
