@@ -18,20 +18,15 @@ export async function exportDskWorkspace(
 
   try {
     // Create RASM instance and get access to the module
-    const { createRasmInstance, createDsk, readDsk } = await import(
-      '@/libs/rasm-wasm'
-    )
+    const { createRasmInstance, readDsk } = await import('@/libs/rasm-wasm')
     const rasmInstance = await createRasmInstance()
     const rasmModule = rasmInstance.getModule()
 
-    // Create empty DSK
-    createDsk(rasmModule, {
-      filename: dskFilename,
-      format: 'data'
-    })
-    console.log(`[DSK Workspace] Created empty DSK: ${dskFilename}`)
+    console.log(
+      `[DSK Workspace] Starting DSK export with ${images.length} image(s)`
+    )
 
-    // Process each image
+    // Process each image (first one creates the DSK, others append to it)
     for (let i = 0; i < images.length; i++) {
       const image = images[i]
       const imageIndex = i + 1

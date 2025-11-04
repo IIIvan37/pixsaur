@@ -17,6 +17,11 @@ msgstr ""
 #~ msgid "{0} (utilisée)"
 #~ msgstr "{0} (verwendet)"
 
+#. placeholder {0}: images.length
+#: src/components/dsk-workspace/dsk-workspace.tsx:125
+msgid "{0} image(s) ready to export"
+msgstr ""
+
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
 msgstr "Eine neue Version von Pixsaur ist verfügbar. Klicken Sie unten, um sie automatisch herunterzuladen und zu installieren."
@@ -29,6 +34,22 @@ msgstr "Eine neue Version von Pixsaur ist verfügbar. Klicken Sie unten, um sie 
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:143
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptiv"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:88
+msgid "Add current converted image to DSK workspace"
+msgstr ""
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:92
+msgid "Add Current Image"
+msgstr ""
+
+#: src/components/export-panel/dsk-files-manager.tsx:125
+msgid "Add Empty"
+msgstr ""
+
+#: src/components/export-panel/dsk-files-manager.tsx:104
+msgid "Additional DSK Files"
+msgstr ""
 
 #: src/app/components/adjustements/adjustement.view.tsx:74
 msgid "Ajuste la clarté globale de l'image"
@@ -46,7 +67,7 @@ msgstr "Passt nur die hellen Bereiche des Bildes an"
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Passt nur die dunklen Bereiche des Bildes an"
 
-#: src/components/export-panel/export-config-dialog.tsx:97
+#: src/components/export-panel/export-config-dialog.tsx:105
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:88
 msgid "Annuler"
 msgstr "Abbrechen"
@@ -107,6 +128,14 @@ msgstr "Bild zentrieren"
 msgid "Changer d'image"
 msgstr "Bild ändern"
 
+#: src/components/dsk-workspace/dsk-workspace.tsx:77
+msgid "Clear"
+msgstr ""
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:75
+msgid "Clear all images from workspace"
+msgstr ""
+
 #: src/components/image-preview/image-preview.tsx:113
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
 msgstr "Klicken Sie, um in einem neuen Tab zu öffnen"
@@ -119,11 +148,11 @@ msgstr "Klicken Sie, um in einem neuen Tab zu öffnen"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Klicken Sie, um ein Bild auszuwählen"
 
-#: src/components/export-panel/export-config-dialog.tsx:90
+#: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Exportkonfiguration"
 
-#: src/components/export-panel/export-config-dialog.tsx:107
+#: src/components/export-panel/export-config-dialog.tsx:115
 msgid "Contenu du ZIP"
 msgstr "ZIP-Inhalt"
 
@@ -131,7 +160,7 @@ msgstr "ZIP-Inhalt"
 msgid "Contraste"
 msgstr "Kontrast"
 
-#: src/app/app.tsx:119
+#: src/app/app.tsx:117
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Bildkonverter"
 
@@ -143,7 +172,7 @@ msgstr "Nichtlineare Helligkeitskorrektur (0.1-3.0, 1.0 = neutral)"
 msgid "Couleur & Température"
 msgstr "Farbe & Temperatur"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:94
+#: src/components/color-palette/color-grid/color-grid-view.tsx:91
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
 msgid "Déverrouiller"
 msgstr "Entsperren"
@@ -151,6 +180,10 @@ msgstr "Entsperren"
 #: src/components/image-controls/image-controls-view.tsx:103
 msgid "Dimensions"
 msgstr "Abmessungen"
+
+#: src/components/export-panel/export-config-dialog.tsx:156
+msgid "Disquette DSK (image écran)"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
@@ -166,6 +199,10 @@ msgstr "Dominante Vielfalt (90%) mit leichter Frequenz (10%)"
 msgid "Downloading..."
 msgstr "Herunterladen..."
 
+#: src/components/dsk-workspace/dsk-workspace.tsx:69
+msgid "DSK Workspace"
+msgstr ""
+
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:146
 msgid "palette.strategy.adaptive.desc"
@@ -175,7 +212,20 @@ msgstr "Dynamische Strategie basierend auf dem Bild"
 msgid "Effets"
 msgstr "Effekte"
 
-#: src/components/export-panel/export-config-dialog.tsx:100
+#. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
+#: src/components/export-panel/dsk-files-manager.tsx:65
+msgid "Error reading file: {0}"
+msgstr ""
+
+#: src/components/export-panel/dsk-files-manager.tsx:188
+msgid "Exec"
+msgstr ""
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:122
+msgid "Export DSK"
+msgstr ""
+
+#: src/components/export-panel/export-config-dialog.tsx:108
 #: src/components/export-panel/export-panel-view.tsx:20
 msgid "Exporter"
 msgstr "Exportieren"
@@ -187,6 +237,11 @@ msgstr "Belichtung"
 #: src/app/components/adjustements/adjustement.view.tsx:37
 msgid "Exposition & Tonalité"
 msgstr "Belichtung & Tonalität"
+
+#. placeholder {0}: file.name
+#: src/components/export-panel/dsk-files-manager.tsx:39
+msgid "File {0} is too large (max 64KB). File skipped."
+msgstr ""
 
 #: src/components/image-upload/image-upload-view.tsx:191
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
@@ -247,11 +302,11 @@ msgstr "Intensität"
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Farbintensität (0 = Schwarzweiß, 2 = sehr gesättigt)"
 
-#: src/components/export-panel/export-config-dialog.tsx:167
+#: src/components/export-panel/export-config-dialog.tsx:198
 msgid "Label de la palette"
 msgstr "Paletten-Label"
 
-#: src/components/export-panel/export-config-dialog.tsx:159
+#: src/components/export-panel/export-config-dialog.tsx:190
 msgid "Label des données"
 msgstr "Daten-Label"
 
@@ -263,11 +318,15 @@ msgstr "Breite"
 msgid "Later"
 msgstr "Später"
 
-#: src/components/export-panel/export-config-dialog.tsx:119
+#: src/components/export-panel/export-config-dialog.tsx:162
+msgid "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+msgstr ""
+
+#: src/components/export-panel/export-config-dialog.tsx:127
 msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 msgstr "SCR-Format erfordert Standardabmessungen (160x200, 320x200 oder 640x200)"
 
-#: src/components/export-panel/export-config-dialog.tsx:126
+#: src/components/export-panel/export-config-dialog.tsx:134
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (sequenziell)"
 
@@ -278,6 +337,10 @@ msgstr "Glättung"
 #: src/components/image-controls/image-controls-view.tsx:126
 msgid "Lissage horizontal"
 msgstr "Horizontale Glättung"
+
+#: src/components/export-panel/dsk-files-manager.tsx:164
+msgid "Load"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:104
@@ -337,7 +400,19 @@ msgstr "Multipliziert den Rotkanal (0-2x)"
 msgid "Multiplie le canal vert (0-2x)"
 msgstr "Multipliziert den Grünkanal (0-2x)"
 
-#: src/components/export-panel/export-config-dialog.tsx:177
+#: src/components/export-panel/dsk-files-manager.tsx:134
+msgid "No additional files. Upload or add files to include them in the DSK."
+msgstr ""
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:89
+msgid "No image to add"
+msgstr ""
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:132
+msgid "No images in workspace yet. Add converted images to build your DSK file."
+msgstr ""
+
+#: src/components/export-panel/export-config-dialog.tsx:208
 msgid "Nom du fichier ZIP"
 msgstr "ZIP-Dateiname"
 
@@ -345,7 +420,7 @@ msgstr "ZIP-Dateiname"
 msgid "Ombres"
 msgstr "Schatten"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:51
+#: src/components/color-palette/color-grid/color-grid-view.tsx:50
 msgid "Options de couleur"
 msgstr "Farboptionen"
 
@@ -361,7 +436,7 @@ msgstr "oder klicken Sie, um eine Datei auszuwählen"
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Oder ziehen Sie eine Datei hierher (falls unterstützt)"
 
-#: src/components/export-panel/export-config-dialog.tsx:131
+#: src/components/export-panel/export-config-dialog.tsx:139
 msgid "Palettes (firmware/hardware)"
 msgstr "Paletten (Firmware/Hardware)"
 
@@ -383,11 +458,11 @@ msgstr "Pixelmodus"
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (Vorschau)"
 
-#: src/components/export-panel/export-config-dialog.tsx:143
+#: src/components/export-panel/export-config-dialog.tsx:151
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (korrektes CPC-Seitenverhältnis)"
 
-#: src/components/export-panel/export-config-dialog.tsx:136
+#: src/components/export-panel/export-config-dialog.tsx:144
 msgid "PNG (pixels carrés)"
 msgstr "PNG (quadratische Pixel)"
 
@@ -420,6 +495,14 @@ msgstr "Reduziert die Anzahl der Farbstufen für einen Postereffekt (256=normal,
 msgid "Réinitialiser"
 msgstr "Zurücksetzen"
 
+#: src/components/export-panel/dsk-files-manager.tsx:214
+msgid "Remove file"
+msgstr ""
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:112
+msgid "Remove image from workspace"
+msgstr ""
+
 #: src/app/components/adjustements/adjustement.view.tsx:94
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
 msgstr "Farbrotation auf dem Farbkreis (-180° bis +180°)"
@@ -437,7 +520,7 @@ msgstr "Sättigung"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Intelligente Sättigung, die matte Farben verstärkt ohne zu übersättigen"
 
-#: src/components/export-panel/export-config-dialog.tsx:113
+#: src/components/export-panel/export-config-dialog.tsx:121
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (verschachteltes CPC-Format)"
 
@@ -445,7 +528,7 @@ msgstr "SCR ASM (verschachteltes CPC-Format)"
 msgid "Sélection"
 msgstr "Auswahl"
 
-#: src/components/export-panel/export-config-dialog.tsx:92
+#: src/components/export-panel/export-config-dialog.tsx:100
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
 
@@ -477,11 +560,15 @@ msgstr "Update verfügbar: Version {updateVersion}"
 #~ msgid "Update Now"
 #~ msgstr "Jetzt aktualisieren"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:67
+#: src/components/export-panel/dsk-files-manager.tsx:109
+msgid "Upload Files"
+msgstr ""
+
+#: src/components/color-palette/color-grid/color-grid-view.tsx:65
 msgid "utilisée"
 msgstr ""
 
-#: src/components/export-panel/export-config-dialog.tsx:152
+#: src/components/export-panel/export-config-dialog.tsx:183
 msgid "Utiliser des labels personnalisés"
 msgstr "Benutzerdefinierte Labels verwenden"
 
@@ -489,7 +576,7 @@ msgstr "Benutzerdefinierte Labels verwenden"
 msgid "Valider"
 msgstr "Bestätigen"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:96
+#: src/components/color-palette/color-grid/color-grid-view.tsx:93
 msgid "Verrouiller"
 msgstr "Sperren"
 

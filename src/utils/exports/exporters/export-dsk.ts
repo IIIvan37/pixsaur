@@ -63,18 +63,12 @@ export async function exportDsk(
   // 4. Assemble with RASM to create the DSK using DSK Manager
   try {
     // Create RASM instance and get access to the module
-    const { createRasmInstance, createDsk, readDsk } = await import(
-      '@/libs/rasm-wasm'
-    )
+    const { createRasmInstance, readDsk } = await import('@/libs/rasm-wasm')
     const rasmInstance = await createRasmInstance()
     const rasmModule = rasmInstance.getModule()
 
-    // Create empty DSK using DSK Manager
-    createDsk(rasmModule, {
-      filename: dskFilename,
-      format: 'data'
-    })
-    console.log(`[DSK] Created empty DSK: ${dskFilename}`)
+    // Note: DSK will be created automatically by the first SAVE directive
+    console.log(`[DSK] Preparing to create DSK: ${dskFilename}`)
 
     // Write the SCR ASM file to RASM's virtual filesystem
     rasmModule.FS.writeFile(`/${scrAsmFilename}`, scrAsmContent)
