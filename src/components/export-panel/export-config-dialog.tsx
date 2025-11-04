@@ -8,8 +8,9 @@ import Button from '@/components/ui/button'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import PixsaurDialog from '@/components/ui/dialog/dialog'
 import Input from '@/components/ui/input/input'
-import type { ExportConfig } from '@/utils/exports/types'
+import type { DskAdditionalFile, ExportConfig } from '@/utils/exports/types'
 import { DEFAULT_EXPORT_CONFIG } from '@/utils/exports/types'
+import DskFilesManager from './dsk-files-manager'
 import styles from './export-config-dialog.module.css'
 
 type Props = {
@@ -164,6 +165,16 @@ export default function ExportConfigDialog({
           />
         </div>
       </div>
+
+      {config.content.includeDSK && isStandardMode && (
+        <DskFilesManager
+          files={config.dskAdditionalFiles || []}
+          onChange={(files) => {
+            setConfig((prev) => ({ ...prev, dskAdditionalFiles: files }))
+          }}
+          disabled={false}
+        />
+      )}
 
       <div className={styles.formGroup}>
         <Checkbox

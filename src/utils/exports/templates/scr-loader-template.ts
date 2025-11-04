@@ -30,32 +30,6 @@ export interface ScrLoaderTemplateOptions {
 }
 
 /**
- * Format filename for CPC AMSDOS (8.3 format with spaces)
- * Name: 8 chars max, Extension: 3 chars max
- * Example: "IMAGE.SCR" -> "IMAGE   SCR"
- */
-function formatAmsdosFilename(filename: string): string {
-  // Split name and extension
-  const lastDot = filename.lastIndexOf('.')
-  let name = ''
-  let ext = ''
-
-  if (lastDot === -1) {
-    name = filename
-  } else {
-    name = filename.substring(0, lastDot)
-    ext = filename.substring(lastDot + 1)
-  }
-
-  // Pad name to 8 characters
-  name = name.substring(0, 8).padEnd(8, ' ')
-  // Pad extension to 3 characters
-  ext = ext.substring(0, 3).padEnd(3, ' ')
-
-  return name + ext
-}
-
-/**
  * Generate ASM loader code for CPC Classic SCR file
  * The SCR file contains palette data at offset 2000
  *

@@ -1,0 +1,139 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--foreground);
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.uploadButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.uploadButton:hover {
+  opacity: 0.9;
+}
+
+.uploadButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  padding: 0.75rem;
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fileItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filenameInput {
+  flex: 1;
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.fileSize {
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: monospace;
+}
+
+.addresses {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.addressGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.addressLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.addressInput {
+  font-family: monospace;
+  font-size: 0.875rem;
+}
+
+.removeButton {
+  flex-shrink: 0;
+  padding: 0.5rem;
+  min-width: auto;
+}
+
+.removeButton span {
+  font-size: 1.2rem;
+  line-height: 1;
+}

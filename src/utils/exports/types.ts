@@ -74,6 +74,9 @@ export interface ExportConfig {
   // ASM-specific options
   labels: ASMLabels
 
+  // DSK-specific options
+  dskAdditionalFiles?: DskAdditionalFile[] // Additional files to include in DSK
+
   // Code generation options (for future phases)
   // includeCode: boolean        // TODO: Phase 2 - Include display routine
   // compression: string         // TODO: Phase 2 - Compression method

@@ -76,7 +76,7 @@ async function exportCPCClassicData(
     asmLabel,
     isStandardMode,
     paletteFirmware,
-    [] // No additional files for now
+    config.dskAdditionalFiles || []
   )
 }
 
