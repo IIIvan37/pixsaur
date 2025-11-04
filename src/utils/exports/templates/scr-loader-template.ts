@@ -189,25 +189,23 @@ scr_set_ink equ #bc32       ; set ink color
 start:
     ;; Get filename parameter passed from BASIC
     ;; When called with CALL &4000, @"filename"
-    ;; The address of the string descriptor is passed on the stack
-    pop hl                  ; return address
-    pop de                  ; address of string descriptor
-    push de                 ; restore stack
-    push hl
+    ;; A register = number of parameters (should be 1)
+    ;; IX points to the last parameter (string descriptor address)
+    
+    ;; Check we have at least 1 parameter
+    cp 1
+    ret c                   ; return if no parameters
     
     ;; String descriptor format in BASIC:
-    ;; Byte 0: string length
-    ;; Byte 1-2: address of string data (little endian)
-    ld a, (de)              ; get string length
-    ld b, a                 ; B = filename length
-    inc de
-    ld a, (de)              ; get low byte of string address
-    inc de
-    ld h, (de)              ; get high byte of string address
-    ld l, a                 ; HL = address of filename string
+    ;; Byte 0 (IX+0): string length
+    ;; Byte 1-2 (IX+1, IX+2): address of string data (little endian)
+    ld b, (ix+0)            ; B = filename length
+    ld l, (ix+1)            ; L = low byte of string address
+    ld h, (ix+2)            ; H = high byte of string address
     
     ;; Now B = length, HL = filename address
     ;; Save for later use
+    ld a, b
     ld (filename_len), a
     ld (filename_addr), hl
     
