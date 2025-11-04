@@ -67,7 +67,7 @@ async function exportCPCClassicData(
 
   exportPalettesClassic(zip, paletteFirmware, config)
 
-  // Export DSK if enabled
+  // Export DSK if enabled (with optional additional files)
   await exportDsk(
     zip,
     indexBuf,
@@ -75,7 +75,8 @@ async function exportCPCClassicData(
     config,
     asmLabel,
     isStandardMode,
-    paletteFirmware
+    paletteFirmware,
+    [] // No additional files for now
   )
 }
 

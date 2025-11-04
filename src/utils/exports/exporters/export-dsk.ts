@@ -15,7 +15,13 @@ export async function exportDsk(
   config: ExportConfig,
   asmLabel: string,
   isStandardMode: boolean,
-  paletteFirmware: number[]
+  paletteFirmware: number[],
+  additionalFiles?: Array<{
+    name: string
+    data: Uint8Array
+    loadAddress?: number
+    execAddress?: number
+  }>
 ) {
   if (!config.content.includeDSK || !isStandardMode) {
     return
@@ -54,12 +60,21 @@ export async function exportDsk(
     screenFilename: 'IMAGE.SCR'
   })
 
-  // 4. Assemble with RASM to create the DSK
+  // 4. Assemble with RASM to create the DSK using DSK Manager
   try {
     // Create RASM instance and get access to the module
-    const { createRasmInstance } = await import('@/libs/rasm-wasm')
+    const { createRasmInstance, createDsk, readDsk } = await import(
+      '@/libs/rasm-wasm'
+    )
     const rasmInstance = await createRasmInstance()
     const rasmModule = rasmInstance.getModule()
+
+    // Create empty DSK using DSK Manager
+    createDsk(rasmModule, {
+      filename: dskFilename,
+      format: 'data'
+    })
+    console.log(`[DSK] Created empty DSK: ${dskFilename}`)
 
     // Write the SCR ASM file to RASM's virtual filesystem
     rasmModule.FS.writeFile(`/${scrAsmFilename}`, scrAsmContent)
@@ -84,12 +99,6 @@ export async function exportDsk(
 
     console.log('[DSK] Loader assembled successfully')
 
-    // Write the DSK back to filesystem so the next assembly can add to it
-    if (loaderResult.dsk) {
-      rasmModule.FS.writeFile(`/${dskFilename}`, loaderResult.dsk)
-      console.log('[DSK] DSK with loader written to filesystem for reuse')
-    }
-
     // Now assemble the DSK template with SCR data
     const result = await rasmInstance.assemble(dskTemplateCode, {
       outputFile: 'output.bin',
@@ -97,9 +106,42 @@ export async function exportDsk(
       dskFile: dskFilename
     })
 
-    if (result.success && result.dsk) {
+    if (result.success) {
+      // Add any additional files to the DSK
+      if (additionalFiles && additionalFiles.length > 0) {
+        const { addFileToDsk } = await import('@/libs/rasm-wasm')
+
+        for (const file of additionalFiles) {
+          try {
+            addFileToDsk(
+              rasmModule,
+              dskFilename,
+              {
+                name: file.name,
+                data: file.data,
+                loadAddress: file.loadAddress,
+                execAddress: file.execAddress
+              },
+              {
+                loadAddress: file.loadAddress,
+                execAddress: file.execAddress
+              }
+            )
+            console.log(`[DSK] Added additional file: ${file.name}`)
+          } catch (error) {
+            console.error(
+              `[DSK] Failed to add file ${file.name}:`,
+              error instanceof Error ? error.message : String(error)
+            )
+          }
+        }
+      }
+
+      // Read the final DSK from virtual filesystem
+      const dskData = readDsk(rasmModule, dskFilename)
+
       // Add the DSK file to the ZIP
-      zip.file(dskFilename, result.dsk)
+      zip.file(dskFilename, dskData)
       console.log('DSK file generated successfully')
     } else {
       console.error('DSK generation failed:', result.output)

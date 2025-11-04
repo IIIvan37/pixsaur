@@ -42,6 +42,16 @@ export interface ZipContentConfig {
 }
 
 /**
+ * Additional file to include in DSK
+ */
+export interface DskAdditionalFile {
+  name: string // Filename on DSK (8.3 format)
+  data: Uint8Array // File content
+  loadAddress?: number // Load address in memory
+  execAddress?: number // Execution address
+}
+
+/**
  * DSK generation options
  */
 export interface DskGeneratorOptions {
@@ -51,6 +61,7 @@ export interface DskGeneratorOptions {
   screenFilename?: string // Filename for .SCR on DSK (default: "IMAGE.SCR")
   basicFilename?: string // Filename for BASIC loader (default: "LOADER.BAS")
   dskFilename?: string // Output DSK filename (default: "pixsaur.dsk")
+  additionalFiles?: DskAdditionalFile[] // Additional files to add to DSK
 }
 
 /**
