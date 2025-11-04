@@ -164,3 +164,63 @@ export async function example4CreateDisk() {
 
   return result
 }
+
+/**
+ * Example 5: Create DSK with multiple files using DSK Manager
+ */
+export async function example5DskManager() {
+  const { createRasmInstance, createDskWithFiles } = await import('./index')
+
+  // Create RASM instance
+  const rasm = await createRasmInstance()
+  const module = rasm.getModule()
+
+  // Create some example files
+  const files = [
+    {
+      name: 'SCREEN.BIN',
+      data: new Uint8Array(16384).fill(0xaa), // Fill screen with pattern
+      loadAddress: 0xc000
+    },
+    {
+      name: 'CODE.BIN',
+      data: new Uint8Array([
+        0x3e,
+        0x01, // ld a,1
+        0xd3,
+        0x7f, // out (#7f),a
+        0x76, // halt
+        0xc9 // ret
+      ]),
+      loadAddress: 0x8000,
+      execAddress: 0x8000
+    }
+  ]
+
+  try {
+    // Create DSK with all files
+    const dsk = await createDskWithFiles(module, files, {
+      filename: 'mydisk.dsk',
+      format: 'data'
+    })
+
+    console.log('DSK created with multiple files!')
+    console.log('DSK size:', dsk.length, 'bytes')
+
+    // Download the DSK
+    const blob = new Blob([new Uint8Array(dsk)], {
+      type: 'application/octet-stream'
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'mydisk.dsk'
+    a.click()
+    URL.revokeObjectURL(url)
+
+    return { success: true, dsk }
+  } catch (error) {
+    console.error('Failed to create DSK:', error)
+    return { success: false, error }
+  }
+}

@@ -127,12 +127,100 @@ const result2 = await rasm.assemble(code2);
 rasm.dispose();
 ```
 
+## DSK Manager
+
+Advanced DSK disk image management with programmatic API.
+
+### Create Empty DSK
+
+```typescript
+import { createRasmInstance, createDsk } from "@/libs/rasm-wasm";
+
+const rasm = await createRasmInstance();
+const module = rasm.getModule();
+
+// Create empty DSK
+const dskFilename = createDsk(module, {
+  filename: "mydisk.dsk",
+  format: "data", // or 'vendor'
+});
+```
+
+### Add Files to DSK
+
+```typescript
+import { addFileToDsk } from "@/libs/rasm-wasm";
+
+// Add a file to the DSK
+addFileToDsk(
+  module,
+  "mydisk.dsk",
+  {
+    name: "SCREEN.BIN",
+    data: screenData, // Uint8Array
+    loadAddress: 0xc000,
+  },
+  {
+    loadAddress: 0xc000,
+    execAddress: 0xc000,
+  }
+);
+```
+
+### Create DSK with Multiple Files
+
+```typescript
+import { createDskWithFiles } from "@/libs/rasm-wasm";
+
+const files = [
+  {
+    name: "SCREEN.BIN",
+    data: new Uint8Array(16384).fill(0xaa),
+    loadAddress: 0xc000,
+  },
+  {
+    name: "CODE.BIN",
+    data: codeData,
+    loadAddress: 0x8000,
+    execAddress: 0x8000,
+  },
+];
+
+const dsk = await createDskWithFiles(module, files, {
+  filename: "game.dsk",
+  format: "data",
+});
+
+// Download the DSK
+const blob = new Blob([new Uint8Array(dsk)]);
+const url = URL.createObjectURL(blob);
+const a = document.createElement("a");
+a.href = url;
+a.download = "game.dsk";
+a.click();
+```
+
+### Read and Delete DSK
+
+```typescript
+import { readDsk, deleteDsk } from "@/libs/rasm-wasm";
+
+// Read DSK from virtual filesystem
+const dsk = readDsk(module, "mydisk.dsk");
+
+// Delete DSK from virtual filesystem
+deleteDsk(module, "mydisk.dsk");
+```
+
 ## Features
 
 - ✅ Full Z80 assembly support
 - ✅ Symbol table generation
 - ✅ SNA snapshot creation
 - ✅ DSK disk image creation
+- ✅ **DSK Manager for programmatic disk creation**
+- ✅ **Add multiple files to DSK**
+- ✅ **Custom load/exec addresses**
 - ✅ Compression support (ZX0, apultra, lzsa)
 - ✅ In-browser execution (no server needed)
 - ✅ TypeScript types included
