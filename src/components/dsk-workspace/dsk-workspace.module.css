@@ -1,0 +1,91 @@
+.container {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 8px;
+	border: 1px solid var(--border);
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.title {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: var(--text-primary);
+}
+
+.actions {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.imageList {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	max-height: 400px;
+	overflow-y: auto;
+}
+
+.imageItem {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.75rem;
+	background: var(--background);
+	border-radius: 6px;
+	border: 1px solid var(--border);
+	transition: border-color 0.2s;
+}
+
+.imageItem:hover {
+	border-color: var(--primary);
+}
+
+.imageInfo {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.imageName {
+	font-weight: 500;
+	color: var(--text-primary);
+}
+
+.imageDetails {
+	font-size: 0.875rem;
+	color: var(--text-secondary);
+}
+
+.exportSection {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	align-items: center;
+	padding-top: 1rem;
+	border-top: 1px solid var(--border);
+}
+
+.exportInfo {
+	font-size: 0.875rem;
+	color: var(--text-secondary);
+}
+
+.emptyState {
+	padding: 2rem;
+	text-align: center;
+	color: var(--text-secondary);
+}
+
+.emptyState p {
+	margin: 0;
+}

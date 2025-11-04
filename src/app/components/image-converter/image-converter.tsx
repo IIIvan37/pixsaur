@@ -2,6 +2,7 @@ import Adjustments from '@/app/components/adjustements/adjustements'
 import PreviewPanel from '@/app/components/preview-panel'
 import SourceSection from '@/app/components/source-section'
 import CrtEffect from '@/components/crt-effect'
+import DskWorkspacePanel from '@/components/dsk-workspace/dsk-workspace-panel'
 import ExportPanel from '@/components/export-panel/export-panel'
 import { useImageAdjustement } from '@/hooks/use-image-adjustement'
 import styles from './image-converter.module.css'
@@ -37,8 +38,10 @@ export default function ImageConverter() {
           </div>
 
           {/* Export section */}
-
           <ExportPanel />
+
+          {/* DSK Workspace */}
+          <DskWorkspacePanel />
         </div>
       </div>
     </div>
