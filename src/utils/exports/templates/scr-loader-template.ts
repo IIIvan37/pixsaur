@@ -184,6 +184,10 @@ scr_set_mode equ #bc0e      ; set graphics mode
 scr_set_border equ #bc38    ; set border color
 scr_set_ink equ #bc32       ; set ink color
 
+;; Memory layout
+buffer equ start - 2048     ; 2KB buffer before code (not in binary)
+data equ #8000              ; Load area for SCR file (high memory)
+
     org #4000               ; loader address
     
 start:
@@ -224,14 +228,14 @@ load_file:
     ld b, a
     ;; HL = address of filename
     ld hl, (filename_addr)
-    ;; DE = buffer address (not used by CAS IN DIRECT)
-    ld de, #8000
+    ;; DE = buffer address (not used by CAS IN DIRECT in disc mode)
+    ld de, buffer
     
     ;; Open file for reading
     call cas_in_open
     ret nc                  ; return with carry clear if error
     
-    ;; Load file to data buffer
+    ;; Load file to data area
     ld hl, data
     call cas_in_direct
     
@@ -278,12 +282,9 @@ palette_loop:
     
     ret
 
-;; Variables
+;; Variables (in RAM, not in binary)
 filename_len: db 0
 filename_addr: dw 0
-
-;; Data buffer (16KB for screen + palette)
-data: ds #4100
 
     SAVE 'LOADER.BIN', start, $ - start, DSK, '${dskFilename}'
 `
