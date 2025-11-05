@@ -10,7 +10,7 @@ export function getHeader(
   const hardwareType = isCPCPlus ? 'CPC+' : 'CPC Classic'
   const paletteInfo =
     type === 'SCR'
-      ? `; Palette data injected at offset 2000 (border at 2000, firmware colors at 2001-2016, hardware colors at 2017-2033)\n`
+      ? `; Palette data injected at offset 2000 (border at 2000, firmware colors at 2001-2016, hardware colors at 2017-2033, mode at 2034)\n`
       : ''
   return `; ${type} Data created with Pixsaur - ${hardwareType}
 ; Mode ${modeConfig.mode} ${modeConfig.overscan ? 'Overscan' : ''} 

@@ -40,10 +40,10 @@ export async function exportDskWorkspace(
     })
 
     if (!loaderResult.success) {
-      console.error(
-        '[DSK Workspace] Universal loader assembly failed:',
-        loaderResult.output
-      )
+      console.error('[DSK Workspace] Universal loader assembly failed:')
+      console.error('RASM Output:', loaderResult.output)
+      console.error('Generated ASM code:')
+      console.error(loaderAsmCode)
       return null
     }
 

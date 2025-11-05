@@ -19,7 +19,7 @@ export function generateSCRAsmClassic(
   asmLabel: string
 ): string | null {
   const scr = exportSCR(indexBuf, modeConfig)
-  injectPaletteDataIntoSCR(scr, paletteFirmware)
+  injectPaletteDataIntoSCR(scr, paletteFirmware, modeConfig.mode)
   const asmResult = toASMData(scr, asmLabel)
 
   if (typeof asmResult !== 'string') {

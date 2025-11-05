@@ -75,7 +75,11 @@ const firmwareToHardware = [
   0x43, // 25 Pastel Yellow
   0x4b // 26 Bright White
 ]
-export function injectPaletteDataIntoSCR(scr: Uint8Array, palette: number[]) {
+export function injectPaletteDataIntoSCR(
+  scr: Uint8Array,
+  palette: number[],
+  mode: 0 | 1 | 2
+) {
   const borderIndex = palette[0] // index firmware
   const borderHw = firmwareToHardware[borderIndex]
 
@@ -96,6 +100,9 @@ export function injectPaletteDataIntoSCR(scr: Uint8Array, palette: number[]) {
     const fw = palette[i]
     scr[2018 + i] = firmwareToHardware[fw]
   }
+
+  // Offset 2034: graphics mode (0, 1, or 2)
+  scr[2034] = mode
 }
 
 export const getHardwarePalette = (palette: number[]) => {

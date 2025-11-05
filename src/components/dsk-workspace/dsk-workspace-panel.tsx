@@ -66,7 +66,11 @@ export default function DskWorkspacePanel() {
             paletteFirmware[correctedIndex] = originalPaletteIndices[i]
           }
         } else {
-          paletteFirmware = originalPaletteIndices
+          // Ensure palette has 16 colors (pad with black if needed)
+          paletteFirmware = new Array(16).fill(0)
+          for (let i = 0; i < originalPaletteIndices.length; i++) {
+            paletteFirmware[i] = originalPaletteIndices[i]
+          }
         }
 
         // Generate a timestamped name and sanitize to AMSDOS 8.3 format

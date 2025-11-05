@@ -2,9 +2,9 @@
  * SCR Loader Template Generator for Amstrad CPC
  * Generates Z80 assembly code to load and display a SCR file from disk
  *
- * Note: The SCR file already contains the palette data injected at specific offsets:
- * - Classic: offset 2000 (border), 2001-2016 (firmware), 2017-2033 (hardware)
- * - Plus: offset 2000 (border), 2001-2032 (CPC+ palette values)
+ * Note: The SCR file already contains the palette data and mode injected at specific offsets:
+ * - Classic: offset 2000 (border), 2001-2016 (firmware), 2017-2033 (hardware), 2034 (mode)
+ * - Plus: offset 2000 (border), 2001-2032 (CPC+ palette values), 2034 (mode)
  */
 
 /**
@@ -31,7 +31,7 @@ export interface ScrLoaderTemplateOptions {
 
 /**
  * Generate ASM loader code for CPC Classic SCR file
- * The SCR file contains palette data at offset 2000
+ * The SCR file contains palette data at offset 2000 and mode at offset 2034
  *
  * @param options - SCR loader template options
  * @returns Z80 assembly source code as string
@@ -186,48 +186,46 @@ scr_set_ink equ #bc32       ; set ink color
 
 ;; Memory layout
 buffer equ start - 2048     ; 2KB buffer before code (not in binary)
-data equ #8000              ; Load area for SCR file (high memory)
 
     org #4000               ; loader address
     
 start:
     ;; Get filename parameter passed from BASIC
-    ;; When called with CALL &4000, @"filename"
+    ;; When called with CALL &4000, @a$
     ;; A register = number of parameters (should be 1)
-    ;; IX points to the last parameter (string descriptor address)
+    ;; DE register = address of string descriptor (last parameter)
     
     ;; Check we have at least 1 parameter
     cp 1
-    ret c                   ; return if no parameters
+    ret nz                   ; return if no parameters
     
-    ;; String descriptor format in BASIC:
-    ;; Byte 0 (IX+0): string length
-    ;; Byte 1-2 (IX+1, IX+2): address of string data (little endian)
-    ld b, (ix+0)            ; B = filename length
-    ld l, (ix+1)            ; L = low byte of string address
-    ld h, (ix+2)            ; H = high byte of string address
+    ;; DE contains the address of a 3-byte descriptor:
+    ;; Byte 0: string length
+    ;; Byte 1: low byte of string data address
+    ;; Byte 2: high byte of string data address
     
-    ;; Now B = length, HL = filename address
-    ;; Save for later use
-    ld a, b
-    ld (filename_len), a
-    ld (filename_addr), hl
+    ex de, hl               ; HL = address of string descriptor
     
+    ld b, (hl)              ; B = string length (1st byte)
+    inc hl
+    ld e, (hl)              ; E = low byte of string data
+    inc hl
+    ld d, (hl)              ; D = high byte of string data
+    
+    ;; Save filename info (DE = address of string characters)
+    ex de, hl               ; HL = string data address
+ 
     ;; Load the file
     call load_file
     ret c                   ; return if error (carry set)
     
     ;; File loaded successfully, now display it
-    call display_screen
-    
-    ret
+    jp display_screen
 
 load_file:
     ;; B = length of filename
-    ld a, (filename_len)
-    ld b, a
     ;; HL = address of filename
-    ld hl, (filename_addr)
+   
     ;; DE = buffer address (not used by CAS IN DIRECT in disc mode)
     ld de, buffer
     
@@ -246,32 +244,33 @@ load_file:
     ret
 
 display_screen:
-    ;; Detect mode from screen data or use mode 0 as default
-    ;; For now, we'll try mode 0 (16 colors)
-    ld a, 0
+    ;; Read graphics mode from SCR file (at offset 2034)
+    ld a, (data + 2034)
     call scr_set_mode
     
     ;; Set border color (at offset 2000)
-    ld hl, data+2000
+    ld hl, data + 2000
     ld b, (hl)
     ld c, b
     call scr_set_border
     
     ;; Set palette (16 colors at offset 2001-2016)
+    ;; Note: In mode 0, palette is reorganized in SCR file
+    ;; We read from last to first (2016->2001) using pen 15->0
     ld b, #10               ; 16 colors
     ld hl, data+2000+16     ; start from last color
 palette_loop:
     push hl
     push bc
-    ld a, b
-    dec a
-    and #0f                 ; pen number (0-15)
+    ld a, b                 ; pen number from b
+    dec a                   ; b-1 (16->15, 15->14, etc.)
+    and #0f                 ; ensure 0-15 range
     ld b, (hl)              ; color value
     ld c, b
-    call scr_set_ink
+    call scr_set_ink        ; set ink(pen=A, color=BC)
     pop bc
     pop hl
-    dec hl
+    dec hl                  ; previous color (going backwards)
     djnz palette_loop
     
     ;; Copy screen data to video memory
@@ -282,10 +281,8 @@ palette_loop:
     
     ret
 
-;; Variables (in RAM, not in binary)
-filename_len: db 0
-filename_addr: dw 0
 
+data:
     SAVE 'LOADER.BIN', start, $ - start, DSK, '${dskFilename}'
 `
 }
