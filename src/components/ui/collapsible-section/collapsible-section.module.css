@@ -13,6 +13,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--spacing-md, 16px);
   padding: var(--spacing-xs, 8px) var(--spacing-sm, 12px);
   cursor: pointer;
   user-select: none;
@@ -34,19 +35,22 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--color-text, rgba(255, 255, 255, 0.9));
-  opacity: 0.9;
+  color: var(--text-primary);
 }
 
 .sectionToggle {
   font-size: var(--font-size-xs, 12px);
-  color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+  color: var(--text-secondary);
   transition: transform 0.2s ease;
   line-height: 1;
 }
 
 .sectionContent {
   overflow: hidden;
+  padding: var(--spacing-md, 16px);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
+  gap: var(--spacing-md, 16px);
 }
 
 .sectionContent[data-state='open'] {

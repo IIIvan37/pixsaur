@@ -14,28 +14,27 @@ export default function MainContent() {
         title={<Trans>Adjustments, Source & Preview</Trans>}
         defaultOpen={true}
       >
-        {/* Source and Preview side by side */}
-        <div className={styles.flexRow}>
-          <div
-            className={styles.spaceY3}
-            style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
-          >
-            <Adjustments />
+        <div className={styles.content}>
+          {/* Three columns side by side */}
+          <div className={styles.flexRow}>
+            <div className={styles.flexColumn}>
+              <Adjustments />
+            </div>
+
+            {/* Left side: Source Image and Adjustments */}
+            <div className={styles.flexColumnGrow}>
+              <SourceSection />
+            </div>
+
+            {/* Right side: Preview and Palette */}
+            <div className={styles.flexColumnGrow}>
+              <PreviewPanel />
+            </div>
           </div>
 
-          {/* Left side: Source Image and Adjustments */}
-          <div className={styles.flexColumn_2}>
-            <SourceSection />
-          </div>
-
-          {/* Right side: Preview and Palette */}
-          <div className={styles.flexColumn_2}>
-            <PreviewPanel />
-          </div>
+          {/* Export section - always below */}
+          <ExportPanel />
         </div>
-
-        {/* Export section */}
-        <ExportPanel />
       </CollapsibleSection>
     </Panel>
   )

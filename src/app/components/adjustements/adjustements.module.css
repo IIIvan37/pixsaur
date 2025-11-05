@@ -8,8 +8,13 @@
 .sectionsContainer {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm);
+  gap: var(--spacing-xs, 8px);
+  padding: 0;
+  width: 100%;
+}
+
+.compactPanel {
+  padding: var(--spacing-xs, 8px);
 }
 
 @media (min-width: var(--breakpoint-lg)) {

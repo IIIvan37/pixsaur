@@ -201,7 +201,7 @@ export const AdjustementsView = ({
   }
 
   return (
-    <Panel>
+    <Panel compact>
       <Header
         action={onReset}
         actionLabel={<Trans>Réinitialiser</Trans>}

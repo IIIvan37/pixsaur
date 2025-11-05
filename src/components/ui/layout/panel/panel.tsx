@@ -1,9 +1,14 @@
 import type { PropsWithChildren } from 'react'
 import Flex from '../../flex'
 import styles from './panel.module.css'
-export function Panel({ children }: PropsWithChildren) {
+
+interface PanelProps extends PropsWithChildren {
+  compact?: boolean
+}
+
+export function Panel({ children, compact = false }: Readonly<PanelProps>) {
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} ${compact ? styles.compact : ''}`}>
       <Flex
         direction='column'
         justify='flex-start'
