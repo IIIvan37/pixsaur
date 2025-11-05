@@ -1,0 +1,80 @@
+.section {
+  width: 100%;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--border-radius-md, 8px);
+  overflow: hidden;
+  background: var(--color-background-subtle, rgba(0, 0, 0, 0.2));
+}
+
+.sectionHeader {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs, 8px) var(--spacing-sm, 12px);
+  cursor: pointer;
+  user-select: none;
+  background: var(--color-surface-variant, rgba(255, 255, 255, 0.05));
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.sectionHeader:hover:not(:disabled) {
+  background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
+}
+
+.sectionHeader:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.sectionTitle {
+  font-size: var(--font-size-sm, 14px);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text, rgba(255, 255, 255, 0.9));
+  opacity: 0.9;
+}
+
+.sectionToggle {
+  font-size: var(--font-size-xs, 12px);
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.6));
+  transition: transform 0.2s ease;
+  line-height: 1;
+}
+
+.sectionContent {
+  overflow: hidden;
+}
+
+.sectionContent[data-state='open'] {
+  animation: slideDown 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sectionContent[data-state='closed'] {
+  animation: slideUp 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    height: var(--radix-collapsible-content-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}

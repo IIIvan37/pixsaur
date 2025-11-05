@@ -3,16 +3,14 @@ import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { DownloadIcon, PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useState } from 'react'
 import {
   addImageToDskAtom,
-  clearDskWorkspaceAtom,
   dskImagesAtom,
   hasDskImagesAtom,
   removeImageFromDskAtom
 } from '@/app/store/dsk-workspace/dsk-workspace'
 import Button from '@/components/ui/button/button'
-import { Header } from '@/components/ui/layout/header/header'
+import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import { Panel } from '@/components/ui/layout/panel/panel'
 import styles from './dsk-workspace.module.css'
 
@@ -43,9 +41,6 @@ export default function DskWorkspace({
   const hasImages = useAtomValue(hasDskImagesAtom)
   const addImageToDsk = useSetAtom(addImageToDskAtom)
   const removeImageFromDsk = useSetAtom(removeImageFromDskAtom)
-  const clearWorkspace = useSetAtom(clearDskWorkspaceAtom)
-
-  const [isExpanded, setIsExpanded] = useState(true)
 
   const handleAddCurrentImage = () => {
     if (currentImageData) {
@@ -70,106 +65,85 @@ export default function DskWorkspace({
 
   return (
     <Panel>
-      <Header
-        title={<Trans>DSK Workspace {hasImages && `(${images.length})`}</Trans>}
-        action={hasImages ? clearWorkspace : undefined}
-        actionLabel={hasImages ? <Trans>Clear</Trans> : undefined}
-      />
+      <CollapsibleSection title={<Trans>DSK Manager</Trans>} defaultOpen={true}>
+        <div className={styles.actions}>
+          <Button
+            onClick={handleAddCurrentImage}
+            disabled={!canAddCurrentImage}
+            title={
+              canAddCurrentImage
+                ? _(msg`Add current converted image to DSK workspace`)
+                : _(msg`No image to add`)
+            }
+          >
+            <PlusIcon /> <Trans>Add Current Image</Trans>
+          </Button>
+        </div>
 
-      <div className={styles.section}>
-        <button
-          type='button'
-          className={styles.sectionHeader}
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <span className={styles.sectionTitle}>
-            <Trans>Images</Trans>
-          </span>
-          <span className={styles.sectionToggle}>{isExpanded ? '▼' : '▶'}</span>
-        </button>
-
-        {isExpanded && (
-          <div className={styles.sectionContent}>
-            <div className={styles.actions}>
-              <Button
-                onClick={handleAddCurrentImage}
-                disabled={!canAddCurrentImage}
-                title={
-                  canAddCurrentImage
-                    ? _(msg`Add current converted image to DSK workspace`)
-                    : _(msg`No image to add`)
-                }
-              >
-                <PlusIcon /> <Trans>Add Current Image</Trans>
-              </Button>
+        {hasImages ? (
+          <>
+            <div className={styles.imageList}>
+              {images.map((image) => (
+                <div key={image.id} className={styles.imageItem}>
+                  {image.thumbnailDataUrl && (
+                    <img
+                      src={image.thumbnailDataUrl}
+                      alt={image.name}
+                      className={styles.thumbnail}
+                    />
+                  )}
+                  <div className={styles.imageInfo}>
+                    <div className={styles.imageName}>{image.name}</div>
+                    <div className={styles.imageDetails}>
+                      {getModeLabel(image.mode)} •{' '}
+                      {formatSize(image.width, image.height)} •{' '}
+                      {Math.round(image.scrData.length / 1024)} KB
+                    </div>
+                    {image.paletteColors && (
+                      <div className={styles.palette}>
+                        {image.paletteColors.map((color, i) => (
+                          <div
+                            key={`${image.id}-color-${i}`}
+                            className={styles.paletteColor}
+                            style={{ backgroundColor: color }}
+                            title={`Color ${i}: ${color}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => removeImageFromDsk(image.id)}
+                    variant='icon'
+                    className={styles.deleteButton}
+                    title={_(msg`Remove image from workspace`)}
+                  >
+                    <TrashIcon />
+                  </Button>
+                </div>
+              ))}
             </div>
 
-            {hasImages ? (
-              <>
-                <div className={styles.imageList}>
-                  {images.map((image) => (
-                    <div key={image.id} className={styles.imageItem}>
-                      {image.thumbnailDataUrl && (
-                        <img
-                          src={image.thumbnailDataUrl}
-                          alt={image.name}
-                          className={styles.thumbnail}
-                        />
-                      )}
-                      <div className={styles.imageInfo}>
-                        <div className={styles.imageName}>{image.name}</div>
-                        <div className={styles.imageDetails}>
-                          {getModeLabel(image.mode)} •{' '}
-                          {formatSize(image.width, image.height)} •{' '}
-                          {Math.round(image.scrData.length / 1024)} KB
-                        </div>
-                        {image.paletteColors && (
-                          <div className={styles.palette}>
-                            {image.paletteColors.map((color, i) => (
-                              <div
-                                key={`${image.id}-color-${i}`}
-                                className={styles.paletteColor}
-                                style={{ backgroundColor: color }}
-                                title={`Color ${i}: ${color}`}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        onClick={() => removeImageFromDsk(image.id)}
-                        variant='icon'
-                        className={styles.deleteButton}
-                        title={_(msg`Remove image from workspace`)}
-                      >
-                        <TrashIcon />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className={styles.exportSection}>
-                  <Button onClick={onExport} variant='primary'>
-                    <DownloadIcon /> <Trans>Export DSK</Trans>
-                  </Button>
-                  <div className={styles.exportInfo}>
-                    <Trans>{images.length} image(s) ready to export</Trans>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className={styles.emptyState}>
-                <p>
-                  <Trans>
-                    No images in workspace yet. Add converted images to build
-                    your DSK file.
-                  </Trans>
-                </p>
+            <div className={styles.exportSection}>
+              <Button onClick={onExport} variant='primary'>
+                <DownloadIcon /> <Trans>Export DSK</Trans>
+              </Button>
+              <div className={styles.exportInfo}>
+                <Trans>{images.length} image(s) ready to export</Trans>
               </div>
-            )}
+            </div>
+          </>
+        ) : (
+          <div className={styles.emptyState}>
+            <p>
+              <Trans>
+                No images in workspace yet. Add converted images to build your
+                DSK file.
+              </Trans>
+            </p>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
     </Panel>
   )
 }
