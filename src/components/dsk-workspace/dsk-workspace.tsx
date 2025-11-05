@@ -109,6 +109,13 @@ export default function DskWorkspace({
                 <div className={styles.imageList}>
                   {images.map((image) => (
                     <div key={image.id} className={styles.imageItem}>
+                      {image.thumbnailDataUrl && (
+                        <img
+                          src={image.thumbnailDataUrl}
+                          alt={image.name}
+                          className={styles.thumbnail}
+                        />
+                      )}
                       <div className={styles.imageInfo}>
                         <div className={styles.imageName}>{image.name}</div>
                         <div className={styles.imageDetails}>
@@ -116,6 +123,18 @@ export default function DskWorkspace({
                           {formatSize(image.width, image.height)} •{' '}
                           {Math.round(image.scrData.length / 1024)} KB
                         </div>
+                        {image.paletteColors && (
+                          <div className={styles.palette}>
+                            {image.paletteColors.map((color, i) => (
+                              <div
+                                key={`${image.id}-color-${i}`}
+                                className={styles.paletteColor}
+                                style={{ backgroundColor: color }}
+                                title={`Color ${i}: ${color}`}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <Button
                         onClick={() => removeImageFromDsk(image.id)}

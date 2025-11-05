@@ -77,6 +77,36 @@ export default function DskWorkspacePanel() {
         const timestamp = Date.now().toString().slice(-6) // Use last 6 digits
         const suggestedName = `IMG_${timestamp}.SCR`
 
+        // Generate thumbnail (max 120px height) with correct CPC pixel aspect ratio
+        const canvas = document.createElement('canvas')
+        const maxHeight = 80
+        const displayWidth = image.width * modeConfig.scaleX
+        const displayHeight = image.height * modeConfig.scaleY
+        const scale = maxHeight / displayHeight
+        canvas.width = Math.floor(displayWidth * scale)
+        canvas.height = Math.floor(displayHeight * scale)
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          const tempCanvas = document.createElement('canvas')
+          tempCanvas.width = image.width
+          tempCanvas.height = image.height
+          const tempCtx = tempCanvas.getContext('2d')
+          if (tempCtx) {
+            tempCtx.putImageData(image, 0, 0)
+            ctx.imageSmoothingEnabled = false
+            ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height)
+          }
+        }
+        const thumbnailDataUrl = canvas.toDataURL('image/png')
+
+        // Convert palette to hex colors for display
+        const paletteColors = reducedPalette.map((color: unknown) => {
+          const rgb = Array.isArray(color)
+            ? color
+            : Array.from(color as ArrayLike<number>)
+          return `#${rgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`
+        })
+
         return {
           name: sanitizeAmsdosFilename(suggestedName),
           scrData: rgbToIndexBufferExact(image.data, reducedPalette, false),
@@ -87,7 +117,9 @@ export default function DskWorkspacePanel() {
           nColors: modeConfig.nColors,
           scaleX: modeConfig.scaleX,
           scaleY: modeConfig.scaleY,
-          paletteFirmware
+          paletteFirmware,
+          thumbnailDataUrl,
+          paletteColors
         }
       })()
     : undefined

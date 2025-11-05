@@ -13,6 +13,8 @@ export interface DskImage {
   scaleX: number
   scaleY: number
   paletteFirmware: number[] // Firmware palette indices for export
+  thumbnailDataUrl?: string // Base64 data URL for preview
+  paletteColors?: string[] // RGB hex colors for palette display
 }
 
 interface DskWorkspaceData {
@@ -52,6 +54,8 @@ export const addImageToDskAtom = atom(
       scaleX: number
       scaleY: number
       paletteFirmware: number[]
+      thumbnailDataUrl?: string
+      paletteColors?: string[]
     }
   ) => {
     const workspace = get(dskWorkspaceStorageAtom)
