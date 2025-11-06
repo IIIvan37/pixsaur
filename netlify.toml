@@ -7,20 +7,7 @@
 [build.environment]
   NODE_VERSION = "20"
 
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-  # Include RASM binary in function deployment
-  included_files = ["functions/lib/rasm"]
-
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Environment variables for functions
-[context.production.environment]
-  NODE_VERSION = "18"
-
-[context.deploy-preview.environment]
-  NODE_VERSION = "18"
