@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Scancode Viewer</title>
+    <style>
+        body {
+            font-family: monospace;
+            text-align: center;
+            margin-top: 100px;
+            background: #111;
+            color: #0f0;
+        }
+
+        .key {
+            font-size: 3em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Scancode Viewer</h1>
+    <p>Appuie sur une touche pour voir ses infos :</p>
+    <div class="key">...</div>
+    <script>
+        const keyDiv = document.querySelector('.key');
+
+        window.addEventListener('keydown', (event) => {
+            event.preventDefault(); // empêche le comportement par défaut
+            keyDiv.innerHTML = `
+        <div>event.key: <b>${event.key}</b></div>
+        <div>event.code: <b>${event.code}</b></div>
+        <div>event.keyCode: <b>${event.keyCode}</b></div>
+        <div>event.which: <b>${event.which}</b></div>
+      `;
+        });
+    </script>
+</body>
+
+</html>

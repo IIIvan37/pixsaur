@@ -17,6 +17,16 @@ msgstr ""
 #~ msgid "{0} (utilisée)"
 #~ msgstr "{0} (utilisée)"
 
+#. placeholder {0}: images.length
+#: src/components/dsk-workspace/dsk-workspace.tsx:145
+msgid "{0} image(s) ready to export"
+msgstr "{0} image(s) prête(s) à exporter"
+
+#. placeholder {0}: formatDskSpace(calculateDskRemainingSpace(images))
+#: src/components/dsk-workspace/dsk-workspace.tsx:147
+msgid "{0} remaining"
+msgstr "{0} restant"
+
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
 msgstr "Une nouvelle version de Pixsaur est disponible. Cliquez ci-dessous pour la télécharger et l'installer automatiquement."
@@ -30,23 +40,43 @@ msgstr "Une nouvelle version de Pixsaur est disponible. Cliquez ci-dessous pour 
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptatif"
 
-#: src/app/components/adjustements/adjustement.view.tsx:74
+#: src/components/dsk-workspace/dsk-workspace.tsx:67
+msgid "Add current converted image to DSK workspace"
+msgstr "Ajouter l'image convertie actuelle au workspace DSK"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:87
+msgid "Add Current Image"
+msgstr "Ajouter l'image actuelle"
+
+#: src/components/export-panel/dsk-files-manager.tsx:125
+msgid "Add Empty"
+msgstr "Ajouter vide"
+
+#: src/components/export-panel/dsk-files-manager.tsx:104
+msgid "Additional DSK Files"
+msgstr "Fichiers DSK supplémentaires"
+
+#: src/app/components/main-content/main-content.tsx:12
+msgid "Adjustments, Source & Preview"
+msgstr "Ajustements, Source & Aperçu"
+
+#: src/app/components/adjustements/adjustement.view.tsx:73
 msgid "Ajuste la clarté globale de l'image"
 msgstr "Ajuste la clarté globale de l'image"
 
-#: src/app/components/adjustements/adjustement.view.tsx:80
+#: src/app/components/adjustements/adjustement.view.tsx:79
 msgid "Ajuste la différence entre les tons clairs et foncés"
 msgstr "Ajuste la différence entre les tons clairs et foncés"
 
-#: src/app/components/adjustements/adjustement.view.tsx:144
+#: src/app/components/adjustements/adjustement.view.tsx:143
 msgid "Ajuste uniquement les zones claires de l'image"
 msgstr "Ajuste uniquement les zones claires de l'image"
 
-#: src/app/components/adjustements/adjustement.view.tsx:149
+#: src/app/components/adjustements/adjustement.view.tsx:148
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
-#: src/components/export-panel/export-config-dialog.tsx:97
+#: src/components/export-panel/export-config-dialog.tsx:105
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:88
 msgid "Annuler"
 msgstr "Annuler"
@@ -55,7 +85,7 @@ msgstr "Annuler"
 #~ msgid "Anti-Aliasing"
 #~ msgstr "Anti-Crénelage"
 
-#: src/app/components/preview-panel.tsx:27
+#: src/app/components/preview-panel.tsx:21
 msgid "Aperçu"
 msgstr "Aperçu"
 
@@ -67,11 +97,11 @@ msgstr "Aucune image traitée"
 msgid "Auto (Smart CPC adapt)"
 msgstr "Auto (adaptation CPC intelligente)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:111
+#: src/app/components/adjustements/adjustement.view.tsx:110
 msgid "Balance bleu/orange (-100 = froid, +100 = chaud)"
 msgstr "Balance bleu/orange (-100 = froid, +100 = chaud)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:117
+#: src/app/components/adjustements/adjustement.view.tsx:116
 msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Balance vert/magenta pour corriger les dominantes de couleur"
 
@@ -90,12 +120,12 @@ msgstr "Équilibre fréquence (60%) et diversité (40%)"
 msgid "palette.strategy.balanced-score-balanced.label"
 msgstr "Score Équilibré"
 
-#: src/app/components/adjustements/adjustement.view.tsx:68
+#: src/app/components/adjustements/adjustement.view.tsx:67
 #: src/components/ui/rgb-slider/rgb-slider.tsx:60
 msgid "Bleu"
 msgstr "Bleu"
 
-#: src/app/components/adjustements/adjustement.view.tsx:27
+#: src/app/components/adjustements/adjustement.view.tsx:26
 msgid "Canaux RGB"
 msgstr "Canaux RGB"
 
@@ -106,6 +136,14 @@ msgstr "Centrer l'image"
 #: src/app/components/source-section.tsx:25
 msgid "Changer d'image"
 msgstr "Changer d'image"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:77
+#~ msgid "Clear"
+#~ msgstr "Vider"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:75
+#~ msgid "Clear all images from workspace"
+#~ msgstr "Supprimer toutes les images du workspace"
 
 #: src/components/image-preview/image-preview.tsx:113
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
@@ -120,31 +158,35 @@ msgstr "Cliquer pour ouvrir dans un nouvel onglet"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
 
-#: src/components/export-panel/export-config-dialog.tsx:90
+#: src/components/dsk-workspace/dsk-workspace.tsx:121
+msgid "Color {i}: {color}"
+msgstr "Couleur {i} : {color}"
+
+#: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Configuration de l'export"
 
-#: src/components/export-panel/export-config-dialog.tsx:107
+#: src/components/export-panel/export-config-dialog.tsx:115
 msgid "Contenu du ZIP"
 msgstr "Contenu du ZIP"
 
-#: src/app/components/adjustements/adjustement.view.tsx:78
+#: src/app/components/adjustements/adjustement.view.tsx:77
 msgid "Contraste"
 msgstr "Contraste"
 
-#: src/app/app.tsx:119
+#: src/app/app.tsx:117
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Convertisseur d'images Amstrad CPC"
 
-#: src/app/components/adjustements/adjustement.view.tsx:126
+#: src/app/components/adjustements/adjustement.view.tsx:125
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:32
+#: src/app/components/adjustements/adjustement.view.tsx:31
 msgid "Couleur & Température"
 msgstr "Couleur & Température"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:94
+#: src/components/color-palette/color-grid/color-grid-view.tsx:91
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
 msgid "Déverrouiller"
 msgstr "Déverrouiller"
@@ -152,6 +194,10 @@ msgstr "Déverrouiller"
 #: src/components/image-controls/image-controls-view.tsx:103
 msgid "Dimensions"
 msgstr "Dimensions"
+
+#: src/components/export-panel/export-config-dialog.tsx:156
+msgid "Disquette DSK (image écran)"
+msgstr "Disquette DSK (image écran)"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
@@ -167,27 +213,53 @@ msgstr "Diversité dominante (90%) avec légère fréquence (10%)"
 msgid "Downloading..."
 msgstr "Téléchargement..."
 
+#: src/components/dsk-workspace/dsk-workspace.tsx:75
+msgid "DSK Manager"
+msgstr "Gestionnaire DSK"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:69
+#~ msgid "DSK Workspace"
+#~ msgstr "Workspace DSK"
+
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:146
 msgid "palette.strategy.adaptive.desc"
 msgstr "Stratégie dynamique selon l'image"
 
-#: src/app/components/adjustements/adjustement.view.tsx:49
+#: src/app/components/adjustements/adjustement.view.tsx:48
 msgid "Effets"
 msgstr "Effets"
 
-#: src/components/export-panel/export-config-dialog.tsx:100
+#. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
+#: src/components/export-panel/dsk-files-manager.tsx:65
+msgid "Error reading file: {0}"
+msgstr "Erreur de lecture du fichier : {0}"
+
+#: src/components/export-panel/dsk-files-manager.tsx:188
+msgid "Exec"
+msgstr "Exec"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:142
+msgid "Export DSK"
+msgstr "Exporter le DSK"
+
+#: src/components/export-panel/export-config-dialog.tsx:108
 #: src/components/export-panel/export-panel-view.tsx:20
 msgid "Exporter"
 msgstr "Exporter"
 
-#: src/app/components/adjustements/adjustement.view.tsx:133
+#: src/app/components/adjustements/adjustement.view.tsx:132
 msgid "Exposition"
 msgstr "Exposition"
 
-#: src/app/components/adjustements/adjustement.view.tsx:37
+#: src/app/components/adjustements/adjustement.view.tsx:36
 msgid "Exposition & Tonalité"
 msgstr "Exposition & Tonalité"
+
+#. placeholder {0}: file.name
+#: src/components/export-panel/dsk-files-manager.tsx:39
+msgid "File {0} is too large (max 64KB). File skipped."
+msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 
 #: src/components/image-upload/image-upload-view.tsx:191
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
@@ -208,7 +280,7 @@ msgstr "Fréquence Contraste"
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Fréquence prioritaire (80%) avec diversité modérée"
 
-#: src/app/components/adjustements/adjustement.view.tsx:124
+#: src/app/components/adjustements/adjustement.view.tsx:123
 msgid "Gamma"
 msgstr "Gamma"
 
@@ -220,13 +292,17 @@ msgstr "Glissez & déposez une image ici"
 msgid "Hardware"
 msgstr "Matériel"
 
-#: src/app/components/adjustements/adjustement.view.tsx:143
+#: src/app/components/adjustements/adjustement.view.tsx:142
 msgid "Hautes lumières"
 msgstr "Hautes lumières"
 
 #: src/components/image-controls/custom-dimensions-input/custom-dimensions-input-view.tsx:57
 msgid "Hauteur"
 msgstr "Hauteur"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:77
+msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
+msgstr "ℹ️ Palette CPC standard uniquement. Le support de la palette Plus arrive bientôt."
 
 #: src/app/components/source-section.tsx:24
 msgid "Image source"
@@ -244,15 +320,15 @@ msgstr "Installer la mise à jour"
 msgid "Intensité"
 msgstr "Intensité"
 
-#: src/app/components/adjustements/adjustement.view.tsx:87
+#: src/app/components/adjustements/adjustement.view.tsx:86
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 
-#: src/components/export-panel/export-config-dialog.tsx:167
+#: src/components/export-panel/export-config-dialog.tsx:198
 msgid "Label de la palette"
 msgstr "Label de la palette"
 
-#: src/components/export-panel/export-config-dialog.tsx:159
+#: src/components/export-panel/export-config-dialog.tsx:190
 msgid "Label des données"
 msgstr "Label des données"
 
@@ -264,21 +340,29 @@ msgstr "Largeur"
 msgid "Later"
 msgstr "Plus tard"
 
-#: src/components/export-panel/export-config-dialog.tsx:119
+#: src/components/export-panel/export-config-dialog.tsx:162
+msgid "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+msgstr "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+
+#: src/components/export-panel/export-config-dialog.tsx:127
 msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 msgstr "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 
-#: src/components/export-panel/export-config-dialog.tsx:126
+#: src/components/export-panel/export-config-dialog.tsx:134
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (séquentiel)"
 
 #: src/app/components/preview-panel.tsx:34
-msgid "Lissage"
-msgstr "Lissage"
+#~ msgid "Lissage"
+#~ msgstr "Lissage"
 
 #: src/components/image-controls/image-controls-view.tsx:126
 msgid "Lissage horizontal"
 msgstr "Lissage horizontal"
+
+#: src/components/export-panel/dsk-files-manager.tsx:164
+msgid "Load"
+msgstr "Load"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:104
@@ -290,7 +374,7 @@ msgstr "Bins de luminance avec diversité prioritaire"
 msgid "palette.strategy.perceptual-balanced.desc"
 msgstr "Bins de luminance avec fréquence prioritaire"
 
-#: src/app/components/adjustements/adjustement.view.tsx:73
+#: src/app/components/adjustements/adjustement.view.tsx:72
 msgid "Luminosité"
 msgstr "Luminosité"
 
@@ -325,27 +409,43 @@ msgstr "Multi-critères équilibrés (50% freq, 25% div, 25% lum)"
 msgid "palette.strategy.balanced-score-max.desc"
 msgstr "Multi-critères avec contraste (30% freq, 35% div, 35% lum)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:69
+#: src/app/components/adjustements/adjustement.view.tsx:68
 msgid "Multiplie le canal bleu (0-2x)"
 msgstr "Multiplie le canal bleu (0-2x)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:59
+#: src/app/components/adjustements/adjustement.view.tsx:58
 msgid "Multiplie le canal rouge (0-2x)"
 msgstr "Multiplie le canal rouge (0-2x)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:64
+#: src/app/components/adjustements/adjustement.view.tsx:63
 msgid "Multiplie le canal vert (0-2x)"
 msgstr "Multiplie le canal vert (0-2x)"
 
-#: src/components/export-panel/export-config-dialog.tsx:177
+#: src/components/export-panel/dsk-files-manager.tsx:134
+msgid "No additional files. Upload or add files to include them in the DSK."
+msgstr "Aucun fichier supplémentaire. Téléchargez ou ajoutez des fichiers pour les inclure dans le DSK."
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:69
+msgid "No image to add"
+msgstr "Aucune image à ajouter"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:156
+msgid "No images in workspace yet. Add converted images to build your DSK file."
+msgstr "Aucune image dans le workspace. Ajoutez des images converties pour construire votre fichier DSK."
+
+#: src/components/export-panel/export-config-dialog.tsx:208
 msgid "Nom du fichier ZIP"
 msgstr "Nom du fichier ZIP"
 
-#: src/app/components/adjustements/adjustement.view.tsx:148
+#: src/components/dsk-workspace/dsk-workspace.tsx:71
+msgid "Not enough space on DSK"
+msgstr "Pas assez d'espace sur le DSK"
+
+#: src/app/components/adjustements/adjustement.view.tsx:147
 msgid "Ombres"
 msgstr "Ombres"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:51
+#: src/components/color-palette/color-grid/color-grid-view.tsx:50
 msgid "Options de couleur"
 msgstr "Options de couleur"
 
@@ -361,7 +461,7 @@ msgstr "ou cliquez pour sélectionner un fichier"
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
-#: src/components/export-panel/export-config-dialog.tsx:131
+#: src/components/export-panel/export-config-dialog.tsx:139
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
@@ -383,15 +483,15 @@ msgstr "Mode pixel"
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (aperçu)"
 
-#: src/components/export-panel/export-config-dialog.tsx:143
+#: src/components/export-panel/export-config-dialog.tsx:151
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (ratio CPC corrigé)"
 
-#: src/components/export-panel/export-config-dialog.tsx:136
+#: src/components/export-panel/export-config-dialog.tsx:144
 msgid "PNG (pixels carrés)"
 msgstr "PNG (pixels carrés)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:153
+#: src/app/components/adjustements/adjustement.view.tsx:152
 msgid "Posterisation"
 msgstr "Posterisation"
 
@@ -412,32 +512,40 @@ msgstr "Diversité Pure"
 #~ msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)"
 #~ msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:155
+#: src/app/components/adjustements/adjustement.view.tsx:154
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:223
+#: src/app/components/adjustements/adjustement.view.tsx:206
 msgid "Réinitialiser"
 msgstr "Réinitialiser"
 
-#: src/app/components/adjustements/adjustement.view.tsx:94
+#: src/components/export-panel/dsk-files-manager.tsx:214
+msgid "Remove file"
+msgstr "Retirer le fichier"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:131
+msgid "Remove image from workspace"
+msgstr "Retirer l'image du workspace"
+
+#: src/app/components/adjustements/adjustement.view.tsx:93
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
 msgstr "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:58
+#: src/app/components/adjustements/adjustement.view.tsx:57
 #: src/components/ui/rgb-slider/rgb-slider.tsx:58
 msgid "Rouge"
 msgstr "Rouge"
 
-#: src/app/components/adjustements/adjustement.view.tsx:85
+#: src/app/components/adjustements/adjustement.view.tsx:84
 msgid "Saturation"
 msgstr "Saturation"
 
-#: src/app/components/adjustements/adjustement.view.tsx:103
+#: src/app/components/adjustements/adjustement.view.tsx:102
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 
-#: src/components/export-panel/export-config-dialog.tsx:113
+#: src/components/export-panel/export-config-dialog.tsx:121
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (format CPC entrelacé)"
 
@@ -445,23 +553,23 @@ msgstr "SCR ASM (format CPC entrelacé)"
 msgid "Sélection"
 msgstr "Sélection"
 
-#: src/components/export-panel/export-config-dialog.tsx:92
+#: src/components/export-panel/export-config-dialog.tsx:100
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 
-#: src/app/components/adjustements/adjustement.view.tsx:135
+#: src/app/components/adjustements/adjustement.view.tsx:134
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:92
+#: src/app/components/adjustements/adjustement.view.tsx:91
 msgid "Teinte"
 msgstr "Teinte"
 
-#: src/app/components/adjustements/adjustement.view.tsx:115
+#: src/app/components/adjustements/adjustement.view.tsx:114
 msgid "Teinte colorée"
 msgstr "Teinte colorée"
 
-#: src/app/components/adjustements/adjustement.view.tsx:110
+#: src/app/components/adjustements/adjustement.view.tsx:109
 msgid "Température"
 msgstr "Température"
 
@@ -477,11 +585,15 @@ msgstr "Mise à jour disponible : version {updateVersion}"
 #~ msgid "Update Now"
 #~ msgstr "Mettre à jour maintenant"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:67
-msgid "utilisée"
-msgstr ""
+#: src/components/export-panel/dsk-files-manager.tsx:109
+msgid "Upload Files"
+msgstr "Télécharger des fichiers"
 
-#: src/components/export-panel/export-config-dialog.tsx:152
+#: src/components/color-palette/color-grid/color-grid-view.tsx:65
+msgid "utilisée"
+msgstr "utilisée"
+
+#: src/components/export-panel/export-config-dialog.tsx:183
 msgid "Utiliser des labels personnalisés"
 msgstr "Utiliser des labels personnalisés"
 
@@ -489,7 +601,7 @@ msgstr "Utiliser des labels personnalisés"
 msgid "Valider"
 msgstr "Valider"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:96
+#: src/components/color-palette/color-grid/color-grid-view.tsx:93
 msgid "Verrouiller"
 msgstr "Verrouiller"
 
@@ -501,12 +613,12 @@ msgstr "Version"
 #~ msgid "Version {updateVersion}"
 #~ msgstr "Version {updateVersion}"
 
-#: src/app/components/adjustements/adjustement.view.tsx:63
+#: src/app/components/adjustements/adjustement.view.tsx:62
 #: src/components/ui/rgb-slider/rgb-slider.tsx:59
 msgid "Vert"
 msgstr "Vert"
 
-#: src/app/components/adjustements/adjustement.view.tsx:101
+#: src/app/components/adjustements/adjustement.view.tsx:100
 msgid "Vibrance"
 msgstr "Vibrance"
 

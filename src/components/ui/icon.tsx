@@ -6,6 +6,7 @@ import {
   ChevronUpIcon,
   Cross2Icon,
   DownloadIcon,
+  FileIcon,
   GearIcon,
   GitHubLogoIcon,
   ImageIcon,
@@ -13,6 +14,7 @@ import {
   LockClosedIcon,
   PlusIcon,
   ReloadIcon,
+  TrashIcon,
   UploadIcon
 } from '@radix-ui/react-icons'
 import { logger } from '@/utils/logger'
@@ -22,12 +24,14 @@ const ICON_MAP = {
   PlusIcon,
   Cross2Icon,
   DownloadIcon,
+  FileIcon,
   GearIcon,
   GitHubLogoIcon,
   ImageIcon,
   InfoCircledIcon,
   LockClosedIcon,
   ReloadIcon,
+  TrashIcon,
   UploadIcon,
   CheckIcon,
   ChevronDownIcon,

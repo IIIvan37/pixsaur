@@ -24,8 +24,6 @@ function isTauri(): boolean {
 export default function App() {
   const tauri = isTauri()
   const dev = isDevelopment()
-  console.log('[APP] isTauri:', tauri, 'isDevelopment:', dev)
-  // alert(`isTauri: ${tauri}, isDevelopment: ${dev}`)
 
   // Add F12 shortcut to open debug window
   useEffect(() => {

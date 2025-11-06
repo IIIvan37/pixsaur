@@ -1,9 +1,8 @@
 import { Trans } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
 import type { AdjustementKey } from '@/app/store/config/types'
+import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import { Header } from '@/components/ui/layout/header/header'
-import { Panel } from '@/components/ui/layout/panel/panel'
 import PixsaurSlider from '@/components/ui/slider'
 import styles from './adjustements.module.css'
 import type { RangeOption } from './types'
@@ -180,22 +179,6 @@ export const AdjustementsView = ({
   onChange,
   onReset
 }: AdjustementsViewProps) => {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['rgb', 'color', 'exposure', 'effects']) // All expanded by default
-  )
-
-  const toggleSection = (id: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
-
   const renderSlider = (adj: RangeLabels) => {
     const settings = adjustments[adj.key]
     if (!settings) return null
@@ -217,7 +200,7 @@ export const AdjustementsView = ({
   }
 
   return (
-    <Panel>
+    <div className={styles.adjustmentsWrapper}>
       <Header
         action={onReset}
         actionLabel={<Trans>Réinitialiser</Trans>}
@@ -226,34 +209,24 @@ export const AdjustementsView = ({
 
       <div className={styles.sectionsContainer}>
         {sections.map((section) => {
-          const isExpanded = expandedSections.has(section.id)
           const sectionLabels = labels.filter((l) =>
             section.keys.includes(l.key)
           )
 
           return (
-            <div key={section.id} className={styles.section}>
-              <button
-                type='button'
-                className={styles.sectionHeader}
-                onClick={() => toggleSection(section.id)}
-                disabled={disabled}
-              >
-                <span className={styles.sectionTitle}>{section.title}</span>
-                <span className={styles.sectionToggle}>
-                  {isExpanded ? '▼' : '▶'}
-                </span>
-              </button>
-
-              {isExpanded && (
-                <div className={styles.sectionContent}>
-                  {sectionLabels.map(renderSlider)}
-                </div>
-              )}
-            </div>
+            <CollapsibleSection
+              key={section.id}
+              title={section.title}
+              defaultOpen={false}
+              disabled={disabled}
+            >
+              <div className={styles.sliderGrid}>
+                {sectionLabels.map(renderSlider)}
+              </div>
+            </CollapsibleSection>
           )
         })}
       </div>
-    </Panel>
+    </div>
   )
 }

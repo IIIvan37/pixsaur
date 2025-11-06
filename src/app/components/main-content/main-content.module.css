@@ -1,0 +1,48 @@
+
+
+.content {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	height: 100%;
+}
+
+.flexRow {
+	display: flex;
+	flex: 1;
+	gap: 1rem;
+	width: 100%;
+}
+
+.flexColumn {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.flexColumnGrow {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+@media (max-width: 1200px) {
+	.flexRow {
+		flex-wrap: wrap;
+	}
+	
+	/* Preview panel (3rd column) goes to full width below */
+	.flexRow > .flexColumnGrow:last-child {
+		flex-basis: 100%;
+		order: 3;
+	}
+}
+
+@media (max-width: 768px) {
+	.flexRow {
+		flex-direction: column;
+	}
+}

@@ -46,11 +46,12 @@ describe('CPC Palette', () => {
   })
 
   describe('injectPaletteDataIntoSCR', () => {
-    it('should inject palette data into SCR buffer', () => {
+    it('should inject palette data and mode into SCR buffer', () => {
       const scr = new Uint8Array(2048)
       const palette = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+      const mode = 1
 
-      injectPaletteDataIntoSCR(scr, palette)
+      injectPaletteDataIntoSCR(scr, palette, mode)
 
       // Check border color
       expect(scr[2000]).toBe(0) // border index
@@ -62,6 +63,20 @@ describe('CPC Palette', () => {
 
       expect(scr[2002]).toBe(1) // firmware index
       expect(scr[2019]).toBe(0x44) // hardware value for index 1
+
+      // Check mode
+      expect(scr[2034]).toBe(1) // graphics mode
+    })
+
+    it('should inject different modes correctly', () => {
+      const scr = new Uint8Array(2048)
+      const palette = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+      injectPaletteDataIntoSCR(scr, palette, 0)
+      expect(scr[2034]).toBe(0)
+
+      injectPaletteDataIntoSCR(scr, palette, 2)
+      expect(scr[2034]).toBe(2)
     })
   })
 

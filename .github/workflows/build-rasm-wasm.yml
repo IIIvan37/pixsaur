@@ -1,0 +1,69 @@
+name: Build RASM WebAssembly
+
+on:
+  workflow_dispatch: # Manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/build-rasm-wasm.sh'
+      - '.github/workflows/build-rasm-wasm.yml'
+
+jobs:
+  build-wasm:
+    runs-on: ubuntu-latest
+    container:
+      image: emscripten/emsdk:latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Verify Emscripten installation
+        run: |
+          emcc --version
+          which emcc
+      
+      - name: Build RASM WebAssembly
+        run: |
+          chmod +x scripts/build-rasm-wasm.sh
+          ./scripts/build-rasm-wasm.sh
+      
+      - name: Check generated files
+        run: |
+          ls -lh public/wasm/
+          file public/wasm/rasm.wasm
+          file public/wasm/rasm.js
+      
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+      
+      - name: Commit WASM artifacts
+        run: |
+          # Force add files even if they're in .gitignore
+          git add -f public/wasm/rasm.js public/wasm/rasm.wasm public/wasm/RASM-LICENSE.txt
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update RASM WebAssembly binaries [skip ci]"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rasm-wasm
+          path: |
+            public/wasm/rasm.js
+            public/wasm/rasm.wasm
+            public/wasm/RASM-LICENSE.txt
+          retention-days: 90

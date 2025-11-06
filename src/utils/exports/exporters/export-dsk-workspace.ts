@@ -1,0 +1,136 @@
+import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { generateDskImageFilename } from '@/utils/amsdos-filename'
+import {
+  generateScrDskTemplate,
+  generateUniversalScrLoader
+} from '../templates'
+import { generateSCRAsmClassic } from './export-scr'
+
+/**
+ * Export DSK file from workspace images
+ * Creates a DSK with multiple screen files from the workspace
+ */
+export async function exportDskWorkspace(
+  images: DskImage[]
+): Promise<Uint8Array | null> {
+  if (images.length === 0) {
+    console.warn('No images in workspace to export')
+    return null
+  }
+
+  const dskFilename = 'pixsaur-workspace.dsk'
+
+  try {
+    // Create RASM instance and get access to the module
+    const { createRasmInstance, readDsk } = await import('@/libs/rasm-wasm')
+    const rasmInstance = await createRasmInstance()
+    const rasmModule = rasmInstance.getModule()
+
+    console.log(
+      `[DSK Workspace] Starting DSK export with ${images.length} image(s)`
+    )
+
+    // Generate and add universal loader first
+    console.log('[DSK Workspace] Adding universal loader to DSK')
+    const loaderAsmCode = generateUniversalScrLoader(dskFilename)
+    const loaderResult = await rasmInstance.assemble(loaderAsmCode, {
+      outputFile: 'loader.bin',
+      exportType: 'dsk',
+      dskFile: dskFilename
+    })
+
+    if (!loaderResult.success) {
+      console.error('[DSK Workspace] Universal loader assembly failed:')
+      console.error('RASM Output:', loaderResult.output)
+      console.error('Generated ASM code:')
+      console.error(loaderAsmCode)
+      return null
+    }
+
+    console.log('[DSK Workspace] Universal loader added successfully')
+
+    // Process each image (first one creates the DSK, others append to it)
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i]
+      const imageIndex = i + 1
+      const scrFilename = generateDskImageFilename(imageIndex)
+      const asmLabel = `image${imageIndex}`
+
+      console.log(
+        `[DSK Workspace] Processing image ${imageIndex}/${images.length}: ${image.name}`
+      )
+
+      // Convert scrData array back to Uint8Array
+      const scrData = new Uint8Array(image.scrData)
+
+      // Generate SCR ASM content with palette firmware
+      const modeConfig = {
+        mode: image.mode,
+        width: image.width,
+        height: image.height,
+        overscan: image.overscan,
+        nColors: image.nColors,
+        scaleX: image.scaleX,
+        scaleY: image.scaleY
+      }
+
+      const scrAsmContent = generateSCRAsmClassic(
+        scrData,
+        modeConfig,
+        image.paletteFirmware,
+        asmLabel
+      )
+
+      if (!scrAsmContent) {
+        console.warn(
+          `[DSK Workspace] Skipping image ${image.name} - SCR data too large`
+        )
+        continue
+      }
+
+      const scrAsmFilename = `${asmLabel}.asm`
+
+      // Write SCR ASM file to virtual filesystem
+      rasmModule.FS.writeFile(`/${scrAsmFilename}`, scrAsmContent)
+
+      // For workspace export, we only save the SCR files without loaders
+      // Users can load them manually from BASIC or create their own loader
+
+      // Generate DSK template code to save SCR to DSK
+      const dskTemplateCode = generateScrDskTemplate({
+        scrAsmFilename,
+        scrLabel: asmLabel,
+        dskFilename,
+        screenFilename: scrFilename
+      })
+
+      // Assemble and save SCR to DSK
+      const result = await rasmInstance.assemble(dskTemplateCode, {
+        outputFile: `output${imageIndex}.bin`,
+        exportType: 'dsk',
+        dskFile: dskFilename
+      })
+
+      if (!result.success) {
+        console.error(
+          `[DSK Workspace] SCR assembly failed for ${image.name}:`,
+          result.output
+        )
+        continue
+      }
+
+      console.log(`[DSK Workspace] Added ${scrFilename} to DSK`)
+    }
+
+    // Read the final DSK from virtual filesystem
+    const dskData = readDsk(rasmModule, dskFilename)
+    console.log(
+      `[DSK Workspace] Successfully exported DSK with ${images.length} image(s)`
+    )
+
+    return dskData
+  } catch (error) {
+    console.error('[DSK Workspace] Error during DSK assembly:', error)
+    return null
+  }
+}
