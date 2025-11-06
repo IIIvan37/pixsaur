@@ -2,10 +2,10 @@
   command = """
     # Install Emscripten SDK in build directory
     git clone --depth 1 https://github.com/emscripten-core/emsdk.git ./emsdk && \
-    cd emsdk && \
+    cd ./emsdk && \
     ./emsdk install latest && \
     ./emsdk activate latest && \
-    source ./emsdk_env.sh && \
+    . ./emsdk_env.sh && \
     cd .. && \
     # Build RASM WASM
     chmod +x scripts/build-rasm-wasm.sh && \
