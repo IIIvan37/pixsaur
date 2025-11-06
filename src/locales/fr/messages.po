@@ -50,11 +50,11 @@ msgstr "Ajouter l'image actuelle"
 
 #: src/components/export-panel/dsk-files-manager.tsx:125
 msgid "Add Empty"
-msgstr ""
+msgstr "Ajouter vide"
 
 #: src/components/export-panel/dsk-files-manager.tsx:104
 msgid "Additional DSK Files"
-msgstr ""
+msgstr "Fichiers DSK supplémentaires"
 
 #: src/app/components/main-content/main-content.tsx:12
 msgid "Adjustments, Source & Preview"
@@ -193,7 +193,7 @@ msgstr "Dimensions"
 
 #: src/components/export-panel/export-config-dialog.tsx:156
 msgid "Disquette DSK (image écran)"
-msgstr ""
+msgstr "Disquette DSK (image écran)"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
@@ -229,11 +229,11 @@ msgstr "Effets"
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #: src/components/export-panel/dsk-files-manager.tsx:65
 msgid "Error reading file: {0}"
-msgstr ""
+msgstr "Erreur de lecture du fichier : {0}"
 
 #: src/components/export-panel/dsk-files-manager.tsx:188
 msgid "Exec"
-msgstr ""
+msgstr "Exec"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:137
 msgid "Export DSK"
@@ -255,7 +255,7 @@ msgstr "Exposition & Tonalité"
 #. placeholder {0}: file.name
 #: src/components/export-panel/dsk-files-manager.tsx:39
 msgid "File {0} is too large (max 64KB). File skipped."
-msgstr ""
+msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 
 #: src/components/image-upload/image-upload-view.tsx:191
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
@@ -334,7 +334,7 @@ msgstr "Plus tard"
 
 #: src/components/export-panel/export-config-dialog.tsx:162
 msgid "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
-msgstr ""
+msgstr "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 
 #: src/components/export-panel/export-config-dialog.tsx:127
 msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
@@ -354,7 +354,7 @@ msgstr "Lissage horizontal"
 
 #: src/components/export-panel/dsk-files-manager.tsx:164
 msgid "Load"
-msgstr ""
+msgstr "Load"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:104
@@ -415,7 +415,7 @@ msgstr "Multiplie le canal vert (0-2x)"
 
 #: src/components/export-panel/dsk-files-manager.tsx:134
 msgid "No additional files. Upload or add files to include them in the DSK."
-msgstr ""
+msgstr "Aucun fichier supplémentaire. Téléchargez ou ajoutez des fichiers pour les inclure dans le DSK."
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:69
 msgid "No image to add"
@@ -514,7 +514,7 @@ msgstr "Réinitialiser"
 
 #: src/components/export-panel/dsk-files-manager.tsx:214
 msgid "Remove file"
-msgstr ""
+msgstr "Retirer le fichier"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:126
 msgid "Remove image from workspace"
@@ -579,11 +579,11 @@ msgstr "Mise à jour disponible : version {updateVersion}"
 
 #: src/components/export-panel/dsk-files-manager.tsx:109
 msgid "Upload Files"
-msgstr ""
+msgstr "Télécharger des fichiers"
 
 #: src/components/color-palette/color-grid/color-grid-view.tsx:65
 msgid "utilisée"
-msgstr ""
+msgstr "utilisée"
 
 #: src/components/export-panel/export-config-dialog.tsx:183
 msgid "Utiliser des labels personnalisés"
