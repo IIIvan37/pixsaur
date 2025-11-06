@@ -3,8 +3,8 @@ import { useAtomValue, useSetAtom } from 'jotai'
 import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
 import { ImageSelector } from '@/components/image-selector'
 import { ImageUpload } from '@/components/image-upload/image-upload'
-import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import { Header } from '@/components/ui/layout/header/header'
+import { Panel } from '@/components/ui/layout/panel/panel'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
 import { imageAtom, setImgAtom, setSelectionAtom } from '../store/image/image'
 
@@ -19,8 +19,9 @@ export default function SourceSection() {
   }
 
   return (
-    <CollapsibleSection title={<Trans>Image source</Trans>} defaultOpen={true}>
+    <Panel>
       <Header
+        title={<Trans>Image source</Trans>}
         actionLabel={<Trans>Changer d'image</Trans>}
         action={() => {
           resetAdjustments()
@@ -39,6 +40,6 @@ export default function SourceSection() {
       ) : (
         <ImageUpload onImageLoaded={handleImageLoaded} />
       )}
-    </CollapsibleSection>
+    </Panel>
   )
 }
