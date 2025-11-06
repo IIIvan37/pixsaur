@@ -1,6 +1,11 @@
 [build]
   command = "pnpm build"
   publish = "dist"
+  ignore = "/bin/false"  # Always ignore auto-deploys from git pushes
+
+# Manual deploys only - builds triggered by GitHub Actions
+[build.environment]
+  NODE_VERSION = "20"
 
 [functions]
   directory = "netlify/functions"
