@@ -18,12 +18,12 @@ msgstr ""
 #~ msgstr "{0} (usada)"
 
 #. placeholder {0}: images.length
-#: src/components/dsk-workspace/dsk-workspace.tsx:140
+#: src/components/dsk-workspace/dsk-workspace.tsx:145
 msgid "{0} image(s) ready to export"
 msgstr "{0} imagen(es) lista(s) para exportar"
 
 #. placeholder {0}: formatDskSpace(calculateDskRemainingSpace(images))
-#: src/components/dsk-workspace/dsk-workspace.tsx:142
+#: src/components/dsk-workspace/dsk-workspace.tsx:147
 msgid "{0} remaining"
 msgstr "{0} restante"
 
@@ -44,7 +44,7 @@ msgstr "Adaptativo"
 msgid "Add current converted image to DSK workspace"
 msgstr "Añadir la imagen convertida actual al espacio de trabajo DSK"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:82
+#: src/components/dsk-workspace/dsk-workspace.tsx:87
 msgid "Add Current Image"
 msgstr "Añadir imagen actual"
 
@@ -158,7 +158,7 @@ msgstr "Haga clic para abrir en una nueva pestaña"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Haga clic para seleccionar una imagen"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:116
+#: src/components/dsk-workspace/dsk-workspace.tsx:121
 msgid "Color {i}: {color}"
 msgstr "Color {i}: {color}"
 
@@ -239,7 +239,7 @@ msgstr "Error al leer el archivo: {0}"
 msgid "Exec"
 msgstr "Exec"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:137
+#: src/components/dsk-workspace/dsk-workspace.tsx:142
 msgid "Export DSK"
 msgstr "Exportar DSK"
 
@@ -299,6 +299,10 @@ msgstr "Luces"
 #: src/components/image-controls/custom-dimensions-input/custom-dimensions-input-view.tsx:57
 msgid "Hauteur"
 msgstr "Altura"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:77
+msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
+msgstr "ℹ️ Solo paleta CPC estándar. El soporte de la paleta Plus llegará pronto."
 
 #: src/app/components/source-section.tsx:24
 msgid "Image source"
@@ -425,7 +429,7 @@ msgstr "No hay archivos adicionales. Suba o añada archivos para incluirlos en e
 msgid "No image to add"
 msgstr "No hay imagen para añadir"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:151
+#: src/components/dsk-workspace/dsk-workspace.tsx:156
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "Aún no hay imágenes en el espacio de trabajo. Añada imágenes convertidas para crear su archivo DSK."
 
@@ -520,7 +524,7 @@ msgstr "Restablecer"
 msgid "Remove file"
 msgstr "Eliminar archivo"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:126
+#: src/components/dsk-workspace/dsk-workspace.tsx:131
 msgid "Remove image from workspace"
 msgstr "Eliminar imagen del espacio de trabajo"
 

@@ -73,6 +73,11 @@ export default function DskWorkspace({
 
   return (
     <CollapsibleSection title={<Trans>DSK Manager</Trans>} defaultOpen={false}>
+      <div className={styles.infoBox}>
+        <Trans>
+          ℹ️ Standard CPC palette only. Plus palette support coming soon.
+        </Trans>
+      </div>
       <div className={styles.actions}>
         <Button
           onClick={handleAddCurrentImage}

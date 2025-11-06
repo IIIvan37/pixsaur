@@ -4,6 +4,16 @@
 	flex-wrap: wrap;
 }
 
+.infoBox {
+	padding: 0.75rem 1rem;
+	background: rgba(var(--primary-rgb, 59, 130, 246), 0.1);
+	border-left: 3px solid var(--primary);
+	border-radius: 4px;
+	margin-bottom: 1rem;
+	font-size: 0.875rem;
+	color: var(--text-secondary);
+}
+
 .imageList {
 	display: flex;
 	flex-direction: column;
