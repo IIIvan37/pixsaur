@@ -29,6 +29,18 @@
 	gap: 0.75rem;
 }
 
+@media (max-width: 1200px) {
+	.flexRow {
+		flex-wrap: wrap;
+	}
+	
+	/* Preview panel (3rd column) goes to full width below */
+	.flexRow > .flexColumnGrow:last-child {
+		flex-basis: 100%;
+		order: 3;
+	}
+}
+
 @media (max-width: 768px) {
 	.flexRow {
 		flex-direction: column;
