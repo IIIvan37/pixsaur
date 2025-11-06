@@ -15,7 +15,7 @@ export function VersionDisplay() {
       } catch (error) {
         console.error('Failed to fetch version:', error)
         // Fallback to package.json version for web
-        setVersion(import.meta.env.VITE_APP_VERSION || '0.1.31')
+        setVersion(import.meta.env.VITE_APP_VERSION || null)
       } finally {
         setIsLoading(false)
       }
@@ -30,7 +30,7 @@ export function VersionDisplay() {
 
   return (
     <div className={styles.version}>
-      v{version}
+      {version ? `v${version}` : ''}
       {isDevelopment() && <span className={styles.devBadge}>DEV</span>}
     </div>
   )

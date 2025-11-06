@@ -20,12 +20,12 @@ msgstr ""
 #. placeholder {0}: images.length
 #: src/components/dsk-workspace/dsk-workspace.tsx:140
 msgid "{0} image(s) ready to export"
-msgstr ""
+msgstr "{0} Bild(er) bereit zum Exportieren"
 
 #. placeholder {0}: formatDskSpace(calculateDskRemainingSpace(images))
 #: src/components/dsk-workspace/dsk-workspace.tsx:142
 msgid "{0} remaining"
-msgstr ""
+msgstr "{0} verbleibend"
 
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
@@ -42,23 +42,23 @@ msgstr "Adaptiv"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:67
 msgid "Add current converted image to DSK workspace"
-msgstr ""
+msgstr "Aktuelles konvertiertes Bild zum DSK-Arbeitsbereich hinzufügen"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:82
 msgid "Add Current Image"
-msgstr ""
+msgstr "Aktuelles Bild hinzufügen"
 
 #: src/components/export-panel/dsk-files-manager.tsx:125
 msgid "Add Empty"
-msgstr ""
+msgstr "Leer hinzufügen"
 
 #: src/components/export-panel/dsk-files-manager.tsx:104
 msgid "Additional DSK Files"
-msgstr ""
+msgstr "Zusätzliche DSK-Dateien"
 
 #: src/app/components/main-content/main-content.tsx:12
 msgid "Adjustments, Source & Preview"
-msgstr ""
+msgstr "Anpassungen, Quelle & Vorschau"
 
 #: src/app/components/adjustements/adjustement.view.tsx:73
 msgid "Ajuste la clarté globale de l'image"
@@ -192,7 +192,7 @@ msgstr "Abmessungen"
 
 #: src/components/export-panel/export-config-dialog.tsx:156
 msgid "Disquette DSK (image écran)"
-msgstr ""
+msgstr "DSK-Diskette (Bildschirmabbild)"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
@@ -210,7 +210,7 @@ msgstr "Herunterladen..."
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:75
 msgid "DSK Manager"
-msgstr ""
+msgstr "DSK-Manager"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:69
 #~ msgid "DSK Workspace"
@@ -228,15 +228,15 @@ msgstr "Effekte"
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #: src/components/export-panel/dsk-files-manager.tsx:65
 msgid "Error reading file: {0}"
-msgstr ""
+msgstr "Fehler beim Lesen der Datei: {0}"
 
 #: src/components/export-panel/dsk-files-manager.tsx:188
 msgid "Exec"
-msgstr ""
+msgstr "Exec"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:137
 msgid "Export DSK"
-msgstr ""
+msgstr "DSK exportieren"
 
 #: src/components/export-panel/export-config-dialog.tsx:108
 #: src/components/export-panel/export-panel-view.tsx:20
@@ -254,7 +254,7 @@ msgstr "Belichtung & Tonalität"
 #. placeholder {0}: file.name
 #: src/components/export-panel/dsk-files-manager.tsx:39
 msgid "File {0} is too large (max 64KB). File skipped."
-msgstr ""
+msgstr "Datei {0} ist zu groß (max. 64 KB). Datei übersprungen."
 
 #: src/components/image-upload/image-upload-view.tsx:191
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
@@ -333,7 +333,7 @@ msgstr "Später"
 
 #: src/components/export-panel/export-config-dialog.tsx:162
 msgid "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
-msgstr ""
+msgstr "Das DSK-Format erfordert Standardabmessungen (160x200, 320x200 oder 640x200)"
 
 #: src/components/export-panel/export-config-dialog.tsx:127
 msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
@@ -353,7 +353,7 @@ msgstr "Horizontale Glättung"
 
 #: src/components/export-panel/dsk-files-manager.tsx:164
 msgid "Load"
-msgstr ""
+msgstr "Load"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:104
@@ -415,15 +415,15 @@ msgstr "Multipliziert den Grünkanal (0-2x)"
 
 #: src/components/export-panel/dsk-files-manager.tsx:134
 msgid "No additional files. Upload or add files to include them in the DSK."
-msgstr ""
+msgstr "Keine zusätzlichen Dateien. Laden Sie Dateien hoch oder fügen Sie sie hinzu, um sie in das DSK einzufügen."
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:69
 msgid "No image to add"
-msgstr ""
+msgstr "Kein Bild zum Hinzufügen"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:151
 msgid "No images in workspace yet. Add converted images to build your DSK file."
-msgstr ""
+msgstr "Noch keine Bilder im Arbeitsbereich. Fügen Sie konvertierte Bilder hinzu, um Ihre DSK-Datei zu erstellen."
 
 #: src/components/export-panel/export-config-dialog.tsx:208
 msgid "Nom du fichier ZIP"
@@ -431,7 +431,7 @@ msgstr "ZIP-Dateiname"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:71
 msgid "Not enough space on DSK"
-msgstr ""
+msgstr "Nicht genügend Speicherplatz auf DSK"
 
 #: src/app/components/adjustements/adjustement.view.tsx:147
 msgid "Ombres"
@@ -514,11 +514,11 @@ msgstr "Zurücksetzen"
 
 #: src/components/export-panel/dsk-files-manager.tsx:214
 msgid "Remove file"
-msgstr ""
+msgstr "Datei entfernen"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:126
 msgid "Remove image from workspace"
-msgstr ""
+msgstr "Bild aus dem Arbeitsbereich entfernen"
 
 #: src/app/components/adjustements/adjustement.view.tsx:93
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
@@ -579,11 +579,11 @@ msgstr "Update verfügbar: Version {updateVersion}"
 
 #: src/components/export-panel/dsk-files-manager.tsx:109
 msgid "Upload Files"
-msgstr ""
+msgstr "Dateien hochladen"
 
 #: src/components/color-palette/color-grid/color-grid-view.tsx:65
 msgid "utilisée"
-msgstr ""
+msgstr "verwendet"
 
 #: src/components/export-panel/export-config-dialog.tsx:183
 msgid "Utiliser des labels personnalisés"
