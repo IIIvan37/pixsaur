@@ -13,7 +13,7 @@ import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { sanitizeAmsdosFilename } from '@/utils/amsdos-filename'
 import { downloadFile } from '@/utils/download-file'
-import { exportDskWorkspace } from '@/utils/exports/exporters/export-dsk-workspace'
+import { exportDskWorkspaceZip } from '@/utils/exports/exporters/export-dsk-workspace-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 
 export default function DskWorkspacePanel() {
@@ -116,13 +116,9 @@ export default function DskWorkspacePanel() {
 
     setIsExporting(true)
     try {
-      const dskData = await exportDskWorkspace(dskImages)
-      if (dskData) {
-        downloadFile(
-          dskData,
-          'pixsaur-workspace.dsk',
-          'application/octet-stream'
-        )
+      const zipBlob = await exportDskWorkspaceZip(dskImages)
+      if (zipBlob) {
+        downloadFile(zipBlob, 'pixsaur-workspace.zip', 'application/zip')
       }
     } catch (error) {
       console.error('[DSK Workspace] Export failed:', error)

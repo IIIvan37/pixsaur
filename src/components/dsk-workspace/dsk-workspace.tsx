@@ -1,7 +1,6 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { DownloadIcon, PlusIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   addImageToDskAtom,
@@ -11,6 +10,7 @@ import {
 } from '@/app/store/dsk-workspace/dsk-workspace'
 import Button from '@/components/ui/button/button'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
+import Icon from '@/components/ui/icon'
 import { generateDskImageFilename } from '@/utils/amsdos-filename'
 import styles from './dsk-workspace.module.css'
 import {
@@ -84,7 +84,7 @@ export default function DskWorkspace({
           disabled={!canAdd}
           title={addButtonTitle}
         >
-          <PlusIcon /> <Trans>Add Current Image</Trans>
+          <Icon name='PlusIcon' /> <Trans>Add Current Image</Trans>
         </Button>
       </div>
 
@@ -130,7 +130,7 @@ export default function DskWorkspace({
                     className={styles.deleteButton}
                     title={_(msg`Remove image from workspace`)}
                   >
-                    <TrashIcon />
+                    <Icon name='TrashIcon' />
                   </Button>
                 </div>
               )
@@ -139,7 +139,7 @@ export default function DskWorkspace({
 
           <div className={styles.exportSection}>
             <Button onClick={onExport} variant='primary'>
-              <DownloadIcon /> <Trans>Export DSK</Trans>
+              <Icon name='DownloadIcon' /> <Trans>Export DSK</Trans>
             </Button>
             <div className={styles.exportInfo}>
               <Trans>{images.length} image(s) ready to export</Trans>

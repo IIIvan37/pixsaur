@@ -1,17 +1,25 @@
 /**
- * Download a Uint8Array as a file
+ * Download a Uint8Array or Blob as a file
  */
 export function downloadFile(
-  data: Uint8Array,
+  data: Uint8Array | Blob,
   filename: string,
   mimeType: string = 'application/octet-stream'
 ) {
-  // Create a new Uint8Array to ensure it's properly typed for Blob
-  const arrayBuffer = data.buffer.slice(
-    data.byteOffset,
-    data.byteOffset + data.byteLength
-  ) as ArrayBuffer
-  const blob = new Blob([arrayBuffer], { type: mimeType })
+  let blob: Blob
+
+  if (data instanceof Blob) {
+    // Data is already a Blob
+    blob = data
+  } else {
+    // Create a new Uint8Array to ensure it's properly typed for Blob
+    const arrayBuffer = data.buffer.slice(
+      data.byteOffset,
+      data.byteOffset + data.byteLength
+    ) as ArrayBuffer
+    blob = new Blob([arrayBuffer], { type: mimeType })
+  }
+
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url

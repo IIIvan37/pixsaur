@@ -171,7 +171,7 @@ export default function DskFilesManager({
                         : `0x${file.loadAddress.toString(16).toUpperCase()}`
                     }
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9a-fA-Fx]/g, '')
+                      const value = sanitizeHexInput(e.target.value)
                       const address = value
                         ? Number.parseInt(value, 16)
                         : undefined
@@ -195,7 +195,7 @@ export default function DskFilesManager({
                         : `0x${file.execAddress.toString(16).toUpperCase()}`
                     }
                     onChange={(e) => {
-                      const value = e.target.value.replace(/[^0-9a-fA-Fx]/g, '')
+                      const value = sanitizeHexInput(e.target.value)
                       const address = value
                         ? Number.parseInt(value, 16)
                         : undefined
@@ -225,6 +225,16 @@ export default function DskFilesManager({
 }
 
 /**
+ * Sanitize hex input by keeping only hex characters
+ */
+function sanitizeHexInput(input: string): string {
+  return input
+    .split('')
+    .filter((char) => /[0-9a-fA-Fx]/.test(char))
+    .join('')
+}
+
+/**
  * Generate CPC-compatible filename (8.3 format)
  */
 function generateCpcFilename(filename: string): string {
@@ -239,13 +249,18 @@ function generateCpcFilename(filename: string): string {
   // Clean and limit name (8 chars max)
   name = name
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '_')
+    .split('')
+    .filter((char) => /[A-Z0-9]/.test(char))
+    .join('')
+    .padEnd(1, '_')
     .slice(0, 8)
 
   // Clean and limit extension (3 chars max)
   ext = ext
     .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '')
+    .split('')
+    .filter((char) => /[A-Z0-9]/.test(char))
+    .join('')
     .slice(0, 3)
 
   return ext ? `${name}.${ext}` : name
