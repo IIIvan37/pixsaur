@@ -1,21 +1,24 @@
 [build]
-  command = "pnpm build"
+  command = """
+    # Install Emscripten SDK
+    git clone --depth 1 https://github.com/emscripten-core/emsdk.git /opt/emsdk && \
+    cd /opt/emsdk && \
+    ./emsdk install latest && \
+    ./emsdk activate latest && \
+    . ./emsdk_env.sh && \
+    cd $OLDPWD && \
+    # Build RASM WASM
+    chmod +x scripts/build-rasm-wasm.sh && \
+    ./scripts/build-rasm-wasm.sh && \
+    # Build the app
+    pnpm build
+  """
   publish = "dist"
 
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-  # Include RASM binary in function deployment
-  included_files = ["functions/lib/rasm"]
+[build.environment]
+  NODE_VERSION = "20"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Environment variables for functions
-[context.production.environment]
-  NODE_VERSION = "18"
-
-[context.deploy-preview.environment]
-  NODE_VERSION = "18"
