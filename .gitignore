@@ -62,5 +62,5 @@ coverage/
 # Build artifacts
 .netlify/
 
-# RASM WebAssembly build artifacts (built automatically by Netlify)
+# RASM WebAssembly build artifacts (built automatically by CI/CD)
 public/wasm/

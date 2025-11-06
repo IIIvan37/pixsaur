@@ -154,6 +154,24 @@ jobs:
           corepack enable
           corepack prepare pnpm@10.11.0 --activate
 
+      - name: Setup Emscripten and build RASM WASM (Linux only - once per release)
+        if: matrix.platform == 'ubuntu-22.04' && matrix.bundle-type == 'appimage'
+        run: |
+          # Install Emscripten
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git ./emsdk
+          cd ./emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          cd ..
+          
+          # Build RASM WASM
+          source ./emsdk/emsdk_env.sh
+          chmod +x scripts/build-rasm-wasm.sh
+          ./scripts/build-rasm-wasm.sh
+          
+          echo "RASM WASM built successfully"
+          ls -lh public/wasm/
+
       - name: Install frontend dependencies
         run: pnpm install
 
