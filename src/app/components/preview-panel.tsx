@@ -4,9 +4,8 @@ import { useEffect, useId } from 'react'
 import { ColorPalette } from '@/components/color-palette/color-palette'
 import ImageControls from '@/components/image-controls/image-controls'
 import ImagePreview from '@/components/image-preview/image-preview'
+import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import Flex from '@/components/ui/flex'
-import { Header } from '@/components/ui/layout/header/header'
-import { Panel } from '@/components/ui/layout/panel/panel'
 import { Switch } from '@/components/ui/switch'
 import { smoothingAtom } from '../store/config/config'
 import { setReducedPaletteAtom } from '../store/palette/palette'
@@ -22,9 +21,8 @@ const PreviewPanel = () => {
   }, [reduced, setReduced])
 
   return (
-    <Panel>
+    <CollapsibleSection title={<Trans>Aperçu</Trans>} defaultOpen={true}>
       <Flex align='baseline' justify='between' style={{ width: '100%' }}>
-        <Header title={<Trans>Aperçu</Trans>} />
         <Switch
           checked={smoothing}
           onCheckedChange={(value) => {
@@ -44,7 +42,7 @@ const PreviewPanel = () => {
       {/* Mode controls directly under palette */}
 
       <ImageControls />
-    </Panel>
+    </CollapsibleSection>
   )
 }
 

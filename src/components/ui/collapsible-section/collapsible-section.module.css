@@ -48,9 +48,6 @@
 .sectionContent {
   overflow: hidden;
   padding: var(--spacing-md, 16px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
-  gap: var(--spacing-md, 16px);
 }
 
 .sectionContent[data-state='open'] {

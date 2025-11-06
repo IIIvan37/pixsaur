@@ -11,8 +11,17 @@ import {
 } from '@/app/store/dsk-workspace/dsk-workspace'
 import Button from '@/components/ui/button/button'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
-import { Panel } from '@/components/ui/layout/panel/panel'
+import { generateDskImageFilename } from '@/utils/amsdos-filename'
 import styles from './dsk-workspace.module.css'
+import {
+  calculateDskRemainingSpace,
+  calculateScrSize,
+  canAddImageToDsk,
+  formatDskSpace,
+  formatImageSize,
+  formatScrSize,
+  getModeLabel
+} from './dsk-workspace-utils'
 
 interface DskWorkspaceProps {
   onExport: () => void
@@ -42,62 +51,60 @@ export default function DskWorkspace({
   const addImageToDsk = useSetAtom(addImageToDskAtom)
   const removeImageFromDsk = useSetAtom(removeImageFromDskAtom)
 
+  // Check if there is enough space on DSK for a new image
+  const hasEnoughSpace = canAddImageToDsk(images)
+  const canAdd = canAddCurrentImage && hasEnoughSpace
+
   const handleAddCurrentImage = () => {
     if (currentImageData) {
       addImageToDsk(currentImageData)
     }
   }
 
-  const formatSize = (width: number, height: number) => `${width}×${height}`
-
-  const getModeLabel = (mode: number) => {
-    switch (mode) {
-      case 0:
-        return 'Mode 0'
-      case 1:
-        return 'Mode 1'
-      case 2:
-        return 'Mode 2'
-      default:
-        return `Mode ${mode}`
-    }
+  // Determine button title based on state
+  let addButtonTitle: string
+  if (canAddCurrentImage && hasEnoughSpace) {
+    addButtonTitle = _(msg`Add current converted image to DSK workspace`)
+  } else if (hasEnoughSpace) {
+    addButtonTitle = _(msg`No image to add`)
+  } else {
+    addButtonTitle = _(msg`Not enough space on DSK`)
   }
 
   return (
-    <Panel>
-      <CollapsibleSection title={<Trans>DSK Manager</Trans>} defaultOpen={true}>
-        <div className={styles.actions}>
-          <Button
-            onClick={handleAddCurrentImage}
-            disabled={!canAddCurrentImage}
-            title={
-              canAddCurrentImage
-                ? _(msg`Add current converted image to DSK workspace`)
-                : _(msg`No image to add`)
-            }
-          >
-            <PlusIcon /> <Trans>Add Current Image</Trans>
-          </Button>
-        </div>
+    <CollapsibleSection title={<Trans>DSK Manager</Trans>} defaultOpen={false}>
+      <div className={styles.actions}>
+        <Button
+          onClick={handleAddCurrentImage}
+          disabled={!canAdd}
+          title={addButtonTitle}
+        >
+          <PlusIcon /> <Trans>Add Current Image</Trans>
+        </Button>
+      </div>
 
-        {hasImages ? (
-          <>
-            <div className={styles.imageList}>
-              {images.map((image) => (
+      {hasImages ? (
+        <>
+          <div className={styles.imageList}>
+            {images.map((image, index) => {
+              // Generate the actual filename that will be used on the DSK
+              const dskFilename = generateDskImageFilename(index + 1)
+
+              return (
                 <div key={image.id} className={styles.imageItem}>
                   {image.thumbnailDataUrl && (
                     <img
                       src={image.thumbnailDataUrl}
-                      alt={image.name}
+                      alt={dskFilename}
                       className={styles.thumbnail}
                     />
                   )}
                   <div className={styles.imageInfo}>
-                    <div className={styles.imageName}>{image.name}</div>
+                    <div className={styles.imageName}>{dskFilename}</div>
                     <div className={styles.imageDetails}>
                       {getModeLabel(image.mode)} •{' '}
-                      {formatSize(image.width, image.height)} •{' '}
-                      {Math.round(image.scrData.length / 1024)} KB
+                      {formatImageSize(image.width, image.height)} •{' '}
+                      {formatScrSize(calculateScrSize())}
                     </div>
                     {image.paletteColors && (
                       <div className={styles.palette}>
@@ -121,29 +128,33 @@ export default function DskWorkspace({
                     <TrashIcon />
                   </Button>
                 </div>
-              ))}
-            </div>
-
-            <div className={styles.exportSection}>
-              <Button onClick={onExport} variant='primary'>
-                <DownloadIcon /> <Trans>Export DSK</Trans>
-              </Button>
-              <div className={styles.exportInfo}>
-                <Trans>{images.length} image(s) ready to export</Trans>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className={styles.emptyState}>
-            <p>
-              <Trans>
-                No images in workspace yet. Add converted images to build your
-                DSK file.
-              </Trans>
-            </p>
+              )
+            })}
           </div>
-        )}
-      </CollapsibleSection>
-    </Panel>
+
+          <div className={styles.exportSection}>
+            <Button onClick={onExport} variant='primary'>
+              <DownloadIcon /> <Trans>Export DSK</Trans>
+            </Button>
+            <div className={styles.exportInfo}>
+              <Trans>{images.length} image(s) ready to export</Trans>
+              {' • '}
+              <Trans>
+                {formatDskSpace(calculateDskRemainingSpace(images))} remaining
+              </Trans>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className={styles.emptyState}>
+          <p>
+            <Trans>
+              No images in workspace yet. Add converted images to build your DSK
+              file.
+            </Trans>
+          </p>
+        </div>
+      )}
+    </CollapsibleSection>
   )
 }

@@ -34,43 +34,22 @@ export default function DskWorkspacePanel() {
         // Convert palette to firmware indices (same logic as in export-panel.tsx)
         const cpcPalette = getPaletteForHardware(cpcHardware)
 
-        const originalPaletteIndices = reducedPalette.map(
-          (colorData: unknown) => {
-            const color = Array.isArray(colorData)
-              ? colorData
-              : Array.from(colorData as ArrayLike<number>)
-            const index = cpcPalette.findIndex(
-              (c) => c[0] === color[0] && c[1] === color[1] && c[2] === color[2]
-            )
-            if (index === -1) {
-              throw new Error(
-                `Pixel RGB [${color}] non trouvé dans la palette.`
-              )
-            }
-            return index
+        const paletteFirmware = reducedPalette.map((colorData: unknown) => {
+          const color = Array.isArray(colorData)
+            ? colorData
+            : Array.from(colorData as ArrayLike<number>)
+          const index = cpcPalette.findIndex(
+            (c) => c[0] === color[0] && c[1] === color[1] && c[2] === color[2]
+          )
+          if (index === -1) {
+            throw new Error(`Pixel RGB [${color}] non trouvé dans la palette.`)
           }
-        )
+          return index
+        })
 
-        // Mode 0 needs palette reorganization
-        const isMode0 = reducedPalette.length === 16
-        let paletteFirmware: number[]
-
-        if (isMode0) {
-          paletteFirmware = new Array(16).fill(0)
-          for (let i = 0; i < originalPaletteIndices.length; i++) {
-            const b0 = i & 1
-            const b1 = (i >> 1) & 1
-            const b2 = (i >> 2) & 1
-            const b3 = (i >> 3) & 1
-            const correctedIndex = b0 | (b2 << 1) | (b1 << 2) | (b3 << 3)
-            paletteFirmware[correctedIndex] = originalPaletteIndices[i]
-          }
-        } else {
-          // Ensure palette has 16 colors (pad with black if needed)
-          paletteFirmware = new Array(16).fill(0)
-          for (let i = 0; i < originalPaletteIndices.length; i++) {
-            paletteFirmware[i] = originalPaletteIndices[i]
-          }
+        // Ensure palette has 16 colors (pad with black if needed)
+        while (paletteFirmware.length < 16) {
+          paletteFirmware.push(0)
         }
 
         // Generate a timestamped name and sanitize to AMSDOS 8.3 format
@@ -107,9 +86,17 @@ export default function DskWorkspacePanel() {
           return `#${rgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`
         })
 
+        // Convert RGB to palette indices (not SCR encoded yet)
+        // The SCR encoding will be done by generateSCRAsmClassic in export-dsk-workspace
+        const indexBuffer = rgbToIndexBufferExact(
+          image.data,
+          reducedPalette,
+          false
+        )
+
         return {
           name: sanitizeAmsdosFilename(suggestedName),
-          scrData: rgbToIndexBufferExact(image.data, reducedPalette, false),
+          scrData: indexBuffer,
           mode: modeConfig.mode,
           width: modeConfig.width,
           height: modeConfig.height,

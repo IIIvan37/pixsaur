@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import type { AdjustementKey } from '@/app/store/config/types'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import { Header } from '@/components/ui/layout/header/header'
-import { Panel } from '@/components/ui/layout/panel/panel'
 import PixsaurSlider from '@/components/ui/slider'
 import styles from './adjustements.module.css'
 import type { RangeOption } from './types'
@@ -201,7 +200,7 @@ export const AdjustementsView = ({
   }
 
   return (
-    <Panel compact>
+    <div className={styles.adjustmentsWrapper}>
       <Header
         action={onReset}
         actionLabel={<Trans>Réinitialiser</Trans>}
@@ -218,14 +217,16 @@ export const AdjustementsView = ({
             <CollapsibleSection
               key={section.id}
               title={section.title}
-              defaultOpen={true}
+              defaultOpen={false}
               disabled={disabled}
             >
-              {sectionLabels.map(renderSlider)}
+              <div className={styles.sliderGrid}>
+                {sectionLabels.map(renderSlider)}
+              </div>
             </CollapsibleSection>
           )
         })}
       </div>
-    </Panel>
+    </div>
   )
 }
