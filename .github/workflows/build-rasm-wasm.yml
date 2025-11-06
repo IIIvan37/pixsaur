@@ -14,8 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: emscripten/emsdk:latest
+      options: --user root
     
     steps:
+      - name: Install git
+        run: |
+          apt-get update
+          apt-get install -y git file
+      
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -40,6 +46,7 @@ jobs:
       
       - name: Configure Git
         run: |
+          git config --global --add safe.directory /__w/pixsaur/pixsaur
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
       
