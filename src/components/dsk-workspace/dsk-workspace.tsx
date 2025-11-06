@@ -113,7 +113,7 @@ export default function DskWorkspace({
                             key={`${image.id}-color-${i}`}
                             className={styles.paletteColor}
                             style={{ backgroundColor: color }}
-                            title={`Color ${i}: ${color}`}
+                            title={_(msg`Color ${i}: ${color}`)}
                           />
                         ))}
                       </div>

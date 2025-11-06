@@ -157,6 +157,10 @@ msgstr "Click to open in a new tab"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
 
+#: src/components/dsk-workspace/dsk-workspace.tsx:116
+msgid "Color {i}: {color}"
+msgstr "Color {i}: {color}"
+
 #: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Export Configuration"

@@ -158,6 +158,10 @@ msgstr "Haga clic para abrir en una nueva pestaña"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Haga clic para seleccionar una imagen"
 
+#: src/components/dsk-workspace/dsk-workspace.tsx:116
+msgid "Color {i}: {color}"
+msgstr "Color {i}: {color}"
+
 #: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Configuración de la exportación"
