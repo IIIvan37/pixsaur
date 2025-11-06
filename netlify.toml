@@ -1,9 +1,20 @@
 [build]
-  command = "pnpm build"
+  command = """
+    # Install Emscripten SDK
+    git clone --depth 1 https://github.com/emscripten-core/emsdk.git /opt/emsdk && \
+    cd /opt/emsdk && \
+    ./emsdk install latest && \
+    ./emsdk activate latest && \
+    . ./emsdk_env.sh && \
+    cd $OLDPWD && \
+    # Build RASM WASM
+    chmod +x scripts/build-rasm-wasm.sh && \
+    ./scripts/build-rasm-wasm.sh && \
+    # Build the app
+    pnpm build
+  """
   publish = "dist"
-  ignore = "/bin/false"  # Always ignore auto-deploys from git pushes
 
-# Manual deploys only - builds triggered by GitHub Actions
 [build.environment]
   NODE_VERSION = "20"
 
