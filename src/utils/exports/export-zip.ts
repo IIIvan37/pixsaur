@@ -4,7 +4,6 @@ import { CPCHardware } from '@/libs/types'
 import { paletteToCPCPlusValues } from './cpc-plus-format'
 import { saveZipFileTauri } from './export-tauri'
 import {
-  exportDsk,
   exportLinearData,
   exportPalettePlus,
   exportPalettesClassic,
@@ -38,10 +37,6 @@ async function exportCPCPlusData(
   await exportLinearData(zip, indexBuf, modeConfig, config, asmLabel, true)
 
   exportPalettePlus(zip, cpcPlusPaletteValues, modeConfig, config)
-
-  // Export DSK if enabled (Classic only for now)
-  // TODO: Add CPC Plus DSK export support
-  // await exportDsk(zip, indexBuf, modeConfig, config, asmLabel, isStandardMode, paletteFirmware)
 }
 
 async function exportCPCClassicData(
@@ -66,18 +61,6 @@ async function exportCPCClassicData(
   await exportLinearData(zip, indexBuf, modeConfig, config, asmLabel, false)
 
   exportPalettesClassic(zip, paletteFirmware, config)
-
-  // Export DSK if enabled (with optional additional files)
-  await exportDsk(
-    zip,
-    indexBuf,
-    modeConfig,
-    config,
-    asmLabel,
-    isStandardMode,
-    paletteFirmware,
-    config.dskAdditionalFiles || []
-  )
 }
 
 export async function exportZip(
