@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'scripts/build-rasm-wasm.sh'
-      - '.github/workflows/build-rasm-wasm.yml'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-wasm:
@@ -33,12 +33,25 @@ jobs:
           emcc --version
           which emcc
       
+      - name: Check if WASM files exist
+        id: check_wasm
+        run: |
+          if [ -f "public/wasm/rasm.wasm" ] && [ -f "public/wasm/rasm.js" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "WASM files already exist, skipping build"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "WASM files missing, will build"
+          fi
+      
       - name: Build RASM WebAssembly
+        if: steps.check_wasm.outputs.exists == 'false'
         run: |
           chmod +x scripts/build-rasm-wasm.sh
           ./scripts/build-rasm-wasm.sh
       
       - name: Check generated files
+        if: steps.check_wasm.outputs.exists == 'false'
         run: |
           ls -lh public/wasm/
           echo "WASM files generated successfully"
@@ -52,6 +65,7 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
       
       - name: Commit WASM artifacts
+        if: steps.check_wasm.outputs.exists == 'false'
         run: |
           # Force add files even if they're in .gitignore
           git add -f public/wasm/rasm.js public/wasm/rasm.wasm public/wasm/RASM-LICENSE.txt
