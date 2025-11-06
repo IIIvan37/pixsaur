@@ -38,7 +38,6 @@ export interface ZipContentConfig {
   includePalettes: boolean // Include palette files (firmware/hardware for Classic, CPC+ values for Plus)
   includePNG: boolean // Include PNG preview
   includePNGCorrected: boolean // Include PNG with corrected aspect ratio
-  includeDSK: boolean // Include DSK disk image with SCR + BASIC loader
 }
 
 /**
@@ -74,9 +73,6 @@ export interface ExportConfig {
   // ASM-specific options
   labels: ASMLabels
 
-  // DSK-specific options
-  dskAdditionalFiles?: DskAdditionalFile[] // Additional files to include in DSK
-
   // Code generation options (for future phases)
   // includeCode: boolean        // TODO: Phase 2 - Include display routine
   // compression: string         // TODO: Phase 2 - Compression method
@@ -94,8 +90,7 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
     includeLinear: true,
     includePalettes: true,
     includePNG: true,
-    includePNGCorrected: true,
-    includeDSK: false // Disabled by default (requires standard mode)
+    includePNGCorrected: true
   },
   labels: {
     enabled: true,
