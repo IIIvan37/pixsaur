@@ -90,8 +90,8 @@ export const DEFAULT_LOGGER_CONFIG: LoggerConfig = {
  */
 export class UnifiedLogger implements LoggerInterface {
   private config: LoggerConfig
-  private activeTimers = new Map<string, number>()
-  private static instances = new Map<string, UnifiedLogger>()
+  private readonly activeTimers = new Map<string, number>()
+  private static readonly instances = new Map<string, UnifiedLogger>()
 
   private constructor(
     private readonly moduleName: string,

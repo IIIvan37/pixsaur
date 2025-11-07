@@ -1,21 +1,21 @@
 import { type ReactNode, useEffect } from 'react'
 import { theme } from './theme'
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children }: { readonly children: ReactNode }) {
   useEffect(() => {
     function injectVars(
       prefix: string,
       obj: Record<string, string | object>,
       set: (k: string, v: string) => void
     ) {
-      Object.entries(obj).forEach(([key, value]) => {
+      for (const [key, value] of Object.entries(obj)) {
         const fullKey = `${prefix}-${key}`
         if (typeof value === 'string') {
           set(fullKey, value)
         } else {
           injectVars(fullKey, value as Record<string, string | object>, set)
         }
-      })
+      }
     }
     const root = document.documentElement
 

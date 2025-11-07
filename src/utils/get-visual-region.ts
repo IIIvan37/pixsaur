@@ -39,7 +39,7 @@ export function getVisualRegionNormalized(
   // Step 2 — Compute the CPC pixel aspect ratio (used for visual correction)
   const pixelAspectRatio = {
     0: 2 / 1, // Mode 0: wide pixels
-    1: 1 / 1, // Mode 1: square pixels
+    1: 1, // Mode 1: square pixels
     2: 1 / 2 // Mode 2: tall pixels
   }[modeConfig.mode]
   // Step 3 — Compute the uniform scale factor considering aspect correction

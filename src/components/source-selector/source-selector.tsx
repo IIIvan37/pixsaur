@@ -38,7 +38,10 @@ export type SourceSelectorProps = {
  * - Handles are rendered at the four corners of the selection rectangle.
  * - All coordinates and sizes are managed in both logical and percentage units for responsive behavior.
  */
-export const SourceSelector = ({ width, height }: SourceSelectorProps) => {
+export const SourceSelector = ({
+  width,
+  height
+}: Readonly<SourceSelectorProps>) => {
   const [resizeHandle, setResizeHandle] = useState<Handle>(null)
 
   const selection = useAtomValue(selectionAtom)

@@ -10,7 +10,12 @@ type SwitchProps = {
   readonly id: string
 }
 
-export function Switch({ checked, onCheckedChange, label, id }: SwitchProps) {
+export function Switch({
+  checked,
+  onCheckedChange,
+  label,
+  id
+}: Readonly<SwitchProps>) {
   return (
     <div className={styles.wrapper}>
       {label && (
