@@ -2,6 +2,7 @@ import { atom } from 'jotai'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { quantifyToCPCPlus, quantizeCPC } from '@/utils/cpc-calculations'
 import {
@@ -400,11 +401,11 @@ function positionImageForAutoMode(
     return remapped
   }
 
+  // Find darkest color using Rec. 709 luminance
   const darkestColor = reduced.reduce((darkest, color) => {
-    const brightness = color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114
-    const darkestBrightness =
-      darkest[0] * 0.299 + darkest[1] * 0.587 + darkest[2] * 0.114
-    return brightness < darkestBrightness ? color : darkest
+    const colorLuminance = luminance(color)
+    const darkestLuminance = luminance(darkest)
+    return colorLuminance < darkestLuminance ? color : darkest
   }, reduced[0])
 
   ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`

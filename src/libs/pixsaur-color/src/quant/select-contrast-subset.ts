@@ -1,4 +1,5 @@
 import type { Vector } from '../type'
+import { isBright, isDark, luminance } from '../utils/luminance'
 
 function kCombinations<T>(
   arr: T[],
@@ -19,23 +20,9 @@ function kCombinations<T>(
   memo.set(key, result)
   return result
 }
-/**
- * Approximate luminance from RGB [0–1] using Rec. 709 Y formula.
- */
-export function luminance([r, g, b]: Vector): number {
-  const R = r / 255
-  const G = g / 255
-  const B = b / 255
-  return 0.2126 * R + 0.7152 * G + 0.0722 * B
-}
 
-export function isDark(color: Vector): boolean {
-  return luminance(color) < 0.2
-}
-
-export function isBright(color: Vector): boolean {
-  return luminance(color) > 0.8
-}
+// Re-export for backward compatibility
+export { luminance, isDark, isBright }
 
 /**
  * Sélectionne un sous-ensemble de couleurs en maximisant le contraste
