@@ -1,5 +1,4 @@
-import { Trans, useLingui } from '@lingui/react/macro'
-import clsx from 'clsx'
+import { Trans } from '@lingui/react/macro'
 import type * as React from 'react'
 import type { PaletteSlot } from '@/app/store/palette/types'
 import Button from '@/components/ui/button'
@@ -30,15 +29,6 @@ export function ColorGridView({
   optionRefs,
   onClose
 }: ColorGridViewProps) {
-  const { t } = useLingui()
-  // Helper to check if a color is used in the palette (excluding current slot)
-  const isColorUsed = (s: PaletteSlot, pc: CPCColor, index: number) => {
-    return (
-      s.color &&
-      index !== slotIndex &&
-      Array.from(s.color).every((v, j) => v === pc.vector[j])
-    )
-  }
   const slot = slots[slotIndex]
   return (
     <div
@@ -50,21 +40,14 @@ export function ColorGridView({
           <Trans>Options de couleur</Trans>
         </legend>
         {fullPalette.map((pc: CPCColor, optionIndex: number) => {
-          const isUsed = slots.some((s: PaletteSlot, i: number) =>
-            isColorUsed(s, pc, i)
-          )
           return (
             <div key={pc.hex}>
               {/* @sonar-ignore-next-line a11y/useSemanticElements: Custom color option with visual display */}
               <ColorButton
                 colorHex={`#${pc.hex}`}
-                className={clsx(
-                  styles.colorOption,
-                  isUsed && styles.colorOptionUsed
-                )}
-                title={isUsed ? `${pc.name} (${t`utilisée`})` : pc.name}
+                className={styles.colorOption}
+                title={pc.name}
                 aria-selected={focusedColorIndex === optionIndex}
-                disabled={isUsed}
                 tabIndex={focusedColorIndex === optionIndex ? 0 : -1}
                 buttonRef={(el: HTMLButtonElement | null) => {
                   if (colorOptionRefs?.current)

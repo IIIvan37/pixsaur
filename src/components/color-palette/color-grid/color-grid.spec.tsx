@@ -31,7 +31,7 @@ describe('ColorGrid', () => {
     { color: new Float32Array([4, 5, 6]), locked: true } // Vert
   ]
 
-  it('disables color options already used in other slots', () => {
+  it('allows selecting color options even if already used in other slots', () => {
     render(
       <ColorGrid
         fullPalette={fullPalette}
@@ -42,17 +42,17 @@ describe('ColorGrid', () => {
       />
     )
 
-    // Rouge and Vert should be disabled, Bleu should not
-    const rougeBtn = screen.getByRole('button', { name: /Rouge \(utilisée\)/i })
-    const vertBtn = screen.getByRole('button', { name: /Vert \(utilisée\)/i })
+    // Toutes les couleurs peuvent être sélectionnées, même si déjà utilisées
+    const rougeBtn = screen.getByRole('button', { name: /Rouge/i })
+    const vertBtn = screen.getByRole('button', { name: /Vert/i })
     const bleuBtn = screen.getByRole('button', { name: /^Bleu$/i })
 
-    expect(rougeBtn).toBeDisabled()
-    expect(vertBtn).toBeDisabled()
+    expect(rougeBtn).not.toBeDisabled()
+    expect(vertBtn).not.toBeDisabled()
     expect(bleuBtn).not.toBeDisabled()
   })
 
-  it('does not disable color if used in the current slot', () => {
+  it('allows selecting a color even when used in the current slot', () => {
     // Slot 0 is filled with Rouge, so Rouge should not be disabled for slotIdx 0
     render(
       <ColorGrid
