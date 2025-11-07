@@ -48,8 +48,11 @@ class PerformanceLogger {
         )
         .join(' ')}`
       await invoke('log_to_file', { message })
-    } catch (_error) {
-      // Silently fail if Tauri logging is not available
+    } catch (error) {
+      // Silently fail if Tauri logging is not available - expected in browser mode
+      if (import.meta.env.DEV) {
+        console.debug('Tauri logging unavailable:', error)
+      }
     }
   }
 
@@ -234,10 +237,10 @@ export const updaterLogger = createLogger({
 // Fonction pour envoyer les logs à la fenêtre de debug
 async function sendLogToDebugWindow(level: string, message: string) {
   try {
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+    if (globalThis.window !== undefined && (globalThis as any).__TAURI__) {
       // Essayer d'envoyer à la fenêtre de debug si elle existe
       const debugWindow = (
-        window as any
+        globalThis as any
       ).__TAURI__.window?.WebviewWindow?.getByLabel('debug')
       if (debugWindow) {
         await debugWindow.postMessage({
@@ -247,8 +250,11 @@ async function sendLogToDebugWindow(level: string, message: string) {
         })
       }
     }
-  } catch (_error) {
-    // Silently fail if debug window is not available
+  } catch (error) {
+    // Silently fail if debug window is not available - expected behavior
+    if (import.meta.env.DEV) {
+      console.debug('Debug window unavailable:', error)
+    }
   }
 }
 
