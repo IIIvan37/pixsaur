@@ -57,16 +57,16 @@ export function deltaE2000Distance(a: Vector, b: Vector): number {
   const [L2, a2, b2] = b
 
   const avgLp = (L1 + L2) / 2
-  const C1 = Math.sqrt(a1 * a1 + b1 * b1)
-  const C2 = Math.sqrt(a2 * a2 + b2 * b2)
+  const C1 = Math.hypot(a1, b1)
+  const C2 = Math.hypot(a2, b2)
   const avgC = (C1 + C2) / 2
 
   const G = 0.5 * (1 - Math.sqrt(avgC ** 7 / (avgC ** 7 + 25 ** 7)))
   const a1p = a1 * (1 + G)
   const a2p = a2 * (1 + G)
 
-  const C1p = Math.sqrt(a1p * a1p + b1 * b1)
-  const C2p = Math.sqrt(a2p * a2p + b2 * b2)
+  const C1p = Math.hypot(a1p, b1)
+  const C2p = Math.hypot(a2p, b2)
   const avgCp = (C1p + C2p) / 2
 
   const h1p = Math.atan2(b1, a1p) * (180 / Math.PI)
