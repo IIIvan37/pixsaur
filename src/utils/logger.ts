@@ -38,7 +38,11 @@ class PerformanceLogger {
    * Log to Tauri backend (for production debugging)
    */
   private async logToTauri(level: string, ...args: any[]): Promise<void> {
+    // Ne rien faire si le logging Tauri n'est pas activé
     if (!this.config.enableTauriLogging) return
+
+    // Vérifier si on est dans un environnement Tauri
+    if (!(globalThis as any).__TAURI__) return
 
     try {
       const { invoke } = await import('@tauri-apps/api/core')
@@ -49,9 +53,9 @@ class PerformanceLogger {
         .join(' ')}`
       await invoke('log_to_file', { message })
     } catch (error) {
-      // Silently fail if Tauri logging is not available - expected in browser mode
-      if (import.meta.env.DEV) {
-        console.debug('Tauri logging unavailable:', error)
+      // Silently fail if Tauri logging fails - can happen during initialization
+      if (import.meta.env.DEV && this.config.enableTauriLogging) {
+        console.debug('Tauri logging failed:', error)
       }
     }
   }
@@ -236,8 +240,11 @@ export const updaterLogger = createLogger({
 
 // Fonction pour envoyer les logs à la fenêtre de debug
 async function sendLogToDebugWindow(level: string, message: string) {
+  // Ne rien faire si on n'est pas dans Tauri
+  if (!(globalThis as any).__TAURI__) return
+
   try {
-    if (globalThis.window !== undefined && (globalThis as any).__TAURI__) {
+    if (globalThis.window !== undefined) {
       // Essayer d'envoyer à la fenêtre de debug si elle existe
       const debugWindow = (
         globalThis as any
@@ -250,11 +257,9 @@ async function sendLogToDebugWindow(level: string, message: string) {
         })
       }
     }
-  } catch (error) {
+  } catch {
     // Silently fail if debug window is not available - expected behavior
-    if (import.meta.env.DEV) {
-      console.debug('Debug window unavailable:', error)
-    }
+    // Ne log que si vraiment nécessaire (pas en mode web)
   }
 }
 

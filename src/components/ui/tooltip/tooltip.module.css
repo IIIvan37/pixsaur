@@ -1,0 +1,174 @@
+/* === Tooltip unifié pour toute l'application === */
+
+.tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Container pour le contenu du tooltip */
+.tooltipContent {
+  position: absolute;
+  z-index: 100;
+  
+  /* Style visuel moderne */
+  background: linear-gradient(135deg, 
+    var(--color-background) 0%, 
+    color-mix(in srgb, var(--color-background) 95%, var(--color-accent)) 100%
+  );
+  color: var(--color-foreground);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  
+  /* Typographie */
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  white-space: nowrap;
+  max-width: 300px;
+  
+  /* Animation */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+
+/* Positions */
+.top {
+  bottom: calc(100% + var(--spacing-xs));
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.bottom {
+  top: calc(100% + var(--spacing-xs));
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+}
+
+.left {
+  right: calc(100% + var(--spacing-xs));
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.right {
+  left: calc(100% + var(--spacing-xs));
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+}
+
+/* État visible */
+.tooltip:hover .tooltipContent,
+.tooltip:focus-within .tooltipContent {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0); /* Pour top/bottom */
+}
+
+.tooltip:hover .tooltipContent.top,
+.tooltip:focus-within .tooltipContent.top {
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip:hover .tooltipContent.bottom,
+.tooltip:focus-within .tooltipContent.bottom {
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip:hover .tooltipContent.left,
+.tooltip:focus-within .tooltipContent.left {
+  transform: translateY(-50%) translateX(0);
+}
+
+.tooltip:hover .tooltipContent.right,
+.tooltip:focus-within .tooltipContent.right {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Flèche */
+.arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+}
+
+.top .arrow {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: var(--color-border);
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.1));
+}
+
+.bottom .arrow {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: var(--color-border);
+  filter: drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.1));
+}
+
+.left .arrow {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: var(--color-border);
+  filter: drop-shadow(1px 0 0 rgba(0, 0, 0, 0.1));
+}
+
+.right .arrow {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: var(--color-border);
+  filter: drop-shadow(-1px 0 0 rgba(0, 0, 0, 0.1));
+}
+
+/* Variantes */
+.success .tooltipContent {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--color-success) 10%, var(--color-background)) 0%, 
+    color-mix(in srgb, var(--color-success) 5%, var(--color-background)) 100%
+  );
+  border-color: var(--color-success);
+}
+
+.error .tooltipContent {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--color-destructive) 10%, var(--color-background)) 0%, 
+    color-mix(in srgb, var(--color-destructive) 5%, var(--color-background)) 100%
+  );
+  border-color: var(--color-destructive);
+}
+
+.warning .tooltipContent {
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, #ff9800 10%, var(--color-background)) 0%, 
+    color-mix(in srgb, #ff9800 5%, var(--color-background)) 100%
+  );
+  border-color: #ff9800;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .tooltipContent {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-sm);
+    max-width: 240px;
+    white-space: normal;
+  }
+}
+
+/* Accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .tooltipContent {
+    transition: opacity 0.1s;
+  }
+}

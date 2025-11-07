@@ -10,12 +10,17 @@ export function VersionDisplay() {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        const appVersion = await getVersion()
-        setVersion(appVersion)
-      } catch (error) {
-        console.error('Failed to fetch version:', error)
-        // Fallback to package.json version for web
-        setVersion(import.meta.env.VITE_APP_VERSION || null)
+        // Ne charger Tauri que si on est dans un environnement Tauri
+        if ((globalThis as any).__TAURI__) {
+          const appVersion = await getVersion()
+          setVersion(appVersion)
+        } else {
+          // Fallback to package.json version for web
+          setVersion(import.meta.env.VITE_APP_VERSION || '')
+        }
+      } catch {
+        // En cas d'erreur, utiliser la version du package.json
+        setVersion(import.meta.env.VITE_APP_VERSION || '')
       } finally {
         setIsLoading(false)
       }

@@ -18,6 +18,7 @@ import {
   canvasToPNGBlob,
   createCorrectedAspectCanvas
 } from '@/utils/exports/export-png-utils'
+import { isTauri } from '@/utils/is-tauri'
 import { ImagePreviewView } from './image-preview-view'
 
 const ImagePreview = () => {
@@ -79,12 +80,8 @@ const ImagePreview = () => {
   const handleCanvasClick = useCallback(async () => {
     if (!previewImage) return
 
-    // Check if running in Tauri
-    const isTauri =
-      typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-
-    if (isTauri) {
-      // In Tauri, don't open in new tab - it would open in system browser
+    // In Tauri, don't open in new tab - it would open in system browser
+    if (isTauri()) {
       return
     }
 
@@ -119,8 +116,8 @@ const ImagePreview = () => {
       image={previewImage}
       width={width}
       height={height}
-      onClick={handleCanvasClick}
-      tooltip={tooltip}
+      onClick={isTauri() ? undefined : handleCanvasClick}
+      tooltip={isTauri() ? undefined : tooltip}
     />
   )
 }

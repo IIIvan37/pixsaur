@@ -39,20 +39,21 @@ export function ImagePreviewView({
 
   return (
     <div ref={containerRefCallback} className={styles.container}>
-      <canvas
-        ref={ref}
-        width={width}
-        height={height}
-        onClick={onClick}
-        title={tooltip}
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          display: 'block',
-          cursor: onClick ? 'pointer' : 'default'
-        }}
-      />
+      <div className={styles.canvasWrapper} data-tooltip={tooltip}>
+        <canvas
+          ref={ref}
+          width={width}
+          height={height}
+          onClick={onClick}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            display: 'block',
+            cursor: onClick ? 'pointer' : 'default'
+          }}
+        />
+      </div>
     </div>
   )
 }
