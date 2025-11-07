@@ -154,19 +154,19 @@ describe('ColorPaletteView', () => {
     )
   })
 
-  it('disables color options already used in other slots', () => {
+  it('allows selecting color options even if already used in other slots', () => {
     render(<ColorPaletteView {...props} />)
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
-    // Rouge et Vert sont utilisés, Bleu ne l'est pas
+    // Toutes les couleurs peuvent être sélectionnées, même si déjà utilisées
     const rougeBtn = screen.getByRole('button', {
-      name: /Rouge \(utilisée\)/i
+      name: /Rouge/i
     })
-    const vertBtn = screen.getByRole('button', { name: /Vert \(utilisée\)/i })
+    const vertBtn = screen.getByRole('button', { name: /Vert/i })
     const bleuBtn = screen.getByRole('button', { name: /^Bleu$/i })
-    expect(rougeBtn).toBeDisabled()
-    expect(vertBtn).toBeDisabled()
+    expect(rougeBtn).not.toBeDisabled()
+    expect(vertBtn).not.toBeDisabled()
     expect(bleuBtn).not.toBeDisabled()
   })
 
