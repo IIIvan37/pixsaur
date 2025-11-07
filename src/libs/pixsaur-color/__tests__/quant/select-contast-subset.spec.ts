@@ -8,7 +8,7 @@ import {
 import type { Vector } from '../../src/type'
 
 const dist = (a: Vector, b: Vector) =>
-  Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2)
+  Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
 
 describe('selectContrastedSubset', () => {
   const black: Vector = [0, 0, 0]
@@ -191,6 +191,44 @@ describe('selectBalancedSubset', () => {
     const result = selectBalancedSubset([red], [black], 2, dist, (v) => v)
     expect(result).toEqual([black, red])
   })
+
+  it('should give luminance bonus to bright colors when needed', () => {
+    // Start with only dark colors, should favor adding a bright color
+    const darkGray: Vector = [30, 30, 30] // Very dark (lum < 0.2)
+    const brightColor: Vector = [250, 250, 250] // Very bright (lum > 0.8)
+    const mediumColor: Vector = [128, 128, 128] // Medium
+
+    const result = selectBalancedSubset(
+      [brightColor, mediumColor],
+      [darkGray],
+      2,
+      dist,
+      (v) => v
+    )
+
+    // Should prefer bright color over medium to balance luminance
+    expect(result).toContain(darkGray)
+    expect(result).toContain(brightColor)
+  })
+
+  it('should give luminance bonus to dark colors when needed', () => {
+    // Start with only bright colors, should favor adding a dark color
+    const brightGray: Vector = [250, 250, 250] // Very bright (lum > 0.8)
+    const darkColor: Vector = [10, 10, 10] // Very dark (lum < 0.2)
+    const mediumColor: Vector = [128, 128, 128] // Medium
+
+    const result = selectBalancedSubset(
+      [darkColor, mediumColor],
+      [brightGray],
+      2,
+      dist,
+      (v) => v
+    )
+
+    // Should prefer dark color over medium to balance luminance
+    expect(result).toContain(brightGray)
+    expect(result).toContain(darkColor)
+  })
 })
 
 describe('selectContrastedSubset - comprehensive tests', () => {
@@ -284,5 +322,18 @@ describe('selectContrastedSubset - comprehensive tests', () => {
       (v) => v
     )
     expect(result).toEqual([black, white])
+  })
+
+  it('should efficiently handle repeated combinations (memoization)', () => {
+    // Create a scenario where kCombinations may reuse memoized results
+    const candidates = [black, white, red, green, blue, gray]
+
+    // First call
+    const result1 = selectContrastedSubset(candidates, [], 3, dist, (v) => v)
+    expect(result1.length).toBe(3)
+
+    // Second call with same size - may hit memoization
+    const result2 = selectContrastedSubset(candidates, [], 3, dist, (v) => v)
+    expect(result2.length).toBe(3)
   })
 })

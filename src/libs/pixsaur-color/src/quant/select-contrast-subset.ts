@@ -1,6 +1,9 @@
 import type { Vector } from '../type'
 import { isBright, isDark, luminance } from '../utils/luminance'
 
+// Re-export for backward compatibility
+export { isBright, isDark, luminance } from '../utils/luminance'
+
 function kCombinations<T>(
   arr: T[],
   k: number,
@@ -21,8 +24,67 @@ function kCombinations<T>(
   return result
 }
 
-// Re-export for backward compatibility
-export { luminance, isDark, isBright }
+/**
+ * Filtre les combinaisons pour garder celles avec au moins une couleur sombre et une claire
+ */
+function filterCombinationsByLuminance(
+  combinations: number[][],
+  preselected: Vector[],
+  remaining: Vector[],
+  isDarkRGB: (v: Vector) => boolean,
+  isBrightRGB: (v: Vector) => boolean
+): number[][] {
+  return combinations.filter((combo) => {
+    const colors = [...preselected, ...combo.map((i) => remaining[i])]
+    return colors.some(isDarkRGB) && colors.some(isBrightRGB)
+  })
+}
+
+/**
+ * Calcule la distance minimale entre toutes les paires de couleurs
+ */
+function calculateMinDistanceInSet(
+  colors: Vector[],
+  distance: (a: Vector, b: Vector) => number,
+  earlyExitThreshold: number
+): number {
+  let minDist = Infinity
+
+  for (let i = 0; i < colors.length; i++) {
+    for (let j = i + 1; j < colors.length; j++) {
+      const d = distance(colors[i], colors[j])
+      if (d < minDist) minDist = d
+      if (minDist <= earlyExitThreshold) return minDist
+    }
+  }
+
+  return minDist
+}
+
+/**
+ * Trouve la meilleure combinaison en maximisant la distance minimale
+ */
+function findBestCombination(
+  combinations: number[][],
+  preselected: Vector[],
+  remaining: Vector[],
+  distance: (a: Vector, b: Vector) => number
+): number[] {
+  let bestCombo: number[] = []
+  let bestMinDist = -Infinity
+
+  for (const combo of combinations) {
+    const colors = [...preselected, ...combo.map((i) => remaining[i])]
+    const minDist = calculateMinDistanceInSet(colors, distance, bestMinDist)
+
+    if (minDist > bestMinDist) {
+      bestMinDist = minDist
+      bestCombo = combo
+    }
+  }
+
+  return bestCombo
+}
 
 /**
  * Sélectionne un sous-ensemble de couleurs en maximisant le contraste
@@ -49,7 +111,7 @@ export function selectContrastedSubset(
   }
 
   const needed = size - preselected.length
-  const indices = [...Array(remaining.length).keys()]
+  const indices = [...new Array(remaining.length).keys()]
 
   if (remaining.length < needed) {
     return [...preselected, ...remaining].slice(0, size)
@@ -57,38 +119,135 @@ export function selectContrastedSubset(
 
   const combinations = kCombinations(indices, needed)
 
-  let bestCombo: number[] = []
-  let bestMinDist = -Infinity
-
   const isDarkRGB = (v: Vector) => isDark(toRGB([...v] as Vector<'RGB'>))
   const isBrightRGB = (v: Vector) => isBright(toRGB([...v] as Vector<'RGB'>))
 
-  const filtered = combinations.filter((combo) => {
-    const colors = [...preselected, ...combo.map((i) => remaining[i])]
-    return colors.some(isDarkRGB) && colors.some(isBrightRGB)
-  })
+  const filtered = filterCombinationsByLuminance(
+    combinations,
+    preselected,
+    remaining,
+    isDarkRGB,
+    isBrightRGB
+  )
 
   const combosToTest = filtered.length > 0 ? filtered : combinations
 
-  for (const combo of combosToTest) {
-    const colors = [...preselected, ...combo.map((i) => remaining[i])]
-    let minDist = Infinity
+  const bestCombo = findBestCombination(
+    combosToTest,
+    preselected,
+    remaining,
+    distance
+  )
 
-    for (let i = 0; i < colors.length; i++) {
-      for (let j = i + 1; j < colors.length; j++) {
-        const d = distance(colors[i], colors[j])
-        if (d < minDist) minDist = d
-        if (minDist <= bestMinDist) break
-      }
-    }
+  return [...preselected, ...bestCombo.map((i) => remaining[i])]
+}
 
-    if (minDist > bestMinDist) {
-      bestMinDist = minDist
-      bestCombo = combo
+/**
+ * Calcule les distances (totale et minimale) entre un candidat et les couleurs déjà sélectionnées
+ */
+function calculateCandidateDistances(
+  candidate: Vector,
+  selectedColors: Vector[],
+  distance: (a: Vector, b: Vector) => number
+): { totalDistance: number; minDistance: number } {
+  let totalDistance = 0
+  let minDistance = Infinity
+
+  for (const selected of selectedColors) {
+    const d = distance(candidate, selected)
+    totalDistance += d
+    minDistance = Math.min(minDistance, d)
+  }
+
+  return { totalDistance, minDistance }
+}
+
+/**
+ * Calcule le bonus de luminance pour encourager la diversité sombre/claire
+ */
+function calculateLuminanceBonus(
+  candidateLuminance: number,
+  selectedLuminances: number[]
+): number {
+  if (selectedLuminances.length === 0) return 0
+
+  const hasVeryDark = selectedLuminances.some((l) => l < 0.2)
+  const hasVeryBright = selectedLuminances.some((l) => l > 0.8)
+
+  // Encourage les couleurs sombres si on n'en a pas
+  if (!hasVeryDark && candidateLuminance < 0.2) {
+    return 20
+  }
+  // Encourage les couleurs claires si on n'en a pas
+  if (!hasVeryBright && candidateLuminance > 0.8) {
+    return 20
+  }
+
+  return 0
+}
+
+/**
+ * Calcule le score équilibré d'un candidat
+ */
+function calculateBalancedScore(
+  candidate: Vector,
+  selectedColors: Vector[],
+  distance: (a: Vector, b: Vector) => number,
+  toRGB: (v: Vector) => Vector<'RGB'>
+): number {
+  const { totalDistance, minDistance } = calculateCandidateDistances(
+    candidate,
+    selectedColors,
+    distance
+  )
+
+  const avgDistance =
+    selectedColors.length > 0 ? totalDistance / selectedColors.length : 0
+
+  const candidateRGB = toRGB([...candidate] as Vector<'RGB'>)
+  const candidateLum = luminance(candidateRGB)
+
+  const selectedLuminances = selectedColors.map((c) =>
+    luminance(toRGB([...c] as Vector<'RGB'>))
+  )
+
+  const luminanceBonus = calculateLuminanceBonus(
+    candidateLum,
+    selectedLuminances
+  )
+
+  // Score équilibré : distance moyenne + distance minimum + bonus luminance
+  return avgDistance + minDistance * 0.5 + luminanceBonus
+}
+
+/**
+ * Trouve le meilleur candidat selon le score équilibré
+ */
+function findBestBalancedCandidate(
+  available: Vector[],
+  selectedColors: Vector[],
+  distance: (a: Vector, b: Vector) => number,
+  toRGB: (v: Vector) => Vector<'RGB'>
+): number {
+  let bestIndex = 0
+  let bestScore = -Infinity
+
+  for (let i = 0; i < available.length; i++) {
+    const candidate = available[i]
+    const score = calculateBalancedScore(
+      candidate,
+      selectedColors,
+      distance,
+      toRGB
+    )
+
+    if (score > bestScore) {
+      bestScore = score
+      bestIndex = i
     }
   }
 
-  return [...preselected, ...bestCombo.map((i) => remaining[i])]
+  return bestIndex
 }
 
 /**
@@ -125,54 +284,12 @@ export function selectBalancedSubset(
 
   // Stratégie plus douce : sélection glouton avec score équilibré
   for (let step = 0; step < needed; step++) {
-    let bestIndex = 0
-    let bestScore = -Infinity
-
-    for (let i = 0; i < available.length; i++) {
-      const candidate = available[i]
-
-      // Score = contraste moyen avec les déjà sélectionnées + bonus luminance
-      let totalDistance = 0
-      let minDistance = Infinity
-
-      for (const selected of result) {
-        const d = distance(candidate, selected)
-        totalDistance += d
-        minDistance = Math.min(minDistance, d)
-      }
-
-      const avgDistance = result.length > 0 ? totalDistance / result.length : 0
-
-      // Bonus luminance : encourage la diversité sombre/claire
-      const candidateRGB = toRGB([...candidate] as Vector<'RGB'>)
-      const candidateLum = luminance(candidateRGB)
-
-      let luminanceBonus = 0
-      if (result.length > 0) {
-        const resultLuminances = result.map((c) =>
-          luminance(toRGB([...c] as Vector<'RGB'>))
-        )
-        const hasVeryDark = resultLuminances.some((l) => l < 0.2)
-        const hasVeryBright = resultLuminances.some((l) => l > 0.8)
-
-        // Encourage les couleurs sombres si on n'en a pas
-        if (!hasVeryDark && candidateLum < 0.2) {
-          luminanceBonus = 20
-        }
-        // Encourage les couleurs claires si on n'en a pas
-        if (!hasVeryBright && candidateLum > 0.8) {
-          luminanceBonus = 20
-        }
-      }
-
-      // Score équilibré : distance moyenne + distance minimum + bonus luminance
-      const score = avgDistance + minDistance * 0.5 + luminanceBonus
-
-      if (score > bestScore) {
-        bestScore = score
-        bestIndex = i
-      }
-    }
+    const bestIndex = findBestBalancedCandidate(
+      available,
+      result,
+      distance,
+      toRGB
+    )
 
     result.push(available[bestIndex])
     available.splice(bestIndex, 1)
