@@ -279,6 +279,52 @@ describe('palette-strategies-v2', () => {
       const result = selectByFrequencyBalanced(candidates, 2)
       expect(result.selectedIndices).toHaveLength(2)
     })
+
+    it('should handle preselected indices at target for BalancedScore', () => {
+      const candidates = createTestCandidates()
+      const result = selectByBalancedScoreBalanced(candidates, 3, [0, 1, 2])
+
+      expect(result.selectedIndices).toHaveLength(3)
+      expect(result.selectedIndices).toEqual([0, 1, 2])
+    })
+
+    it('should handle preselected indices exceeding target for BalancedScore', () => {
+      const candidates = createTestCandidates()
+      const result = selectByBalancedScoreMax(candidates, 2, [0, 1, 2, 3])
+
+      // Devrait tronquer à targetColors
+      expect(result.selectedIndices).toHaveLength(2)
+      expect(result.selectedIndices).toEqual([0, 1])
+    })
+
+    it('should break when no more diverse colors in frequency strategy', () => {
+      // Créer des couleurs très proches
+      const closeCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [100, 100, 100] as Vector,
+          converted: [100, 100, 100] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [101, 101, 101] as Vector,
+          converted: [101, 101, 101] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [102, 102, 102] as Vector,
+          converted: [102, 102, 102] as Vector
+        }
+      ]
+
+      const result = selectByFrequencyMax(closeCandidates, 3)
+
+      // Devrait quand même utiliser fillRemainingSlots pour compléter
+      expect(result.selectedIndices).toHaveLength(3)
+    })
   })
 
   describe('Fallback mechanism in diversity-first', () => {
@@ -315,6 +361,287 @@ describe('palette-strategies-v2', () => {
 
       // Devrait quand même trouver 4 couleurs grâce au fallback
       expect(result.selectedIndices).toHaveLength(4)
+    })
+
+    it('should use fallback when no candidate meets strict criteria', () => {
+      // Créer des candidats avec des couleurs extrêmement similaires
+      const extremelySimilarCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 50,
+          color: [128, 128, 128] as Vector,
+          converted: [128, 128, 128] as Vector
+        },
+        {
+          index: 1,
+          frequency: 50,
+          color: [129, 129, 129] as Vector,
+          converted: [129, 129, 129] as Vector
+        },
+        {
+          index: 2,
+          frequency: 50,
+          color: [130, 130, 130] as Vector,
+          converted: [130, 130, 130] as Vector
+        }
+      ]
+
+      const result = selectByDiversityFirstMax(extremelySimilarCandidates, 3)
+
+      // Devrait utiliser le fallback et trouver 3 couleurs
+      expect(result.selectedIndices).toHaveLength(3)
+    })
+
+    it('should break when no fallback candidate is found', () => {
+      // Cas extrême : un seul candidat demandé avec plusieurs disponibles
+      const candidates = createTestCandidates()
+      const result = selectByDiversityFirstMax(candidates, 1)
+
+      expect(result.selectedIndices).toHaveLength(1)
+    })
+  })
+
+  describe('selectByAdaptive - edge cases', () => {
+    it('should use frequency-balanced when one color dominates strongly', () => {
+      const dominantCandidates: ColorCandidate[] = [
+        {
+          // Couleur ultra-dominante (variance > 3)
+          index: 0,
+          frequency: 1000,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 100,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 100,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByAdaptive(dominantCandidates, 3)
+
+      // Devrait utiliser frequency-balanced
+      expect(result.selectedIndices).toHaveLength(3)
+      // Devrait contenir la couleur dominante
+      expect(result.selectedIndices).toContain(0)
+    })
+
+    it('should use balanced-score-balanced for even distribution', () => {
+      const evenCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 95,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 90,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByAdaptive(evenCandidates, 3)
+
+      // Devrait utiliser balanced-score-balanced (variance < 3)
+      expect(result.selectedIndices).toHaveLength(3)
+    })
+  })
+
+  describe('selectByBalancedScoreCore - fallback cases', () => {
+    it('should use fallback when no candidate has good score', () => {
+      // Créer une situation où le meilleur candidat ne peut pas être trouvé
+      const edgeCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [0, 0, 0] as Vector,
+          converted: [0, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 50,
+          color: [1, 1, 1] as Vector,
+          converted: [1, 1, 1] as Vector
+        }
+      ]
+
+      const result = selectByBalancedScoreBalanced(edgeCandidates, 2)
+
+      // Devrait quand même retourner 2 couleurs
+      expect(result.selectedIndices).toHaveLength(2)
+    })
+  })
+
+  describe('CPC Plus vs CPC Classic threshold differences', () => {
+    it('should use relaxed thresholds for CPC Classic (≤27 colors)', () => {
+      const cpcClassicCandidates: ColorCandidate[] = Array.from(
+        { length: 27 },
+        (_, i) => ({
+          index: i,
+          frequency: 100 - i,
+          color: [i * 10, i * 10, i * 10] as Vector,
+          converted: [i * 10, i * 10, i * 10] as Vector
+        })
+      )
+
+      const result = selectByDiversityFirstMax(cpcClassicCandidates, 10)
+
+      // Devrait réussir à trouver 10 couleurs avec les seuils relaxés
+      expect(result.selectedIndices).toHaveLength(10)
+    })
+
+    it('should use strict thresholds for CPC Plus (>27 colors)', () => {
+      const cpcPlusCandidates: ColorCandidate[] = Array.from(
+        { length: 50 },
+        (_, i) => ({
+          index: i,
+          frequency: 100 - i,
+          color: [i * 5, i * 5, i * 5] as Vector,
+          converted: [i * 5, i * 5, i * 5] as Vector
+        })
+      )
+
+      const result = selectByDiversityFirstMax(cpcPlusCandidates, 10)
+
+      // Devrait réussir à trouver 10 couleurs avec les seuils stricts
+      expect(result.selectedIndices).toHaveLength(10)
+    })
+  })
+
+  describe('Perceptual strategies with empty bins', () => {
+    it('should handle luminance bins with no candidates', () => {
+      // Créer des candidats tous dans la même plage de luminance
+      const sameLuminanceCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [100, 100, 100] as Vector,
+          converted: [100, 100, 100] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [105, 105, 105] as Vector,
+          converted: [105, 105, 105] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [110, 110, 110] as Vector,
+          converted: [110, 110, 110] as Vector
+        }
+      ]
+
+      const result = selectByPerceptualBalanced(sameLuminanceCandidates, 4)
+
+      // Devrait compléter avec fillRemainingSlots
+      expect(result.selectedIndices).toHaveLength(3)
+    })
+
+    it('should handle perceptualMax with preselected indices at target', () => {
+      const candidates = createTestCandidates()
+      const result = selectByPerceptualMax(candidates, 2, [0, 1])
+
+      // Devrait retourner exactement les indices présélectionnés
+      expect(result.selectedIndices).toEqual([0, 1])
+    })
+  })
+
+  describe('BalancedScore fallback mechanism', () => {
+    it('should trigger fallback when no best candidate found', () => {
+      // Créer une situation où aucun candidat ne peut être trouvé
+      const difficultCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [0, 0, 0] as Vector,
+          converted: [0, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByBalancedScoreBalanced(difficultCandidates, 2)
+
+      // Devrait utiliser le fallback et retourner au moins 1 couleur
+      expect(result.selectedIndices.length).toBeGreaterThan(0)
+      expect(result.selectedIndices.length).toBeLessThanOrEqual(2)
+    })
+
+    it('should break loop when no fallback available', () => {
+      const singleCandidate: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [128, 128, 128] as Vector,
+          converted: [128, 128, 128] as Vector
+        }
+      ]
+
+      const result = selectByBalancedScoreMax(singleCandidate, 5)
+
+      // Devrait s'arrêter après avoir épuisé les candidats
+      expect(result.selectedIndices).toHaveLength(1)
+    })
+  })
+
+  describe('DiversityFirst ultimate fallback', () => {
+    it('should use most diverse without constraints when all else fails', () => {
+      // Créer des candidats identiques pour forcer le dernier fallback
+      const identicalCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 50,
+          color: [100, 100, 100] as Vector,
+          converted: [100, 100, 100] as Vector
+        },
+        {
+          index: 1,
+          frequency: 50,
+          color: [100, 100, 100] as Vector,
+          converted: [100, 100, 100] as Vector
+        },
+        {
+          index: 2,
+          frequency: 50,
+          color: [101, 101, 101] as Vector,
+          converted: [101, 101, 101] as Vector
+        }
+      ]
+
+      const result = selectByDiversityFirstMax(identicalCandidates, 3)
+
+      // Devrait quand même trouver 3 couleurs via le dernier recours
+      expect(result.selectedIndices).toHaveLength(3)
+    })
+
+    it('should break when no diverse candidate can be found', () => {
+      const singleCandidate: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [128, 128, 128] as Vector,
+          converted: [128, 128, 128] as Vector
+        }
+      ]
+
+      const result = selectByDiversityFirstBalanced(singleCandidate, 5)
+
+      // Devrait s'arrêter avec un seul candidat
+      expect(result.selectedIndices).toHaveLength(1)
     })
   })
 })
