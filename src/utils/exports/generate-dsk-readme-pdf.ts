@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
 
 /**
  * Generate PDF README for DSK export
@@ -51,14 +52,37 @@ export function generateDskReadmePdf(
   doc.text('Files', 20, yPosition)
   yPosition += 5
 
-  const filesTableData = images.map((image, index) => {
-    const filename = `IMG${String(index + 1).padStart(5, '0')}.SCR`
+  // Build files list including chunks for custom dimensions
+  const filesTableData: string[][] = []
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i]
+    const imageIndex = i + 1
+    const filenames = generateDskFilenames(
+      imageIndex,
+      image.width,
+      image.height,
+      image.mode,
+      image.overscan
+    )
     const hardware = image.cpcHardware === 'plus' ? 'CPC Plus' : 'CPC Classic'
     const mode = `Mode ${image.mode}`
     const dimensions = `${image.width}×${image.height}`
     const colors = String(image.nColors)
-    return [filename, hardware, mode, dimensions, colors]
-  })
+
+    if (filenames.length === 1) {
+      // Single file (standard or small custom)
+      filesTableData.push([filenames[0], hardware, mode, dimensions, colors])
+    } else {
+      // Multiple chunks - show main file with chunk count
+      filesTableData.push([
+        `${filenames[0].replace(/_1\.BIN$/, '.BIN')} (${filenames.length} chunks)`,
+        hardware,
+        mode,
+        dimensions,
+        colors
+      ])
+    }
+  }
 
   autoTable(doc, {
     startY: yPosition,
@@ -84,7 +108,7 @@ export function generateDskReadmePdf(
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  doc.text('From BASIC:', 20, yPosition)
+  doc.text('Standard SCR files (from BASIC):', 20, yPosition)
   yPosition += 6
 
   doc.setFont('courier', 'normal')
@@ -93,7 +117,7 @@ export function generateDskReadmePdf(
   yPosition += 5
   doc.text('LOAD"LOADER.BIN",&8000', 25, yPosition)
   yPosition += 5
-  doc.text('A$="IMG00001.SCR"', 25, yPosition)
+  doc.text('A$="IMG1.SCR"', 25, yPosition)
   yPosition += 5
   doc.text('CALL &8000, @A$', 25, yPosition)
   yPosition += 8
@@ -101,10 +125,21 @@ export function generateDskReadmePdf(
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   const loaderText =
-    'The loader automatically detects CPC Classic or CPC Plus format and applies the appropriate palette.'
+    'The loader automatically detects CPC Classic or CPC Plus format and applies the appropriate palette. This only works for standard .SCR files.'
   const splitText = doc.splitTextToSize(loaderText, 170)
   doc.text(splitText, 20, yPosition)
-  yPosition += 6 * splitText.length + 10
+  yPosition += 6 * splitText.length + 8
+
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Custom dimension files (.BIN):', 20, yPosition)
+  yPosition += 6
+
+  const customText =
+    'Files with custom dimensions are exported as raw linear data (.BIN format) and may be split into multiple chunks if larger than 16KB. These files require custom loading code tailored to your specific dimensions and usage.'
+  const splitCustomText = doc.splitTextToSize(customText, 170)
+  doc.text(splitCustomText, 20, yPosition)
+  yPosition += 6 * splitCustomText.length + 2
 
   // SCR File Format section
   if (yPosition > 230) {
@@ -114,7 +149,12 @@ export function generateDskReadmePdf(
 
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('SCR File Format', 20, yPosition)
+  doc.text('File Formats', 20, yPosition)
+  yPosition += 8
+
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Standard SCR Format (160x200, 320x200, 640x200)', 20, yPosition)
   yPosition += 8
 
   doc.setFontSize(10)
@@ -135,9 +175,7 @@ export function generateDskReadmePdf(
   autoTable(doc, {
     startY: yPosition,
     head: [['Offset', 'Size', 'Description']],
-    body: [
-      ['0x0000-0x3FFF', '16384', 'Screen data (pixel data in CPC format)']
-    ],
+    body: [['#0000-#3FFF', '16384', 'Screen data (pixel data in CPC format)']],
     theme: 'grid',
     headStyles: { fillColor: [41, 128, 185] },
     styles: { fontSize: 9 }
@@ -229,6 +267,55 @@ export function generateDskReadmePdf(
   doc.text('Stored as 16-bit little-endian values', 25, yPosition)
   yPosition += 10
 
+  // Custom BIN Format section
+  if (yPosition > 200) {
+    doc.addPage()
+    yPosition = 20
+  }
+
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Custom BIN Format (Non-standard dimensions)', 20, yPosition)
+  yPosition += 8
+
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  const binFormatText =
+    'Files with custom dimensions (e.g., overscan, custom resolutions) are exported as raw linear pixel data without any metadata. Each file contains only the raw CPC screen data organized sequentially.'
+  const splitBinFormat = doc.splitTextToSize(binFormatText, 170)
+  doc.text(splitBinFormat, 20, yPosition)
+  yPosition += 6 * splitBinFormat.length + 8
+
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Characteristics', 20, yPosition)
+  yPosition += 5
+
+  autoTable(doc, {
+    startY: yPosition,
+    head: [['Property', 'Description']],
+    body: [
+      ['Extension', '.BIN'],
+      ['Format', 'Raw linear pixel data (no metadata)'],
+      ['Size', 'width / pixelsPerByte × height'],
+      ['Chunking', 'Files > 16KB split into multiple chunks (_1, _2, etc.)'],
+      ['Palette', 'Not embedded - must be set by your code'],
+      ['Usage', 'Requires custom loading code']
+    ],
+    theme: 'grid',
+    headStyles: { fillColor: [41, 128, 185] },
+    styles: { fontSize: 9 }
+  })
+
+  yPosition = (doc as any).lastAutoTable.finalY + 8
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  const pixelsPerByteText =
+    'pixelsPerByte = Mode 0: 2 pixels/byte, Mode 1: 4 pixels/byte, Mode 2: 8 pixels/byte'
+  doc.text(pixelsPerByteText, 20, yPosition)
+  yPosition += 10
+
   // Palette Information
   if (yPosition > 230) {
     doc.addPage()
@@ -246,11 +333,23 @@ export function generateDskReadmePdf(
       yPosition = 20
     }
 
-    const filename = `IMG${String(index + 1).padStart(5, '0')}.SCR`
+    const imageIndex = index + 1
+    const filenames = generateDskFilenames(
+      imageIndex,
+      image.width,
+      image.height,
+      image.mode,
+      image.overscan
+    )
+    const displayFilename =
+      filenames.length === 1
+        ? filenames[0]
+        : `${filenames[0].replace(/_1\.BIN$/, '.BIN')} (${filenames.length} chunks)`
+
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
     doc.text(
-      `${filename} (${image.cpcHardware === 'plus' ? 'CPC Plus' : 'CPC Classic'})`,
+      `${displayFilename} (${image.cpcHardware === 'plus' ? 'CPC Plus' : 'CPC Classic'})`,
       20,
       yPosition
     )
@@ -280,7 +379,7 @@ export function generateDskReadmePdf(
       yPosition += 5
       doc.setFont('courier', 'normal')
       const paletteText = `[${image.palettePlus
-        .map((v) => `0x${v.toString(16).toUpperCase().padStart(3, '0')}`)
+        .map((v) => `#${v.toString(16).toUpperCase().padStart(3, '0')}`)
         .join(', ')}]`
       const splitPalette = doc.splitTextToSize(paletteText, 170)
       doc.text(splitPalette, 25, yPosition)
