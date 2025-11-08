@@ -34,7 +34,7 @@ type ItemProps = {
   readonly children: ReactNode
 }
 
-export function SelectItem({ value, children }: ItemProps) {
+export function SelectItem({ value, children }: Readonly<ItemProps>) {
   return (
     <RadixSelect.Item className={styles.item} value={value}>
       <RadixSelect.ItemText>{children}</RadixSelect.ItemText>

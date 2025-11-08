@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { CPCHardware } from '@/libs/types'
+import { isTauri } from '../is-tauri'
 import { paletteToCPCPlusValues } from './cpc-plus-format'
 import { saveZipFileTauri } from './export-tauri'
 import {
@@ -134,10 +135,7 @@ export async function exportZip(
   const zipBlob = await zip.generateAsync({ type: 'blob' })
 
   // Check if running in Tauri (desktop) or web
-  const isTauri =
-    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-
-  if (isTauri) {
+  if (isTauri()) {
     // Use Tauri's native file dialog and save
     await saveZipFileTauri(
       zipBlob,

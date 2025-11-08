@@ -118,9 +118,9 @@ describe('CPC Plus Format Conversion', () => {
     expect(scr[2006]).toBe(0x0f) // Blue: RRRR BBBB
     expect(scr[2007]).toBe(0x00) // Blue: 0000 GGGG
 
-    // Vérifier le marqueur CPC Plus
-    expect(scr[2034]).toBe(0xc9) // 'C'
-    expect(scr[2035]).toBe(0x2b) // '+'
+    // Vérifier le mode et le type de hardware
+    expect(scr[2034]).toBe(0) // Mode 0
+    expect(scr[2035]).toBe(1) // Hardware type: 1 = Plus
   })
 
   test('round-trip conversion preserves color fidelity', () => {

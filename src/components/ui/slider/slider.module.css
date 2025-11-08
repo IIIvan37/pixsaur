@@ -39,33 +39,62 @@
 }
 
 .descriptionTooltip {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
   min-width: 200px;
   max-width: 320px;
-  background-color: rgba(0, 0, 0, 0.95);
+  background: linear-gradient(135deg, rgba(20, 20, 20, 0.98), rgba(10, 10, 10, 0.98));
+  backdrop-filter: blur(8px);
   color: var(--color-foreground);
   font-size: var(--font-size-xs);
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  padding: var(--spacing-md) var(--spacing-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   pointer-events: none;
-  line-height: 1.4;
+  line-height: 1.5;
   white-space: normal;
   word-wrap: break-word;
   overflow-wrap: break-word;
+}
+
+/* Alignement à gauche quand déborde à gauche */
+.tooltipAlignLeft {
+  transform: translateX(0);
+  animation: tooltipFadeInLeft 0.2s ease-out;
+}
+
+/* Alignement centré par défaut */
+.tooltipAlignCenter {
+  transform: translateX(-50%);
+  animation: tooltipFadeInCenter 0.2s ease-out;
+}
+
+/* Alignement à droite quand déborde à droite */
+.tooltipAlignRight {
+  transform: translateX(-100%);
+  animation: tooltipFadeInRight 0.2s ease-out;
 }
 
 /* Mobile: tooltip plus large */
 @media (max-width: 768px) {
   .descriptionTooltip {
     max-width: calc(100vw - 40px);
-    left: 50%;
+  }
+  
+  .tooltipAlignCenter {
     transform: translateX(-50%);
+  }
+  
+  .tooltipAlignLeft {
+    transform: translateX(0);
+  }
+  
+  .tooltipAlignRight {
+    transform: translateX(-100%);
   }
 }
 
@@ -78,35 +107,45 @@
 /* === Tooltip === */
 .tooltip {
   position: absolute;
-  top: -24px;
+  top: -32px;
   transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.85);
+  background: linear-gradient(135deg, rgba(30, 30, 30, 0.98), rgba(15, 15, 15, 0.98));
+  backdrop-filter: blur(8px);
   color: var(--color-foreground);
-  font-size: var(--font-size-xs);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: 
+    opacity 0.2s ease,
+    transform 0.2s ease;
   z-index: 5;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 1px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .tooltipVisible {
   opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
 }
 
 .tooltipArrow {
   position: absolute;
-  bottom: -5px;
+  bottom: -6px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 5px solid rgba(0, 0, 0, 0.85);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(30, 30, 30, 0.98);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
 /* === Radix Slider structure === */
@@ -178,6 +217,40 @@
 
 .sliderRoot:focus-within .sliderTrack {
   animation: glowPulse 1.2s infinite ease-in-out;
+}
+
+/* Tooltip fade in animations */
+@keyframes tooltipFadeInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(0) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@keyframes tooltipFadeInCenter {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes tooltipFadeInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-100%) translateY(0);
+  }
 }
 
 /* === Disabled styles (tokens verts uniquement) === */

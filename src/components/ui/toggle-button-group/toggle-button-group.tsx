@@ -51,16 +51,16 @@ export function ToggleButtonGroup<T extends string | number>({
   onChange,
   className = '',
   ariaLabelPrefix
-}: ToggleButtonGroupProps<T>) {
+}: Readonly<ToggleButtonGroupProps<T>>) {
   return (
     <div className={`${styles.buttonGroup} ${className}`.trim()}>
       {options.map((option) => {
         const isActive = value === option.value
+        const labelText =
+          typeof option.label === 'string' ? option.label : String(option.value)
         const ariaLabel =
           option.ariaLabel ||
-          (ariaLabelPrefix
-            ? `${ariaLabelPrefix} ${option.label}`
-            : String(option.label))
+          (ariaLabelPrefix ? `${ariaLabelPrefix} ${labelText}` : labelText)
 
         return (
           <button

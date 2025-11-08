@@ -106,12 +106,14 @@ export function cpcPlusValuesToASM(
 
 /**
  * Injects CPC Plus palette data into an SCR buffer.
- * Updates the palette area with CPC Plus format colors and sets the CPC Plus marker.
+ * Updates the palette area with CPC Plus format colors and sets the hardware type flag.
  *
- * SCR Memory layout:
- * - 0x0000-0x0F9F: Graphics data (4000 bytes)
- * - 0x0FA0-0x0FC7: Palette data (40 bytes = 20 colors × 2 bytes)
- * - 0x0FC8-0x0FFF: Unused space (can contain CPC Plus marker)
+ * SCR Format - Available space in first 2KB block (offsets 2000-2047):
+ * - 2000-2001: Border color (2 bytes, little-endian 16-bit hardware value)
+ * - 2002-2033: 16 palette colors (16 × 2 bytes, little-endian 16-bit hardware values)
+ * - 2034: Graphics mode (0, 1, or 2)
+ * - 2035: Hardware type (0=Classic, 1=Plus)
+ * - 2036-2047: Reserved/unused
  *
  * @param scr SCR buffer (must be at least 2048 bytes)
  * @param cpcPalette Array of 16-bit CPC Plus values (max 16 colors)
@@ -128,19 +130,20 @@ export function injectCPCPlusPaletteIntoSCR(
     throw new Error('CPC Plus supports maximum 16 colors')
   }
 
-  // Border color (first color in palette)
+  // Border color (first color in palette) at offset 2000-2001
   const borderBytes = rgbToCPCPlusBytes(cpcPlusToRGB(cpcPalette[0]))
   scr[2000] = borderBytes[0] // Low byte
   scr[2001] = borderBytes[1] // High byte
 
-  // Inject palette data starting at offset 2002
+  // Inject palette data starting at offset 2002 (16 colors × 2 bytes)
   for (let i = 0; i < cpcPalette.length; i++) {
     const bytes = rgbToCPCPlusBytes(cpcPlusToRGB(cpcPalette[i]))
     scr[2002 + i * 2] = bytes[0] // Low byte
     scr[2002 + i * 2 + 1] = bytes[1] // High byte
   }
 
-  // Set CPC Plus marker at offset 2034 ('C+')
-  scr[2034] = 0xc9 // 'C'
-  scr[2035] = 0x2b // '+'
+  // Note: Graphics mode should be set by the caller at offset 2034
+
+  // Offset 2035: hardware type (1=Plus)
+  scr[2035] = 1
 }

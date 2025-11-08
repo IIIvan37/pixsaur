@@ -23,6 +23,9 @@ const consoleGroupEndSpy = vi
 // Mock performance.now
 const performanceNowSpy = vi.spyOn(performance, 'now')
 
+// Helper for async tests
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 describe('Logger Functionality', () => {
   let testLogger: ReturnType<typeof createLogger>
 
@@ -238,7 +241,7 @@ describe('Logger Functionality', () => {
       performanceNowSpy.mockReturnValueOnce(1030) // end
 
       const asyncFn = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1))
+        await delay(1)
         return 'result'
       }
 

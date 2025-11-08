@@ -1,3 +1,5 @@
+import { luminance as calculateLuminance } from '../utils/luminance'
+
 /**
  * Selects the top indices from a given counts array, optionally including preselected indices.
  *
@@ -102,14 +104,14 @@ function getColorMetrics(colorIndex: number, basePalette: readonly any[]) {
     return { luminance: 0.5, hue: 0, saturation: 0 }
   }
   const [r, g, b] = basePalette[colorIndex]
+
+  // Luminance (formule standard Rec. 709)
+  const luminance = calculateLuminance([r, g, b])
+
+  // Calcul de la teinte (simplifié)
   const rNorm = r / 255
   const gNorm = g / 255
   const bNorm = b / 255
-
-  // Luminance (formule standard)
-  const luminance = 0.2126 * rNorm + 0.7152 * gNorm + 0.0722 * bNorm
-
-  // Calcul de la teinte (simplifié)
   const max = Math.max(rNorm, gNorm, bNorm)
   const min = Math.min(rNorm, gNorm, bNorm)
   const delta = max - min

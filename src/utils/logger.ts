@@ -38,7 +38,11 @@ class PerformanceLogger {
    * Log to Tauri backend (for production debugging)
    */
   private async logToTauri(level: string, ...args: any[]): Promise<void> {
+    // Ne rien faire si le logging Tauri n'est pas activé
     if (!this.config.enableTauriLogging) return
+
+    // Vérifier si on est dans un environnement Tauri
+    if (!(globalThis as any).__TAURI__) return
 
     try {
       const { invoke } = await import('@tauri-apps/api/core')
@@ -48,8 +52,11 @@ class PerformanceLogger {
         )
         .join(' ')}`
       await invoke('log_to_file', { message })
-    } catch (_error) {
-      // Silently fail if Tauri logging is not available
+    } catch (error) {
+      // Silently fail if Tauri logging fails - can happen during initialization
+      if (import.meta.env.DEV && this.config.enableTauriLogging) {
+        console.debug('Tauri logging failed:', error)
+      }
     }
   }
 
@@ -221,6 +228,7 @@ export const adapterLogger = createLogger({ prefix: '[Adapter]' })
 export const webglLogger = createLogger({ prefix: '[WebGL]' })
 export const quantizerLogger = createLogger({ prefix: '[Quantizer]' })
 export const paletteLogger = createLogger({ prefix: '[Palette]' })
+export const dskLogger = createLogger({ prefix: '[DSK Workspace]' })
 
 // Logger pour l'updater (peut être activé en production pour le debugging)
 export const updaterLogger = createLogger({
@@ -233,11 +241,14 @@ export const updaterLogger = createLogger({
 
 // Fonction pour envoyer les logs à la fenêtre de debug
 async function sendLogToDebugWindow(level: string, message: string) {
+  // Ne rien faire si on n'est pas dans Tauri
+  if (!(globalThis as any).__TAURI__) return
+
   try {
-    if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+    if (globalThis.window !== undefined) {
       // Essayer d'envoyer à la fenêtre de debug si elle existe
       const debugWindow = (
-        window as any
+        globalThis as any
       ).__TAURI__.window?.WebviewWindow?.getByLabel('debug')
       if (debugWindow) {
         await debugWindow.postMessage({
@@ -247,8 +258,9 @@ async function sendLogToDebugWindow(level: string, message: string) {
         })
       }
     }
-  } catch (_error) {
-    // Silently fail if debug window is not available
+  } catch {
+    // Silently fail if debug window is not available - expected behavior
+    // Ne log que si vraiment nécessaire (pas en mode web)
   }
 }
 

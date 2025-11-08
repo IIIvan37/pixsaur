@@ -2,6 +2,7 @@
  * Utility functions for color analysis and mapping
  */
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { luminanceGammaCorrected } from '@/libs/pixsaur-color/src/utils/luminance'
 
 /**
  * Finds the darkest color in a palette based on luminance
@@ -14,10 +15,10 @@ export function findDarkestColor(palette: Vector[]): Vector {
   }
 
   let darkestColor = palette[0]
-  let minLuminance = calculateLuminance(darkestColor)
+  let minLuminance = luminanceGammaCorrected(darkestColor)
 
   for (const color of palette) {
-    const luminance = calculateLuminance(color)
+    const luminance = luminanceGammaCorrected(color)
     if (luminance < minLuminance) {
       minLuminance = luminance
       darkestColor = color
@@ -25,21 +26,4 @@ export function findDarkestColor(palette: Vector[]): Vector {
   }
 
   return darkestColor
-}
-
-/**
- * Calculates the relative luminance of an RGB color
- * Based on ITU-R BT.709 standard
- * @param color RGB color vector [r, g, b]
- * @returns Luminance value between 0 and 1
- */
-function calculateLuminance(color: Vector): number {
-  const [r, g, b] = color.map((component) => {
-    const normalized = component / 255
-    return normalized <= 0.03928
-      ? normalized / 12.92
-      : ((normalized + 0.055) / 1.055) ** 2.4
-  })
-
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }

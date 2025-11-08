@@ -17,38 +17,40 @@ function isTauri(): boolean {
   )
 }
 
-export const ImageUpload = memo(({ onImageLoaded }: ImageUploadProps) => {
-  const handleUpload = useCallback(
-    async (acceptedFiles: File[]) => {
-      // In Tauri with empty array, use native dialog
-      if (isTauri() && acceptedFiles.length === 0) {
-        try {
-          const { pickImageFileTauri } = await import('./tauri-file-picker')
-          const dataUrl = await pickImageFileTauri()
+export const ImageUpload = memo(
+  ({ onImageLoaded }: Readonly<ImageUploadProps>) => {
+    const handleUpload = useCallback(
+      async (acceptedFiles: File[]) => {
+        // In Tauri with empty array, use native dialog
+        if (isTauri() && acceptedFiles.length === 0) {
+          try {
+            const { pickImageFileTauri } = await import('./tauri-file-picker')
+            const dataUrl = await pickImageFileTauri()
 
-          if (dataUrl) {
-            const img = new Image()
-            img.onload = () => onImageLoaded(img)
-            img.onerror = (e) =>
-              console.error('[ImageUpload] Image load failed:', e)
-            img.src = dataUrl
+            if (dataUrl) {
+              const img = new Image()
+              img.onload = () => onImageLoaded(img)
+              img.onerror = (e) =>
+                console.error('[ImageUpload] Image load failed:', e)
+              img.src = dataUrl
+            }
+          } catch (error) {
+            console.error('[ImageUpload] Failed to load image:', error)
           }
-        } catch (error) {
-          console.error('[ImageUpload] Failed to load image:', error)
+          return
         }
-        return
-      }
 
-      // Handle dropped/selected file
-      const file = acceptedFiles[0]
-      if (!file?.type.startsWith('image/')) return
+        // Handle dropped/selected file
+        const file = acceptedFiles[0]
+        if (!file?.type.startsWith('image/')) return
 
-      // In Tauri, drag & drop is disabled - only native dialog works
-      // In web mode, use standard FileReader
-      processImageFile(file).then(onImageLoaded).catch(console.error)
-    },
-    [onImageLoaded]
-  )
+        // In Tauri, drag & drop is disabled - only native dialog works
+        // In web mode, use standard FileReader
+        processImageFile(file).then(onImageLoaded).catch(console.error)
+      },
+      [onImageLoaded]
+    )
 
-  return <ImageUploadView onUpload={handleUpload} isTauri={isTauri()} />
-})
+    return <ImageUploadView onUpload={handleUpload} isTauri={isTauri()} />
+  }
+)

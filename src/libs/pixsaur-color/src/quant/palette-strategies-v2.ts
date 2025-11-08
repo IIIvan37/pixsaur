@@ -232,6 +232,78 @@ function calculateDiversityScore(params: DiversityScoreParams): number | null {
 }
 
 /**
+ * Vérifie si un candidat satisfait les critères de distance minimale
+ */
+function meetsDistanceCriteria(
+  candidate: ColorCandidate,
+  selectedColors: Vector[],
+  selectedLuminances: number[],
+  minColorDist: number,
+  minLumDist: number
+): boolean {
+  const colorDist = calculateMinColorDistance(candidate, selectedColors)
+  if (colorDist < minColorDist) return false
+
+  const lumDist = calculateMinLuminanceDistance(candidate, selectedLuminances)
+  return lumDist >= minLumDist
+}
+
+/**
+ * Calcule le score d'un candidat pour la sélection relaxée
+ */
+function calculateRelaxedScore(
+  candidate: ColorCandidate,
+  selectedColors: Vector[]
+): number {
+  const minColorDist = calculateMinColorDistance(candidate, selectedColors)
+  const diversityScore = Math.min(1, minColorDist / 255)
+  const minLumDist = calculateMinLuminanceDistance(candidate, [
+    calculateLuminance(candidate.color)
+  ])
+  return diversityScore * 0.7 + minLumDist * 0.3
+}
+
+/**
+ * Recherche le meilleur candidat avec des critères donnés
+ */
+function findBestCandidateWithCriteria(
+  candidates: ColorCandidate[],
+  result: number[],
+  selectedColors: Vector[],
+  selectedLuminances: number[],
+  minColorDist: number,
+  minLumDist: number
+): { candidate: ColorCandidate; score: number } | null {
+  let bestScore = -Infinity
+  let bestCandidate: ColorCandidate | null = null
+
+  for (const candidate of candidates) {
+    if (result.includes(candidate.index)) continue
+
+    if (
+      !meetsDistanceCriteria(
+        candidate,
+        selectedColors,
+        selectedLuminances,
+        minColorDist,
+        minLumDist
+      )
+    ) {
+      continue
+    }
+
+    const totalScore = calculateRelaxedScore(candidate, selectedColors)
+
+    if (totalScore > bestScore) {
+      bestScore = totalScore
+      bestCandidate = candidate
+    }
+  }
+
+  return bestCandidate ? { candidate: bestCandidate, score: bestScore } : null
+}
+
+/**
  * Tentative de trouver un candidat avec critères assouplis (fallback progressif)
  */
 function findCandidateWithRelaxedCriteria(
@@ -243,40 +315,26 @@ function findCandidateWithRelaxedCriteria(
   MIN_LUMINANCE_DISTANCE: number
 ): { candidate: ColorCandidate; score: number } | null {
   let relaxFactor = 0.7
-  let bestScore = -Infinity
-  let bestCandidate: ColorCandidate | null = null
 
-  while (!bestCandidate && relaxFactor > 0.2) {
+  while (relaxFactor > 0.2) {
     const relaxedMinColorDist = MIN_COLOR_DISTANCE * relaxFactor
     const relaxedMinLumDist = MIN_LUMINANCE_DISTANCE * relaxFactor
 
-    for (const candidate of candidates) {
-      if (result.includes(candidate.index)) continue
+    const foundCandidate = findBestCandidateWithCriteria(
+      candidates,
+      result,
+      selectedColors,
+      selectedLuminances,
+      relaxedMinColorDist,
+      relaxedMinLumDist
+    )
 
-      const minColorDist = calculateMinColorDistance(candidate, selectedColors)
-      if (minColorDist < relaxedMinColorDist) continue
+    if (foundCandidate) return foundCandidate
 
-      const minLumDist = calculateMinLuminanceDistance(
-        candidate,
-        selectedLuminances
-      )
-      if (minLumDist < relaxedMinLumDist) continue
-
-      const diversityScore = Math.min(1, minColorDist / 255)
-      const totalScore = diversityScore * 0.7 + minLumDist * 0.3
-
-      if (totalScore > bestScore) {
-        bestScore = totalScore
-        bestCandidate = candidate
-      }
-    }
-
-    if (!bestCandidate) {
-      relaxFactor -= 0.15
-    }
+    relaxFactor -= 0.15
   }
 
-  return bestCandidate ? { candidate: bestCandidate, score: bestScore } : null
+  return null
 }
 
 /**
@@ -403,6 +461,56 @@ export const selectByBalancedScoreMax: PaletteStrategyFunction = (
   )
 }
 
+/**
+ * Initialise la sélection avec le premier candidat (le plus fréquent)
+ */
+function initializeSelection(
+  result: number[],
+  candidates: ColorCandidate[]
+): void {
+  if (result.length === 0 && candidates.length > 0) {
+    const first = candidates.reduce(
+      (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
+      candidates[0]
+    )
+    result.push(first.index)
+  }
+}
+
+/**
+ * Trouve le meilleur candidat selon le score équilibré
+ */
+function findBestBalancedScoreCandidate(
+  candidates: ColorCandidate[],
+  result: number[],
+  selectedColors: Vector[],
+  selectedLuminances: number[],
+  maxFreq: number,
+  weights: { frequency: number; diversity: number; luminance: number }
+): { candidate: ColorCandidate; score: number } | null {
+  let bestScore = -Infinity
+  let bestCandidate: ColorCandidate | null = null
+
+  for (const candidate of candidates) {
+    if (result.includes(candidate.index)) continue
+
+    const totalScore = calculateBalancedScore(
+      candidate,
+      selectedColors,
+      selectedLuminances,
+      maxFreq,
+      weights
+    )
+
+    if (totalScore > bestScore) {
+      bestScore = totalScore
+      bestCandidate = candidate
+    }
+  }
+
+  return bestCandidate ? { candidate: bestCandidate, score: bestScore } : null
+}
+
 function selectByBalancedScoreCore(
   candidates: ColorCandidate[],
   targetColors: number,
@@ -422,18 +530,9 @@ function selectByBalancedScoreCore(
     luminance: calculateLuminance(c.color)
   }))
 
-  if (result.length === 0 && candidates.length > 0) {
-    const first = candidates.reduce(
-      (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
-      candidates[0]
-    )
-    result.push(first.index)
-  }
+  initializeSelection(result, candidates)
 
   while (result.length < targetColors && candidates.length > 0) {
-    let bestScore = -Infinity
-    let bestCandidate: ColorCandidate | null = null
-
     const selectedColors = result.map(
       (idx) => candidates.find((c) => c.index === idx)!.converted
     )
@@ -441,26 +540,18 @@ function selectByBalancedScoreCore(
       (idx) => luminances.find((l) => l.index === idx)!.luminance
     )
 
-    for (const candidate of candidates) {
-      if (result.includes(candidate.index)) continue
+    const best = findBestBalancedScoreCandidate(
+      candidates,
+      result,
+      selectedColors,
+      selectedLuminances,
+      maxFreq,
+      weights
+    )
 
-      const totalScore = calculateBalancedScore(
-        candidate,
-        selectedColors,
-        selectedLuminances,
-        maxFreq,
-        weights
-      )
-
-      if (totalScore > bestScore) {
-        bestScore = totalScore
-        bestCandidate = candidate
-      }
-    }
-
-    if (bestCandidate) {
-      result.push(bestCandidate.index)
-      scores.set(bestCandidate.index, bestScore)
+    if (best) {
+      result.push(best.candidate.index)
+      scores.set(best.candidate.index, best.score)
     } else {
       const fallback = findMostFrequentRemaining(candidates, result)
       if (fallback) {
@@ -602,6 +693,85 @@ export const selectByDiversityFirstMax: PaletteStrategyFunction = (
   )
 }
 
+interface FindDiversityCandidateParams {
+  candidates: ColorCandidate[]
+  result: number[]
+  selectedColors: Vector[]
+  selectedLuminances: number[]
+  frequencyWeight: number
+  maxFreq: number
+  isCPCClassic: boolean
+  minColorDistance: number
+  minLuminanceDistance: number
+}
+
+/**
+ * Trouve le meilleur candidat selon le score de diversité
+ */
+function findBestDiversityCandidate(
+  params: FindDiversityCandidateParams
+): { candidate: ColorCandidate; score: number } | null {
+  let bestScore = -Infinity
+  let bestCandidate: ColorCandidate | null = null
+
+  for (const candidate of params.candidates) {
+    if (params.result.includes(candidate.index)) continue
+
+    const totalScore = calculateDiversityScore({
+      candidate,
+      selectedColors: params.selectedColors,
+      selectedLuminances: params.selectedLuminances,
+      frequencyWeight: params.frequencyWeight,
+      maxFreq: params.maxFreq,
+      isCPCClassic: params.isCPCClassic,
+      minColorDistance: params.minColorDistance,
+      minLuminanceDistance: params.minLuminanceDistance
+    })
+
+    if (totalScore !== null && totalScore > bestScore) {
+      bestScore = totalScore
+      bestCandidate = candidate
+    }
+  }
+
+  return bestCandidate ? { candidate: bestCandidate, score: bestScore } : null
+}
+
+/**
+ * Essaie de trouver un candidat de fallback si aucun candidat optimal n'est trouvé
+ */
+function findDiversityFallbackCandidate(
+  candidates: ColorCandidate[],
+  result: number[],
+  selectedColors: Vector[],
+  selectedLuminances: number[],
+  minColorDistance: number,
+  minLuminanceDistance: number
+): { candidate: ColorCandidate; score: number } | null {
+  const relaxedResult = findCandidateWithRelaxedCriteria(
+    candidates,
+    result,
+    selectedColors,
+    selectedLuminances,
+    minColorDistance,
+    minLuminanceDistance
+  )
+
+  if (relaxedResult) {
+    return relaxedResult
+  }
+
+  // Dernier recours : la plus diverse sans contrainte
+  const excludedIndices = new Set(result)
+  const bestCandidate = selectMostDiverseCandidate(
+    candidates,
+    selectedColors,
+    excludedIndices
+  )
+
+  return bestCandidate ? { candidate: bestCandidate, score: 0 } : null
+}
+
 function selectByDiversityFirstCore(
   candidates: ColorCandidate[],
   targetColors: number,
@@ -615,22 +785,13 @@ function selectByDiversityFirstCore(
     return { selectedIndices: result.slice(0, targetColors), scores }
   }
 
-  if (result.length === 0 && candidates.length > 0) {
-    const first = candidates.reduce(
-      (prev, curr) => (curr.frequency > prev.frequency ? curr : prev),
-      candidates[0]
-    )
-    result.push(first.index)
-  }
+  initializeSelection(result, candidates)
 
   const isCPCClassic = candidates.length <= 27
   const MIN_COLOR_DISTANCE = isCPCClassic ? 50 : 140
   const MIN_LUMINANCE_DISTANCE = isCPCClassic ? 0.15 : 0.35
 
   while (result.length < targetColors && candidates.length > 0) {
-    let bestScore = -Infinity
-    let bestCandidate: ColorCandidate | null = null
-
     const selectedColors = result.map(
       (idx) => candidates.find((c) => c.index === idx)!.converted
     )
@@ -641,32 +802,23 @@ function selectByDiversityFirstCore(
     const maxFreq =
       frequencyWeight > 0 ? Math.max(...candidates.map((c) => c.frequency)) : 1
 
-    for (const candidate of candidates) {
-      if (result.includes(candidate.index)) continue
+    const best = findBestDiversityCandidate({
+      candidates,
+      result,
+      selectedColors,
+      selectedLuminances,
+      frequencyWeight,
+      maxFreq,
+      isCPCClassic,
+      minColorDistance: MIN_COLOR_DISTANCE,
+      minLuminanceDistance: MIN_LUMINANCE_DISTANCE
+    })
 
-      const totalScore = calculateDiversityScore({
-        candidate,
-        selectedColors,
-        selectedLuminances,
-        frequencyWeight,
-        maxFreq,
-        isCPCClassic,
-        minColorDistance: MIN_COLOR_DISTANCE,
-        minLuminanceDistance: MIN_LUMINANCE_DISTANCE
-      })
-
-      if (totalScore !== null && totalScore > bestScore) {
-        bestScore = totalScore
-        bestCandidate = candidate
-      }
-    }
-
-    if (bestCandidate) {
-      result.push(bestCandidate.index)
-      scores.set(bestCandidate.index, bestScore)
+    if (best) {
+      result.push(best.candidate.index)
+      scores.set(best.candidate.index, best.score)
     } else {
-      // Fallback progressif
-      const relaxedResult = findCandidateWithRelaxedCriteria(
+      const fallback = findDiversityFallbackCandidate(
         candidates,
         result,
         selectedColors,
@@ -675,24 +827,11 @@ function selectByDiversityFirstCore(
         MIN_LUMINANCE_DISTANCE
       )
 
-      if (relaxedResult) {
-        result.push(relaxedResult.candidate.index)
-        scores.set(relaxedResult.candidate.index, relaxedResult.score)
+      if (fallback) {
+        result.push(fallback.candidate.index)
+        scores.set(fallback.candidate.index, fallback.score)
       } else {
-        // Dernier recours : la plus diverse sans contrainte
-        const excludedIndices = new Set(result)
-        bestCandidate = selectMostDiverseCandidate(
-          candidates,
-          selectedColors,
-          excludedIndices
-        )
-
-        if (bestCandidate) {
-          result.push(bestCandidate.index)
-          scores.set(bestCandidate.index, 0)
-        } else {
-          break
-        }
+        break
       }
     }
   }

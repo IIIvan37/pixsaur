@@ -18,12 +18,12 @@ msgstr ""
 #~ msgstr "{0} (used)"
 
 #. placeholder {0}: images.length
-#: src/components/dsk-workspace/dsk-workspace.tsx:145
+#: src/components/dsk-workspace/dsk-workspace.tsx:166
 msgid "{0} image(s) ready to export"
 msgstr "{0} image(s) ready to export"
 
 #. placeholder {0}: formatDskSpace(calculateDskRemainingSpace(images))
-#: src/components/dsk-workspace/dsk-workspace.tsx:147
+#: src/components/dsk-workspace/dsk-workspace.tsx:168
 msgid "{0} remaining"
 msgstr "{0} remaining"
 
@@ -40,11 +40,11 @@ msgstr "A new version of Pixsaur is available. Click below to download and insta
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptive"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:67
+#: src/components/dsk-workspace/dsk-workspace.tsx:71
 msgid "Add current converted image to DSK workspace"
 msgstr "Add current converted image to DSK workspace"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:87
+#: src/components/dsk-workspace/dsk-workspace.tsx:92
 msgid "Add Current Image"
 msgstr "Add Current Image"
 
@@ -76,7 +76,7 @@ msgstr "Ajuste uniquement les zones claires de l'image"
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
-#: src/components/export-panel/export-config-dialog.tsx:105
+#: src/components/export-panel/export-config-dialog.tsx:103
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:88
 msgid "Annuler"
 msgstr "Cancel"
@@ -145,7 +145,7 @@ msgstr "Change image"
 #~ msgid "Clear all images from workspace"
 #~ msgstr "Clear all images from workspace"
 
-#: src/components/image-preview/image-preview.tsx:113
+#: src/components/image-preview/image-preview.tsx:110
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
 msgstr "Click to open in a new tab"
 
@@ -157,15 +157,15 @@ msgstr "Click to open in a new tab"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:121
+#: src/components/dsk-workspace/dsk-workspace.tsx:142
 msgid "Color {i}: {color}"
 msgstr "Color {i}: {color}"
 
-#: src/components/export-panel/export-config-dialog.tsx:98
+#: src/components/export-panel/export-config-dialog.tsx:96
 msgid "Configuration de l'export"
 msgstr "Export Configuration"
 
-#: src/components/export-panel/export-config-dialog.tsx:115
+#: src/components/export-panel/export-config-dialog.tsx:113
 msgid "Contenu du ZIP"
 msgstr "ZIP Contents"
 
@@ -185,7 +185,7 @@ msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgid "Couleur & Température"
 msgstr "Color & Temperature"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:91
+#: src/components/color-palette/color-grid/color-grid-view.tsx:74
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
 msgid "Déverrouiller"
 msgstr "Unlock"
@@ -195,8 +195,8 @@ msgid "Dimensions"
 msgstr "Dimensions"
 
 #: src/components/export-panel/export-config-dialog.tsx:156
-msgid "Disquette DSK (image écran)"
-msgstr "Disquette DSK (image écran)"
+#~ msgid "Disquette DSK (image écran)"
+#~ msgstr "Disquette DSK (image écran)"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
@@ -212,7 +212,7 @@ msgstr "Dominant diversity (90%) with slight frequency (10%)"
 msgid "Downloading..."
 msgstr "Downloading..."
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:75
+#: src/components/dsk-workspace/dsk-workspace.tsx:79
 msgid "DSK Manager"
 msgstr "DSK Manager"
 
@@ -238,11 +238,11 @@ msgstr "Error reading file: {0}"
 msgid "Exec"
 msgstr "Exec"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:142
+#: src/components/dsk-workspace/dsk-workspace.tsx:163
 msgid "Export DSK"
 msgstr "Export DSK"
 
-#: src/components/export-panel/export-config-dialog.tsx:108
+#: src/components/export-panel/export-config-dialog.tsx:106
 #: src/components/export-panel/export-panel-view.tsx:20
 msgid "Exporter"
 msgstr "Export"
@@ -300,8 +300,8 @@ msgid "Hauteur"
 msgstr "Height"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:77
-msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
-msgstr "ℹ️ Standard CPC palette only. Plus palette support coming soon."
+#~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
+#~ msgstr "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 
 #: src/app/components/source-section.tsx:24
 msgid "Image source"
@@ -323,11 +323,11 @@ msgstr "Intensity"
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 
-#: src/components/export-panel/export-config-dialog.tsx:198
+#: src/components/export-panel/export-config-dialog.tsx:173
 msgid "Label de la palette"
 msgstr "Palette Label"
 
-#: src/components/export-panel/export-config-dialog.tsx:190
+#: src/components/export-panel/export-config-dialog.tsx:165
 msgid "Label des données"
 msgstr "Data Label"
 
@@ -340,14 +340,14 @@ msgid "Later"
 msgstr "Later"
 
 #: src/components/export-panel/export-config-dialog.tsx:162
-msgid "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
-msgstr "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+#~ msgid "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+#~ msgstr "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 
-#: src/components/export-panel/export-config-dialog.tsx:127
+#: src/components/export-panel/export-config-dialog.tsx:125
 msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 msgstr "SCR format requires standard dimensions (160x200, 320x200 or 640x200)"
 
-#: src/components/export-panel/export-config-dialog.tsx:134
+#: src/components/export-panel/export-config-dialog.tsx:132
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (sequential)"
 
@@ -424,19 +424,19 @@ msgstr "Multiplie le canal vert (0-2x)"
 msgid "No additional files. Upload or add files to include them in the DSK."
 msgstr "No additional files. Upload or add files to include them in the DSK."
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:69
+#: src/components/dsk-workspace/dsk-workspace.tsx:73
 msgid "No image to add"
 msgstr "No image to add"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:156
+#: src/components/dsk-workspace/dsk-workspace.tsx:177
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "No images in workspace yet. Add converted images to build your DSK file."
 
-#: src/components/export-panel/export-config-dialog.tsx:208
+#: src/components/export-panel/export-config-dialog.tsx:183
 msgid "Nom du fichier ZIP"
 msgstr "ZIP File Name"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:71
+#: src/components/dsk-workspace/dsk-workspace.tsx:75
 msgid "Not enough space on DSK"
 msgstr "Not enough space on DSK"
 
@@ -444,7 +444,7 @@ msgstr "Not enough space on DSK"
 msgid "Ombres"
 msgstr "Shadows"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:50
+#: src/components/color-palette/color-grid/color-grid-view.tsx:40
 msgid "Options de couleur"
 msgstr "Color options"
 
@@ -460,7 +460,7 @@ msgstr "or click to select a file"
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
-#: src/components/export-panel/export-config-dialog.tsx:139
+#: src/components/export-panel/export-config-dialog.tsx:137
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
@@ -482,11 +482,11 @@ msgstr "Pixel Mode"
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (preview)"
 
-#: src/components/export-panel/export-config-dialog.tsx:151
+#: src/components/export-panel/export-config-dialog.tsx:149
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (correct CPC aspect ratio)"
 
-#: src/components/export-panel/export-config-dialog.tsx:144
+#: src/components/export-panel/export-config-dialog.tsx:142
 msgid "PNG (pixels carrés)"
 msgstr "PNG (square pixels)"
 
@@ -523,7 +523,7 @@ msgstr "Reset"
 msgid "Remove file"
 msgstr "Remove file"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:131
+#: src/components/dsk-workspace/dsk-workspace.tsx:152
 msgid "Remove image from workspace"
 msgstr "Remove image from workspace"
 
@@ -544,7 +544,7 @@ msgstr "Saturation"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 
-#: src/components/export-panel/export-config-dialog.tsx:121
+#: src/components/export-panel/export-config-dialog.tsx:119
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (interlaced CPC format)"
 
@@ -552,13 +552,17 @@ msgstr "SCR ASM (interlaced CPC format)"
 msgid "Sélection"
 msgstr "Selection"
 
-#: src/components/export-panel/export-config-dialog.tsx:100
+#: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Select files to include in ZIP archive"
 
 #: src/app/components/adjustements/adjustement.view.tsx:134
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
+
+#: src/components/dsk-workspace/dsk-workspace.tsx:81
+msgid "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
+msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
 
 #: src/app/components/adjustements/adjustement.view.tsx:91
 msgid "Teinte"
@@ -589,10 +593,10 @@ msgid "Upload Files"
 msgstr "Upload Files"
 
 #: src/components/color-palette/color-grid/color-grid-view.tsx:65
-msgid "utilisée"
-msgstr "utilisée"
+#~ msgid "utilisée"
+#~ msgstr "utilisée"
 
-#: src/components/export-panel/export-config-dialog.tsx:183
+#: src/components/export-panel/export-config-dialog.tsx:158
 msgid "Utiliser des labels personnalisés"
 msgstr "Use custom labels"
 
@@ -600,7 +604,7 @@ msgstr "Use custom labels"
 msgid "Valider"
 msgstr "Confirm"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:93
+#: src/components/color-palette/color-grid/color-grid-view.tsx:76
 msgid "Verrouiller"
 msgstr "Lock"
 
