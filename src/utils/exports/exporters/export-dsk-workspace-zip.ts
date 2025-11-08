@@ -102,17 +102,14 @@ export async function exportDskWorkspaceZip(
         .replace(/[^A-Z0-9]/g, '')
         .substring(0, 8)
 
-      // Add SCR file to ZIP
-      zip.file(`${filename}.scr`, scrData)
-      console.log(`[DSK Workspace ZIP] Added ${filename}.scr to archive`)
-
-      // Generate ASM file and assemble to BIN
+      // Generate ASM file and assemble to BIN, then save as .scr
       const asmLabel = `image${imageIndex}`
       const asmResult = toASMData(scrData, asmLabel)
 
       if (typeof asmResult === 'string' && rasmInstance && rasmModule) {
         const asmFilename = `${filename}.asm`
         const binFilename = `${filename}.bin`
+        const scrFilename = `${filename}.scr`
 
         try {
           // Write ASM to virtual filesystem
@@ -124,9 +121,9 @@ export async function exportDskWorkspaceZip(
           })
 
           if (assembleResult.success && assembleResult.binary) {
-            // Add BIN file to ZIP
-            zip.file(binFilename, assembleResult.binary)
-            console.log(`[DSK Workspace ZIP] Added ${binFilename} to archive`)
+            // Add BIN file to ZIP as .scr
+            zip.file(scrFilename, assembleResult.binary)
+            console.log(`[DSK Workspace ZIP] Added ${scrFilename} to archive`)
           } else {
             console.warn(
               `[DSK Workspace ZIP] Failed to assemble ${filename} to binary`
@@ -138,6 +135,12 @@ export async function exportDskWorkspaceZip(
             error
           )
         }
+      } else if (!rasmInstance || !rasmModule) {
+        // Fallback: if RASM not available, add raw SCR data
+        zip.file(`${filename}.scr`, scrData)
+        console.log(
+          `[DSK Workspace ZIP] Added ${filename}.scr to archive (fallback)`
+        )
       }
     }
 

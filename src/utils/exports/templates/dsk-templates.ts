@@ -8,14 +8,14 @@
  */
 export interface ScrDskTemplateOptions {
   /**
-   * Filename of the SCR ASM file to include (without path)
-   * Example: "pixsaur_data.asm"
+   * Filename of the binary SCR file to include (without path)
+   * Example: "image1.bin"
    */
-  scrAsmFilename: string
+  scrBinFilename: string
 
   /**
-   * Label name used in the SCR ASM file
-   * Example: "pixsaur_data"
+   * Label name for the screen data
+   * Example: "image1"
    */
   scrLabel: string
 
@@ -34,7 +34,7 @@ export interface ScrDskTemplateOptions {
 
 /**
  * Generate ASM template for saving SCR data to DSK
- * This template includes the SCR ASM file and uses RASM's SAVE directive
+ * This template includes the SCR binary file using INCBIN and uses RASM's SAVE directive
  *
  * @param options - SCR DSK template options
  * @returns Z80 assembly source code as string
@@ -42,20 +42,22 @@ export interface ScrDskTemplateOptions {
  * @example
  * ```typescript
  * const asmCode = generateScrDskTemplate({
- *   scrAsmFilename: "pixsaur_data.asm",
- *   scrLabel: "pixsaur_data",
+ *   scrBinFilename: "image1.bin",
+ *   scrLabel: "image1",
  *   dskFilename: "pixsaur.dsk",
- *   screenFilename: "IMAGE.SCR"
+ *   screenFilename: "IMAGE1.SCR"
  * })
  * ```
  */
 export function generateScrDskTemplate(options: ScrDskTemplateOptions): string {
-  const { scrAsmFilename, scrLabel, dskFilename, screenFilename } = options
+  const { scrBinFilename, scrLabel, dskFilename, screenFilename } = options
 
   return `
-    start
-    include "${scrAsmFilename}"
+    org #c000
+${scrLabel}:
+    incbin "${scrBinFilename}"
+${scrLabel}_end:
 
-    SAVE '${screenFilename}', ${scrLabel}, $ - start, DSK, '${dskFilename}'
+    SAVE '${screenFilename}', ${scrLabel}, ${scrLabel}_end - ${scrLabel}, DSK, '${dskFilename}'
   `
 }

@@ -5,7 +5,6 @@ import {
   generateScrDskTemplate,
   generateUniversalScrLoader
 } from '../templates'
-import { generateSCRAsmClassic, generateSCRAsmPlus } from './export-scr'
 
 /**
  * Export DSK file from workspace images
@@ -74,9 +73,9 @@ export async function exportDskWorkspace(
       )
 
       // Convert scrData array back to Uint8Array
-      const scrData = new Uint8Array(image.scrData)
+      const indexBuf = new Uint8Array(image.scrData)
 
-      // Generate SCR ASM content with appropriate palette format
+      // Generate SCR with appropriate palette format
       const modeConfig = {
         mode: image.mode,
         width: image.width,
@@ -87,33 +86,34 @@ export async function exportDskWorkspace(
         scaleY: image.scaleY
       }
 
-      // Use appropriate generation function based on hardware type
-      const scrAsmContent =
-        image.cpcHardware === 'plus' && image.palettePlus
-          ? generateSCRAsmPlus(scrData, modeConfig, image.palettePlus, asmLabel)
-          : generateSCRAsmClassic(
-              scrData,
-              modeConfig,
-              image.paletteFirmware,
-              asmLabel
-            )
+      // Convert index buffer to SCR format
+      const { exportSCR } = await import('../export-scr/export-scr')
+      const scrData = exportSCR(indexBuf, modeConfig)
 
-      if (!scrAsmContent) {
-        dskLogger.warn(`Skipping image ${image.name} - SCR data too large`)
-        continue
+      // Inject palette based on hardware type
+      if (image.cpcHardware === 'plus' && image.palettePlus) {
+        const { injectCPCPlusPaletteIntoSCR } = await import(
+          '../cpc-plus-format'
+        )
+        injectCPCPlusPaletteIntoSCR(scrData, image.palettePlus)
+        scrData[2034] = image.mode
+      } else {
+        const { injectPaletteDataIntoSCR } = await import(
+          '@/palettes/cpc-palette'
+        )
+        injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
       }
 
-      const scrAsmFilename = `${asmLabel}.asm`
+      const scrBinFilename = `${asmLabel}.bin`
 
-      // Write SCR ASM file to virtual filesystem
-      rasmModule.FS.writeFile(`/${scrAsmFilename}`, scrAsmContent)
+      // Write SCR binary file to virtual filesystem
+      rasmModule.FS.writeFile(`/${scrBinFilename}`, scrData)
 
-      // For workspace export, we only save the SCR files without loaders
-      // Users can load them manually from BASIC or create their own loader
+      dskLogger.info(`Created ${scrBinFilename} (${scrData.length} bytes)`)
 
-      // Generate DSK template code to save SCR to DSK
+      // Generate DSK template code to save SCR to DSK using INCBIN
       const dskTemplateCode = generateScrDskTemplate({
-        scrAsmFilename,
+        scrBinFilename,
         scrLabel: asmLabel,
         dskFilename,
         screenFilename: scrFilename
