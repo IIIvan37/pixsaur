@@ -25,8 +25,9 @@ export default function DskWorkspacePanel() {
   const dskImages = useAtomValue(dskImagesAtom)
   const [isExporting, setIsExporting] = useState(false)
 
-  // Check if we can add current image (must have image and standard mode without overscan)
-  const canAddCurrentImage = !!image && !modeConfig.overscan
+  // Check if we can add current image (must have image)
+  // We now support all dimensions including overscan and custom
+  const canAddCurrentImage = !!image
 
   // Prepare current image data for adding to DSK
   const currentImageData = canAddCurrentImage

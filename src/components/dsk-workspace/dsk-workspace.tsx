@@ -11,16 +11,18 @@ import {
 import Button from '@/components/ui/button/button'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import Icon from '@/components/ui/icon'
-import { generateDskImageFilename } from '@/utils/amsdos-filename'
 import styles from './dsk-workspace.module.css'
 import {
   calculateDskRemainingSpace,
+  calculateLinearSize,
   calculateScrSize,
   canAddImageToDsk,
   formatDskSpace,
   formatImageSize,
   formatScrSize,
-  getModeLabel
+  generateDskFilenames,
+  getModeLabel,
+  isStandardMode
 } from './dsk-workspace-utils'
 
 interface DskWorkspaceProps {
@@ -97,21 +99,48 @@ export default function DskWorkspace({
         <>
           <div className={styles.imageList}>
             {images.map((image, index) => {
-              // Generate the actual filename that will be used on the DSK
-              const dskFilename = generateDskImageFilename(index + 1)
+              // Generate the actual filename(s) that will be used on the DSK
+              const dskFilenames = generateDskFilenames(
+                index + 1,
+                image.width,
+                image.height,
+                image.mode,
+                image.overscan
+              )
+
+              // Calculate file size
+              const isStandard = isStandardMode(
+                image.width,
+                image.height,
+                image.mode,
+                image.overscan
+              )
+              const fileSize = isStandard
+                ? calculateScrSize()
+                : calculateLinearSize(image.width, image.height, image.mode)
 
               return (
                 <div key={image.id} className={styles.imageItem}>
                   {image.thumbnailDataUrl && (
                     <img
                       src={image.thumbnailDataUrl}
-                      alt={dskFilename}
+                      alt={dskFilenames[0]}
                       className={styles.thumbnail}
                     />
                   )}
                   <div className={styles.imageInfo}>
                     <div className={styles.imageName}>
-                      {dskFilename}
+                      {dskFilenames.length === 1 ? (
+                        dskFilenames[0]
+                      ) : (
+                        <>
+                          {dskFilenames[0].replace(/_1\.BIN$/, '.BIN')}
+                          <span className={styles.chunkInfo}>
+                            {' '}
+                            ({dskFilenames.length} chunks)
+                          </span>
+                        </>
+                      )}
                       <span
                         className={
                           image.cpcHardware === 'plus'
@@ -130,7 +159,10 @@ export default function DskWorkspace({
                     <div className={styles.imageDetails}>
                       {getModeLabel(image.mode)} •{' '}
                       {formatImageSize(image.width, image.height)} •{' '}
-                      {formatScrSize(calculateScrSize())}
+                      {formatScrSize(fileSize)}
+                      {!isStandard && (
+                        <span className={styles.customBadge}> • Custom</span>
+                      )}
                     </div>
                     {image.paletteColors && (
                       <div className={styles.palette}>

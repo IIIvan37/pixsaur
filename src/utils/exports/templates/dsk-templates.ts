@@ -53,7 +53,6 @@ export function generateScrDskTemplate(options: ScrDskTemplateOptions): string {
   const { scrBinFilename, scrLabel, dskFilename, screenFilename } = options
 
   return `
-    org #c000
 ${scrLabel}:
     incbin "${scrBinFilename}"
 ${scrLabel}_end:
