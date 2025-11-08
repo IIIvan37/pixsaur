@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import { generateDskReadme } from '../generate-dsk-readme'
+import { generateDskReadmePdf } from '../generate-dsk-readme-pdf'
 import { exportDskWorkspace } from './export-dsk-workspace'
 
 /**
@@ -35,7 +36,12 @@ export async function exportDskWorkspaceZip(
     // Generate and add README
     const readme = generateDskReadme(images, dskFilename)
     zip.file('README.md', readme)
-    console.log('[DSK Workspace ZIP] Added README to archive')
+    console.log('[DSK Workspace ZIP] Added README.md to archive')
+
+    // Generate and add README PDF
+    const readmePdf = generateDskReadmePdf(images, dskFilename)
+    zip.file('README.pdf', readmePdf)
+    console.log('[DSK Workspace ZIP] Added README.pdf to archive')
 
     // Generate ZIP blob
     const zipBlob = await zip.generateAsync({

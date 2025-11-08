@@ -94,7 +94,7 @@ export function generateDskReadme(
     ) {
       readme += 'Hardware values (GRB format):\n'
       readme += '```\n'
-      readme += `[${image.palettePlus.map((v) => `0x${v.toString(16).toUpperCase().padStart(3, '0')}`).join(', ')}]\n`
+      readme += `[${image.palettePlus.map((v) => `#${v.toString(16).toUpperCase().padStart(3, '0')}`).join(', ')}]\n`
       readme += '```\n\n'
     }
   }
