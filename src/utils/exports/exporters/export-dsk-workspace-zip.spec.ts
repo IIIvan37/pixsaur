@@ -65,8 +65,8 @@ describe('exportDskWorkspaceZip', () => {
       const zip = await JSZip.loadAsync(result)
       expect(zip.files['pixsaur-workspace.dsk']).toBeDefined()
       expect(zip.files['README.pdf']).toBeDefined()
-      expect(zip.files['IMAGE1.scr']).toBeDefined()
-      expect(zip.files['IMAGE2.scr']).toBeDefined()
+      expect(zip.files['IMG00001.scr']).toBeDefined()
+      expect(zip.files['IMG00002.scr']).toBeDefined()
     }
   })
 
@@ -80,8 +80,8 @@ describe('exportDskWorkspaceZip', () => {
     // Verify single SCR file is included
     if (result) {
       const zip = await JSZip.loadAsync(result)
-      expect(zip.files['IMAGE1.scr']).toBeDefined()
-      const scrData = await zip.files['IMAGE1.scr'].async('uint8array')
+      expect(zip.files['IMG00001.scr']).toBeDefined()
+      const scrData = await zip.files['IMG00001.scr'].async('uint8array')
       expect(scrData.length).toBe(16384) // SCR file size
     }
   })
@@ -100,9 +100,9 @@ describe('exportDskWorkspaceZip', () => {
     // Verify all SCR files are included
     if (result) {
       const zip = await JSZip.loadAsync(result)
-      expect(zip.files['IMAGE1.scr']).toBeDefined()
-      expect(zip.files['IMAGE2.scr']).toBeDefined()
-      expect(zip.files['IMAGE3.scr']).toBeDefined()
+      expect(zip.files['IMG00001.scr']).toBeDefined()
+      expect(zip.files['IMG00002.scr']).toBeDefined()
+      expect(zip.files['IMG00003.scr']).toBeDefined()
     }
   })
 
@@ -115,6 +115,49 @@ describe('exportDskWorkspaceZip', () => {
     // DSK is ~180 KB, compressed should be significantly smaller
     if (result) {
       expect(result.size).toBeLessThan(184320) // DSK total size
+    }
+  })
+
+  it('should handle custom dimensions with linear format', async () => {
+    // Create an overscan image (custom dimensions)
+    const overscanImage: DskImage = {
+      id: 'overscan-1',
+      name: 'Overscan',
+      scrData: Array.from({ length: 192 * 272 }, () => 0), // 192x272 in mode 1
+      mode: 1,
+      width: 384,
+      height: 272,
+      overscan: true,
+      nColors: 4,
+      scaleX: 1,
+      scaleY: 1.2,
+      cpcHardware: 'classic',
+      paletteFirmware: [0, 1, 2, 3],
+      thumbnailDataUrl: 'data:image/png;base64,test',
+      paletteColors: ['#000000', '#0000ff', '#ff0000', '#ff00ff']
+    }
+
+    const result = await exportDskWorkspaceZip([overscanImage])
+
+    expect(result).not.toBeNull()
+    expect(result).toBeInstanceOf(Blob)
+
+    // Verify .bin file(s) are created for custom dimensions
+    if (result) {
+      const zip = await JSZip.loadAsync(result)
+
+      // Linear format with chunking - should be split into multiple files
+      // Total size: 96 * 272 = 26112 bytes
+      // Should be split into 2 chunks (16384 + 9728 bytes)
+      expect(zip.files['IMG00001_1.bin']).toBeDefined()
+      expect(zip.files['IMG00001_2.bin']).toBeDefined()
+
+      const chunk1Data = await zip.files['IMG00001_1.bin'].async('uint8array')
+      const chunk2Data = await zip.files['IMG00001_2.bin'].async('uint8array')
+
+      // Verify chunk sizes
+      expect(chunk1Data.length).toBe(16 * 1024) // 16KB max chunk
+      expect(chunk2Data.length).toBe(26112 - 16384) // Remaining data
     }
   })
 })

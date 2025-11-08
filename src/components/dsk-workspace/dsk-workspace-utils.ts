@@ -9,6 +9,94 @@ export function calculateScrSize(): number {
 }
 
 /**
+ * Calculate the size of linear data for custom dimensions
+ * @param width - Image width in pixels
+ * @param height - Image height in pixels
+ * @param mode - CPC mode (0, 1, or 2)
+ * @returns Size in bytes
+ */
+export function calculateLinearSize(
+  width: number,
+  height: number,
+  mode: number
+): number {
+  const pixelsPerByte = mode === 0 ? 2 : mode === 1 ? 4 : 8
+  const widthInBytes = Math.floor(width / pixelsPerByte)
+  return widthInBytes * height
+}
+
+/**
+ * Check if image dimensions are standard (non-custom)
+ * @param width - Image width
+ * @param height - Image height
+ * @param mode - CPC mode
+ * @param overscan - Is overscan mode
+ * @returns True if standard dimensions
+ */
+export function isStandardMode(
+  width: number,
+  height: number,
+  mode: number,
+  overscan: boolean
+): boolean {
+  if (overscan) return false
+
+  return (
+    (mode === 0 && width === 160 && height === 200) ||
+    (mode === 1 && width === 320 && height === 200) ||
+    (mode === 2 && width === 640 && height === 200)
+  )
+}
+
+/**
+ * Calculate number of chunks needed for data
+ * @param dataSize - Size of data in bytes
+ * @returns Number of chunks (1 if <= 16KB, 2+ if larger)
+ */
+export function calculateChunkCount(dataSize: number): number {
+  const MAX_CHUNK_SIZE = 16 * 1024 // 16 KB
+  return Math.ceil(dataSize / MAX_CHUNK_SIZE)
+}
+
+/**
+ * Generate DSK filenames for an image (may be multiple chunks)
+ * @param imageIndex - 1-based index
+ * @param width - Image width
+ * @param height - Image height
+ * @param mode - CPC mode
+ * @param overscan - Is overscan
+ * @returns Array of filenames
+ */
+export function generateDskFilenames(
+  imageIndex: number,
+  width: number,
+  height: number,
+  mode: number,
+  overscan: boolean
+): string[] {
+  const isStandard = isStandardMode(width, height, mode, overscan)
+
+  if (isStandard) {
+    return [`IMG${imageIndex}.SCR`]
+  }
+
+  // Custom dimensions - calculate chunks
+  const linearSize = calculateLinearSize(width, height, mode)
+  const chunkCount = calculateChunkCount(linearSize)
+
+  if (chunkCount === 1) {
+    return [`IMG${imageIndex}.BIN`]
+  }
+
+  // Multiple chunks - use shorter base name to fit AMSDOS 8.3 limit
+  // IMG1_1.BIN fits in 8 chars (IMG + index + _ + chunk number)
+  return Array.from(
+    { length: chunkCount },
+    (_, i) => `IMG${imageIndex}_${i + 1}.BIN`
+  )
+}
+
+/**
  * Standard DSK size in bytes
  * 9 tracks × 2 sides × 512 bytes per sector × 9 sectors per track = 184320 bytes (180 KB)
  */

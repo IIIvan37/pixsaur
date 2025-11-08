@@ -1,5 +1,5 @@
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
-import { generateDskImageFilename } from '@/utils/amsdos-filename'
+import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
 import { dskLogger } from '@/utils/logger'
 import {
   generateScrDskTemplate,
@@ -65,7 +65,6 @@ export async function exportDskWorkspace(
     for (let i = 0; i < images.length; i++) {
       const image = images[i]
       const imageIndex = i + 1
-      const scrFilename = generateDskImageFilename(imageIndex)
       const asmLabel = `image${imageIndex}`
 
       dskLogger.info(
@@ -86,37 +85,129 @@ export async function exportDskWorkspace(
         scaleY: image.scaleY
       }
 
-      // Convert index buffer to SCR format
-      const { exportSCR } = await import('../export-scr/export-scr')
-      const scrData = exportSCR(indexBuf, modeConfig)
+      // Check if this is a standard SCR format or custom linear format
+      const isStandardMode =
+        !modeConfig.overscan &&
+        ((modeConfig.mode === 0 &&
+          modeConfig.width === 160 &&
+          modeConfig.height === 200) ||
+          (modeConfig.mode === 1 &&
+            modeConfig.width === 320 &&
+            modeConfig.height === 200) ||
+          (modeConfig.mode === 2 &&
+            modeConfig.width === 640 &&
+            modeConfig.height === 200))
 
-      // Inject palette based on hardware type
-      if (image.cpcHardware === 'plus' && image.palettePlus) {
-        const { injectCPCPlusPaletteIntoSCR } = await import(
-          '../cpc-plus-format'
+      let binaryData: Uint8Array
+      let dskFilenameOnDisk: string
+
+      if (isStandardMode) {
+        // Standard SCR format with metadata
+        const { exportSCR } = await import('../export-scr/export-scr')
+        const scrData = exportSCR(indexBuf, modeConfig)
+
+        // Inject palette based on hardware type
+        if (image.cpcHardware === 'plus' && image.palettePlus) {
+          const { injectCPCPlusPaletteIntoSCR } = await import(
+            '../cpc-plus-format'
+          )
+          injectCPCPlusPaletteIntoSCR(scrData, image.palettePlus)
+          scrData[2034] = image.mode
+        } else {
+          const { injectPaletteDataIntoSCR } = await import(
+            '@/palettes/cpc-palette'
+          )
+          injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
+        }
+
+        binaryData = scrData
+        const filenames = generateDskFilenames(
+          imageIndex,
+          image.width,
+          image.height,
+          image.mode,
+          image.overscan
         )
-        injectCPCPlusPaletteIntoSCR(scrData, image.palettePlus)
-        scrData[2034] = image.mode
+        dskFilenameOnDisk = filenames[0] // IMG1.SCR
+        dskLogger.info(
+          `Generated standard SCR format (${binaryData.length} bytes)`
+        )
       } else {
-        const { injectPaletteDataIntoSCR } = await import(
-          '@/palettes/cpc-palette'
+        // Custom dimensions - use linear format without metadata
+        const { exportLinearAsm, splitLinearIntoChunks } = await import(
+          '../export-linear-asm/export-linear.asm'
         )
-        injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
+        const linearData = exportLinearAsm(indexBuf, modeConfig)
+        const chunks = splitLinearIntoChunks(linearData)
+
+        dskLogger.info(
+          `Generated linear format for custom dimensions (${linearData.length} bytes, ${chunks.length} chunk(s))`
+        )
+
+        // Generate all filenames for this image
+        const dskFilenames = generateDskFilenames(
+          imageIndex,
+          image.width,
+          image.height,
+          image.mode,
+          image.overscan
+        )
+
+        // Process each chunk
+        for (const chunk of chunks) {
+          const chunkBinFilename = `${asmLabel}_${chunk.index}.bin`
+          const chunkDskFilename = dskFilenames[chunk.index - 1] // Use pre-generated filename
+
+          // Write chunk to virtual filesystem
+          rasmModule.FS.writeFile(`/${chunkBinFilename}`, chunk.data)
+
+          dskLogger.info(
+            `Created ${chunkBinFilename} (${chunk.data.length} bytes)`
+          )
+
+          // Generate DSK template code to save chunk to DSK using INCBIN
+          const dskTemplateCode = generateScrDskTemplate({
+            scrBinFilename: chunkBinFilename,
+            scrLabel: `${asmLabel}_${chunk.index}`,
+            dskFilename,
+            screenFilename: chunkDskFilename
+          })
+
+          // Assemble and save chunk to DSK
+          const result = await rasmInstance.assemble(dskTemplateCode, {
+            outputFile: `output${imageIndex}_${chunk.index}.bin`,
+            exportType: 'dsk',
+            dskFile: dskFilename
+          })
+
+          if (!result.success) {
+            dskLogger.error(
+              `Chunk ${chunk.index} assembly failed for ${image.name}:`,
+              result.output || '(no error message)'
+            )
+            dskLogger.error('DSK Template Code:', dskTemplateCode)
+          } else {
+            dskLogger.info(`Added ${chunkDskFilename} to DSK`)
+          }
+        }
+
+        // Skip the standard single-file logic below for chunked files
+        continue
       }
 
       const scrBinFilename = `${asmLabel}.bin`
 
-      // Write SCR binary file to virtual filesystem
-      rasmModule.FS.writeFile(`/${scrBinFilename}`, scrData)
+      // Write binary file to virtual filesystem
+      rasmModule.FS.writeFile(`/${scrBinFilename}`, binaryData)
 
-      dskLogger.info(`Created ${scrBinFilename} (${scrData.length} bytes)`)
+      dskLogger.info(`Created ${scrBinFilename} (${binaryData.length} bytes)`)
 
       // Generate DSK template code to save SCR to DSK using INCBIN
       const dskTemplateCode = generateScrDskTemplate({
         scrBinFilename,
         scrLabel: asmLabel,
         dskFilename,
-        screenFilename: scrFilename
+        screenFilename: dskFilenameOnDisk
       })
 
       // Assemble and save SCR to DSK
@@ -131,7 +222,7 @@ export async function exportDskWorkspace(
         continue
       }
 
-      dskLogger.info(`Added ${scrFilename} to DSK`)
+      dskLogger.info(`Added ${dskFilenameOnDisk} to DSK`)
     }
 
     // Read the final DSK from virtual filesystem

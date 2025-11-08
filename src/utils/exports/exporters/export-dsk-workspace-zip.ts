@@ -68,7 +68,7 @@ export async function exportDskWorkspaceZip(
       const image = images[i]
       const imageIndex = i + 1
 
-      // Convert index buffer to SCR format
+      // Convert index buffer
       const indexBuf = new Uint8Array(image.scrData)
       const modeConfig = {
         mode: image.mode,
@@ -80,30 +80,119 @@ export async function exportDskWorkspaceZip(
         scaleY: image.scaleY
       }
 
-      const scrData = exportSCR(indexBuf, modeConfig)
+      // Check if this is a standard SCR format or custom linear format
+      const isStandardMode =
+        !modeConfig.overscan &&
+        ((modeConfig.mode === 0 &&
+          modeConfig.width === 160 &&
+          modeConfig.height === 200) ||
+          (modeConfig.mode === 1 &&
+            modeConfig.width === 320 &&
+            modeConfig.height === 200) ||
+          (modeConfig.mode === 2 &&
+            modeConfig.width === 640 &&
+            modeConfig.height === 200))
 
-      // Inject palette based on hardware type
-      if (image.cpcHardware === 'plus' && image.palettePlus) {
-        injectCPCPlusPaletteIntoSCR(scrData, image.palettePlus)
-        scrData[2034] = image.mode
+      let binaryData: Uint8Array
+
+      if (isStandardMode) {
+        // Standard SCR format
+        const scrData = exportSCR(indexBuf, modeConfig)
+
+        // Inject palette based on hardware type
+        if (image.cpcHardware === 'plus' && image.palettePlus) {
+          injectCPCPlusPaletteIntoSCR(scrData, image.palettePlus)
+          scrData[2034] = image.mode
+        } else {
+          injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
+        }
+
+        binaryData = scrData
       } else {
-        injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
+        // Custom dimensions - use linear format
+        const { exportLinearAsm, splitLinearIntoChunks } = await import(
+          '../export-linear-asm/export-linear.asm'
+        )
+        const linearData = exportLinearAsm(indexBuf, modeConfig)
+        const chunks = splitLinearIntoChunks(linearData)
+
+        console.log(
+          `[DSK Workspace ZIP] Generated linear format for custom dimensions (${linearData.length} bytes, ${chunks.length} chunk(s))`
+        )
+
+        // Use same filename format as DSK: IMG00001.BIN, IMG00001_1.BIN, etc.
+        const paddedIndex = imageIndex.toString().padStart(5, '0')
+
+        // Process each chunk
+        for (const chunk of chunks) {
+          const asmLabel = `image${imageIndex}_${chunk.index}`
+          const chunkFilename =
+            chunks.length === 1
+              ? `IMG${paddedIndex}.bin`
+              : `IMG${paddedIndex}_${chunk.index}.bin`
+
+          const asmResult = toASMData(chunk.data, asmLabel)
+
+          if (typeof asmResult === 'string' && rasmInstance && rasmModule) {
+            const asmFilename = `${asmLabel}.asm`
+            const binFilename = `${asmLabel}.bin`
+
+            try {
+              // Write ASM to virtual filesystem
+              rasmModule.FS.writeFile(`/${asmFilename}`, asmResult)
+
+              // Assemble to binary (no exportType = binary output)
+              const assembleResult = await rasmInstance.assemble(asmResult, {
+                outputFile: binFilename
+              })
+
+              if (assembleResult.success && assembleResult.binary) {
+                // Add BIN chunk to ZIP
+                zip.file(chunkFilename, assembleResult.binary)
+                console.log(
+                  `[DSK Workspace ZIP] Added ${chunkFilename} to archive`
+                )
+              } else {
+                console.warn(
+                  `[DSK Workspace ZIP] Failed to assemble ${chunkFilename} to binary`
+                )
+              }
+            } catch (error) {
+              console.warn(
+                `[DSK Workspace ZIP] Error assembling ${chunkFilename}:`,
+                error
+              )
+            }
+          } else if (!rasmInstance || !rasmModule) {
+            // Fallback: if RASM not available, add raw binary data
+            zip.file(chunkFilename, chunk.data)
+            console.log(
+              `[DSK Workspace ZIP] Added ${chunkFilename} to archive (fallback)`
+            )
+          }
+        }
+
+        // Skip the standard single-file logic for chunked files
+        continue
       }
 
-      // Generate filename from image name (convert to AMSDOS format)
-      const filename = image.name
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '')
-        .substring(0, 8)
+      // Use same filename format as DSK: IMG00001.SCR
+      const paddedIndex = imageIndex.toString().padStart(5, '0')
+      const filename = isStandardMode
+        ? `IMG${paddedIndex}`
+        : `IMG${paddedIndex}`
 
-      // Generate ASM file and assemble to BIN, then save as .scr
+      // Generate ASM file and assemble to BIN, then save as .scr or .bin
       const asmLabel = `image${imageIndex}`
-      const asmResult = toASMData(scrData, asmLabel)
+      const asmResult = toASMData(binaryData, asmLabel)
 
       if (typeof asmResult === 'string' && rasmInstance && rasmModule) {
         const asmFilename = `${filename}.asm`
         const binFilename = `${filename}.bin`
-        const scrFilename = `${filename}.scr`
+        // Use .scr extension for standard format, .bin for custom
+        const outputFilename = isStandardMode
+          ? `${filename}.scr`
+          : `${filename}.bin`
 
         try {
           // Write ASM to virtual filesystem
@@ -115,9 +204,11 @@ export async function exportDskWorkspaceZip(
           })
 
           if (assembleResult.success && assembleResult.binary) {
-            // Add BIN file to ZIP as .scr
-            zip.file(scrFilename, assembleResult.binary)
-            console.log(`[DSK Workspace ZIP] Added ${scrFilename} to archive`)
+            // Add BIN file to ZIP
+            zip.file(outputFilename, assembleResult.binary)
+            console.log(
+              `[DSK Workspace ZIP] Added ${outputFilename} to archive`
+            )
           } else {
             console.warn(
               `[DSK Workspace ZIP] Failed to assemble ${filename} to binary`
@@ -130,10 +221,13 @@ export async function exportDskWorkspaceZip(
           )
         }
       } else if (!rasmInstance || !rasmModule) {
-        // Fallback: if RASM not available, add raw SCR data
-        zip.file(`${filename}.scr`, scrData)
+        // Fallback: if RASM not available, add raw binary data
+        const outputFilename = isStandardMode
+          ? `${filename}.scr`
+          : `${filename}.bin`
+        zip.file(outputFilename, binaryData)
         console.log(
-          `[DSK Workspace ZIP] Added ${filename}.scr to archive (fallback)`
+          `[DSK Workspace ZIP] Added ${outputFilename} to archive (fallback)`
         )
       }
     }
