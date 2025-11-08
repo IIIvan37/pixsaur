@@ -1,3 +1,4 @@
+import JSZip from 'jszip'
 import { describe, expect, it, vi } from 'vitest'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
@@ -23,6 +24,7 @@ describe('exportDskWorkspaceZip', () => {
     nColors: mode === 0 ? 16 : mode === 1 ? 4 : 2,
     scaleX: mode === 0 ? 2 : mode === 1 ? 1 : 0.5,
     scaleY: 1.2,
+    cpcHardware: 'classic',
     paletteFirmware: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     thumbnailDataUrl: 'data:image/png;base64,test',
     paletteColors: [
@@ -57,6 +59,16 @@ describe('exportDskWorkspaceZip', () => {
     expect(result).not.toBeNull()
     expect(result).toBeInstanceOf(Blob)
     expect(result?.type).toBe('application/zip')
+
+    // Verify ZIP contents
+    if (result) {
+      const zip = await JSZip.loadAsync(result)
+      expect(zip.files['pixsaur-workspace.dsk']).toBeDefined()
+      expect(zip.files['README.md']).toBeDefined()
+      expect(zip.files['README.pdf']).toBeDefined()
+      expect(zip.files['IMAGE1.scr']).toBeDefined()
+      expect(zip.files['IMAGE2.scr']).toBeDefined()
+    }
   })
 
   it('should handle single image', async () => {
@@ -65,6 +77,14 @@ describe('exportDskWorkspaceZip', () => {
 
     expect(result).not.toBeNull()
     expect(result).toBeInstanceOf(Blob)
+
+    // Verify single SCR file is included
+    if (result) {
+      const zip = await JSZip.loadAsync(result)
+      expect(zip.files['IMAGE1.scr']).toBeDefined()
+      const scrData = await zip.files['IMAGE1.scr'].async('uint8array')
+      expect(scrData.length).toBe(16384) // SCR file size
+    }
   })
 
   it('should handle multiple modes', async () => {
@@ -77,6 +97,14 @@ describe('exportDskWorkspaceZip', () => {
 
     expect(result).not.toBeNull()
     expect(result).toBeInstanceOf(Blob)
+
+    // Verify all SCR files are included
+    if (result) {
+      const zip = await JSZip.loadAsync(result)
+      expect(zip.files['IMAGE1.scr']).toBeDefined()
+      expect(zip.files['IMAGE2.scr']).toBeDefined()
+      expect(zip.files['IMAGE3.scr']).toBeDefined()
+    }
   })
 
   it('should compress ZIP with DEFLATE level 9', async () => {

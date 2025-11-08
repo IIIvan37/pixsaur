@@ -43,6 +43,21 @@ export async function exportDskWorkspaceZip(
     zip.file('README.pdf', readmePdf)
     console.log('[DSK Workspace ZIP] Added README.pdf to archive')
 
+    // Add individual SCR files
+    for (const image of images) {
+      // scrData is already a complete SCR with palette injected
+      const scrData = new Uint8Array(image.scrData)
+
+      // Generate filename from image name (convert to AMSDOS format)
+      const filename = image.name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '')
+        .substring(0, 8)
+
+      zip.file(`${filename}.scr`, scrData)
+      console.log(`[DSK Workspace ZIP] Added ${filename}.scr to archive`)
+    }
+
     // Generate ZIP blob
     const zipBlob = await zip.generateAsync({
       type: 'blob',
