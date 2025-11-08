@@ -64,7 +64,6 @@ describe('exportDskWorkspaceZip', () => {
     if (result) {
       const zip = await JSZip.loadAsync(result)
       expect(zip.files['pixsaur-workspace.dsk']).toBeDefined()
-      expect(zip.files['README.md']).toBeDefined()
       expect(zip.files['README.pdf']).toBeDefined()
       expect(zip.files['IMAGE1.scr']).toBeDefined()
       expect(zip.files['IMAGE2.scr']).toBeDefined()

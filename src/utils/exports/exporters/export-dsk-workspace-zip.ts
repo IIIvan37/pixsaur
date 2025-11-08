@@ -3,7 +3,6 @@ import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import { injectPaletteDataIntoSCR } from '@/palettes/cpc-palette'
 import { injectCPCPlusPaletteIntoSCR } from '../cpc-plus-format'
 import { exportSCR } from '../export-scr/export-scr'
-import { generateDskReadme } from '../generate-dsk-readme'
 import { generateDskReadmePdf } from '../generate-dsk-readme-pdf'
 import { toASMData } from '../to-asm-data'
 import { exportDskWorkspace } from './export-dsk-workspace'
@@ -36,11 +35,6 @@ export async function exportDskWorkspaceZip(
     // Add DSK file to ZIP
     zip.file(dskFilename, dskData)
     console.log('[DSK Workspace ZIP] Added DSK to archive')
-
-    // Generate and add README
-    const readme = generateDskReadme(images, dskFilename)
-    zip.file('README.md', readme)
-    console.log('[DSK Workspace ZIP] Added README.md to archive')
 
     // Generate and add README PDF
     const readmePdf = generateDskReadmePdf(images, dskFilename)
