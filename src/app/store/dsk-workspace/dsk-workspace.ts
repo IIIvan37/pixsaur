@@ -12,7 +12,9 @@ export interface DskImage {
   nColors: number
   scaleX: number
   scaleY: number
-  paletteFirmware: number[] // Firmware palette indices for export
+  cpcHardware: 'classic' | 'plus' // Hardware type for palette format
+  paletteFirmware: number[] // Firmware palette indices for CPC Classic export
+  palettePlus?: number[] // CPC Plus 16-bit palette values (optional, only for CPC Plus)
   thumbnailDataUrl?: string // Base64 data URL for preview
   paletteColors?: string[] // RGB hex colors for palette display
 }
@@ -53,7 +55,9 @@ export const addImageToDskAtom = atom(
       nColors: number
       scaleX: number
       scaleY: number
+      cpcHardware: 'classic' | 'plus'
       paletteFirmware: number[]
+      palettePlus?: number[]
       thumbnailDataUrl?: string
       paletteColors?: string[]
     }

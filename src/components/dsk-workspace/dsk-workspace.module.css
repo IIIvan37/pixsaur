@@ -84,6 +84,33 @@
 	font-size: 1rem;
 	color: var(--text-primary);
 	font-family: 'Courier New', monospace;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.hardwareBadgeClassic,
+.hardwareBadgePlus {
+	display: inline-block;
+	padding: 0.125rem 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border-radius: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	font-family: system-ui, -apple-system, sans-serif;
+}
+
+.hardwareBadgeClassic {
+	background: rgba(100, 116, 139, 0.2);
+	color: #94a3b8;
+	border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.hardwareBadgePlus {
+	background: rgba(147, 51, 234, 0.2);
+	color: #a78bfa;
+	border: 1px solid rgba(147, 51, 234, 0.3);
 }
 
 .imageDetails {

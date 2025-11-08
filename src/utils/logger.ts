@@ -228,6 +228,7 @@ export const adapterLogger = createLogger({ prefix: '[Adapter]' })
 export const webglLogger = createLogger({ prefix: '[WebGL]' })
 export const quantizerLogger = createLogger({ prefix: '[Quantizer]' })
 export const paletteLogger = createLogger({ prefix: '[Palette]' })
+export const dskLogger = createLogger({ prefix: '[DSK Workspace]' })
 
 // Logger pour l'updater (peut être activé en production pour le debugging)
 export const updaterLogger = createLogger({

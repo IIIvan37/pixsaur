@@ -13,6 +13,7 @@ import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { sanitizeAmsdosFilename } from '@/utils/amsdos-filename'
 import { downloadFile } from '@/utils/download-file'
+import { paletteToCPCPlusValues } from '@/utils/exports/cpc-plus-format'
 import { exportDskWorkspaceZip } from '@/utils/exports/exporters/export-dsk-workspace-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 
@@ -24,14 +25,13 @@ export default function DskWorkspacePanel() {
   const dskImages = useAtomValue(dskImagesAtom)
   const [isExporting, setIsExporting] = useState(false)
 
-  // Check if we can add current image (must have image and be CPC Classic with standard mode)
-  const canAddCurrentImage =
-    !!image && cpcHardware === 'classic' && !modeConfig.overscan
+  // Check if we can add current image (must have image and standard mode without overscan)
+  const canAddCurrentImage = !!image && !modeConfig.overscan
 
   // Prepare current image data for adding to DSK
   const currentImageData = canAddCurrentImage
     ? (() => {
-        // Convert palette to firmware indices (same logic as in export-panel.tsx)
+        // Convert palette to firmware indices (for CPC Classic) or CPC Plus values
         const cpcPalette = getPaletteForHardware(cpcHardware)
 
         const paletteFirmware = reducedPalette.map((colorData: unknown) => {
@@ -51,6 +51,22 @@ export default function DskWorkspacePanel() {
         while (paletteFirmware.length < 16) {
           paletteFirmware.push(0)
         }
+
+        // For CPC Plus, also generate the 16-bit palette values
+        const palettePlus =
+          cpcHardware === 'plus'
+            ? paletteToCPCPlusValues(
+                reducedPalette.map((color: unknown) =>
+                  Array.isArray(color)
+                    ? (color as [number, number, number])
+                    : (Array.from(color as ArrayLike<number>) as [
+                        number,
+                        number,
+                        number
+                      ])
+                )
+              )
+            : undefined
 
         // Generate a timestamped name and sanitize to AMSDOS 8.3 format
         const timestamp = Date.now().toString().slice(-6) // Use last 6 digits
@@ -104,7 +120,9 @@ export default function DskWorkspacePanel() {
           nColors: modeConfig.nColors,
           scaleX: modeConfig.scaleX,
           scaleY: modeConfig.scaleY,
+          cpcHardware,
           paletteFirmware,
+          palettePlus,
           thumbnailDataUrl,
           paletteColors
         }

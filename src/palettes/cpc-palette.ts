@@ -75,6 +75,18 @@ const firmwareToHardware = [
   0x43, // 25 Pastel Yellow
   0x4b // 26 Bright White
 ]
+/**
+ * Injects CPC Classic palette data into an SCR buffer
+ *
+ * SCR Format - Available space in first 2KB block (offsets 2000-2047):
+ * - 2000: Border color (firmware index)
+ * - 2001-2016: 16 palette colors (firmware indices)
+ * - 2017: Border color (hardware value)
+ * - 2018-2033: 16 palette colors (hardware values)
+ * - 2034: Graphics mode (0, 1, or 2)
+ * - 2035: Hardware type (0=Classic, 1=Plus)
+ * - 2036-2047: Reserved/unused
+ */
 export function injectPaletteDataIntoSCR(
   scr: Uint8Array,
   palette: number[],
@@ -103,6 +115,9 @@ export function injectPaletteDataIntoSCR(
 
   // Offset 2034: graphics mode (0, 1, or 2)
   scr[2034] = mode
+
+  // Offset 2035: hardware type (0=Classic)
+  scr[2035] = 0
 }
 
 export const getHardwarePalette = (palette: number[]) => {

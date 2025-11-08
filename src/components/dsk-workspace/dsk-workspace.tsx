@@ -35,7 +35,11 @@ interface DskWorkspaceProps {
     nColors: number
     scaleX: number
     scaleY: number
+    cpcHardware: 'classic' | 'plus'
     paletteFirmware: number[]
+    palettePlus?: number[]
+    thumbnailDataUrl?: string
+    paletteColors?: string[]
   }
   canAddCurrentImage: boolean
 }
@@ -75,7 +79,8 @@ export default function DskWorkspace({
     <CollapsibleSection title={<Trans>DSK Manager</Trans>} defaultOpen={false}>
       <div className={styles.infoBox}>
         <Trans>
-          ℹ️ Standard CPC palette only. Plus palette support coming soon.
+          Supports both CPC Classic and CPC Plus formats. The loader
+          auto-detects the hardware type.
         </Trans>
       </div>
       <div className={styles.actions}>
@@ -105,7 +110,23 @@ export default function DskWorkspace({
                     />
                   )}
                   <div className={styles.imageInfo}>
-                    <div className={styles.imageName}>{dskFilename}</div>
+                    <div className={styles.imageName}>
+                      {dskFilename}
+                      <span
+                        className={
+                          image.cpcHardware === 'plus'
+                            ? styles.hardwareBadgePlus
+                            : styles.hardwareBadgeClassic
+                        }
+                        title={
+                          image.cpcHardware === 'plus'
+                            ? 'CPC Plus (4096 colors)'
+                            : 'CPC Classic (27 colors)'
+                        }
+                      >
+                        {image.cpcHardware === 'plus' ? 'Plus' : 'Classic'}
+                      </span>
+                    </div>
                     <div className={styles.imageDetails}>
                       {getModeLabel(image.mode)} •{' '}
                       {formatImageSize(image.width, image.height)} •{' '}

@@ -19,33 +19,82 @@ export function generateDskReadme(
   readme += `This DSK contains ${images.length} image(s) converted for Amstrad CPC.\n\n`
 
   readme += `### Files\n\n`
-  readme += `| Filename | Mode | Dimensions | Colors |\n`
-  readme += `|----------|------|------------|--------|\n`
+  readme += `| Filename | Hardware | Mode | Dimensions | Colors |\n`
+  readme += `|----------|----------|------|------------|--------|\n`
 
   for (const [index, image] of images.entries()) {
     const filename = `IMG${String(index + 1).padStart(5, '0')}.SCR`
+    const hardware = image.cpcHardware === 'plus' ? 'CPC Plus' : 'CPC Classic'
     const mode = `Mode ${image.mode}`
     const dimensions = `${image.width}×${image.height}`
     const colors = image.nColors
 
-    readme += `| ${filename} | ${mode} | ${dimensions} | ${colors} |\n`
+    readme += `| ${filename} | ${hardware} | ${mode} | ${dimensions} | ${colors} |\n`
   }
 
   readme += `\n### How to use\n\n`
-  readme += ` From BASIC: \n`
-  readme += `\`\`\`\n`
-  readme += `LOAD"LOADER.BIN",&4000\n`
+  readme += `From BASIC:\n`
+  readme += `\`\`\`basic\n`
+  readme += `MEMORY &7FFF\n`
+  readme += `LOAD"LOADER.BIN",&8000\n`
   readme += `A$="IMG00001.SCR" \n`
-  readme += `CALL &4000, @A$\n`
-  readme += `\`\`\`\n`
-  readme += `Each .SCR file is self-contained with palette data\n\n`
+  readme += `CALL &8000, @A$\n`
+  readme += `\`\`\`\n\n`
+  readme += `The loader automatically detects CPC Classic or CPC Plus format and applies the appropriate palette.\n\n`
+
+  readme += `## SCR File Format\n\n`
+  readme += `Each .SCR file is 16KB (16384 bytes) with embedded metadata in the first 2KB block:\n\n`
+  readme += `### Memory Layout (offsets relative to file start)\n\n`
+  readme += `| Offset | Size | Description |\n`
+  readme += `|--------|------|-------------|\n`
+  readme += `| 0x0000-0x3FFF | 16384 | Screen data (pixel data in CPC format) |\n\n`
+  readme += `### Metadata Area (first 2KB block, offsets 2000-2047)\n\n`
+
+  readme += `#### CPC Classic Format\n\n`
+  readme += `| Offset | Size | Description |\n`
+  readme += `|--------|------|-------------|\n`
+  readme += `| 2000 | 1 | Border color (firmware index) |\n`
+  readme += `| 2001-2016 | 16 | Palette colors (firmware indices) |\n`
+  readme += `| 2017 | 1 | Border color (hardware value) |\n`
+  readme += `| 2018-2033 | 16 | Palette colors (hardware values) |\n`
+  readme += `| 2034 | 1 | Graphics mode (0, 1, or 2) |\n`
+  readme += `| 2035 | 1 | Hardware type (0 = Classic) |\n`
+  readme += `| 2036-2047 | 12 | Reserved/unused |\n\n`
+
+  readme += `#### CPC Plus Format\n\n`
+  readme += `| Offset | Size | Description |\n`
+  readme += `|--------|------|-------------|\n`
+  readme += `| 2000-2001 | 2 | Border color (16-bit little-endian, GRB format) |\n`
+  readme += `| 2002-2033 | 32 | 16 palette colors (16×2 bytes, little-endian, GRB format) |\n`
+  readme += `| 2034 | 1 | Graphics mode (0, 1, or 2) |\n`
+  readme += `| 2035 | 1 | Hardware type (1 = Plus) |\n`
+  readme += `| 2036-2047 | 12 | Reserved/unused |\n\n`
+
+  readme += `**Note:** CPC Plus colors use 4 bits per component in GRB order:\n`
+  readme += `- Format: \`0000 GGGG RRRR BBBB\` (12-bit color from 4096 colors)\n`
+  readme += `- Stored as 16-bit little-endian values\n\n`
 
   readme += `### Palette Information\n\n`
   for (const [index, image] of images.entries()) {
-    readme += `**IMG${String(index + 1).padStart(5, '0')}.SCR**\n`
-    if (image.paletteFirmware && image.paletteFirmware.length > 0) {
+    const filename = `IMG${String(index + 1).padStart(5, '0')}.SCR`
+    readme += `**${filename}** (${image.cpcHardware === 'plus' ? 'CPC Plus' : 'CPC Classic'})\n`
+    if (
+      image.cpcHardware === 'classic' &&
+      image.paletteFirmware &&
+      image.paletteFirmware.length > 0
+    ) {
+      readme += 'Firmware indices:\n'
       readme += '```\n'
       readme += `[${image.paletteFirmware.join(', ')}]\n`
+      readme += '```\n\n'
+    } else if (
+      image.cpcHardware === 'plus' &&
+      image.palettePlus &&
+      image.palettePlus.length > 0
+    ) {
+      readme += 'Hardware values (GRB format):\n'
+      readme += '```\n'
+      readme += `[${image.palettePlus.map((v) => `0x${v.toString(16).toUpperCase().padStart(3, '0')}`).join(', ')}]\n`
       readme += '```\n\n'
     }
   }
