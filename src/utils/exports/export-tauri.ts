@@ -10,12 +10,13 @@ import { writeFile } from '@tauri-apps/plugin-fs'
  * @param data - File data as Blob or Uint8Array
  * @param defaultFilename - Default filename to suggest
  * @param filters - File type filters for the save dialog
+ * @returns true if file was saved successfully, false if user cancelled
  */
 export async function saveTauriFile(
   data: Blob | Uint8Array,
   defaultFilename: string,
   filters?: Array<{ name: string; extensions: string[] }>
-): Promise<void> {
+): Promise<boolean> {
   // Open native save dialog
   const filePath = await save({
     defaultPath: defaultFilename,
@@ -29,7 +30,7 @@ export async function saveTauriFile(
 
   // User cancelled the dialog
   if (!filePath) {
-    return
+    return false
   }
 
   // Convert Blob to Uint8Array if needed
@@ -44,6 +45,7 @@ export async function saveTauriFile(
   try {
     // Write file using Tauri's fs API
     await writeFile(filePath, uint8Data)
+    return true
   } catch (error) {
     console.error('[Tauri Export] Failed to write file:', error)
     throw error
@@ -52,12 +54,13 @@ export async function saveTauriFile(
 
 /**
  * Save a ZIP file using Tauri's native APIs
+ * @returns true if file was saved successfully, false if user cancelled
  */
 export async function saveZipFileTauri(
   zipBlob: Blob,
   filename: string
-): Promise<void> {
-  await saveTauriFile(zipBlob, filename, [
+): Promise<boolean> {
+  return await saveTauriFile(zipBlob, filename, [
     {
       name: 'ZIP Archive',
       extensions: ['zip']

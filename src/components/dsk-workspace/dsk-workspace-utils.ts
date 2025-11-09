@@ -97,6 +97,34 @@ export function generateDskFilenames(
 }
 
 /**
+ * Calculate the total file size for an image on DSK (including AMSDOS headers)
+ * @param width - Image width
+ * @param height - Image height
+ * @param mode - CPC mode
+ * @param overscan - Is overscan mode
+ * @returns Total size in bytes (data + AMSDOS headers)
+ */
+export function calculateImageDskSize(
+  width: number,
+  height: number,
+  mode: number,
+  overscan: boolean
+): number {
+  const isStandard = isStandardMode(width, height, mode, overscan)
+
+  if (isStandard) {
+    // Standard SCR: 16KB data + 128 bytes AMSDOS header
+    return calculateScrSize() + 128
+  }
+
+  // Custom dimensions: linear data size + 128 bytes AMSDOS header per chunk
+  const linearSize = calculateLinearSize(width, height, mode)
+  const chunkCount = calculateChunkCount(linearSize)
+  // Each chunk gets its own AMSDOS header
+  return linearSize + chunkCount * 128
+}
+
+/**
  * Standard DSK size in bytes
  * 9 tracks × 2 sides × 512 bytes per sector × 9 sectors per track = 184320 bytes (180 KB)
  */
@@ -113,23 +141,39 @@ export const DSK_CATALOG_SIZE = 2048
 export const DSK_LOADER_SIZE = 1024
 
 /**
- * Available DSK size for files (177 KB)
- * Total - Catalog - Loader = 180 KB - 2 KB - 1 KB = 177 KB
+ * DSK template BASIC file size (1 KB already present in template)
+ */
+export const DSK_TEMPLATE_BASIC_SIZE = 1024
+
+/**
+ * Available DSK size for files (176 KB)
+ * Total - Catalog - Loader - Template BASIC = 180 KB - 2 KB - 1 KB - 1 KB = 176 KB
  */
 export const DSK_AVAILABLE_SIZE =
-  DSK_TOTAL_SIZE - DSK_CATALOG_SIZE - DSK_LOADER_SIZE // 181248 bytes = 177 KB
+  DSK_TOTAL_SIZE - DSK_CATALOG_SIZE - DSK_LOADER_SIZE - DSK_TEMPLATE_BASIC_SIZE // 180224 bytes = 176 KB
 
 /**
  * Calculate remaining space on a DSK
- * @param images - Array of images with scrData
+ * @param images - Array of images with their dimensions
  * @returns Remaining space in bytes
  */
 export function calculateDskRemainingSpace(
-  images: Array<{ scrData: Uint8Array | number[] }>
+  images: Array<{
+    scrData: Uint8Array | number[]
+    width: number
+    height: number
+    mode: number
+    overscan: boolean
+  }>
 ): number {
-  // Calculate total used space (each file = 16384 bytes + 128 bytes AMSDOS header)
-  const usedSpace = images.reduce((total) => {
-    const fileSize = calculateScrSize() + 128 // SCR data + AMSDOS header
+  // Calculate total used space based on actual file sizes
+  const usedSpace = images.reduce((total, image) => {
+    const fileSize = calculateImageDskSize(
+      image.width,
+      image.height,
+      image.mode,
+      image.overscan
+    )
     return total + fileSize
   }, 0)
 
@@ -139,13 +183,40 @@ export function calculateDskRemainingSpace(
 /**
  * Check if there is enough space to add a new image to the DSK
  * @param images - Current array of images
- * @returns True if there is enough space for one more image
+ * @param newImage - The image to add (with dimensions)
+ * @returns True if there is enough space for the new image
  */
 export function canAddImageToDsk(
-  images: Array<{ scrData: Uint8Array | number[] }>
+  images: Array<{
+    scrData: Uint8Array | number[]
+    width: number
+    height: number
+    mode: number
+    overscan: boolean
+  }>,
+  newImage?: {
+    width: number
+    height: number
+    mode: number
+    overscan: boolean
+  }
 ): boolean {
   const remaining = calculateDskRemainingSpace(images)
-  const fileSize = calculateScrSize() + 128 // 16512 bytes
+
+  // If no new image specified, assume standard SCR size
+  if (!newImage) {
+    const fileSize = calculateScrSize() + 128 // 16512 bytes
+    return remaining >= fileSize
+  }
+
+  // Calculate size for the specific image
+  const fileSize = calculateImageDskSize(
+    newImage.width,
+    newImage.height,
+    newImage.mode,
+    newImage.overscan
+  )
+
   return remaining >= fileSize
 }
 
@@ -170,6 +241,17 @@ export function formatScrSize(scrDataLength: number): string {
   const totalSizeBytes = scrDataLength + 128
   // Convert to KB and round up
   const totalSizeKb = Math.ceil(totalSizeBytes / 1024)
+  return `${totalSizeKb} Ko`
+}
+
+/**
+ * Format file size in kilobytes (without AMSDOS header)
+ * Used for raw binary files
+ * @param dataLength - The length of the data in bytes
+ * @returns Formatted string with size in Ko
+ */
+export function formatFileSize(dataLength: number): string {
+  const totalSizeKb = Math.ceil(dataLength / 1024)
   return `${totalSizeKb} Ko`
 }
 

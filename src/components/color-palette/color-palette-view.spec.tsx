@@ -6,6 +6,7 @@ import { createStore, Provider } from 'jotai'
 import { beforeEach, describe, it, vi } from 'vitest'
 import { cpcHardwareAtom } from '@/app/store/config/config'
 import { CPCHardware } from '@/libs/types'
+import { renderWithJotai } from '@/utils/test-utils'
 import {
   ColorPaletteView,
   type ColorPaletteViewProps
@@ -56,6 +57,9 @@ let onToggleLock: ReturnType<typeof vi.fn>
 let onSetColor: ReturnType<typeof vi.fn>
 let props: ColorPaletteViewProps
 
+// Use the shared renderWithJotai from test-utils instead of local helper
+const renderWithStore = renderWithJotai
+
 beforeEach(() => {
   onToggleLock = vi.fn()
   onSetColor = vi.fn()
@@ -69,12 +73,12 @@ beforeEach(() => {
 
 describe('ColorPaletteView', () => {
   it('renders the correct number of slots', () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     expect(screen.getAllByRole('button').length).toBe(3)
   })
 
   it('renders filled slots with color and lock state', () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     // Unlocked filled slot
     expect(
       screen.getByRole('button', { name: `#${hex_rouge} déverrouillée` })
@@ -90,7 +94,7 @@ describe('ColorPaletteView', () => {
   })
 
   it('renders empty slots with plus icon', () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     expect(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     ).toBeInTheDocument()
@@ -98,7 +102,7 @@ describe('ColorPaletteView', () => {
   })
 
   it('opens popover when empty slot is clicked', async () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
@@ -118,7 +122,7 @@ describe('ColorPaletteView', () => {
   })
 
   it('opens popover when empty slot is clicked', () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
@@ -138,7 +142,7 @@ describe('ColorPaletteView', () => {
   })
 
   it('calls onSetColor and closes popover when a color is selected', async () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
@@ -155,7 +159,7 @@ describe('ColorPaletteView', () => {
   })
 
   it('allows selecting color options even if already used in other slots', () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
     )
@@ -171,7 +175,7 @@ describe('ColorPaletteView', () => {
   })
 
   it('has correct ARIA attributes', () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
     // Region for palette
     expect(
       screen.getByRole('region', { name: /Palette de couleurs/i })
@@ -186,7 +190,7 @@ describe('ColorPaletteView', () => {
   })
 
   it('closes popover when clicking outside', async () => {
-    render(<ColorPaletteView {...props} />)
+    renderWithStore(<ColorPaletteView {...props} />)
 
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })

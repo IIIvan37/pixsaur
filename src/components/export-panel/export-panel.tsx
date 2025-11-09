@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
 import {
@@ -8,6 +10,7 @@ import {
   previewImageAtom,
   reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
+import { Notification } from '@/components/ui/notification/notification'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 
 import { exportZip } from '@/utils/exports/export-zip'
@@ -17,11 +20,14 @@ import ExportConfigDialog from './export-config-dialog'
 import ExportPanelView from './export-panel-view'
 
 export default function ExportPanel() {
+  const { _ } = useLingui()
   const image = useAtomValue(previewImageAtom)
   const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState('')
 
   const handleExport = async (config: ExportConfig) => {
     if (!image?.data) return
@@ -108,7 +114,7 @@ export default function ExportPanel() {
     ctx?.putImageData(cleanImage, 0, 0)
 
     // Generate ZIP with selected content
-    exportZip(
+    const success = await exportZip(
       indexBuf,
       paletteFirmware,
       canvas,
@@ -117,6 +123,12 @@ export default function ExportPanel() {
       paletteForExport,
       config
     )
+
+    // Show success message
+    if (success) {
+      setNotificationMessage(_(msg`File exported successfully!`))
+      setShowNotification(true)
+    }
   }
 
   return (
@@ -126,6 +138,13 @@ export default function ExportPanel() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         onConfirm={handleExport}
+      />
+      <Notification
+        message={notificationMessage}
+        type='success'
+        open={showNotification}
+        onOpenChange={setShowNotification}
+        autoCloseDuration={3000}
       />
     </>
   )

@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import {
+  calculateChunkCount,
   calculateDskRemainingSpace,
+  calculateImageDskSize,
+  calculateLinearSize,
   calculateScrSize,
   canAddImageToDsk,
   DSK_AVAILABLE_SIZE,
   DSK_CATALOG_SIZE,
   DSK_LOADER_SIZE,
+  DSK_TEMPLATE_BASIC_SIZE,
   DSK_TOTAL_SIZE,
   formatDskSpace,
+  formatFileSize,
   formatImageSize,
   formatScrSize,
-  getModeLabel
+  generateDskFilenames,
+  getModeLabel,
+  isStandardMode
 } from './dsk-workspace-utils'
 
 describe('DSK Workspace Utils', () => {
@@ -27,10 +34,17 @@ describe('DSK Workspace Utils', () => {
       expect(DSK_LOADER_SIZE).toBe(1024) // 1 KB
     })
 
+    it('should have correct template BASIC file size', () => {
+      expect(DSK_TEMPLATE_BASIC_SIZE).toBe(1024) // 1 KB
+    })
+
     it('should have correct available size', () => {
-      expect(DSK_AVAILABLE_SIZE).toBe(181248) // 177 KB
+      expect(DSK_AVAILABLE_SIZE).toBe(180224) // 176 KB
       expect(DSK_AVAILABLE_SIZE).toBe(
-        DSK_TOTAL_SIZE - DSK_CATALOG_SIZE - DSK_LOADER_SIZE
+        DSK_TOTAL_SIZE -
+          DSK_CATALOG_SIZE -
+          DSK_LOADER_SIZE -
+          DSK_TEMPLATE_BASIC_SIZE
       )
     })
   })
@@ -46,48 +60,88 @@ describe('DSK Workspace Utils', () => {
   describe('calculateDskRemainingSpace', () => {
     it('should return full available DSK size when empty', () => {
       const result = calculateDskRemainingSpace([])
-      expect(result).toBe(DSK_AVAILABLE_SIZE) // 181248 bytes (177 KB)
-      expect(result).toBe(181248)
+      expect(result).toBe(DSK_AVAILABLE_SIZE) // 180224 bytes (176 KB)
+      expect(result).toBe(180224)
     })
 
     it('should calculate remaining space with 1 image', () => {
-      const images = [{ scrData: new Uint8Array(16384) }]
+      const images = [
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        }
+      ]
       const fileSize = 16384 + 128 // SCR + AMSDOS header = 16512
       const result = calculateDskRemainingSpace(images)
       expect(result).toBe(DSK_AVAILABLE_SIZE - fileSize)
-      expect(result).toBe(181248 - 16512)
-      expect(result).toBe(164736)
+      expect(result).toBe(180224 - 16512)
+      expect(result).toBe(163712)
     })
 
     it('should calculate remaining space with multiple images', () => {
       const images = [
-        { scrData: new Uint8Array(16384) },
-        { scrData: new Uint8Array(16384) },
-        { scrData: new Uint8Array(16384) }
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        },
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        },
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        }
       ]
       const totalFiles = 3
       const fileSize = 16384 + 128 // 16512 per file
       const totalUsed = totalFiles * fileSize // 49536
       const result = calculateDskRemainingSpace(images)
       expect(result).toBe(DSK_AVAILABLE_SIZE - totalUsed)
-      expect(result).toBe(181248 - 49536)
-      expect(result).toBe(131712)
+      expect(result).toBe(180224 - 49536)
+      expect(result).toBe(130688)
     })
 
     it('should handle number array scrData type', () => {
-      const images = [{ scrData: new Array(16384).fill(0) }]
+      const images = [
+        {
+          scrData: new Array(16384).fill(0),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        }
+      ]
       const result = calculateDskRemainingSpace(images)
-      expect(result).toBe(181248 - 16512)
+      expect(result).toBe(180224 - 16512)
     })
 
     it('should calculate max number of images on DSK (approximately 10)', () => {
       // Each file: 16384 + 128 = 16512 bytes
-      // Available size: 181248 bytes (177 KB)
-      // Max files: floor(181248 / 16512) = 10
+      // Available size: 180224 bytes (176 KB)
+      // Max files: floor(180224 / 16512) = 10
       const maxFiles = Math.floor(DSK_AVAILABLE_SIZE / (16384 + 128))
       expect(maxFiles).toBe(10)
 
-      const images = new Array(10).fill({ scrData: new Uint8Array(16384) })
+      const images = new Array(10).fill({
+        scrData: new Uint8Array(16384),
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
       const remaining = calculateDskRemainingSpace(images)
       expect(remaining).toBeGreaterThanOrEqual(0)
       expect(remaining).toBeLessThan(16512)
@@ -96,14 +150,69 @@ describe('DSK Workspace Utils', () => {
 
   describe('canAddImageToDsk', () => {
     it('should return true when DSK is empty', () => {
+      const result = canAddImageToDsk([], {
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
+      expect(result).toBe(true)
+    })
+
+    it('should return true when DSK is empty and no newImage specified (assumes standard SCR)', () => {
       const result = canAddImageToDsk([])
       expect(result).toBe(true)
     })
 
     it('should return true when there is enough space', () => {
       const images = [
-        { scrData: new Uint8Array(16384) },
-        { scrData: new Uint8Array(16384) }
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        },
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        },
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        }
+      ]
+      const result = canAddImageToDsk(images, {
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
+      expect(result).toBe(true)
+    })
+
+    it('should return true when there is enough space and no newImage specified', () => {
+      const images = [
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        },
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        }
       ]
       const result = canAddImageToDsk(images)
       expect(result).toBe(true)
@@ -111,20 +220,67 @@ describe('DSK Workspace Utils', () => {
 
     it('should return false when DSK is full', () => {
       // Max 10 images, so 10th image should still fit, but 11th should not
-      const images = new Array(10).fill({ scrData: new Uint8Array(16384) })
+      const images = new Array(10).fill({
+        scrData: new Uint8Array(16384),
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
+      const result = canAddImageToDsk(images, {
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
+      expect(result).toBe(false)
+    })
+
+    it('should return false when DSK is full and no newImage specified', () => {
+      const images = new Array(10).fill({
+        scrData: new Uint8Array(16384),
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
       const result = canAddImageToDsk(images)
       expect(result).toBe(false)
     })
 
     it('should return true for 9 images (can add 10th)', () => {
-      const images = new Array(9).fill({ scrData: new Uint8Array(16384) })
-      const result = canAddImageToDsk(images)
+      const images = new Array(9).fill({
+        scrData: new Uint8Array(16384),
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
+      const result = canAddImageToDsk(images, {
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
       expect(result).toBe(true)
     })
 
     it('should handle number array scrData type', () => {
-      const images = [{ scrData: new Array(16384).fill(0) }]
-      const result = canAddImageToDsk(images)
+      const images = [
+        {
+          scrData: new Array(16384).fill(0),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        }
+      ]
+      const result = canAddImageToDsk(images, {
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
       expect(result).toBe(true)
     })
   })
@@ -132,13 +288,13 @@ describe('DSK Workspace Utils', () => {
   describe('formatDskSpace', () => {
     it('should format full available DSK size', () => {
       const result = formatDskSpace(DSK_AVAILABLE_SIZE)
-      expect(result).toBe('177 Ko')
+      expect(result).toBe('176 Ko')
     })
 
     it('should format remaining space after 1 file', () => {
-      const remaining = 181248 - 16512
+      const remaining = 180224 - 16512
       const result = formatDskSpace(remaining)
-      expect(result).toBe('160 Ko')
+      expect(result).toBe('159 Ko')
     })
 
     it('should format zero space', () => {
@@ -319,6 +475,249 @@ describe('DSK Workspace Utils', () => {
     it('should return generic label for unknown modes', () => {
       expect(getModeLabel(3)).toBe('Mode 3')
       expect(getModeLabel(99)).toBe('Mode 99')
+    })
+  })
+
+  describe('calculateLinearSize', () => {
+    it('should calculate linear size for Mode 0 (2 pixels per byte)', () => {
+      // Mode 0: 2 pixels per byte
+      // 320 width ÷ 2 = 160 bytes per line
+      // 160 × 200 = 32000 bytes
+      const result = calculateLinearSize(320, 200, 0)
+      expect(result).toBe(32000)
+    })
+
+    it('should calculate linear size for Mode 1 (4 pixels per byte)', () => {
+      // Mode 1: 4 pixels per byte
+      // 400 width ÷ 4 = 100 bytes per line
+      // 100 × 300 = 30000 bytes
+      const result = calculateLinearSize(400, 300, 1)
+      expect(result).toBe(30000)
+    })
+
+    it('should calculate linear size for Mode 2 (8 pixels per byte)', () => {
+      // Mode 2: 8 pixels per byte
+      // 800 width ÷ 8 = 100 bytes per line
+      // 100 × 400 = 40000 bytes
+      const result = calculateLinearSize(800, 400, 2)
+      expect(result).toBe(40000)
+    })
+
+    it('should handle standard Mode 1 dimensions', () => {
+      // Standard Mode 1: 320×200
+      // 320 ÷ 4 = 80 bytes per line
+      // 80 × 200 = 16000 bytes
+      const result = calculateLinearSize(320, 200, 1)
+      expect(result).toBe(16000)
+    })
+  })
+
+  describe('isStandardMode', () => {
+    it('should return true for Mode 0 standard (160×200)', () => {
+      expect(isStandardMode(160, 200, 0, false)).toBe(true)
+    })
+
+    it('should return true for Mode 1 standard (320×200)', () => {
+      expect(isStandardMode(320, 200, 1, false)).toBe(true)
+    })
+
+    it('should return true for Mode 2 standard (640×200)', () => {
+      expect(isStandardMode(640, 200, 2, false)).toBe(true)
+    })
+
+    it('should return false for overscan images', () => {
+      expect(isStandardMode(320, 200, 1, true)).toBe(false)
+      expect(isStandardMode(160, 200, 0, true)).toBe(false)
+      expect(isStandardMode(640, 200, 2, true)).toBe(false)
+    })
+
+    it('should return false for custom dimensions', () => {
+      expect(isStandardMode(400, 200, 1, false)).toBe(false)
+      expect(isStandardMode(320, 300, 1, false)).toBe(false)
+      expect(isStandardMode(800, 400, 2, false)).toBe(false)
+    })
+  })
+
+  describe('calculateChunkCount', () => {
+    it('should return 1 for data <= 16KB', () => {
+      expect(calculateChunkCount(16384)).toBe(1)
+      expect(calculateChunkCount(16000)).toBe(1)
+      expect(calculateChunkCount(1024)).toBe(1)
+    })
+
+    it('should return 2 for data between 16KB and 32KB', () => {
+      expect(calculateChunkCount(16385)).toBe(2)
+      expect(calculateChunkCount(20000)).toBe(2)
+      expect(calculateChunkCount(32768)).toBe(2)
+    })
+
+    it('should return 3 for data between 32KB and 48KB', () => {
+      expect(calculateChunkCount(32769)).toBe(3)
+      expect(calculateChunkCount(40000)).toBe(3)
+      expect(calculateChunkCount(49152)).toBe(3)
+    })
+
+    it('should handle exact multiples of 16KB', () => {
+      expect(calculateChunkCount(16384)).toBe(1)
+      expect(calculateChunkCount(32768)).toBe(2)
+      expect(calculateChunkCount(49152)).toBe(3)
+    })
+  })
+
+  describe('generateDskFilenames', () => {
+    it('should return .SCR filename for standard Mode 0 image', () => {
+      const filenames = generateDskFilenames(1, 160, 200, 0, false)
+      expect(filenames).toEqual(['IMG1.SCR'])
+    })
+
+    it('should return .SCR filename for standard Mode 1 image', () => {
+      const filenames = generateDskFilenames(2, 320, 200, 1, false)
+      expect(filenames).toEqual(['IMG2.SCR'])
+    })
+
+    it('should return .SCR filename for standard Mode 2 image', () => {
+      const filenames = generateDskFilenames(3, 640, 200, 2, false)
+      expect(filenames).toEqual(['IMG3.SCR'])
+    })
+
+    it('should return .BIN filename for custom dimensions that fit in one chunk', () => {
+      // 320×150 Mode 1: 80×150 = 12000 bytes (< 16KB, fits in 1 chunk)
+      const filenames = generateDskFilenames(1, 320, 150, 1, false)
+      expect(filenames).toEqual(['IMG1.BIN'])
+    })
+
+    it('should return multiple .BIN filenames for custom dimensions requiring multiple chunks', () => {
+      // 320×300 Mode 1 = 80×300 = 24000 bytes (> 16KB, needs 2 chunks)
+      const filenames = generateDskFilenames(5, 320, 300, 1, false)
+      expect(filenames).toEqual(['IMG5_1.BIN', 'IMG5_2.BIN'])
+    })
+
+    it('should return .BIN for overscan image (not standard)', () => {
+      const filenames = generateDskFilenames(1, 320, 200, 1, true)
+      expect(filenames).toEqual(['IMG1.BIN'])
+    })
+
+    it('should handle large custom dimensions with many chunks', () => {
+      // 800×400 Mode 2 = 100×400 = 40000 bytes (needs 3 chunks)
+      const filenames = generateDskFilenames(10, 800, 400, 2, false)
+      expect(filenames).toEqual(['IMG10_1.BIN', 'IMG10_2.BIN', 'IMG10_3.BIN'])
+    })
+  })
+
+  describe('calculateImageDskSize', () => {
+    it('should return 16512 bytes for standard Mode 1 image (16384 + 128)', () => {
+      const size = calculateImageDskSize(320, 200, 1, false)
+      expect(size).toBe(16512)
+    })
+
+    it('should return 16512 bytes for standard Mode 0 image', () => {
+      const size = calculateImageDskSize(160, 200, 0, false)
+      expect(size).toBe(16512)
+    })
+
+    it('should return 16512 bytes for standard Mode 2 image', () => {
+      const size = calculateImageDskSize(640, 200, 2, false)
+      expect(size).toBe(16512)
+    })
+
+    it('should calculate size for custom dimensions with single chunk', () => {
+      // 400×150 Mode 1 = 100×150 = 15000 bytes + 128 header = 15128
+      const size = calculateImageDskSize(400, 150, 1, false)
+      expect(size).toBe(15128)
+    })
+
+    it('should calculate size for custom dimensions with multiple chunks', () => {
+      // 320×300 Mode 1 = 80×300 = 24000 bytes
+      // 2 chunks needed → 24000 + (2 × 128) = 24256
+      const size = calculateImageDskSize(320, 300, 1, false)
+      expect(size).toBe(24256)
+    })
+
+    it('should treat overscan as custom (not standard)', () => {
+      // Overscan 320×200 Mode 1: linear = 80×200 = 16000 bytes
+      // 1 chunk → 16000 + 128 = 16128 (different from standard 16512)
+      const size = calculateImageDskSize(320, 200, 1, true)
+      expect(size).toBe(16128)
+    })
+  })
+
+  describe('formatFileSize', () => {
+    it('should format file size without AMSDOS header', () => {
+      // 16384 bytes = 16 KB → 16 Ko
+      expect(formatFileSize(16384)).toBe('16 Ko')
+    })
+
+    it('should round up to next KB', () => {
+      // 16385 bytes = 16.001 KB → rounds up to 17 Ko
+      expect(formatFileSize(16385)).toBe('17 Ko')
+    })
+
+    it('should handle small sizes', () => {
+      expect(formatFileSize(512)).toBe('1 Ko')
+      expect(formatFileSize(1024)).toBe('1 Ko')
+      expect(formatFileSize(1025)).toBe('2 Ko')
+    })
+
+    it('should handle exact KB boundaries', () => {
+      expect(formatFileSize(1024)).toBe('1 Ko')
+      expect(formatFileSize(2048)).toBe('2 Ko')
+      expect(formatFileSize(16384)).toBe('16 Ko')
+    })
+  })
+
+  describe('Custom dimensions - Integration tests', () => {
+    it('should handle custom dimension images in DSK remaining space calculation', () => {
+      const images = [
+        {
+          scrData: new Uint8Array(24000),
+          width: 320,
+          height: 300,
+          mode: 1,
+          overscan: false
+        }
+      ]
+      // 320×300 Mode 1 = 24000 bytes + 2 chunks × 128 = 24256 bytes
+      const remaining = calculateDskRemainingSpace(images)
+      expect(remaining).toBe(DSK_AVAILABLE_SIZE - 24256)
+    })
+
+    it('should allow adding custom dimension image if space available', () => {
+      const images = [
+        {
+          scrData: new Uint8Array(16384),
+          width: 320,
+          height: 200,
+          mode: 1,
+          overscan: false
+        }
+      ]
+      // Try to add a custom 400×200 image (20000 + 2×128 = 20256 bytes)
+      const canAdd = canAddImageToDsk(images, {
+        width: 400,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
+      expect(canAdd).toBe(true)
+    })
+
+    it('should correctly calculate when custom image does not fit', () => {
+      // Fill DSK with 10 standard images (close to full)
+      const images = new Array(10).fill({
+        scrData: new Uint8Array(16384),
+        width: 320,
+        height: 200,
+        mode: 1,
+        overscan: false
+      })
+      // Try to add a large custom image
+      const canAdd = canAddImageToDsk(images, {
+        width: 800,
+        height: 400,
+        mode: 2,
+        overscan: false
+      })
+      expect(canAdd).toBe(false)
     })
   })
 })

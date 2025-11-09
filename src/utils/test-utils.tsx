@@ -2,6 +2,7 @@ import { i18n } from '@lingui/core'
 import { I18nProvider } from '@lingui/react'
 import type { RenderOptions } from '@testing-library/react'
 import { render } from '@testing-library/react'
+import { createStore, Provider as JotaiProvider } from 'jotai'
 import type { ReactElement } from 'react'
 
 /**
@@ -15,6 +16,40 @@ export function renderWithI18n(
   return render(ui, {
     wrapper: ({ children }) => (
       <I18nProvider i18n={i18n}>{children}</I18nProvider>
+    ),
+    ...options
+  })
+}
+
+/**
+ * Custom render function that wraps components with Jotai Provider
+ */
+export function renderWithJotai(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>
+) {
+  const store = createStore()
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <JotaiProvider store={store}>{children}</JotaiProvider>
+    ),
+    ...options
+  })
+}
+
+/**
+ * Custom render function that wraps components with both I18n and Jotai providers
+ */
+export function renderWithProviders(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'wrapper'>
+) {
+  const store = createStore()
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <JotaiProvider store={store}>
+        <I18nProvider i18n={i18n}>{children}</I18nProvider>
+      </JotaiProvider>
     ),
     ...options
   })

@@ -18,12 +18,12 @@ msgstr ""
 #~ msgstr "{0} (verwendet)"
 
 #. placeholder {0}: images.length
-#: src/components/dsk-workspace/dsk-workspace.tsx:166
+#: src/components/dsk-workspace/dsk-workspace.tsx:211
 msgid "{0} image(s) ready to export"
 msgstr "{0} Bild(er) bereit zum Exportieren"
 
 #. placeholder {0}: formatDskSpace(calculateDskRemainingSpace(images))
-#: src/components/dsk-workspace/dsk-workspace.tsx:168
+#: src/components/dsk-workspace/dsk-workspace.tsx:213
 msgid "{0} remaining"
 msgstr "{0} verbleibend"
 
@@ -40,11 +40,11 @@ msgstr "Eine neue Version von Pixsaur ist verfügbar. Klicken Sie unten, um sie 
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptiv"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:71
+#: src/components/dsk-workspace/dsk-workspace.tsx:84
 msgid "Add current converted image to DSK workspace"
 msgstr "Aktuelles konvertiertes Bild zum DSK-Arbeitsbereich hinzufügen"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:92
+#: src/components/dsk-workspace/dsk-workspace.tsx:105
 msgid "Add Current Image"
 msgstr "Aktuelles Bild hinzufügen"
 
@@ -157,7 +157,7 @@ msgstr "Klicken Sie, um in einem neuen Tab zu öffnen"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Klicken Sie, um ein Bild auszuwählen"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:142
+#: src/components/dsk-workspace/dsk-workspace.tsx:187
 msgid "Color {i}: {color}"
 msgstr "Farbe {i}: {color}"
 
@@ -212,13 +212,18 @@ msgstr "Dominante Vielfalt (90%) mit leichter Frequenz (10%)"
 msgid "Downloading..."
 msgstr "Herunterladen..."
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:79
+#: src/components/dsk-workspace/dsk-workspace.tsx:92
 msgid "DSK Manager"
 msgstr "DSK-Manager"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:69
 #~ msgid "DSK Workspace"
 #~ msgstr ""
+
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:156
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:162
+msgid "DSK workspace exported successfully!"
+msgstr "DSK-Workspace erfolgreich exportiert!"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:146
@@ -238,7 +243,7 @@ msgstr "Fehler beim Lesen der Datei: {0}"
 msgid "Exec"
 msgstr "Exec"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:163
+#: src/components/dsk-workspace/dsk-workspace.tsx:208
 msgid "Export DSK"
 msgstr "DSK exportieren"
 
@@ -259,6 +264,10 @@ msgstr "Belichtung & Tonalität"
 #: src/components/export-panel/dsk-files-manager.tsx:39
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "Datei {0} ist zu groß (max. 64 KB). Datei übersprungen."
+
+#: src/components/export-panel/export-panel.tsx:131
+msgid "File exported successfully!"
+msgstr "Datei erfolgreich exportiert!"
 
 #: src/components/image-upload/image-upload-view.tsx:191
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
@@ -425,11 +434,11 @@ msgstr "Multipliziert den Grünkanal (0-2x)"
 msgid "No additional files. Upload or add files to include them in the DSK."
 msgstr "Keine zusätzlichen Dateien. Laden Sie Dateien hoch oder fügen Sie sie hinzu, um sie in das DSK einzufügen."
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:73
+#: src/components/dsk-workspace/dsk-workspace.tsx:86
 msgid "No image to add"
 msgstr "Kein Bild zum Hinzufügen"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:177
+#: src/components/dsk-workspace/dsk-workspace.tsx:222
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "Noch keine Bilder im Arbeitsbereich. Fügen Sie konvertierte Bilder hinzu, um Ihre DSK-Datei zu erstellen."
 
@@ -437,7 +446,7 @@ msgstr "Noch keine Bilder im Arbeitsbereich. Fügen Sie konvertierte Bilder hinz
 msgid "Nom du fichier ZIP"
 msgstr "ZIP-Dateiname"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:75
+#: src/components/dsk-workspace/dsk-workspace.tsx:88
 msgid "Not enough space on DSK"
 msgstr "Nicht genügend Speicherplatz auf DSK"
 
@@ -524,7 +533,7 @@ msgstr "Zurücksetzen"
 msgid "Remove file"
 msgstr "Datei entfernen"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:152
+#: src/components/dsk-workspace/dsk-workspace.tsx:197
 msgid "Remove image from workspace"
 msgstr "Bild aus dem Arbeitsbereich entfernen"
 
@@ -561,7 +570,7 @@ msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simuliert Blendenstufen (-3 bis +3, ±1 = doppelt/halb Licht)"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:81
+#: src/components/dsk-workspace/dsk-workspace.tsx:94
 msgid "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
 msgstr "Unterstützt CPC Classic und CPC Plus Formate. Der Lader erkennt automatisch den Hardware-Typ."
 
