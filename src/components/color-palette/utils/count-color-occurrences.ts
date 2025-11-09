@@ -14,24 +14,50 @@ export function countColorOccurrences(
 
   if (!imageData) return occurrences
 
-  // Initialize counts for all palette colors
-  for (const color of palette) {
-    if (color) {
-      const hex = rgbToHex(color)
-      occurrences.set(hex, 0)
-    }
+  // Filter out null colors and prepare palette with hex keys
+  const validPalette = palette
+    .filter((c): c is Vector<'RGB'> => c !== null)
+    .map((color) => ({
+      color,
+      hex: rgbToHex(color),
+      r: Math.round(color[0]),
+      g: Math.round(color[1]),
+      b: Math.round(color[2])
+    }))
+
+  // Initialize counts
+  for (const { hex } of validPalette) {
+    occurrences.set(hex, 0)
   }
 
-  // Count pixels
+  // Count pixels by finding nearest color in palette
   const data = imageData.data
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i]
     const g = data[i + 1]
     const b = data[i + 2]
-    const hex = `${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 
-    if (occurrences.has(hex)) {
-      occurrences.set(hex, (occurrences.get(hex) || 0) + 1)
+    // Find the closest color in palette (should be exact match since image uses palette colors)
+    let minDistance = Number.POSITIVE_INFINITY
+    let closestHex = ''
+
+    for (const paletteColor of validPalette) {
+      const distance =
+        Math.abs(r - paletteColor.r) +
+        Math.abs(g - paletteColor.g) +
+        Math.abs(b - paletteColor.b)
+
+      if (distance < minDistance) {
+        minDistance = distance
+        closestHex = paletteColor.hex
+      }
+
+      // Exact match, no need to continue
+      if (distance === 0) break
+    }
+
+    if (closestHex) {
+      occurrences.set(closestHex, (occurrences.get(closestHex) || 0) + 1)
     }
   }
 
