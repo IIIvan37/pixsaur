@@ -72,7 +72,7 @@ export async function exportZip(
   cpcHardware: CPCHardware,
   reducedPalette: Array<[number, number, number]> | undefined,
   config: ExportConfig
-) {
+): Promise<boolean> {
   const zip = new JSZip()
   const isCPCPlus = cpcHardware === CPCHardware.PLUS
 
@@ -81,7 +81,7 @@ export async function exportZip(
 
   const ctx = canvas.getContext('2d')
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
-  if (!data) return
+  if (!data) return false
 
   // Check if mode is standard (required for SCR format)
   // SCR format requires standard 16KB screen dimensions
@@ -137,10 +137,11 @@ export async function exportZip(
   // Check if running in Tauri (desktop) or web
   if (isTauri()) {
     // Use Tauri's native file dialog and save
-    await saveZipFileTauri(
+    const success = await saveZipFileTauri(
       zipBlob,
       `${config.filename || 'pixsaur-export'}.zip`
     )
+    return success
   } else {
     // Use browser download
     const url = URL.createObjectURL(zipBlob)
@@ -149,5 +150,6 @@ export async function exportZip(
     a.download = `${config.filename || 'pixsaur-export'}.zip`
     a.click()
     URL.revokeObjectURL(url)
+    return true
   }
 }

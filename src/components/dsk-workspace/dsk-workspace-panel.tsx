@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { useAtomValue } from 'jotai'
 import { useState } from 'react'
 import {
@@ -10,20 +12,26 @@ import {
   reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
+import { Notification } from '@/components/ui/notification/notification'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { sanitizeAmsdosFilename } from '@/utils/amsdos-filename'
 import { downloadFile } from '@/utils/download-file'
 import { paletteToCPCPlusValues } from '@/utils/exports/cpc-plus-format'
+import { saveZipFileTauri } from '@/utils/exports/export-tauri'
 import { exportDskWorkspaceZip } from '@/utils/exports/exporters/export-dsk-workspace-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
+import { isTauri } from '@/utils/is-tauri'
 
 export default function DskWorkspacePanel() {
+  const { _ } = useLingui()
   const image = useAtomValue(previewImageAtom)
   const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const dskImages = useAtomValue(dskImagesAtom)
   const [isExporting, setIsExporting] = useState(false)
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState('')
 
   // Check if we can add current image (must have image)
   // We now support all dimensions including overscan and custom
@@ -137,7 +145,23 @@ export default function DskWorkspacePanel() {
     try {
       const zipBlob = await exportDskWorkspaceZip(dskImages)
       if (zipBlob) {
-        downloadFile(zipBlob, 'pixsaur-workspace.zip', 'application/zip')
+        // Check if running in Tauri (desktop) or web
+        if (isTauri()) {
+          // Use Tauri's native file dialog and save
+          const success = await saveZipFileTauri(
+            zipBlob,
+            'pixsaur-workspace.zip'
+          )
+          if (success) {
+            setNotificationMessage(_(msg`DSK workspace exported successfully!`))
+            setShowNotification(true)
+          }
+        } else {
+          // Use browser download
+          downloadFile(zipBlob, 'pixsaur-workspace.zip', 'application/zip')
+          setNotificationMessage(_(msg`DSK workspace exported successfully!`))
+          setShowNotification(true)
+        }
       }
     } catch (error) {
       console.error('[DSK Workspace] Export failed:', error)
@@ -147,10 +171,19 @@ export default function DskWorkspacePanel() {
   }
 
   return (
-    <DskWorkspace
-      onExport={handleExport}
-      currentImageData={currentImageData}
-      canAddCurrentImage={canAddCurrentImage && !isExporting}
-    />
+    <>
+      <DskWorkspace
+        onExport={handleExport}
+        currentImageData={currentImageData}
+        canAddCurrentImage={canAddCurrentImage && !isExporting}
+      />
+      <Notification
+        message={notificationMessage}
+        type='success'
+        open={showNotification}
+        onOpenChange={setShowNotification}
+        autoCloseDuration={3000}
+      />
+    </>
   )
 }
