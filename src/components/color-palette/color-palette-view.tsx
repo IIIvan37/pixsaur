@@ -2,21 +2,18 @@
 // Handles popover logic, slot mapping, focus management, and accessibility
 
 import { useAtomValue } from 'jotai'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { cpcHardwareAtom } from '@/app/store/config/config'
 import type { PaletteSlot } from '@/app/store/palette/types'
-import { previewImageAtom } from '@/app/store/preview/preview'
 import { ColorPickerPopup } from '@/components/ui/color-picker-popup'
 import PixsaurPopover from '@/components/ui/popover'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { CPCColor } from '@/libs/types'
-import { vectorToHex } from '@/palettes/cpc-palette'
 import animStyles from '@/styles/animations.module.css'
 import { ColorGridView } from './color-grid/color-grid-view'
 import styles from './color-palette.module.css'
 import { ColorSlot } from './color-slot/color-slot'
 import { EmptySlotButton } from './color-slot/empty.slot'
-import { countColorOccurrences } from './utils/count-color-occurrences'
 
 /**
  * Helper function to convert Vector to CPCColor for CPC Plus mode
@@ -65,17 +62,6 @@ export const ColorPaletteView = ({
   // Get current CPC hardware mode
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const isClassicMode = cpcHardware === 'classic'
-
-  // Get preview image to count color occurrences
-  const previewImage = useAtomValue(previewImageAtom)
-
-  // Count color occurrences in preview image
-  const colorOccurrences = useMemo(() => {
-    return countColorOccurrences(
-      previewImage,
-      slots.map((s) => s.color)
-    )
-  }, [previewImage, slots])
 
   // Ensure buttonRefs array matches slots length
   useEffect(() => {
@@ -126,10 +112,6 @@ export const ColorPaletteView = ({
       <div className={styles.paletteGrid}>
         {slots.map((slot, idx) => {
           const isPopoverOpen = openPopoverIndex === idx
-          // Get occurrence count for this color
-          const occurrenceCount = slot.color
-            ? colorOccurrences.get(vectorToHex(slot.color))
-            : undefined
           return (
             <div
               key={`slot-${idx}-${slot.color || 'empty'}`}
@@ -154,7 +136,6 @@ export const ColorPaletteView = ({
                         setOpenPopoverIndex(idx)
                       }}
                       focused={openPopoverIndex === idx}
-                      occurrenceCount={occurrenceCount}
                     />
                   }
                 >

@@ -23,17 +23,6 @@ vi.mock('@/styles/animations.module.css', () => ({
 }))
 vi.mock('@/components/ui/icon')
 
-// Mock previewImageAtom to avoid async suspension issues in tests
-vi.mock('@/app/store/preview/preview', () => ({
-  previewImageAtom: { init: null, read: () => null },
-  reducedPaletteRgbAtom: { init: [], read: () => [] }
-}))
-
-// Mock count-color-occurrences to avoid async previewImageAtom dependency
-vi.mock('./utils/count-color-occurrences', () => ({
-  countColorOccurrences: vi.fn(() => new Map())
-}))
-
 // Mock palette data for tests (French names)
 const mockPalette = [
   {
