@@ -14,10 +14,7 @@ import {
   previewImageAtom
 } from '@/app/store/preview/preview'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
-import {
-  canvasToPNGBlob,
-  createCorrectedAspectCanvas
-} from '@/utils/exports/export-png-utils'
+import { createCorrectedAspectCanvas } from '@/utils/exports/export-png-utils'
 import { isTauri } from '@/utils/is-tauri'
 import { ImagePreviewView } from './image-preview-view'
 
@@ -99,12 +96,35 @@ const ImagePreview = () => {
       modeConfig
     )
 
-    // Open in new tab
-    const blob = await canvasToPNGBlob(correctedCanvas)
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
+    // Convert to data URL (can be saved directly by browsers)
+    const dataUrl = correctedCanvas.toDataURL('image/png')
+
+    // Create an HTML document with the image as data URL
+    // Data URLs can be right-clicked and saved with "Save Image As"
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Preview - Pixsaur</title>
+  <style>
+    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1a1a1a; }
+    img { max-width: 100%; max-height: 100vh; image-rendering: pixelated; }
+  </style>
+</head>
+<body>
+  <img src="${dataUrl}" alt="CPC Preview" download="pixsaur-preview.png" />
+</body>
+</html>`
+
+    const htmlBlob = new Blob([html], { type: 'text/html' })
+    const htmlUrl = URL.createObjectURL(htmlBlob)
+
+    window.open(htmlUrl, '_blank')
+
     // Clean up after a delay
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    setTimeout(() => {
+      URL.revokeObjectURL(htmlUrl)
+    }, 2000)
   }, [previewImage, modeConfig])
 
   const tooltip = _(msg`Cliquer pour ouvrir dans un nouvel onglet`)
