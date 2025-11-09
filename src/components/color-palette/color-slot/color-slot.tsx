@@ -14,17 +14,38 @@ type ColorSlotProps = {
   buttonRef: (el: HTMLButtonElement | null) => void
   onOpenPopover?: () => void
   focused?: boolean
+  occurrenceCount?: number
 }
 
 export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
-  ({ color, locked, buttonRef, onOpenPopover, focused }, ref) => {
+  (
+    { color, locked, buttonRef, onOpenPopover, focused, occurrenceCount },
+    ref
+  ) => {
     const hex = vectorToHex(color)
+
+    // Build tooltip with hex color and occurrence count
+    let tooltip = `#${hex} ${locked ? 'verrouillée' : 'déverrouillée'}`
+    if (occurrenceCount !== undefined) {
+      const formattedCount =
+        occurrenceCount === 0
+          ? '0 pixel'
+          : occurrenceCount === 1
+            ? '1 pixel'
+            : occurrenceCount >= 1000000
+              ? `${(occurrenceCount / 1000000).toFixed(1)}M pixels`
+              : occurrenceCount >= 1000
+                ? `${(occurrenceCount / 1000).toFixed(1)}k pixels`
+                : `${occurrenceCount} pixels`
+      tooltip += ` - ${formattedCount}`
+    }
+
     return (
       <ColorButton
         ref={ref}
         colorHex={`#${hex}`}
         className={styles.colorFill}
-        title={`#${hex} ${locked ? 'verrouillée' : 'déverrouillée'}`}
+        title={tooltip}
         aria-selected={focused ? 'true' : 'false'}
         buttonRef={buttonRef}
         onClick={onOpenPopover ? () => onOpenPopover() : undefined}
