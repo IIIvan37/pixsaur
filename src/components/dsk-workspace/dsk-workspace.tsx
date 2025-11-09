@@ -18,6 +18,7 @@ import {
   calculateScrSize,
   canAddImageToDsk,
   formatDskSpace,
+  formatFileSize,
   formatImageSize,
   formatScrSize,
   generateDskFilenames,
@@ -58,7 +59,17 @@ export default function DskWorkspace({
   const removeImageFromDsk = useSetAtom(removeImageFromDskAtom)
 
   // Check if there is enough space on DSK for a new image
-  const hasEnoughSpace = canAddImageToDsk(images)
+  const hasEnoughSpace = canAddImageToDsk(
+    images,
+    currentImageData
+      ? {
+          width: currentImageData.width,
+          height: currentImageData.height,
+          mode: currentImageData.mode,
+          overscan: currentImageData.overscan
+        }
+      : undefined
+  )
   const canAdd = canAddCurrentImage && hasEnoughSpace
 
   const handleAddCurrentImage = () => {
@@ -159,7 +170,9 @@ export default function DskWorkspace({
                     <div className={styles.imageDetails}>
                       {getModeLabel(image.mode)} •{' '}
                       {formatImageSize(image.width, image.height)} •{' '}
-                      {formatScrSize(fileSize)}
+                      {isStandard
+                        ? formatScrSize(fileSize)
+                        : formatFileSize(fileSize)}
                       {!isStandard && (
                         <span className={styles.customBadge}> • Custom</span>
                       )}
