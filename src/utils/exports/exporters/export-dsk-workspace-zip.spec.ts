@@ -253,6 +253,7 @@ describe('exportDskWorkspaceZip', () => {
     expect(spy).toHaveBeenCalled()
     if (result) {
       const zip = await JSZip.loadAsync(result)
+
       expect(zip.files['IMG1.scr']).toBeDefined()
     }
   })
@@ -378,6 +379,10 @@ describe('exportDskWorkspaceZip', () => {
     if (result) {
       const zip = await JSZip.loadAsync(result)
       // RASM exists so no raw fallback for chunk should be present (except where code adds it)
+
+      expect(zip.files['IMG1_1.bin']).toBeUndefined()
+      expect(zip.files['IMG1_2.bin']).toBeUndefined()
+
       expect(zip.files['IMG1_1.bin']).toBeUndefined()
       expect(zip.files['IMG1_2.bin']).toBeUndefined()
     }
@@ -438,6 +443,10 @@ describe('exportDskWorkspaceZip', () => {
     expect(result).not.toBeNull()
     if (result) {
       const zip = await JSZip.loadAsync(result)
+
+      expect(zip.files['IMG1_1.bin']).toBeUndefined()
+      expect(zip.files['IMG1_2.bin']).toBeUndefined()
+
       expect(zip.files['IMG1_1.bin']).toBeUndefined()
       expect(zip.files['IMG1_2.bin']).toBeUndefined()
     }
