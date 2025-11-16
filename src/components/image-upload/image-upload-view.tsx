@@ -1,8 +1,13 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Window } from '@tauri-apps/api/window'
-import { useEffect, useId, useRef } from 'react'
+import { useAtomValue, useSetAtom } from 'jotai'
+import { useCallback, useEffect, useId, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
+import {
+  openImagePickerAtom,
+  setOpenImagePickerAtom
+} from '@/app/store/image/image'
 import Icon from '@/components/ui/icon'
 import logger from '@/utils/logger'
 import styles from './image-upload.module.css'
@@ -65,20 +70,23 @@ export const ImageUploadView = ({
   const { isTauriEnv, isLinux, isWSL } = detectEnvironment(isTauri)
 
   // Helper function to process a dragged file
-  const processFile = async (filePath: string, cb: (files: File[]) => void) => {
-    try {
-      const { readFile } = await import('@tauri-apps/plugin-fs')
-      const buffer = await readFile(filePath)
-      const fileName = filePath.split('/').pop() || 'image'
-      const file = new File([buffer], fileName, {
-        type: 'image/*'
-      })
-      cb([file])
-    } catch (error) {
-      // Log error for debugging but don't crash the app
-      logger.warn('[ImageUpload] Failed to process file:', filePath, error)
-    }
-  }
+  const processFile = useCallback(
+    async (filePath: string, cb: (files: File[]) => void) => {
+      try {
+        const { readFile } = await import('@tauri-apps/plugin-fs')
+        const buffer = await readFile(filePath)
+        const fileName = filePath.split('/').pop() || 'image'
+        const file = new File([buffer], fileName, {
+          type: 'image/*'
+        })
+        cb([file])
+      } catch (error) {
+        // Log error for debugging but don't crash the app
+        logger.warn('[ImageUpload] Failed to process file:', filePath, error)
+      }
+    },
+    []
+  )
 
   // Helper function to handle drag-drop events
   const handleDragDropEvent = async (
@@ -147,31 +155,34 @@ export const ImageUploadView = ({
     }
   }
 
-  const handleClick = async (e: React.MouseEvent) => {
-    // In Tauri mode, open native file dialog
-    if (isTauri) {
-      e.preventDefault()
-      e.stopPropagation()
-      try {
-        const { open } = await import('@tauri-apps/plugin-dialog')
-        const selected = await open({
-          multiple: false,
-          filters: [
-            {
-              name: 'Images',
-              extensions: IMAGE_EXTENSIONS
-            }
-          ]
-        })
-        if (selected && typeof selected === 'string') {
-          await processFile(selected, onUpload)
+  const handleClick = useCallback(
+    async (e: React.MouseEvent) => {
+      // In Tauri mode, open native file dialog
+      if (isTauri) {
+        e.preventDefault()
+        e.stopPropagation()
+        try {
+          const { open } = await import('@tauri-apps/plugin-dialog')
+          const selected = await open({
+            multiple: false,
+            filters: [
+              {
+                name: 'Images',
+                extensions: IMAGE_EXTENSIONS
+              }
+            ]
+          })
+          if (selected && typeof selected === 'string') {
+            await processFile(selected, onUpload)
+          }
+        } catch (error) {
+          // Log error for debugging but don't crash the app
+          logger.warn('[ImageUpload] Failed to open file dialog:', error)
         }
-      } catch (error) {
-        // Log error for debugging but don't crash the app
-        logger.warn('[ImageUpload] Failed to open file dialog:', error)
       }
-    }
-  }
+    },
+    [isTauri, onUpload, processFile]
+  )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: handleDrop,
@@ -193,6 +204,32 @@ export const ImageUploadView = ({
   )
 
   const rootProps = getRootProps()
+  const inputProps = getInputProps()
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const openImagePickerRequest = useAtomValue(openImagePickerAtom)
+  const setOpenImagePicker = useSetAtom(setOpenImagePickerAtom)
+
+  // If another component requests the uploader to open, trigger the input click
+  useEffect(() => {
+    if (!openImagePickerRequest) return
+    // If Tauri, open native dialog; otherwise click the input
+    if (isTauri) {
+      handleClick({} as React.MouseEvent)
+    } else {
+      try {
+        inputRef.current?.click()
+      } catch (err) {
+        logger.warn(
+          '[ImageUpload] Failed to trigger click programmatically',
+          err
+        )
+      }
+    }
+
+    // Reset the request flag
+    setOpenImagePicker(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openImagePickerRequest, isTauri, setOpenImagePicker, handleClick])
 
   return (
     <button
@@ -225,9 +262,16 @@ export const ImageUploadView = ({
     >
       {!isTauri && (
         <input
-          {...getInputProps()}
+          {...inputProps}
           id={uploadId}
           data-testid='image-upload-input'
+          ref={(node) => {
+            // Must handle case where getInputProps() returned a ref callback
+            const origRef = (inputProps as any).ref
+            inputRef.current = node
+            if (typeof origRef === 'function') origRef(node)
+            else if (origRef && 'current' in origRef) origRef.current = node
+          }}
         />
       )}
       <Icon name='UploadIcon' className={styles.icon} />
