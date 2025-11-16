@@ -13,7 +13,7 @@ export default function Input({
   id,
   ...props
 }: InputProps) {
-  const inputId = id || label?.toLowerCase().replace(/\s+/g, '-')
+  const inputId = id || label?.toLowerCase().replaceAll(' ', '-')
 
   if (label) {
     return (
@@ -23,7 +23,9 @@ export default function Input({
         </label>
         <input
           id={inputId}
-          className={`${styles.input} ${error ? styles.inputError : ''} ${className || ''}`}
+          className={`${styles.input} ${error ? styles.inputError : ''} ${
+            className || ''
+          }`}
           {...props}
         />
         {error && <span className={styles.error}>{error}</span>}
@@ -34,7 +36,9 @@ export default function Input({
   return (
     <input
       id={inputId}
-      className={`${styles.input} ${error ? styles.inputError : ''} ${className || ''}`}
+      className={`${styles.input} ${error ? styles.inputError : ''} ${
+        className || ''
+      }`}
       {...props}
     />
   )
