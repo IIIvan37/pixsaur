@@ -1,6 +1,8 @@
 import { memo, useCallback } from 'react'
+import { isTauri } from '@/utils/is-tauri'
 import logger from '@/utils/logger'
 import { ImageUploadView } from './image-upload-view'
+import { pickImageFileTauriAsFile } from './tauri-file-picker'
 import { processImageFile } from './utils'
 
 export type ImageUploadProps = {
@@ -11,12 +13,6 @@ export type ImageUploadProps = {
  * Check if running in Tauri environment
  * In Tauri v2, we check if the module can be imported
  */
-function isTauri(): boolean {
-  // Check if we're in a Tauri context by trying to access window.__TAURI_INTERNALS__
-  return (
-    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-  )
-}
 
 export const ImageUpload = memo(
   ({ onImageLoaded }: Readonly<ImageUploadProps>) => {
@@ -25,16 +21,10 @@ export const ImageUpload = memo(
         // In Tauri with empty array, use native dialog
         if (isTauri() && acceptedFiles.length === 0) {
           try {
-            const { pickImageFileTauri } = await import('./tauri-file-picker')
-            const dataUrl = await pickImageFileTauri()
-
-            if (dataUrl) {
-              const img = new Image()
-              img.onload = () => onImageLoaded(img)
-              img.onerror = (e) =>
-                logger.error('[ImageUpload] Image load failed:', e)
-              img.src = dataUrl
-            }
+            const file = await pickImageFileTauriAsFile()
+            if (!file) return
+            const img = await processImageFile(file)
+            onImageLoaded(img)
           } catch (error) {
             logger.error('[ImageUpload] Failed to load image:', error)
           }

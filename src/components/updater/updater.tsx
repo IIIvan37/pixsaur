@@ -1,17 +1,13 @@
 import { check } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useState } from 'react'
+import { isTauri } from '@/utils/is-tauri'
 import { updaterLogger } from '@/utils/logger'
 import { UpdaterView } from './updater-view'
 
 /**
  * Check if running in Tauri environment
  */
-function isTauri(): boolean {
-  return (
-    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-  )
-}
-
+// use shared util
 /**
  * Auto-updater component for Tauri desktop app (Container/Smart Component)
  * Handles update checking, downloading, and installation logic

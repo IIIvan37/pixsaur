@@ -8,6 +8,7 @@ import { Updater } from '@/components/updater/updater'
 import { VersionDisplay } from '@/components/version-display'
 import styles from '@/styles/app.module.css'
 import { isDevelopment } from '@/utils/is-development'
+import { isTauri } from '@/utils/is-tauri'
 import logger from '@/utils/logger'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
@@ -16,12 +17,7 @@ import { I18nProviderWrapper } from './i18n-provider'
  * Check if running in Tauri environment
  */
 
-function isTauri(): boolean {
-  return (
-    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-  )
-}
-
+// use shared util
 export default function App() {
   const tauri = isTauri()
   const dev = isDevelopment()

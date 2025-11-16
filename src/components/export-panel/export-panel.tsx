@@ -135,7 +135,7 @@ export default function ExportPanel() {
     <>
       <ExportPanelView
         onExport={() => setIsDialogOpen(true)}
-        disabled={isDialogOpen}
+        disabled={isDialogOpen || !image?.data}
       />
       <ExportConfigDialog
         open={isDialogOpen}

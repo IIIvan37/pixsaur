@@ -1,6 +1,7 @@
 import { getVersion } from '@tauri-apps/api/app'
 import { useEffect, useState } from 'react'
 import { isDevelopment } from '@/utils/is-development'
+import { isTauri } from '@/utils/is-tauri'
 import styles from './version-display.module.css'
 
 export function VersionDisplay() {
@@ -11,7 +12,7 @@ export function VersionDisplay() {
     const fetchVersion = async () => {
       try {
         // Ne charger Tauri que si on est dans un environnement Tauri
-        if ((globalThis as any).__TAURI__) {
+        if (isTauri()) {
           const appVersion = await getVersion()
           setVersion(appVersion)
         } else {

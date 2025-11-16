@@ -3,18 +3,23 @@ import { useAtomValue, useSetAtom } from 'jotai'
 import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
 import { ImageSelector } from '@/components/image-selector'
 import { ImageUpload } from '@/components/image-upload/image-upload'
+import { pickImageFileTauriAsFile } from '@/components/image-upload/tauri-file-picker'
+import { processImageFile } from '@/components/image-upload/utils'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
+import { isTauri } from '@/utils/is-tauri'
+import logger from '@/utils/logger'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
 import {
   imageAtom,
   setImgAtom,
-  setOpenImagePickerAtom
+  setOpenImagePickerAtom,
+  setSelectionAtom
 } from '../store/image/image'
 
 export default function SourceSection() {
   const setImg = useSetAtom(setImgAtom)
-  // We intentionally don't reset selection when opening uploader
+  const setSelection = useSetAtom(setSelectionAtom)
   const img = useAtomValue(imageAtom)
 
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
@@ -28,12 +33,32 @@ export default function SourceSection() {
       <Header
         title={<Trans>Image source</Trans>}
         actionLabel={<Trans>Changer d'image</Trans>}
-        action={() => {
+        action={async () => {
           resetAdjustments()
-          // Keep current image/selection and just open the uploader
-          // so the user may choose a new file without losing the current image
-          // unless they explicitly select a new one via the file picker.
-          // Trigger the image picker as if the user clicked the uploader
+          // Clear the current image & selection (previous behavior) and
+          // then open the uploader so the user can pick a new image.
+          setImg(null)
+          setSelection(null)
+          // On Tauri we open the native dialog ourselves because the
+          // `ImageUpload` component may not be mounted when an image is
+          // present (so the `openImagePickerAtom` wouldn't be observed).
+          if (isTauri()) {
+            try {
+              const file = await pickImageFileTauriAsFile()
+              if (!file) return
+              const loaded = await processImageFile(file)
+              setImg(loaded)
+            } catch (err) {
+              logger.warn(
+                '[SourceSection] Failed to pick image with Tauri',
+                err
+              )
+              // fallback to the web uploader in case of failure
+              setOpenImagePicker(true)
+            }
+            return
+          }
+
           setOpenImagePicker(true)
         }}
         icon='UploadIcon'
@@ -45,17 +70,9 @@ export default function SourceSection() {
           {/* Resize mode controls - placed after source selection */}
           <ImageResizePanel />
         </>
-      ) : null}
-
-      {/*
-        Always mount the ImageUpload so we can programmatically open the
-        file picker even when an image is already selected. When an image
-        exists, keep the uploader hidden visually but mounted so it can
-        respond to `setOpenImagePicker(true)`.
-      */}
-      <div style={{ display: img ? 'none' : 'block' }}>
+      ) : (
         <ImageUpload onImageLoaded={handleImageLoaded} />
-      </div>
+      )}
     </Panel>
   )
 }

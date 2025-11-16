@@ -25,6 +25,28 @@ describe('ImageSelectorView', () => {
     expect(canvas).toHaveAttribute('height', '456')
   })
 
+  it('container has explicit minWidth style to avoid flex regressions', () => {
+    const refCallback = vi.fn()
+
+    render(
+      <ImageSelectorView
+        canvasWidth={100}
+        canvasHeight={100}
+        src={null}
+        refCallback={refCallback}
+      />
+    )
+
+    const container = document.querySelector(
+      '[data-testid="image-selector-container"]'
+    )
+    expect(container).toBeInTheDocument()
+    // HTMLElement.style returns empty string for unspecified CSS. We expect minWidth === '0px'
+    // JSDOM may normalize the style value to either '0' or '0px'
+    const minWidth = (container as HTMLElement).style.minWidth || ''
+    expect(['0', '0px']).toContain(minWidth)
+  })
+
   it('calls refCallback with the canvas element', () => {
     const refCallback = vi.fn()
 
