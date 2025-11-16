@@ -12,6 +12,18 @@ import SourceSection from './source-section'
 vi.mock('@/utils/is-tauri')
 vi.mock('@/components/image-upload/tauri-file-picker')
 vi.mock('@/components/image-upload/utils')
+vi.mock('@tauri-apps/api/window', () => ({
+  // Provide a lightweight stub implementation of Window.getByLabel so
+  // tests running in JSDOM won't call Tauri internals which rely on
+  // `invoke`. The returned object exposes `listen` and
+  // `onDragDropEvent` methods used by the component.
+  Window: {
+    getByLabel: vi.fn(async (_label: string) => ({
+      listen: vi.fn(),
+      onDragDropEvent: vi.fn()
+    }))
+  }
+}))
 
 function SetupInitialImage() {
   const setImg = useSetAtom(setImgAtom)
