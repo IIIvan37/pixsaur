@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import type React from 'react'
-import { useMemo } from 'react'
+import { forwardRef, useMemo } from 'react'
 import Icon from '@/components/ui/icon'
 import { isBright } from '@/libs/pixsaur-color/src/quant/select-contrast-subset'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
@@ -28,45 +28,46 @@ type ColorSlotProps = {
   occurrenceCount?: number
 }
 
-export const ColorSlot: React.FC<ColorSlotProps> = ({
-  color,
-  locked,
-  buttonRef,
-  onOpenPopover,
-  focused,
-  occurrenceCount
-}) => {
-  const hex = vectorToHex(color)
+export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
+  (
+    { color, locked, buttonRef, onOpenPopover, focused, occurrenceCount },
+    ref
+  ) => {
+    const hex = vectorToHex(color)
 
-  // Build tooltip with hex color and occurrence count
-  const tooltip = useMemo(() => {
-    let result = `#${hex} ${locked ? 'verrouillée' : 'déverrouillée'}`
-    if (occurrenceCount !== undefined) {
-      result += ` - ${formatOccurrenceCount(occurrenceCount)}`
-    }
-    return result
-  }, [hex, locked, occurrenceCount])
+    // Build tooltip with hex color and occurrence count
+    const tooltip = useMemo(() => {
+      let result = `#${hex} ${locked ? 'verrouillée' : 'déverrouillée'}`
+      if (occurrenceCount !== undefined) {
+        result += ` - ${formatOccurrenceCount(occurrenceCount)}`
+      }
+      return result
+    }, [hex, locked, occurrenceCount])
 
-  return (
-    <ColorButton
-      colorHex={`#${hex}`}
-      className={styles.colorFill}
-      title={tooltip}
-      aria-pressed={focused}
-      buttonRef={buttonRef}
-      onClick={onOpenPopover ? () => onOpenPopover() : undefined}
-    >
-      {locked && (
-        <span className={styles.lockOverlay} aria-hidden='true'>
-          <Icon
-            name='LockClosedIcon'
-            className={clsx(
-              styles.lockIcon,
-              isBright(color) ? styles.lockIconDark : styles.lockIconLight
-            )}
-          />
-        </span>
-      )}
-    </ColorButton>
-  )
-}
+    return (
+      <ColorButton
+        ref={ref}
+        colorHex={`#${hex}`}
+        className={styles.colorFill}
+        title={tooltip}
+        aria-pressed={focused}
+        buttonRef={buttonRef}
+        onClick={onOpenPopover ? () => onOpenPopover() : undefined}
+      >
+        {locked && (
+          <span className={styles.lockOverlay} aria-hidden='true'>
+            <Icon
+              name='LockClosedIcon'
+              className={clsx(
+                styles.lockIcon,
+                isBright(color) ? styles.lockIconDark : styles.lockIconLight
+              )}
+            />
+          </span>
+        )}
+      </ColorButton>
+    )
+  }
+)
+// set a readable display name for devtools
+ColorSlot.displayName = 'ColorSlot'
