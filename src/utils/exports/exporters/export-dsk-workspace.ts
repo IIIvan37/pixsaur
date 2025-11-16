@@ -61,6 +61,107 @@ export async function exportDskWorkspace(
 
     dskLogger.info('Universal loader added successfully')
 
+    // Helper: assemble and add a single SCR file to the DSK
+    async function addScrToDsk(
+      rasmInstance: Awaited<
+        ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>
+      >,
+      rasmModule: ReturnType<
+        Awaited<
+          ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>
+        >['getModule']
+      >,
+      binary: Uint8Array,
+      asmLabel: string,
+      dskFilenameOnDisk: string,
+      imageIndex: number,
+      imageName: string
+    ) {
+      const scrBinFilename = `${asmLabel}.bin`
+
+      // Write binary file to virtual filesystem
+      rasmModule.FS.writeFile(`/${scrBinFilename}`, binary)
+
+      dskLogger.info(`Created ${scrBinFilename} (${binary.length} bytes)`)
+
+      // Generate DSK template code to save SCR to DSK using INCBIN
+      const dskTemplateCode = generateScrDskTemplate({
+        scrBinFilename,
+        scrLabel: asmLabel,
+        dskFilename,
+        screenFilename: dskFilenameOnDisk
+      })
+
+      // Assemble and save SCR to DSK
+      const result = await rasmInstance.assemble(dskTemplateCode, {
+        outputFile: `output${imageIndex}.bin`,
+        exportType: 'dsk',
+        dskFile: dskFilename
+      })
+
+      if (!result.success) {
+        dskLogger.error(`SCR assembly failed for ${imageName}:`, result.output)
+        return false
+      }
+
+      dskLogger.info(`Added ${dskFilenameOnDisk} to DSK`)
+      return true
+    }
+
+    // Helper: write chunks and add them to the DSK
+    async function addChunksToDsk(
+      rasmInstance: Awaited<
+        ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>
+      >,
+      rasmModule: ReturnType<
+        Awaited<
+          ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>
+        >['getModule']
+      >,
+      chunks: Array<{ index: number; data: Uint8Array }>,
+      asmLabel: string,
+      dskFilenames: string[],
+      imageIndex: number,
+      imageName: string
+    ) {
+      for (const chunk of chunks) {
+        const chunkBinFilename = `${asmLabel}_${chunk.index}.bin`
+        const chunkDskFilename = dskFilenames[chunk.index - 1]
+
+        // Write chunk to virtual filesystem
+        rasmModule.FS.writeFile(`/${chunkBinFilename}`, chunk.data)
+
+        dskLogger.info(
+          `Created ${chunkBinFilename} (${chunk.data.length} bytes)`
+        )
+
+        // Generate DSK template code to save chunk to DSK using INCBIN
+        const dskTemplateCode = generateScrDskTemplate({
+          scrBinFilename: chunkBinFilename,
+          scrLabel: `${asmLabel}_${chunk.index}`,
+          dskFilename,
+          screenFilename: chunkDskFilename
+        })
+
+        // Assemble and save chunk to DSK
+        const result = await rasmInstance.assemble(dskTemplateCode, {
+          outputFile: `output${imageIndex}_${chunk.index}.bin`,
+          exportType: 'dsk',
+          dskFile: dskFilename
+        })
+
+        if (!result.success) {
+          dskLogger.error(
+            `Chunk ${chunk.index} assembly failed for ${imageName}:`,
+            result.output || '(no error message)'
+          )
+          dskLogger.error('DSK Template Code:', dskTemplateCode)
+        } else {
+          dskLogger.info(`Added ${chunkDskFilename} to DSK`)
+        }
+      }
+    }
+
     // Process each image (first one creates the DSK, others append to it)
     for (let i = 0; i < images.length; i++) {
       const image = images[i]
@@ -153,43 +254,16 @@ export async function exportDskWorkspace(
           image.overscan
         )
 
-        // Process each chunk
-        for (const chunk of chunks) {
-          const chunkBinFilename = `${asmLabel}_${chunk.index}.bin`
-          const chunkDskFilename = dskFilenames[chunk.index - 1] // Use pre-generated filename
-
-          // Write chunk to virtual filesystem
-          rasmModule.FS.writeFile(`/${chunkBinFilename}`, chunk.data)
-
-          dskLogger.info(
-            `Created ${chunkBinFilename} (${chunk.data.length} bytes)`
-          )
-
-          // Generate DSK template code to save chunk to DSK using INCBIN
-          const dskTemplateCode = generateScrDskTemplate({
-            scrBinFilename: chunkBinFilename,
-            scrLabel: `${asmLabel}_${chunk.index}`,
-            dskFilename,
-            screenFilename: chunkDskFilename
-          })
-
-          // Assemble and save chunk to DSK
-          const result = await rasmInstance.assemble(dskTemplateCode, {
-            outputFile: `output${imageIndex}_${chunk.index}.bin`,
-            exportType: 'dsk',
-            dskFile: dskFilename
-          })
-
-          if (!result.success) {
-            dskLogger.error(
-              `Chunk ${chunk.index} assembly failed for ${image.name}:`,
-              result.output || '(no error message)'
-            )
-            dskLogger.error('DSK Template Code:', dskTemplateCode)
-          } else {
-            dskLogger.info(`Added ${chunkDskFilename} to DSK`)
-          }
-        }
+        // Process chunked custom linear data and add to DSK
+        await addChunksToDsk(
+          rasmInstance,
+          rasmModule,
+          chunks,
+          asmLabel,
+          dskFilenames,
+          imageIndex,
+          image.name
+        )
 
         // Skip the standard single-file logic below for chunked files
         continue
@@ -202,27 +276,18 @@ export async function exportDskWorkspace(
 
       dskLogger.info(`Created ${scrBinFilename} (${binaryData.length} bytes)`)
 
-      // Generate DSK template code to save SCR to DSK using INCBIN
-      const dskTemplateCode = generateScrDskTemplate({
-        scrBinFilename,
-        scrLabel: asmLabel,
-        dskFilename,
-        screenFilename: dskFilenameOnDisk
-      })
+      // Assemble and save SCR to DSK (different helper handles template creation)
+      const ok = await addScrToDsk(
+        rasmInstance,
+        rasmModule,
+        binaryData,
+        asmLabel,
+        dskFilenameOnDisk,
+        imageIndex,
+        image.name
+      )
 
-      // Assemble and save SCR to DSK
-      const result = await rasmInstance.assemble(dskTemplateCode, {
-        outputFile: `output${imageIndex}.bin`,
-        exportType: 'dsk',
-        dskFile: dskFilename
-      })
-
-      if (!result.success) {
-        dskLogger.error(`SCR assembly failed for ${image.name}:`, result.output)
-        continue
-      }
-
-      dskLogger.info(`Added ${dskFilenameOnDisk} to DSK`)
+      if (!ok) continue
     }
 
     // Read the final DSK from virtual filesystem
