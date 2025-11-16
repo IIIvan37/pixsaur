@@ -1,6 +1,8 @@
 import JSZip from 'jszip'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
 import { injectPaletteDataIntoSCR } from '@/palettes/cpc-palette'
+import { dskLogger } from '@/utils/logger'
 import { injectCPCPlusPaletteIntoSCR } from '../cpc-plus-format'
 import { exportSCR } from '../export-scr/export-scr'
 import { generateDskReadmePdf } from '../generate-dsk-readme-pdf'
@@ -14,17 +16,17 @@ export async function exportDskWorkspaceZip(
   images: DskImage[]
 ): Promise<Blob | null> {
   if (images.length === 0) {
-    console.warn('No images in workspace to export')
+    dskLogger.warn('No images in workspace to export')
     return null
   }
 
   try {
-    console.log('[DSK Workspace ZIP] Starting ZIP export')
+    dskLogger.info('[DSK Workspace ZIP] Starting ZIP export')
 
     // Generate DSK file
     const dskData = await exportDskWorkspace(images)
     if (!dskData) {
-      console.error('[DSK Workspace ZIP] Failed to generate DSK')
+      dskLogger.error('[DSK Workspace ZIP] Failed to generate DSK')
       return null
     }
 
@@ -34,12 +36,12 @@ export async function exportDskWorkspaceZip(
 
     // Add DSK file to ZIP
     zip.file(dskFilename, dskData)
-    console.log('[DSK Workspace ZIP] Added DSK to archive')
+    dskLogger.info('[DSK Workspace ZIP] Added DSK to archive')
 
     // Generate and add README PDF
     const readmePdf = generateDskReadmePdf(images, dskFilename)
     zip.file('README.pdf', readmePdf)
-    console.log('[DSK Workspace ZIP] Added README.pdf to archive')
+    dskLogger.info('[DSK Workspace ZIP] Added README.pdf to archive')
 
     // Add individual SCR files and BIN files
     // Try to create RASM instance for binary generation (may fail in test environment)
@@ -56,9 +58,11 @@ export async function exportDskWorkspaceZip(
       const { createRasmInstance } = await import('@/libs/rasm-wasm')
       rasmInstance = await createRasmInstance()
       rasmModule = rasmInstance.getModule()
-      console.log('[DSK Workspace ZIP] RASM initialized for binary generation')
+      dskLogger.info(
+        '[DSK Workspace ZIP] RASM initialized for binary generation'
+      )
     } catch (error) {
-      console.warn(
+      dskLogger.warn(
         '[DSK Workspace ZIP] RASM not available, skipping binary generation:',
         error
       )
@@ -116,20 +120,29 @@ export async function exportDskWorkspaceZip(
         const linearData = exportLinearAsm(indexBuf, modeConfig)
         const chunks = splitLinearIntoChunks(linearData)
 
-        console.log(
+        dskLogger.info(
           `[DSK Workspace ZIP] Generated linear format for custom dimensions (${linearData.length} bytes, ${chunks.length} chunk(s))`
         )
 
-        // Use same filename format as DSK: IMG00001.BIN, IMG00001_1.BIN, etc.
-        const paddedIndex = imageIndex.toString().padStart(5, '0')
+        // Use same filename format as DSK (no padding): IMG1.BIN, IMG1_1.BIN, etc.
+        const dskFilenames = generateDskFilenames(
+          imageIndex,
+          image.width,
+          image.height,
+          image.mode,
+          image.overscan
+        )
 
         // Process each chunk
         for (const chunk of chunks) {
           const asmLabel = `image${imageIndex}_${chunk.index}`
-          const chunkFilename =
-            chunks.length === 1
-              ? `IMG${paddedIndex}.bin`
-              : `IMG${paddedIndex}_${chunk.index}.bin`
+          // Use the filename matching the one added to the DSK
+          const chunkDskFilename = dskFilenames[chunk.index - 1]
+          // Keep base uppercase (IMG1_1) but use lowercase extension (.bin) for ZIP
+          const chunkFilename = chunkDskFilename.replace(
+            /\.(BIN)$/i,
+            (_m, p1) => `.${p1.toLowerCase()}`
+          )
 
           const asmResult = toASMData(chunk.data, asmLabel)
 
@@ -149,16 +162,16 @@ export async function exportDskWorkspaceZip(
               if (assembleResult.success && assembleResult.binary) {
                 // Add BIN chunk to ZIP
                 zip.file(chunkFilename, assembleResult.binary)
-                console.log(
+                dskLogger.info(
                   `[DSK Workspace ZIP] Added ${chunkFilename} to archive`
                 )
               } else {
-                console.warn(
+                dskLogger.warn(
                   `[DSK Workspace ZIP] Failed to assemble ${chunkFilename} to binary`
                 )
               }
             } catch (error) {
-              console.warn(
+              dskLogger.warn(
                 `[DSK Workspace ZIP] Error assembling ${chunkFilename}:`,
                 error
               )
@@ -166,7 +179,7 @@ export async function exportDskWorkspaceZip(
           } else if (!rasmInstance || !rasmModule) {
             // Fallback: if RASM not available, add raw binary data
             zip.file(chunkFilename, chunk.data)
-            console.log(
+            dskLogger.info(
               `[DSK Workspace ZIP] Added ${chunkFilename} to archive (fallback)`
             )
           }
@@ -176,22 +189,24 @@ export async function exportDskWorkspaceZip(
         continue
       }
 
-      // Use same filename format as DSK: IMG00001.SCR
-      const paddedIndex = imageIndex.toString().padStart(5, '0')
-      // Filename uses the same pattern for standard and custom modes
-      const filename = `IMG${paddedIndex}`
+      // Use same filename format as DSK (no padding)
+      const dskFilenames = generateDskFilenames(
+        imageIndex,
+        image.width,
+        image.height,
+        image.mode,
+        image.overscan
+      )
+      const filename = dskFilenames[0].replace(/\.(SCR|BIN)$/i, '')
 
       // Generate ASM file and assemble to BIN, then save as .scr or .bin
       const asmLabel = `image${imageIndex}`
       const asmResult = toASMData(binaryData, asmLabel)
 
       if (typeof asmResult === 'string' && rasmInstance && rasmModule) {
-        const asmFilename = `${filename}.asm`
+        const asmFilename = `${asmLabel}.asm`
         const binFilename = `${filename}.bin`
-        // Use .scr extension for standard format, .bin for custom
-        const outputFilename = isStandardMode
-          ? `${filename}.scr`
-          : `${filename}.bin`
+        // DSK filename will be used for ZIP entries (dskFilenames[0])
 
         try {
           // Write ASM to virtual filesystem
@@ -204,29 +219,36 @@ export async function exportDskWorkspaceZip(
 
           if (assembleResult.success && assembleResult.binary) {
             // Add BIN file to ZIP
-            zip.file(outputFilename, assembleResult.binary)
-            console.log(
-              `[DSK Workspace ZIP] Added ${outputFilename} to archive`
+            // Add file to zip using the DSK filename so ZIP & DSK match
+            const zipFilename = dskFilenames[0].replace(
+              /\.(SCR|BIN)$/i,
+              (_m, p1) => `.${p1.toLowerCase()}`
+            )
+            zip.file(zipFilename, assembleResult.binary)
+            dskLogger.info(
+              `[DSK Workspace ZIP] Added ${dskFilenames[0]} to archive`
             )
           } else {
-            console.warn(
+            dskLogger.warn(
               `[DSK Workspace ZIP] Failed to assemble ${filename} to binary`
             )
           }
         } catch (error) {
-          console.warn(
+          dskLogger.warn(
             `[DSK Workspace ZIP] Error assembling ${filename}:`,
             error
           )
         }
       } else if (!rasmInstance || !rasmModule) {
         // Fallback: if RASM not available, add raw binary data
-        const outputFilename = isStandardMode
-          ? `${filename}.scr`
-          : `${filename}.bin`
-        zip.file(outputFilename, binaryData)
-        console.log(
-          `[DSK Workspace ZIP] Added ${outputFilename} to archive (fallback)`
+        // Add fallback raw binary using the DSK filename (consistent names)
+        const zipFilename = dskFilenames[0].replace(
+          /\.(SCR|BIN)$/i,
+          (_m, p1) => `.${p1.toLowerCase()}`
+        )
+        zip.file(zipFilename, binaryData)
+        dskLogger.info(
+          `[DSK Workspace ZIP] Added ${dskFilenames[0]} to archive (fallback)`
         )
       }
     }
@@ -238,10 +260,10 @@ export async function exportDskWorkspaceZip(
       compressionOptions: { level: 9 }
     })
 
-    console.log('[DSK Workspace ZIP] ZIP export completed successfully')
+    dskLogger.info('[DSK Workspace ZIP] ZIP export completed successfully')
     return zipBlob
   } catch (error) {
-    console.error('[DSK Workspace ZIP] Error during ZIP export:', error)
+    dskLogger.error('[DSK Workspace ZIP] Error during ZIP export:', error)
     return null
   }
 }

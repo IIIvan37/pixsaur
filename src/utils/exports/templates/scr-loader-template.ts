@@ -36,13 +36,15 @@ export interface ScrLoaderTemplateOptions {
  * @param options - SCR loader template options
  * @returns Z80 assembly source code as string
  */
+import { dskLogger } from '@/utils/logger'
+
 export function generateScrLoaderClassic(
   options: ScrLoaderTemplateOptions
 ): string {
   const { dskFilename, screenFilename, mode } = options
   const formattedFilename = screenFilename
 
-  console.log('Formatted AMSDOS filename:', `"${formattedFilename}"`)
+  dskLogger.debug('Formatted AMSDOS filename:', `"${formattedFilename}"`)
   return `
 ;; firmware function to open a file for reading
 buffer equ #3800        ; Temporary buffer (#4000 - 2048 = #3800)
@@ -155,7 +157,7 @@ data:
  * This loader accepts a filename parameter from BASIC and auto-detects format
  *
  * Usage from BASIC:
- *   CALL &8000, @"IMG00001.SCR"
+ *   CALL &8000, @"IMG1.SCR"
  *
  * The loader will:
  * - Load the SCR file specified by the filename parameter
@@ -180,8 +182,8 @@ export function generateUniversalScrLoader(dskFilename: string): string {
 ;; Auto-detects Classic vs Plus format via hardware byte at offset 2035
 ;;
 ;; Usage from BASIC:
-;;   CALL &8000, @"IMG00001.SCR"
-;;   CALL &8000, @"IMG00002.SCR"
+;;   CALL &8000, @"IMG1.SCR"
+;;   CALL &8000, @"IMG2.SCR"
 ;;   etc.
 
 ;; Firmware functions

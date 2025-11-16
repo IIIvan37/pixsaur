@@ -146,7 +146,7 @@ export function sanitizeAmsdosFilename(
  * @returns AMSDOS-compliant filename
  */
 export function generateDskImageFilename(index: number): string {
-  // Support up to 99999 images (IMG99999.SCR = 8 chars)
-  const paddedIndex = index.toString().padStart(5, '0')
-  return `IMG${paddedIndex}.SCR`
+  // No padding: use straightforward IMG{n}.SCR to keep filenames shorter
+  // e.g., IMG1.SCR, IMG10.SCR, IMG12345.SCR
+  return `IMG${index}.SCR`
 }

@@ -16,7 +16,11 @@
 .dropzone {
   position: relative;
   width: 100%;
-  min-width: 320px;
+  /* allow the dropzone to shrink as part of a flex layout so it won't
+   * force other columns to collapse; previously this was 320px which
+   * could cause width regressions when toggling upload/selector views.
+   */
+  min-width: 0;
   max-height: 300px;
   border: 2px dashed #00ff00;
   background-color: black;

@@ -100,6 +100,12 @@ export const setSelectionAtom = atom(
   }
 )
 
+// Trigger to open the image file picker programmatically
+export const openImagePickerAtom = atom(false)
+export const setOpenImagePickerAtom = atom(null, (_get, set, open: boolean) => {
+  set(openImagePickerAtom, open)
+})
+
 export const initialSelectionAtom = atom((get) => {
   const downscaled = get(downscaledAtom)
   if (!downscaled) return null

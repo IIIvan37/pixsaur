@@ -1,6 +1,9 @@
 import { fireEvent, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { useSetAtom } from 'jotai'
 import { describe, expect, it, vi } from 'vitest'
-import { renderWithI18n } from '@/utils/test-utils'
+import { setOpenImagePickerAtom } from '@/app/store/image/image'
+import { renderWithI18n, renderWithProviders } from '@/utils/test-utils'
 import { ImageUploadView } from './image-upload-view'
 
 let files: File[] = []
@@ -74,6 +77,33 @@ describe('ImageUploadView', () => {
     fireEvent.change(input)
     // Component passes all files, parent logic should filter
     expect(onUpload).toHaveBeenCalledWith(files)
+  })
+
+  it('responds to global open image picker request by clicking input', async () => {
+    const onUpload = vi.fn()
+
+    function Trigger() {
+      const setOpen = useSetAtom(setOpenImagePickerAtom)
+      return (
+        <button type='button' onClick={() => setOpen(true)}>
+          Open picker
+        </button>
+      )
+    }
+
+    const { getByText, getByTestId } = renderWithProviders(
+      <>
+        <ImageUploadView onUpload={onUpload} />
+        <Trigger />
+      </>
+    )
+
+    const input = getByTestId('image-upload-input')
+    const spy = vi.spyOn(input, 'click' as any)
+
+    await userEvent.click(getByText('Open picker'))
+
+    await vi.waitFor(() => expect(spy).toHaveBeenCalled())
   })
 
   it('calls onUpload with only the first file if multiple files are selected', () => {

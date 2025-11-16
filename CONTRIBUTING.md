@@ -13,6 +13,7 @@ Thank you for your interest in contributing to Pixsaur! This document provides g
 ### Reporting Bugs
 
 Open an issue with:
+
 - Clear description of the problem
 - Steps to reproduce
 - Expected vs actual behavior
@@ -21,6 +22,7 @@ Open an issue with:
 ### Suggesting Features
 
 Open an issue with:
+
 - Clear use case description
 - Proposed solution or approach
 - Potential alternatives considered
@@ -60,6 +62,14 @@ pnpm biome check .
 - **Linting**: No errors or warnings (`pnpm biome check .`)
 - **Tests**: Add tests for new features
 - **Commits**: Use conventional commit messages
+
+## Logging
+
+- Use the centralized `logger` from `src/utils/logger.ts` for application-level logs. It integrates with Tauri and the debug window and supports levels: `debug`, `info`, `warn`, `error`.
+- Prefer domain loggers: `dskLogger`, `adapterLogger`, `quantizerLogger`, etc. when logging from a specific subsystem.
+- Avoid direct `console.*` calls in `src/` (exceptions: unit tests, performance tests, and documentation examples). The repository includes a `scripts/check-console-usage.js` script which runs in pre-commit to enforce this rule — it will prevent commits that introduce raw `console` usage in the source.
+- If you need to temporarily debug something, prefer toggling `logger.configure({ enabled: true })` in the dev console or a local flag, rather than adding `console.*` to source.
+- To add an exception for a doc example, add it to the allow list inside `scripts/check-console-usage.js` (only in rare cases where using `console` in docs is important).
 
 ## Project Structure
 

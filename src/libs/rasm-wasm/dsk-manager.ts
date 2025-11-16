@@ -19,6 +19,8 @@ export interface CreateDskOptions {
   format?: 'data' | 'vendor'
 }
 
+import { dskLogger } from '@/utils/logger'
+
 export interface AddFileToDskOptions {
   /** Load address in memory (optional) */
   loadAddress?: number
@@ -63,7 +65,7 @@ export function createDsk(
     throw new Error(`Failed to create DSK: exit code ${exitCode}`)
   }
 
-  console.log(`[DSK] Created empty DSK: ${filename}`)
+  dskLogger.info(`[DSK] Created empty DSK: ${filename}`)
   return filename
 }
 
@@ -131,7 +133,7 @@ export function addFileToDsk(
     )
   }
 
-  console.log(`[DSK] Added file to DSK: ${file.name}`)
+  dskLogger.info(`[DSK] Added file to DSK: ${file.name}`)
 }
 
 /**
@@ -158,9 +160,9 @@ export function readDsk(module: RasmModule, filename: string): Uint8Array {
 export function deleteDsk(module: RasmModule, filename: string): void {
   try {
     module.FS.unlink(filename)
-    console.log(`[DSK] Deleted DSK: ${filename}`)
+    dskLogger.info(`[DSK] Deleted DSK: ${filename}`)
   } catch (error) {
-    console.warn(
+    dskLogger.warn(
       `[DSK] Failed to delete DSK ${filename}:`,
       error instanceof Error ? error.message : String(error)
     )

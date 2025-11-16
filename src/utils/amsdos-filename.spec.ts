@@ -131,11 +131,11 @@ describe('sanitizeAmsdosFilename', () => {
 })
 
 describe('generateDskImageFilename', () => {
-  it('generates sequential filenames with padding', () => {
-    expect(generateDskImageFilename(1)).toBe('IMG00001.SCR')
-    expect(generateDskImageFilename(10)).toBe('IMG00010.SCR')
-    expect(generateDskImageFilename(99)).toBe('IMG00099.SCR')
-    expect(generateDskImageFilename(500)).toBe('IMG00500.SCR')
+  it('generates sequential filenames without padding', () => {
+    expect(generateDskImageFilename(1)).toBe('IMG1.SCR')
+    expect(generateDskImageFilename(10)).toBe('IMG10.SCR')
+    expect(generateDskImageFilename(99)).toBe('IMG99.SCR')
+    expect(generateDskImageFilename(500)).toBe('IMG500.SCR')
   })
 
   it('supports up to 5 digits', () => {

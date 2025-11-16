@@ -56,7 +56,7 @@ export interface RasmInstance {
   /** Check if RASM module is ready */
   isReady: () => boolean
   /** Cleanup resources */
-  dispose: () => void
+  dispose: () => Promise<void>
   /** Access to the underlying RASM module (for advanced usage like writing files to FS) */
   getModule: () => RasmModule
 }

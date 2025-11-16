@@ -93,3 +93,28 @@ if (typeof HTMLCanvasElement !== 'undefined') {
     return null
   })
 }
+
+// Polyfill pointer capture functions for the test environment (happy-dom lacks these)
+if (typeof HTMLElement !== 'undefined') {
+  // Add safe no-op implementations if not provided by the test DOM
+  if (typeof (HTMLElement.prototype as any).setPointerCapture !== 'function') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(HTMLElement.prototype as any).setPointerCapture = (_pointerId: number) =>
+      undefined
+  }
+
+  if (
+    typeof (HTMLElement.prototype as any).releasePointerCapture !== 'function'
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(HTMLElement.prototype as any).releasePointerCapture = (
+      _pointerId: number
+    ) => undefined
+  }
+
+  if (typeof (HTMLElement.prototype as any).hasPointerCapture !== 'function') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(HTMLElement.prototype as any).hasPointerCapture = (_pointerId: number) =>
+      false
+  }
+}

@@ -73,8 +73,8 @@ describe('exportDskWorkspaceZip', () => {
       const zip = await JSZip.loadAsync(result)
       expect(zip.files['pixsaur-workspace.dsk']).toBeDefined()
       expect(zip.files['README.pdf']).toBeDefined()
-      expect(zip.files['IMG00001.scr']).toBeDefined()
-      expect(zip.files['IMG00002.scr']).toBeDefined()
+      expect(zip.files['IMG1.scr']).toBeDefined()
+      expect(zip.files['IMG2.scr']).toBeDefined()
     }
   })
 
@@ -88,8 +88,8 @@ describe('exportDskWorkspaceZip', () => {
     // Verify single SCR file is included
     if (result) {
       const zip = await JSZip.loadAsync(result)
-      expect(zip.files['IMG00001.scr']).toBeDefined()
-      const scrData = await zip.files['IMG00001.scr'].async('uint8array')
+      expect(zip.files['IMG1.scr']).toBeDefined()
+      const scrData = await zip.files['IMG1.scr'].async('uint8array')
       expect(scrData.length).toBe(16384) // SCR file size
     }
   })
@@ -108,9 +108,9 @@ describe('exportDskWorkspaceZip', () => {
     // Verify all SCR files are included
     if (result) {
       const zip = await JSZip.loadAsync(result)
-      expect(zip.files['IMG00001.scr']).toBeDefined()
-      expect(zip.files['IMG00002.scr']).toBeDefined()
-      expect(zip.files['IMG00003.scr']).toBeDefined()
+      expect(zip.files['IMG1.scr']).toBeDefined()
+      expect(zip.files['IMG2.scr']).toBeDefined()
+      expect(zip.files['IMG3.scr']).toBeDefined()
     }
   })
 
@@ -157,11 +157,11 @@ describe('exportDskWorkspaceZip', () => {
       // Linear format with chunking - should be split into multiple files
       // Total size: 96 * 272 = 26112 bytes
       // Should be split into 2 chunks (16384 + 9728 bytes)
-      expect(zip.files['IMG00001_1.bin']).toBeDefined()
-      expect(zip.files['IMG00001_2.bin']).toBeDefined()
+      expect(zip.files['IMG1_1.bin']).toBeDefined()
+      expect(zip.files['IMG1_2.bin']).toBeDefined()
 
-      const chunk1Data = await zip.files['IMG00001_1.bin'].async('uint8array')
-      const chunk2Data = await zip.files['IMG00001_2.bin'].async('uint8array')
+      const chunk1Data = await zip.files['IMG1_1.bin'].async('uint8array')
+      const chunk2Data = await zip.files['IMG1_2.bin'].async('uint8array')
 
       // Verify chunk sizes — first chunk should be the max 16KiB and second
       // should contain the remaining bytes for the linear export.
@@ -216,8 +216,8 @@ describe('exportDskWorkspaceZip', () => {
       const zip = await JSZip.loadAsync(result)
 
       // We expect assembled binaries to be present (instead of fallback raw SCR)
-      expect(zip.files['IMG00001.scr']).toBeDefined()
-      expect(zip.files['IMG00002.scr']).toBeDefined()
+      expect(zip.files['IMG1.scr']).toBeDefined()
+      expect(zip.files['IMG2.scr']).toBeDefined()
     }
 
     expect(createRasmInstanceImpl).toHaveBeenCalled()
@@ -253,7 +253,8 @@ describe('exportDskWorkspaceZip', () => {
     expect(spy).toHaveBeenCalled()
     if (result) {
       const zip = await JSZip.loadAsync(result)
-      expect(zip.files['IMG00001.scr']).toBeDefined()
+
+      expect(zip.files['IMG1.scr']).toBeDefined()
     }
   })
 
@@ -314,8 +315,8 @@ describe('exportDskWorkspaceZip', () => {
 
     if (result) {
       const zip = await JSZip.loadAsync(result)
-      expect(zip.files['IMG00001_1.bin']).toBeDefined()
-      expect(zip.files['IMG00001_2.bin']).toBeDefined()
+      expect(zip.files['IMG1_1.bin']).toBeDefined()
+      expect(zip.files['IMG1_2.bin']).toBeDefined()
     }
 
     expect(createRasmInstanceImpl).toHaveBeenCalled()
@@ -378,8 +379,12 @@ describe('exportDskWorkspaceZip', () => {
     if (result) {
       const zip = await JSZip.loadAsync(result)
       // RASM exists so no raw fallback for chunk should be present (except where code adds it)
-      expect(zip.files['IMG00001_1.bin']).toBeUndefined()
-      expect(zip.files['IMG00001_2.bin']).toBeUndefined()
+
+      expect(zip.files['IMG1_1.bin']).toBeUndefined()
+      expect(zip.files['IMG1_2.bin']).toBeUndefined()
+
+      expect(zip.files['IMG1_1.bin']).toBeUndefined()
+      expect(zip.files['IMG1_2.bin']).toBeUndefined()
     }
 
     expect(createRasmInstanceImpl).toHaveBeenCalled()
@@ -438,8 +443,12 @@ describe('exportDskWorkspaceZip', () => {
     expect(result).not.toBeNull()
     if (result) {
       const zip = await JSZip.loadAsync(result)
-      expect(zip.files['IMG00001_1.bin']).toBeUndefined()
-      expect(zip.files['IMG00001_2.bin']).toBeUndefined()
+
+      expect(zip.files['IMG1_1.bin']).toBeUndefined()
+      expect(zip.files['IMG1_2.bin']).toBeUndefined()
+
+      expect(zip.files['IMG1_1.bin']).toBeUndefined()
+      expect(zip.files['IMG1_2.bin']).toBeUndefined()
     }
 
     expect(createRasmInstanceImpl).toHaveBeenCalled()
@@ -481,7 +490,7 @@ describe('exportDskWorkspaceZip', () => {
       const zip = await JSZip.loadAsync(result)
       // Since assembly fails, no assembled BIN is added when RASM is available
       // (the exporter logs the failure but does not fallback to raw data automatically)
-      expect(zip.files['IMG00001.scr']).toBeUndefined()
+      expect(zip.files['IMG1.scr']).toBeUndefined()
     }
 
     expect(createRasmInstanceImpl).toHaveBeenCalled()
@@ -502,7 +511,7 @@ describe('exportDskWorkspaceZip', () => {
       assemble,
       getModule: () => module,
       isReady: () => true,
-      dispose: () => undefined
+      dispose: async () => undefined
     }))
 
     const { exportDskWorkspaceZip: exportZipStdError } = await import(
@@ -517,7 +526,7 @@ describe('exportDskWorkspaceZip', () => {
     if (result) {
       const zip = await JSZip.loadAsync(result)
       // No assembled SCR is added, and exporter should not throw
-      expect(zip.files['IMG00001.scr']).toBeUndefined()
+      expect(zip.files['IMG1.scr']).toBeUndefined()
     }
 
     expect(assemble).toHaveBeenCalled()
@@ -563,7 +572,7 @@ describe('exportDskWorkspaceZip', () => {
       assemble,
       getModule: () => module,
       isReady: () => true,
-      dispose: () => undefined
+      dispose: async () => undefined
     }))
 
     // Spy toASMData to return array
@@ -584,7 +593,7 @@ describe('exportDskWorkspaceZip', () => {
       const zip = await JSZip.loadAsync(result)
       // Our custom toASMData returns an array; since exporter expects a string, it won't assemble
       // and since RASM is available, it will not fallback to raw SCR either
-      expect(zip.files['IMG00001.scr']).toBeUndefined()
+      expect(zip.files['IMG1.scr']).toBeUndefined()
     }
   })
 })

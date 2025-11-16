@@ -34,8 +34,14 @@ export function ImageSelectorView({
       style={{
         position: 'relative',
         width: '100%',
-        aspectRatio
+        aspectRatio,
+        // Allow this element to shrink if parent flex container reduces
+        // available space. Ensures the image selector always honors the
+        // available width and avoids layout regression after toggling
+        // the upload component.
+        minWidth: 0
       }}
+      data-testid='image-selector-container'
     >
       <canvas
         ref={refCallback}

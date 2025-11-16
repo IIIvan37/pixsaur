@@ -13,6 +13,13 @@ fn open_debug_window(app: tauri::AppHandle) {
   let _ = app.get_webview_window("debug").unwrap().show();
 }
 
+/// Quit application from JS invoke (used by tray menu / quit)
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+  // Prefer a clean exit using tauri AppHandle
+  app.exit(0);
+}
+
 #[tauri::command]
 async fn test_updater(app: tauri::AppHandle) -> Result<String, String> {
   println!("[PIXSAUR] Testing updater from main window");
@@ -39,12 +46,19 @@ async fn test_updater(app: tauri::AppHandle) -> Result<String, String> {
 
 pub fn run() {
   tauri::Builder::default()
+    // No native menu/tray by default to keep compatibility with the
+    // project's Tauri configuration. We intentionally do not add
+    // a system tray or menu here.
+    // NOTE: menu and system tray are intentionally not configured here to preserve
+    // compatibility with the tauri version used by this project. Adding them requires
+    // specific cargo features (e.g., `tray-icon`) and correct menu creation with a
+    // Manager/`AppHandle`. We'll add the tray/menu later after verifying APIs.
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_shell::init())
-    .invoke_handler(tauri::generate_handler![log_to_file, open_debug_window, test_updater])
+  .invoke_handler(tauri::generate_handler![log_to_file, open_debug_window, test_updater, quit_app])
     .setup(|app| {
       // Enable logging in debug builds or when PIXSAUR_DEBUG env var is set
       if cfg!(debug_assertions) || std::env::var("PIXSAUR_DEBUG").is_ok() {

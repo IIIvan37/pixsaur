@@ -8,6 +8,8 @@ import { Updater } from '@/components/updater/updater'
 import { VersionDisplay } from '@/components/version-display'
 import styles from '@/styles/app.module.css'
 import { isDevelopment } from '@/utils/is-development'
+import { isTauri } from '@/utils/is-tauri'
+import logger from '@/utils/logger'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
 
@@ -15,12 +17,7 @@ import { I18nProviderWrapper } from './i18n-provider'
  * Check if running in Tauri environment
  */
 
-function isTauri(): boolean {
-  return (
-    typeof globalThis !== 'undefined' && '__TAURI_INTERNALS__' in globalThis
-  )
-}
-
+// use shared util
 export default function App() {
   const tauri = isTauri()
   const dev = isDevelopment()
@@ -33,9 +30,9 @@ export default function App() {
       if (event.key === 'F12') {
         event.preventDefault()
         invoke('open_debug_window')
-          .then(() => console.log('[APP] Debug window opened'))
+          .then(() => logger.info('[APP] Debug window opened'))
           .catch((error) =>
-            console.error('[APP] Failed to open debug window:', error)
+            logger.error('[APP] Failed to open debug window:', error)
           )
       }
     }
@@ -43,6 +40,29 @@ export default function App() {
     globalThis.addEventListener('keydown', handleKeyDown)
     return () => globalThis.removeEventListener('keydown', handleKeyDown)
   }, [tauri])
+
+  // Add keyboard shortcut for quitting the app (Cmd/Ctrl+Q).
+  useEffect(() => {
+    if (!tauri) return
+
+    const handler = async (event: KeyboardEvent) => {
+      try {
+        const { isQuitShortcut } = await import('@/utils/quit-shortcut')
+        if (isQuitShortcut(event)) {
+          event.preventDefault()
+          const { invoke } = await import('@tauri-apps/api/core')
+          await invoke('quit_app')
+        }
+      } catch (err) {
+        logger.error('[APP] Failed to invoke quit_app:', err)
+      }
+    }
+
+    globalThis.addEventListener('keydown', handler)
+    return () => globalThis.removeEventListener('keydown', handler)
+  }, [tauri])
+
+  // No tray by default. JS/Native tray code was removed to simplify UX.
 
   // Listen for messages from debug window
   useEffect(() => {
@@ -58,7 +78,7 @@ export default function App() {
           await debugWindow.emit('debug-response', data)
         }
       } catch (error) {
-        console.error('[APP] Failed to send debug response:', error)
+        logger.error('[APP] Failed to send debug response:', error)
       }
     }
 
@@ -66,13 +86,13 @@ export default function App() {
     const handleUpdaterTest = async (requestId: string) => {
       try {
         const result = await invoke('test_updater')
-        console.log('[APP] Updater test result:', result)
+        logger.info('[APP] Updater test result:', result)
         await sendDebugResponse({
           result: JSON.parse(result as string),
           requestId
         })
       } catch (error) {
-        console.error('[APP] Updater test failed:', error)
+        logger.error('[APP] Updater test failed:', error)
         await sendDebugResponse({
           error: error instanceof Error ? error.message : String(error),
           requestId
@@ -83,7 +103,7 @@ export default function App() {
     const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type !== 'DEBUG_REQUEST') return
 
-      console.log('[APP] Received debug request:', event.data)
+      logger.info('[APP] Received debug request:', event.data)
 
       if (event.data.action === 'TEST_UPDATER') {
         await handleUpdaterTest(event.data.requestId)

@@ -15,6 +15,24 @@ import type {
 const logger = createLogger({ prefix: '[RASM]' })
 
 let rasmModulePromise: Promise<RasmModule> | null = null
+// A simple serial queue to ensure we only call into Emscripten's
+// module.callMain() and mutate module.print/module.printErr one at a time.
+// Concurrent assembles mutate the same global module handlers and will
+// interfere with each other if they run in parallel. This queue ensures
+// assemble() invocations are executed serially.
+let assemblyQueue: Promise<any> = Promise.resolve()
+// Test helper: introduce an optional artificial delay to simulate long-running
+// assembly steps. This helps unit testing of serialization and dispose()
+// behavior without changing runtime behavior in production.
+let TEST_ASSEMBLY_DELAY_MS = 0
+
+export function __setTestAssemblyDelay(ms: number) {
+  TEST_ASSEMBLY_DELAY_MS = ms
+}
+
+export function __waitForAssemblyIdle() {
+  return assemblyQueue.then(() => undefined)
+}
 
 /**
  * Convert Emscripten FS readFile result to Uint8Array
@@ -244,88 +262,117 @@ export async function createRasmInstance(): Promise<RasmInstance> {
       // Prepare input file
       const inputFile = '/input.asm'
 
-      // Capture output
-      let capturedOutput = ''
-      const originalPrint = module.print
-      const originalPrintErr = module.printErr
+      // Run the actual assembly under a serial execution queue so
+      // we don't mutate/restore module.print/printErr concurrently.
+      const runAssembly = async (): Promise<AssembleResult> => {
+        // Capture output
+        let capturedOutput = ''
+        const originalPrint = module.print
+        const originalPrintErr = module.printErr
 
-      module.print = (text: string) => {
-        capturedOutput += `${text}\n`
-        originalPrint?.(text)
-      }
-
-      module.printErr = (text: string) => {
-        capturedOutput += `${text}\n`
-        originalPrintErr?.(text)
-      }
-
-      try {
-        // Write source code to virtual filesystem
-        module.FS.writeFile(inputFile, code)
-
-        // Build command-line arguments
-        const args = buildRasmArgs(inputFile, {
-          outputFile,
-          symbols,
-          symbolFile,
-          exportType,
-          snapshotFile
-        })
-
-        logger.debug('Calling with args:', args)
-
-        // Call RASM
-        const exitCode = module.callMain(args)
-        logger.debug('Exit code:', exitCode)
-
-        // Read output files
-        const { binary, symbolData, snapshot, dsk } = readOutputFiles(module, {
-          outputFile,
-          symbols,
-          symbolFile,
-          exportType,
-          snapshotFile,
-          dskFile
-        })
-
-        // Cleanup virtual filesystem
-        cleanupFiles(module, {
-          inputFile,
-          outputFile: binary ? outputFile : undefined,
-          symbolFile: symbolData ? symbolFile : undefined,
-          snapshotFile: snapshot ? snapshotFile : undefined
-        })
-
-        // Restore output handlers
-        module.print = originalPrint
-        module.printErr = originalPrintErr
-
-        return {
-          success: exitCode === 0,
-          binary,
-          symbols: symbolData,
-          snapshot,
-          dsk,
-          output: capturedOutput,
-          exitCode
+        module.print = (text: string) => {
+          capturedOutput += `${text}\n`
+          originalPrint?.(text)
         }
-      } catch (error) {
-        // Restore output handlers
-        module.print = originalPrint
-        module.printErr = originalPrintErr
 
-        const errorMessage =
-          error instanceof Error ? error.message : String(error)
-        return {
-          success: false,
-          output: `${capturedOutput}\nError: ${errorMessage}`,
-          exitCode: -1
+        module.printErr = (text: string) => {
+          capturedOutput += `${text}\n`
+          originalPrintErr?.(text)
+        }
+
+        try {
+          // If a test delay is configured, yield for the requested time
+          // before invoking callMain. This simulates a long-running
+          // assembly step and allows tests to assert serialization.
+          if (TEST_ASSEMBLY_DELAY_MS > 0) {
+            await new Promise<void>((res) =>
+              setTimeout(res, TEST_ASSEMBLY_DELAY_MS)
+            )
+          }
+          // Write source code to virtual filesystem
+          module.FS.writeFile(inputFile, code)
+
+          // Build command-line arguments
+          const args = buildRasmArgs(inputFile, {
+            outputFile,
+            symbols,
+            symbolFile,
+            exportType,
+            snapshotFile
+          })
+
+          logger.debug('Calling with args:', args)
+
+          // Call RASM
+          const exitCode = module.callMain(args)
+          logger.debug('Exit code:', exitCode)
+
+          // Read output files
+          const { binary, symbolData, snapshot, dsk } = readOutputFiles(
+            module,
+            {
+              outputFile,
+              symbols,
+              symbolFile,
+              exportType,
+              snapshotFile,
+              dskFile
+            }
+          )
+
+          // Cleanup virtual filesystem
+          cleanupFiles(module, {
+            inputFile,
+            outputFile: binary ? outputFile : undefined,
+            symbolFile: symbolData ? symbolFile : undefined,
+            snapshotFile: snapshot ? snapshotFile : undefined
+          })
+
+          // Restore output handlers
+          module.print = originalPrint
+          module.printErr = originalPrintErr
+
+          return {
+            success: exitCode === 0,
+            binary,
+            symbols: symbolData,
+            snapshot,
+            dsk,
+            output: capturedOutput,
+            exitCode
+          }
+        } catch (error) {
+          // Restore output handlers
+          module.print = originalPrint
+          module.printErr = originalPrintErr
+
+          const errorMessage =
+            error instanceof Error ? error.message : String(error)
+          return {
+            success: false,
+            output: `${capturedOutput}\nError: ${errorMessage}`,
+            exitCode: -1
+          }
         }
       }
+
+      // Queue up the assembly operation to run serially.
+      // This prevents race conditions on the Emscripten runtime module
+      // (module.print/module.printErr) when multiple callers assemble
+      // code at the same time.
+      const queued = assemblyQueue.then(
+        () => runAssembly(),
+        () => runAssembly()
+      )
+      // Ensure the queue doesn't reject permanently; keep a resolved
+      // promise chain to sequentialize future calls.
+      assemblyQueue = queued.catch(() => undefined)
+      return await queued
     },
 
-    dispose: () => {
-      // Cleanup if needed
+    dispose: async () => {
+      // Wait for any queued assembly operations to finish first.
+      await assemblyQueue
       rasmModulePromise = null
     }
   }

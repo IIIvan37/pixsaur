@@ -21,6 +21,7 @@ import { saveZipFileTauri } from '@/utils/exports/export-tauri'
 import { exportDskWorkspaceZip } from '@/utils/exports/exporters/export-dsk-workspace-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 import { isTauri } from '@/utils/is-tauri'
+import { dskLogger } from '@/utils/logger'
 
 export default function DskWorkspacePanel() {
   const { _ } = useLingui()
@@ -164,7 +165,7 @@ export default function DskWorkspacePanel() {
         }
       }
     } catch (error) {
-      console.error('[DSK Workspace] Export failed:', error)
+      dskLogger.error('[DSK Workspace] Export failed:', error)
     } finally {
       setIsExporting(false)
     }

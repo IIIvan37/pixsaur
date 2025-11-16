@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import * as rasmWasm from '../rasm-wasm'
 import type { RasmModule } from '../types'
 
 // Create a mock RASM module
@@ -77,6 +78,65 @@ describe('rasm-wasm helpers', () => {
 
       expect(mockModule.callMain).toBeDefined()
     })
+  })
+
+  it('serializes concurrent assemble() calls and dispose waits for queue', async () => {
+    // Intercept the script load to call onload immediately
+    const appendSpy = vi
+      .spyOn(document.head, 'appendChild')
+      .mockImplementation((node: any) => {
+        // Immediately invoke onload so createRasmModule is called
+        if (typeof node.onload === 'function') node.onload(new Event('load'))
+        return node
+      })
+
+    // Save existing global module factory
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const prev = (globalThis as any).createRasmModule
+
+    const calls: number[] = []
+
+    const mockModule = createMockRasmModule(0, {})
+    mockModule.callMain = vi.fn(() => {
+      // Record a timestamp and return
+      calls.push(Date.now())
+      return 0
+    })
+
+    // Provide the global factory expected by loadRasmModule
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(globalThis as any).createRasmModule = async () => {
+      mockModule.print = () => undefined
+      mockModule.printErr = () => undefined
+      return mockModule
+    }
+
+    // Simulate a longer assembly to ensure there is room for interleaving if
+    // serialization is not in place.
+    rasmWasm.__setTestAssemblyDelay(30)
+
+    const rasmInstance = await rasmWasm.createRasmInstance()
+
+    // Fire two assembles concurrently
+    const p1 = rasmInstance.assemble('org 0x8000')
+    const p2 = rasmInstance.assemble('org 0x8000')
+
+    await Promise.all([p1, p2])
+
+    // Both callMain invocations should have happened
+    expect(mockModule.callMain).toHaveBeenCalledTimes(2)
+    // The recorded timestamps should be ordered - second should be later
+    expect(calls.length).toBe(2)
+    expect(calls[0]).toBeLessThanOrEqual(calls[1])
+
+    // Dispose should wait for any queued operations to finish
+    await rasmInstance.dispose()
+
+    // Cleanup
+    rasmWasm.__setTestAssemblyDelay(0)
+    appendSpy.mockRestore()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(globalThis as any).createRasmModule = prev
   })
 
   describe('readOutputFiles', () => {
