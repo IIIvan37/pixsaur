@@ -8,6 +8,57 @@ export function calculateScrSize(): number {
   return 16384
 }
 
+// Constants for DSK and file format calculations
+export const AMSDOS_HEADER_SIZE = 128 // bytes
+export const BYTES_PER_KB = 1024
+export const MAX_CHUNK_SIZE = 16 * BYTES_PER_KB // 16 KB
+
+/**
+ * Get pixels per byte for a given CPC mode
+ * @param mode - CPC mode (0, 1, or 2)
+ * @returns Number of pixels encoded per byte
+ */
+export function getPixelsPerByte(mode: number): number {
+  switch (mode) {
+    case 0:
+      return 2
+    case 1:
+      return 4
+    case 2:
+      return 8
+    default:
+      throw new Error(`Invalid CPC mode: ${mode}`)
+  }
+}
+
+/**
+ * Get image format information for DSK operations
+ * @param width - Image width
+ * @param height - Image height
+ * @param mode - CPC mode
+ * @param overscan - Is overscan mode
+ * @returns Object with format information
+ */
+export function getImageFormatInfo(
+  width: number,
+  height: number,
+  mode: number,
+  overscan: boolean
+) {
+  const isStandard = isStandardMode(width, height, mode, overscan)
+  const linearSize = calculateLinearSize(width, height, mode)
+  const chunkCount = calculateChunkCount(linearSize)
+
+  return {
+    isStandard,
+    linearSize,
+    chunkCount,
+    totalSize: isStandard
+      ? calculateScrSize() + AMSDOS_HEADER_SIZE
+      : linearSize + chunkCount * AMSDOS_HEADER_SIZE
+  }
+}
+
 /**
  * Calculate the size of linear data for custom dimensions
  * @param width - Image width in pixels
@@ -20,7 +71,7 @@ export function calculateLinearSize(
   height: number,
   mode: number
 ): number {
-  const pixelsPerByte = mode === 0 ? 2 : mode === 1 ? 4 : 8
+  const pixelsPerByte = getPixelsPerByte(mode)
   const widthInBytes = Math.floor(width / pixelsPerByte)
   return widthInBytes * height
 }
@@ -54,7 +105,6 @@ export function isStandardMode(
  * @returns Number of chunks (1 if <= 16KB, 2+ if larger)
  */
 export function calculateChunkCount(dataSize: number): number {
-  const MAX_CHUNK_SIZE = 16 * 1024 // 16 KB
   return Math.ceil(dataSize / MAX_CHUNK_SIZE)
 }
 
@@ -74,15 +124,16 @@ export function generateDskFilenames(
   mode: number,
   overscan: boolean
 ): string[] {
-  const isStandard = isStandardMode(width, height, mode, overscan)
+  const { isStandard, chunkCount } = getImageFormatInfo(
+    width,
+    height,
+    mode,
+    overscan
+  )
 
   if (isStandard) {
     return [`IMG${imageIndex}.SCR`]
   }
-
-  // Custom dimensions - calculate chunks
-  const linearSize = calculateLinearSize(width, height, mode)
-  const chunkCount = calculateChunkCount(linearSize)
 
   if (chunkCount === 1) {
     return [`IMG${imageIndex}.BIN`]
@@ -110,18 +161,8 @@ export function calculateImageDskSize(
   mode: number,
   overscan: boolean
 ): number {
-  const isStandard = isStandardMode(width, height, mode, overscan)
-
-  if (isStandard) {
-    // Standard SCR: 16KB data + 128 bytes AMSDOS header
-    return calculateScrSize() + 128
-  }
-
-  // Custom dimensions: linear data size + 128 bytes AMSDOS header per chunk
-  const linearSize = calculateLinearSize(width, height, mode)
-  const chunkCount = calculateChunkCount(linearSize)
-  // Each chunk gets its own AMSDOS header
-  return linearSize + chunkCount * 128
+  const { totalSize } = getImageFormatInfo(width, height, mode, overscan)
+  return totalSize
 }
 
 /**
@@ -133,17 +174,17 @@ export const DSK_TOTAL_SIZE = 184320
 /**
  * DSK catalog size in bytes (2 KB reserved for directory)
  */
-export const DSK_CATALOG_SIZE = 2048
+export const DSK_CATALOG_SIZE = 2 * BYTES_PER_KB
 
 /**
  * DSK loader size in bytes (1 KB reserved for loader program)
  */
-export const DSK_LOADER_SIZE = 1024
+export const DSK_LOADER_SIZE = BYTES_PER_KB
 
 /**
  * DSK template BASIC file size (1 KB already present in template)
  */
-export const DSK_TEMPLATE_BASIC_SIZE = 1024
+export const DSK_TEMPLATE_BASIC_SIZE = BYTES_PER_KB
 
 /**
  * Available DSK size for files (176 KB)
@@ -205,7 +246,7 @@ export function canAddImageToDsk(
 
   // If no new image specified, assume standard SCR size
   if (!newImage) {
-    const fileSize = calculateScrSize() + 128 // 16512 bytes
+    const fileSize = calculateScrSize() + AMSDOS_HEADER_SIZE // 16512 bytes
     return remaining >= fileSize
   }
 
@@ -226,7 +267,7 @@ export function canAddImageToDsk(
  * @returns Formatted string (e.g., "163 Ko")
  */
 export function formatDskSpace(bytes: number): string {
-  const kb = Math.floor(bytes / 1024)
+  const kb = Math.floor(bytes / BYTES_PER_KB)
   return `${kb} Ko`
 }
 
@@ -238,9 +279,9 @@ export function formatDskSpace(bytes: number): string {
  */
 export function formatScrSize(scrDataLength: number): string {
   // Add 128 bytes for AMSDOS header
-  const totalSizeBytes = scrDataLength + 128
+  const totalSizeBytes = scrDataLength + AMSDOS_HEADER_SIZE
   // Convert to KB and round up
-  const totalSizeKb = Math.ceil(totalSizeBytes / 1024)
+  const totalSizeKb = Math.ceil(totalSizeBytes / BYTES_PER_KB)
   return `${totalSizeKb} Ko`
 }
 
@@ -251,7 +292,7 @@ export function formatScrSize(scrDataLength: number): string {
  * @returns Formatted string with size in Ko
  */
 export function formatFileSize(dataLength: number): string {
-  const totalSizeKb = Math.ceil(dataLength / 1024)
+  const totalSizeKb = Math.ceil(dataLength / BYTES_PER_KB)
   return `${totalSizeKb} Ko`
 }
 
