@@ -28,7 +28,7 @@ msgstr "{0} imagen(es) lista(s) para exportar"
 
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:165
 msgid "{remainingSpace} remaining"
-msgstr ""
+msgstr "{remainingSpace} restante"
 
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
@@ -142,11 +142,11 @@ msgstr "Cambiar imagen"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:77
 #~ msgid "Clear"
-#~ msgstr ""
+#~ msgstr "Vaciar"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:75
 #~ msgid "Clear all images from workspace"
-#~ msgstr ""
+#~ msgstr "Eliminar todas las imágenes del espacio de trabajo"
 
 #: src/components/image-preview/image-preview.tsx:131
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
@@ -167,7 +167,7 @@ msgstr "Haga clic para seleccionar una imagen"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:82
 msgid "Color {index}: {color}"
-msgstr ""
+msgstr "Color {index}: {color}"
 
 #: src/components/export-panel/export-config-dialog.tsx:96
 msgid "Configuration de l'export"
@@ -226,7 +226,7 @@ msgstr "Gestor DSK"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:69
 #~ msgid "DSK Workspace"
-#~ msgstr ""
+#~ msgstr "Workspace DSK"
 
 #: src/components/dsk-workspace/dsk-workspace-panel.tsx:157
 #: src/components/dsk-workspace/dsk-workspace-panel.tsx:163

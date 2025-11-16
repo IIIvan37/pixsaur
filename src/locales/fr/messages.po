@@ -28,7 +28,7 @@ msgstr "{0} image(s) prête(s) à exporter"
 
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:165
 msgid "{remainingSpace} remaining"
-msgstr ""
+msgstr "{remainingSpace} restant"
 
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
@@ -167,7 +167,7 @@ msgstr "Cliquez pour sélectionner une image"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:82
 msgid "Color {index}: {color}"
-msgstr ""
+msgstr "Couleur {index} : {color}"
 
 #: src/components/export-panel/export-config-dialog.tsx:96
 msgid "Configuration de l'export"
