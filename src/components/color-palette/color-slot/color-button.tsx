@@ -10,7 +10,7 @@ type ColorButtonProps = {
   role?: string
   disabled?: boolean
   tabIndex?: number
-  onClick?: () => void
+  onClick?: React.MouseEventHandler<HTMLButtonElement>
   buttonRef?: (el: HTMLButtonElement | null) => void
   'aria-pressed'?: boolean | 'true' | 'false' | 'mixed'
   children?: React.ReactNode
