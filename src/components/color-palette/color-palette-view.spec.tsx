@@ -205,6 +205,30 @@ describe('ColorPaletteView', () => {
     })
   })
 
+  it('palette slot is clickable when placed under a preview container', async () => {
+    // Simulate layout: preview element then palette below
+    renderWithStore(
+      <div>
+        <div role='img' aria-label='Preview container'>
+          Preview
+        </div>
+        <ColorPaletteView {...props} />
+      </div>
+    )
+
+    // Click on a filled slot
+    const btn = screen.getByRole('button', {
+      name: /#010203 déverrouillée/i
+    })
+    expect(btn).toBeInTheDocument()
+    await userEvent.click(btn)
+
+    // Popover must open
+    expect(
+      await screen.findByRole('group', { name: /Options de couleur/i })
+    ).toBeInTheDocument()
+  })
+
   describe('CPC Plus mode', () => {
     it('renders ColorPickerPopup for CPC Plus mode when slot has color', () => {
       const store = createStore()

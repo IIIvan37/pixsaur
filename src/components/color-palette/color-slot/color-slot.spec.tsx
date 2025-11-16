@@ -1,5 +1,8 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import PixsaurPopover from '@/components/ui/popover'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { ColorSlot, formatOccurrenceCount } from './color-slot'
 
@@ -238,6 +241,30 @@ describe('ColorSlot', () => {
       const arg = buttonRef.mock.calls[0][0]
       expect(arg).toBeInstanceOf(HTMLButtonElement)
     })
+  })
+
+  it('works as a popover trigger when used with PixsaurPopover (forwardRef needed)', async () => {
+    // Using controlled open state in Wrapper
+
+    function Wrapper() {
+      const [open, setOpen] = useState(false)
+      return (
+        <PixsaurPopover
+          open={open}
+          onOpenChange={(v) => setOpen(v)}
+          trigger={<ColorSlot {...defaultProps} buttonRef={() => {}} />}
+        >
+          <fieldset aria-label='Test Popover'>Content</fieldset>
+        </PixsaurPopover>
+      )
+    }
+
+    const { findByText } = render(<Wrapper />)
+    const btn = screen.getByRole('button', { name: /#ff0000/i })
+
+    await userEvent.click(btn)
+
+    expect(await findByText('Content')).toBeDefined()
   })
 
   describe('Lock icon styling', () => {
