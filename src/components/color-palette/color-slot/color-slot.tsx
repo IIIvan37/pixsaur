@@ -1,5 +1,4 @@
 import clsx from 'clsx'
-import type React from 'react'
 import { forwardRef, useMemo } from 'react'
 import Icon from '@/components/ui/icon'
 import { isBright } from '@/libs/pixsaur-color/src/quant/select-contrast-subset'
