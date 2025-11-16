@@ -75,6 +75,16 @@ describe('ExportPanelView', () => {
     expect(buttons).toHaveLength(1)
   })
 
+  it('renders a disabled button when disabled prop is passed', async () => {
+    renderWithI18n(<ExportPanelView onExport={onExport} disabled />)
+
+    const button = screen.getByRole('button', { name: /Exporter/i })
+    expect(button).toBeDisabled()
+
+    await userEvent.click(button)
+    expect(onExport).not.toHaveBeenCalled()
+  })
+
   it('calls onExport when the button is activated by spacebar', async () => {
     renderWithI18n(<ExportPanelView onExport={onExport} />)
     const button = screen.getByRole('button', { name: /Exporter/i })
