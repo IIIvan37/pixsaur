@@ -54,12 +54,19 @@ export default function SourceSection() {
                 err
               )
               // fallback to the web uploader in case of failure
-              setOpenImagePicker(true)
+              // fallback to the web uploader in case of failure. Use a small
+              // delay to avoid re-entrancy bugs with native dialogs that can
+              // cause the picker to reopen immediately on cancel.
+              setTimeout(() => setOpenImagePicker(true), 0)
             }
             return
           }
 
-          setOpenImagePicker(true)
+          // Schedule open on the next tick to avoid re-opening the file
+          // dialog on browsers when users cancel the native dialog.
+          // This prevents event bubbling / focus timing issues that cause
+          // the picker to reopen immediately after cancel.
+          setTimeout(() => setOpenImagePicker(true), 0)
         }}
         icon='UploadIcon'
       />
