@@ -157,7 +157,7 @@ data:
  * This loader accepts a filename parameter from BASIC and auto-detects format
  *
  * Usage from BASIC:
- *   CALL &8000, @"IMG00001.SCR"
+ *   CALL &8000, @"IMG1.SCR"
  *
  * The loader will:
  * - Load the SCR file specified by the filename parameter
@@ -182,8 +182,8 @@ export function generateUniversalScrLoader(dskFilename: string): string {
 ;; Auto-detects Classic vs Plus format via hardware byte at offset 2035
 ;;
 ;; Usage from BASIC:
-;;   CALL &8000, @"IMG00001.SCR"
-;;   CALL &8000, @"IMG00002.SCR"
+;;   CALL &8000, @"IMG1.SCR"
+;;   CALL &8000, @"IMG2.SCR"
 ;;   etc.
 
 ;; Firmware functions

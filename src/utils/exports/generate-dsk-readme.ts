@@ -1,4 +1,5 @@
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
 
 /**
  * Generate README.md content for the DSK export
@@ -23,7 +24,14 @@ export function generateDskReadme(
   readme += `|----------|----------|------|------------|--------|\n`
 
   for (const [index, image] of images.entries()) {
-    const filename = `IMG${String(index + 1).padStart(5, '0')}.SCR`
+    const dskFilenames = generateDskFilenames(
+      index + 1,
+      image.width,
+      image.height,
+      image.mode,
+      image.overscan
+    )
+    const filename = dskFilenames[0]
     const hardware = image.cpcHardware === 'plus' ? 'CPC Plus' : 'CPC Classic'
     const mode = `Mode ${image.mode}`
     const dimensions = `${image.width}×${image.height}`
@@ -37,7 +45,7 @@ export function generateDskReadme(
   readme += `\`\`\`basic\n`
   readme += `MEMORY &7FFF\n`
   readme += `LOAD"LOADER.BIN",&8000\n`
-  readme += `A$="IMG00001.SCR" \n`
+  readme += `A$="IMG1.SCR" \n`
   readme += `CALL &8000, @A$\n`
   readme += `\`\`\`\n\n`
   readme += `The loader automatically detects CPC Classic or CPC Plus format and applies the appropriate palette.\n\n`
@@ -76,7 +84,14 @@ export function generateDskReadme(
 
   readme += `### Palette Information\n\n`
   for (const [index, image] of images.entries()) {
-    const filename = `IMG${String(index + 1).padStart(5, '0')}.SCR`
+    const dskFilenames = generateDskFilenames(
+      index + 1,
+      image.width,
+      image.height,
+      image.mode,
+      image.overscan
+    )
+    const filename = dskFilenames[0]
     readme += `**${filename}** (${image.cpcHardware === 'plus' ? 'CPC Plus' : 'CPC Classic'})\n`
     if (
       image.cpcHardware === 'classic' &&
