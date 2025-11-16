@@ -16,7 +16,7 @@
     "lint:fix": "biome lint . --write",
     "format": "biome format .",
     "format:fix": "biome format . --write",
-    "check": "biome check . && node scripts/check-radix-imports.js",
+    "check": "biome check . && node scripts/check-console-usage.js && node scripts/check-radix-imports.js",
     "check:fix": "biome check . --write",
     "check:radix-imports": "node scripts/check-radix-imports.js",
     "preview": "vite preview",
