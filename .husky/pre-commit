@@ -9,4 +9,10 @@ npx @biomejs/biome check . --write
 # Add any files that were auto-fixed by biome
 git add -u
 
+echo "🔍 Running console usage check..."
+node scripts/check-console-usage.js
+
+echo "🔍 Checking forbidden Radix imports..."
+node scripts/check-radix-imports.js
+
 echo "✅ Pre-commit checks passed!"
