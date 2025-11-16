@@ -178,9 +178,8 @@ export async function exportDskWorkspaceZip(
 
       // Use same filename format as DSK: IMG00001.SCR
       const paddedIndex = imageIndex.toString().padStart(5, '0')
-      const filename = isStandardMode
-        ? `IMG${paddedIndex}`
-        : `IMG${paddedIndex}`
+      // Filename uses the same pattern for standard and custom modes
+      const filename = `IMG${paddedIndex}`
 
       // Generate ASM file and assemble to BIN, then save as .scr or .bin
       const asmLabel = `image${imageIndex}`

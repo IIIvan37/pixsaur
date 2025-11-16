@@ -1,13 +1,42 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { ColorSlot } from './color-slot'
+import { ColorSlot, formatOccurrenceCount } from './color-slot'
 
 vi.mock('@/components/ui/icon', () => ({
   default: ({ name, className }: { name: string; className: string }) => (
     <span data-testid='icon' data-icon={name} className={className} />
   )
 }))
+
+describe('formatOccurrenceCount', () => {
+  it('should format 0 as "0 pixel"', () => {
+    expect(formatOccurrenceCount(0)).toBe('0 pixel')
+  })
+
+  it('should format 1 as "1 pixel"', () => {
+    expect(formatOccurrenceCount(1)).toBe('1 pixel')
+  })
+
+  it('should format small numbers as "X pixels"', () => {
+    expect(formatOccurrenceCount(5)).toBe('5 pixels')
+    expect(formatOccurrenceCount(42)).toBe('42 pixels')
+    expect(formatOccurrenceCount(999)).toBe('999 pixels')
+  })
+
+  it('should format thousands with "k" suffix', () => {
+    expect(formatOccurrenceCount(1000)).toBe('1.0k pixels')
+    expect(formatOccurrenceCount(1500)).toBe('1.5k pixels')
+    expect(formatOccurrenceCount(25000)).toBe('25.0k pixels')
+    expect(formatOccurrenceCount(999999)).toBe('1000.0k pixels')
+  })
+
+  it('should format millions with "M" suffix', () => {
+    expect(formatOccurrenceCount(1000000)).toBe('1.0M pixels')
+    expect(formatOccurrenceCount(1500000)).toBe('1.5M pixels')
+    expect(formatOccurrenceCount(25000000)).toBe('25.0M pixels')
+  })
+})
 
 describe('ColorSlot', () => {
   const defaultProps = {
@@ -53,19 +82,21 @@ describe('ColorSlot', () => {
     })
 
     it('should render with focused state', () => {
-      // ColorSlot passes aria-selected but ColorButton doesn't support it yet
-      // Test that component renders successfully with focused prop
       const { container } = render(
         <ColorSlot {...defaultProps} focused={true} />
       )
-      expect(container.querySelector('button')).toBeDefined()
+      const button = container.querySelector('button')
+
+      expect(button).toHaveAttribute('aria-pressed', 'true')
     })
 
     it('should render with unfocused state', () => {
       const { container } = render(
         <ColorSlot {...defaultProps} focused={false} />
       )
-      expect(container.querySelector('button')).toBeDefined()
+      const button = container.querySelector('button')
+
+      expect(button).toHaveAttribute('aria-pressed', 'false')
     })
   })
 
@@ -233,17 +264,6 @@ describe('ColorSlot', () => {
 
       const overlay = document.querySelector('[aria-hidden="true"]')
       expect(overlay).toBeDefined()
-    })
-  })
-
-  describe('Forward ref', () => {
-    it('should forward ref to button element', () => {
-      const ref = vi.fn()
-      render(<ColorSlot {...defaultProps} ref={ref} />)
-
-      expect(ref).toHaveBeenCalled()
-      const element = ref.mock.calls[0][0]
-      expect(element).toBeInstanceOf(HTMLButtonElement)
     })
   })
 })

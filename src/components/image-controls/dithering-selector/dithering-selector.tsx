@@ -60,7 +60,7 @@ export function DitheringSelector() {
       justify='flex-start'
       align='flex-start'
     >
-      <Flex direction='column' gap='var(--spacing-xs)' align='start'>
+      <Flex direction='column' gap='var(--spacing-xs)' align='flex-start'>
         <div
           style={{
             fontFamily: 'var(--font-family)',

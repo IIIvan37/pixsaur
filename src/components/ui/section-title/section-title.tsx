@@ -3,11 +3,11 @@ import styles from './section-title.module.css'
 
 export type SectionTitleProps = {
   /** The title content */
-  children: ReactNode
+  readonly children: ReactNode
   /** Semantic title level (h2 by default) */
-  level?: 2 | 3 | 4
+  readonly level?: 2 | 3 | 4
   /** Additional CSS classes */
-  className?: string
+  readonly className?: string
 }
 
 /**
@@ -28,6 +28,11 @@ export function SectionTitle({
   level = 2,
   className = ''
 }: SectionTitleProps) {
+  // We intentionally create the tag name dynamically (h2/h3/h4) to keep the
+  // component compact while preserving semantic headings. Sonar's a11y rule
+  // 'useSemanticElements' flags dynamic element usage, but here we use only
+  // valid heading tags. Suppress that specific Sonar warning for this line.
+  // @sonar-ignore-next-line a11y/useSemanticElements: Dynamic heading used by design
   const Tag = `h${level}` as ElementType
 
   return (

@@ -12,6 +12,7 @@ type ColorButtonProps = {
   tabIndex?: number
   onClick?: () => void
   buttonRef?: (el: HTMLButtonElement | null) => void
+  'aria-pressed'?: boolean | 'true' | 'false' | 'mixed'
   children?: React.ReactNode
 }
 
@@ -26,6 +27,7 @@ export const ColorButton = forwardRef<HTMLButtonElement, ColorButtonProps>(
       tabIndex,
       onClick,
       buttonRef,
+      'aria-pressed': ariaPressed,
       children
     },
     ref
@@ -43,6 +45,7 @@ export const ColorButton = forwardRef<HTMLButtonElement, ColorButtonProps>(
       disabled={disabled}
       tabIndex={tabIndex}
       onClick={onClick}
+      aria-pressed={ariaPressed}
       type='button'
     >
       {children}

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  AMSDOS_HEADER_SIZE,
+  BYTES_PER_KB,
   calculateChunkCount,
   calculateDskRemainingSpace,
   calculateImageDskSize,
@@ -16,8 +18,11 @@ import {
   formatImageSize,
   formatScrSize,
   generateDskFilenames,
+  getImageFormatInfo,
   getModeLabel,
-  isStandardMode
+  getPixelsPerByte,
+  isStandardMode,
+  MAX_CHUNK_SIZE
 } from './dsk-workspace-utils'
 
 describe('DSK Workspace Utils', () => {
@@ -27,15 +32,15 @@ describe('DSK Workspace Utils', () => {
     })
 
     it('should have correct catalog size', () => {
-      expect(DSK_CATALOG_SIZE).toBe(2048) // 2 KB
+      expect(DSK_CATALOG_SIZE).toBe(2 * BYTES_PER_KB) // 2 KB
     })
 
     it('should have correct loader size', () => {
-      expect(DSK_LOADER_SIZE).toBe(1024) // 1 KB
+      expect(DSK_LOADER_SIZE).toBe(BYTES_PER_KB) // 1 KB
     })
 
     it('should have correct template BASIC file size', () => {
-      expect(DSK_TEMPLATE_BASIC_SIZE).toBe(1024) // 1 KB
+      expect(DSK_TEMPLATE_BASIC_SIZE).toBe(BYTES_PER_KB) // 1 KB
     })
 
     it('should have correct available size', () => {
@@ -46,6 +51,79 @@ describe('DSK Workspace Utils', () => {
           DSK_LOADER_SIZE -
           DSK_TEMPLATE_BASIC_SIZE
       )
+    })
+
+    it('should have correct AMSDOS header size', () => {
+      expect(AMSDOS_HEADER_SIZE).toBe(128)
+    })
+
+    it('should have correct bytes per KB', () => {
+      expect(BYTES_PER_KB).toBe(1024)
+    })
+
+    it('should have correct max chunk size', () => {
+      expect(MAX_CHUNK_SIZE).toBe(16 * BYTES_PER_KB) // 16 KB
+      expect(MAX_CHUNK_SIZE).toBe(16384)
+    })
+  })
+
+  describe('getPixelsPerByte', () => {
+    it('should return 2 pixels per byte for Mode 0', () => {
+      expect(getPixelsPerByte(0)).toBe(2)
+    })
+
+    it('should return 4 pixels per byte for Mode 1', () => {
+      expect(getPixelsPerByte(1)).toBe(4)
+    })
+
+    it('should return 8 pixels per byte for Mode 2', () => {
+      expect(getPixelsPerByte(2)).toBe(8)
+    })
+
+    it('should throw error for invalid mode', () => {
+      expect(() => getPixelsPerByte(3)).toThrow('Invalid CPC mode: 3')
+      expect(() => getPixelsPerByte(-1)).toThrow('Invalid CPC mode: -1')
+      expect(() => getPixelsPerByte(99)).toThrow('Invalid CPC mode: 99')
+    })
+  })
+
+  describe('getImageFormatInfo', () => {
+    it('should return correct info for standard Mode 1 image', () => {
+      const info = getImageFormatInfo(320, 200, 1, false)
+      expect(info.isStandard).toBe(true)
+      expect(info.linearSize).toBe(16000) // 80 bytes × 200 lines
+      expect(info.chunkCount).toBe(1)
+      expect(info.totalSize).toBe(16512) // 16384 + 128
+    })
+
+    it('should return correct info for custom dimensions', () => {
+      const info = getImageFormatInfo(400, 300, 1, false)
+      expect(info.isStandard).toBe(false)
+      expect(info.linearSize).toBe(30000) // 100 bytes × 300 lines
+      expect(info.chunkCount).toBe(2) // 30000 > 16384
+      expect(info.totalSize).toBe(30256) // 30000 + 2×128
+    })
+
+    it('should return correct info for overscan image', () => {
+      const info = getImageFormatInfo(320, 200, 1, true)
+      expect(info.isStandard).toBe(false)
+      expect(info.linearSize).toBe(16000)
+      expect(info.chunkCount).toBe(1)
+      expect(info.totalSize).toBe(16128) // 16000 + 128
+    })
+
+    it('should handle Mode 0 standard dimensions', () => {
+      const info = getImageFormatInfo(160, 200, 0, false)
+      expect(info.isStandard).toBe(true)
+      expect(info.linearSize).toBe(16000) // 80 bytes × 200 lines
+      expect(info.totalSize).toBe(16512)
+    })
+
+    it('should handle Mode 2 standard dimensions', () => {
+      const info = getImageFormatInfo(640, 200, 2, false)
+      expect(info.isStandard).toBe(true)
+      expect(info.linearSize).toBe(16000) // 80 bytes × 200 lines
+      expect(info.totalSize).toBe(16512)
     })
   })
 
@@ -74,7 +152,7 @@ describe('DSK Workspace Utils', () => {
           overscan: false
         }
       ]
-      const fileSize = 16384 + 128 // SCR + AMSDOS header = 16512
+      const fileSize = 16384 + AMSDOS_HEADER_SIZE // SCR + AMSDOS header = 16512
       const result = calculateDskRemainingSpace(images)
       expect(result).toBe(DSK_AVAILABLE_SIZE - fileSize)
       expect(result).toBe(180224 - 16512)
@@ -540,27 +618,27 @@ describe('DSK Workspace Utils', () => {
 
   describe('calculateChunkCount', () => {
     it('should return 1 for data <= 16KB', () => {
-      expect(calculateChunkCount(16384)).toBe(1)
+      expect(calculateChunkCount(MAX_CHUNK_SIZE)).toBe(1)
       expect(calculateChunkCount(16000)).toBe(1)
       expect(calculateChunkCount(1024)).toBe(1)
     })
 
     it('should return 2 for data between 16KB and 32KB', () => {
-      expect(calculateChunkCount(16385)).toBe(2)
+      expect(calculateChunkCount(MAX_CHUNK_SIZE + 1)).toBe(2)
       expect(calculateChunkCount(20000)).toBe(2)
-      expect(calculateChunkCount(32768)).toBe(2)
+      expect(calculateChunkCount(2 * MAX_CHUNK_SIZE)).toBe(2)
     })
 
     it('should return 3 for data between 32KB and 48KB', () => {
-      expect(calculateChunkCount(32769)).toBe(3)
+      expect(calculateChunkCount(2 * MAX_CHUNK_SIZE + 1)).toBe(3)
       expect(calculateChunkCount(40000)).toBe(3)
-      expect(calculateChunkCount(49152)).toBe(3)
+      expect(calculateChunkCount(3 * MAX_CHUNK_SIZE)).toBe(3)
     })
 
     it('should handle exact multiples of 16KB', () => {
-      expect(calculateChunkCount(16384)).toBe(1)
-      expect(calculateChunkCount(32768)).toBe(2)
-      expect(calculateChunkCount(49152)).toBe(3)
+      expect(calculateChunkCount(MAX_CHUNK_SIZE)).toBe(1)
+      expect(calculateChunkCount(2 * MAX_CHUNK_SIZE)).toBe(2)
+      expect(calculateChunkCount(3 * MAX_CHUNK_SIZE)).toBe(3)
     })
   })
 
@@ -607,7 +685,7 @@ describe('DSK Workspace Utils', () => {
   describe('calculateImageDskSize', () => {
     it('should return 16512 bytes for standard Mode 1 image (16384 + 128)', () => {
       const size = calculateImageDskSize(320, 200, 1, false)
-      expect(size).toBe(16512)
+      expect(size).toBe(16384 + AMSDOS_HEADER_SIZE)
     })
 
     it('should return 16512 bytes for standard Mode 0 image', () => {
@@ -623,21 +701,21 @@ describe('DSK Workspace Utils', () => {
     it('should calculate size for custom dimensions with single chunk', () => {
       // 400×150 Mode 1 = 100×150 = 15000 bytes + 128 header = 15128
       const size = calculateImageDskSize(400, 150, 1, false)
-      expect(size).toBe(15128)
+      expect(size).toBe(15000 + AMSDOS_HEADER_SIZE)
     })
 
     it('should calculate size for custom dimensions with multiple chunks', () => {
       // 320×300 Mode 1 = 80×300 = 24000 bytes
       // 2 chunks needed → 24000 + (2 × 128) = 24256
       const size = calculateImageDskSize(320, 300, 1, false)
-      expect(size).toBe(24256)
+      expect(size).toBe(24000 + 2 * AMSDOS_HEADER_SIZE)
     })
 
     it('should treat overscan as custom (not standard)', () => {
       // Overscan 320×200 Mode 1: linear = 80×200 = 16000 bytes
       // 1 chunk → 16000 + 128 = 16128 (different from standard 16512)
       const size = calculateImageDskSize(320, 200, 1, true)
-      expect(size).toBe(16128)
+      expect(size).toBe(16000 + AMSDOS_HEADER_SIZE)
     })
   })
 
@@ -654,14 +732,14 @@ describe('DSK Workspace Utils', () => {
 
     it('should handle small sizes', () => {
       expect(formatFileSize(512)).toBe('1 Ko')
-      expect(formatFileSize(1024)).toBe('1 Ko')
-      expect(formatFileSize(1025)).toBe('2 Ko')
+      expect(formatFileSize(BYTES_PER_KB)).toBe('1 Ko')
+      expect(formatFileSize(BYTES_PER_KB + 1)).toBe('2 Ko')
     })
 
     it('should handle exact KB boundaries', () => {
-      expect(formatFileSize(1024)).toBe('1 Ko')
-      expect(formatFileSize(2048)).toBe('2 Ko')
-      expect(formatFileSize(16384)).toBe('16 Ko')
+      expect(formatFileSize(BYTES_PER_KB)).toBe('1 Ko')
+      expect(formatFileSize(2 * BYTES_PER_KB)).toBe('2 Ko')
+      expect(formatFileSize(16 * BYTES_PER_KB)).toBe('16 Ko')
     })
   })
 
