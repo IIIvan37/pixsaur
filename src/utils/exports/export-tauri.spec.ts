@@ -131,6 +131,7 @@ describe('export-tauri', () => {
       )
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[Pixsaur]',
         '[Tauri Export] Failed to write file:',
         writeError
       )

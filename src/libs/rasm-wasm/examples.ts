@@ -2,7 +2,10 @@
  * RASM WebAssembly Usage Examples
  */
 
+import { createLogger } from '@/utils/logger'
 import { assemble } from './index'
+
+const rasmLogger = createLogger({ prefix: '[RASM]' })
 
 /**
  * Example 1: Simple assembly
@@ -18,17 +21,17 @@ export async function example1SimpleAssembly() {
   const result = await assemble(code)
 
   if (result.success && result.binary) {
-    console.log('Assembly successful!')
-    console.log('Binary size:', result.binary.length, 'bytes')
-    console.log(
+    rasmLogger.info('Assembly successful!')
+    rasmLogger.info('Binary size:', result.binary.length, 'bytes')
+    rasmLogger.info(
       'Binary:',
       Array.from(result.binary)
         .map((b) => b.toString(16).padStart(2, '0'))
         .join(' ')
     )
   } else {
-    console.error('Assembly failed:')
-    console.error(result.output)
+    rasmLogger.error('Assembly failed:')
+    rasmLogger.error(result.output)
   }
 
   return result
@@ -62,14 +65,14 @@ export async function example2WithSymbols() {
   })
 
   if (result.success) {
-    console.log('Assembly successful!')
+    rasmLogger.info('Assembly successful!')
     if (result.symbols) {
-      console.log('\nSymbol table:')
-      console.log(result.symbols)
+      rasmLogger.info('\nSymbol table:')
+      rasmLogger.info(result.symbols)
     }
   } else {
-    console.error('Assembly failed:')
-    console.error(result.output)
+    rasmLogger.error('Assembly failed:')
+    rasmLogger.error(result.output)
   }
 
   return result
@@ -97,8 +100,8 @@ export async function example3CreateSnapshot() {
   })
 
   if (result.success && result.snapshot) {
-    console.log('Snapshot created!')
-    console.log('Snapshot size:', result.snapshot.length, 'bytes')
+    rasmLogger.info('Snapshot created!')
+    rasmLogger.info('Snapshot size:', result.snapshot.length, 'bytes')
 
     // Download the snapshot
     const blob = new Blob([result.snapshot], {
@@ -111,8 +114,8 @@ export async function example3CreateSnapshot() {
     a.click()
     URL.revokeObjectURL(url)
   } else {
-    console.error('Snapshot creation failed:')
-    console.error(result.output)
+    rasmLogger.error('Snapshot creation failed:')
+    rasmLogger.error(result.output)
   }
 
   return result
@@ -144,8 +147,8 @@ export async function example4CreateDisk() {
   })
 
   if (result.success && result.dsk) {
-    console.log('DSK created!')
-    console.log('DSK size:', result.dsk.length, 'bytes')
+    rasmLogger.info('DSK created!')
+    rasmLogger.info('DSK size:', result.dsk.length, 'bytes')
 
     // Download the DSK
     const blob = new Blob([result.dsk], {
@@ -158,8 +161,8 @@ export async function example4CreateDisk() {
     a.click()
     URL.revokeObjectURL(url)
   } else {
-    console.error('DSK creation failed:')
-    console.error(result.output)
+    rasmLogger.error('DSK creation failed:')
+    rasmLogger.error(result.output)
   }
 
   return result
@@ -204,8 +207,8 @@ export async function example5DskManager() {
       format: 'data'
     })
 
-    console.log('DSK created with multiple files!')
-    console.log('DSK size:', dsk.length, 'bytes')
+    rasmLogger.info('DSK created with multiple files!')
+    rasmLogger.info('DSK size:', dsk.length, 'bytes')
 
     // Download the DSK
     const blob = new Blob([new Uint8Array(dsk)], {
@@ -220,7 +223,7 @@ export async function example5DskManager() {
 
     return { success: true, dsk }
   } catch (error) {
-    console.error('Failed to create DSK:', error)
+    rasmLogger.error('Failed to create DSK:', error)
     return { success: false, error }
   }
 }

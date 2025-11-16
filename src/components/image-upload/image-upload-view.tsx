@@ -4,6 +4,7 @@ import { Window } from '@tauri-apps/api/window'
 import { useEffect, useId, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
 import Icon from '@/components/ui/icon'
+import logger from '@/utils/logger'
 import styles from './image-upload.module.css'
 
 export type ImageUploadProps = {
@@ -75,7 +76,7 @@ export const ImageUploadView = ({
       cb([file])
     } catch (error) {
       // Log error for debugging but don't crash the app
-      console.warn('[ImageUpload] Failed to process file:', filePath, error)
+      logger.warn('[ImageUpload] Failed to process file:', filePath, error)
     }
   }
 
@@ -167,7 +168,7 @@ export const ImageUploadView = ({
         }
       } catch (error) {
         // Log error for debugging but don't crash the app
-        console.warn('[ImageUpload] Failed to open file dialog:', error)
+        logger.warn('[ImageUpload] Failed to open file dialog:', error)
       }
     }
   }

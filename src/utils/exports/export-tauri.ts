@@ -4,6 +4,7 @@
 
 import { save } from '@tauri-apps/plugin-dialog'
 import { writeFile } from '@tauri-apps/plugin-fs'
+import logger from '@/utils/logger'
 
 /**
  * Save a file using Tauri's native file dialog and file system
@@ -47,7 +48,7 @@ export async function saveTauriFile(
     await writeFile(filePath, uint8Data)
     return true
   } catch (error) {
-    console.error('[Tauri Export] Failed to write file:', error)
+    logger.error('[Tauri Export] Failed to write file:', error)
     throw error
   }
 }

@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react'
+import logger from '@/utils/logger'
 import { ImageUploadView } from './image-upload-view'
 import { processImageFile } from './utils'
 
@@ -31,11 +32,11 @@ export const ImageUpload = memo(
               const img = new Image()
               img.onload = () => onImageLoaded(img)
               img.onerror = (e) =>
-                console.error('[ImageUpload] Image load failed:', e)
+                logger.error('[ImageUpload] Image load failed:', e)
               img.src = dataUrl
             }
           } catch (error) {
-            console.error('[ImageUpload] Failed to load image:', error)
+            logger.error('[ImageUpload] Failed to load image:', error)
           }
           return
         }
@@ -46,7 +47,9 @@ export const ImageUpload = memo(
 
         // In Tauri, drag & drop is disabled - only native dialog works
         // In web mode, use standard FileReader
-        processImageFile(file).then(onImageLoaded).catch(console.error)
+        processImageFile(file)
+          .then(onImageLoaded)
+          .catch((e) => logger.error(e))
       },
       [onImageLoaded]
     )

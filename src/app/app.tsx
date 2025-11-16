@@ -8,6 +8,7 @@ import { Updater } from '@/components/updater/updater'
 import { VersionDisplay } from '@/components/version-display'
 import styles from '@/styles/app.module.css'
 import { isDevelopment } from '@/utils/is-development'
+import logger from '@/utils/logger'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
 
@@ -33,9 +34,9 @@ export default function App() {
       if (event.key === 'F12') {
         event.preventDefault()
         invoke('open_debug_window')
-          .then(() => console.log('[APP] Debug window opened'))
+          .then(() => logger.info('[APP] Debug window opened'))
           .catch((error) =>
-            console.error('[APP] Failed to open debug window:', error)
+            logger.error('[APP] Failed to open debug window:', error)
           )
       }
     }
@@ -58,7 +59,7 @@ export default function App() {
           await debugWindow.emit('debug-response', data)
         }
       } catch (error) {
-        console.error('[APP] Failed to send debug response:', error)
+        logger.error('[APP] Failed to send debug response:', error)
       }
     }
 
@@ -66,13 +67,13 @@ export default function App() {
     const handleUpdaterTest = async (requestId: string) => {
       try {
         const result = await invoke('test_updater')
-        console.log('[APP] Updater test result:', result)
+        logger.info('[APP] Updater test result:', result)
         await sendDebugResponse({
           result: JSON.parse(result as string),
           requestId
         })
       } catch (error) {
-        console.error('[APP] Updater test failed:', error)
+        logger.error('[APP] Updater test failed:', error)
         await sendDebugResponse({
           error: error instanceof Error ? error.message : String(error),
           requestId
@@ -83,7 +84,7 @@ export default function App() {
     const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type !== 'DEBUG_REQUEST') return
 
-      console.log('[APP] Received debug request:', event.data)
+      logger.info('[APP] Received debug request:', event.data)
 
       if (event.data.action === 'TEST_UPDATER') {
         await handleUpdaterTest(event.data.requestId)
