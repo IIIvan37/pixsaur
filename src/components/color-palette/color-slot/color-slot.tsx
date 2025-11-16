@@ -11,7 +11,7 @@ import styles from './color-slot.module.css'
 /**
  * Format occurrence count for display in tooltips
  */
-const formatOccurrenceCount = (count: number): string => {
+export const formatOccurrenceCount = (count: number): string => {
   if (count === 0) return '0 pixel'
   if (count === 1) return '1 pixel'
   if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M pixels`
@@ -52,7 +52,7 @@ export const ColorSlot: React.FC<ColorSlotProps> = ({
       colorHex={`#${hex}`}
       className={styles.colorFill}
       title={tooltip}
-      aria-pressed={focused ? 'true' : 'false'}
+      aria-pressed={focused}
       buttonRef={buttonRef}
       onClick={onOpenPopover ? () => onOpenPopover() : undefined}
     >
