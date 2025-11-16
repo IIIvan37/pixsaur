@@ -1,4 +1,4 @@
-use tauri::{Manager, Listener, Emitter};
+use tauri::{Manager, Listener, Emitter, CustomMenuItem, Menu, MenuItem, Submenu};
 use tauri_plugin_updater::UpdaterExt;
 use serde_json;
 
@@ -39,6 +39,22 @@ async fn test_updater(app: tauri::AppHandle) -> Result<String, String> {
 
 pub fn run() {
   tauri::Builder::default()
+    // Add a small native menu with a Quit action so users can exit the
+    // application even when the window has no decorations / close button.
+    .menu({
+      let quit = CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q");
+      let file = Menu::new().add_item(quit);
+      Menu::new().add_submenu(Submenu::new("File", file))
+    })
+    .on_menu_event(|event| {
+      match event.menu_item_id() {
+        "quit" => {
+          // Quit the entire application with success code 0
+          event.window().app_handle().exit(0);
+        }
+        _ => {}
+      }
+    })
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_updater::Builder::new().build())
