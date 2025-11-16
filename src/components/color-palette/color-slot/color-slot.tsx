@@ -18,7 +18,11 @@ export const formatOccurrenceCount = (count: number): string => {
   return `${count} pixels`
 }
 
-type ColorSlotProps = {
+// Omit native `color` attr from button (HTML attribute) to allow our `color` Vector
+type ColorSlotProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'color'
+> & {
   color: Vector<'RGB'>
   locked: boolean
   buttonRef: (el: HTMLButtonElement | null) => void
