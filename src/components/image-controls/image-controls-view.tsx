@@ -121,7 +121,7 @@ export function ImageControlsView({
       <div className={styles.section}>
         <DitheringSelector />
 
-        <Flex align='center' justify='between' style={{ width: '100%' }}>
+        <Flex align='center' justify='space-between' style={{ width: '100%' }}>
           <SectionTitle>
             <Trans>Lissage horizontal</Trans>
           </SectionTitle>
