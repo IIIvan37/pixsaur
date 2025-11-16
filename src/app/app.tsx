@@ -41,6 +41,29 @@ export default function App() {
     return () => globalThis.removeEventListener('keydown', handleKeyDown)
   }, [tauri])
 
+  // Add keyboard shortcut for quitting the app (Cmd/Ctrl+Q).
+  useEffect(() => {
+    if (!tauri) return
+
+    const handler = async (event: KeyboardEvent) => {
+      try {
+        const { isQuitShortcut } = await import('@/utils/quit-shortcut')
+        if (isQuitShortcut(event)) {
+          event.preventDefault()
+          const { invoke } = await import('@tauri-apps/api/core')
+          await invoke('quit_app')
+        }
+      } catch (err) {
+        logger.error('[APP] Failed to invoke quit_app:', err)
+      }
+    }
+
+    globalThis.addEventListener('keydown', handler)
+    return () => globalThis.removeEventListener('keydown', handler)
+  }, [tauri])
+
+  // No tray by default. JS/Native tray code was removed to simplify UX.
+
   // Listen for messages from debug window
   useEffect(() => {
     if (!tauri) return

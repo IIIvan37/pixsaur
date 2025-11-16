@@ -31,11 +31,7 @@ describe('SourceSection', () => {
   })
 
   it("clicking 'Changer d'image' opens the uploader", async () => {
-    const { findByTestId } = renderWithProviders(
-      <>
-        <SetupInitialImage />
-      </>
-    )
+    const { findByTestId } = renderWithProviders(<SetupInitialImage />)
 
     const changeButton = screen.getByRole('button', {
       name: /Changer d'image/i

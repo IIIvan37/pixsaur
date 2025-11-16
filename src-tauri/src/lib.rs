@@ -1,4 +1,4 @@
-use tauri::{Manager, Listener, Emitter, CustomMenuItem, Menu, MenuItem, Submenu};
+use tauri::{Manager, Listener, Emitter};
 use tauri_plugin_updater::UpdaterExt;
 use serde_json;
 
@@ -11,6 +11,13 @@ fn log_to_file(message: String) {
 fn open_debug_window(app: tauri::AppHandle) {
   use tauri::Manager;
   let _ = app.get_webview_window("debug").unwrap().show();
+}
+
+/// Quit application from JS invoke (used by tray menu / quit)
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+  // Prefer a clean exit using tauri AppHandle
+  app.exit(0);
 }
 
 #[tauri::command]
@@ -39,28 +46,19 @@ async fn test_updater(app: tauri::AppHandle) -> Result<String, String> {
 
 pub fn run() {
   tauri::Builder::default()
-    // Add a small native menu with a Quit action so users can exit the
-    // application even when the window has no decorations / close button.
-    .menu({
-      let quit = CustomMenuItem::new("quit".to_string(), "Quit").accelerator("CmdOrCtrl+Q");
-      let file = Menu::new().add_item(quit);
-      Menu::new().add_submenu(Submenu::new("File", file))
-    })
-    .on_menu_event(|event| {
-      match event.menu_item_id() {
-        "quit" => {
-          // Quit the entire application with success code 0
-          event.window().app_handle().exit(0);
-        }
-        _ => {}
-      }
-    })
+    // No native menu/tray by default to keep compatibility with the
+    // project's Tauri configuration. We intentionally do not add
+    // a system tray or menu here.
+    // NOTE: menu and system tray are intentionally not configured here to preserve
+    // compatibility with the tauri version used by this project. Adding them requires
+    // specific cargo features (e.g., `tray-icon`) and correct menu creation with a
+    // Manager/`AppHandle`. We'll add the tray/menu later after verifying APIs.
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_shell::init())
-    .invoke_handler(tauri::generate_handler![log_to_file, open_debug_window, test_updater])
+  .invoke_handler(tauri::generate_handler![log_to_file, open_debug_window, test_updater, quit_app])
     .setup(|app| {
       // Enable logging in debug builds or when PIXSAUR_DEBUG env var is set
       if cfg!(debug_assertions) || std::env::var("PIXSAUR_DEBUG").is_ok() {
