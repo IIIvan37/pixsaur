@@ -96,35 +96,36 @@ const ImagePreview = () => {
       modeConfig
     )
 
-    // Convert to data URL (can be saved directly by browsers)
-    const dataUrl = correctedCanvas.toDataURL('image/png')
+    // Convert to blob and create blob URL for better compatibility
+    correctedCanvas.toBlob((blob) => {
+      if (blob) {
+        const blobUrl = URL.createObjectURL(blob)
 
-    // Create an HTML document with the image as data URL
-    // Data URLs can be right-clicked and saved with "Save Image As"
-    const html = `
+        // Create an HTML document with the image as blob URL
+        // Blob URLs are more reliable than data URLs for opening in new tabs
+        const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <title>Preview - Pixsaur</title>
   <style>
     body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #1a1a1a; }
-    img { max-width: 100%; max-height: 100vh; image-rendering: pixelated; }
+    img { max-width: 100%; max-height: 100vh; image-rendering: pixelated; cursor: pointer; }
   </style>
 </head>
 <body>
-  <img src="${dataUrl}" alt="CPC Preview" download="pixsaur-preview.png" />
+  <img src="${blobUrl}" alt="CPC Preview" onload="URL.revokeObjectURL('${blobUrl}')" />
 </body>
 </html>`
 
-    const htmlBlob = new Blob([html], { type: 'text/html' })
-    const htmlUrl = URL.createObjectURL(htmlBlob)
-
-    window.open(htmlUrl, '_blank')
-
-    // Clean up after a delay
-    setTimeout(() => {
-      URL.revokeObjectURL(htmlUrl)
-    }, 2000)
+        // Open new window and inject HTML content
+        const newWindow = window.open('', '_blank')
+        if (newWindow) {
+          newWindow.document.write(html)
+          newWindow.document.close()
+        }
+      }
+    }, 'image/png')
   }, [previewImage, modeConfig])
 
   const tooltip = _(msg`Cliquer pour ouvrir dans un nouvel onglet`)
