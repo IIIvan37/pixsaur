@@ -19,7 +19,11 @@ export const formatOccurrenceCount = (count: number): string => {
   return `${count} pixels`
 }
 
-type ColorSlotProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+// Omit native `color` attr from button (HTML attribute) to allow our `color` Vector
+type ColorSlotProps = Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'color'
+> & {
   color: Vector<'RGB'>
   locked: boolean
   buttonRef: (el: HTMLButtonElement | null) => void
@@ -54,11 +58,11 @@ export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
 
     return (
       <ColorButton
+        ref={ref}
         colorHex={`#${hex}`}
         className={styles.colorFill}
         title={tooltip}
         aria-pressed={focused}
-        ref={ref}
         buttonRef={buttonRef}
         onClick={onOpenPopover ? () => onOpenPopover() : rest.onClick}
         {...rest}
@@ -78,5 +82,5 @@ export const ColorSlot = forwardRef<HTMLButtonElement, ColorSlotProps>(
     )
   }
 )
-
+// set a readable display name for devtools
 ColorSlot.displayName = 'ColorSlot'
