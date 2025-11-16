@@ -502,7 +502,7 @@ describe('exportDskWorkspaceZip', () => {
       assemble,
       getModule: () => module,
       isReady: () => true,
-      dispose: () => undefined
+      dispose: async () => undefined
     }))
 
     const { exportDskWorkspaceZip: exportZipStdError } = await import(
@@ -563,7 +563,7 @@ describe('exportDskWorkspaceZip', () => {
       assemble,
       getModule: () => module,
       isReady: () => true,
-      dispose: () => undefined
+      dispose: async () => undefined
     }))
 
     // Spy toASMData to return array

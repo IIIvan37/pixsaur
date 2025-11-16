@@ -124,7 +124,13 @@ const result1 = await rasm.assemble(code1);
 const result2 = await rasm.assemble(code2);
 
 // Cleanup
-rasm.dispose();
+await rasm.dispose();
+
+Note: assemble() calls are executed serially. The WebAssembly runtime modifies
+global print handlers during assembly, so concurrent assemble() calls are
+queued and executed one at a time to avoid race conditions. If you need
+parallel assembly across workers, spawn multiple worker contexts instead of
+calling assemble() simultaneously in the same main thread.
 ```
 
 ## DSK Manager
