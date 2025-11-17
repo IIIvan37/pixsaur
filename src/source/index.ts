@@ -7,5 +7,5 @@ export type {
   ProcessedImage,
   SourceImage
 } from '@/types/image'
-export * from '@/utils/image-resize'
-export * from '@/utils/validate-custom-dimensions'
+export * from './image-resize'
+// validateCustomDimensions lives in `preview` (this is a preview/output concern)

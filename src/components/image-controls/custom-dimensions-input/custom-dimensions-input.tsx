@@ -7,7 +7,7 @@ import {
 } from '@/app/store/config/config'
 import type { CustomDimensions } from '@/app/store/config/types'
 import { getPixelsPerByte, getWidthStepForMode } from '@/export'
-import { validateCustomDimensions } from '@/source'
+import { validateCustomDimensions } from '@/preview'
 import { CustomDimensionsInputView } from './custom-dimensions-input-view'
 
 // Debounce hook with ref

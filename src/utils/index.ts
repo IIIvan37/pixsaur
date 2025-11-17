@@ -30,5 +30,3 @@ export * from './quit-shortcut'
 
 // testing
 export * from './test-utils'
-export * from './validate-custom-dimensions'
-export * from './validate-custom-dimensions'

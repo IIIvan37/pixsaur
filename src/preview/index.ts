@@ -9,3 +9,4 @@ export type {
 } from '@/types/image'
 export * from '@/utils/get-visual-region'
 export * from '@/utils/image-processing/horizontal-smoothing'
+export * from './validate-custom-dimensions'
