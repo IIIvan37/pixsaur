@@ -1,9 +1,9 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { CPCHardware } from '@/libs/types'
+import { saveZipFileTauri } from '@/tauri'
 import { isTauri } from '../is-tauri'
 import { paletteToCPCPlusValues } from './cpc-plus-format'
-import { saveZipFileTauri } from './export-tauri'
 import {
   exportLinearData,
   exportPalettePlus,

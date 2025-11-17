@@ -1,11 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Updater } from './updater'
 
-// Mock Tauri updater plugin
+// We'll import Updater dynamically in tests so mocks for `@/tauri` and
+// `@tauri-apps/plugin-updater` can be applied before module evaluation.
+
+// Mock Tauri updater and process plugins directly — tests are allowed to
+// mock these platform modules.
 vi.mock('@tauri-apps/plugin-updater')
-
-// Mock Tauri process plugin
 vi.mock('@tauri-apps/plugin-process')
 
 // Mock logger
@@ -14,8 +15,16 @@ vi.mock('@/utils/core', () => ({
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn()
+  },
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
   }
 }))
+
+// We do not mock the '@/tauri' module globally; tests will use spies or
+// plugin-level mocks to control behavior instead.
 
 describe('Updater', () => {
   beforeEach(() => {
@@ -27,10 +36,15 @@ describe('Updater', () => {
   })
 
   it('does not render when no update is available', async () => {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    vi.mocked(check).mockResolvedValue(null)
+    const tauri = await import('@/tauri')
+    expect(tauri.isTauri()).toBe(true)
+    vi.spyOn(tauri, 'checkForUpdates').mockResolvedValue(null as any)
 
+    const { Updater } = await import('./updater')
     const { container } = render(<Updater />)
+
+    // Confirm test environment is detected as Tauri for this test.
+    expect(tauri.isTauri()).toBe(true)
 
     await waitFor(() => {
       expect(container.firstChild).toBeNull()
@@ -38,8 +52,8 @@ describe('Updater', () => {
   })
 
   it('renders update notification when update is available', async () => {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    vi.mocked(check).mockResolvedValue({
+    const tauri = await import('@/tauri')
+    vi.spyOn(tauri, 'checkForUpdates').mockResolvedValue({
       version: '0.1.22',
       currentVersion: '0.1.21',
       date: '2025-01-01',
@@ -47,6 +61,7 @@ describe('Updater', () => {
       downloadAndInstall: vi.fn()
     } as any)
 
+    const { Updater } = await import('./updater')
     render(<Updater />)
 
     await waitFor(() => {
@@ -58,25 +73,27 @@ describe('Updater', () => {
     })
   })
   it('checks for updates on mount', async () => {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    vi.mocked(check).mockResolvedValue(null)
+    const tauri = await import('@/tauri')
+    vi.spyOn(tauri, 'checkForUpdates').mockResolvedValue(null as any)
 
+    const { Updater } = await import('./updater')
     render(<Updater />)
 
     await waitFor(() => {
-      expect(check).toHaveBeenCalledTimes(1)
+      expect(tauri.checkForUpdates).toHaveBeenCalledTimes(1)
     })
   })
 
   it('does not check for updates in non-Tauri environment', async () => {
     delete (globalThis as { __TAURI_INTERNALS__?: never }).__TAURI_INTERNALS__
-    const { check } = await import('@tauri-apps/plugin-updater')
-    vi.mocked(check).mockResolvedValue(null)
+    const tauri = await import('@/tauri')
+    vi.spyOn(tauri, 'checkForUpdates')
 
+    const { Updater } = await import('./updater')
     render(<Updater />)
 
     await waitFor(() => {
-      expect(check).not.toHaveBeenCalled()
+      expect(tauri.checkForUpdates).not.toHaveBeenCalled()
     })
   })
 
@@ -90,9 +107,9 @@ describe('Updater', () => {
       return Promise.resolve()
     })
 
-    const { check } = await import('@tauri-apps/plugin-updater')
+    const tauri = await import('@/tauri')
     const { relaunch } = await import('@tauri-apps/plugin-process')
-    vi.mocked(check).mockResolvedValue({
+    vi.spyOn(tauri, 'checkForUpdates').mockResolvedValue({
       version: '0.1.22',
       currentVersion: '0.1.21',
       date: '2025-01-01',
@@ -102,6 +119,7 @@ describe('Updater', () => {
 
     vi.mocked(relaunch).mockResolvedValue(undefined)
 
+    const { Updater } = await import('./updater')
     render(<Updater />)
 
     // Wait for update to be available
@@ -123,8 +141,8 @@ describe('Updater', () => {
   })
 
   it('shows error message when update fails', async () => {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    vi.mocked(check).mockResolvedValue({
+    const tauri = await import('@/tauri')
+    vi.spyOn(tauri, 'checkForUpdates').mockResolvedValue({
       version: '0.1.22',
       currentVersion: '0.1.21',
       date: '2025-01-01',
@@ -132,6 +150,7 @@ describe('Updater', () => {
       downloadAndInstall: vi.fn().mockRejectedValue(new Error('Network error'))
     } as any)
 
+    const { Updater } = await import('./updater')
     render(<Updater />)
 
     // Wait for update to be available
@@ -152,9 +171,12 @@ describe('Updater', () => {
   })
 
   it('handles check error gracefully', async () => {
-    const { check } = await import('@tauri-apps/plugin-updater')
-    vi.mocked(check).mockRejectedValue(new Error('Failed to check'))
+    const tauri = await import('@/tauri')
+    vi.spyOn(tauri, 'checkForUpdates').mockRejectedValue(
+      new Error('Failed to check')
+    )
 
+    const { Updater } = await import('./updater')
     const { container } = render(<Updater />)
 
     await waitFor(() => {
@@ -170,8 +192,8 @@ describe('Updater', () => {
       })
     })
 
-    const { check } = await import('@tauri-apps/plugin-updater')
-    vi.mocked(check).mockResolvedValue({
+    const tauri = await import('@/tauri')
+    vi.spyOn(tauri, 'checkForUpdates').mockResolvedValue({
       version: '0.1.22',
       currentVersion: '0.1.21',
       date: '2025-01-01',
@@ -179,6 +201,7 @@ describe('Updater', () => {
       downloadAndInstall: mockDownloadAndInstall
     } as any)
 
+    const { Updater } = await import('./updater')
     render(<Updater />)
 
     // Wait for update to be available
@@ -206,9 +229,9 @@ describe('Updater', () => {
       return Promise.resolve()
     })
 
-    const { check } = await import('@tauri-apps/plugin-updater')
-    const { relaunch } = await import('@tauri-apps/plugin-process')
-    vi.mocked(check).mockResolvedValue({
+    const tauri = await import('@/tauri')
+    const { relaunch } = await import('@/tauri')
+    vi.spyOn(tauri, 'checkForUpdates').mockResolvedValue({
       version: '0.1.22',
       currentVersion: '0.1.21',
       date: '2025-01-01',
@@ -216,6 +239,7 @@ describe('Updater', () => {
       downloadAndInstall: mockDownloadAndInstall
     } as any)
 
+    const { Updater } = await import('./updater')
     render(<Updater />)
 
     // Wait for update to be available

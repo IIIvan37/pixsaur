@@ -1,5 +1,5 @@
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { getPixelsPerByte } from '@/utils/cpc-calculations'
+import { getPixelsPerByte } from '@/export'
 
 export function getHeader(
   modeConfig: CpcModeConfig,

@@ -45,7 +45,7 @@ class PerformanceLogger {
     if (!(globalThis as any).__TAURI__) return
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core')
+      const { invoke } = await import('@/tauri')
       const message = `${this.config.prefix} [${level.toUpperCase()}] ${args
         .map((arg) =>
           typeof arg === 'object' ? JSON.stringify(arg) : String(arg)

@@ -1,6 +1,5 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
-import { Window } from '@tauri-apps/api/window'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useEffect, useId, useRef } from 'react'
 import { useDropzone } from 'react-dropzone'
@@ -9,6 +8,7 @@ import {
   setOpenImagePickerAtom
 } from '@/app/store/image/image'
 import Icon from '@/components/ui/icon'
+import { Window } from '@/tauri'
 import { logger } from '@/utils/core'
 import styles from './image-upload.module.css'
 
@@ -73,7 +73,7 @@ export const ImageUploadView = ({
   const processFile = useCallback(
     async (filePath: string, cb: (files: File[]) => void) => {
       try {
-        const { readFile } = await import('@tauri-apps/plugin-fs')
+        const { readFile } = await import('@/tauri')
         const buffer = await readFile(filePath)
         const fileName = filePath.split('/').pop() || 'image'
         const file = new File([buffer], fileName, {
@@ -162,7 +162,7 @@ export const ImageUploadView = ({
         e.preventDefault()
         e.stopPropagation()
         try {
-          const { open } = await import('@tauri-apps/plugin-dialog')
+          const { open } = await import('@/tauri')
           const selected = await open({
             multiple: false,
             filters: [

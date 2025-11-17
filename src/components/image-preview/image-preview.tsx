@@ -13,9 +13,9 @@ import {
   previewCanvasWidthAtom,
   previewImageAtom
 } from '@/app/store/preview/preview'
+import { createCorrectedAspectCanvas } from '@/export'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
-import { createCorrectedAspectCanvas } from '@/utils/exports/export-png-utils'
-import { isTauri } from '@/utils/is-tauri'
+import { isTauri } from '@/tauri'
 import { ImagePreviewView } from './image-preview-view'
 
 const ImagePreview = () => {

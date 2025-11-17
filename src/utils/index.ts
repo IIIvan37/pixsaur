@@ -10,7 +10,6 @@ export * from './download-file'
 export * from './exports/asm-templates'
 export * from './exports/color-utils'
 export * from './exports/cpc-plus-format'
-export * from './exports/export-tauri'
 export * from './exports/export-zip'
 export * from './exports/exporters/export-linear'
 export * from './exports/exporters/export-palette'
@@ -24,7 +23,8 @@ export * from './image-processing/horizontal-smoothing'
 export * from './image-resize'
 export * from './invariant'
 export * from './is-development'
-export * from './is-tauri'
+// Tauri helpers moved to `@/tauri` module. Keep local imports within utils
+// where needed (e.g. `../is-tauri`), but do not re-export them from here.
 export * from './logger'
 export * from './quit-shortcut'
 

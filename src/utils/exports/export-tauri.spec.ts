@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { saveTauriFile, saveZipFileTauri } from './export-tauri'
+import { saveTauriFile, saveZipFileTauri } from '@/tauri'
 
-// Mock Tauri plugins
+// Mock Tauri plugins directly — tests are allowed to mock platform modules.
 vi.mock('@tauri-apps/plugin-dialog', () => ({
   save: vi.fn()
 }))

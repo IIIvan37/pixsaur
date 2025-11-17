@@ -1,5 +1,5 @@
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { getPixelsPerByte } from '@/utils/cpc-calculations'
+import { getPixelsPerByte } from '@/export'
 import { encodeByte } from '../encode-byte'
 
 const MAX_CHUNK_SIZE = 16 * 1024 // 16 Ko

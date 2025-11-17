@@ -1,6 +1,6 @@
 import { memo, useCallback } from 'react'
-import { logger } from '@/utils/core'
-import { isTauri } from '@/utils/is-tauri'
+import { isTauri } from '@/tauri'
+import logger from '@/utils/logger'
 import { ImageUploadView } from './image-upload-view'
 import { pickImageFileTauriAsFile } from './tauri-file-picker'
 import { processImageFile } from './utils'

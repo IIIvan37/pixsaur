@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { quantizeCPC } from '@/utils/cpc-calculations'
+import { quantizeCPC } from '@/export'
 
 // Test de la fonction de quantification CPC isolément
 describe('CPC Quantization Logic', () => {

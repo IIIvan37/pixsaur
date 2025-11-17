@@ -9,7 +9,7 @@ vi.mock('../is-tauri', () => ({
   isTauri: vi.fn()
 }))
 
-vi.mock('./export-tauri', () => ({
+vi.mock('@/tauri', () => ({
   saveZipFileTauri: vi.fn()
 }))
 
@@ -120,7 +120,7 @@ describe('export-zip', () => {
 
     it('should export CPC Classic ZIP in Tauri', async () => {
       const { isTauri } = await import('../is-tauri')
-      const { saveZipFileTauri } = await import('./export-tauri')
+      const { saveZipFileTauri } = await import('@/tauri')
 
       vi.mocked(isTauri).mockReturnValue(true)
       vi.mocked(saveZipFileTauri).mockResolvedValue(true)
@@ -566,7 +566,7 @@ describe('export-zip', () => {
 
     it('should return false when Tauri save is cancelled', async () => {
       const { isTauri } = await import('../is-tauri')
-      const { saveZipFileTauri } = await import('./export-tauri')
+      const { saveZipFileTauri } = await import('@/tauri')
 
       vi.mocked(isTauri).mockReturnValue(true)
       vi.mocked(saveZipFileTauri).mockResolvedValue(false) // User cancelled

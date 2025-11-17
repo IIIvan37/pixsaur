@@ -1,20 +1,18 @@
 import { atom } from 'jotai'
+import { quantifyToCPCPlus, quantizeCPC } from '@/export'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
-import { logger } from '@/utils/core'
-import { quantifyToCPCPlus, quantizeCPC } from '@/utils/cpc-calculations'
-import {
-  getVisualRegion,
-  getVisualRegionNormalized
-} from '@/utils/get-visual-region'
 import {
   applyHorizontalSmoothing,
-  getPixelWidthForMode
-} from '@/utils/image-processing/horizontal-smoothing'
-import { applyResize, type Selection } from '@/utils/image-resize'
+  getPixelWidthForMode,
+  getVisualRegion,
+  getVisualRegionNormalized
+} from '@/preview'
+import { applyResize, type Selection } from '@/source'
+import { logger } from '@/utils/core'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,

@@ -4,7 +4,7 @@
  */
 
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { getAspectRatioMultipliers } from '@/utils/cpc-calculations'
+import { getAspectRatioMultipliers } from '@/export'
 
 /**
  * Create a canvas with native CPC dimensions (1:1 square pixels)

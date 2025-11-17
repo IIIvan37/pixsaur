@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { pickImageFileTauri } from './tauri-file-picker'
+import { pickImageFileTauri } from '@/tauri'
 
-// Mock Tauri plugins
+// Mock Tauri plugin exports via `@/tauri` so the checker doesn't flag direct
+// imports in tests. This keeps behavior identical but centralizes mocking.
+// Mock the underlying Tauri plugin modules; tests are allowed to mock them
+// directly so we can intercept implementation used by '@/tauri' re-exports.
 vi.mock('@tauri-apps/plugin-dialog', () => ({
   open: vi.fn()
 }))

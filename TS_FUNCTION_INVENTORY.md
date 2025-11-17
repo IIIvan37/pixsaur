@@ -25,6 +25,7 @@ Le même inventaire que `docs/ts-function-inventory.md` (dossier docs est ignor�
 ... (liste complète se trouve dans `docs/ts-function-inventory.md`)
 
 ## Propositions d'amélioration architecturale
+
 - Consolidation des librairies couleur (distance, conversions) pour éviter duplications
 - Décomposition de gros fichiers en modules plus petits et testables
 - Normalisation des signatures et types (Vector, ColorSpace types)
