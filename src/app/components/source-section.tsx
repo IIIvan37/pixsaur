@@ -2,11 +2,13 @@ import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
 import { ImageSelector } from '@/components/image-selector'
-import { ImageUpload } from '@/components/image-upload/image-upload'
-import { pickImageFileTauriAsFile } from '@/components/image-upload/tauri-file-picker'
-import { processImageFile } from '@/components/image-upload/utils'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
+import {
+  ImageUpload,
+  pickImageFileTauriAsFile,
+  processImageFile
+} from '@/source'
 import { isTauri } from '@/utils/is-tauri'
 import logger from '@/utils/logger'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
