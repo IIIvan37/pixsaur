@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/plugin-updater')
 vi.mock('@tauri-apps/plugin-process')
 
 // Mock logger
-vi.mock('@/utils/logger', () => ({
+vi.mock('@/utils/core', () => ({
   updaterLogger: {
     info: vi.fn(),
     error: vi.fn(),

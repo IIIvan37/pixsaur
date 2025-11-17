@@ -7,7 +7,7 @@ import {
   paletteProcessorAtom
 } from '@/app/store/adapters/processors'
 import type { AdjustmentConfig } from '@/libs/pixsaur-adapter'
-import { adapterLogger, logger } from '@/utils/logger'
+import { adapterLogger, logger } from '@/utils/core'
 
 export const useImageProcessors = () => {
   const imageProcessor = useAtomValue(imageProcessorAtom)

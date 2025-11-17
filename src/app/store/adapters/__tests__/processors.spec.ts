@@ -14,7 +14,7 @@ import {
 } from '../processors'
 
 // Mock the logger
-vi.mock('@/utils/logger', () => ({
+vi.mock('@/utils/core', () => ({
   adapterLogger: {
     info: vi.fn(),
     warn: vi.fn(),

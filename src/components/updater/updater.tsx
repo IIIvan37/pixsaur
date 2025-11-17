@@ -1,7 +1,7 @@
 import { check } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useState } from 'react'
+import { updaterLogger } from '@/utils/core'
 import { isTauri } from '@/utils/is-tauri'
-import { updaterLogger } from '@/utils/logger'
 import { UpdaterView } from './updater-view'
 
 /**

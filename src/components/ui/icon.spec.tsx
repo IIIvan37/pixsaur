@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import Icon, { type IconName } from './icon'
 
 // Mock the logger to avoid console output in tests
-vi.mock('@/utils/logger', () => ({
+vi.mock('@/utils/core', () => ({
   logger: {
     warn: vi.fn()
   }

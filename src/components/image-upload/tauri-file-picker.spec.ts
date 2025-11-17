@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
   readFile: vi.fn()
 }))
 
-vi.mock('@/utils/logger', () => ({
+vi.mock('@/utils/core', () => ({
   logger: {
     error: vi.fn()
   }

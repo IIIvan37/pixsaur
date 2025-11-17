@@ -15,13 +15,13 @@ import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { sanitizeAmsdosFilename } from '@/utils/amsdos-filename'
+import { dskLogger } from '@/utils/core'
 import { downloadFile } from '@/utils/download-file'
 import { paletteToCPCPlusValues } from '@/utils/exports/cpc-plus-format'
 import { saveZipFileTauri } from '@/utils/exports/export-tauri'
 import { exportDskWorkspaceZip } from '@/utils/exports/exporters/export-dsk-workspace-zip'
 import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
 import { isTauri } from '@/utils/is-tauri'
-import { dskLogger } from '@/utils/logger'
 
 export default function DskWorkspacePanel() {
   const { _ } = useLingui()

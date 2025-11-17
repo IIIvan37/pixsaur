@@ -7,7 +7,7 @@ import {
   paletteStrategyAtom
 } from '@/app/store/config/config'
 import type { PaletteStrategy } from '@/app/store/config/types'
-import { logger } from '@/utils/logger'
+import { logger } from '@/utils/core'
 import {
   type PaletteStrategyOption,
   PaletteStrategySelectorView

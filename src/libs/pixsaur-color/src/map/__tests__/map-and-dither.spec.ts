@@ -11,7 +11,7 @@ import {
 } from '../map-and-dither'
 
 // Mock logger to avoid console output in tests
-vi.mock('@/utils/logger', () => ({
+vi.mock('@/utils/core', () => ({
   logger: {
     warn: vi.fn(),
     error: vi.fn(),

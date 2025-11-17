@@ -4,8 +4,8 @@
 
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
+import { logger } from '@/utils/core'
 import { invariant } from '@/utils/invariant'
-import { logger } from '@/utils/logger'
 
 /**
  * Open native file dialog and read selected image file

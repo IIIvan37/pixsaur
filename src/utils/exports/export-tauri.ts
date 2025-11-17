@@ -4,7 +4,7 @@
 
 import { save } from '@tauri-apps/plugin-dialog'
 import { writeFile } from '@tauri-apps/plugin-fs'
-import logger from '@/utils/logger'
+import { logger } from '@/utils/core'
 
 /**
  * Save a file using Tauri's native file dialog and file system
