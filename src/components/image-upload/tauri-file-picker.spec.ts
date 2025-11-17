@@ -19,7 +19,7 @@ vi.mock('@/utils/core', () => ({
 // Import mocked functions
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
-import { logger } from '@/utils/logger'
+import { logger } from '@/utils/core'
 
 describe('pickImageFileTauri', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
-import { dskLogger } from '@/utils/logger'
+import { dskLogger } from '@/utils/core'
 import {
   generateScrDskTemplate,
   generateUniversalScrLoader

@@ -25,7 +25,7 @@ import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { adapterLogger } from '@/utils/logger'
+import { adapterLogger } from '@/utils/core'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 
 /**

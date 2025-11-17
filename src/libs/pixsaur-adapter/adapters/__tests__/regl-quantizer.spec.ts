@@ -29,7 +29,7 @@ const mockRegl = {
 }
 
 // Mock logger
-vi.mock('@/utils/logger', () => ({
+vi.mock('@/utils/core', () => ({
   adapterLogger: {
     info: vi.fn(),
     warn: vi.fn(),

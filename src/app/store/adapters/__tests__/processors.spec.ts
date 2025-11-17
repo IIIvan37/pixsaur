@@ -2,7 +2,7 @@ import { getDefaultStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { processorTypeAtom } from '@/app/store/config/config'
 import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
-import { adapterLogger } from '@/utils/logger'
+import { adapterLogger } from '@/utils/core'
 import {
   disposeProcessorsAtom,
   imageProcessorAtom,

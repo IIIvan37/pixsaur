@@ -4,6 +4,7 @@ import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
+import { logger } from '@/utils/core'
 import { quantifyToCPCPlus, quantizeCPC } from '@/utils/cpc-calculations'
 import {
   getVisualRegion,
@@ -14,7 +15,6 @@ import {
   getPixelWidthForMode
 } from '@/utils/image-processing/horizontal-smoothing'
 import { applyResize, type Selection } from '@/utils/image-resize'
-import { logger } from '@/utils/logger'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,

@@ -36,7 +36,7 @@ export interface ScrLoaderTemplateOptions {
  * @param options - SCR loader template options
  * @returns Z80 assembly source code as string
  */
-import { dskLogger } from '@/utils/logger'
+import { dskLogger } from '@/utils/core'
 
 export function generateScrLoaderClassic(
   options: ScrLoaderTemplateOptions

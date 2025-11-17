@@ -9,8 +9,8 @@ import {
   pickImageFileTauriAsFile,
   processImageFile
 } from '@/source'
+import { logger } from '@/utils/core'
 import { isTauri } from '@/utils/is-tauri'
-import logger from '@/utils/logger'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
 import {
   imageAtom,
