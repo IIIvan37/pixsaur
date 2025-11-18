@@ -13,15 +13,16 @@ import {
 } from '@/app/store/preview/preview'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
+import { dskLogger } from '@/core'
+import {
+  downloadFile,
+  exportDskWorkspaceZip,
+  paletteToCPCPlusValues,
+  rgbToIndexBufferExact,
+  sanitizeAmsdosFilename
+} from '@/export'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
-import { sanitizeAmsdosFilename } from '@/utils/amsdos-filename'
-import { downloadFile } from '@/utils/download-file'
-import { paletteToCPCPlusValues } from '@/utils/exports/cpc-plus-format'
-import { saveZipFileTauri } from '@/utils/exports/export-tauri'
-import { exportDskWorkspaceZip } from '@/utils/exports/exporters/export-dsk-workspace-zip'
-import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
-import { isTauri } from '@/utils/is-tauri'
-import { dskLogger } from '@/utils/logger'
+import { isTauri, saveZipFileTauri } from '@/tauri'
 
 export default function DskWorkspacePanel() {
   const { _ } = useLingui()

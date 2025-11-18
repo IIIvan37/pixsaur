@@ -3,11 +3,16 @@ import { describe, expect, it, vi } from 'vitest'
 import Icon, { type IconName } from './icon'
 
 // Mock the logger to avoid console output in tests
-vi.mock('@/utils/logger', () => ({
-  logger: {
-    warn: vi.fn()
+vi.mock('@/core', async (importOriginal) => {
+  const actual: any = await importOriginal()
+  return {
+    ...(actual as any),
+    logger: {
+      ...(actual.logger || {}),
+      warn: vi.fn()
+    }
   }
-}))
+})
 
 describe('Icon', () => {
   it('renders a valid icon', () => {

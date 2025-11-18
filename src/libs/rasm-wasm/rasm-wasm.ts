@@ -4,7 +4,7 @@
  * compiled to WebAssembly via Emscripten.
  */
 
-import { createLogger } from '@/utils/logger'
+import { createLogger } from '@/core'
 import type {
   AssembleOptions,
   AssembleResult,

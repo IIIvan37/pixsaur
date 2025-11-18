@@ -4,7 +4,7 @@ import { reinitializeProcessorsAtom } from '@/app/store/adapters/processors'
 import { processorTypeAtom } from '@/app/store/config/config'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
-import { isDevelopment } from '@/utils/is-development'
+import { isDevelopment } from '@/core'
 
 const PROCESSOR_TYPES = [
   { value: 'auto', label: 'Auto (GPU puis CPU)' },

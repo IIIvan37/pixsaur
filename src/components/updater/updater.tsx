@@ -1,7 +1,6 @@
-import { check } from '@tauri-apps/plugin-updater'
 import { useCallback, useEffect, useState } from 'react'
-import { isTauri } from '@/utils/is-tauri'
-import { updaterLogger } from '@/utils/logger'
+import { updaterLogger } from '@/core'
+import { checkForUpdates, isTauri } from '@/tauri'
 import { UpdaterView } from './updater-view'
 
 /**
@@ -20,13 +19,13 @@ export const Updater = () => {
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const checkForUpdates = useCallback(async () => {
+  const performCheck = useCallback(async () => {
     try {
       updaterLogger.info('Checking for updates...')
 
       if (isTauri()) {
         updaterLogger.info('Running in Tauri environment, calling updater API')
-        const update = await check()
+        const update: any = await checkForUpdates()
 
         if (update) {
           updaterLogger.info(`Update available: ${update.version}`)
@@ -52,8 +51,8 @@ export const Updater = () => {
   }, [])
 
   useEffect(() => {
-    checkForUpdates()
-  }, [checkForUpdates])
+    performCheck()
+  }, [performCheck])
 
   const installUpdate = async () => {
     try {
@@ -63,7 +62,7 @@ export const Updater = () => {
       setError(null)
 
       if (isTauri()) {
-        const update = await check()
+        const update: any = await checkForUpdates()
 
         if (!update) {
           updaterLogger.warn('No update found during installation attempt')
@@ -80,7 +79,7 @@ export const Updater = () => {
         let downloadedSize = 0
 
         // Download and install with progress tracking
-        await update.downloadAndInstall((event) => {
+        await update.downloadAndInstall((event: any) => {
           switch (event.event) {
             case 'Started':
               totalSize = event.data.contentLength || 0
@@ -121,7 +120,7 @@ export const Updater = () => {
         )
 
         // Relaunch the app to apply the update
-        const { relaunch } = await import('@tauri-apps/plugin-process')
+        const { relaunch } = await import('@/tauri')
         updaterLogger.info('Relaunching application...')
         await relaunch()
       } else {

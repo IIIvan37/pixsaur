@@ -1,15 +1,13 @@
 import { Trans } from '@lingui/react/macro'
-import { invoke } from '@tauri-apps/api/core'
 import { useEffect } from 'react'
 import { LanguageSelector } from '@/components/language-selector'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
 import { VersionDisplay } from '@/components/version-display'
+import { isDevelopment, logger } from '@/core'
 import styles from '@/styles/app.module.css'
-import { isDevelopment } from '@/utils/is-development'
-import { isTauri } from '@/utils/is-tauri'
-import logger from '@/utils/logger'
+import { invoke, isTauri } from '@/tauri'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
 
@@ -47,10 +45,10 @@ export default function App() {
 
     const handler = async (event: KeyboardEvent) => {
       try {
-        const { isQuitShortcut } = await import('@/utils/quit-shortcut')
+        const { isQuitShortcut } = await import('@/tauri')
         if (isQuitShortcut(event)) {
           event.preventDefault()
-          const { invoke } = await import('@tauri-apps/api/core')
+          const { invoke } = await import('@/tauri')
           await invoke('quit_app')
         }
       } catch (err) {
@@ -71,7 +69,7 @@ export default function App() {
     // Helper function to send response to debug window
     const sendDebugResponse = async (data: unknown) => {
       try {
-        const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow')
+        const { WebviewWindow } = await import('@/tauri')
         const debugWindow = await WebviewWindow.getByLabel('debug')
 
         if (debugWindow) {

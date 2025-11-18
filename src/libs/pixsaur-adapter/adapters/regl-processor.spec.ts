@@ -12,7 +12,7 @@ import { ReGLProcessor } from './regl-processor'
 // Mock des dépendances
 vi.mock('@/libs/pixsaur-color/src/transform/color-transform/adjust')
 vi.mock('@/libs/pixsaur-color/src/quant/quantize')
-vi.mock('@/utils/logger')
+vi.mock('@/core')
 vi.mock('@/app/store/config/config', () => ({
   paletteStrategyAtom: vi.fn()
 }))

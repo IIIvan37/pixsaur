@@ -11,11 +11,9 @@ import {
   reducedPaletteRgbAtom
 } from '@/app/store/preview/preview'
 import { Notification } from '@/components/ui/notification/notification'
+import type { ExportConfig } from '@/export'
+import { exportZip, rgbToIndexBufferExact } from '@/export'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
-
-import { exportZip } from '@/utils/exports/export-zip'
-import { rgbToIndexBufferExact } from '@/utils/exports/rgb-to-indexes'
-import type { ExportConfig } from '@/utils/exports/types'
 import ExportConfigDialog from './export-config-dialog'
 import ExportPanelView from './export-panel-view'
 
@@ -33,7 +31,7 @@ export default function ExportPanel() {
     if (!image?.data) return
 
     // FIX: Ne pas "nettoyer" l'image - previewImageAtom contient déjà le dithering correct
-    // const { remapImageDataToPalette } = await import('@/utils/exports/rgb-to-indexes')
+    // const { remapImageDataToPalette } = await import('@/export')
     // const cleanImage = remapImageDataToPalette(image, reducedPalette)
     const cleanImage = image // Utiliser directement l'image avec dithering
 

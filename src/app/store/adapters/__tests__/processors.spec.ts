@@ -1,8 +1,8 @@
 import { getDefaultStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { processorTypeAtom } from '@/app/store/config/config'
+import { adapterLogger } from '@/core'
 import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
-import { adapterLogger } from '@/utils/logger'
 import {
   disposeProcessorsAtom,
   imageProcessorAtom,
@@ -14,13 +14,18 @@ import {
 } from '../processors'
 
 // Mock the logger
-vi.mock('@/utils/logger', () => ({
-  adapterLogger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn()
+vi.mock('@/core', async (importOriginal) => {
+  const actual: any = await importOriginal()
+  return {
+    ...(actual as any),
+    adapterLogger: {
+      ...(actual.adapterLogger || {}),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
+    }
   }
-}))
+})
 
 // Mock ReGL
 vi.mock('regl', () => ({

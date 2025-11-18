@@ -3,13 +3,12 @@ import userEvent from '@testing-library/user-event'
 import { useSetAtom } from 'jotai'
 import { useEffect } from 'react'
 import { setImgAtom } from '@/app/store/image/image'
-import { pickImageFileTauriAsFile } from '@/components/image-upload/tauri-file-picker'
 import { processImageFile } from '@/components/image-upload/utils'
-import { isTauri } from '@/utils/is-tauri'
-import { mockGlobalImage, renderWithProviders } from '@/utils/test-utils'
+import { isTauri, pickImageFileTauriAsFile } from '@/tauri'
+import { mockGlobalImage, renderWithProviders } from '@/test-utils'
 import SourceSection from './source-section'
 
-vi.mock('@/utils/is-tauri')
+vi.mock('@/tauri')
 vi.mock('@/components/image-upload/tauri-file-picker')
 vi.mock('@/components/image-upload/utils')
 vi.mock('@tauri-apps/api/window', () => ({

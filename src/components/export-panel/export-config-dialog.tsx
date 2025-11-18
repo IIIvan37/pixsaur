@@ -8,8 +8,8 @@ import Button from '@/components/ui/button'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import PixsaurDialog from '@/components/ui/dialog/dialog'
 import Input from '@/components/ui/input/input'
-import type { ExportConfig } from '@/utils/exports/types'
-import { DEFAULT_EXPORT_CONFIG } from '@/utils/exports/types'
+import type { ExportConfig } from '@/export'
+import { DEFAULT_EXPORT_CONFIG } from '@/export'
 import styles from './export-config-dialog.module.css'
 
 type Props = {

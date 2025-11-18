@@ -7,7 +7,7 @@
  */
 
 import { atom } from 'jotai'
-import { logger } from '@/utils/logger'
+import { logger } from '@/core'
 
 // Atom RGB constant - remplace l'ancien colorSpaceAtom
 export const rgbColorSpaceAtom = atom('RGB' as const)

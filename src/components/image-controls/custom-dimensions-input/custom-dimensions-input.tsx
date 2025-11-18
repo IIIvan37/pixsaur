@@ -6,8 +6,8 @@ import {
   setCustomDimensionsAtom
 } from '@/app/store/config/config'
 import type { CustomDimensions } from '@/app/store/config/types'
-import { getPixelsPerByte, getWidthStepForMode } from '@/utils/cpc-calculations'
-import { validateCustomDimensions } from '@/utils/validate-custom-dimensions'
+import { getPixelsPerByte, getWidthStepForMode } from '@/export'
+import { validateCustomDimensions } from '@/preview'
 import { CustomDimensionsInputView } from './custom-dimensions-input-view'
 
 // Debounce hook with ref

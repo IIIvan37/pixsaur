@@ -4,7 +4,7 @@ import { Trans } from '@lingui/react/macro'
 import { useState } from 'react'
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
-import type { DskAdditionalFile } from '@/utils/exports/types'
+import type { DskAdditionalFile } from '@/export'
 import styles from './dsk-files-manager.module.css'
 
 type Props = {

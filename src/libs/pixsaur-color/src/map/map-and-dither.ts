@@ -414,7 +414,7 @@ export function applyNoDither(
   return out
 }
 
-import { logger } from '@/utils/logger'
+import { logger } from '@/core'
 import {
   DISTANCE_METRICS_BY_COLORSPACE,
   type DistanceFn,

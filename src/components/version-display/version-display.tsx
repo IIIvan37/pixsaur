@@ -1,7 +1,6 @@
-import { getVersion } from '@tauri-apps/api/app'
 import { useEffect, useState } from 'react'
-import { isDevelopment } from '@/utils/is-development'
-import { isTauri } from '@/utils/is-tauri'
+import { isDevelopment } from '@/core'
+import { getAppVersion, isTauri } from '@/tauri'
 import styles from './version-display.module.css'
 
 export function VersionDisplay() {
@@ -13,7 +12,7 @@ export function VersionDisplay() {
       try {
         // Ne charger Tauri que si on est dans un environnement Tauri
         if (isTauri()) {
-          const appVersion = await getVersion()
+          const appVersion = await getAppVersion()
           setVersion(appVersion)
         } else {
           // Fallback to package.json version for web

@@ -6,7 +6,7 @@ import {
 } from '@/app/store/config/config'
 import type { AdjustementKey } from '@/app/store/config/types'
 import { workingImageAtom } from '@/app/store/image/image'
-import { logger } from '@/utils/logger'
+import { logger } from '@/core'
 import { AdjustementsView } from './adjustement.view'
 import type { RangeOption } from './types'
 

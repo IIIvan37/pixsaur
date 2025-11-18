@@ -17,7 +17,7 @@ import {
   TrashIcon,
   UploadIcon
 } from '@radix-ui/react-icons'
-import { logger } from '@/utils/logger'
+import { logger } from '@/core'
 
 // Mapping statique des icônes pour éviter l'accès dynamique
 const ICON_MAP = {

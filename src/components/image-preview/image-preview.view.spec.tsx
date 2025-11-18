@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 import React from 'react'
-import { renderWithI18n } from '@/utils/test-utils'
+import { renderWithI18n } from '@/test-utils'
 import { ImagePreviewView } from './image-preview-view'
 
 describe('ImagePreviewView', () => {

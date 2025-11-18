@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useSetAtom } from 'jotai'
 import { describe, expect, it, vi } from 'vitest'
 import { setOpenImagePickerAtom } from '@/app/store/image/image'
-import { renderWithI18n, renderWithProviders } from '@/utils/test-utils'
+import { renderWithI18n, renderWithProviders } from '@/test-utils'
 import { ImageUploadView } from './image-upload-view'
 
 let files: File[] = []

@@ -2,9 +2,9 @@ import { atom } from 'jotai'
 import type REGL from 'regl'
 import createREGL from 'regl'
 import { processorTypeAtom } from '@/app/store/config/config'
+import { adapterLogger } from '@/core'
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
 import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
-import { adapterLogger } from '@/utils/logger'
 
 // Atomes pour les adaptateurs auto-sélectionnés
 export const imageProcessorAtom = atom<ImageProcessor | null>(null)

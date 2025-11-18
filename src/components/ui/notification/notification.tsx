@@ -23,11 +23,16 @@ export const Notification = ({
   autoCloseDuration = 3000
 }: NotificationProps) => {
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+
     if (open && autoCloseDuration > 0) {
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         onOpenChange(false)
       }, autoCloseDuration)
-      return () => clearTimeout(timer)
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer)
     }
   }, [open, autoCloseDuration, onOpenChange])
 

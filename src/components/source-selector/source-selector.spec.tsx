@@ -1,6 +1,6 @@
 import { fireEvent } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { renderWithI18n } from '@/utils/test-utils'
+import { renderWithI18n } from '@/test-utils'
 import styles from './source-selector.module.css'
 import { SourceSelectorView } from './source-selector-view'
 
