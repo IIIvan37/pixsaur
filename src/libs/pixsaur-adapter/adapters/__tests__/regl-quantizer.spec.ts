@@ -29,14 +29,19 @@ const mockRegl = {
 }
 
 // Mock logger
-vi.mock('@/utils/core', () => ({
-  adapterLogger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    debug: vi.fn()
+vi.mock('@/core', async (importOriginal) => {
+  const actual: any = await importOriginal()
+  return {
+    ...(actual as any),
+    adapterLogger: {
+      ...(actual.adapterLogger || {}),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn()
+    }
   }
-}))
+})
 
 // Mock shaders
 vi.mock('../shaders', () => ({

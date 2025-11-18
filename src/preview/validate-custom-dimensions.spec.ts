@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import {
-  type ValidationResult,
-  validateCustomDimensions
-} from './validate-custom-dimensions'
+import { validateCustomDimensions } from './validate-custom-dimensions'
+
+describe('validateCustomDimensions', () => {
+  it('validates correct dimensions for mode 0', () => {
+    const result = validateCustomDimensions(160, 200, 0)
+    expect(result.valid).toBe(true)
+  })
+})
+
+import type { ValidationResult } from './validate-custom-dimensions'
 
 describe('validateCustomDimensions', () => {
   describe('Valid dimensions', () => {

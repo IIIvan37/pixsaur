@@ -4,9 +4,9 @@ import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
 import { ImageSelector } from '@/components/image-selector'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
+import { logger } from '@/core'
 import { ImageUpload, processImageFile } from '@/source'
 import { isTauri, pickImageFileTauriAsFile } from '@/tauri'
-import { logger } from '@/utils/core'
 import { resetImageAdjustmentsAtom } from '../store/config/config'
 import {
   imageAtom,

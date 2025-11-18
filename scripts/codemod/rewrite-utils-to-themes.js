@@ -22,6 +22,38 @@ const FORBIDDEN_MAP = [
     pattern: /from ['"]@\/utils\/validate-custom-dimensions['"]/g,
     replacement: "from '@/source'"
   },
+  {
+    pattern: /from ['"]@\/utils\/core['"]/g,
+    replacement: "from '@/core'"
+  },
+  {
+    pattern: /['"]@\/utils\/core['"]/g,
+    replacement: "'@/core'"
+  },
+  {
+    pattern: /from ['"]@\/utils\/logger['"]/g,
+    replacement: "from '@/core'"
+  },
+  {
+    pattern: /from ['"]@\/utils\/invariant['"]/g,
+    replacement: "from '@/core'"
+  },
+  {
+    pattern: /from ['"]@\/utils\/is-development['"]/g,
+    replacement: "from '@/core'"
+  },
+  {
+    pattern: /['"]@\/utils\/is-development['"]/g,
+    replacement: "'@/core'"
+  },
+  {
+    pattern: /from ['"]@\/utils\/quit-shortcut['"]/g,
+    replacement: "from '@/tauri'"
+  },
+  {
+    pattern: /from ['"]@\/utils\/download-file['"]/g,
+    replacement: "from '@/export'"
+  },
   // Replace any imports from `@/utils/exports/...` with `@/export` (root re-exports)
   {
     pattern: /from\s*['"]@\/utils\/exports\/[\w\-/]+['"]/g,
@@ -34,6 +66,10 @@ const FORBIDDEN_MAP = [
   {
     pattern: /from ['"]@\/utils\/amsdos-filename['"]/g,
     replacement: "from '@/export'"
+  },
+  {
+    pattern: /from ['"]@\/utils\/is-tauri['"]/g,
+    replacement: "from '@/tauri'"
   }
 ]
 

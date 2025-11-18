@@ -1,5 +1,5 @@
+import { logger } from '@/core'
 import { save, writeFile } from '@/tauri'
-import { logger } from '@/utils/core'
 
 export async function saveTauriFile(
   data: Blob | Uint8Array,

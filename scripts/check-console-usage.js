@@ -14,6 +14,7 @@ const IGNORE_PATTERNS = [
   /__tests__\//,
   /\/tests\//,
   /src\/utils\/logger\.ts$/,
+  /src\/core\/logger\.ts$/,
   /src\/utils\/validate-custom-dimensions\.ts$/,
   /\/coverage\//
 ]

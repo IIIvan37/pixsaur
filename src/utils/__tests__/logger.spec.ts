@@ -8,7 +8,7 @@ import {
   paletteLogger,
   quantizerLogger,
   webglLogger
-} from '@/utils/core'
+} from '@/core'
 
 // Mock console methods
 const consoleDebugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})

@@ -9,6 +9,7 @@
 
 import type REGL from 'regl'
 import type { PaletteStrategy } from '@/app/store/config/types'
+import { adapterLogger } from '@/core'
 import {
   type ColorCandidate,
   selectByAdaptive,
@@ -25,7 +26,6 @@ import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { adapterLogger } from '@/utils/core'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 
 /**

@@ -101,6 +101,7 @@ describe('exportDskWorkspace', () => {
 
     const { exportDskWorkspace } = await import('../export-dsk-workspace')
 
+    // debug log removed: chunked image mode is validated by test assertions
     const result = await exportDskWorkspace([image])
 
     expect(result).toBeInstanceOf(Uint8Array)
@@ -135,7 +136,7 @@ describe('exportDskWorkspace', () => {
     // use spy below to override real function
     // Spy on the real CPC Plus module and override its implementation so the
     // dynamic import inside exportDskWorkspace will call our spy.
-    const cpcMod = await import('@/utils/exports/cpc-plus-format')
+    const cpcMod = await import('@/export')
     const spy = vi
       .spyOn(cpcMod, 'injectCPCPlusPaletteIntoSCR')
       .mockImplementation(mockPlusInjector)
@@ -197,8 +198,8 @@ describe('exportDskWorkspace', () => {
       name: 'linear',
       scrData: [0, 1, 2],
       mode: 0 as 0,
-      width: 200,
       height: 150,
+      width: 200,
       overscan: false,
       nColors: 4,
       scaleX: 1,

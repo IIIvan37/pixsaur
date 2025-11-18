@@ -1,6 +1,6 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { renderWithI18n } from '@/utils/test-utils'
+import { renderWithI18n } from '@/test-utils'
 import ExportPanelView from './export-panel-view'
 
 vi.mock('@/components/ui/icon')

@@ -4,7 +4,7 @@ import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import {
   getVisualRegion,
   getVisualRegionNormalized
-} from '@/utils/get-visual-region'
+} from '@/preview/get-visual-region'
 
 describe('getVisualRegion', () => {
   let sourceImageData: ImageData

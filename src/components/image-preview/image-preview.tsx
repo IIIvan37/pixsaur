@@ -97,7 +97,7 @@ const ImagePreview = () => {
     )
 
     // Convert to blob and create blob URL for better compatibility
-    correctedCanvas.toBlob((blob) => {
+    correctedCanvas.toBlob((blob: Blob | null) => {
       if (blob) {
         const blobUrl = URL.createObjectURL(blob)
 

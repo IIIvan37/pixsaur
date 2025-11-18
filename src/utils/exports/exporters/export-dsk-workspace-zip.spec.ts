@@ -228,7 +228,7 @@ describe('exportDskWorkspaceZip', () => {
     vi.resetModules()
 
     // Spy on the CPC Plus injector implementation
-    const cpcMod = await import('@/utils/exports/cpc-plus-format')
+    const cpcMod = await import('@/export')
     const spy = vi
       .spyOn(cpcMod, 'injectCPCPlusPaletteIntoSCR')
       .mockImplementation((scr: Uint8Array) => {

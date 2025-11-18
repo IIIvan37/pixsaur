@@ -2,10 +2,13 @@
 // Move domain-specific utilities into subfolders (utils/core, utils/image, utils/exports, utils/cpc, utils/platform, utils/test)
 // and update these re-exports progressively to keep backwards compatibility during refactor.
 
+// Prefer `@/tauri` domain for quit/tauri helpers
+export * from '@/tauri'
 // specific utilities
 export * from './amsdos-filename'
 // cpc / export helpers
-export * from './cpc-calculations'
+// moved to `@/export` domain — keep the utils index small. Import from
+// `@/export` instead of this compatibility wrapper.
 export * from './download-file'
 export * from './exports/asm-templates'
 export * from './exports/color-utils'
@@ -26,7 +29,6 @@ export * from './is-development'
 // Tauri helpers moved to `@/tauri` module. Keep local imports within utils
 // where needed (e.g. `../is-tauri`), but do not re-export them from here.
 export * from './logger'
-export * from './quit-shortcut'
 
 // testing
 export * from './test-utils'

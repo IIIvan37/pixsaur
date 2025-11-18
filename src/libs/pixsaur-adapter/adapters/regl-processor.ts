@@ -4,15 +4,15 @@
  * ReGL simplifiera la gestion WebGL quand l'implémentation GPU sera prête
  */
 
-// Import pour accéder à l'atome de stratégie de palette
 import { getDefaultStore } from 'jotai'
 import type REGL from 'regl'
+// Import pour accéder à l'atome de stratégie de palette
 import { paletteStrategyAtom } from '@/app/store/config/config'
+import { adapterLogger, paletteLogger } from '@/core'
 import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { adapterLogger, paletteLogger } from '@/utils/core'
 import type {
   AdjustmentConfig,
   ImageProcessor,

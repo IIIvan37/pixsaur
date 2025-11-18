@@ -13,16 +13,21 @@ vi.mock('@tauri-apps/plugin-fs', () => ({
   readFile: vi.fn()
 }))
 
-vi.mock('@/utils/core', () => ({
-  logger: {
-    error: vi.fn()
+vi.mock('@/core', async (importOriginal) => {
+  const actual: any = await importOriginal()
+  return {
+    ...(actual as any),
+    logger: {
+      ...(actual.logger || {}),
+      error: vi.fn()
+    }
   }
-}))
+})
 
-// Import mocked functions
 import { open } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
-import { logger } from '@/utils/core'
+// Import mocked functions
+import { logger } from '@/core'
 
 describe('pickImageFileTauri', () => {
   beforeEach(() => {

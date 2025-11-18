@@ -13,7 +13,9 @@ import {
 } from '@/app/store/preview/preview'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
+import { dskLogger } from '@/core'
 import {
+  downloadFile,
   exportDskWorkspaceZip,
   paletteToCPCPlusValues,
   rgbToIndexBufferExact,
@@ -21,8 +23,6 @@ import {
 } from '@/export'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { isTauri, saveZipFileTauri } from '@/tauri'
-import { dskLogger } from '@/utils/core'
-import { downloadFile } from '@/utils/download-file'
 
 export default function DskWorkspacePanel() {
   const { _ } = useLingui()

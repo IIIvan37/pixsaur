@@ -10,18 +10,22 @@ vi.mock('@tauri-apps/plugin-updater')
 vi.mock('@tauri-apps/plugin-process')
 
 // Mock logger
-vi.mock('@/utils/core', () => ({
-  updaterLogger: {
-    info: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn()
-  },
-  logger: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn()
+vi.mock('@/core', async (importOriginal) => {
+  const actual: any = await importOriginal()
+  return {
+    ...(actual as any),
+    updaterLogger: {
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn()
+    },
+    logger: {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
+    }
   }
-}))
+})
 
 // We do not mock the '@/tauri' module globally; tests will use spies or
 // plugin-level mocks to control behavior instead.

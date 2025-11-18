@@ -3,13 +3,4 @@
  * Centralized exports for all template generators
  */
 
-export {
-  generateScrDskTemplate,
-  type ScrDskTemplateOptions
-} from './dsk-templates'
-export {
-  generateScrLoaderClassic,
-  generateScrLoaderPlus,
-  generateUniversalScrLoader,
-  type ScrLoaderTemplateOptions
-} from './scr-loader-template'
+export * from '@/export/exports/templates'

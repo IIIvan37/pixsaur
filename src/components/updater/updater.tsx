@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { updaterLogger } from '@/core'
 import { checkForUpdates, isTauri } from '@/tauri'
-import { updaterLogger } from '@/utils/core'
 import { UpdaterView } from './updater-view'
 
 /**

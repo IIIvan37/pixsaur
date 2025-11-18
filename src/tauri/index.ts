@@ -9,14 +9,15 @@ export { open, save } from '@tauri-apps/plugin-dialog'
 export { readFile, writeFile } from '@tauri-apps/plugin-fs'
 export { relaunch } from '@tauri-apps/plugin-process'
 export { check } from '@tauri-apps/plugin-updater'
-export * from '@/utils/is-tauri'
 export * from './export-tauri'
+export * from './is-tauri'
+export * from './quit-shortcut'
 export * from './tauri-file-picker'
 
 // App-level helpers
 import { getVersion } from '@tauri-apps/api/app'
 import { check } from '@tauri-apps/plugin-updater'
-import { isTauri } from '@/utils/is-tauri'
+import { isTauri } from './is-tauri'
 
 /**
  * Returns the application version.

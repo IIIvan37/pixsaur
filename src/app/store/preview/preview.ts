@@ -1,4 +1,5 @@
 import { atom } from 'jotai'
+import { logger } from '@/core'
 import { quantifyToCPCPlus, quantizeCPC } from '@/export'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
@@ -12,7 +13,6 @@ import {
   getVisualRegionNormalized
 } from '@/preview'
 import { applyResize, type Selection } from '@/source'
-import { logger } from '@/utils/core'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
   centerImageAtom,

@@ -19,7 +19,7 @@ export interface CreateDskOptions {
   format?: 'data' | 'vendor'
 }
 
-import { dskLogger } from '@/utils/core'
+import { dskLogger } from '@/core'
 
 export interface AddFileToDskOptions {
   /** Load address in memory (optional) */

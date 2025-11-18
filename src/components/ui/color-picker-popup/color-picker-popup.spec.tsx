@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { renderWithI18n } from '@/utils/test-utils'
+import { renderWithI18n } from '@/test-utils'
 import {
   ColorPickerPopup,
   type ColorPickerPopupProps

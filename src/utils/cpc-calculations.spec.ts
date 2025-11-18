@@ -5,7 +5,7 @@ import {
   getWidthStepForMode,
   quantifyToCPCPlus,
   quantizeCPC
-} from './cpc-calculations'
+} from '@/export'
 
 describe('cpc-calculations', () => {
   describe('getWidthStepForMode', () => {

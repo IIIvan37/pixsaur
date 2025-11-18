@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
+import { isDevelopment } from '@/core'
 import { getAppVersion, isTauri } from '@/tauri'
-import { isDevelopment } from '@/utils/is-development'
 import styles from './version-display.module.css'
 
 export function VersionDisplay() {

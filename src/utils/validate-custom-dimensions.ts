@@ -8,7 +8,7 @@
  * - Total memory must not exceed 64 Ko
  */
 
-import { getPixelsPerByte, getWidthStepForMode } from '@/utils/cpc-calculations'
+import { getPixelsPerByte, getWidthStepForMode } from '@/export'
 
 export type CpcMode = 0 | 1 | 2
 

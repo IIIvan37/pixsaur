@@ -11,14 +11,19 @@ import {
 } from '../map-and-dither'
 
 // Mock logger to avoid console output in tests
-vi.mock('@/utils/core', () => ({
-  logger: {
-    warn: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    debug: vi.fn()
+vi.mock('@/core', async (importOriginal) => {
+  const actual: any = await importOriginal()
+  return {
+    ...(actual as any),
+    logger: {
+      ...(actual.logger || {}),
+      warn: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn()
+    }
   }
-}))
+})
 
 describe('Map and Dither', () => {
   let testPalette: Vector[]

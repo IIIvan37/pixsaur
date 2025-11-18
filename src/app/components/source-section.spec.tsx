@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import { setImgAtom } from '@/app/store/image/image'
 import { processImageFile } from '@/components/image-upload/utils'
 import { isTauri, pickImageFileTauriAsFile } from '@/tauri'
-import { mockGlobalImage, renderWithProviders } from '@/utils/test-utils'
+import { mockGlobalImage, renderWithProviders } from '@/test-utils'
 import SourceSection from './source-section'
 
 vi.mock('@/tauri')

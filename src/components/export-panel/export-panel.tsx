@@ -31,7 +31,7 @@ export default function ExportPanel() {
     if (!image?.data) return
 
     // FIX: Ne pas "nettoyer" l'image - previewImageAtom contient déjà le dithering correct
-    // const { remapImageDataToPalette } = await import('@/utils/exports/rgb-to-indexes')
+    // const { remapImageDataToPalette } = await import('@/export')
     // const cleanImage = remapImageDataToPalette(image, reducedPalette)
     const cleanImage = image // Utiliser directement l'image avec dithering
 

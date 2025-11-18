@@ -7,6 +7,6 @@ export type {
   ProcessedImage,
   SourceImage
 } from '@/types/image'
-export * from '@/utils/get-visual-region'
-export * from '@/utils/image-processing/horizontal-smoothing'
+export * from './get-visual-region'
+export * from './image-processing/horizontal-smoothing'
 export * from './validate-custom-dimensions'

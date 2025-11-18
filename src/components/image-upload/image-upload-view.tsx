@@ -8,8 +8,8 @@ import {
   setOpenImagePickerAtom
 } from '@/app/store/image/image'
 import Icon from '@/components/ui/icon'
+import { logger } from '@/core'
 import { Window } from '@/tauri'
-import { logger } from '@/utils/core'
 import styles from './image-upload.module.css'
 
 export type ImageUploadProps = {

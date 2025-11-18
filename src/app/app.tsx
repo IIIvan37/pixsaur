@@ -5,10 +5,9 @@ import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
 import { VersionDisplay } from '@/components/version-display'
+import { isDevelopment, logger } from '@/core'
 import styles from '@/styles/app.module.css'
 import { invoke, isTauri } from '@/tauri'
-import { logger } from '@/utils/core'
-import { isDevelopment } from '@/utils/is-development'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
 
@@ -46,7 +45,7 @@ export default function App() {
 
     const handler = async (event: KeyboardEvent) => {
       try {
-        const { isQuitShortcut } = await import('@/utils/quit-shortcut')
+        const { isQuitShortcut } = await import('@/tauri')
         if (isQuitShortcut(event)) {
           event.preventDefault()
           const { invoke } = await import('@/tauri')

@@ -1,12 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { createStore, Provider } from 'jotai'
 import { beforeEach, describe, it, vi } from 'vitest'
 import { cpcHardwareAtom } from '@/app/store/config/config'
 import { CPCHardware } from '@/libs/types'
-import { renderWithJotai } from '@/utils/test-utils'
+import { renderWithJotai } from '@/test-utils'
 import {
   ColorPaletteView,
   type ColorPaletteViewProps
