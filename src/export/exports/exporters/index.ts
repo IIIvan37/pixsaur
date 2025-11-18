@@ -3,7 +3,7 @@
  * Centralized exports for all export functionality
  */
 
-export { exportDskWorkspaceZip } from '@/utils/exports/exporters/export-dsk-workspace-zip'
+export { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
 export { exportLinearData } from './export-linear'
 export { exportPalettePlus, exportPalettesClassic } from './export-palette'
 export { exportPNGData } from './export-png'
