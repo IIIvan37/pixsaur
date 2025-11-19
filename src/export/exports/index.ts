@@ -1,5 +1,6 @@
 export * from './asm-templates'
 export * from './color-utils'
+export * from './cpc-format'
 export * from './cpc-plus-format'
 export * from './export-png-utils'
 export * from './export-zip'
