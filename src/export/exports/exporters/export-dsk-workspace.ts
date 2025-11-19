@@ -216,7 +216,7 @@ export async function exportDskWorkspace(
           scrData[2034] = image.mode
         } else {
           const { injectPaletteDataIntoSCR } = await import(
-            '@/palettes/cpc-palette'
+            '@/export/exports/cpc-format'
           )
           injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
         }

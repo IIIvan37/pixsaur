@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import {
+  getHardwarePalette,
+  injectPaletteDataIntoSCR
+} from '@/export/exports/cpc-format'
 import { CPCHardware } from '@/libs/types'
 import {
   cpcPalette,
   generateAmstradCPCPalette,
   generateCPCPlusPalette,
-  getHardwarePalette,
   getPaletteForHardware,
-  injectPaletteDataIntoSCR,
   vectorToHex
 } from './cpc-palette'
 
