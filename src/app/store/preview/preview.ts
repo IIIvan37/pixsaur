@@ -27,7 +27,8 @@ import {
 import { selectionAtom, workingImageAtom } from '../image/image'
 import {
   lockedEmptySlotsCountAtom,
-  lockedVectorsAtom
+  lockedVectorsAtom,
+  userPaletteAtom
 } from '../palette/palette'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
@@ -397,6 +398,56 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   }
 
   return projected
+})
+
+// Palette pour l'export: reconstruit la palette complète avec les slots vides lockés
+// Les slots vides lockés sont remplis avec la couleur la plus sombre de la palette
+// pour maintenir la correspondance des indices lors de l'export
+export const exportPaletteWithSlotsAtom = atom(async (get) => {
+  const reducedPalette = await get(reducedPaletteRgbAtom)
+  const userPalette = get(userPaletteAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
+
+  if (reducedPalette.length === 0) {
+    return []
+  }
+
+  // Trouver la couleur la plus sombre pour remplir les slots vides
+  const darkestColor = reducedPalette.reduce((darkest, color) => {
+    const colorLuminance = luminance(color)
+    const darkestLuminance = luminance(darkest)
+    return colorLuminance < darkestLuminance ? color : darkest
+  }, reducedPalette[0])
+
+  // Reconstruire la palette complète avec les slots vides à leur position
+  const fullPalette: Vector[] = []
+  let reducedIndex = 0
+
+  for (let i = 0; i < modeConfig.nColors; i++) {
+    const slot = userPalette[i]
+    if (slot?.locked && slot.color === null) {
+      // Slot vide locké: utiliser la couleur la plus sombre comme placeholder
+      fullPalette.push(darkestColor)
+    } else if (reducedIndex < reducedPalette.length) {
+      // Slot avec couleur: utiliser la couleur de la palette réduite
+      fullPalette.push(reducedPalette[reducedIndex])
+      reducedIndex++
+    } else {
+      // Pas assez de couleurs: remplir avec la couleur la plus sombre
+      fullPalette.push(darkestColor)
+    }
+  }
+
+  logger.info('[Preview] exportPaletteWithSlotsAtom', {
+    reducedPaletteLength: reducedPalette.length,
+    fullPaletteLength: fullPalette.length,
+    lockedEmptySlots: userPalette
+      .slice(0, modeConfig.nColors)
+      .map((s, i) => ({ i, isEmpty: s.locked && s.color === null }))
+      .filter((s) => s.isEmpty)
+  })
+
+  return fullPalette
 })
 
 // Helper functions pour réduire la complexité cognitive
