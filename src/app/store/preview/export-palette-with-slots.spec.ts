@@ -5,6 +5,9 @@ import { dimensionPresetAtom, pixelModeAtom } from '../config/config'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
 
+// Valeur spéciale pour marquer un slot ignoré
+const IGNORED_SLOT: Vector = [-1, -1, -1]
+
 // Mock les atoms async car ils sont complexes à tester directement
 // On teste la logique de reconstruction de palette avec slots vides
 
@@ -16,38 +19,45 @@ describe('Export Palette With Slots Logic', () => {
   })
 
   // Fonction helper qui simule la logique de exportPaletteWithSlotsAtom
+  // Les slots ignorés sont marqués avec [-1, -1, -1]
   function buildExportPaletteWithSlots(
-    reducedPalette: Vector[],
     userPalette: PaletteSlot[],
     maxColors: number
   ): Vector[] {
-    if (reducedPalette.length === 0) {
+    // Collecter les couleurs valides
+    const validColors: Vector[] = []
+    for (let i = 0; i < maxColors; i++) {
+      const slot = userPalette[i]
+      if (slot?.color && !(slot.locked && slot.color === null)) {
+        validColors.push(slot.color)
+      }
+    }
+
+    if (validColors.length === 0) {
       return []
     }
 
-    // Trouver la couleur la plus sombre pour remplir les slots vides
-    const darkestColor = reducedPalette.reduce((darkest, color) => {
+    // Trouver la couleur la plus sombre pour remplir les slots vides non lockés
+    const darkestColor = validColors.reduce((darkest, color) => {
       const luminance = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]
       const darkestLuminance =
         0.299 * darkest[0] + 0.587 * darkest[1] + 0.114 * darkest[2]
       return luminance < darkestLuminance ? color : darkest
-    }, reducedPalette[0])
+    }, validColors[0])
 
-    // Reconstruire la palette complète avec les slots vides à leur position
+    // Reconstruire la palette complète
     const fullPalette: Vector[] = []
-    let reducedIndex = 0
 
     for (let i = 0; i < maxColors; i++) {
       const slot = userPalette[i]
       if (slot?.locked && slot.color === null) {
-        // Slot vide locké: utiliser la couleur la plus sombre comme placeholder
-        fullPalette.push(darkestColor)
-      } else if (reducedIndex < reducedPalette.length) {
-        // Slot avec couleur: utiliser la couleur de la palette réduite
-        fullPalette.push(reducedPalette[reducedIndex])
-        reducedIndex++
+        // Slot vide locké: marquer comme ignoré avec [-1, -1, -1]
+        fullPalette.push(IGNORED_SLOT)
+      } else if (slot?.color) {
+        // Slot avec couleur
+        fullPalette.push(slot.color)
       } else {
-        // Pas assez de couleurs: remplir avec la couleur la plus sombre
+        // Slot sans couleur (non locké): remplir avec la couleur la plus sombre
         fullPalette.push(darkestColor)
       }
     }
@@ -55,23 +65,22 @@ describe('Export Palette With Slots Logic', () => {
     return fullPalette
   }
 
+  // Helper pour vérifier si un slot est ignoré
+  function isIgnoredSlot(color: Vector): boolean {
+    return color[0] === -1 && color[1] === -1 && color[2] === -1
+  }
+
   describe('buildExportPaletteWithSlots', () => {
-    it('should return empty array for empty reduced palette', () => {
-      const result = buildExportPaletteWithSlots(
-        [],
-        [{ color: null, locked: false }],
-        4
-      )
+    it('should return empty array when no valid colors', () => {
+      const userPalette: PaletteSlot[] = [
+        { color: null, locked: true },
+        { color: null, locked: true }
+      ]
+      const result = buildExportPaletteWithSlots(userPalette, 2)
       expect(result).toEqual([])
     })
 
-    it('should return reduced palette as-is when no locked empty slots', () => {
-      const reducedPalette: Vector[] = [
-        [255, 0, 0],
-        [0, 255, 0],
-        [0, 0, 255],
-        [255, 255, 0]
-      ]
+    it('should return palette as-is when no locked empty slots', () => {
       const userPalette: PaletteSlot[] = [
         { color: [255, 0, 0], locked: false },
         { color: [0, 255, 0], locked: false },
@@ -79,17 +88,16 @@ describe('Export Palette With Slots Logic', () => {
         { color: [255, 255, 0], locked: false }
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 4)
-      expect(result).toEqual(reducedPalette)
+      const result = buildExportPaletteWithSlots(userPalette, 4)
+      expect(result).toEqual([
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255],
+        [255, 255, 0]
+      ])
     })
 
-    it('should insert darkest color at locked empty slot position', () => {
-      // Palette réduite avec 3 couleurs (slot 1 est vide locké)
-      const reducedPalette: Vector[] = [
-        [255, 0, 0], // Slot 0
-        [0, 255, 0], // Devrait aller au slot 2
-        [0, 0, 255] // Devrait aller au slot 3
-      ]
+    it('should mark locked empty slot with IGNORED_SLOT [-1,-1,-1]', () => {
       const userPalette: PaletteSlot[] = [
         { color: [255, 0, 0], locked: false }, // Slot 0
         { color: null, locked: true }, // Slot 1 - vide et locké
@@ -97,21 +105,15 @@ describe('Export Palette With Slots Logic', () => {
         { color: [0, 0, 255], locked: false } // Slot 3
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 4)
+      const result = buildExportPaletteWithSlots(userPalette, 4)
 
-      // Slot 1 devrait contenir la couleur la plus sombre (noir ou bleu dans ce cas)
-      expect(result[0]).toEqual([255, 0, 0]) // Slot 0 - première couleur
-      expect(result[1]).toEqual([0, 0, 255]) // Slot 1 - couleur la plus sombre (bleu)
-      expect(result[2]).toEqual([0, 255, 0]) // Slot 2 - deuxième couleur
-      expect(result[3]).toEqual([0, 0, 255]) // Slot 3 - troisième couleur
+      expect(result[0]).toEqual([255, 0, 0]) // Slot 0 - couleur normale
+      expect(isIgnoredSlot(result[1])).toBe(true) // Slot 1 - ignoré [-1,-1,-1]
+      expect(result[2]).toEqual([0, 255, 0]) // Slot 2 - couleur normale
+      expect(result[3]).toEqual([0, 0, 255]) // Slot 3 - couleur normale
     })
 
     it('should handle multiple locked empty slots', () => {
-      // Palette réduite avec 2 couleurs (slots 1 et 3 sont vides lockés)
-      const reducedPalette: Vector[] = [
-        [255, 255, 255], // Blanc - slot 0
-        [0, 0, 0] // Noir - slot 2
-      ]
       const userPalette: PaletteSlot[] = [
         { color: [255, 255, 255], locked: false }, // Slot 0
         { color: null, locked: true }, // Slot 1 - vide et locké
@@ -119,32 +121,26 @@ describe('Export Palette With Slots Logic', () => {
         { color: null, locked: true } // Slot 3 - vide et locké
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 4)
+      const result = buildExportPaletteWithSlots(userPalette, 4)
 
-      // La couleur la plus sombre est le noir [0,0,0]
       expect(result[0]).toEqual([255, 255, 255]) // Slot 0 - blanc
-      expect(result[1]).toEqual([0, 0, 0]) // Slot 1 - noir (placeholder)
+      expect(isIgnoredSlot(result[1])).toBe(true) // Slot 1 - ignoré
       expect(result[2]).toEqual([0, 0, 0]) // Slot 2 - noir
-      expect(result[3]).toEqual([0, 0, 0]) // Slot 3 - noir (placeholder)
+      expect(isIgnoredSlot(result[3])).toBe(true) // Slot 3 - ignoré
     })
 
-    it('should use darkest color for placeholder (luminance calculation)', () => {
+    it('should use darkest color for non-locked empty slots', () => {
       // Palette avec différentes luminances
-      const reducedPalette: Vector[] = [
-        [255, 255, 255], // Blanc - luminance maximale
-        [128, 128, 128], // Gris - luminance moyenne
-        [50, 0, 0] // Rouge sombre - devrait être le plus sombre
-      ]
       const userPalette: PaletteSlot[] = [
-        { color: [255, 255, 255], locked: false },
-        { color: null, locked: true }, // Slot vide locké
-        { color: [128, 128, 128], locked: false },
-        { color: [50, 0, 0], locked: false }
+        { color: [255, 255, 255], locked: false }, // Blanc
+        { color: null, locked: false }, // Slot vide non locké - devrait être rempli
+        { color: [128, 128, 128], locked: false }, // Gris
+        { color: [50, 0, 0], locked: false } // Rouge sombre - le plus sombre
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 4)
+      const result = buildExportPaletteWithSlots(userPalette, 4)
 
-      // Le slot 1 (vide locké) devrait avoir la couleur la plus sombre
+      // Le slot 1 (vide non locké) devrait avoir la couleur la plus sombre
       expect(result[1]).toEqual([50, 0, 0])
     })
 
@@ -152,10 +148,6 @@ describe('Export Palette With Slots Logic', () => {
       store.set(pixelModeAtom, 1)
       store.set(dimensionPresetAtom, 'standard')
 
-      const reducedPalette: Vector[] = [
-        [0, 0, 0],
-        [255, 255, 255]
-      ]
       const userPalette: PaletteSlot[] = [
         { color: [0, 0, 0], locked: true },
         { color: null, locked: true }, // Vide locké
@@ -163,38 +155,30 @@ describe('Export Palette With Slots Logic', () => {
         { color: [255, 255, 255], locked: false }
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 4)
+      const result = buildExportPaletteWithSlots(userPalette, 4)
 
       expect(result).toHaveLength(4)
       expect(result[0]).toEqual([0, 0, 0]) // Couleur existante
-      expect(result[1]).toEqual([0, 0, 0]) // Placeholder (noir est le plus sombre)
-      expect(result[2]).toEqual([0, 0, 0]) // Placeholder
+      expect(isIgnoredSlot(result[1])).toBe(true) // Ignoré
+      expect(isIgnoredSlot(result[2])).toBe(true) // Ignoré
       expect(result[3]).toEqual([255, 255, 255]) // Couleur existante
     })
 
     it('should handle mode 2 (2 colors) with one locked empty slot', () => {
-      const reducedPalette: Vector[] = [[255, 255, 255]] // Seulement 1 couleur
       const userPalette: PaletteSlot[] = [
         { color: null, locked: true }, // Slot 0 - vide et locké
         { color: [255, 255, 255], locked: false } // Slot 1 - blanc
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 2)
+      const result = buildExportPaletteWithSlots(userPalette, 2)
 
       expect(result).toHaveLength(2)
-      expect(result[0]).toEqual([255, 255, 255]) // Placeholder (seule couleur disponible)
+      expect(isIgnoredSlot(result[0])).toBe(true) // Ignoré
       expect(result[1]).toEqual([255, 255, 255]) // Couleur existante
     })
 
     it('should preserve exact color positions for index mapping', () => {
       // Cas d'usage réel: mode 0 (16 couleurs) avec quelques slots vides
-      const reducedPalette: Vector[] = [
-        [0, 0, 0], // Index 0
-        [255, 0, 0], // Index 1 -> devrait aller au slot 2
-        [0, 255, 0], // Index 2 -> devrait aller au slot 4
-        [0, 0, 255] // Index 3 -> devrait aller au slot 5
-      ]
-
       // Slots 1 et 3 sont vides et lockés
       const userPalette: PaletteSlot[] = [
         { color: [0, 0, 0], locked: false }, // 0
@@ -205,15 +189,22 @@ describe('Export Palette With Slots Logic', () => {
         { color: [0, 0, 255], locked: false } // 5
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 6)
+      const result = buildExportPaletteWithSlots(userPalette, 6)
 
       // Vérifier que chaque couleur est à la bonne position
       expect(result[0]).toEqual([0, 0, 0]) // Noir
-      expect(result[1]).toEqual([0, 0, 0]) // Placeholder (noir = plus sombre)
+      expect(isIgnoredSlot(result[1])).toBe(true) // Ignoré [-1,-1,-1]
       expect(result[2]).toEqual([255, 0, 0]) // Rouge
-      expect(result[3]).toEqual([0, 0, 0]) // Placeholder (noir = plus sombre)
+      expect(isIgnoredSlot(result[3])).toBe(true) // Ignoré [-1,-1,-1]
       expect(result[4]).toEqual([0, 255, 0]) // Vert
       expect(result[5]).toEqual([0, 0, 255]) // Bleu
+    })
+
+    it('should correctly identify ignored slots with isIgnoredSlot helper', () => {
+      expect(isIgnoredSlot([-1, -1, -1])).toBe(true)
+      expect(isIgnoredSlot([0, 0, 0])).toBe(false)
+      expect(isIgnoredSlot([255, 255, 255])).toBe(false)
+      expect(isIgnoredSlot([-1, 0, 0])).toBe(false) // Only all -1 is ignored
     })
   })
 
@@ -238,7 +229,6 @@ describe('Export Palette With Slots Logic', () => {
     })
 
     it('should handle all slots locked and empty', () => {
-      const reducedPalette: Vector[] = [] // Aucune couleur générée
       const userPalette: PaletteSlot[] = [
         { color: null, locked: true },
         { color: null, locked: true },
@@ -246,18 +236,14 @@ describe('Export Palette With Slots Logic', () => {
         { color: null, locked: true }
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 4)
+      const result = buildExportPaletteWithSlots(userPalette, 4)
 
-      // Avec une palette réduite vide, le résultat devrait être vide
+      // Avec aucune couleur valide, le résultat devrait être vide
       expect(result).toEqual([])
     })
 
     it('should handle locked slots with colors (not empty)', () => {
       // Les slots lockés avec couleurs ne sont PAS des slots vides
-      const reducedPalette: Vector[] = [
-        [255, 0, 0],
-        [0, 255, 0]
-      ]
       const userPalette: PaletteSlot[] = [
         { color: [255, 0, 0], locked: true }, // Locké AVEC couleur
         { color: [0, 255, 0], locked: true }, // Locké AVEC couleur
@@ -265,7 +251,7 @@ describe('Export Palette With Slots Logic', () => {
         { color: null, locked: false }
       ]
 
-      const result = buildExportPaletteWithSlots(reducedPalette, userPalette, 4)
+      const result = buildExportPaletteWithSlots(userPalette, 4)
 
       // Les slots lockés avec couleurs sont traités normalement
       expect(result[0]).toEqual([255, 0, 0])

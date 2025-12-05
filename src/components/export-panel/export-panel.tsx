@@ -8,6 +8,7 @@ import {
 } from '@/app/store/config/config'
 import {
   exportPaletteWithSlotsAtom,
+  IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
 import { Notification } from '@/components/ui/notification/notification'
@@ -36,7 +37,14 @@ export default function ExportPanel() {
     // const cleanImage = remapImageDataToPalette(image, reducedPalette)
     const cleanImage = image // Utiliser directement l'image avec dithering
 
+    // Helper pour vérifier si un slot est ignoré
+    const isIgnoredSlot = (color: number[]) =>
+      color[0] === IGNORED_SLOT[0] &&
+      color[1] === IGNORED_SLOT[1] &&
+      color[2] === IGNORED_SLOT[2]
+
     // Convert palette to the correct format for export
+    // Les slots ignorés [-1,-1,-1] sont conservés pour marquer leur position
     const paletteForExport = exportPalette.map((colorData: any) => {
       const color = Array.isArray(colorData) ? colorData : Array.from(colorData)
       return [color[0], color[1], color[2]] as [number, number, number]
@@ -52,10 +60,17 @@ export default function ExportPanel() {
       const cpcPalette = getPaletteForHardware(cpcHardware)
 
       // Find indexes of the palette in amstrad cpc palette
+      // Les slots ignorés [-1,-1,-1] utilisent l'indice 0 (noir) comme placeholder
       const originalPaletteIndices = exportPalette.map((colorData: any) => {
         const color = Array.isArray(colorData)
           ? colorData
           : Array.from(colorData)
+
+        // Slot ignoré: utiliser 0 (noir) comme placeholder
+        if (isIgnoredSlot(color)) {
+          return 0
+        }
+
         const index = cpcPalette.findIndex(
           (c) => c[0] === color[0] && c[1] === color[1] && c[2] === color[2]
         )
