@@ -18,6 +18,51 @@ const getPaletteStrategies = (
 ): readonly PaletteStrategyOption[] =>
   [
     {
+      value: 'exhaustive-contrast',
+      label: _(
+        msg({
+          id: 'palette.strategy.exhaustive-contrast.label',
+          message: 'Exhaustive Contrast'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.exhaustive-contrast.desc',
+          message: 'Tests all combinations, maximizes contrast (best quality)'
+        })
+      )
+    },
+    {
+      value: 'coverage-aware',
+      label: _(
+        msg({
+          id: 'palette.strategy.coverage-aware.label',
+          message: 'Coverage Aware'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.coverage-aware.desc',
+          message: 'Maximizes pixel coverage (minimizes global error)'
+        })
+      )
+    },
+    {
+      value: 'dithering-aware',
+      label: _(
+        msg({
+          id: 'palette.strategy.dithering-aware.label',
+          message: 'Dithering Aware'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.dithering-aware.desc',
+          message: 'Selects colors that blend well in dithering'
+        })
+      )
+    },
+    {
       value: 'frequency-balanced',
       label: _(
         msg({

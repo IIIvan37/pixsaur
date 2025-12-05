@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { Vector } from '../type'
 import {
+  AVAILABLE_STRATEGIES,
+  applyPaletteStrategyV2,
   type ColorCandidate,
+  isValidPaletteStrategy,
+  type PaletteStrategyName,
   selectByAdaptive,
   selectByBalancedScoreBalanced,
   selectByBalancedScoreMax,
   selectByDiversityFirstBalanced,
   selectByDiversityFirstMax,
+  selectByExhaustiveContrast,
   selectByFrequencyBalanced,
   selectByFrequencyMax,
   selectByPerceptualBalanced,
@@ -642,6 +647,393 @@ describe('palette-strategies-v2', () => {
 
       // Devrait s'arrêter avec un seul candidat
       expect(result.selectedIndices).toHaveLength(1)
+    })
+  })
+
+  // ============================================================================
+  // EXHAUSTIVE CONTRAST STRATEGY TESTS
+  // ============================================================================
+
+  describe('selectByExhaustiveContrast', () => {
+    it('should return correct number of colors', () => {
+      const candidates = createTestCandidates()
+      const result = selectByExhaustiveContrast(candidates, 4)
+      expect(result.selectedIndices).toHaveLength(4)
+    })
+
+    it('should maximize contrast by testing all combinations', () => {
+      // Candidats avec couleurs très contrastées
+      const contrastCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [0, 0, 0] as Vector, // Noir
+          converted: [0, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [255, 255, 255] as Vector, // Blanc
+          converted: [255, 255, 255] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [10, 10, 10] as Vector, // Quasi-noir
+          converted: [10, 10, 10] as Vector
+        },
+        {
+          index: 3,
+          frequency: 40,
+          color: [255, 0, 0] as Vector, // Rouge vif
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 4,
+          frequency: 20,
+          color: [0, 255, 0] as Vector, // Vert vif
+          converted: [0, 255, 0] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(contrastCandidates, 3)
+
+      // Devrait préférer noir, blanc et une couleur saturée (pas quasi-noir)
+      expect(result.selectedIndices).toHaveLength(3)
+      // Le quasi-noir (index 2) ne devrait PAS être sélectionné car trop proche du noir
+      expect(result.selectedIndices).not.toContain(2)
+    })
+
+    it('should respect preselected indices', () => {
+      const candidates = createTestCandidates()
+      const preselected = [0, 1]
+
+      const result = selectByExhaustiveContrast(candidates, 4, preselected)
+
+      expect(result.selectedIndices).toHaveLength(4)
+      expect(result.selectedIndices).toContain(0)
+      expect(result.selectedIndices).toContain(1)
+    })
+
+    it('should handle edge case with fewer candidates than needed', () => {
+      const fewCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [0, 0, 0] as Vector,
+          converted: [0, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 50,
+          color: [255, 255, 255] as Vector,
+          converted: [255, 255, 255] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(fewCandidates, 4)
+
+      // Devrait retourner tous les candidats disponibles
+      expect(result.selectedIndices).toHaveLength(2)
+    })
+
+    it('should prefer combinations with dark AND bright colors', () => {
+      // Candidats sans couleur sombre
+      const noDarkCandidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [200, 200, 200] as Vector, // Gris clair
+          converted: [200, 200, 200] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [255, 255, 255] as Vector, // Blanc
+          converted: [255, 255, 255] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 0] as Vector, // Noir - seule couleur sombre
+          converted: [0, 0, 0] as Vector
+        },
+        {
+          index: 3,
+          frequency: 40,
+          color: [255, 200, 200] as Vector, // Rose clair
+          converted: [255, 200, 200] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(noDarkCandidates, 2)
+
+      // Devrait inclure le noir (seule couleur sombre) pour le contraste
+      expect(result.selectedIndices).toContain(2)
+    })
+
+    it('should handle pre-filtering with many candidates (> 12)', () => {
+      // Créer 20 candidats pour tester le pre-filtering
+      const manyCandidates: ColorCandidate[] = []
+      for (let i = 0; i < 20; i++) {
+        const brightness = (i * 12) % 256 // Variations de luminosité
+        manyCandidates.push({
+          index: i,
+          frequency: 100 - i * 4, // Fréquences décroissantes
+          color: [brightness, brightness, brightness] as Vector,
+          converted: [brightness, brightness, brightness] as Vector
+        })
+      }
+
+      // Ne doit pas planter malgré les nombreux candidats
+      const result = selectByExhaustiveContrast(manyCandidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+      // Les indices sélectionnés doivent être valides
+      for (const idx of result.selectedIndices) {
+        expect(idx).toBeGreaterThanOrEqual(0)
+        expect(idx).toBeLessThan(20)
+      }
+    })
+
+    it('should include diverse luminance even with many candidates', () => {
+      // Créer candidats avec un mélange de luminances
+      const diverseCandidates: ColorCandidate[] = [
+        // Couleurs sombres
+        {
+          index: 0,
+          frequency: 90,
+          color: [20, 20, 20] as Vector,
+          converted: [20, 20, 20] as Vector
+        },
+        {
+          index: 1,
+          frequency: 85,
+          color: [40, 40, 40] as Vector,
+          converted: [40, 40, 40] as Vector
+        },
+        // Couleurs moyennes
+        {
+          index: 2,
+          frequency: 80,
+          color: [128, 128, 128] as Vector,
+          converted: [128, 128, 128] as Vector
+        },
+        {
+          index: 3,
+          frequency: 75,
+          color: [140, 140, 140] as Vector,
+          converted: [140, 140, 140] as Vector
+        },
+        // Couleurs claires
+        {
+          index: 4,
+          frequency: 70,
+          color: [220, 220, 220] as Vector,
+          converted: [220, 220, 220] as Vector
+        },
+        {
+          index: 5,
+          frequency: 65,
+          color: [240, 240, 240] as Vector,
+          converted: [240, 240, 240] as Vector
+        },
+        // Plus de candidats pour dépasser le seuil
+        {
+          index: 6,
+          frequency: 60,
+          color: [60, 60, 60] as Vector,
+          converted: [60, 60, 60] as Vector
+        },
+        {
+          index: 7,
+          frequency: 55,
+          color: [80, 80, 80] as Vector,
+          converted: [80, 80, 80] as Vector
+        },
+        {
+          index: 8,
+          frequency: 50,
+          color: [100, 100, 100] as Vector,
+          converted: [100, 100, 100] as Vector
+        },
+        {
+          index: 9,
+          frequency: 45,
+          color: [160, 160, 160] as Vector,
+          converted: [160, 160, 160] as Vector
+        },
+        {
+          index: 10,
+          frequency: 40,
+          color: [180, 180, 180] as Vector,
+          converted: [180, 180, 180] as Vector
+        },
+        {
+          index: 11,
+          frequency: 35,
+          color: [200, 200, 200] as Vector,
+          converted: [200, 200, 200] as Vector
+        },
+        {
+          index: 12,
+          frequency: 30,
+          color: [30, 30, 30] as Vector,
+          converted: [30, 30, 30] as Vector
+        },
+        {
+          index: 13,
+          frequency: 25,
+          color: [250, 250, 250] as Vector,
+          converted: [250, 250, 250] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(diverseCandidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+
+      // Vérifier qu'on a du contraste dans le résultat
+      const selectedColors = result.selectedIndices.map(
+        (idx) => diverseCandidates.find((c) => c.index === idx)!.color
+      )
+      const luminances = selectedColors.map((c) => (c[0] + c[1] + c[2]) / 3)
+      const minLum = Math.min(...luminances)
+      const maxLum = Math.max(...luminances)
+
+      // Il devrait y avoir un écart de luminance significatif
+      expect(maxLum - minLum).toBeGreaterThan(100)
+    })
+  })
+
+  describe('applyPaletteStrategyV2', () => {
+    const createTestCandidates = (): ColorCandidate[] => [
+      {
+        index: 0,
+        frequency: 100,
+        color: [0, 0, 0] as Vector,
+        converted: [0, 0, 0] as Vector
+      },
+      {
+        index: 1,
+        frequency: 80,
+        color: [255, 255, 255] as Vector,
+        converted: [255, 255, 255] as Vector
+      },
+      {
+        index: 2,
+        frequency: 60,
+        color: [255, 0, 0] as Vector,
+        converted: [255, 0, 0] as Vector
+      },
+      {
+        index: 3,
+        frequency: 40,
+        color: [0, 255, 0] as Vector,
+        converted: [0, 255, 0] as Vector
+      },
+      {
+        index: 4,
+        frequency: 20,
+        color: [0, 0, 255] as Vector,
+        converted: [0, 0, 255] as Vector
+      }
+    ]
+
+    it('should apply exhaustive-contrast strategy', () => {
+      const candidates = createTestCandidates()
+      const result = applyPaletteStrategyV2(
+        'exhaustive-contrast',
+        candidates,
+        4
+      )
+
+      expect(result.selectedIndices).toHaveLength(4)
+    })
+
+    it('should apply frequency-balanced strategy', () => {
+      const candidates = createTestCandidates()
+      const result = applyPaletteStrategyV2('frequency-balanced', candidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+      expect(result.selectedIndices).toContain(0) // Most frequent
+    })
+
+    it('should apply all strategies without error', () => {
+      const candidates = createTestCandidates()
+
+      for (const strategy of AVAILABLE_STRATEGIES) {
+        const result = applyPaletteStrategyV2(strategy, candidates, 3)
+        expect(result.selectedIndices.length).toBeGreaterThan(0)
+        expect(result.selectedIndices.length).toBeLessThanOrEqual(3)
+      }
+    })
+
+    it('should handle preselected indices', () => {
+      const candidates = createTestCandidates()
+      const preselected = [4] // Blue
+
+      const result = applyPaletteStrategyV2(
+        'frequency-balanced',
+        candidates,
+        3,
+        preselected
+      )
+
+      expect(result.selectedIndices).toContain(4)
+    })
+
+    it('should fallback to frequency-balanced for unknown strategy', () => {
+      const candidates = createTestCandidates()
+      // @ts-expect-error - Testing invalid strategy
+      const result = applyPaletteStrategyV2('unknown-strategy', candidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+    })
+  })
+
+  describe('isValidPaletteStrategy', () => {
+    it('should return true for valid strategies', () => {
+      expect(isValidPaletteStrategy('exhaustive-contrast')).toBe(true)
+      expect(isValidPaletteStrategy('frequency-balanced')).toBe(true)
+      expect(isValidPaletteStrategy('adaptive')).toBe(true)
+    })
+
+    it('should return false for invalid strategies', () => {
+      expect(isValidPaletteStrategy('invalid')).toBe(false)
+      expect(isValidPaletteStrategy('')).toBe(false)
+      expect(isValidPaletteStrategy('random')).toBe(false)
+    })
+  })
+
+  describe('AVAILABLE_STRATEGIES', () => {
+    it('should contain all 12 strategies', () => {
+      expect(AVAILABLE_STRATEGIES).toHaveLength(12)
+    })
+
+    it('should contain exhaustive-contrast', () => {
+      expect(AVAILABLE_STRATEGIES).toContain('exhaustive-contrast')
+    })
+
+    it('should contain all strategy names', () => {
+      const expectedStrategies: PaletteStrategyName[] = [
+        'exhaustive-contrast',
+        'coverage-aware',
+        'dithering-aware',
+        'frequency-balanced',
+        'frequency-max',
+        'balanced-score-balanced',
+        'balanced-score-max',
+        'perceptual-balanced',
+        'perceptual-max',
+        'diversity-first-balanced',
+        'diversity-first-max',
+        'adaptive'
+      ]
+
+      for (const strategy of expectedStrategies) {
+        expect(AVAILABLE_STRATEGIES).toContain(strategy)
+      }
     })
   })
 })

@@ -9,8 +9,15 @@ import Checkbox from '@/components/ui/checkbox/checkbox'
 import PixsaurDialog from '@/components/ui/dialog/dialog'
 import Input from '@/components/ui/input/input'
 import type { ExportConfig } from '@/export'
-import { DEFAULT_EXPORT_CONFIG } from '@/export'
+import { DEFAULT_EXPORT_CONFIG, getPixelsPerByte } from '@/export'
 import styles from './export-config-dialog.module.css'
+
+/**
+ * Maximum SCR file size in bytes (16 KB)
+ * Standard CPC screen memory is 16000 bytes (for standard modes)
+ * but we allow up to 16384 bytes for custom dimensions
+ */
+const MAX_SCR_SIZE_BYTES = 16384
 
 type Props = {
   open: boolean
@@ -27,7 +34,11 @@ export default function ExportConfigDialog({
   const [config, setConfig] = useState<ExportConfig>(DEFAULT_EXPORT_CONFIG)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
 
-  // Check if mode is standard (required for SCR format)
+  // Calculate SCR size in bytes for current dimensions and mode
+  const scrSizeBytes =
+    (modeConfig.width * modeConfig.height) / getPixelsPerByte(modeConfig.mode)
+
+  // SCR export is allowed for standard modes OR custom dimensions if size <= 16384 bytes
   const isStandardMode =
     !modeConfig.overscan &&
     ((modeConfig.mode === 0 &&
@@ -40,9 +51,12 @@ export default function ExportConfigDialog({
         modeConfig.width === 640 &&
         modeConfig.height === 200))
 
-  // Automatically uncheck SCR if mode is not standard
+  // Allow SCR export for standard modes OR custom dimensions with size <= 16384 bytes
+  const canExportSCR = isStandardMode || scrSizeBytes <= MAX_SCR_SIZE_BYTES
+
+  // Automatically uncheck SCR if export is not allowed
   useEffect(() => {
-    if (!isStandardMode) {
+    if (!canExportSCR) {
       const needsUpdate = config.content.includeSCR
       if (needsUpdate) {
         setConfig((prev) => ({
@@ -54,7 +68,7 @@ export default function ExportConfigDialog({
         }))
       }
     }
-  }, [isStandardMode, config.content.includeSCR])
+  }, [canExportSCR, config.content.includeSCR])
 
   const handleConfirm = () => {
     onConfirm(config)
@@ -117,12 +131,12 @@ export default function ExportConfigDialog({
             checked={config.content.includeSCR}
             onChange={(e) => updateContent('includeSCR', e.target.checked)}
             label={_(msg`SCR ASM (format CPC entrelacé)`)}
-            disabled={!isStandardMode}
+            disabled={!canExportSCR}
             title={
-              isStandardMode
+              canExportSCR
                 ? undefined
                 : _(
-                    msg`Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)`
+                    msg`Le format SCR nécessite une taille <= 16 Ko (taille actuelle: ${Math.round(scrSizeBytes / 1024)} Ko)`
                   )
             }
           />

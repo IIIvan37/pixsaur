@@ -24,6 +24,9 @@ export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
 // Palette selection strategy for color quantization
 export type PaletteStrategy =
+  | 'exhaustive-contrast' // Exhaustive search: tests all combinations, maximizes min distance
+  | 'coverage-aware' // Maximizes coverage of image colors within threshold
+  | 'dithering-aware' // Selects colors that blend well for dithering
   | 'frequency-balanced' // Original: frequency + diversity, mode balanced (80% freq)
   | 'frequency-max' // Original: frequency + diversity, max contrast (60% freq)
   | 'balanced-score-balanced' // Multi-criteria: 50% freq, 25% diversity, 25% luminance

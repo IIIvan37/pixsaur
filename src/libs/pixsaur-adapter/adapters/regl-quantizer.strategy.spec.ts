@@ -38,6 +38,18 @@ vi.mock('../../pixsaur-color/src/quant/palette-strategies-v2', () => ({
   selectByAdaptive: vi.fn((candidates, targetColors) => ({
     selectedIndices: candidates.slice(0, targetColors).map((c: any) => c.index),
     scores: new Map()
+  })),
+  selectByExhaustiveContrast: vi.fn((candidates, targetColors) => ({
+    selectedIndices: candidates.slice(0, targetColors).map((c: any) => c.index),
+    scores: new Map()
+  })),
+  selectByCoverageAware: vi.fn((candidates, targetColors) => ({
+    selectedIndices: candidates.slice(0, targetColors).map((c: any) => c.index),
+    scores: new Map()
+  })),
+  selectByDitheringAware: vi.fn((candidates, targetColors) => ({
+    selectedIndices: candidates.slice(0, targetColors).map((c: any) => c.index),
+    scores: new Map()
   }))
 }))
 
@@ -45,8 +57,11 @@ import {
   selectByAdaptive,
   selectByBalancedScoreBalanced,
   selectByBalancedScoreMax,
+  selectByCoverageAware,
+  selectByDitheringAware,
   selectByDiversityFirstBalanced,
   selectByDiversityFirstMax,
+  selectByExhaustiveContrast,
   selectByFrequencyBalanced,
   selectByFrequencyMax,
   selectByPerceptualBalanced,
@@ -60,6 +75,9 @@ describe('regl-quantizer strategy integration', () => {
 
   describe('Strategy selection routing', () => {
     const strategies: PaletteStrategy[] = [
+      'exhaustive-contrast',
+      'coverage-aware',
+      'dithering-aware',
       'frequency-balanced',
       'frequency-max',
       'balanced-score-balanced',
@@ -71,7 +89,10 @@ describe('regl-quantizer strategy integration', () => {
       'adaptive'
     ]
 
-    const strategyFunctionMap = {
+    const strategyFunctionMap: Record<PaletteStrategy, unknown> = {
+      'exhaustive-contrast': selectByExhaustiveContrast,
+      'coverage-aware': selectByCoverageAware,
+      'dithering-aware': selectByDitheringAware,
       'frequency-balanced': selectByFrequencyBalanced,
       'frequency-max': selectByFrequencyMax,
       'balanced-score-balanced': selectByBalancedScoreBalanced,
@@ -83,8 +104,8 @@ describe('regl-quantizer strategy integration', () => {
       adaptive: selectByAdaptive
     }
 
-    it('should map all 9 strategies to correct functions', () => {
-      expect(strategies).toHaveLength(9)
+    it('should map all 12 strategies to correct functions', () => {
+      expect(strategies).toHaveLength(12)
 
       for (const strategy of strategies) {
         const fn = strategyFunctionMap[strategy]

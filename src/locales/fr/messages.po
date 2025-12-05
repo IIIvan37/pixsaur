@@ -39,7 +39,7 @@ msgstr "Une nouvelle version de Pixsaur est disponible. Cliquez ci-dessous pour 
 #~ msgstr "Une nouvelle version de Pixsaur est disponible. Mettez à jour maintenant pour bénéficier des dernières fonctionnalités et améliorations."
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:143
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:188
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptatif"
 
@@ -109,17 +109,17 @@ msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Balance vert/magenta pour corriger les dominantes de couleur"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:68
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
 msgid "palette.strategy.balanced-score-max.label"
 msgstr "Score Contraste Max"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:44
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:89
 msgid "palette.strategy.frequency-max.desc"
 msgstr "Équilibre fréquence (60%) et diversité (40%)"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:53
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:98
 msgid "palette.strategy.balanced-score-balanced.label"
 msgstr "Score Équilibré"
 
@@ -193,7 +193,12 @@ msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgid "Couleur & Température"
 msgstr "Couleur & Température"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:77
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:38
+msgid "palette.strategy.coverage-aware.label"
+msgstr "Couverture Optimale"
+
+#: src/components/color-palette/color-grid/color-grid-view.tsx:74
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
 msgstr "Déverrouiller"
@@ -207,12 +212,17 @@ msgstr "Dimensions"
 #~ msgstr "Disquette DSK (image écran)"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:113
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:53
+msgid "palette.strategy.dithering-aware.label"
+msgstr "Optimisé Tramage"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:158
 msgid "palette.strategy.diversity-first-balanced.label"
 msgstr "Diversité Équilibrée"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:119
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:164
 msgid "palette.strategy.diversity-first-balanced.desc"
 msgstr "Diversité dominante (90%) avec légère fréquence (10%)"
 
@@ -234,7 +244,7 @@ msgid "DSK workspace exported successfully!"
 msgstr "Workspace DSK exporté avec succès !"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:146
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:191
 msgid "palette.strategy.adaptive.desc"
 msgstr "Stratégie dynamique selon l'image"
 
@@ -250,6 +260,11 @@ msgstr "Erreur de lecture du fichier : {0}"
 #: src/components/export-panel/dsk-files-manager.tsx:188
 msgid "Exec"
 msgstr "Exec"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:23
+msgid "palette.strategy.exhaustive-contrast.label"
+msgstr "Exhaustive Contrast"
 
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:160
 msgid "Export DSK"
@@ -282,17 +297,17 @@ msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Formats supportés : PNG, JPEG, GIF, BMP, WEBP, SVG"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:23
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:68
 msgid "palette.strategy.frequency-balanced.label"
 msgstr "Fréquence Équilibrée"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:38
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:83
 msgid "palette.strategy.frequency-max.label"
 msgstr "Fréquence Contraste"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:29
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:74
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Fréquence prioritaire (80%) avec diversité modérée"
 
@@ -381,12 +396,12 @@ msgid "Load"
 msgstr "Load"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:104
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:149
 msgid "palette.strategy.perceptual-max.desc"
 msgstr "Bins de luminance avec diversité prioritaire"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:89
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:134
 msgid "palette.strategy.perceptual-balanced.desc"
 msgstr "Bins de luminance avec fréquence prioritaire"
 
@@ -395,7 +410,12 @@ msgid "Luminosité"
 msgstr "Luminosité"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:134
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:44
+msgid "palette.strategy.coverage-aware.desc"
+msgstr "Maximise la couverture des pixels (minimise l'erreur globale)"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:179
 msgid "palette.strategy.diversity-first-max.desc"
 msgstr "Diversité maximale (100%), fréquence ignorée"
 
@@ -416,12 +436,12 @@ msgid "Mode de redimensionnement"
 msgstr "Mode de redimensionnement"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:59
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:104
 msgid "palette.strategy.balanced-score-balanced.desc"
 msgstr "Multi-critères équilibrés (50% freq, 25% div, 25% lum)"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:74
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:119
 msgid "palette.strategy.balanced-score-max.desc"
 msgstr "Multi-critères avec contraste (30% freq, 35% div, 35% lum)"
 
@@ -461,7 +481,7 @@ msgstr "Pas assez d'espace sur le DSK"
 msgid "Ombres"
 msgstr "Ombres"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:42
+#: src/components/color-palette/color-grid/color-grid-view.tsx:39
 msgid "Options de couleur"
 msgstr "Options de couleur"
 
@@ -482,12 +502,12 @@ msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:83
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:128
 msgid "palette.strategy.perceptual-balanced.label"
 msgstr "Perceptuel Équilibré"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:98
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:143
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptuel Contraste"
 
@@ -516,7 +536,7 @@ msgid "Processeur"
 msgstr "Processeur"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:128
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:173
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Diversité Pure"
 
@@ -573,6 +593,11 @@ msgstr "Sélection"
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:59
+msgid "palette.strategy.dithering-aware.desc"
+msgstr "Sélectionne des couleurs qui se mélangent bien en tramage"
+
 #: src/app/components/adjustements/adjustement.view.tsx:134
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
@@ -592,6 +617,11 @@ msgstr "Teinte colorée"
 #: src/app/components/adjustements/adjustement.view.tsx:109
 msgid "Température"
 msgstr "Température"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:29
+msgid "palette.strategy.exhaustive-contrast.desc"
+msgstr "Tests all combinations, maximizes contrast (best quality)"
 
 #: src/components/updater/updater-view.tsx:61
 msgid "Update Available"
@@ -621,7 +651,7 @@ msgstr "Utiliser des labels personnalisés"
 msgid "Valider"
 msgstr "Valider"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:79
+#: src/components/color-palette/color-grid/color-grid-view.tsx:76
 msgid "Verrouiller"
 msgstr "Verrouiller"
 
@@ -642,7 +672,7 @@ msgstr "Vert"
 msgid "Vibrance"
 msgstr "Vibrance"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:90
+#: src/components/color-palette/color-grid/color-grid-view.tsx:87
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:117
 msgid "Vider"
 msgstr "Vider"

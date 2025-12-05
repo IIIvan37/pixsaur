@@ -5,16 +5,17 @@ import type { PaletteStrategy } from './types'
 
 describe('Palette Strategy Configuration Atoms', () => {
   describe('paletteStrategyAtom', () => {
-    it('should have frequency-balanced as default value', () => {
+    it('should have exhaustive-contrast as default value', () => {
       const store = createStore()
       const value = store.get(paletteStrategyAtom)
 
-      expect(value).toBe('frequency-balanced')
+      expect(value).toBe('exhaustive-contrast')
     })
 
-    it('should store all 9 valid strategy values', () => {
+    it('should store all 10 valid strategy values', () => {
       const store = createStore()
       const strategies: PaletteStrategy[] = [
+        'exhaustive-contrast',
         'frequency-balanced',
         'frequency-max',
         'balanced-score-balanced',
@@ -37,7 +38,7 @@ describe('Palette Strategy Configuration Atoms', () => {
     it('should update paletteStrategyAtom when executed', () => {
       const store = createStore()
 
-      expect(store.get(paletteStrategyAtom)).toBe('frequency-balanced')
+      expect(store.get(paletteStrategyAtom)).toBe('exhaustive-contrast')
 
       store.set(setPaletteStrategyAtom, 'diversity-first-max')
 
@@ -64,6 +65,7 @@ describe('Palette Strategy Configuration Atoms', () => {
 
       // Valid strategies
       const validStrategies: PaletteStrategy[] = [
+        'exhaustive-contrast',
         'frequency-balanced',
         'frequency-max',
         'balanced-score-balanced',
