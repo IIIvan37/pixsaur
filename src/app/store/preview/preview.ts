@@ -254,7 +254,8 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 export const previewImageAtom = atom(async (get) => {
   const modeConfig = get(effectiveModeConfigAtom)
   const quantizer = await get(quantizerAtom)
-  const reduced = await get(reducedPaletteRgbAtom) // Utiliser la palette quantifiée
+  // Utiliser la palette avec slots pour que les indices correspondent à l'export
+  const reduced = await get(exportPaletteWithSlotsAtom)
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const processed = await get(smoothedImageAtom)
   const dithering = get(ditheringAtom)
