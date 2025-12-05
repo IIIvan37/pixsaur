@@ -8,8 +8,8 @@ import {
 } from '@/app/store/config/config'
 import { dskImagesAtom } from '@/app/store/dsk-workspace/dsk-workspace'
 import {
-  previewImageAtom,
-  reducedPaletteRgbAtom
+  exportPaletteWithSlotsAtom,
+  previewImageAtom
 } from '@/app/store/preview/preview'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
@@ -27,7 +27,8 @@ import { isTauri, saveZipFileTauri } from '@/tauri'
 export default function DskWorkspacePanel() {
   const { _ } = useLingui()
   const image = useAtomValue(previewImageAtom)
-  const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
+  // Utiliser la palette avec slots pour l'export (conserve les positions des slots vides lockés)
+  const exportPalette = useAtomValue(exportPaletteWithSlotsAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const dskImages = useAtomValue(dskImagesAtom)
@@ -45,7 +46,7 @@ export default function DskWorkspacePanel() {
         // Convert palette to firmware indices (for CPC Classic) or CPC Plus values
         const cpcPalette = getPaletteForHardware(cpcHardware)
 
-        const paletteFirmware = reducedPalette.map((colorData: unknown) => {
+        const paletteFirmware = exportPalette.map((colorData: unknown) => {
           const color = Array.isArray(colorData)
             ? colorData
             : Array.from(colorData as ArrayLike<number>)
@@ -67,7 +68,7 @@ export default function DskWorkspacePanel() {
         const palettePlus =
           cpcHardware === 'plus'
             ? paletteToCPCPlusValues(
-                reducedPalette.map((color: unknown) =>
+                exportPalette.map((color: unknown) =>
                   Array.isArray(color)
                     ? (color as [number, number, number])
                     : (Array.from(color as ArrayLike<number>) as [
@@ -106,7 +107,7 @@ export default function DskWorkspacePanel() {
         const thumbnailDataUrl = canvas.toDataURL('image/png')
 
         // Convert palette to hex colors for display
-        const paletteColors = reducedPalette.map((color: unknown) => {
+        const paletteColors = exportPalette.map((color: unknown) => {
           const rgb = Array.isArray(color)
             ? color
             : Array.from(color as ArrayLike<number>)
@@ -117,7 +118,7 @@ export default function DskWorkspacePanel() {
         // The SCR encoding will be done by generateSCRAsmClassic in export-dsk-workspace
         const indexBuffer = rgbToIndexBufferExact(
           image.data,
-          reducedPalette,
+          exportPalette,
           false
         )
 

@@ -7,8 +7,8 @@ import {
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
 import {
-  previewImageAtom,
-  reducedPaletteRgbAtom
+  exportPaletteWithSlotsAtom,
+  previewImageAtom
 } from '@/app/store/preview/preview'
 import { Notification } from '@/components/ui/notification/notification'
 import type { ExportConfig } from '@/export'
@@ -20,7 +20,8 @@ import ExportPanelView from './export-panel-view'
 export default function ExportPanel() {
   const { _ } = useLingui()
   const image = useAtomValue(previewImageAtom)
-  const reducedPalette = useAtomValue(reducedPaletteRgbAtom)
+  // Utiliser la palette avec slots pour l'export (conserve les positions des slots vides lockés)
+  const exportPalette = useAtomValue(exportPaletteWithSlotsAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -36,7 +37,7 @@ export default function ExportPanel() {
     const cleanImage = image // Utiliser directement l'image avec dithering
 
     // Convert palette to the correct format for export
-    const paletteForExport = reducedPalette.map((colorData: any) => {
+    const paletteForExport = exportPalette.map((colorData: any) => {
       const color = Array.isArray(colorData) ? colorData : Array.from(colorData)
       return [color[0], color[1], color[2]] as [number, number, number]
     })
@@ -51,7 +52,7 @@ export default function ExportPanel() {
       const cpcPalette = getPaletteForHardware(cpcHardware)
 
       // Find indexes of the palette in amstrad cpc palette
-      const originalPaletteIndices = reducedPalette.map((colorData: any) => {
+      const originalPaletteIndices = exportPalette.map((colorData: any) => {
         const color = Array.isArray(colorData)
           ? colorData
           : Array.from(colorData)
@@ -68,14 +69,14 @@ export default function ExportPanel() {
       const shouldQuantize = false
       indexBuf = rgbToIndexBufferExact(
         cleanImage.data,
-        reducedPalette,
+        exportPalette,
         shouldQuantize
       )
 
       // Mode 0 (16 colors) needs palette reorganization for Img2CPC format
       // The color index correction is now applied directly in encodeByte for mode 0
       // Modes 1 (4 colors) and 2 (2 colors) work with direct indices
-      const isMode0 = reducedPalette.length === 16
+      const isMode0 = exportPalette.length === 16
 
       if (isMode0) {
         // Mode 0: Réorganiser la palette pour correspondre aux indices corrigés
@@ -99,7 +100,7 @@ export default function ExportPanel() {
       const fallbackToDarkest = true // Use darkest color for missing colors (padding)
       indexBuf = rgbToIndexBufferExact(
         cleanImage.data,
-        reducedPalette,
+        exportPalette,
         shouldQuantize,
         fallbackToDarkest
       )
