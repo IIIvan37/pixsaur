@@ -11,16 +11,9 @@ import type REGL from 'regl'
 import type { PaletteStrategy } from '@/app/store/config/types'
 import { adapterLogger } from '@/core'
 import {
+  applyPaletteStrategyV2,
   type ColorCandidate,
-  selectByAdaptive,
-  selectByBalancedScoreBalanced,
-  selectByBalancedScoreMax,
-  selectByDiversityFirstBalanced,
-  selectByDiversityFirstMax,
-  selectByFrequencyBalanced,
-  selectByFrequencyMax,
-  selectByPerceptualBalanced,
-  selectByPerceptualMax
+  type PaletteStrategyName
 } from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
@@ -459,9 +452,11 @@ export class ReGLQuantizer {
     _candidatesCount: number,
     config: ReGLQuantizeConfig
   ): number[] {
-    // Échantillonnage équilibré : qualité vs performance
-    // Pour CPC Classic (27 couleurs), on peut utiliser plus d'échantillons que pour CPC Plus
-    const sampledColors = this.sampleImageColors(imageData, 256) // 256 échantillons pour CPC Classic
+    // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
+    // Mode 0 (16 couleurs): 256 échantillons suffisent pour CPC Classic
+    // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
+    const sampleCount = config.targetColors <= 4 ? 1024 : 256
+    const sampledColors = this.sampleImageColors(imageData, sampleCount)
 
     // Récupérer les indices présélectionnés (couleurs lockées)
     const preselectedIndices = config.preselectedIndices || []
@@ -492,8 +487,11 @@ export class ReGLQuantizer {
     _candidatesCount: number,
     config: ReGLQuantizeConfig
   ): number[] {
-    // Échantillonnage équilibré : qualité vs performance
-    const sampledColors = this.sampleImageColors(imageData, 128) // 128 échantillons pour un bon compromis
+    // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
+    // Mode 0 (16 couleurs): 128 échantillons suffisent
+    // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
+    const sampleCount = config.targetColors <= 4 ? 1024 : 128
+    const sampledColors = this.sampleImageColors(imageData, sampleCount)
 
     // Récupérer les indices présélectionnés (couleurs lockées)
     const preselectedIndices = config.preselectedIndices || []
@@ -710,64 +708,13 @@ export class ReGLQuantizer {
         converted: c.converted
       }))
 
-      let strategyResult: {
-        selectedIndices: number[]
-        scores?: Map<number, number>
-      }
-      switch (paletteStrategy) {
-        case 'frequency-max':
-          strategyResult = selectByFrequencyMax(candidates, targetColors, [
-            ...preselectedIndices
-          ])
-          break
-        case 'balanced-score-balanced':
-          strategyResult = selectByBalancedScoreBalanced(
-            candidates,
-            targetColors,
-            [...preselectedIndices]
-          )
-          break
-        case 'balanced-score-max':
-          strategyResult = selectByBalancedScoreMax(candidates, targetColors, [
-            ...preselectedIndices
-          ])
-          break
-        case 'perceptual-balanced':
-          strategyResult = selectByPerceptualBalanced(
-            candidates,
-            targetColors,
-            [...preselectedIndices]
-          )
-          break
-        case 'perceptual-max':
-          strategyResult = selectByPerceptualMax(candidates, targetColors, [
-            ...preselectedIndices
-          ])
-          break
-        case 'diversity-first-balanced':
-          strategyResult = selectByDiversityFirstBalanced(
-            candidates,
-            targetColors,
-            [...preselectedIndices]
-          )
-          break
-        case 'diversity-first-max':
-          strategyResult = selectByDiversityFirstMax(candidates, targetColors, [
-            ...preselectedIndices
-          ])
-          break
-        case 'adaptive':
-          strategyResult = selectByAdaptive(candidates, targetColors, [
-            ...preselectedIndices
-          ])
-          break
-        default:
-          // Default to frequency-balanced strategy
-          strategyResult = selectByFrequencyBalanced(candidates, targetColors, [
-            ...preselectedIndices
-          ])
-          break
-      }
+      // Utiliser le helper centralisé pour appliquer la stratégie
+      const strategyResult = applyPaletteStrategyV2(
+        paletteStrategy as PaletteStrategyName,
+        candidates,
+        targetColors,
+        [...preselectedIndices]
+      )
 
       adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {
         strategy: paletteStrategy,

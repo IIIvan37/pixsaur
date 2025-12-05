@@ -33,6 +33,7 @@ export type PaletteStrategy =
   | 'diversity-first-balanced' // Diversity max with slight frequency (90% div, 10% freq)
   | 'diversity-first-max' // Pure diversity (100% div, 0% freq)
   | 'adaptive' // Adaptive based on image analysis
+  | 'exhaustive-contrast' // Exhaustive search: tests all combinations, maximizes min distance
 
 // This file defines types and constants related to CPC modes and color adjustments.
 export type CpcModeConfig = {

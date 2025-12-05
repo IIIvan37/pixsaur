@@ -254,7 +254,7 @@ export const setProcessorTypeAtom = atom(
 )
 
 // Palette strategy selection for color quantization
-export const paletteStrategyAtom = atom<PaletteStrategy>('frequency-balanced')
+export const paletteStrategyAtom = atom<PaletteStrategy>('exhaustive-contrast')
 
 // Setter for palette strategy
 export const setPaletteStrategyAtom = atom(

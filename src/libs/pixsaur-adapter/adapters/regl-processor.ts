@@ -358,7 +358,8 @@ export class ReGLProcessor implements ImageProcessor {
       targetColors,
       basePalette,
       preselected,
-      distanceMetric
+      distanceMetric,
+      paletteStrategy || getDefaultStore().get(paletteStrategyAtom)
     )
   }
 
@@ -371,7 +372,8 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    distanceMetric: DistanceMetric
+    distanceMetric: DistanceMetric,
+    paletteStrategy?: PaletteStrategy
   ): Promise<Vector[]> {
     // Utiliser la signature correcte de createQuantizer
     const quantizer = createQuantizer({
@@ -380,7 +382,8 @@ export class ReGLProcessor implements ImageProcessor {
       preselected,
       quantConfig: {
         distanceMetric,
-        contrastStrategy: undefined // Obsolete parameter
+        contrastStrategy: undefined, // Obsolete parameter
+        paletteStrategy // Passer la stratégie v2 au quantizer CPU
       }
     })
 

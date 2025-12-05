@@ -6,6 +6,11 @@ import {
   getDistanceFn
 } from '../metric/distance'
 import type { Vector } from '../type'
+import {
+  applyPaletteStrategyV2,
+  type ColorCandidate,
+  type PaletteStrategyName
+} from './palette-strategies-v2'
 import { selectTopIndices, selectTopIndicesCore } from './select-to-indices'
 import { selectByStrategy } from './strategy-selector'
 
@@ -24,9 +29,13 @@ export type DitheringConfig = {
   intensity: number // de 0 (off) à 1 (plein)
 }
 
+// Re-export PaletteStrategy type from palette-strategies-v2 for external use
+export type PaletteStrategy = PaletteStrategyName
+
 export type QuantizeConfig = {
   distanceMetric: DistanceMetric
-  contrastStrategy?: 'max' | 'balanced' // Stratégie de contraste pour petites palettes
+  contrastStrategy?: 'max' | 'balanced' // Stratégie de contraste pour petites palettes (legacy)
+  paletteStrategy?: PaletteStrategy // Nouvelle stratégie v2 (prioritaire si définie)
 }
 
 /**
@@ -103,7 +112,30 @@ export function createQuantizer({
 
     const out = idxs.map((i: number) => workingPal[i])
 
-    // Utiliser le sélecteur de stratégie commun
+    // Si paletteStrategy v2 est définie, utiliser les nouvelles stratégies (comme le GPU)
+    if (quantConfig.paletteStrategy && limit <= 4) {
+      // Construire les candidats avec fréquences à partir de l'histogramme
+      const candidates: ColorCandidate[] = idxs.map((idx: number) => ({
+        index: idx,
+        frequency: counts[idx] / vecs.length, // Normaliser la fréquence
+        color: [...workingPal[idx]] as Vector,
+        converted: [...workingPal[idx]] as Vector
+      }))
+
+      // Utiliser le helper centralisé pour appliquer la stratégie
+      const strategyResult = applyPaletteStrategyV2(
+        quantConfig.paletteStrategy,
+        candidates,
+        limit,
+        [...preIdx]
+      )
+
+      return strategyResult.selectedIndices.map(
+        (idx) => [...workingPal[idx]] as Vector
+      )
+    }
+
+    // Fallback: Utiliser le sélecteur de stratégie legacy (contrastStrategy)
     const selectedW = selectByStrategy(
       { contrastStrategy: quantConfig.contrastStrategy, targetColors: limit },
       {

@@ -5,7 +5,11 @@
 
 import { weightedRGBDistance } from '../metric/distance'
 import type { Vector } from '../type'
-import { luminance as calculateLuminance } from './select-contrast-subset'
+import {
+  luminance as calculateLuminance,
+  isBright,
+  isDark
+} from './select-contrast-subset'
 
 export interface ColorCandidate {
   index: number
@@ -874,3 +878,292 @@ export const selectByAdaptive: PaletteStrategyFunction = (
     preselectedIndices
   )
 }
+
+// ============================================================================
+// EXHAUSTIVE CONTRAST STRATEGY
+// ============================================================================
+
+/**
+ * Génère toutes les combinaisons de k éléments parmi n
+ * Avec mémoïsation pour éviter les recalculs
+ */
+function kCombinationsV2<T>(
+  arr: T[],
+  k: number,
+  memo = new Map<string, T[][]>()
+): T[][] {
+  const key = `${arr.length}|${k}`
+  if (memo.has(key)) return memo.get(key)!
+
+  if (k === 0) return [[]]
+  if (arr.length < k) return []
+  if (arr.length === k) return [arr]
+
+  const [head, ...tail] = arr
+  const withHead = kCombinationsV2(tail, k - 1, memo).map((c) => [head, ...c])
+  const withoutHead = kCombinationsV2(tail, k, memo)
+  const result = withHead.concat(withoutHead)
+  memo.set(key, result)
+  return result
+}
+
+/**
+ * Filtre les combinaisons pour garder celles avec au moins une couleur sombre et une claire
+ */
+function filterCombinationsByLuminanceV2(
+  combinations: number[][],
+  preselectedColors: Vector[],
+  remainingCandidates: ColorCandidate[]
+): number[][] {
+  return combinations.filter((combo) => {
+    const colors = [
+      ...preselectedColors,
+      ...combo.map((i) => remainingCandidates[i].converted)
+    ]
+    return colors.some((c) => isDark(c)) && colors.some((c) => isBright(c))
+  })
+}
+
+/**
+ * Calcule la distance minimale entre toutes les paires de couleurs d'un ensemble
+ */
+function calculateMinDistanceInSetV2(
+  colors: Vector[],
+  earlyExitThreshold: number
+): number {
+  let minDist = Infinity
+
+  for (let i = 0; i < colors.length; i++) {
+    for (let j = i + 1; j < colors.length; j++) {
+      const d = calculatePerceptualDistance(colors[i], colors[j])
+      if (d < minDist) minDist = d
+      if (minDist <= earlyExitThreshold) return minDist
+    }
+  }
+
+  return minDist
+}
+
+/**
+ * Trouve la meilleure combinaison en maximisant la distance minimale
+ */
+function findBestCombinationV2(
+  combinations: number[][],
+  preselectedColors: Vector[],
+  remainingCandidates: ColorCandidate[]
+): number[] {
+  let bestCombo: number[] = []
+  let bestMinDist = -Infinity
+
+  for (const combo of combinations) {
+    const colors = [
+      ...preselectedColors,
+      ...combo.map((i) => remainingCandidates[i].converted)
+    ]
+    const minDist = calculateMinDistanceInSetV2(colors, bestMinDist)
+
+    if (minDist > bestMinDist) {
+      bestMinDist = minDist
+      bestCombo = combo
+    }
+  }
+
+  return bestCombo
+}
+
+/**
+ * exhaustive-contrast : Recherche exhaustive de la meilleure combinaison
+ *
+ * Algorithme :
+ * 1. Pré-filtre les candidats pour garder les N plus fréquents (évite explosion combinatoire)
+ * 2. Génère toutes les combinaisons possibles de k couleurs
+ * 3. Filtre celles qui ont au moins une couleur sombre ET une claire
+ * 4. Sélectionne celle qui maximise la distance minimale entre paires
+ *
+ * C'est l'algorithme le plus précis mais aussi le plus coûteux (O(C(n,k)))
+ * Idéal pour les petites palettes (2-4 couleurs) où la qualité prime
+ */
+export const selectByExhaustiveContrast: PaletteStrategyFunction = (
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult => {
+  const result: number[] = [...preselectedIndices]
+  const scores = new Map<number, number>()
+
+  // Marquer les indices déjà sélectionnés
+  const usedIndices = new Set(preselectedIndices)
+
+  // Récupérer les couleurs présélectionnées
+  const preselectedColors = preselectedIndices
+    .map((idx) => candidates.find((c) => c.index === idx)?.converted)
+    .filter((c): c is Vector => c !== undefined)
+
+  // Filtrer les candidats restants
+  let remainingCandidates = candidates.filter((c) => !usedIndices.has(c.index))
+
+  if (result.length >= targetColors) {
+    return { selectedIndices: result.slice(0, targetColors), scores }
+  }
+
+  const needed = targetColors - result.length
+
+  if (remainingCandidates.length <= needed) {
+    // Pas assez de candidats, prendre tous
+    for (const c of remainingCandidates) {
+      result.push(c.index)
+      scores.set(c.index, c.frequency)
+    }
+    return { selectedIndices: result.slice(0, targetColors), scores }
+  }
+
+  // OPTIMISATION: Limiter le nombre de candidats pour éviter l'explosion combinatoire
+  // C(12, 4) = 495 combinaisons - acceptable
+  // C(16, 4) = 1820 combinaisons - limite acceptable
+  // C(20, 4) = 4845 combinaisons - trop lent
+  const MAX_CANDIDATES = 12
+  if (remainingCandidates.length > MAX_CANDIDATES) {
+    // Garder les plus fréquents, mais s'assurer d'avoir des couleurs sombres et claires
+    const sorted = [...remainingCandidates].sort(
+      (a, b) => b.frequency - a.frequency
+    )
+
+    // Séparer en couleurs sombres et claires
+    const dark = sorted.filter((c) => isDark(c.converted))
+    const bright = sorted.filter((c) => isBright(c.converted))
+
+    // S'assurer d'avoir au moins 2 couleurs de chaque catégorie si disponibles
+    const selectedCandidates: ColorCandidate[] = []
+    const addUnique = (c: ColorCandidate) => {
+      if (!selectedCandidates.find((s) => s.index === c.index)) {
+        selectedCandidates.push(c)
+      }
+    }
+
+    // Ajouter les 2 couleurs sombres les plus fréquentes
+    dark.slice(0, 2).forEach(addUnique)
+    // Ajouter les 2 couleurs claires les plus fréquentes
+    bright.slice(0, 2).forEach(addUnique)
+    // Compléter avec les couleurs les plus fréquentes (toutes catégories)
+    for (const c of sorted) {
+      if (selectedCandidates.length >= MAX_CANDIDATES) break
+      addUnique(c)
+    }
+
+    remainingCandidates = selectedCandidates
+  }
+
+  // Générer tous les indices des candidats restants
+  const indices = remainingCandidates.map((_, i) => i)
+
+  // Générer toutes les combinaisons de 'needed' éléments
+  const combinations = kCombinationsV2(indices, needed)
+
+  // Filtrer les combinaisons avec contraste luminance (sombre + clair)
+  const filtered = filterCombinationsByLuminanceV2(
+    combinations,
+    preselectedColors,
+    remainingCandidates
+  )
+
+  // Utiliser les combinaisons filtrées si disponibles, sinon toutes
+  const combosToTest = filtered.length > 0 ? filtered : combinations
+
+  // Trouver la meilleure combinaison
+  const bestCombo = findBestCombinationV2(
+    combosToTest,
+    preselectedColors,
+    remainingCandidates
+  )
+
+  // Ajouter les couleurs de la meilleure combinaison
+  for (const i of bestCombo) {
+    const candidate = remainingCandidates[i]
+    result.push(candidate.index)
+    // Score basé sur la position dans la combinaison optimale
+    scores.set(candidate.index, 1.0 - i * 0.1)
+  }
+
+  return { selectedIndices: result, scores }
+}
+
+/**
+ * Type pour les noms de stratégies de palette v2
+ */
+export type PaletteStrategyName =
+  | 'exhaustive-contrast'
+  | 'frequency-balanced'
+  | 'frequency-max'
+  | 'balanced-score-balanced'
+  | 'balanced-score-max'
+  | 'perceptual-balanced'
+  | 'perceptual-max'
+  | 'diversity-first-balanced'
+  | 'diversity-first-max'
+  | 'adaptive'
+
+/**
+ * Map des stratégies de palette v2
+ * Centralisée pour éviter la duplication des switch statements
+ */
+const PALETTE_STRATEGY_MAP: Record<
+  PaletteStrategyName,
+  PaletteStrategyFunction
+> = {
+  'exhaustive-contrast': selectByExhaustiveContrast,
+  'frequency-balanced': selectByFrequencyBalanced,
+  'frequency-max': selectByFrequencyMax,
+  'balanced-score-balanced': selectByBalancedScoreBalanced,
+  'balanced-score-max': selectByBalancedScoreMax,
+  'perceptual-balanced': selectByPerceptualBalanced,
+  'perceptual-max': selectByPerceptualMax,
+  'diversity-first-balanced': selectByDiversityFirstBalanced,
+  'diversity-first-max': selectByDiversityFirstMax,
+  adaptive: selectByAdaptive
+}
+
+/**
+ * Applique une stratégie de palette v2 de manière centralisée
+ * Évite la duplication des switch statements entre CPU et GPU quantizers
+ *
+ * @param strategy - Nom de la stratégie à appliquer
+ * @param candidates - Candidats de couleurs avec fréquences
+ * @param targetColors - Nombre de couleurs cibles
+ * @param preselectedIndices - Indices des couleurs présélectionnées (lockées)
+ * @returns Résultat de la stratégie avec les indices sélectionnés
+ */
+export function applyPaletteStrategyV2(
+  strategy: PaletteStrategyName,
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult {
+  const strategyFn = PALETTE_STRATEGY_MAP[strategy]
+
+  if (!strategyFn) {
+    // Fallback to frequency-balanced if strategy is unknown
+    return selectByFrequencyBalanced(
+      candidates,
+      targetColors,
+      preselectedIndices
+    )
+  }
+
+  return strategyFn(candidates, targetColors, preselectedIndices)
+}
+
+/**
+ * Vérifie si une stratégie est valide
+ */
+export function isValidPaletteStrategy(
+  strategy: string
+): strategy is PaletteStrategyName {
+  return strategy in PALETTE_STRATEGY_MAP
+}
+
+/**
+ * Liste des stratégies disponibles
+ */
+export const AVAILABLE_STRATEGIES: readonly PaletteStrategyName[] = Object.keys(
+  PALETTE_STRATEGY_MAP
+) as PaletteStrategyName[]

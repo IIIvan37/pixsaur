@@ -18,6 +18,21 @@ const getPaletteStrategies = (
 ): readonly PaletteStrategyOption[] =>
   [
     {
+      value: 'exhaustive-contrast',
+      label: _(
+        msg({
+          id: 'palette.strategy.exhaustive-contrast.label',
+          message: 'Exhaustive Contrast'
+        })
+      ),
+      description: _(
+        msg({
+          id: 'palette.strategy.exhaustive-contrast.desc',
+          message: 'Tests all combinations, maximizes contrast (best quality)'
+        })
+      )
+    },
+    {
       value: 'frequency-balanced',
       label: _(
         msg({
