@@ -30,6 +30,7 @@ describe('ColorPickerPopup', () => {
     isLocked: false,
     onColorConfirm: vi.fn(),
     onToggleLock: vi.fn(),
+    onClearSlot: vi.fn(),
     onClose: vi.fn()
   }
 
@@ -108,5 +109,21 @@ describe('ColorPickerPopup', () => {
 
     const preview = screen.getByTitle('RGB(255, 0, 0)')
     expect(preview).toHaveStyle('background-color: rgb(255, 0, 0)')
+  })
+
+  it('should display clear button', () => {
+    renderWithI18n(<ColorPickerPopup {...defaultProps} />)
+
+    expect(screen.getByText('Vider')).toBeInTheDocument()
+  })
+
+  it('should call onClearSlot when clear button is clicked', async () => {
+    const onClearSlot = vi.fn()
+    renderWithI18n(
+      <ColorPickerPopup {...defaultProps} onClearSlot={onClearSlot} />
+    )
+
+    await userEvent.click(screen.getByText('Vider'))
+    expect(onClearSlot).toHaveBeenCalledTimes(1)
   })
 })

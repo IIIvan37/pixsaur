@@ -15,6 +15,8 @@ export interface ColorPickerPopupProps {
   readonly onColorConfirm: (color: Vector) => void
   /** Callback to toggle lock */
   readonly onToggleLock: () => void
+  /** Callback to clear the slot and lock it */
+  readonly onClearSlot: () => void
   /** Callback to close the popup */
   readonly onClose: () => void
 }
@@ -33,6 +35,7 @@ export function ColorPickerPopup({
   isLocked,
   onColorConfirm,
   onToggleLock,
+  onClearSlot,
   onClose
 }: ColorPickerPopupProps) {
   // État local pour la couleur en cours d'édition
@@ -93,18 +96,27 @@ export function ColorPickerPopup({
           </Flex>
         </div>
 
-        {/* Bouton de déverrouillage - seulement si la couleur est verrouillée */}
-        {isLocked && (
-          <div className={styles.lockActions}>
+        {/* Actions secondaires */}
+        <div className={styles.lockActions}>
+          {/* Bouton de déverrouillage - seulement si la couleur est verrouillée */}
+          {isLocked && (
             <Button
-              className={styles.lockButton}
+              className={styles.actionButton}
               variant='secondary'
               onClick={handleUnlock}
             >
               <Trans>Déverrouiller</Trans>
             </Button>
-          </div>
-        )}
+          )}
+          {/* Bouton pour vider le slot et le verrouiller */}
+          <Button
+            className={styles.actionButton}
+            variant='secondary'
+            onClick={onClearSlot}
+          >
+            <Trans>Vider</Trans>
+          </Button>
+        </div>
       </div>
     </div>
   )

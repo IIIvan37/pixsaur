@@ -25,7 +25,10 @@ import {
   resizeModeAtom
 } from '../config/config'
 import { selectionAtom, workingImageAtom } from '../image/image'
-import { lockedVectorsAtom } from '../palette/palette'
+import {
+  lockedEmptySlotsCountAtom,
+  lockedVectorsAtom
+} from '../palette/palette'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -191,7 +194,18 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 
   // Utilisation du nombre de couleurs correct depuis l'optimisation CPC Plus
   const modeConfig = get(effectiveModeConfigAtom)
+  // Compter les slots vides verrouillés pour tronquer le résultat après quantification
+  const lockedEmptyCount = get(lockedEmptySlotsCountAtom)
+  // Toujours demander le nombre maximum de couleurs pour garantir la stabilité de la palette
+  // On tronquera le résultat après coup pour exclure les couleurs en trop
   const targetColors = modeConfig.nColors
+
+  logger.info('[Preview] Target colors calculation', {
+    modeNColors: modeConfig.nColors,
+    lockedEmptyCount,
+    targetColors,
+    lockedVecsCount: lockedVecs.length
+  })
 
   // Quantifier les couleurs lockées selon le hardware AVANT de les passer au quantizer
   const quantifiedLockedVecs =
@@ -351,6 +365,13 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const raw = await get(reducedPaletteRawAtom)
   const modeConfig = get(effectiveModeConfigAtom)
+  const lockedEmptyCount = get(lockedEmptySlotsCountAtom)
+
+  logger.info('[Preview] reducedPaletteRgbAtom', {
+    rawLength: raw.length,
+    modeNColors: modeConfig.nColors,
+    lockedEmptyCount
+  })
 
   // Colors are already in RGB format, no conversion needed
   const projected = [...raw] // Create a copy to avoid mutating original
@@ -368,10 +389,11 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   }
 
   // S'assurer qu'on ne dépasse jamais la limite finale
-  const maxColors = modeConfig.nColors
-  if (projected.length > maxColors) {
-    // Tronquer à maxColors (les couleurs lockées sont déjà en tête grâce au quantizer)
-    projected.splice(maxColors)
+  // Tenir compte des slots vides verrouillés pour tronquer la palette
+  const effectiveMaxColors = modeConfig.nColors - lockedEmptyCount
+  if (projected.length > effectiveMaxColors) {
+    // Tronquer pour exclure les couleurs en trop (slots vides verrouillés)
+    projected.splice(effectiveMaxColors)
   }
 
   return projected

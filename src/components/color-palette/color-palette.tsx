@@ -1,6 +1,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import type React from 'react'
 import {
+  onClearSlotAtom,
   onSetColorAtom,
   onToggleLockAtom,
   userPaletteAtom
@@ -25,6 +26,8 @@ export const ColorPalette: React.FC = () => {
   const toggleLock = useSetAtom(onToggleLockAtom)
   // Handler to set a color for a slot
   const setColor = useSetAtom(onSetColorAtom)
+  // Handler to clear a slot and lock it
+  const clearSlot = useSetAtom(onClearSlotAtom)
 
   // Get the full CPC palette for color selection
   const fullPalette = cpcFullPalette
@@ -34,6 +37,7 @@ export const ColorPalette: React.FC = () => {
       slots={slots}
       onToggleLock={toggleLock}
       onSetColor={setColor}
+      onClearSlot={clearSlot}
       fullPalette={fullPalette}
     />
   )

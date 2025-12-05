@@ -35,12 +35,14 @@ function vectorToCPCColor(vector: Vector, index: number): CPCColor {
  * @property slots - Array of palette slots
  * @property onToggleLock - Callback to toggle lock state for a slot
  * @property onSetColor - Callback to set color for a slot
+ * @property onClearSlot - Callback to clear a slot and lock it
  * @property fullPalette - Array of all available colors
  */
 export type ColorPaletteViewProps = {
   readonly slots: PaletteSlot[]
   readonly onToggleLock: (idx: number) => void
   readonly onSetColor: (params: { index: number; color: CPCColor }) => void
+  readonly onClearSlot: (idx: number) => void
   readonly fullPalette: CPCColor[]
 }
 
@@ -48,6 +50,7 @@ export const ColorPaletteView = ({
   slots,
   onToggleLock,
   onSetColor,
+  onClearSlot,
   fullPalette
 }: ColorPaletteViewProps) => {
   // openPopoverIndex: index of slot with open popover, or null
@@ -149,6 +152,7 @@ export const ColorPaletteView = ({
                       colorOptionRefs={colorOptionRefs}
                       optionRefs={colorOptionRefs}
                       onToggleLock={onToggleLock}
+                      onClearSlot={onClearSlot}
                       onClose={() => setOpenPopoverIndex(null)}
                     />
                   ) : (
@@ -159,6 +163,10 @@ export const ColorPaletteView = ({
                         handleRgbColorSelect(vector, idx)
                       }
                       onToggleLock={() => onToggleLock(idx)}
+                      onClearSlot={() => {
+                        onClearSlot(idx)
+                        setOpenPopoverIndex(null)
+                      }}
                       onClose={() => setOpenPopoverIndex(null)}
                     />
                   )}
@@ -180,6 +188,8 @@ export const ColorPaletteView = ({
                   onColorSelect={handleColorSelect}
                   onRgbColorSelect={handleRgbColorSelect}
                   colorOptionRefs={colorOptionRefs}
+                  locked={slot.locked}
+                  onToggleLock={onToggleLock}
                 />
               )}
             </div>

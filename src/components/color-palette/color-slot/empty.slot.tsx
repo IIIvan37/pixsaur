@@ -20,6 +20,8 @@ export type EmptySlotButtonProps = {
   readonly onColorSelect: (color: CPCColor, idx: number) => void
   readonly onRgbColorSelect?: (color: Vector, idx: number) => void
   readonly colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>
+  readonly locked: boolean
+  readonly onToggleLock: (idx: number) => void
 }
 
 export function EmptySlotButton({
@@ -32,7 +34,9 @@ export function EmptySlotButton({
   focusedColorIdx,
   onColorSelect,
   onRgbColorSelect,
-  colorOptionRefs
+  colorOptionRefs,
+  locked,
+  onToggleLock
 }: EmptySlotButtonProps) {
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const isPlus = cpcHardware === 'plus'
@@ -41,6 +45,28 @@ export function EmptySlotButton({
     if (onRgbColorSelect) {
       onRgbColorSelect(color, idx)
     }
+  }
+
+  const handleToggleLock = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onToggleLock(idx)
+  }
+
+  // If locked and empty, show a locked empty slot with toggle button
+  if (locked) {
+    return (
+      <div className={styles.emptySlotContainer}>
+        <button
+          ref={buttonRef}
+          className={styles.emptySlot}
+          aria-label='Slot vide verrouillé'
+          type='button'
+          onClick={handleToggleLock}
+        >
+          <Icon name='LockClosedIcon' className={styles.lockIconEmpty} />
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -65,6 +91,7 @@ export function EmptySlotButton({
           isLocked={false}
           onColorConfirm={handleRgbChange}
           onToggleLock={() => {}} // Pas de verrouillage pour les slots vides
+          onClearSlot={() => {}} // Pas d'action vider pour les slots vides
           onClose={() => onOpenChange(false)}
         />
       ) : (

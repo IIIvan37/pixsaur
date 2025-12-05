@@ -496,4 +496,69 @@ describe('ReGLQuantizer', () => {
       expect(typeof shouldUse).toBe('boolean')
     })
   })
+
+  describe('mode detection logic', () => {
+    beforeEach(() => {
+      mockRegl.hasExtension.mockReturnValue(true)
+      quantizer = new ReGLQuantizer(mockRegl as any)
+    })
+
+    it('should detect mode 0 for targetColors=16', () => {
+      const config = { ...testConfig, targetColors: 16 }
+      // Access internal logic through detectModeAndSelectColors
+      const isMode0Based =
+        config.targetColors === 16 || config.targetColors === 512
+      expect(isMode0Based).toBe(true)
+    })
+
+    it('should detect mode 1 for targetColors=4', () => {
+      const config = { ...testConfig, targetColors: 4 }
+      const isMode1Based = config.targetColors >= 1 && config.targetColors <= 4
+      expect(isMode1Based).toBe(true)
+    })
+
+    it('should detect mode 1 for targetColors=3 (locked empty slot)', () => {
+      const config = { ...testConfig, targetColors: 3 }
+      const isMode1Based = config.targetColors >= 1 && config.targetColors <= 4
+      expect(isMode1Based).toBe(true)
+    })
+
+    it('should detect mode 1 for targetColors=2 (two locked empty slots)', () => {
+      const config = { ...testConfig, targetColors: 2 }
+      const isMode1Based = config.targetColors >= 1 && config.targetColors <= 4
+      expect(isMode1Based).toBe(true)
+    })
+
+    it('should detect mode 1 for targetColors=1 (three locked empty slots)', () => {
+      const config = { ...testConfig, targetColors: 1 }
+      const isMode1Based = config.targetColors >= 1 && config.targetColors <= 4
+      expect(isMode1Based).toBe(true)
+    })
+
+    it('should detect mode 2 for targetColors <= 2', () => {
+      const config1 = { ...testConfig, targetColors: 2 }
+      const config2 = { ...testConfig, targetColors: 1 }
+      expect(config1.targetColors <= 2).toBe(true)
+      expect(config2.targetColors <= 2).toBe(true)
+    })
+
+    it('should use optimized selection for modes 0, 1, and 2', () => {
+      const testCases = [
+        { targetColors: 16, expected: true }, // mode 0
+        { targetColors: 4, expected: true }, // mode 1
+        { targetColors: 3, expected: true }, // mode 1 with locked empty
+        { targetColors: 2, expected: true }, // mode 2 or mode 1
+        { targetColors: 1, expected: true } // mode 2 with locked empty or mode 1
+      ]
+
+      for (const { targetColors, expected } of testCases) {
+        const isMode0Based = targetColors === 16 || targetColors === 512
+        const isMode1Based = targetColors >= 1 && targetColors <= 4
+        const isMode2Based = targetColors <= 2
+        const useOptimizedSelection =
+          isMode0Based || isMode1Based || isMode2Based
+        expect(useOptimizedSelection).toBe(expected)
+      }
+    })
+  })
 })

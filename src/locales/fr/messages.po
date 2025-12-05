@@ -80,7 +80,7 @@ msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
 #: src/components/export-panel/export-config-dialog.tsx:103
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:88
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
 msgid "Annuler"
 msgstr "Annuler"
 
@@ -136,7 +136,7 @@ msgstr "Canaux RGB"
 msgid "Centrer l'image"
 msgstr "Centrer l'image"
 
-#: src/app/components/source-section.tsx:25
+#: src/app/components/source-section.tsx:33
 msgid "Changer d'image"
 msgstr "Changer d'image"
 
@@ -157,7 +157,7 @@ msgstr "Cliquer pour ouvrir dans un nouvel onglet"
 #~ msgid "Cliquer pour ouvrir en plein écran dans un nouvel onglet"
 #~ msgstr "Cliquer pour ouvrir en plein écran dans un nouvel onglet"
 
-#: src/components/image-upload/image-upload-view.tsx:186
+#: src/components/image-upload/image-upload-view.tsx:197
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
 
@@ -181,7 +181,7 @@ msgstr "Contenu du ZIP"
 msgid "Contraste"
 msgstr "Contraste"
 
-#: src/app/app.tsx:118
+#: src/app/app.tsx:135
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Convertisseur d'images Amstrad CPC"
 
@@ -193,8 +193,8 @@ msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgid "Couleur & Température"
 msgstr "Couleur & Température"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:74
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:104
+#: src/components/color-palette/color-grid/color-grid-view.tsx:77
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
 msgstr "Déverrouiller"
 
@@ -228,8 +228,8 @@ msgstr "Gestionnaire DSK"
 #~ msgid "DSK Workspace"
 #~ msgstr "Workspace DSK"
 
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:157
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:163
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:158
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:164
 msgid "DSK workspace exported successfully!"
 msgstr "Workspace DSK exporté avec succès !"
 
@@ -256,7 +256,7 @@ msgid "Export DSK"
 msgstr "Exporter le DSK"
 
 #: src/components/export-panel/export-config-dialog.tsx:106
-#: src/components/export-panel/export-panel-view.tsx:20
+#: src/components/export-panel/export-panel-view.tsx:25
 msgid "Exporter"
 msgstr "Exporter"
 
@@ -273,11 +273,11 @@ msgstr "Exposition & Tonalité"
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 
-#: src/components/export-panel/export-panel.tsx:129
+#: src/components/export-panel/export-panel.tsx:127
 msgid "File exported successfully!"
 msgstr "Fichier exporté avec succès !"
 
-#: src/components/image-upload/image-upload-view.tsx:192
+#: src/components/image-upload/image-upload-view.tsx:203
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Formats supportés : PNG, JPEG, GIF, BMP, WEBP, SVG"
 
@@ -300,7 +300,7 @@ msgstr "Fréquence prioritaire (80%) avec diversité modérée"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/image-upload/image-upload-view.tsx:187
+#: src/components/image-upload/image-upload-view.tsx:198
 msgid "Glissez & déposez une image ici"
 msgstr "Glissez & déposez une image ici"
 
@@ -320,7 +320,7 @@ msgstr "Hauteur"
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Palette CPC standard uniquement. Le support de la palette Plus arrive bientôt."
 
-#: src/app/components/source-section.tsx:24
+#: src/app/components/source-section.tsx:32
 msgid "Image source"
 msgstr "Image source"
 
@@ -461,7 +461,7 @@ msgstr "Pas assez d'espace sur le DSK"
 msgid "Ombres"
 msgstr "Ombres"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:40
+#: src/components/color-palette/color-grid/color-grid-view.tsx:42
 msgid "Options de couleur"
 msgstr "Options de couleur"
 
@@ -469,11 +469,11 @@ msgstr "Options de couleur"
 msgid "Origin (No Scale)"
 msgstr "Origine (sans échelle)"
 
-#: src/components/image-upload/image-upload-view.tsx:190
+#: src/components/image-upload/image-upload-view.tsx:201
 msgid "ou cliquez pour sélectionner un fichier"
 msgstr "ou cliquez pour sélectionner un fichier"
 
-#: src/components/image-upload/image-upload-view.tsx:189
+#: src/components/image-upload/image-upload-view.tsx:200
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
@@ -617,11 +617,11 @@ msgstr "Télécharger des fichiers"
 msgid "Utiliser des labels personnalisés"
 msgstr "Utiliser des labels personnalisés"
 
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:94
 msgid "Valider"
 msgstr "Valider"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:76
+#: src/components/color-palette/color-grid/color-grid-view.tsx:79
 msgid "Verrouiller"
 msgstr "Verrouiller"
 
@@ -641,6 +641,11 @@ msgstr "Vert"
 #: src/app/components/adjustements/adjustement.view.tsx:100
 msgid "Vibrance"
 msgstr "Vibrance"
+
+#: src/components/color-palette/color-grid/color-grid-view.tsx:90
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:117
+msgid "Vider"
+msgstr "Vider"
 
 #: src/components/source-selector/source-selector-view.tsx:71
 msgid "Zone de sélection"
