@@ -9,6 +9,7 @@ import {
 import { dskImagesAtom } from '@/app/store/dsk-workspace/dsk-workspace'
 import {
   exportPaletteWithSlotsAtom,
+  IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
@@ -40,16 +41,29 @@ export default function DskWorkspacePanel() {
   // We now support all dimensions including overscan and custom
   const canAddCurrentImage = !!image
 
+  // Helper pour vérifier si un slot est ignoré
+  const isIgnoredSlot = (color: number[]) =>
+    color[0] === IGNORED_SLOT[0] &&
+    color[1] === IGNORED_SLOT[1] &&
+    color[2] === IGNORED_SLOT[2]
+
   // Prepare current image data for adding to DSK
   const currentImageData = canAddCurrentImage
     ? (() => {
         // Convert palette to firmware indices (for CPC Classic) or CPC Plus values
         const cpcPalette = getPaletteForHardware(cpcHardware)
 
+        // Les slots ignorés [-1,-1,-1] utilisent l'indice 0 (noir) comme placeholder
         const paletteFirmware = exportPalette.map((colorData: unknown) => {
           const color = Array.isArray(colorData)
             ? colorData
             : Array.from(colorData as ArrayLike<number>)
+
+          // Slot ignoré: utiliser 0 (noir) comme placeholder
+          if (isIgnoredSlot(color)) {
+            return 0
+          }
+
           const index = cpcPalette.findIndex(
             (c) => c[0] === color[0] && c[1] === color[1] && c[2] === color[2]
           )
@@ -65,18 +79,20 @@ export default function DskWorkspacePanel() {
         }
 
         // For CPC Plus, also generate the 16-bit palette values
+        // Les slots ignorés sont remplacés par 0 (noir en GRB)
         const palettePlus =
           cpcHardware === 'plus'
             ? paletteToCPCPlusValues(
-                exportPalette.map((color: unknown) =>
-                  Array.isArray(color)
-                    ? (color as [number, number, number])
-                    : (Array.from(color as ArrayLike<number>) as [
-                        number,
-                        number,
-                        number
-                      ])
-                )
+                exportPalette.map((color: unknown) => {
+                  const c = Array.isArray(color)
+                    ? color
+                    : Array.from(color as ArrayLike<number>)
+                  // Slot ignoré: utiliser noir [0,0,0]
+                  if (isIgnoredSlot(c)) {
+                    return [0, 0, 0] as [number, number, number]
+                  }
+                  return c as [number, number, number]
+                })
               )
             : undefined
 
@@ -107,10 +123,15 @@ export default function DskWorkspacePanel() {
         const thumbnailDataUrl = canvas.toDataURL('image/png')
 
         // Convert palette to hex colors for display
+        // Les slots ignorés sont affichés comme "ignored"
         const paletteColors = exportPalette.map((color: unknown) => {
           const rgb = Array.isArray(color)
             ? color
             : Array.from(color as ArrayLike<number>)
+          // Slot ignoré
+          if (isIgnoredSlot(rgb)) {
+            return 'ignored'
+          }
           return `#${rgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`
         })
 

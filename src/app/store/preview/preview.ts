@@ -255,13 +255,30 @@ export const previewImageAtom = atom(async (get) => {
   const modeConfig = get(effectiveModeConfigAtom)
   const quantizer = await get(quantizerAtom)
   // Utiliser la palette avec slots pour que les indices correspondent à l'export
-  const reduced = await get(exportPaletteWithSlotsAtom)
+  const exportPalette = await get(exportPaletteWithSlotsAtom)
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const processed = await get(smoothedImageAtom)
   const dithering = get(ditheringAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom) // Get center option
   if (!quantizer || !processed) return null
+
+  // Préparer la palette pour le dithering: remplacer les slots ignorés [-1,-1,-1]
+  // par une couleur valide (noir) pour que le dithering fonctionne
+  const validColors = exportPalette.filter(
+    (c) => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
+  )
+  const fallbackColor: Vector =
+    validColors.length > 0
+      ? validColors.reduce((darkest, color) => {
+          return luminance(color) < luminance(darkest) ? color : darkest
+        }, validColors[0])
+      : [0, 0, 0]
+
+  // Palette pour le dithering: même structure que export mais avec fallback pour les ignorés
+  const ditheringPalette = exportPalette.map((color) =>
+    color[0] === -1 ? fallbackColor : color
+  )
 
   // En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
   // On ne doit PAS appliquer getVisualRegionNormalized qui re-scale avec le pixel aspect ratio
@@ -272,7 +289,7 @@ export const previewImageAtom = atom(async (get) => {
 
   if (!normalized) return null
 
-  const previewBuffer = quantizer.dither(normalized, reduced, {
+  const previewBuffer = quantizer.dither(normalized, ditheringPalette, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
@@ -292,7 +309,7 @@ export const previewImageAtom = atom(async (get) => {
     const positioned = positionImageForAutoMode(
       remapped,
       modeConfig,
-      reduced,
+      exportPalette,
       centerImage
     )
     return positioned
@@ -401,40 +418,51 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   return projected
 })
 
+// Valeur spéciale pour marquer un slot ignoré dans la palette d'export
+export const IGNORED_SLOT: Vector = [-1, -1, -1]
+
 // Palette pour l'export: reconstruit la palette complète avec les slots vides lockés
-// Les slots vides lockés sont remplis avec la couleur la plus sombre de la palette
-// pour maintenir la correspondance des indices lors de l'export
+// Les slots vides lockés sont marqués avec IGNORED_SLOT [-1, -1, -1] pour indiquer qu'ils sont ignorés
 export const exportPaletteWithSlotsAtom = atom(async (get) => {
   const reducedPalette = await get(reducedPaletteRgbAtom)
   const userPalette = get(userPaletteAtom)
   const modeConfig = get(effectiveModeConfigAtom)
+  const cpcHardware = get(cpcHardwareAtom)
 
   if (reducedPalette.length === 0) {
-    return []
+    return [] as Vector[]
   }
 
-  // Trouver la couleur la plus sombre pour remplir les slots vides
+  // Trouver la couleur la plus sombre pour remplir les slots vides non lockés
   const darkestColor = reducedPalette.reduce((darkest, color) => {
     const colorLuminance = luminance(color)
     const darkestLuminance = luminance(darkest)
     return colorLuminance < darkestLuminance ? color : darkest
   }, reducedPalette[0])
 
-  // Reconstruire la palette complète avec les slots vides à leur position
+  // Reconstruire la palette complète en utilisant userPalette comme référence
   const fullPalette: Vector[] = []
-  let reducedIndex = 0
 
   for (let i = 0; i < modeConfig.nColors; i++) {
     const slot = userPalette[i]
     if (slot?.locked && slot.color === null) {
-      // Slot vide locké: utiliser la couleur la plus sombre comme placeholder
-      fullPalette.push(darkestColor)
-    } else if (reducedIndex < reducedPalette.length) {
-      // Slot avec couleur: utiliser la couleur de la palette réduite
-      fullPalette.push(reducedPalette[reducedIndex])
-      reducedIndex++
+      // Slot vide locké: marquer comme ignoré avec [-1, -1, -1]
+      fullPalette.push(IGNORED_SLOT)
+    } else if (slot?.color) {
+      // Slot avec couleur: quantifier la couleur du slot selon le hardware
+      const color = [...slot.color] as Vector
+      if (cpcHardware === 'classic') {
+        color[0] = quantizeCPC(color[0])
+        color[1] = quantizeCPC(color[1])
+        color[2] = quantizeCPC(color[2])
+      } else {
+        color[0] = quantifyToCPCPlus(color[0])
+        color[1] = quantifyToCPCPlus(color[1])
+        color[2] = quantifyToCPCPlus(color[2])
+      }
+      fullPalette.push(color)
     } else {
-      // Pas assez de couleurs: remplir avec la couleur la plus sombre
+      // Slot sans couleur (non locké): remplir avec la couleur la plus sombre
       fullPalette.push(darkestColor)
     }
   }
@@ -445,7 +473,8 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
     lockedEmptySlots: userPalette
       .slice(0, modeConfig.nColors)
       .map((s, i) => ({ i, isEmpty: s.locked && s.color === null }))
-      .filter((s) => s.isEmpty)
+      .filter((s) => s.isEmpty),
+    palette: fullPalette.map((c, i) => ({ i, color: c }))
   })
 
   return fullPalette
@@ -455,7 +484,7 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
 function positionImageForAutoMode(
   remapped: ImageData,
   modeConfig: any,
-  reduced: any[],
+  reduced: Vector[],
   centerImage: boolean
 ): ImageData {
   const targetWidth = modeConfig.width
@@ -473,12 +502,20 @@ function positionImageForAutoMode(
     return remapped
   }
 
+  // Filter out ignored slots [-1, -1, -1] for darkest color calculation
+  const validColors = reduced.filter(
+    (c) => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
+  )
+  const fallbackColor: Vector = [0, 0, 0]
+  const colorsForDarkest =
+    validColors.length > 0 ? validColors : [fallbackColor]
+
   // Find darkest color using Rec. 709 luminance
-  const darkestColor = reduced.reduce((darkest, color) => {
+  const darkestColor = colorsForDarkest.reduce((darkest, color) => {
     const colorLuminance = luminance(color)
     const darkestLuminance = luminance(darkest)
     return colorLuminance < darkestLuminance ? color : darkest
-  }, reduced[0])
+  }, colorsForDarkest[0])
 
   ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
   ctx.fillRect(0, 0, targetWidth, targetHeight)
