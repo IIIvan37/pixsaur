@@ -54,6 +54,7 @@ const emptySlot = { color: null, locked: false }
 
 let onToggleLock: ReturnType<typeof vi.fn>
 let onSetColor: ReturnType<typeof vi.fn>
+let onClearSlot: ReturnType<typeof vi.fn>
 let props: ColorPaletteViewProps
 
 // Use the shared renderWithJotai from test-utils instead of local helper
@@ -62,10 +63,12 @@ const renderWithStore = renderWithJotai
 beforeEach(() => {
   onToggleLock = vi.fn()
   onSetColor = vi.fn()
+  onClearSlot = vi.fn()
   props = {
     slots: [filledSlot, emptySlot, lockedSlot],
     onToggleLock,
     onSetColor,
+    onClearSlot,
     fullPalette: mockPalette
   }
 })

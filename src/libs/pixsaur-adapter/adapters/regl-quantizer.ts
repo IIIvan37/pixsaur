@@ -377,12 +377,18 @@ export class ReGLQuantizer {
       basePalette
     )
 
+    // Ajouter les indices présélectionnés à la config pour les méthodes optimisées
+    const configWithPreselected: ReGLQuantizeConfig = {
+      ...config,
+      preselectedIndices
+    }
+
     // Détecter le mode et sélectionner les couleurs
     const topIndices = this.detectModeAndSelectColors(
       imageData,
       basePalette,
       preselectedIndices,
-      config
+      configWithPreselected
     )
 
     // OPTIMISATION: Pour modes 0 (16 couleurs), retourner directement (diversité suffisante)
@@ -889,8 +895,9 @@ export class ReGLQuantizer {
   ): number[] {
     const isMode0Based =
       config.targetColors === 16 || config.targetColors === 512
-    const isMode1Based = config.targetColors === 4
-    const isMode2Based = config.targetColors === 2
+    // Support any targetColors <= 4 for mode 1 (allows locked empty slots reducing count)
+    const isMode1Based = config.targetColors >= 1 && config.targetColors <= 4
+    const isMode2Based = config.targetColors <= 2
     const isCPCPlus = basePalette.length > 27
     const actualTargetColors =
       config.targetColors === 512 ? 16 : config.targetColors

@@ -3,8 +3,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { dimensionPresetAtom, pixelModeAtom } from '../../config/config'
 import {
+  lockedEmptySlotsCountAtom,
   lockedSlotsAtom,
   lockedVectorsAtom,
+  onClearSlotAtom,
   onSetColorAtom,
   onToggleLockAtom,
   setReducedPaletteAtom,
@@ -277,7 +279,8 @@ describe('Palette Store', () => {
       store.set(userPaletteAtom, palette)
 
       const lockedVectors = store.get(lockedVectorsAtom)
-      expect(lockedVectors).toEqual([null, [255, 0, 0]])
+      // Slots verrouillés avec color null sont filtrés
+      expect(lockedVectors).toEqual([[255, 0, 0]])
     })
   })
 
@@ -297,6 +300,145 @@ describe('Palette Store', () => {
         0: [255, 0, 0],
         2: [0, 255, 0]
       })
+    })
+  })
+
+  describe('onClearSlotAtom', () => {
+    it('should clear slot color and lock it', () => {
+      // Initialize palette with a colored slot
+      const initialPalette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: false },
+        { color: [0, 255, 0], locked: false },
+        { color: [0, 0, 255], locked: false },
+        { color: [255, 255, 0], locked: false }
+      ]
+      store.set(userPaletteAtom, initialPalette)
+
+      // Clear slot at index 1
+      store.set(onClearSlotAtom, 1)
+
+      const updatedPalette = store.get(userPaletteAtom)
+      expect(updatedPalette[1].color).toBeNull()
+      expect(updatedPalette[1].locked).toBe(true)
+      // Other slots should be unchanged
+      expect(updatedPalette[0].color).toEqual([255, 0, 0])
+      expect(updatedPalette[2].color).toEqual([0, 0, 255])
+    })
+
+    it('should work on already locked slot with color', () => {
+      const initialPalette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: true },
+        { color: null, locked: false },
+        { color: null, locked: false },
+        { color: null, locked: false }
+      ]
+      store.set(userPaletteAtom, initialPalette)
+
+      store.set(onClearSlotAtom, 0)
+
+      const updatedPalette = store.get(userPaletteAtom)
+      expect(updatedPalette[0].color).toBeNull()
+      expect(updatedPalette[0].locked).toBe(true)
+    })
+
+    it('should work on the last slot index', () => {
+      const initialPalette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: false },
+        { color: [0, 255, 0], locked: false },
+        { color: [0, 0, 255], locked: false },
+        { color: [255, 255, 0], locked: false }
+      ]
+      store.set(userPaletteAtom, initialPalette)
+
+      // Clear the last slot (index 3)
+      store.set(onClearSlotAtom, 3)
+
+      const updatedPalette = store.get(userPaletteAtom)
+      expect(updatedPalette[3].color).toBeNull()
+      expect(updatedPalette[3].locked).toBe(true)
+      // Other slots should be unchanged
+      expect(updatedPalette[0].color).toEqual([255, 0, 0])
+      expect(updatedPalette[1].color).toEqual([0, 255, 0])
+      expect(updatedPalette[2].color).toEqual([0, 0, 255])
+    })
+  })
+
+  describe('lockedEmptySlotsCountAtom', () => {
+    it('should return 0 when no slots are locked and empty', () => {
+      store.set(pixelModeAtom, 1)
+      const palette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: false },
+        { color: [0, 255, 0], locked: false },
+        { color: [0, 0, 255], locked: false },
+        { color: [255, 255, 0], locked: false }
+      ]
+      store.set(userPaletteAtom, palette)
+
+      expect(store.get(lockedEmptySlotsCountAtom)).toBe(0)
+    })
+
+    it('should count locked empty slots within mode limit (mode 1 = 4 colors)', () => {
+      store.set(pixelModeAtom, 1)
+      const palette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: false },
+        { color: null, locked: true }, // locked empty
+        { color: null, locked: true }, // locked empty
+        { color: null, locked: false } // not locked
+      ]
+      store.set(userPaletteAtom, palette)
+
+      expect(store.get(lockedEmptySlotsCountAtom)).toBe(2)
+    })
+
+    it('should count locked empty slots within mode limit (mode 2 = 2 colors)', () => {
+      store.set(pixelModeAtom, 2)
+      const palette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: false },
+        { color: null, locked: true } // locked empty
+      ]
+      store.set(userPaletteAtom, palette)
+
+      expect(store.get(lockedEmptySlotsCountAtom)).toBe(1)
+    })
+
+    it('should not count slots outside mode limit', () => {
+      store.set(pixelModeAtom, 2) // mode 2 = 2 colors
+      const palette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: false },
+        { color: null, locked: true }, // locked empty within limit
+        { color: null, locked: true }, // outside mode 2 limit (index 2)
+        { color: null, locked: true } // outside mode 2 limit (index 3)
+      ]
+      store.set(userPaletteAtom, palette)
+
+      // Should only count index 1, not indexes 2 and 3
+      expect(store.get(lockedEmptySlotsCountAtom)).toBe(1)
+    })
+
+    it('should not count locked slots that have colors', () => {
+      store.set(pixelModeAtom, 1)
+      const palette: PaletteSlot[] = [
+        { color: [255, 0, 0], locked: true }, // locked with color
+        { color: [0, 255, 0], locked: true }, // locked with color
+        { color: null, locked: true }, // locked empty
+        { color: null, locked: false } // not locked
+      ]
+      store.set(userPaletteAtom, palette)
+
+      // Should only count index 2 (locked and empty)
+      expect(store.get(lockedEmptySlotsCountAtom)).toBe(1)
+    })
+
+    it('should count all locked empty slots in mode 0 (16 colors)', () => {
+      store.set(pixelModeAtom, 0)
+      store.set(dimensionPresetAtom, 'standard')
+      const palette: PaletteSlot[] = new Array(16).fill(null).map((_, i) => ({
+        color: i < 10 ? [i * 25, 0, 0] : null, // First 10 have colors
+        locked: i >= 10 // Last 6 are locked (and empty)
+      }))
+      store.set(userPaletteAtom, palette)
+
+      expect(store.get(lockedEmptySlotsCountAtom)).toBe(6)
     })
   })
 })

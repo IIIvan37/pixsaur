@@ -82,14 +82,19 @@
 
 .lockActions {
   display: flex;
-  justify-content: center;
-  padding-top: var(--spacing-sm);
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--spacing-sm);
+  width: 100%;
 }
 
-.lockButton {
+/* Action buttons (lock/unlock, clear) */
+.actionButton {
   font-weight: 600;
-  font-size: 1rem;
-  min-width: 120px;
+  font-size: 0.75rem;
   padding: var(--spacing-xs) var(--spacing-sm);
 }
 
@@ -108,7 +113,7 @@
     height: 50px;
   }
   
-  .lockButton {
+  .actionButton {
     min-width: 100px;
     font-size: var(--font-size-xs);
   }

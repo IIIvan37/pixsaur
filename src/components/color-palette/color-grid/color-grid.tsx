@@ -9,6 +9,7 @@ type ColorGridProps = {
   slotIndex: number
   focusedColorIndex: number
   onColorSelect: (color: CPCColor, slotIndex: number) => void
+  onClearSlot?: (index: number) => void
   colorOptionRefs?: React.RefObject<(HTMLButtonElement | null)[]>
 }
 
@@ -18,6 +19,7 @@ export const ColorGrid: React.FC<ColorGridProps> = ({
   slotIndex,
   focusedColorIndex,
   onColorSelect,
+  onClearSlot,
   colorOptionRefs
 }) => {
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
@@ -39,6 +41,11 @@ export const ColorGrid: React.FC<ColorGridProps> = ({
   const handleClose = (): void => {
     throw new Error('Function not implemented.')
   }
+  const handleClearSlot = (index: number): void => {
+    if (onClearSlot) {
+      onClearSlot(index)
+    }
+  }
 
   return (
     <ColorGridView
@@ -50,6 +57,7 @@ export const ColorGrid: React.FC<ColorGridProps> = ({
       colorOptionRefs={colorOptionRefs ?? optionRefs}
       optionRefs={optionRefs}
       onToggleLock={handleToggleLock}
+      onClearSlot={handleClearSlot}
       onClose={handleClose}
     />
   )

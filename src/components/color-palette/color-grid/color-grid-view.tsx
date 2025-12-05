@@ -13,6 +13,7 @@ export type ColorGridViewProps = {
   readonly focusedColorIndex: number
   readonly onColorSelect: (color: CPCColor, slotIndex: number) => void
   readonly onToggleLock: (index: number) => void
+  readonly onClearSlot: (index: number) => void
   readonly colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>
   readonly optionRefs: React.RefObject<(HTMLButtonElement | null)[]>
   readonly onClose: () => void
@@ -25,16 +26,14 @@ export function ColorGridView({
   focusedColorIndex,
   onColorSelect,
   onToggleLock,
+  onClearSlot,
   colorOptionRefs,
   optionRefs,
   onClose
 }: ColorGridViewProps) {
   const slot = slots[slotIndex]
   return (
-    <div
-      className='popover'
-      style={{ position: 'relative', minHeight: 140, maxHeight: 260 }}
-    >
+    <div className='popover' style={{ position: 'relative' }}>
       <fieldset className={styles.colorGrid}>
         <legend className='sr-only'>
           <Trans>Options de couleur</Trans>
@@ -60,22 +59,34 @@ export function ColorGridView({
           )
         })}
       </fieldset>
-      {/* Affiche le bouton lock uniquement si le slot est rempli */}
+      {/* Affiche les boutons uniquement si le slot est rempli */}
       {slot.color && (
-        <Button
-          className={styles.lockButton}
-          variant='secondary'
-          onClick={() => {
-            onToggleLock(slotIndex)
-            onClose()
-          }}
-        >
-          {slot.locked ? (
-            <Trans>Déverrouiller</Trans>
-          ) : (
-            <Trans>Verrouiller</Trans>
-          )}
-        </Button>
+        <div className={styles.actionButtons}>
+          <Button
+            className={styles.actionButton}
+            variant='secondary'
+            onClick={() => {
+              onToggleLock(slotIndex)
+              onClose()
+            }}
+          >
+            {slot.locked ? (
+              <Trans>Déverrouiller</Trans>
+            ) : (
+              <Trans>Verrouiller</Trans>
+            )}
+          </Button>
+          <Button
+            className={styles.actionButton}
+            variant='secondary'
+            onClick={() => {
+              onClearSlot(slotIndex)
+              onClose()
+            }}
+          >
+            <Trans>Vider</Trans>
+          </Button>
+        </div>
       )}
     </div>
   )
