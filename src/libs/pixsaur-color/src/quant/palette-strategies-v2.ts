@@ -1087,11 +1087,356 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   return { selectedIndices: result, scores }
 }
 
+// ============================================================================
+// COVERAGE-AWARE STRATEGY
+// ============================================================================
+
+/**
+ * Calcule le score de couverture d'une combinaison de couleurs
+ *
+ * Pour chaque candidat, on regarde combien de couleurs de l'image
+ * seraient "bien représentées" (distance < threshold) par cette palette
+ */
+function calculateCoverageScore(
+  selectedIndices: number[],
+  allCandidates: ColorCandidate[],
+  coverageThreshold: number
+): { coverage: number; avgDistance: number } {
+  const selectedColors = selectedIndices.map(
+    (idx) => allCandidates.find((c) => c.index === idx)!.converted
+  )
+
+  let totalCovered = 0
+  let totalDistance = 0
+  let totalFrequency = 0
+
+  for (const candidate of allCandidates) {
+    // Trouver la distance à la couleur la plus proche dans la sélection
+    let minDist = Infinity
+    for (const selected of selectedColors) {
+      const dist = calculatePerceptualDistance(candidate.converted, selected)
+      if (dist < minDist) minDist = dist
+    }
+
+    totalFrequency += candidate.frequency
+
+    if (minDist <= coverageThreshold) {
+      totalCovered += candidate.frequency
+      totalDistance += minDist * candidate.frequency
+    }
+  }
+
+  const coverage = totalFrequency > 0 ? totalCovered / totalFrequency : 0
+  const avgDistance = totalCovered > 0 ? totalDistance / totalCovered : Infinity
+
+  return { coverage, avgDistance }
+}
+
+/**
+ * coverage-aware : Maximise la couverture des couleurs de l'image
+ *
+ * Algorithme :
+ * 1. Pour chaque combinaison possible de couleurs
+ * 2. Calcule le % de pixels de l'image "bien représentés" (distance < seuil)
+ * 3. Sélectionne la combinaison avec la meilleure couverture
+ * 4. En cas d'égalité, préfère celle avec la distance moyenne la plus faible
+ *
+ * Idéal pour les images avec beaucoup de nuances où on veut minimiser l'erreur globale
+ */
+export const selectByCoverageAware: PaletteStrategyFunction = (
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult => {
+  const result: number[] = [...preselectedIndices]
+  const scores = new Map<number, number>()
+
+  if (result.length >= targetColors) {
+    return { selectedIndices: result.slice(0, targetColors), scores }
+  }
+
+  const usedIndices = new Set(preselectedIndices)
+  let remainingCandidates = candidates.filter((c) => !usedIndices.has(c.index))
+
+  const needed = targetColors - result.length
+
+  if (remainingCandidates.length <= needed) {
+    for (const c of remainingCandidates) {
+      result.push(c.index)
+      scores.set(c.index, c.frequency)
+    }
+    return { selectedIndices: result.slice(0, targetColors), scores }
+  }
+
+  // Limiter les candidats pour la recherche exhaustive
+  const MAX_CANDIDATES = 14
+  if (remainingCandidates.length > MAX_CANDIDATES) {
+    const sorted = [...remainingCandidates].sort(
+      (a, b) => b.frequency - a.frequency
+    )
+    const dark = sorted.filter((c) => isDark(c.converted))
+    const bright = sorted.filter((c) => isBright(c.converted))
+
+    const selectedCandidates: ColorCandidate[] = []
+    const addUnique = (c: ColorCandidate) => {
+      if (!selectedCandidates.find((s) => s.index === c.index)) {
+        selectedCandidates.push(c)
+      }
+    }
+
+    dark.slice(0, 3).forEach(addUnique)
+    bright.slice(0, 3).forEach(addUnique)
+    for (const c of sorted) {
+      if (selectedCandidates.length >= MAX_CANDIDATES) break
+      addUnique(c)
+    }
+
+    remainingCandidates = selectedCandidates
+  }
+
+  // Seuil de couverture adapté à la palette CPC
+  // Plus la palette est petite, plus le seuil doit être élevé
+  const isCPCClassic = candidates.length <= 27
+  const coverageThreshold = isCPCClassic ? 60 : 45
+
+  const indices = remainingCandidates.map((_, i) => i)
+  const combinations = kCombinationsV2(indices, needed)
+
+  let bestCombo: number[] = []
+  let bestCoverage = -1
+  let bestAvgDistance = Infinity
+
+  for (const combo of combinations) {
+    const testIndices = [
+      ...result,
+      ...combo.map((i) => remainingCandidates[i].index)
+    ]
+
+    const { coverage, avgDistance } = calculateCoverageScore(
+      testIndices,
+      candidates,
+      coverageThreshold
+    )
+
+    // Préférer meilleure couverture, puis distance plus faible
+    if (
+      coverage > bestCoverage ||
+      (coverage === bestCoverage && avgDistance < bestAvgDistance)
+    ) {
+      bestCoverage = coverage
+      bestAvgDistance = avgDistance
+      bestCombo = combo
+    }
+  }
+
+  for (const i of bestCombo) {
+    const candidate = remainingCandidates[i]
+    result.push(candidate.index)
+    scores.set(candidate.index, bestCoverage)
+  }
+
+  return { selectedIndices: result, scores }
+}
+
+// ============================================================================
+// DITHERING-AWARE STRATEGY
+// ============================================================================
+
+/**
+ * Calcule la couleur moyenne résultant du mélange de deux couleurs en dithering 50/50
+ */
+function blendColors(c1: Vector, c2: Vector): Vector {
+  return [
+    Math.round((c1[0] + c2[0]) / 2),
+    Math.round((c1[1] + c2[1]) / 2),
+    Math.round((c1[2] + c2[2]) / 2)
+  ] as Vector
+}
+
+/**
+ * Calcule toutes les couleurs intermédiaires possibles par dithering
+ * entre les couleurs d'une palette
+ */
+function calculateDitheringPalette(selectedColors: Vector[]): Vector[] {
+  const extended: Vector[] = [...selectedColors]
+
+  // Ajouter tous les mélanges 50/50 entre paires de couleurs
+  for (let i = 0; i < selectedColors.length; i++) {
+    for (let j = i + 1; j < selectedColors.length; j++) {
+      extended.push(blendColors(selectedColors[i], selectedColors[j]))
+    }
+  }
+
+  return extended
+}
+
+/**
+ * Calcule le score de dithering d'une combinaison
+ *
+ * Une bonne palette pour le dithering doit :
+ * 1. Avoir des couleurs qui se mélangent bien (créent des intermédiaires utiles)
+ * 2. Couvrir plus de teintes grâce aux mélanges
+ */
+function calculateDitheringScore(
+  selectedIndices: number[],
+  allCandidates: ColorCandidate[],
+  coverageThreshold: number
+): { expandedCoverage: number; uniqueBlends: number } {
+  const selectedColors = selectedIndices.map(
+    (idx) => allCandidates.find((c) => c.index === idx)!.converted
+  )
+
+  // Calculer la palette étendue avec dithering
+  const extendedPalette = calculateDitheringPalette(selectedColors)
+
+  let totalCovered = 0
+  let totalFrequency = 0
+
+  for (const candidate of allCandidates) {
+    let minDist = Infinity
+
+    // Vérifier la distance à la palette étendue (avec blends)
+    for (const paletteColor of extendedPalette) {
+      const dist = calculatePerceptualDistance(
+        candidate.converted,
+        paletteColor
+      )
+      if (dist < minDist) minDist = dist
+    }
+
+    totalFrequency += candidate.frequency
+    if (minDist <= coverageThreshold) {
+      totalCovered += candidate.frequency
+    }
+  }
+
+  const expandedCoverage =
+    totalFrequency > 0 ? totalCovered / totalFrequency : 0
+
+  // Compter les blends uniques utiles (différents des couleurs de base)
+  const uniqueBlends = extendedPalette.length - selectedColors.length
+
+  return { expandedCoverage, uniqueBlends }
+}
+
+/**
+ * dithering-aware : Sélectionne des couleurs qui se mélangent bien en dithering
+ *
+ * Algorithme :
+ * 1. Pour chaque combinaison, calcule la palette "étendue" (couleurs + mélanges 50/50)
+ * 2. Évalue combien de couleurs de l'image sont couvertes par cette palette étendue
+ * 3. Privilégie les combinaisons dont les mélanges créent des teintes intermédiaires utiles
+ *
+ * Idéal pour les modes avec peu de couleurs (2-4) où le dithering est crucial
+ */
+export const selectByDitheringAware: PaletteStrategyFunction = (
+  candidates: ColorCandidate[],
+  targetColors: number,
+  preselectedIndices: number[] = []
+): StrategyResult => {
+  const result: number[] = [...preselectedIndices]
+  const scores = new Map<number, number>()
+
+  if (result.length >= targetColors) {
+    return { selectedIndices: result.slice(0, targetColors), scores }
+  }
+
+  const usedIndices = new Set(preselectedIndices)
+  let remainingCandidates = candidates.filter((c) => !usedIndices.has(c.index))
+
+  const needed = targetColors - result.length
+
+  if (remainingCandidates.length <= needed) {
+    for (const c of remainingCandidates) {
+      result.push(c.index)
+      scores.set(c.index, c.frequency)
+    }
+    return { selectedIndices: result.slice(0, targetColors), scores }
+  }
+
+  // Limiter les candidats
+  const MAX_CANDIDATES = 12
+  if (remainingCandidates.length > MAX_CANDIDATES) {
+    const sorted = [...remainingCandidates].sort(
+      (a, b) => b.frequency - a.frequency
+    )
+    const dark = sorted.filter((c) => isDark(c.converted))
+    const bright = sorted.filter((c) => isBright(c.converted))
+
+    const selectedCandidates: ColorCandidate[] = []
+    const addUnique = (c: ColorCandidate) => {
+      if (!selectedCandidates.find((s) => s.index === c.index)) {
+        selectedCandidates.push(c)
+      }
+    }
+
+    dark.slice(0, 2).forEach(addUnique)
+    bright.slice(0, 2).forEach(addUnique)
+    for (const c of sorted) {
+      if (selectedCandidates.length >= MAX_CANDIDATES) break
+      addUnique(c)
+    }
+
+    remainingCandidates = selectedCandidates
+  }
+
+  // Seuil de couverture pour le dithering (plus tolérant car les blends aident)
+  const isCPCClassic = candidates.length <= 27
+  const coverageThreshold = isCPCClassic ? 50 : 40
+
+  const indices = remainingCandidates.map((_, i) => i)
+  const combinations = kCombinationsV2(indices, needed)
+
+  // Filtrer pour avoir contraste luminance
+  const preselectedColors = preselectedIndices
+    .map((idx) => candidates.find((c) => c.index === idx)?.converted)
+    .filter((c): c is Vector => c !== undefined)
+
+  const filtered = filterCombinationsByLuminanceV2(
+    combinations,
+    preselectedColors,
+    remainingCandidates
+  )
+
+  const combosToTest = filtered.length > 0 ? filtered : combinations
+
+  let bestCombo: number[] = []
+  let bestExpandedCoverage = -1
+
+  for (const combo of combosToTest) {
+    const testIndices = [
+      ...result,
+      ...combo.map((i) => remainingCandidates[i].index)
+    ]
+
+    const { expandedCoverage } = calculateDitheringScore(
+      testIndices,
+      candidates,
+      coverageThreshold
+    )
+
+    if (expandedCoverage > bestExpandedCoverage) {
+      bestExpandedCoverage = expandedCoverage
+      bestCombo = combo
+    }
+  }
+
+  for (const i of bestCombo) {
+    const candidate = remainingCandidates[i]
+    result.push(candidate.index)
+    scores.set(candidate.index, bestExpandedCoverage)
+  }
+
+  return { selectedIndices: result, scores }
+}
+
 /**
  * Type pour les noms de stratégies de palette v2
  */
 export type PaletteStrategyName =
   | 'exhaustive-contrast'
+  | 'coverage-aware'
+  | 'dithering-aware'
   | 'frequency-balanced'
   | 'frequency-max'
   | 'balanced-score-balanced'
@@ -1111,6 +1456,8 @@ const PALETTE_STRATEGY_MAP: Record<
   PaletteStrategyFunction
 > = {
   'exhaustive-contrast': selectByExhaustiveContrast,
+  'coverage-aware': selectByCoverageAware,
+  'dithering-aware': selectByDitheringAware,
   'frequency-balanced': selectByFrequencyBalanced,
   'frequency-max': selectByFrequencyMax,
   'balanced-score-balanced': selectByBalancedScoreBalanced,

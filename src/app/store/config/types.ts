@@ -24,6 +24,9 @@ export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
 // Palette selection strategy for color quantization
 export type PaletteStrategy =
+  | 'exhaustive-contrast' // Exhaustive search: tests all combinations, maximizes min distance
+  | 'coverage-aware' // Maximizes coverage of image colors within threshold
+  | 'dithering-aware' // Selects colors that blend well for dithering
   | 'frequency-balanced' // Original: frequency + diversity, mode balanced (80% freq)
   | 'frequency-max' // Original: frequency + diversity, max contrast (60% freq)
   | 'balanced-score-balanced' // Multi-criteria: 50% freq, 25% diversity, 25% luminance
@@ -33,7 +36,6 @@ export type PaletteStrategy =
   | 'diversity-first-balanced' // Diversity max with slight frequency (90% div, 10% freq)
   | 'diversity-first-max' // Pure diversity (100% div, 0% freq)
   | 'adaptive' // Adaptive based on image analysis
-  | 'exhaustive-contrast' // Exhaustive search: tests all combinations, maximizes min distance
 
 // This file defines types and constants related to CPC modes and color adjustments.
 export type CpcModeConfig = {

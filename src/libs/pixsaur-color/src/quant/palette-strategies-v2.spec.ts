@@ -1007,8 +1007,8 @@ describe('palette-strategies-v2', () => {
   })
 
   describe('AVAILABLE_STRATEGIES', () => {
-    it('should contain all 10 strategies', () => {
-      expect(AVAILABLE_STRATEGIES).toHaveLength(10)
+    it('should contain all 12 strategies', () => {
+      expect(AVAILABLE_STRATEGIES).toHaveLength(12)
     })
 
     it('should contain exhaustive-contrast', () => {
@@ -1018,6 +1018,8 @@ describe('palette-strategies-v2', () => {
     it('should contain all strategy names', () => {
       const expectedStrategies: PaletteStrategyName[] = [
         'exhaustive-contrast',
+        'coverage-aware',
+        'dithering-aware',
         'frequency-balanced',
         'frequency-max',
         'balanced-score-balanced',
