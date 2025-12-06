@@ -297,7 +297,7 @@ msgstr "Exec"
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:23
 msgid "palette.strategy.exhaustive-contrast.label"
-msgstr "Exhaustive Contrast"
+msgstr "Contraste Exhaustif"
 
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:160
 msgid "Export DSK"
@@ -671,7 +671,7 @@ msgstr "Température"
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:29
 msgid "palette.strategy.exhaustive-contrast.desc"
-msgstr "Tests all combinations, maximizes contrast (best quality)"
+msgstr "Teste toutes les combinaisons, maximise le contraste (meilleure qualité)"
 
 #: src/components/updater/updater-view.tsx:61
 msgid "Update Available"
