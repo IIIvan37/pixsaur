@@ -18,6 +18,9 @@ import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 import { isTauri } from '@/tauri'
 import { ImagePreviewView } from './image-preview-view'
 
+// Mémoriser le résultat de isTauri pour éviter les logs répétés
+const IS_TAURI = isTauri()
+
 const ImagePreview = () => {
   const { _ } = useLingui()
   const ref = useRef<HTMLCanvasElement>(null)
@@ -78,7 +81,7 @@ const ImagePreview = () => {
     if (!previewImage) return
 
     // In Tauri, don't open in new tab - it would open in system browser
-    if (isTauri()) {
+    if (IS_TAURI) {
       return
     }
 
@@ -137,8 +140,8 @@ const ImagePreview = () => {
       image={previewImage}
       width={width}
       height={height}
-      onClick={isTauri() ? undefined : handleCanvasClick}
-      tooltip={isTauri() ? undefined : tooltip}
+      onClick={IS_TAURI ? undefined : handleCanvasClick}
+      tooltip={IS_TAURI ? undefined : tooltip}
     />
   )
 }

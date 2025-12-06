@@ -1036,4 +1036,311 @@ describe('palette-strategies-v2', () => {
       }
     })
   })
+
+  describe('selectByExhaustiveContrast - CPC Plus enhancements', () => {
+    it('should include a dark color in the palette', () => {
+      const candidates: ColorCandidate[] = [
+        // Couleurs claires/moyennes seulement
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 200, 100] as Vector,
+          converted: [255, 200, 100] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [100, 255, 200] as Vector,
+          converted: [100, 255, 200] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [200, 100, 255] as Vector,
+          converted: [200, 100, 255] as Vector
+        },
+        // Une couleur sombre
+        {
+          index: 3,
+          frequency: 10,
+          color: [10, 10, 10] as Vector,
+          converted: [10, 10, 10] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(candidates, 4)
+
+      // Devrait inclure la couleur sombre malgré sa faible fréquence
+      expect(result.selectedIndices).toContain(3)
+    })
+
+    it('should avoid selecting colors too similar in hue for CPC Plus', () => {
+      // Deux jaunes très similaires
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [0, 0, 0] as Vector, // noir
+          converted: [0, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [221, 170, 0] as Vector, // jaune 1
+          converted: [221, 170, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [204, 170, 0] as Vector, // jaune 2 (très similaire)
+          converted: [204, 170, 0] as Vector
+        },
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 100, 200] as Vector, // bleu
+          converted: [0, 100, 200] as Vector
+        },
+        {
+          index: 4,
+          frequency: 60,
+          color: [200, 50, 100] as Vector, // rose/magenta
+          converted: [200, 50, 100] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(candidates, 4)
+
+      // Ne devrait PAS sélectionner les deux jaunes similaires
+      const hasYellow1 = result.selectedIndices.includes(1)
+      const hasYellow2 = result.selectedIndices.includes(2)
+      expect(hasYellow1 && hasYellow2).toBe(false)
+    })
+
+    it('should prefer saturated colors for CPC Plus', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [0, 0, 0] as Vector, // noir
+          converted: [0, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [255, 0, 0] as Vector, // rouge saturé
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 85,
+          color: [180, 100, 100] as Vector, // rouge désaturé
+          converted: [180, 100, 100] as Vector
+        },
+        {
+          index: 3,
+          frequency: 80,
+          color: [0, 255, 0] as Vector, // vert saturé
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 4,
+          frequency: 75,
+          color: [100, 180, 100] as Vector, // vert désaturé
+          converted: [100, 180, 100] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(candidates, 3)
+
+      // Devrait préférer les couleurs saturées
+      expect(result.selectedIndices).toContain(1) // rouge saturé
+      // Le vert saturé ou une combinaison diverse
+    })
+
+    it('should respect preselected colors and avoid similar hues', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector, // rouge
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [250, 50, 50] as Vector, // rouge similaire
+          converted: [250, 50, 50] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [0, 255, 0] as Vector, // vert
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 0, 255] as Vector, // bleu
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      // Rouge présélectionné (locké)
+      const result = selectByExhaustiveContrast(candidates, 3, [0])
+
+      expect(result.selectedIndices).toContain(0) // présélectionné
+      // Ne devrait pas sélectionner le rouge similaire (index 1)
+      expect(result.selectedIndices).not.toContain(1)
+    })
+  })
+
+  describe('Hue diversity calculations', () => {
+    it('should correctly identify colors with diverse hues', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector, // rouge (~0°)
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [0, 255, 0] as Vector, // vert (~120°)
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [0, 0, 255] as Vector, // bleu (~240°)
+          converted: [0, 0, 255] as Vector
+        },
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 0, 0] as Vector, // noir
+          converted: [0, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(candidates, 4)
+
+      // Toutes les couleurs devraient être sélectionnées car elles ont des teintes très différentes
+      expect(result.selectedIndices).toHaveLength(4)
+    })
+
+    it('should handle achromatic colors (grays) correctly', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [128, 128, 128] as Vector, // gris moyen
+          converted: [128, 128, 128] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [64, 64, 64] as Vector, // gris sombre
+          converted: [64, 64, 64] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [192, 192, 192] as Vector, // gris clair
+          converted: [192, 192, 192] as Vector
+        },
+        {
+          index: 3,
+          frequency: 70,
+          color: [255, 0, 0] as Vector, // rouge (seule couleur saturée)
+          converted: [255, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(candidates, 3)
+
+      // Devrait inclure le rouge car c'est la seule couleur saturée
+      expect(result.selectedIndices).toContain(3)
+    })
+  })
+
+  describe('Dark color forcing', () => {
+    it('should force a dark color when none is present', () => {
+      // Toutes les couleurs sont claires sauf une
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 255, 200] as Vector, // jaune clair
+          converted: [255, 255, 200] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [200, 255, 255] as Vector, // cyan clair
+          converted: [200, 255, 255] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [255, 200, 255] as Vector, // magenta clair
+          converted: [255, 200, 255] as Vector
+        },
+        {
+          index: 3,
+          frequency: 10, // Faible fréquence mais sombre
+          color: [20, 20, 20] as Vector,
+          converted: [20, 20, 20] as Vector
+        }
+      ]
+
+      const result = selectByExhaustiveContrast(candidates, 4)
+
+      // Devrait inclure la couleur sombre malgré sa faible fréquence
+      expect(result.selectedIndices).toContain(3)
+    })
+
+    it('should not force dark color if already preselected', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [10, 10, 10] as Vector, // noir (présélectionné)
+          converted: [10, 10, 10] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        },
+        {
+          index: 4,
+          frequency: 5,
+          color: [5, 5, 5] as Vector, // autre noir
+          converted: [5, 5, 5] as Vector
+        }
+      ]
+
+      // Noir présélectionné
+      const result = selectByExhaustiveContrast(candidates, 4, [0])
+
+      expect(result.selectedIndices).toContain(0)
+      // Ne devrait pas avoir besoin d'ajouter un autre noir
+      expect(result.selectedIndices).not.toContain(4)
+    })
+  })
 })
