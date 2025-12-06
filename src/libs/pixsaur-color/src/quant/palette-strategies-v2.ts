@@ -2129,78 +2129,86 @@ function blendColors(c1: Vector, c2: Vector): Vector {
 }
 
 /**
- * Calcule toutes les couleurs intermédiaires possibles par dithering
- * entre les couleurs d'une palette
+ * Cache des distances entre couleurs pour éviter les recalculs
  */
-function calculateDitheringPalette(selectedColors: Vector[]): Vector[] {
-  const extended: Vector[] = [...selectedColors]
+type DistanceCache = Map<string, number>
 
-  // Ajouter tous les mélanges 50/50 entre paires de couleurs
-  for (let i = 0; i < selectedColors.length; i++) {
-    for (let j = i + 1; j < selectedColors.length; j++) {
-      extended.push(blendColors(selectedColors[i], selectedColors[j]))
-    }
-  }
-
-  return extended
+/**
+ * Génère une clé de cache pour une paire de couleurs
+ */
+function colorKey(c: Vector): string {
+  return `${c[0]},${c[1]},${c[2]}`
 }
 
 /**
- * Calcule le score de dithering d'une combinaison
- *
- * Une bonne palette pour le dithering doit :
- * 1. Avoir des couleurs qui se mélangent bien (créent des intermédiaires utiles)
- * 2. Couvrir plus de teintes grâce aux mélanges
+ * Calcule la distance avec cache
  */
-function calculateDitheringScore(
-  selectedIndices: number[],
-  allCandidates: ColorCandidate[],
-  coverageThreshold: number
-): { expandedCoverage: number; uniqueBlends: number } {
-  const selectedColors = selectedIndices.map(
-    (idx) => allCandidates.find((c) => c.index === idx)!.converted
-  )
+function cachedDistance(c1: Vector, c2: Vector, cache: DistanceCache): number {
+  const key = `${colorKey(c1)}|${colorKey(c2)}`
+  const reverseKey = `${colorKey(c2)}|${colorKey(c1)}`
 
-  // Calculer la palette étendue avec dithering
-  const extendedPalette = calculateDitheringPalette(selectedColors)
+  if (cache.has(key)) return cache.get(key)!
+  if (cache.has(reverseKey)) return cache.get(reverseKey)!
 
-  let totalCovered = 0
-  let totalFrequency = 0
+  const dist = calculatePerceptualDistance(c1, c2)
+  cache.set(key, dist)
+  return dist
+}
 
-  for (const candidate of allCandidates) {
-    let minDist = Infinity
+/**
+ * Échantillonne les candidats pour l'évaluation du dithering
+ * Garde les plus fréquents + un échantillon diversifié
+ */
+function sampleCandidatesForDithering(
+  candidates: ColorCandidate[],
+  maxSamples: number
+): { color: Vector; frequency: number }[] {
+  if (candidates.length <= maxSamples) {
+    return candidates.map((c) => ({
+      color: c.converted,
+      frequency: c.frequency
+    }))
+  }
 
-    // Vérifier la distance à la palette étendue (avec blends)
-    for (const paletteColor of extendedPalette) {
-      const dist = calculatePerceptualDistance(
-        candidate.converted,
-        paletteColor
-      )
-      if (dist < minDist) minDist = dist
-    }
+  // Trier par fréquence et prendre les top
+  const sorted = [...candidates].sort((a, b) => b.frequency - a.frequency)
+  const topCount = Math.ceil(maxSamples * 0.7) // 70% les plus fréquents
+  const diverseCount = maxSamples - topCount
 
-    totalFrequency += candidate.frequency
-    if (minDist <= coverageThreshold) {
-      totalCovered += candidate.frequency
+  const sampled: { color: Vector; frequency: number }[] = []
+
+  // Ajouter les plus fréquents
+  for (let i = 0; i < topCount && i < sorted.length; i++) {
+    sampled.push({ color: sorted[i].converted, frequency: sorted[i].frequency })
+  }
+
+  // Ajouter un échantillon diversifié parmi les restants
+  if (diverseCount > 0 && sorted.length > topCount) {
+    const remaining = sorted.slice(topCount)
+    const step = Math.max(1, Math.floor(remaining.length / diverseCount))
+    for (
+      let i = 0;
+      i < remaining.length && sampled.length < maxSamples;
+      i += step
+    ) {
+      sampled.push({
+        color: remaining[i].converted,
+        frequency: remaining[i].frequency
+      })
     }
   }
 
-  const expandedCoverage =
-    totalFrequency > 0 ? totalCovered / totalFrequency : 0
-
-  // Compter les blends uniques utiles (différents des couleurs de base)
-  const uniqueBlends = extendedPalette.length - selectedColors.length
-
-  return { expandedCoverage, uniqueBlends }
+  return sampled
 }
 
 /**
  * dithering-aware : Sélectionne des couleurs qui se mélangent bien en dithering
  *
- * Algorithme :
- * 1. Pour chaque combinaison, calcule la palette "étendue" (couleurs + mélanges 50/50)
- * 2. Évalue combien de couleurs de l'image sont couvertes par cette palette étendue
- * 3. Privilégie les combinaisons dont les mélanges créent des teintes intermédiaires utiles
+ * Algorithme optimisé :
+ * 1. Échantillonne les candidats pour l'évaluation (évite de tester tous les pixels)
+ * 2. Utilise un cache de distances pour éviter les recalculs
+ * 3. Pour chaque combinaison, calcule la palette "étendue" (couleurs + mélanges 50/50)
+ * 4. Évalue combien de couleurs de l'échantillon sont couvertes par cette palette étendue
  *
  * Idéal pour les modes avec peu de couleurs (2-4) où le dithering est crucial
  */
@@ -2238,20 +2246,36 @@ export const selectByDitheringAware: PaletteStrategyFunction = (
   }
 
   // Seuil de couverture pour le dithering (plus tolérant car les blends aident)
-  // Pour CPC Plus, le seuil doit être plus bas car l'espace de couleurs est plus grand
   const isCPCClassic = isCPCClassicPalette(options, candidates.length)
   const coverageThreshold = isCPCClassic ? 50 : 40
 
-  // Limiter les candidats avec diversité de teinte pour CPC Plus
-  const MAX_CANDIDATES = isCPCClassic ? 12 : 16
+  // Limiter les candidats avec diversité de teinte
+  const MAX_CANDIDATES = isCPCClassic ? 12 : 14
   if (remainingCandidates.length > MAX_CANDIDATES) {
     remainingCandidates = filterCandidatesWithHueDiversity(
       remainingCandidates,
       MAX_CANDIDATES,
       isCPCClassic,
-      preselectedColors // Couleurs lockées à éviter
+      preselectedColors
     )
   }
+
+  // Pré-extraire les couleurs des candidats restants pour éviter les lookups répétés
+  const candidateColors = remainingCandidates.map((c) => c.converted)
+
+  // Échantillonner les candidats pour l'évaluation (max 50 pour la performance)
+  const MAX_SAMPLES = 50
+  const sampledCandidates = sampleCandidatesForDithering(
+    candidates,
+    MAX_SAMPLES
+  )
+  const totalSampledFrequency = sampledCandidates.reduce(
+    (sum, c) => sum + c.frequency,
+    0
+  )
+
+  // Cache de distances partagé entre toutes les combinaisons
+  const distanceCache: DistanceCache = new Map()
 
   const indices = remainingCandidates.map((_, i) => i)
   const combinations = kCombinationsV2(indices, needed)
@@ -2269,15 +2293,17 @@ export const selectByDitheringAware: PaletteStrategyFunction = (
   let bestExpandedCoverage = -1
 
   for (const combo of combosToTest) {
-    const testIndices = [
-      ...result,
-      ...combo.map((i) => remainingCandidates[i].index)
-    ]
+    // Construire la palette complète : couleurs présélectionnées + combo
+    const comboColors = combo.map((i) => candidateColors[i])
+    const allColors = [...preselectedColors, ...comboColors]
 
-    const { expandedCoverage } = calculateDitheringScore(
-      testIndices,
-      candidates,
-      coverageThreshold
+    // Calculer le score avec la palette complète
+    const expandedCoverage = calculateDitheringScoreOptimizedDirect(
+      allColors,
+      sampledCandidates,
+      totalSampledFrequency,
+      coverageThreshold,
+      distanceCache
     )
 
     if (expandedCoverage > bestExpandedCoverage) {
@@ -2293,6 +2319,46 @@ export const selectByDitheringAware: PaletteStrategyFunction = (
   }
 
   return { selectedIndices: result, scores }
+}
+
+/**
+ * Version directe qui prend les couleurs au lieu des indices
+ */
+function calculateDitheringScoreOptimizedDirect(
+  selectedColors: Vector[],
+  sampledCandidates: { color: Vector; frequency: number }[],
+  totalSampledFrequency: number,
+  coverageThreshold: number,
+  distanceCache: DistanceCache
+): number {
+  // Construire la palette étendue avec les blends
+  const extended: Vector[] = [...selectedColors]
+  for (let i = 0; i < selectedColors.length; i++) {
+    for (let j = i + 1; j < selectedColors.length; j++) {
+      extended.push(blendColors(selectedColors[i], selectedColors[j]))
+    }
+  }
+
+  let totalCovered = 0
+
+  for (const { color, frequency } of sampledCandidates) {
+    let minDist = Infinity
+
+    for (const paletteColor of extended) {
+      const dist = cachedDistance(color, paletteColor, distanceCache)
+      if (dist < minDist) {
+        minDist = dist
+        // Early exit si déjà couvert
+        if (minDist <= coverageThreshold) break
+      }
+    }
+
+    if (minDist <= coverageThreshold) {
+      totalCovered += frequency
+    }
+  }
+
+  return totalSampledFrequency > 0 ? totalCovered / totalSampledFrequency : 0
 }
 
 /**
