@@ -214,6 +214,32 @@
   justify-content: center;
 }
 
+.modeInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.modeBadge {
+  padding: 0.125rem 0.5rem;
+  background: var(--primary-alpha, rgba(59, 130, 246, 0.1));
+  color: var(--primary, #3b82f6);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.modeHint {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
 .emptyState {
   padding: 1rem;
   text-align: center;

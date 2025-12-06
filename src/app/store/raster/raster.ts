@@ -2,7 +2,12 @@ import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { createRasterPreviewImageData } from '@/libs/pixsaur-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
+import { cpcHardwareAtom, effectiveModeConfigAtom } from '../config/config'
 import { previewImageAtom, previewIndexBufferAtom } from '../preview/preview'
+
+/** Max raster changes per line: 1 for most modes, 4 for Plus Mode 1 only */
+export const MAX_CHANGES_PER_LINE_DEFAULT = 1
+export const MAX_CHANGES_PER_LINE_PLUS_MODE1 = 4
 
 /**
  * Whether raster mode is enabled
@@ -109,11 +114,23 @@ export const clearRasterChangesAtom = atom(null, (_get, set) => {
 export const clearRasterRangesAtom = clearRasterChangesAtom
 
 /**
- * Derived atom: check for conflicts (same ink on same line)
+ * Derived atom: check for conflicts
+ * - Same ink modified twice on same line = always a conflict
+ * - Too many changes on same line = conflict
+ *   - CPC Plus Mode 1 allows 4 changes per line
+ *   - All other modes allow only 1 change per line
  * Returns array of conflicting change IDs
  */
 export const rasterConflictsAtom = atom((get) => {
   const changes = get(rasterChangesAtom)
+  const hardware = get(cpcHardwareAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
+
+  // Only CPC Plus + Mode 1 (4 colors) allows 4 ink changes per line
+  const isPlusMode1 = hardware === 'plus' && modeConfig.nColors === 4
+  const maxChangesPerLine = isPlusMode1
+    ? MAX_CHANGES_PER_LINE_PLUS_MODE1
+    : MAX_CHANGES_PER_LINE_DEFAULT
   const conflicts: string[] = []
 
   // Group by line
@@ -124,8 +141,9 @@ export const rasterConflictsAtom = atom((get) => {
     byLine.set(change.line, existing)
   }
 
-  // Find lines with multiple changes on the same ink
+  // Check conflicts for each line
   for (const [, lineChanges] of byLine) {
+    // Check for same ink modified twice on same line
     const inksSeen = new Map<number, string>()
     for (const change of lineChanges) {
       if (inksSeen.has(change.inkIndex)) {
@@ -135,6 +153,14 @@ export const rasterConflictsAtom = atom((get) => {
         if (!conflicts.includes(change.id)) conflicts.push(change.id)
       } else {
         inksSeen.set(change.inkIndex, change.id)
+      }
+    }
+
+    // Check for too many changes on same line
+    if (lineChanges.length > maxChangesPerLine) {
+      // All changes on this line are in conflict (exceeds hardware limit)
+      for (const change of lineChanges) {
+        if (!conflicts.includes(change.id)) conflicts.push(change.id)
       }
     }
   }

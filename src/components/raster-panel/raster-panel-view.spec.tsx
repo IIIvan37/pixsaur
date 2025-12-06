@@ -47,6 +47,7 @@ function createDefaultProps(
     nColors: 4,
     cpcPalette: mockCpcPalette,
     isClassicMode: true,
+    isPlusMode1: false,
     onAddChange: vi.fn(),
     onUpdateChange: vi.fn(),
     onRemoveChange: vi.fn(),
@@ -109,6 +110,62 @@ describe('RasterPanelView', () => {
       expect(
         screen.queryByRole('button', { name: /plus/i })
       ).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Mode indicator', () => {
+    it('should show CPC badge when not in Plus Mode 1', async () => {
+      render(
+        <RasterPanelView
+          {...createDefaultProps({ enabled: true, isPlusMode1: false })}
+        />
+      )
+      await expandSection()
+      expect(screen.getByText('CPC')).toBeInTheDocument()
+    })
+
+    it('should show CPC Plus Mode 1 badge in Plus Mode 1', async () => {
+      render(
+        <RasterPanelView
+          {...createDefaultProps({ enabled: true, isPlusMode1: true })}
+        />
+      )
+      await expandSection()
+      expect(screen.getByText('CPC Plus Mode 1')).toBeInTheDocument()
+    })
+
+    it('should show 1 change per line hint when not in Plus Mode 1', async () => {
+      render(
+        <RasterPanelView
+          {...createDefaultProps({ enabled: true, isPlusMode1: false })}
+        />
+      )
+      await expandSection()
+      // Check that modeHint element exists (text is mocked in tests)
+      const modeInfo = screen.getByText('CPC').parentElement
+      expect(modeInfo?.querySelectorAll('span')).toHaveLength(2) // badge + hint
+    })
+
+    it('should show 4 changes per line hint in Plus Mode 1', async () => {
+      render(
+        <RasterPanelView
+          {...createDefaultProps({ enabled: true, isPlusMode1: true })}
+        />
+      )
+      await expandSection()
+      // Check that modeHint element exists (text is mocked in tests)
+      const modeInfo = screen.getByText('CPC Plus Mode 1').parentElement
+      expect(modeInfo?.querySelectorAll('span')).toHaveLength(2) // badge + hint
+    })
+
+    it('should not show mode indicator when raster is disabled', async () => {
+      render(
+        <RasterPanelView
+          {...createDefaultProps({ enabled: false, isPlusMode1: false })}
+        />
+      )
+      await expandSection()
+      expect(screen.queryByText('CPC')).not.toBeInTheDocument()
     })
   })
 

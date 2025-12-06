@@ -28,6 +28,8 @@ export interface RasterPanelViewProps {
   readonly nColors: number
   readonly cpcPalette: CPCColor[]
   readonly isClassicMode: boolean
+  /** CPC Plus + Mode 1 allows 4 ink changes per line */
+  readonly isPlusMode1: boolean
   readonly onAddChange: () => void
   readonly onUpdateChange: (
     id: string,
@@ -236,6 +238,7 @@ export function RasterPanelView({
   nColors,
   cpcPalette,
   isClassicMode,
+  isPlusMode1,
   onAddChange,
   onUpdateChange,
   onRemoveChange
@@ -259,6 +262,21 @@ export function RasterPanelView({
             <Trans>Activer l'aperçu raster</Trans>
           </span>
         </div>
+
+        {enabled && (
+          <div className={styles.modeInfo}>
+            <span className={styles.modeBadge}>
+              {isPlusMode1 ? 'CPC Plus Mode 1' : 'CPC'}
+            </span>
+            <span className={styles.modeHint}>
+              {isPlusMode1 ? (
+                <Trans>4 changements d'encre par ligne maximum</Trans>
+              ) : (
+                <Trans>1 changement d'encre par ligne maximum</Trans>
+              )}
+            </span>
+          </div>
+        )}
 
         {enabled && (
           <>

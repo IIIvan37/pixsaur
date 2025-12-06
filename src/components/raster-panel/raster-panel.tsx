@@ -41,6 +41,8 @@ export function RasterPanel() {
   const maxLine = modeConfig.height - 1
   const isClassicMode = cpcHardware === 'classic'
   const hasImage = image !== null
+  // CPC Plus Mode 1 allows 4 ink changes per line (Mode 1 = 4 colors)
+  const isPlusMode1 = cpcHardware === 'plus' && modeConfig.nColors === 4
 
   // Extract colors from display palette slots
   const palette: Vector[] = displayPalette.map(
@@ -48,17 +50,35 @@ export function RasterPanel() {
   )
 
   const handleAddChange = () => {
-    // Find the last change (by line) to determine where to add the new one
-    const sortedChanges = [...changes].sort((a, b) => b.line - a.line)
-    const lastChange = sortedChanges[0]
+    // Find the last change (by creation order) to determine where to add the new one
+    const lastChange = changes[changes.length - 1]
 
-    // Default line is after the last change (+1), or 0 if no changes
+    // For CPC Plus Mode 1 only, we can have up to 4 ink changes per line
+    // Check if we can add another ink on the same line
+    if (isPlusMode1 && lastChange) {
+      const changesOnLastLine = changes.filter(
+        (c) => c.line === lastChange.line
+      )
+      const usedInks = new Set(changesOnLastLine.map((c) => c.inkIndex))
+
+      // If less than 4 inks used on this line, add another ink on same line
+      if (changesOnLastLine.length < 4) {
+        // Find next available ink (0-3 for Mode 1)
+        const nextInk = [0, 1, 2, 3].find((ink) => !usedInks.has(ink)) ?? 0
+        const defaultColor = palette[nextInk] || [0, 0, 0]
+
+        addChange({
+          line: lastChange.line,
+          inkIndex: nextInk,
+          color: defaultColor as Vector<'RGB'>
+        })
+        return
+      }
+    }
+
+    // Default behavior: new line
     const defaultLine = lastChange ? Math.min(lastChange.line + 1, maxLine) : 0
-
-    // Default ink is 0
     const defaultInkIndex = 0
-
-    // Use the palette color for this ink
     const defaultColor = palette[defaultInkIndex] || [0, 0, 0]
 
     addChange({
@@ -92,6 +112,7 @@ export function RasterPanel() {
       nColors={modeConfig.nColors}
       cpcPalette={cpcFullPalette}
       isClassicMode={isClassicMode}
+      isPlusMode1={isPlusMode1}
       onAddChange={handleAddChange}
       onUpdateChange={handleUpdateChange}
       onRemoveChange={handleRemoveChange}
