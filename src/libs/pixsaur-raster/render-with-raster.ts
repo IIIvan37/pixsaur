@@ -1,24 +1,24 @@
 import type { Vector } from '../pixsaur-color/src/type'
-import type { RasterRange } from './types'
+import type { RasterChange } from './types'
 
 /**
  * Render a preview image with raster effects applied.
  *
  * This function takes an index buffer (where each pixel contains an ink index 0-15)
  * and renders it to RGB using the appropriate palette for each line based on
- * the raster ranges defined.
+ * the raster changes defined.
  *
  * This is exactly how CPC hardware works: the raster changes the ink definition,
  * not the image data itself.
  *
- * Note: When a raster range ends, the ink keeps its modified color until
- * another raster range explicitly changes it. No automatic restore to base palette.
+ * When a change is applied, the ink keeps its new color until
+ * another change on the same ink explicitly modifies it.
  *
  * @param indexBuffer - Array of ink indices (0-15) for each pixel
  * @param width - Image width in pixels
  * @param height - Image height in pixels
  * @param globalPalette - Base palette (16 colors as RGB vectors)
- * @param rasterRanges - User-defined raster ranges
+ * @param rasterChanges - User-defined raster changes
  * @returns RGBA pixel data for display
  */
 export function renderPreviewWithRaster(
@@ -26,39 +26,29 @@ export function renderPreviewWithRaster(
   width: number,
   height: number,
   globalPalette: Vector[],
-  rasterRanges: RasterRange[]
+  rasterChanges: RasterChange[]
 ): Uint8ClampedArray {
   const output = new Uint8ClampedArray(width * height * 4)
 
-  // Sort ranges by startLine to process them in order
-  const sortedRanges = [...rasterRanges].sort(
-    (a, b) => a.startLine - b.startLine
-  )
-
-  // Build a map of line -> raster changes that START on this line
-  const rasterStartsByLine: Map<number, RasterRange[]> = new Map()
-  for (const range of sortedRanges) {
-    if (!rasterStartsByLine.has(range.startLine)) {
-      rasterStartsByLine.set(range.startLine, [])
+  // Build a map of line -> changes that occur on this line
+  const changesByLine: Map<number, RasterChange[]> = new Map()
+  for (const change of rasterChanges) {
+    if (!changesByLine.has(change.line)) {
+      changesByLine.set(change.line, [])
     }
-    rasterStartsByLine.get(range.startLine)!.push(range)
+    changesByLine.get(change.line)!.push(change)
   }
 
   // Current palette state - starts as a copy of global palette
-  // This persists across lines (no auto-restore)
+  // This persists across lines
   const currentPalette: Vector[] = globalPalette.map((c) => [...c] as Vector)
 
-  // Track active ranges (ranges that have started but not yet ended)
-  const activeRanges: Set<RasterRange> = new Set()
-
   for (let y = 0; y < height; y++) {
-    // Check for ranges that START on this line
-    const startingRanges = rasterStartsByLine.get(y)
-    if (startingRanges) {
-      for (const range of startingRanges) {
-        // Apply the raster change to current palette
-        currentPalette[range.inkIndex] = [...range.color] as Vector
-        activeRanges.add(range)
+    // Apply any changes that occur on this line
+    const lineChanges = changesByLine.get(y)
+    if (lineChanges) {
+      for (const change of lineChanges) {
+        currentPalette[change.inkIndex] = [...change.color] as Vector
       }
     }
 
@@ -77,15 +67,6 @@ export function renderPreviewWithRaster(
       output[outputIndex + 2] = color[2] // B
       output[outputIndex + 3] = 255 // A (fully opaque)
     }
-
-    // Remove ranges that END on this line (but don't restore color!)
-    for (const range of activeRanges) {
-      if (range.endLine === y) {
-        activeRanges.delete(range)
-        // Note: we intentionally do NOT restore currentPalette[range.inkIndex]
-        // The color persists until another range changes it
-      }
-    }
   }
 
   return output
@@ -99,14 +80,14 @@ export function createRasterPreviewImageData(
   width: number,
   height: number,
   globalPalette: Vector[],
-  rasterRanges: RasterRange[]
+  rasterChanges: RasterChange[]
 ): ImageData {
   const pixels = renderPreviewWithRaster(
     indexBuffer,
     width,
     height,
     globalPalette,
-    rasterRanges
+    rasterChanges
   )
   // Créer un ImageData vide puis copier les pixels
   const imageData = new ImageData(width, height)

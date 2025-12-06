@@ -6,15 +6,15 @@ import {
 import { imageAtom } from '@/app/store/image/image'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
 import {
-  addRasterRangeAtom,
+  addRasterChangeAtom,
+  rasterChangesAtom,
   rasterConflictsAtom,
   rasterEnabledAtom,
-  rasterRangesAtom,
-  removeRasterRangeAtom,
-  updateRasterRangeAtom
+  removeRasterChangeAtom,
+  updateRasterChangeAtom
 } from '@/app/store/raster/raster'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { RasterRange } from '@/libs/pixsaur-raster/types'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { cpcFullPalette } from '@/palettes/cpc-palette'
 import { RasterPanelView } from './raster-panel-view'
 
@@ -22,20 +22,20 @@ import { RasterPanelView } from './raster-panel-view'
  * RasterPanel container component.
  *
  * Connects Jotai atoms to the presentational RasterPanelView.
- * Manages raster range state and provides handlers for UI interactions.
+ * Manages raster change state and provides handlers for UI interactions.
  */
 export function RasterPanel() {
   const [enabled, setEnabled] = useAtom(rasterEnabledAtom)
-  const ranges = useAtomValue(rasterRangesAtom)
+  const changes = useAtomValue(rasterChangesAtom)
   const conflicts = useAtomValue(rasterConflictsAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const displayPalette = useAtomValue(displayPaletteAtom)
   const image = useAtomValue(imageAtom)
 
-  const addRange = useSetAtom(addRasterRangeAtom)
-  const updateRange = useSetAtom(updateRasterRangeAtom)
-  const removeRange = useSetAtom(removeRasterRangeAtom)
+  const addChange = useSetAtom(addRasterChangeAtom)
+  const updateChange = useSetAtom(updateRasterChangeAtom)
+  const removeChange = useSetAtom(removeRasterChangeAtom)
 
   // Max line is height - 1 (0-indexed)
   const maxLine = modeConfig.height - 1
@@ -47,51 +47,37 @@ export function RasterPanel() {
     (slot) => slot.color || ([0, 0, 0] as Vector)
   )
 
-  const handleAddRange = () => {
-    // Find the last range (by endLine) to determine where to start the new range
-    const sortedRanges = [...ranges].sort((a, b) => b.endLine - a.endLine)
-    const lastRange = sortedRanges[0]
+  const handleAddChange = () => {
+    // Find the last change (by line) to determine where to add the new one
+    const sortedChanges = [...changes].sort((a, b) => b.line - a.line)
+    const lastChange = sortedChanges[0]
 
-    // Default start is after the last range, or 0 if no ranges
-    const defaultStartLine = lastRange ? lastRange.endLine + 1 : 0
-    const defaultEndLine = Math.min(defaultStartLine + 50, maxLine)
+    // Default line is after the last change (+1), or 0 if no changes
+    const defaultLine = lastChange ? Math.min(lastChange.line + 1, maxLine) : 0
 
-    // Default ink is 0, but if adjacent to previous range with same ink, inherit its color
+    // Default ink is 0
     const defaultInkIndex = 0
 
-    // Check if we're adjacent to the last range and using the same ink
-    // If so, inherit the color from that range
-    let defaultColor: Vector
-    if (
-      lastRange &&
-      defaultStartLine === lastRange.endLine + 1 &&
-      lastRange.inkIndex === defaultInkIndex
-    ) {
-      // Inherit color from adjacent range on same ink
-      defaultColor = lastRange.color
-    } else {
-      // Use the palette color for this ink
-      defaultColor = palette[defaultInkIndex] || [0, 0, 0]
-    }
+    // Use the palette color for this ink
+    const defaultColor = palette[defaultInkIndex] || [0, 0, 0]
 
-    addRange({
-      startLine: defaultStartLine,
-      endLine: defaultEndLine,
+    addChange({
+      line: defaultLine,
       inkIndex: defaultInkIndex,
       color: defaultColor as Vector<'RGB'>
     })
   }
 
-  const handleUpdateRange = (
+  const handleUpdateChange = (
     id: string,
-    field: keyof Omit<RasterRange, 'id'>,
+    field: keyof Omit<RasterChange, 'id'>,
     value: number | Vector<'RGB'>
   ) => {
-    updateRange({ id, [field]: value })
+    updateChange({ id, [field]: value })
   }
 
-  const handleRemoveRange = (id: string) => {
-    removeRange(id)
+  const handleRemoveChange = (id: string) => {
+    removeChange(id)
   }
 
   return (
@@ -99,16 +85,16 @@ export function RasterPanel() {
       disabled={!hasImage}
       enabled={enabled}
       onEnabledChange={setEnabled}
-      ranges={ranges}
+      changes={changes}
       conflicts={conflicts}
       maxLine={maxLine}
       palette={palette}
       nColors={modeConfig.nColors}
       cpcPalette={cpcFullPalette}
       isClassicMode={isClassicMode}
-      onAddRange={handleAddRange}
-      onUpdateRange={handleUpdateRange}
-      onRemoveRange={handleRemoveRange}
+      onAddChange={handleAddChange}
+      onUpdateChange={handleUpdateChange}
+      onRemoveChange={handleRemoveChange}
     />
   )
 }

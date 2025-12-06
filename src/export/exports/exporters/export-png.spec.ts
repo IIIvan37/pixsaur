@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { RasterRange } from '@/libs/pixsaur-raster/types'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { exportPNGData, type PNGExportData } from './export-png'
 
 // Mock JSZip
@@ -181,11 +181,10 @@ describe('export-png', () => {
         }
       }
 
-      const rasterRanges: RasterRange[] = [
+      const rasterRanges: RasterChange[] = [
         {
           id: 'test-1',
-          startLine: 50,
-          endLine: 100,
+          line: 50,
           inkIndex: 1,
           color: [255, 0, 0] as Vector
         }
@@ -251,8 +250,7 @@ describe('export-png', () => {
         rasterRanges: [
           {
             id: 'test-1',
-            startLine: 50,
-            endLine: 100,
+            line: 50,
             inkIndex: 1,
             color: [255, 0, 0] as Vector
           }
@@ -395,12 +393,11 @@ describe('export-png', () => {
         [128, 128, 128] // ink 1 = gray
       ]
 
-      // Raster changes ink 1 to red on lines 1-2
-      const rasterRanges: RasterRange[] = [
+      // Raster changes ink 1 to red on line 1
+      const rasterRanges: RasterChange[] = [
         {
           id: 'test-1',
-          startLine: 1,
-          endLine: 2,
+          line: 1,
           inkIndex: 1,
           color: [255, 0, 0] as Vector
         }

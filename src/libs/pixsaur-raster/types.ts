@@ -1,15 +1,14 @@
 import type { Vector } from '../pixsaur-color/src/type'
 
 /**
- * A raster range defines a zone where an ink color is changed
+ * A raster change defines a point where an ink color is changed.
+ * The color persists until another change on the same ink.
  */
-export interface RasterRange {
-  /** Unique identifier for the range */
+export interface RasterChange {
+  /** Unique identifier for the change */
   id: string
-  /** Start line (0-based, inclusive) */
-  startLine: number
-  /** End line (inclusive) */
-  endLine: number
+  /** Line where the change occurs (0-based) */
+  line: number
   /** Ink index to modify (0-15) */
   inkIndex: number
   /** Target RGB color */
@@ -17,11 +16,16 @@ export interface RasterRange {
 }
 
 /**
+ * @deprecated Use RasterChange instead. Kept for backward compatibility.
+ */
+export type RasterRange = RasterChange
+
+/**
  * Raster configuration
  */
 export interface RasterConfig {
   enabled: boolean
-  ranges: RasterRange[]
+  changes: RasterChange[]
 }
 
 /**

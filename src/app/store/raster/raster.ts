@@ -1,7 +1,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { createRasterPreviewImageData } from '@/libs/pixsaur-raster'
-import type { RasterRange } from '@/libs/pixsaur-raster/types'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { previewImageAtom, previewIndexBufferAtom } from '../preview/preview'
 
 /**
@@ -13,89 +13,128 @@ export const rasterEnabledAtom = atomWithStorage<boolean>(
 )
 
 /**
- * User-defined raster ranges
+ * User-defined raster changes (single line changes, no ranges)
  */
-export const rasterRangesAtom = atomWithStorage<RasterRange[]>(
-  'pixsaur-raster-ranges',
+export const rasterChangesAtom = atomWithStorage<RasterChange[]>(
+  'pixsaur-raster-changes',
   []
 )
 
 /**
- * Generate a unique ID for a new raster range
+ * @deprecated Use rasterChangesAtom instead
  */
-export function generateRangeId(): string {
+export const rasterRangesAtom = rasterChangesAtom
+
+/**
+ * Generate a unique ID for a new raster change
+ */
+export function generateChangeId(): string {
   return `raster-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 /**
- * Action atom to add a new raster range
+ * @deprecated Use generateChangeId instead
  */
-export const addRasterRangeAtom = atom(
+export const generateRangeId = generateChangeId
+
+/**
+ * Action atom to add a new raster change
+ */
+export const addRasterChangeAtom = atom(
   null,
-  (get, set, range: Omit<RasterRange, 'id'>) => {
-    const ranges = get(rasterRangesAtom)
-    const newRange: RasterRange = {
-      ...range,
-      id: generateRangeId()
+  (get, set, change: Omit<RasterChange, 'id'>) => {
+    const changes = get(rasterChangesAtom)
+    const newChange: RasterChange = {
+      ...change,
+      id: generateChangeId()
     }
-    set(rasterRangesAtom, [...ranges, newRange])
-    return newRange.id
+    set(rasterChangesAtom, [...changes, newChange])
+    return newChange.id
   }
 )
 
 /**
- * Action atom to update an existing raster range
+ * @deprecated Use addRasterChangeAtom instead
  */
-export const updateRasterRangeAtom = atom(
+export const addRasterRangeAtom = addRasterChangeAtom
+
+/**
+ * Action atom to update an existing raster change
+ */
+export const updateRasterChangeAtom = atom(
   null,
-  (get, set, update: { id: string } & Partial<Omit<RasterRange, 'id'>>) => {
-    const ranges = get(rasterRangesAtom)
-    const index = ranges.findIndex((r) => r.id === update.id)
+  (get, set, update: { id: string } & Partial<Omit<RasterChange, 'id'>>) => {
+    const changes = get(rasterChangesAtom)
+    const index = changes.findIndex((c) => c.id === update.id)
     if (index === -1) return false
 
-    const updatedRanges = [...ranges]
-    updatedRanges[index] = { ...updatedRanges[index], ...update }
-    set(rasterRangesAtom, updatedRanges)
+    const updatedChanges = [...changes]
+    updatedChanges[index] = { ...updatedChanges[index], ...update }
+    set(rasterChangesAtom, updatedChanges)
     return true
   }
 )
 
 /**
- * Action atom to remove a raster range by ID
+ * @deprecated Use updateRasterChangeAtom instead
  */
-export const removeRasterRangeAtom = atom(null, (get, set, id: string) => {
-  const ranges = get(rasterRangesAtom)
+export const updateRasterRangeAtom = updateRasterChangeAtom
+
+/**
+ * Action atom to remove a raster change by ID
+ */
+export const removeRasterChangeAtom = atom(null, (get, set, id: string) => {
+  const changes = get(rasterChangesAtom)
   set(
-    rasterRangesAtom,
-    ranges.filter((r) => r.id !== id)
+    rasterChangesAtom,
+    changes.filter((c) => c.id !== id)
   )
 })
 
 /**
- * Action atom to clear all raster ranges
+ * @deprecated Use removeRasterChangeAtom instead
  */
-export const clearRasterRangesAtom = atom(null, (_get, set) => {
-  set(rasterRangesAtom, [])
+export const removeRasterRangeAtom = removeRasterChangeAtom
+
+/**
+ * Action atom to clear all raster changes
+ */
+export const clearRasterChangesAtom = atom(null, (_get, set) => {
+  set(rasterChangesAtom, [])
 })
 
 /**
- * Derived atom: check if any ranges overlap (regardless of ink)
- * Returns array of conflicting range IDs
+ * @deprecated Use clearRasterChangesAtom instead
+ */
+export const clearRasterRangesAtom = clearRasterChangesAtom
+
+/**
+ * Derived atom: check for conflicts (same ink on same line)
+ * Returns array of conflicting change IDs
  */
 export const rasterConflictsAtom = atom((get) => {
-  const ranges = get(rasterRangesAtom)
+  const changes = get(rasterChangesAtom)
   const conflicts: string[] = []
 
-  for (let i = 0; i < ranges.length; i++) {
-    for (let j = i + 1; j < ranges.length; j++) {
-      const a = ranges[i]
-      const b = ranges[j]
+  // Group by line
+  const byLine = new Map<number, RasterChange[]>()
+  for (const change of changes) {
+    const existing = byLine.get(change.line) || []
+    existing.push(change)
+    byLine.set(change.line, existing)
+  }
 
-      // Check if overlapping lines (regardless of ink)
-      const overlaps = !(a.endLine < b.startLine || b.endLine < a.startLine)
-      if (overlaps) {
-        if (!conflicts.includes(a.id)) conflicts.push(a.id)
-        if (!conflicts.includes(b.id)) conflicts.push(b.id)
+  // Find lines with multiple changes on the same ink
+  for (const [, lineChanges] of byLine) {
+    const inksSeen = new Map<number, string>()
+    for (const change of lineChanges) {
+      if (inksSeen.has(change.inkIndex)) {
+        // Conflict: same ink modified twice on same line
+        const existingId = inksSeen.get(change.inkIndex)!
+        if (!conflicts.includes(existingId)) conflicts.push(existingId)
+        if (!conflicts.includes(change.id)) conflicts.push(change.id)
+      } else {
+        inksSeen.set(change.inkIndex, change.id)
       }
     }
   }
@@ -109,9 +148,9 @@ export const rasterConflictsAtom = atom((get) => {
  */
 export const rasterPreviewImageAtom = atom(async (get) => {
   const enabled = get(rasterEnabledAtom)
-  const ranges = get(rasterRangesAtom)
+  const changes = get(rasterChangesAtom)
 
-  if (!enabled || ranges.length === 0) {
+  if (!enabled || changes.length === 0) {
     return null
   }
 
@@ -122,7 +161,7 @@ export const rasterPreviewImageAtom = atom(async (get) => {
 
   const { buffer, width, height, palette } = indexBufferData
 
-  return createRasterPreviewImageData(buffer, width, height, palette, ranges)
+  return createRasterPreviewImageData(buffer, width, height, palette, changes)
 })
 
 /**

@@ -18,7 +18,7 @@
 
 .headerRow {
   display: grid;
-  grid-template-columns: 24px 100px 16px 100px auto 32px 28px 20px;
+  grid-template-columns: 24px 100px auto 32px 28px 20px;
   gap: 0.5rem;
   align-items: center;
   padding: 0 0.75rem;
@@ -31,15 +31,17 @@
   letter-spacing: 0.05em;
 }
 
-.rangesList {
+.rangesList,
+.changesList {
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
 }
 
-.rangeRow {
+.rangeRow,
+.changeRow {
   display: grid;
-  grid-template-columns: 24px 100px 16px 100px auto 32px 28px 20px;
+  grid-template-columns: 24px 100px auto 32px 28px 20px;
   gap: 0.5rem;
   align-items: center;
   padding: 0.625rem 0.75rem;
@@ -51,28 +53,33 @@
   font-size: 0.9375rem;
 }
 
-.rangeRow:hover {
+.rangeRow:hover,
+.changeRow:hover {
   background: rgba(128, 128, 128, 0.08);
   border-color: rgba(128, 128, 128, 0.4);
 }
 
-.rangeRow.conflict {
+.rangeRow.conflict,
+.changeRow.conflict {
   border-color: var(--error, #ef4444);
   background: rgba(239, 68, 68, 0.03);
 }
 
-.rangeRow.conflict:hover {
+.rangeRow.conflict:hover,
+.changeRow.conflict:hover {
   background: rgba(239, 68, 68, 0.08);
 }
 
-.rangeNumber {
+.rangeNumber,
+.changeNumber {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text-secondary);
   text-align: center;
 }
 
-.sliderGroup {
+.sliderGroup,
+.lineSliderGroup {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -243,17 +250,20 @@
     display: none;
   }
 
-  .rangeRow {
+  .rangeRow,
+  .changeRow {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
   }
 
-  .rangeNumber {
+  .rangeNumber,
+  .changeNumber {
     flex-shrink: 0;
   }
 
-  .sliderGroup {
+  .sliderGroup,
+  .lineSliderGroup {
     flex: 1 1 80px;
     min-width: 80px;
   }

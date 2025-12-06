@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { RasterRange } from '@/libs/pixsaur-raster/types'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCColor } from '@/libs/types'
 import { RasterPanelView, type RasterPanelViewProps } from './raster-panel-view'
 
@@ -40,16 +40,16 @@ function createDefaultProps(
   return {
     enabled: false,
     onEnabledChange: vi.fn(),
-    ranges: [],
+    changes: [],
     conflicts: [],
     maxLine: 199,
     palette: mockPalette,
     nColors: 4,
     cpcPalette: mockCpcPalette,
     isClassicMode: true,
-    onAddRange: vi.fn(),
-    onUpdateRange: vi.fn(),
-    onRemoveRange: vi.fn(),
+    onAddChange: vi.fn(),
+    onUpdateChange: vi.fn(),
+    onRemoveChange: vi.fn(),
     ...overrides
   }
 }
@@ -113,10 +113,10 @@ describe('RasterPanelView', () => {
   })
 
   describe('Empty state', () => {
-    it('should show empty state when enabled with no ranges', async () => {
+    it('should show empty state when enabled with no changes', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, ranges: [] })}
+          {...createDefaultProps({ enabled: true, changes: [] })}
         />
       )
       await expandSection()
@@ -126,12 +126,12 @@ describe('RasterPanelView', () => {
     })
   })
 
-  describe('Adding ranges', () => {
-    it('should call onAddRange when add button is clicked', async () => {
-      const onAddRange = vi.fn()
+  describe('Adding changes', () => {
+    it('should call onAddChange when add button is clicked', async () => {
+      const onAddChange = vi.fn()
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, onAddRange })}
+          {...createDefaultProps({ enabled: true, onAddChange })}
         />
       )
       await expandSection()
@@ -143,45 +143,43 @@ describe('RasterPanelView', () => {
         await userEvent.click(addButton)
       }
 
-      expect(onAddRange).toHaveBeenCalledTimes(1)
+      expect(onAddChange).toHaveBeenCalledTimes(1)
     })
   })
 
-  describe('Displaying ranges', () => {
-    const mockRanges: RasterRange[] = [
+  describe('Displaying changes', () => {
+    const mockChanges: RasterChange[] = [
       {
-        id: 'range-1',
+        id: 'change-1',
         inkIndex: 0,
-        startLine: 0,
-        endLine: 50,
+        line: 0,
         color: [255, 0, 0]
       },
       {
-        id: 'range-2',
+        id: 'change-2',
         inkIndex: 1,
-        startLine: 60,
-        endLine: 100,
+        line: 60,
         color: [0, 255, 0]
       }
     ]
 
-    it('should render range rows when ranges exist', async () => {
+    it('should render change rows when changes exist', async () => {
       const { container } = render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, ranges: mockRanges })}
+          {...createDefaultProps({ enabled: true, changes: mockChanges })}
         />
       )
       await expandSection()
 
-      // Check for range rows by looking for elements with rangeRow class
-      const rangeRows = container.querySelectorAll('[class*="rangeRow"]')
-      expect(rangeRows.length).toBe(2)
+      // Check for change rows by looking for elements with changeRow class
+      const changeRows = container.querySelectorAll('[class*="changeRow"]')
+      expect(changeRows.length).toBe(2)
     })
 
-    it('should display startLine and endLine values', async () => {
+    it('should display line values', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, ranges: mockRanges })}
+          {...createDefaultProps({ enabled: true, changes: mockChanges })}
         />
       )
       await expandSection()
@@ -189,29 +187,28 @@ describe('RasterPanelView', () => {
       // The values should be displayed as text (use getAllByText for multiple matches)
       const zeroElements = screen.getAllByText('0')
       expect(zeroElements.length).toBeGreaterThan(0)
-      expect(screen.getByText('50')).toBeInTheDocument()
+      expect(screen.getByText('60')).toBeInTheDocument()
     })
   })
 
-  describe('Removing ranges', () => {
-    const mockRanges: RasterRange[] = [
+  describe('Removing changes', () => {
+    const mockChanges: RasterChange[] = [
       {
-        id: 'range-1',
+        id: 'change-1',
         inkIndex: 0,
-        startLine: 0,
-        endLine: 50,
+        line: 0,
         color: [255, 0, 0]
       }
     ]
 
-    it('should call onRemoveRange when delete button is clicked', async () => {
-      const onRemoveRange = vi.fn()
+    it('should call onRemoveChange when delete button is clicked', async () => {
+      const onRemoveChange = vi.fn()
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: mockRanges,
-            onRemoveRange
+            changes: mockChanges,
+            onRemoveChange
           })}
         />
       )
@@ -225,59 +222,55 @@ describe('RasterPanelView', () => {
         await userEvent.click(deleteButton)
       }
 
-      expect(onRemoveRange).toHaveBeenCalledWith('range-1')
+      expect(onRemoveChange).toHaveBeenCalledWith('change-1')
     })
   })
 
   describe('Conflict highlighting', () => {
-    const conflictingRanges: RasterRange[] = [
+    const conflictingChanges: RasterChange[] = [
       {
-        id: 'range-1',
+        id: 'change-1',
         inkIndex: 0,
-        startLine: 0,
-        endLine: 50,
+        line: 50,
         color: [255, 0, 0]
       },
       {
-        id: 'range-2',
-        inkIndex: 1,
-        startLine: 40,
-        endLine: 80,
+        id: 'change-2',
+        inkIndex: 0,
+        line: 50,
         color: [0, 255, 0]
       }
     ]
 
-    it('should mark conflicting ranges visually', async () => {
+    it('should mark conflicting changes visually', async () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: conflictingRanges,
-            conflicts: ['range-1', 'range-2']
+            changes: conflictingChanges,
+            conflicts: ['change-1', 'change-2']
           })}
         />
       )
       await expandSection()
 
-      // Check that conflict class is applied to range rows
+      // Check that conflict class is applied to change rows
       const conflictRows = container.querySelectorAll('[class*="conflict"]')
       expect(conflictRows.length).toBeGreaterThan(0)
     })
 
-    it('should not mark non-conflicting ranges', async () => {
-      const nonConflictingRanges: RasterRange[] = [
+    it('should not mark non-conflicting changes', async () => {
+      const nonConflictingChanges: RasterChange[] = [
         {
-          id: 'range-1',
+          id: 'change-1',
           inkIndex: 0,
-          startLine: 0,
-          endLine: 50,
+          line: 0,
           color: [255, 0, 0]
         },
         {
-          id: 'range-2',
+          id: 'change-2',
           inkIndex: 1,
-          startLine: 60,
-          endLine: 100,
+          line: 60,
           color: [0, 255, 0]
         }
       ]
@@ -286,16 +279,16 @@ describe('RasterPanelView', () => {
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: nonConflictingRanges,
+            changes: nonConflictingChanges,
             conflicts: []
           })}
         />
       )
       await expandSection()
 
-      // Get range rows and check they don't have conflict class
-      const rangeRows = container.querySelectorAll('[class*="rangeRow"]')
-      rangeRows.forEach((row) => {
+      // Get change rows and check they don't have conflict class
+      const changeRows = container.querySelectorAll('[class*="changeRow"]')
+      changeRows.forEach((row) => {
         // Should not have the conflict modifier class
         expect(row.className).not.toMatch(/_conflict_/)
       })
@@ -303,12 +296,11 @@ describe('RasterPanelView', () => {
   })
 
   describe('Ink selector', () => {
-    const mockRanges: RasterRange[] = [
+    const mockChanges: RasterChange[] = [
       {
-        id: 'range-1',
+        id: 'change-1',
         inkIndex: 0,
-        startLine: 0,
-        endLine: 50,
+        line: 0,
         color: [255, 0, 0]
       }
     ]
@@ -318,7 +310,7 @@ describe('RasterPanelView', () => {
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: mockRanges,
+            changes: mockChanges,
             nColors: 4
           })}
         />
@@ -330,15 +322,15 @@ describe('RasterPanelView', () => {
       expect(inkButtons).toHaveLength(4)
     })
 
-    it('should call onUpdateRange for inkIndex and color when ink is changed', async () => {
-      const onUpdateRange = vi.fn()
+    it('should call onUpdateChange for inkIndex and color when ink is changed', async () => {
+      const onUpdateChange = vi.fn()
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: mockRanges,
+            changes: mockChanges,
             nColors: 4,
-            onUpdateRange
+            onUpdateChange
           })}
         />
       )
@@ -351,59 +343,56 @@ describe('RasterPanelView', () => {
       await userEvent.click(inkButtons[2])
 
       // Should update both inkIndex and color
-      expect(onUpdateRange).toHaveBeenCalledWith('range-1', 'inkIndex', 2)
-      expect(onUpdateRange).toHaveBeenCalledWith(
-        'range-1',
+      expect(onUpdateChange).toHaveBeenCalledWith('change-1', 'inkIndex', 2)
+      expect(onUpdateChange).toHaveBeenCalledWith(
+        'change-1',
         'color',
         mockPalette[2]
       )
-      expect(onUpdateRange).toHaveBeenCalledTimes(2)
+      expect(onUpdateChange).toHaveBeenCalledTimes(2)
     })
   })
 
   describe('Slider interactions', () => {
-    const mockRanges: RasterRange[] = [
+    const mockChanges: RasterChange[] = [
       {
-        id: 'range-1',
+        id: 'change-1',
         inkIndex: 0,
-        startLine: 10,
-        endLine: 50,
+        line: 10,
         color: [255, 0, 0]
       }
     ]
 
-    it('should display current startLine and endLine values', async () => {
+    it('should display current line value', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, ranges: mockRanges })}
+          {...createDefaultProps({ enabled: true, changes: mockChanges })}
         />
       )
       await expandSection()
 
       expect(screen.getByText('10')).toBeInTheDocument()
-      expect(screen.getByText('50')).toBeInTheDocument()
     })
 
-    it('should render sliders for start and end lines', async () => {
+    it('should render slider for line', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, ranges: mockRanges })}
+          {...createDefaultProps({ enabled: true, changes: mockChanges })}
         />
       )
       await expandSection()
 
       const sliders = screen.getAllByRole('slider')
-      expect(sliders.length).toBeGreaterThanOrEqual(2)
+      expect(sliders.length).toBeGreaterThanOrEqual(1)
     })
   })
 
   describe('Color picker', () => {
-    const mockRanges: RasterRange[] = [
+    const mockChanges: RasterChange[] = [
       {
-        id: 'range-1',
+        id: 'change-1',
         inkIndex: 0,
-        startLine: 0,
-        endLine: 50,
+        line: 0,
         color: [255, 0, 0]
       }
     ]
@@ -413,7 +402,7 @@ describe('RasterPanelView', () => {
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: mockRanges,
+            changes: mockChanges,
             isClassicMode: true
           })}
         />
@@ -432,14 +421,14 @@ describe('RasterPanelView', () => {
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: mockRanges,
+            changes: mockChanges,
             isClassicMode: true
           })}
         />
       )
       await expandSection()
 
-      // Color swatch should show the range color (hex format in style)
+      // Color swatch should show the change color (hex format in style)
       const colorSwatch = container.querySelector('[class*="colorSwatch"]')
       expect(colorSwatch).toBeInTheDocument()
       // The style is set as hex, check for the hex color
@@ -447,13 +436,12 @@ describe('RasterPanelView', () => {
     })
 
     it('should display color matching the ink color from palette', async () => {
-      // Range with inkIndex 2, color should match palette[2] = [255, 0, 0]
-      const rangeWithInk2: RasterRange[] = [
+      // Change with inkIndex 2, color should match palette[2] = [255, 0, 0]
+      const changeWithInk2: RasterChange[] = [
         {
-          id: 'range-1',
+          id: 'change-1',
           inkIndex: 2,
-          startLine: 0,
-          endLine: 50,
+          line: 0,
           color: [255, 0, 0]
         }
       ]
@@ -461,7 +449,7 @@ describe('RasterPanelView', () => {
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: rangeWithInk2,
+            changes: changeWithInk2,
             isClassicMode: true
           })}
         />
@@ -475,14 +463,13 @@ describe('RasterPanelView', () => {
     })
 
     it('should update color when ink is changed to use new ink color', async () => {
-      const onUpdateRange = vi.fn()
+      const onUpdateChange = vi.fn()
       // Start with ink 0 (black [0,0,0])
-      const rangeWithInk0: RasterRange[] = [
+      const changeWithInk0: RasterChange[] = [
         {
-          id: 'range-1',
+          id: 'change-1',
           inkIndex: 0,
-          startLine: 0,
-          endLine: 50,
+          line: 0,
           color: [0, 0, 0]
         }
       ]
@@ -490,9 +477,9 @@ describe('RasterPanelView', () => {
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: rangeWithInk0,
+            changes: changeWithInk0,
             nColors: 4,
-            onUpdateRange
+            onUpdateChange
           })}
         />
       )
@@ -503,23 +490,22 @@ describe('RasterPanelView', () => {
       await userEvent.click(inkButtons[1])
 
       // Should update inkIndex to 1
-      expect(onUpdateRange).toHaveBeenCalledWith('range-1', 'inkIndex', 1)
+      expect(onUpdateChange).toHaveBeenCalledWith('change-1', 'inkIndex', 1)
       // Should also update color to palette[1] = [0, 0, 255]
-      expect(onUpdateRange).toHaveBeenCalledWith(
-        'range-1',
+      expect(onUpdateChange).toHaveBeenCalledWith(
+        'change-1',
         'color',
         [0, 0, 255]
       )
     })
 
     it('should update color to green when selecting ink 3', async () => {
-      const onUpdateRange = vi.fn()
-      const rangeWithInk0: RasterRange[] = [
+      const onUpdateChange = vi.fn()
+      const changeWithInk0: RasterChange[] = [
         {
-          id: 'range-1',
+          id: 'change-1',
           inkIndex: 0,
-          startLine: 0,
-          endLine: 50,
+          line: 0,
           color: [0, 0, 0]
         }
       ]
@@ -527,9 +513,9 @@ describe('RasterPanelView', () => {
         <RasterPanelView
           {...createDefaultProps({
             enabled: true,
-            ranges: rangeWithInk0,
+            changes: changeWithInk0,
             nColors: 4,
-            onUpdateRange
+            onUpdateChange
           })}
         />
       )
@@ -540,10 +526,10 @@ describe('RasterPanelView', () => {
       await userEvent.click(inkButtons[3])
 
       // Should update inkIndex to 3
-      expect(onUpdateRange).toHaveBeenCalledWith('range-1', 'inkIndex', 3)
+      expect(onUpdateChange).toHaveBeenCalledWith('change-1', 'inkIndex', 3)
       // Should also update color to palette[3] = [0, 255, 0] (green)
-      expect(onUpdateRange).toHaveBeenCalledWith(
-        'range-1',
+      expect(onUpdateChange).toHaveBeenCalledWith(
+        'change-1',
         'color',
         [0, 255, 0]
       )
