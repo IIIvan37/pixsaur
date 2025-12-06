@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { logger } from '@/core/logger'
+import { weightedRGBDistance } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { effectiveModeConfigAtom } from '../config/config'
 import type { PaletteSlot } from './types'
@@ -11,9 +12,15 @@ type SerializedPaletteSlot = {
   locked: boolean
 }
 
-// Utilitaire: compare deux vecteurs RGB
-function vectorsEqual(a: Vector<'RGB'>, b: Vector<'RGB'>): boolean {
-  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2]
+// Seuil de distance minimale pour éviter les doublons visuels
+const MIN_PERCEPTUAL_DISTANCE = 50
+
+// Utilitaire: vérifie si une couleur est trop proche d'une des couleurs lockées
+function isColorTooClose(color: Vector, lockedColors: Vector[]): boolean {
+  return lockedColors.some(
+    (locked) =>
+      Math.sqrt(weightedRGBDistance(color, locked)) < MIN_PERCEPTUAL_DISTANCE
+  )
 }
 
 // Utilitaire: filtre les slots dans la limite du mode
@@ -89,24 +96,13 @@ export const setReducedPaletteAtom = atom(
     const modeConfig = get(effectiveModeConfigAtom)
     const maxColors = modeConfig.nColors
 
-    logger.info('[Palette] setReducedPaletteAtom called', {
-      reducedLength: reduced.length,
-      maxColors,
-      prevLockedSlots: prev
-        .slice(0, maxColors)
-        .map((s, i) => ({ i, locked: s.locked, hasColor: !!s.color }))
-        .filter((s) => s.locked)
-    })
-
     // 2.1 - extraire les vecteurs des slots lockes
     const lockedVecs = prev
       .filter((slot) => slot.locked && slot.color)
       .map((slot) => slot.color!) // Vector<'RGB'>[]
 
-    // 2.2 - filtrer reduced pour oter toute couleur deja lockee
-    const queue = reduced.filter(
-      (vec) => !lockedVecs.some((lv) => vectorsEqual(lv, vec))
-    )
+    // 2.2 - filtrer reduced pour oter toute couleur deja lockee ou trop proche d'une lockee
+    const queue = reduced.filter((vec) => !isColorTooClose(vec, lockedVecs))
 
     // 2.3 - reconstruire la nouvelle palette (limiter a maxColors)
     const newSlots: PaletteSlot[] = []
@@ -121,15 +117,6 @@ export const setReducedPaletteAtom = atom(
       }
     }
 
-    logger.info('[Palette] New slots after reconstruction', {
-      queueRemaining: queue.length,
-      newSlots: newSlots.map((s, i) => ({
-        i,
-        locked: s.locked,
-        hasColor: !!s.color
-      }))
-    })
-
     // Completer avec des slots vides pour atteindre 16
     // Preserver l'etat verrouille des slots existants hors du mode actuel
     while (newSlots.length < 16) {
@@ -138,6 +125,30 @@ export const setReducedPaletteAtom = atom(
       // Conserver le locked mais effacer la couleur (hors mode actuel)
       newSlots.push({ color: null, locked: existingSlot?.locked ?? false })
     }
+
+    // Verifier si la palette a change avant de mettre a jour
+    // pour eviter une boucle infinie de re-renders
+    if (shallowEqualPalette(prev, newSlots)) {
+      return // Pas de changement, ne pas declencher de mise a jour
+    }
+
+    logger.info('[Palette] setReducedPaletteAtom called', {
+      reducedLength: reduced.length,
+      maxColors,
+      prevLockedSlots: prev
+        .slice(0, maxColors)
+        .map((s, i) => ({ i, locked: s.locked, hasColor: !!s.color }))
+        .filter((s) => s.locked)
+    })
+
+    logger.info('[Palette] New slots after reconstruction', {
+      queueRemaining: queue.length,
+      newSlots: newSlots.map((s, i) => ({
+        i,
+        locked: s.locked,
+        hasColor: !!s.color
+      }))
+    })
 
     set(userPaletteAtom, newSlots)
   }

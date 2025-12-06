@@ -2,7 +2,10 @@ import { atom } from 'jotai'
 import { logger } from '@/core'
 import { quantifyToCPCPlus, quantizeCPC } from '@/export'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
-import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
+import {
+  DISTANCE_METRICS_BY_COLORSPACE,
+  weightedRGBDistance
+} from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
@@ -30,6 +33,54 @@ import {
   lockedVectorsAtom,
   userPaletteAtom
 } from '../palette/palette'
+import type { PaletteSlot } from '../palette/types'
+
+// ============================================================================
+// Utilitaires pour le filtrage des couleurs lockées
+// ============================================================================
+
+// Seuil de distance minimale pour éviter les doublons visuels
+const MIN_PERCEPTUAL_DISTANCE = 50
+
+/**
+ * Calcule la distance perceptuelle entre deux couleurs RGB
+ */
+function perceptualColorDistance(a: Vector, b: Vector): number {
+  return Math.sqrt(weightedRGBDistance(a, b))
+}
+
+/**
+ * Vérifie si une couleur est trop proche d'une des couleurs lockées
+ */
+function isColorTooCloseToLocked(
+  color: Vector,
+  lockedColors: Vector[]
+): boolean {
+  return lockedColors.some(
+    (locked) => perceptualColorDistance(color, locked) < MIN_PERCEPTUAL_DISTANCE
+  )
+}
+
+/**
+ * Filtre les couleurs de reducedPalette qui sont trop proches des couleurs lockées
+ */
+function filterReducedPalette(
+  reducedPalette: Vector[],
+  lockedColors: Vector[]
+): Vector[] {
+  return reducedPalette.filter(
+    (color) => !isColorTooCloseToLocked(color, lockedColors)
+  )
+}
+
+/**
+ * Extrait les couleurs des slots lockés (non vides)
+ */
+function extractLockedColors(userPalette: PaletteSlot[]): Vector[] {
+  return userPalette
+    .filter((slot) => slot.locked && slot.color)
+    .map((slot) => slot.color!)
+}
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -418,6 +469,47 @@ export const reducedPaletteRgbAtom = atom(async (get) => {
   return projected
 })
 
+// Atom pour l'affichage dans ColorPalette
+// Combine l'état locked de userPaletteAtom avec les couleurs de reducedPaletteRgbAtom
+// pour les slots non lockés
+export const displayPaletteAtom = atom(async (get) => {
+  const userPalette = get(userPaletteAtom)
+  const reducedPalette = await get(reducedPaletteRgbAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
+
+  // Filtrer les couleurs trop proches des couleurs lockées
+  const lockedColors = extractLockedColors(userPalette)
+  const filteredReduced = filterReducedPalette(reducedPalette, lockedColors)
+
+  const displaySlots: PaletteSlot[] = []
+  let reducedIndex = 0
+
+  for (let i = 0; i < 16; i++) {
+    const slot = userPalette[i]
+    if (i >= modeConfig.nColors) {
+      // Hors du mode actuel: garder le slot tel quel
+      displaySlots.push({ ...slot })
+    } else if (slot?.locked) {
+      // Slot locké: garder tel quel (avec ou sans couleur)
+      displaySlots.push({ ...slot })
+    } else {
+      // Slot non locké: utiliser la couleur de filteredReduced
+      if (reducedIndex < filteredReduced.length) {
+        const color = filteredReduced[reducedIndex]
+        displaySlots.push({
+          color: color,
+          locked: false
+        })
+        reducedIndex++
+      } else {
+        displaySlots.push({ color: null, locked: false })
+      }
+    }
+  }
+
+  return displaySlots
+})
+
 // Valeur spéciale pour marquer un slot ignoré dans la palette d'export
 export const IGNORED_SLOT: Vector = [-1, -1, -1]
 
@@ -433,23 +525,28 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
     return [] as Vector[]
   }
 
-  // Trouver la couleur la plus sombre pour remplir les slots vides non lockés
+  // Trouver la couleur la plus sombre pour remplir les slots vides
   const darkestColor = reducedPalette.reduce((darkest, color) => {
     const colorLuminance = luminance(color)
     const darkestLuminance = luminance(darkest)
     return colorLuminance < darkestLuminance ? color : darkest
   }, reducedPalette[0])
 
+  // Filtrer les couleurs trop proches des couleurs lockées
+  const lockedColors = extractLockedColors(userPalette)
+  const filteredReduced = filterReducedPalette(reducedPalette, lockedColors)
+
   // Reconstruire la palette complète en utilisant userPalette comme référence
   const fullPalette: Vector[] = []
+  let reducedIndex = 0 // Compteur pour parcourir filteredReduced
 
   for (let i = 0; i < modeConfig.nColors; i++) {
     const slot = userPalette[i]
     if (slot?.locked && slot.color === null) {
       // Slot vide locké: marquer comme ignoré avec [-1, -1, -1]
       fullPalette.push(IGNORED_SLOT)
-    } else if (slot?.color) {
-      // Slot avec couleur: quantifier la couleur du slot selon le hardware
+    } else if (slot?.locked && slot.color) {
+      // Slot avec couleur lockée: quantifier la couleur du slot selon le hardware
       const color = [...slot.color] as Vector
       if (cpcHardware === 'classic') {
         color[0] = quantizeCPC(color[0])
@@ -462,8 +559,13 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
       }
       fullPalette.push(color)
     } else {
-      // Slot sans couleur (non locké): remplir avec la couleur la plus sombre
-      fullPalette.push(darkestColor)
+      // Slot non locké: utiliser filteredReduced avec un compteur
+      if (reducedIndex < filteredReduced.length) {
+        fullPalette.push(filteredReduced[reducedIndex])
+        reducedIndex++
+      } else {
+        fullPalette.push(darkestColor)
+      }
     }
   }
 

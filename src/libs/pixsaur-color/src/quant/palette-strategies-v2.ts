@@ -24,16 +24,46 @@ export interface StrategyResult {
 }
 
 /**
+ * Options pour les stratégies de palette
+ * basePaletteSize: taille de la palette de base (27 pour CPC Classic, 4096 pour CPC Plus)
+ * preselectedColors: couleurs présélectionnées (lockées) - utilisé pour éviter de sélectionner des couleurs trop proches
+ */
+export interface StrategyOptions {
+  basePaletteSize?: number
+  preselectedColors?: Vector[]
+}
+
+/**
  * Interface commune pour toutes les fonctions de stratégie de palette
  */
 export type PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices?: number[]
+  preselectedIndices?: number[],
+  options?: StrategyOptions
 ) => StrategyResult
 
 function calculatePerceptualDistance(color1: Vector, color2: Vector): number {
   return Math.sqrt(weightedRGBDistance(color1, color2))
+}
+
+/**
+ * Détermine si on est en mode CPC Classic basé sur la taille de la palette de base
+ * CPC Classic = 27 couleurs, CPC Plus = 4096 couleurs
+ *
+ * IMPORTANT: Ne pas utiliser candidates.length car les candidats sont préfiltrés
+ * et ne reflètent pas la taille réelle de la palette hardware
+ */
+function isCPCClassicPalette(
+  options?: StrategyOptions,
+  candidatesCount?: number
+): boolean {
+  // Si on a l'info explicite, l'utiliser
+  if (options?.basePaletteSize !== undefined) {
+    return options.basePaletteSize <= 27
+  }
+  // Fallback: utiliser le nombre de candidats (comportement legacy, moins fiable)
+  return (candidatesCount ?? 0) <= 27
 }
 
 /**
@@ -47,6 +77,285 @@ function calculateSaturation(color: Vector): number {
   const max = Math.max(r, g, b)
   const min = Math.min(r, g, b)
   return max > 0 ? (max - min) / max : 0
+}
+
+/**
+ * Calcule la "vivacité" d'une couleur
+ * Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
+ */
+function calculateVividnessForColor(color: Vector): number {
+  const [r, g, b] = color
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const saturation = max === 0 ? 0 : (max - min) / max
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Saturation est le facteur principal (puissance 2 pour accentuer)
+  // Pénaliser les couleurs trop sombres (< 0.25) ou trop claires (> 0.85)
+  const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1.0 : 0.3
+
+  // Score = saturation² * (0.7 + 0.3 * luminance) * brightnessBonus
+  return saturation * saturation * (0.7 + 0.3 * luminance) * brightnessBonus
+}
+
+/**
+ * Calcule la teinte (hue) d'une couleur (0-360)
+ * Retourne -1 pour les couleurs achromatiques (gris)
+ */
+function calculateHue(color: Vector): number {
+  const r = color[0] / 255
+  const g = color[1] / 255
+  const b = color[2] / 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const delta = max - min
+
+  // Couleur achromatique (gris)
+  if (delta < 0.01) return -1
+
+  let hue = 0
+  if (max === r) {
+    hue = ((g - b) / delta) % 6
+  } else if (max === g) {
+    hue = (b - r) / delta + 2
+  } else {
+    hue = (r - g) / delta + 4
+  }
+
+  hue *= 60
+  if (hue < 0) hue += 360
+
+  return hue
+}
+
+/**
+ * Calcule la distance circulaire entre deux teintes (0-180)
+ * Retourne 180 si l'une des couleurs est achromatique (considérée comme très différente)
+ */
+function calculateHueDistance(hue1: number, hue2: number): number {
+  // Si l'une des couleurs est achromatique, considérer comme très différente
+  if (hue1 < 0 || hue2 < 0) return 180
+
+  let diff = Math.abs(hue1 - hue2)
+  if (diff > 180) diff = 360 - diff
+  return diff
+}
+
+/**
+ * Calcule la distance de teinte minimale entre un candidat et les couleurs sélectionnées
+ * Ignore les couleurs peu saturées (gris) car leur teinte n'est pas significative
+ */
+function calculateMinHueDistance(
+  candidate: ColorCandidate,
+  selectedColors: Vector[]
+): number {
+  const candidateHue = calculateHue(candidate.converted)
+  const candidateSat = calculateSaturation(candidate.converted)
+
+  // Si le candidat est peu saturé, sa teinte n'est pas significative
+  if (candidateSat < 0.15) return 180
+
+  let minDist = 180
+  for (const selected of selectedColors) {
+    const selectedSat = calculateSaturation(selected)
+    // Ignorer les couleurs peu saturées dans la comparaison
+    if (selectedSat < 0.15) continue
+
+    const selectedHue = calculateHue(selected)
+    const dist = calculateHueDistance(candidateHue, selectedHue)
+    minDist = Math.min(minDist, dist)
+  }
+
+  return minDist
+}
+
+/**
+ * Filtre les candidats pour garantir une diversité de teinte
+ * Pour CPC Plus, assure que les candidats sélectionnés couvrent différentes teintes
+ * et ne sont pas tous des couleurs achromatiques
+ * @param colorsToAvoid - Couleurs présélectionnées (lockées) à éviter (ne pas sélectionner de couleurs trop proches)
+ */
+function filterCandidatesWithHueDiversity(
+  candidates: ColorCandidate[],
+  maxCandidates: number,
+  isCPCClassic: boolean,
+  colorsToAvoid: Vector[] = []
+): ColorCandidate[] {
+  if (candidates.length <= maxCandidates) return candidates
+
+  // Fonction pour vérifier si un candidat est trop proche d'une couleur à éviter
+  const isTooCloseToAvoidedColors = (candidate: ColorCandidate): boolean => {
+    const MIN_DISTANCE = 50
+    for (const avoidColor of colorsToAvoid) {
+      const dist = calculatePerceptualDistance(candidate.converted, avoidColor)
+      if (dist < MIN_DISTANCE) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const sorted = [...candidates].sort((a, b) => b.frequency - a.frequency)
+
+  if (isCPCClassic) {
+    // Pour CPC Classic, garder le comportement simple
+    return sorted.slice(0, maxCandidates)
+  }
+
+  // Fonction pour calculer la "vivacité" d'une couleur
+  // Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
+  const calculateVividness = (color: Vector): number => {
+    const [r, g, b] = color
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const saturation = max === 0 ? 0 : (max - min) / max
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+    // Saturation est le facteur principal (puissance 2 pour accentuer)
+    // Luminance ne sert qu'à départager les couleurs très saturées
+    // Pénaliser les couleurs trop sombres (< 0.25) ou trop claires (> 0.85)
+    const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1.0 : 0.3
+
+    // Score = saturation² * (0.7 + 0.3 * luminance) * brightnessBonus
+    // La saturation domine, la luminance n'ajoute qu'un petit bonus
+    return saturation * saturation * (0.7 + 0.3 * luminance) * brightnessBonus
+  }
+
+  // Pour CPC Plus, assurer une diversité de teinte
+  const selectedCandidates: ColorCandidate[] = []
+
+  // Grouper par plage de teinte (0-60, 60-120, 120-180, 180-240, 240-300, 300-360)
+  // Ne garder que les couleurs visuellement colorées dans les groupes de teinte
+  const hueGroups: ColorCandidate[][] = [[], [], [], [], [], []]
+  const grays: ColorCandidate[] = []
+  const darkColors: ColorCandidate[] = [] // Couleurs saturées mais trop sombres
+
+  for (const c of sorted) {
+    if (isVisuallyColorful(c.converted)) {
+      // Couleur visuellement colorée (saturée ET lumineuse)
+      const hue = calculateHue(c.converted)
+      if (hue >= 0) {
+        const groupIndex = Math.floor(hue / 60) % 6
+        hueGroups[groupIndex].push(c)
+      } else {
+        grays.push(c)
+      }
+    } else {
+      const sat = calculateSaturation(c.converted)
+      if (sat >= 0.15) {
+        // Saturée mais trop sombre ou trop claire
+        darkColors.push(c)
+      } else {
+        // Vraiment grise
+        grays.push(c)
+      }
+    }
+  }
+
+  // Trier chaque groupe de teinte par vivacité (les plus vives en premier)
+  for (const group of hueGroups) {
+    group.sort(
+      (a, b) =>
+        calculateVividness(b.converted) - calculateVividness(a.converted)
+    )
+  }
+
+  // Compter le nombre de groupes de teintes non vides (couleurs visuellement colorées)
+  const nonEmptyGroups = hueGroups.filter((g) => g.length > 0)
+  const hasColorDiversity = nonEmptyGroups.length >= 2
+
+  if (hasColorDiversity) {
+    // Trouver la couleur la plus sombre parmi TOUS les candidats (pas seulement les gris)
+    // pour garantir un bon contraste dans la palette finale tout en restant fidèle à l'image
+    // MAIS exclure les couleurs trop proches des couleurs à éviter (présélectionnées/lockées)
+    const eligibleDarkCandidates = candidates.filter(
+      (c) => !isTooCloseToAvoidedColors(c)
+    )
+    const darkestCandidate = eligibleDarkCandidates.reduce(
+      (darkest, current) => {
+        const currentLum = calculateLuminance(current.converted)
+        const darkestLum = darkest ? calculateLuminance(darkest.converted) : 1
+        return currentLum < darkestLum ? current : darkest
+      },
+      null as ColorCandidate | null
+    )
+
+    // Ajouter la couleur la plus sombre en premier si elle est suffisamment sombre
+    if (
+      darkestCandidate &&
+      calculateLuminance(darkestCandidate.converted) < 0.2
+    ) {
+      selectedCandidates.push(darkestCandidate)
+    }
+
+    // Ajouter des couleurs de chaque groupe de teinte en round-robin
+    // Les plus vives de chaque groupe seront sélectionnées en premier
+    let added = true
+    let round = 0
+    while (added && selectedCandidates.length < maxCandidates) {
+      added = false
+      for (const group of hueGroups) {
+        if (selectedCandidates.length >= maxCandidates) break
+        if (round < group.length) {
+          const c = group[round]
+          if (
+            !selectedCandidates.find((s) => s.index === c.index) &&
+            !isTooCloseToAvoidedColors(c)
+          ) {
+            selectedCandidates.push(c)
+            added = true
+          }
+        }
+      }
+      round++
+    }
+  } else {
+    // Image majoritairement achromatique - garder le comportement basé sur la fréquence
+    // mais s'assurer d'inclure toutes les couleurs saturées disponibles
+    for (const group of hueGroups) {
+      for (const c of group) {
+        if (
+          selectedCandidates.length < maxCandidates &&
+          !isTooCloseToAvoidedColors(c)
+        ) {
+          selectedCandidates.push(c)
+        }
+      }
+    }
+    // Puis compléter avec les couleurs sombres saturées
+    for (const c of darkColors) {
+      if (selectedCandidates.length >= maxCandidates) break
+      if (
+        !selectedCandidates.find((s) => s.index === c.index) &&
+        !isTooCloseToAvoidedColors(c)
+      ) {
+        selectedCandidates.push(c)
+      }
+    }
+    // Puis compléter avec les gris
+    for (const c of grays) {
+      if (selectedCandidates.length >= maxCandidates) break
+      if (
+        !selectedCandidates.find((s) => s.index === c.index) &&
+        !isTooCloseToAvoidedColors(c)
+      ) {
+        selectedCandidates.push(c)
+      }
+    }
+  }
+
+  // Compléter avec les plus fréquents si on n'a pas assez
+  for (const c of sorted) {
+    if (selectedCandidates.length >= maxCandidates) break
+    if (
+      !selectedCandidates.find((s) => s.index === c.index) &&
+      !isTooCloseToAvoidedColors(c)
+    ) {
+      selectedCandidates.push(c)
+    }
+  }
+
+  return selectedCandidates
 }
 
 /**
@@ -190,10 +499,12 @@ interface DiversityScoreParams {
   isCPCClassic: boolean
   minColorDistance: number
   minLuminanceDistance: number
+  minHueDistance: number
 }
 
 /**
  * Calcule le score de diversité pour la stratégie diversity-first
+ * Pour CPC Plus, inclut une vérification stricte de la distance de teinte
  */
 function calculateDiversityScore(params: DiversityScoreParams): number | null {
   const minColorDist = calculateMinColorDistance(
@@ -212,6 +523,15 @@ function calculateDiversityScore(params: DiversityScoreParams): number | null {
 
   if (minLumDist < params.minLuminanceDistance) return null
 
+  // Pour CPC Plus, vérifier aussi la distance de teinte minimale
+  if (!params.isCPCClassic && params.minHueDistance > 0) {
+    const minHueDist = calculateMinHueDistance(
+      params.candidate,
+      params.selectedColors
+    )
+    if (minHueDist < params.minHueDistance) return null
+  }
+
   const luminanceScore = minLumDist
 
   const balanceBonus = calculateLuminanceBalanceBonus(
@@ -219,9 +539,17 @@ function calculateDiversityScore(params: DiversityScoreParams): number | null {
     params.selectedLuminances
   )
 
-  const saturationBonus = params.isCPCClassic
-    ? 0
-    : calculateSaturation(params.candidate.color) * 0.3
+  // Pour CPC Plus, bonus pour saturation ET diversité de teinte
+  let saturationBonus = 0
+  if (!params.isCPCClassic) {
+    const saturation = calculateSaturation(params.candidate.color)
+    const hueDistance = calculateMinHueDistance(
+      params.candidate,
+      params.selectedColors
+    )
+    // Bonus combiné saturation + teinte
+    saturationBonus = saturation * 0.2 + (hueDistance / 180) * 0.2
+  }
 
   const freqScore =
     params.frequencyWeight > 0 ? params.candidate.frequency / params.maxFreq : 0
@@ -367,9 +695,16 @@ function findMostFrequentRemaining(
 export const selectByFrequencyBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
-  return selectByFrequencyCore(candidates, targetColors, preselectedIndices, 60)
+  return selectByFrequencyCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    60,
+    options
+  )
 }
 
 /**
@@ -378,16 +713,24 @@ export const selectByFrequencyBalanced: PaletteStrategyFunction = (
 export const selectByFrequencyMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
-  return selectByFrequencyCore(candidates, targetColors, preselectedIndices, 40)
+  return selectByFrequencyCore(
+    candidates,
+    targetColors,
+    preselectedIndices,
+    40,
+    options
+  )
 }
 
 function selectByFrequencyCore(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[],
-  minDistance: number
+  minDistance: number,
+  options?: StrategyOptions
 ): StrategyResult {
   const result = [...preselectedIndices]
   const selectedConverted: Vector[] = result.map(
@@ -399,6 +742,10 @@ function selectByFrequencyCore(
   if (result.length >= targetColors) {
     return { selectedIndices: result.slice(0, targetColors) }
   }
+
+  // Pour CPC Plus, ajouter une contrainte de teinte minimale
+  const isCPCClassic = isCPCClassicPalette(options, candidates.length)
+  const minHueDistance = isCPCClassic ? 0 : 60
 
   const sorted = [...candidates].sort((a, b) => b.frequency - a.frequency)
 
@@ -414,6 +761,14 @@ function selectByFrequencyCore(
       ) {
         isDiverse = false
         break
+      }
+    }
+
+    // Pour CPC Plus, vérifier aussi la distance de teinte
+    if (isDiverse && !isCPCClassic && minHueDistance > 0) {
+      const hueDist = calculateMinHueDistance(candidate, selectedConverted)
+      if (hueDist < minHueDistance) {
+        isDiverse = false
       }
     }
 
@@ -439,13 +794,15 @@ function selectByFrequencyCore(
 export const selectByBalancedScoreBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   return selectByBalancedScoreCore(
     candidates,
     targetColors,
     preselectedIndices,
-    { frequency: 0.5, diversity: 0.25, luminance: 0.25 }
+    { frequency: 0.5, diversity: 0.25, luminance: 0.25 },
+    options
   )
 }
 
@@ -455,13 +812,15 @@ export const selectByBalancedScoreBalanced: PaletteStrategyFunction = (
 export const selectByBalancedScoreMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   return selectByBalancedScoreCore(
     candidates,
     targetColors,
     preselectedIndices,
-    { frequency: 0.3, diversity: 0.35, luminance: 0.35 }
+    { frequency: 0.3, diversity: 0.35, luminance: 0.35 },
+    options
   )
 }
 
@@ -490,13 +849,21 @@ function findBestBalancedScoreCandidate(
   selectedColors: Vector[],
   selectedLuminances: number[],
   maxFreq: number,
-  weights: { frequency: number; diversity: number; luminance: number }
+  weights: { frequency: number; diversity: number; luminance: number },
+  isCPCClassic: boolean,
+  minHueDistance: number
 ): { candidate: ColorCandidate; score: number } | null {
   let bestScore = -Infinity
   let bestCandidate: ColorCandidate | null = null
 
   for (const candidate of candidates) {
     if (result.includes(candidate.index)) continue
+
+    // Pour CPC Plus, vérifier la distance de teinte minimale
+    if (!isCPCClassic && minHueDistance > 0) {
+      const hueDist = calculateMinHueDistance(candidate, selectedColors)
+      if (hueDist < minHueDistance) continue
+    }
 
     const totalScore = calculateBalancedScore(
       candidate,
@@ -506,8 +873,13 @@ function findBestBalancedScoreCandidate(
       weights
     )
 
-    if (totalScore > bestScore) {
-      bestScore = totalScore
+    // Pour CPC Plus, bonus de teinte dans le score
+    const hueBonus = isCPCClassic
+      ? 0
+      : (calculateMinHueDistance(candidate, selectedColors) / 180) * 0.15
+
+    if (totalScore + hueBonus > bestScore) {
+      bestScore = totalScore + hueBonus
       bestCandidate = candidate
     }
   }
@@ -519,7 +891,8 @@ function selectByBalancedScoreCore(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[],
-  weights: { frequency: number; diversity: number; luminance: number }
+  weights: { frequency: number; diversity: number; luminance: number },
+  options?: StrategyOptions
 ): StrategyResult {
   const result = [...preselectedIndices]
   const scores = new Map<number, number>()
@@ -527,6 +900,9 @@ function selectByBalancedScoreCore(
   if (result.length >= targetColors) {
     return { selectedIndices: result.slice(0, targetColors), scores }
   }
+
+  const isCPCClassic = isCPCClassicPalette(options, candidates.length)
+  const minHueDistance = isCPCClassic ? 0 : 60
 
   const maxFreq = Math.max(...candidates.map((c) => c.frequency))
   const luminances = candidates.map((c) => ({
@@ -550,7 +926,9 @@ function selectByBalancedScoreCore(
       selectedColors,
       selectedLuminances,
       maxFreq,
-      weights
+      weights,
+      isCPCClassic,
+      minHueDistance
     )
 
     if (best) {
@@ -578,13 +956,15 @@ function selectByBalancedScoreCore(
 export const selectByPerceptualBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   return selectByPerceptualCore(
     candidates,
     targetColors,
     preselectedIndices,
-    true
+    true,
+    options
   )
 }
 
@@ -594,13 +974,15 @@ export const selectByPerceptualBalanced: PaletteStrategyFunction = (
 export const selectByPerceptualMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   return selectByPerceptualCore(
     candidates,
     targetColors,
     preselectedIndices,
-    false
+    false,
+    options
   )
 }
 
@@ -608,13 +990,17 @@ function selectByPerceptualCore(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[],
-  prioritizeFrequency: boolean
+  prioritizeFrequency: boolean,
+  options?: StrategyOptions
 ): StrategyResult {
   const result = [...preselectedIndices]
 
   if (result.length >= targetColors) {
     return { selectedIndices: result.slice(0, targetColors) }
   }
+
+  const isCPCClassic = isCPCClassicPalette(options, candidates.length)
+  const minHueDistance = isCPCClassic ? 0 : 60
 
   const withLuminance = candidates.map((c) => ({
     ...c,
@@ -630,12 +1016,26 @@ function selectByPerceptualCore(
     const minLum = bin * binSize
     const maxLum = (bin + 1) * binSize
 
-    const inBin = withLuminance.filter(
+    let inBin = withLuminance.filter(
       (c) =>
         c.luminance >= minLum &&
         c.luminance < maxLum &&
         !result.includes(c.index)
     )
+
+    // Pour CPC Plus, filtrer par distance de teinte
+    if (!isCPCClassic && minHueDistance > 0 && result.length > 0) {
+      const selectedColors = result.map(
+        (idx) => candidates.find((c) => c.index === idx)!.converted
+      )
+      const filtered = inBin.filter((c) => {
+        const hueDist = calculateMinHueDistance(c, selectedColors)
+        return hueDist >= minHueDistance
+      })
+      if (filtered.length > 0) {
+        inBin = filtered
+      }
+    }
 
     if (inBin.length > 0) {
       if (prioritizeFrequency) {
@@ -671,13 +1071,15 @@ function selectByPerceptualCore(
 export const selectByDiversityFirstBalanced: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   return selectByDiversityFirstCore(
     candidates,
     targetColors,
     preselectedIndices,
-    0.1
+    0.1,
+    options
   )
 }
 
@@ -687,13 +1089,15 @@ export const selectByDiversityFirstBalanced: PaletteStrategyFunction = (
 export const selectByDiversityFirstMax: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   return selectByDiversityFirstCore(
     candidates,
     targetColors,
     preselectedIndices,
-    0
+    0,
+    options
   )
 }
 
@@ -707,6 +1111,7 @@ interface FindDiversityCandidateParams {
   isCPCClassic: boolean
   minColorDistance: number
   minLuminanceDistance: number
+  minHueDistance: number
 }
 
 /**
@@ -729,7 +1134,8 @@ function findBestDiversityCandidate(
       maxFreq: params.maxFreq,
       isCPCClassic: params.isCPCClassic,
       minColorDistance: params.minColorDistance,
-      minLuminanceDistance: params.minLuminanceDistance
+      minLuminanceDistance: params.minLuminanceDistance,
+      minHueDistance: params.minHueDistance
     })
 
     if (totalScore !== null && totalScore > bestScore) {
@@ -780,7 +1186,8 @@ function selectByDiversityFirstCore(
   candidates: ColorCandidate[],
   targetColors: number,
   preselectedIndices: number[],
-  frequencyWeight: number
+  frequencyWeight: number,
+  options?: StrategyOptions
 ): StrategyResult {
   const result = [...preselectedIndices]
   const scores = new Map<number, number>()
@@ -791,9 +1198,15 @@ function selectByDiversityFirstCore(
 
   initializeSelection(result, candidates)
 
-  const isCPCClassic = candidates.length <= 27
+  // Utiliser la nouvelle fonction de détection CPC Classic/Plus
+  const isCPCClassic = isCPCClassicPalette(options, candidates.length)
+  // Pour CPC Plus en mode 1, on a besoin de distances beaucoup plus grandes
+  // car la palette de 4096 couleurs contient beaucoup de dégradés similaires
   const MIN_COLOR_DISTANCE = isCPCClassic ? 50 : 140
   const MIN_LUMINANCE_DISTANCE = isCPCClassic ? 0.15 : 0.35
+  // Pour CPC Plus, imposer une distance de teinte minimale de 45° entre les couleurs
+  // Cela évite les palettes avec des dégradés de même teinte
+  const MIN_HUE_DISTANCE = isCPCClassic ? 0 : 45
 
   while (result.length < targetColors && candidates.length > 0) {
     const selectedColors = result.map(
@@ -815,7 +1228,8 @@ function selectByDiversityFirstCore(
       maxFreq,
       isCPCClassic,
       minColorDistance: MIN_COLOR_DISTANCE,
-      minLuminanceDistance: MIN_LUMINANCE_DISTANCE
+      minLuminanceDistance: MIN_LUMINANCE_DISTANCE,
+      minHueDistance: MIN_HUE_DISTANCE
     })
 
     if (best) {
@@ -854,7 +1268,8 @@ function selectByDiversityFirstCore(
 export const selectByAdaptive: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   // Analyser la distribution des candidats
   const avgFrequency =
@@ -867,7 +1282,8 @@ export const selectByAdaptive: PaletteStrategyFunction = (
     return selectByFrequencyBalanced(
       candidates,
       targetColors,
-      preselectedIndices
+      preselectedIndices,
+      options
     )
   }
 
@@ -875,7 +1291,8 @@ export const selectByAdaptive: PaletteStrategyFunction = (
   return selectByBalancedScoreBalanced(
     candidates,
     targetColors,
-    preselectedIndices
+    preselectedIndices,
+    options
   )
 }
 
@@ -945,27 +1362,387 @@ function calculateMinDistanceInSetV2(
 }
 
 /**
+ * Calcule la distance de teinte minimale dans un ensemble de couleurs
+ */
+function calculateMinHueDistanceInSet(colors: Vector[]): number {
+  let minHueDist = 180
+
+  for (let i = 0; i < colors.length; i++) {
+    const sat1 = calculateSaturation(colors[i])
+    if (sat1 < 0.15) continue // Ignorer les couleurs peu saturées
+
+    const hue1 = calculateHue(colors[i])
+    if (hue1 < 0) continue
+
+    for (let j = i + 1; j < colors.length; j++) {
+      const sat2 = calculateSaturation(colors[j])
+      if (sat2 < 0.15) continue
+
+      const hue2 = calculateHue(colors[j])
+      if (hue2 < 0) continue
+
+      const dist = calculateHueDistance(hue1, hue2)
+      minHueDist = Math.min(minHueDist, dist)
+    }
+  }
+
+  return minHueDist
+}
+
+/**
+ * Vérifie si une couleur est visuellement colorée (pas grise ni trop sombre)
+ * Une couleur doit avoir une saturation suffisante ET une luminosité minimale
+ */
+function isVisuallyColorful(color: Vector): boolean {
+  const [r, g, b] = color
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+
+  // Saturation HSV
+  const saturation = max === 0 ? 0 : (max - min) / max
+
+  // Luminance perceptuelle (formule standard)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Brightness HSV (pour détecter les couleurs trop claires)
+  const brightness = max / 255
+
+  // Une couleur est visuellement colorée si:
+  // - Elle a une saturation >= 0.30 (pas grise) - seuil relevé pour plus de saturation
+  // - ET une luminance >= 0.20 (pas trop sombre - seuil abaissé pour inclure les couleurs saturées sombres)
+  // - ET une brightness <= 0.95 (pas trop claire/blanche)
+  // Les couleurs très saturées (>0.7) peuvent avoir une luminance plus basse
+  const minLuminance = saturation > 0.7 ? 0.15 : 0.2
+  return saturation >= 0.3 && luminance >= minLuminance && brightness <= 0.95
+}
+
+/**
+ * Compte le nombre de couleurs visuellement colorées
+ */
+function countVisuallyColorfulColors(colors: Vector[]): number {
+  return colors.filter(isVisuallyColorful).length
+}
+
+/**
  * Trouve la meilleure combinaison en maximisant la distance minimale
+ * Pour CPC Plus, pénalise les combinaisons avec des teintes trop proches
+ * ou avec trop de couleurs achromatiques/sombres
  */
 function findBestCombinationV2(
   combinations: number[][],
   preselectedColors: Vector[],
-  remainingCandidates: ColorCandidate[]
+  remainingCandidates: ColorCandidate[],
+  isCPCClassic: boolean = true
 ): number[] {
   let bestCombo: number[] = []
-  let bestMinDist = -Infinity
+  let bestScore = -Infinity
+
+  // Fallback: garder la meilleure combinaison même si elle ne passe pas tous les filtres
+  let fallbackCombo: number[] = []
+  let fallbackScore = -Infinity
+
+  // Pour CPC Plus, compter combien de candidats sont visuellement colorés
+  // (saturés ET avec une luminosité suffisante)
+  const colorfulCandidatesCount = isCPCClassic
+    ? 0
+    : remainingCandidates.filter((c) => isVisuallyColorful(c.converted)).length
+
+  // Si on a des couleurs visuellement colorées disponibles, en exiger au moins 2 sur 4
+  const minColorfulRequired =
+    !isCPCClassic && colorfulCandidatesCount >= 2 ? 2 : 0
+
+  // Fonction pour calculer la vivacité totale d'une combinaison
+  // Calculer la vivacité totale d'un ensemble de couleurs
+  // Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
+  const calculateTotalVividness = (colors: Vector[]): number => {
+    return colors.reduce((sum, color) => {
+      const [r, g, b] = color
+      const max = Math.max(r, g, b)
+      const min = Math.min(r, g, b)
+      const saturation = max === 0 ? 0 : (max - min) / max
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+      // Saturation² pour favoriser fortement les couleurs très saturées
+      // Luminance ne sert qu'à départager
+      const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1.0 : 0.3
+      return sum + saturation * saturation * brightnessBonus
+    }, 0)
+  }
+
+  // Calculer la saturation moyenne d'un ensemble de couleurs (hors noir/blanc)
+  const calculateAverageSaturation = (colors: Vector[]): number => {
+    const saturatedColors = colors.filter(([r, g, b]) => {
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+      return luminance > 0.15 && luminance < 0.85 // Exclure noir et blanc
+    })
+    if (saturatedColors.length === 0) return 0
+    return (
+      saturatedColors.reduce((sum, [r, g, b]) => {
+        const max = Math.max(r, g, b)
+        const min = Math.min(r, g, b)
+        const saturation = max === 0 ? 0 : (max - min) / max
+        return sum + saturation
+      }, 0) / saturatedColors.length
+    )
+  }
 
   for (const combo of combinations) {
     const colors = [
       ...preselectedColors,
       ...combo.map((i) => remainingCandidates[i].converted)
     ]
-    const minDist = calculateMinDistanceInSetV2(colors, bestMinDist)
 
-    if (minDist > bestMinDist) {
-      bestMinDist = minDist
+    const minDist = calculateMinDistanceInSetV2(
+      colors,
+      Math.max(bestScore, fallbackScore)
+    )
+    let baseScore = minDist
+
+    // Calculer le score avec bonus pour CPC Plus
+    if (!isCPCClassic) {
+      const minHueDist = calculateMinHueDistanceInSet(colors)
+      const colorfulCount = countVisuallyColorfulColors(colors)
+      const totalVividness = calculateTotalVividness(colors)
+      const avgSaturation = calculateAverageSaturation(colors)
+
+      // Bonus important pour une bonne diversité de teinte (> 60°)
+      if (minHueDist >= 60) {
+        baseScore += minHueDist * 1.5
+      } else if (minHueDist >= 45) {
+        baseScore += minHueDist * 0.5
+      }
+
+      // Bonus significatif pour les couleurs visuellement colorées
+      baseScore += colorfulCount * 30
+
+      // Bonus TRÈS FORT pour la vivacité totale (favorise les couleurs vives)
+      baseScore += totalVividness * 100
+
+      // Bonus TRÈS FORT pour la saturation moyenne élevée
+      baseScore += avgSaturation * 150
+    }
+
+    // Mettre à jour le fallback (meilleure combinaison sans filtres stricts)
+    if (baseScore > fallbackScore) {
+      fallbackScore = baseScore
+      fallbackCombo = combo
+    }
+
+    // Pour CPC Plus, appliquer les filtres stricts
+    if (!isCPCClassic) {
+      // Vérifier le nombre de couleurs visuellement colorées
+      if (minColorfulRequired > 0) {
+        const colorfulCount = countVisuallyColorfulColors(colors)
+        if (colorfulCount < minColorfulRequired) {
+          continue // Skip cette combinaison
+        }
+      }
+
+      // Vérifier la distance de teinte minimale
+      const minHueDist = calculateMinHueDistanceInSet(colors)
+      // Rejeter les combinaisons avec des teintes trop proches (<= 40°)
+      if (minHueDist <= 40) {
+        continue // Skip cette combinaison
+      }
+
+      // Vérifier la saturation moyenne (exclure les palettes ternes)
+      const avgSaturation = calculateAverageSaturation(colors)
+      if (avgSaturation < 0.4) {
+        continue // Skip les combinaisons avec saturation moyenne < 40% (réduit de 50%)
+      }
+    }
+
+    if (baseScore > bestScore) {
+      bestScore = baseScore
       bestCombo = combo
     }
+  }
+
+  // Si aucune combinaison ne passe les filtres, utiliser un fallback intelligent
+  if (bestCombo.length === 0 && fallbackCombo.length > 0) {
+    // Fallback intelligent : sélectionner des couleurs avec des teintes diverses
+    // au lieu de prendre la combinaison avec le meilleur score de contraste
+    const selectedArrayIndices: number[] = [] // Indices dans remainingCandidates (pas dans la palette de base)
+    const usedHues: number[] = []
+    const MIN_HUE_DISTANCE = 45 // Distance minimale entre teintes (réduit de 60 à 45 pour plus de diversité)
+    const neededColors = fallbackCombo.length // Nombre de couleurs à sélectionner
+
+    // Initialiser usedHues avec les couleurs présélectionnées (lockées)
+    // pour éviter de sélectionner des couleurs trop similaires
+    for (const preColor of preselectedColors) {
+      const preHue = calculateHue(preColor)
+      const preSat = calculateSaturation(preColor)
+      if (preSat > 0.2 && preHue >= 0) {
+        usedHues.push(preHue)
+      }
+    }
+
+    // Vérifier si une couleur sombre est déjà présélectionnée
+    const hasDarkPreselected = preselectedColors.some((c) => {
+      const lum = calculateLuminance(c)
+      return lum < 0.1 // Seuil strict pour "vraiment sombre"
+    })
+
+    // ÉTAPE 1 : Forcer une couleur sombre EN PREMIER si pas déjà présélectionnée
+    // Note: On n'ajoute PAS la teinte de la couleur sombre à usedHues
+    // car les couleurs très sombres n'ont pas vraiment de teinte perceptible
+    if (!hasDarkPreselected) {
+      let darkestIdx = -1
+      let darkestLum = Infinity
+      for (let i = 0; i < remainingCandidates.length; i++) {
+        const lum = calculateLuminance(remainingCandidates[i].converted)
+        if (lum < darkestLum) {
+          darkestLum = lum
+          darkestIdx = i
+        }
+      }
+      if (darkestIdx >= 0 && darkestLum < 0.15) {
+        selectedArrayIndices.push(darkestIdx)
+      }
+    }
+
+    // Créer un tableau avec l'index dans remainingCandidates + le candidat
+    const candidatesWithArrayIndex = remainingCandidates.map(
+      (candidate, arrayIndex) => ({
+        candidate,
+        arrayIndex
+      })
+    )
+
+    // Trier par vividness (saturation * luminance) pour favoriser les couleurs saturées
+    candidatesWithArrayIndex.sort((a, b) => {
+      const vividnessA = calculateVividnessForColor(a.candidate.converted)
+      const vividnessB = calculateVividnessForColor(b.candidate.converted)
+      return vividnessB - vividnessA
+    })
+
+    // ÉTAPE 2 : Sélectionner les couleurs avec diversité de teinte
+    for (const { candidate, arrayIndex } of candidatesWithArrayIndex) {
+      if (selectedArrayIndices.length >= neededColors) break
+      if (selectedArrayIndices.includes(arrayIndex)) continue // Déjà sélectionné (couleur sombre)
+
+      const hue = calculateHue(candidate.converted)
+      const saturation = calculateSaturation(candidate.converted)
+      const luminance = calculateLuminance(candidate.converted)
+
+      // Éviter les couleurs trop sombres (on en a déjà une)
+      if (luminance < 0.15) {
+        continue
+      }
+
+      // Vérifier si cette teinte est assez différente des teintes déjà sélectionnées
+      const isSaturated = saturation > 0.2
+      let isHueDiverse = true
+      let minHueDistFound = 360
+
+      if (isSaturated && hue >= 0) {
+        for (const usedHue of usedHues) {
+          const hueDist = Math.min(
+            Math.abs(hue - usedHue),
+            360 - Math.abs(hue - usedHue)
+          )
+          if (hueDist < minHueDistFound) {
+            minHueDistFound = hueDist
+          }
+          if (hueDist < MIN_HUE_DISTANCE) {
+            isHueDiverse = false
+            break
+          }
+        }
+      }
+
+      if (isHueDiverse) {
+        selectedArrayIndices.push(arrayIndex)
+        if (isSaturated && hue >= 0) {
+          usedHues.push(hue)
+        }
+      }
+    }
+
+    // Si on n'a pas assez de couleurs, compléter avec les restants
+    // mais en respectant quand même une distance de teinte minimale (plus permissive)
+    if (selectedArrayIndices.length < neededColors) {
+      const FALLBACK_MIN_HUE_DISTANCE = 30 // Plus permissif pour le fallback du fallback
+
+      for (const { candidate, arrayIndex } of candidatesWithArrayIndex) {
+        if (selectedArrayIndices.length >= neededColors) break
+        if (selectedArrayIndices.includes(arrayIndex)) continue
+
+        const hue = calculateHue(candidate.converted)
+        const saturation = calculateSaturation(candidate.converted)
+        const isSaturated = saturation > 0.2
+
+        // Vérifier la diversité de teinte même pour le fallback
+        let isHueDiverse = true
+        if (isSaturated && hue >= 0) {
+          for (const usedHue of usedHues) {
+            const hueDist = Math.min(
+              Math.abs(hue - usedHue),
+              360 - Math.abs(hue - usedHue)
+            )
+            if (hueDist < FALLBACK_MIN_HUE_DISTANCE) {
+              isHueDiverse = false
+              break
+            }
+          }
+        }
+
+        if (isHueDiverse) {
+          selectedArrayIndices.push(arrayIndex)
+          if (isSaturated && hue >= 0) {
+            usedHues.push(hue)
+          }
+        }
+      }
+    }
+
+    // Dernier recours : si on n'a toujours pas assez, prendre les couleurs restantes
+    // mais en gardant quand même une distance minimale de teinte (très permissive)
+    if (selectedArrayIndices.length < neededColors) {
+      const LAST_RESORT_MIN_HUE_DISTANCE = 20 // Distance minimale même en dernier recours
+
+      for (const { candidate, arrayIndex } of candidatesWithArrayIndex) {
+        if (selectedArrayIndices.length >= neededColors) break
+        if (selectedArrayIndices.includes(arrayIndex)) continue
+
+        const hue = calculateHue(candidate.converted)
+        const saturation = calculateSaturation(candidate.converted)
+        const isSaturated = saturation > 0.2
+
+        // Vérifier la diversité de teinte même en dernier recours
+        let isHueDiverse = true
+        if (isSaturated && hue >= 0) {
+          for (const usedHue of usedHues) {
+            const hueDist = Math.min(
+              Math.abs(hue - usedHue),
+              360 - Math.abs(hue - usedHue)
+            )
+            if (hueDist < LAST_RESORT_MIN_HUE_DISTANCE) {
+              isHueDiverse = false
+              break
+            }
+          }
+        }
+
+        if (isHueDiverse) {
+          selectedArrayIndices.push(arrayIndex)
+          if (isSaturated && hue >= 0) {
+            usedHues.push(hue)
+          }
+        }
+      }
+    }
+
+    // Ultime recours : si VRAIMENT on n'a pas assez, prendre n'importe quoi
+    if (selectedArrayIndices.length < neededColors) {
+      for (const { arrayIndex } of candidatesWithArrayIndex) {
+        if (selectedArrayIndices.length >= neededColors) break
+        if (!selectedArrayIndices.includes(arrayIndex)) {
+          selectedArrayIndices.push(arrayIndex)
+        }
+      }
+    }
+
+    return selectedArrayIndices
   }
 
   return bestCombo
@@ -986,7 +1763,8 @@ function findBestCombinationV2(
 export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   const result: number[] = [...preselectedIndices]
   const scores = new Map<number, number>()
@@ -994,13 +1772,31 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   // Marquer les indices déjà sélectionnés
   const usedIndices = new Set(preselectedIndices)
 
-  // Récupérer les couleurs présélectionnées
-  const preselectedColors = preselectedIndices
-    .map((idx) => candidates.find((c) => c.index === idx)?.converted)
-    .filter((c): c is Vector => c !== undefined)
+  // Récupérer les couleurs présélectionnées depuis les options (si disponibles)
+  // Sinon, essayer de les trouver dans les candidats (fallback)
+  const preselectedColors =
+    options?.preselectedColors ??
+    preselectedIndices
+      .map((idx) => candidates.find((c) => c.index === idx)?.converted)
+      .filter((c): c is Vector => c !== undefined)
 
-  // Filtrer les candidats restants
+  // Filtrer les candidats restants (exclure ceux déjà sélectionnés)
   let remainingCandidates = candidates.filter((c) => !usedIndices.has(c.index))
+
+  // Filtrer les candidats trop proches des couleurs présélectionnées (lockées)
+  // pour éviter d'avoir des doublons visuels
+  if (preselectedColors.length > 0) {
+    const MIN_DISTANCE_FROM_PRESELECTED = 50 // Distance minimale en RGB
+    remainingCandidates = remainingCandidates.filter((c) => {
+      for (const preColor of preselectedColors) {
+        const dist = calculatePerceptualDistance(c.converted, preColor)
+        if (dist < MIN_DISTANCE_FROM_PRESELECTED) {
+          return false // Trop proche d'une couleur présélectionnée
+        }
+      }
+      return true
+    })
+  }
 
   if (result.length >= targetColors) {
     return { selectedIndices: result.slice(0, targetColors), scores }
@@ -1017,40 +1813,60 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
     return { selectedIndices: result.slice(0, targetColors), scores }
   }
 
+  // Déterminer si on est en CPC Classic ou Plus
+  const isCPCClassic = isCPCClassicPalette(options, candidates.length)
+
   // OPTIMISATION: Limiter le nombre de candidats pour éviter l'explosion combinatoire
+  // Pour CPC Plus, on peut se permettre plus de candidats car l'espace est plus grand
   // C(12, 4) = 495 combinaisons - acceptable
-  // C(16, 4) = 1820 combinaisons - limite acceptable
+  // C(16, 4) = 1820 combinaisons - limite acceptable pour CPC Plus
   // C(20, 4) = 4845 combinaisons - trop lent
-  const MAX_CANDIDATES = 12
+  const MAX_CANDIDATES = isCPCClassic ? 12 : 16
+
+  // Pour CPC Plus, on veut plus de couleurs sombres et claires pour maximiser le contraste
+  const darkCount = isCPCClassic ? 2 : 4
+  const brightCount = isCPCClassic ? 2 : 4
+
   if (remainingCandidates.length > MAX_CANDIDATES) {
-    // Garder les plus fréquents, mais s'assurer d'avoir des couleurs sombres et claires
-    const sorted = [...remainingCandidates].sort(
-      (a, b) => b.frequency - a.frequency
-    )
+    if (isCPCClassic) {
+      // Pour CPC Classic : garder les plus fréquents avec contraste luminance
+      const sorted = [...remainingCandidates].sort(
+        (a, b) => b.frequency - a.frequency
+      )
 
-    // Séparer en couleurs sombres et claires
-    const dark = sorted.filter((c) => isDark(c.converted))
-    const bright = sorted.filter((c) => isBright(c.converted))
+      // Séparer en couleurs sombres et claires
+      const dark = sorted.filter((c) => isDark(c.converted))
+      const bright = sorted.filter((c) => isBright(c.converted))
 
-    // S'assurer d'avoir au moins 2 couleurs de chaque catégorie si disponibles
-    const selectedCandidates: ColorCandidate[] = []
-    const addUnique = (c: ColorCandidate) => {
-      if (!selectedCandidates.find((s) => s.index === c.index)) {
-        selectedCandidates.push(c)
+      // S'assurer d'avoir assez de couleurs de chaque catégorie si disponibles
+      const selectedCandidates: ColorCandidate[] = []
+      const addUnique = (c: ColorCandidate) => {
+        if (!selectedCandidates.find((s) => s.index === c.index)) {
+          selectedCandidates.push(c)
+        }
       }
-    }
 
-    // Ajouter les 2 couleurs sombres les plus fréquentes
-    dark.slice(0, 2).forEach(addUnique)
-    // Ajouter les 2 couleurs claires les plus fréquentes
-    bright.slice(0, 2).forEach(addUnique)
-    // Compléter avec les couleurs les plus fréquentes (toutes catégories)
-    for (const c of sorted) {
-      if (selectedCandidates.length >= MAX_CANDIDATES) break
-      addUnique(c)
-    }
+      // Ajouter les couleurs sombres les plus fréquentes
+      dark.slice(0, darkCount).forEach(addUnique)
+      // Ajouter les couleurs claires les plus fréquentes
+      bright.slice(0, brightCount).forEach(addUnique)
+      // Compléter avec les couleurs les plus fréquentes (toutes catégories)
+      for (const c of sorted) {
+        if (selectedCandidates.length >= MAX_CANDIDATES) break
+        addUnique(c)
+      }
 
-    remainingCandidates = selectedCandidates
+      remainingCandidates = selectedCandidates
+    } else {
+      // Pour CPC Plus : utiliser la diversité des teintes
+      // Passer les couleurs présélectionnées pour éviter de sélectionner des couleurs trop proches
+      remainingCandidates = filterCandidatesWithHueDiversity(
+        remainingCandidates,
+        MAX_CANDIDATES,
+        false, // isCPCClassic = false
+        preselectedColors // Couleurs lockées à éviter
+      )
+    }
   }
 
   // Générer tous les indices des candidats restants
@@ -1070,11 +1886,47 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   const combosToTest = filtered.length > 0 ? filtered : combinations
 
   // Trouver la meilleure combinaison
-  const bestCombo = findBestCombinationV2(
+  let bestCombo = findBestCombinationV2(
     combosToTest,
     preselectedColors,
-    remainingCandidates
+    remainingCandidates,
+    isCPCClassic
   )
+
+  // GARANTIR une couleur VRAIMENT sombre (proche du noir) dans la sélection finale
+  // On utilise un seuil plus strict que isDark() pour forcer une couleur proche du noir
+  const DARK_LUMINANCE_THRESHOLD = 0.1 // Plus strict que isDark (0.2)
+
+  const hasDarkPreselected = preselectedColors.some(
+    (c) => calculateLuminance(c) < DARK_LUMINANCE_THRESHOLD
+  )
+  const hasDarkInCombo = bestCombo.some(
+    (i) =>
+      calculateLuminance(remainingCandidates[i].converted) <
+      DARK_LUMINANCE_THRESHOLD
+  )
+
+  if (!hasDarkPreselected && !hasDarkInCombo && bestCombo.length > 0) {
+    // Trouver la couleur la plus sombre parmi les candidats
+    let darkestIdx = -1
+    let darkestLum = Infinity
+    for (let i = 0; i < remainingCandidates.length; i++) {
+      const lum = calculateLuminance(remainingCandidates[i].converted)
+      if (lum < darkestLum) {
+        darkestLum = lum
+        darkestIdx = i
+      }
+    }
+    // Remplacer la dernière couleur par la plus sombre si elle est vraiment sombre
+    if (
+      darkestIdx >= 0 &&
+      darkestLum < 0.3 &&
+      !bestCombo.includes(darkestIdx)
+    ) {
+      bestCombo = [...bestCombo]
+      bestCombo[bestCombo.length - 1] = darkestIdx
+    }
+  }
 
   // Ajouter les couleurs de la meilleure combinaison
   for (const i of bestCombo) {
@@ -1146,10 +1998,18 @@ function calculateCoverageScore(
 export const selectByCoverageAware: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   const result: number[] = [...preselectedIndices]
   const scores = new Map<number, number>()
+
+  // Récupérer les couleurs présélectionnées depuis les options (si disponibles)
+  const preselectedColors =
+    options?.preselectedColors ??
+    preselectedIndices
+      .map((idx) => candidates.find((c) => c.index === idx)?.converted)
+      .filter((c): c is Vector => c !== undefined)
 
   if (result.length >= targetColors) {
     return { selectedIndices: result.slice(0, targetColors), scores }
@@ -1169,34 +2029,49 @@ export const selectByCoverageAware: PaletteStrategyFunction = (
   }
 
   // Limiter les candidats pour la recherche exhaustive
-  const MAX_CANDIDATES = 14
+  // Déterminer si on est en CPC Classic ou Plus
+  const isCPCClassic = isCPCClassicPalette(options, candidates.length)
+  const MAX_CANDIDATES = isCPCClassic ? 14 : 16
+
   if (remainingCandidates.length > MAX_CANDIDATES) {
-    const sorted = [...remainingCandidates].sort(
-      (a, b) => b.frequency - a.frequency
-    )
-    const dark = sorted.filter((c) => isDark(c.converted))
-    const bright = sorted.filter((c) => isBright(c.converted))
+    if (isCPCClassic) {
+      // Pour CPC Classic : utiliser la logique de contraste luminance
+      const sorted = [...remainingCandidates].sort(
+        (a, b) => b.frequency - a.frequency
+      )
+      const dark = sorted.filter((c) => isDark(c.converted))
+      const bright = sorted.filter((c) => isBright(c.converted))
 
-    const selectedCandidates: ColorCandidate[] = []
-    const addUnique = (c: ColorCandidate) => {
-      if (!selectedCandidates.find((s) => s.index === c.index)) {
-        selectedCandidates.push(c)
+      const selectedCandidates: ColorCandidate[] = []
+      const addUnique = (c: ColorCandidate) => {
+        if (!selectedCandidates.find((s) => s.index === c.index)) {
+          selectedCandidates.push(c)
+        }
       }
-    }
 
-    dark.slice(0, 3).forEach(addUnique)
-    bright.slice(0, 3).forEach(addUnique)
-    for (const c of sorted) {
-      if (selectedCandidates.length >= MAX_CANDIDATES) break
-      addUnique(c)
-    }
+      dark.slice(0, 3).forEach(addUnique)
+      bright.slice(0, 3).forEach(addUnique)
+      for (const c of sorted) {
+        if (selectedCandidates.length >= MAX_CANDIDATES) break
+        addUnique(c)
+      }
 
-    remainingCandidates = selectedCandidates
+      remainingCandidates = selectedCandidates
+    } else {
+      // Pour CPC Plus : utiliser la diversité des teintes
+      // Passer les couleurs présélectionnées pour éviter de sélectionner des couleurs trop proches
+      remainingCandidates = filterCandidatesWithHueDiversity(
+        remainingCandidates,
+        MAX_CANDIDATES,
+        false, // isCPCClassic = false
+        preselectedColors // Couleurs lockées à éviter
+      )
+    }
   }
 
   // Seuil de couverture adapté à la palette CPC
   // Plus la palette est petite, plus le seuil doit être élevé
-  const isCPCClassic = candidates.length <= 27
+  // Pour CPC Plus, le seuil doit être plus bas car l'espace de couleurs est plus grand
   const coverageThreshold = isCPCClassic ? 60 : 45
 
   const indices = remainingCandidates.map((_, i) => i)
@@ -1332,10 +2207,18 @@ function calculateDitheringScore(
 export const selectByDitheringAware: PaletteStrategyFunction = (
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult => {
   const result: number[] = [...preselectedIndices]
   const scores = new Map<number, number>()
+
+  // Récupérer les couleurs présélectionnées depuis les options (si disponibles)
+  const preselectedColors =
+    options?.preselectedColors ??
+    preselectedIndices
+      .map((idx) => candidates.find((c) => c.index === idx)?.converted)
+      .filter((c): c is Vector => c !== undefined)
 
   if (result.length >= targetColors) {
     return { selectedIndices: result.slice(0, targetColors), scores }
@@ -1354,44 +2237,26 @@ export const selectByDitheringAware: PaletteStrategyFunction = (
     return { selectedIndices: result.slice(0, targetColors), scores }
   }
 
-  // Limiter les candidats
-  const MAX_CANDIDATES = 12
-  if (remainingCandidates.length > MAX_CANDIDATES) {
-    const sorted = [...remainingCandidates].sort(
-      (a, b) => b.frequency - a.frequency
-    )
-    const dark = sorted.filter((c) => isDark(c.converted))
-    const bright = sorted.filter((c) => isBright(c.converted))
-
-    const selectedCandidates: ColorCandidate[] = []
-    const addUnique = (c: ColorCandidate) => {
-      if (!selectedCandidates.find((s) => s.index === c.index)) {
-        selectedCandidates.push(c)
-      }
-    }
-
-    dark.slice(0, 2).forEach(addUnique)
-    bright.slice(0, 2).forEach(addUnique)
-    for (const c of sorted) {
-      if (selectedCandidates.length >= MAX_CANDIDATES) break
-      addUnique(c)
-    }
-
-    remainingCandidates = selectedCandidates
-  }
-
   // Seuil de couverture pour le dithering (plus tolérant car les blends aident)
-  const isCPCClassic = candidates.length <= 27
+  // Pour CPC Plus, le seuil doit être plus bas car l'espace de couleurs est plus grand
+  const isCPCClassic = isCPCClassicPalette(options, candidates.length)
   const coverageThreshold = isCPCClassic ? 50 : 40
+
+  // Limiter les candidats avec diversité de teinte pour CPC Plus
+  const MAX_CANDIDATES = isCPCClassic ? 12 : 16
+  if (remainingCandidates.length > MAX_CANDIDATES) {
+    remainingCandidates = filterCandidatesWithHueDiversity(
+      remainingCandidates,
+      MAX_CANDIDATES,
+      isCPCClassic,
+      preselectedColors // Couleurs lockées à éviter
+    )
+  }
 
   const indices = remainingCandidates.map((_, i) => i)
   const combinations = kCombinationsV2(indices, needed)
 
   // Filtrer pour avoir contraste luminance
-  const preselectedColors = preselectedIndices
-    .map((idx) => candidates.find((c) => c.index === idx)?.converted)
-    .filter((c): c is Vector => c !== undefined)
-
   const filtered = filterCombinationsByLuminanceV2(
     combinations,
     preselectedColors,
@@ -1477,13 +2342,15 @@ const PALETTE_STRATEGY_MAP: Record<
  * @param candidates - Candidats de couleurs avec fréquences
  * @param targetColors - Nombre de couleurs cibles
  * @param preselectedIndices - Indices des couleurs présélectionnées (lockées)
+ * @param options - Options incluant basePaletteSize (27 pour CPC Classic, 4096 pour CPC Plus)
  * @returns Résultat de la stratégie avec les indices sélectionnés
  */
 export function applyPaletteStrategyV2(
   strategy: PaletteStrategyName,
   candidates: ColorCandidate[],
   targetColors: number,
-  preselectedIndices: number[] = []
+  preselectedIndices: number[] = [],
+  options?: StrategyOptions
 ): StrategyResult {
   const strategyFn = PALETTE_STRATEGY_MAP[strategy]
 
@@ -1492,11 +2359,12 @@ export function applyPaletteStrategyV2(
     return selectByFrequencyBalanced(
       candidates,
       targetColors,
-      preselectedIndices
+      preselectedIndices,
+      options
     )
   }
 
-  return strategyFn(candidates, targetColors, preselectedIndices)
+  return strategyFn(candidates, targetColors, preselectedIndices, options)
 }
 
 /**

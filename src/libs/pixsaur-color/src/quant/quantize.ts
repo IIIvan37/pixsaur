@@ -123,11 +123,13 @@ export function createQuantizer({
       }))
 
       // Utiliser le helper centralisé pour appliquer la stratégie
+      // Passer la taille de la palette de base pour distinguer CPC Classic (27) de CPC Plus (4096)
       const strategyResult = applyPaletteStrategyV2(
         quantConfig.paletteStrategy,
         candidates,
         limit,
-        [...preIdx]
+        [...preIdx],
+        { basePaletteSize: basePalette.length }
       )
 
       return strategyResult.selectedIndices.map(

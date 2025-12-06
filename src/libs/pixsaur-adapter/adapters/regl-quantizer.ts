@@ -17,7 +17,6 @@ import {
 } from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
-import { selectByStrategy } from '@/libs/pixsaur-color/src/quant/strategy-selector'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 
@@ -414,11 +413,9 @@ export class ReGLQuantizer {
       return selectedColors
     }
 
-    // PHASE 2: Appliquer l'algorithme de contraste pour petites palettes (modes 1-2)
+    // PHASE 2: Pour petites palettes (modes 1-2), les stratégies v2 ont déjà sélectionné les bonnes couleurs
+    // On retourne directement les couleurs sélectionnées sans re-appliquer les anciennes stratégies
     const candidateColors = topIndices.map(
-      (idx: number) => [...basePalette[idx]] as Vector
-    )
-    const preselectedColors = preselectedIndices.map(
       (idx: number) => [...basePalette[idx]] as Vector
     )
 
@@ -426,13 +423,9 @@ export class ReGLQuantizer {
       `[ReGL] Candidates pool: ${candidateColors.length} colors (target: ${config.targetColors})`
     )
 
-    // Appliquer les fonctions de contraste
-    const result = this.applyContrastFunctionsForSmallPalettes(
-      candidateColors,
-      preselectedColors,
-      config,
-      isCPCPlus
-    )
+    // Les stratégies v2 retournent exactement targetColors indices
+    // Pas besoin d'ajouter le noir ni de re-filtrer - les stratégies v2 ont déjà fait le travail
+    const result = candidateColors.slice(0, config.targetColors)
 
     // DEBUG: Afficher les couleurs finalement sélectionnées
     for (const [i, c] of result.entries()) {
@@ -698,7 +691,8 @@ export class ReGLQuantizer {
       adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
         strategy: paletteStrategy,
         targetColors,
-        candidatesCount: colorFrequency.length
+        candidatesCount: colorFrequency.length,
+        basePaletteSize: basePalette.length
       })
 
       const candidates: ColorCandidate[] = colorFrequency.map((c) => ({
@@ -708,17 +702,25 @@ export class ReGLQuantizer {
         converted: c.converted
       }))
 
+      // Récupérer les couleurs présélectionnées depuis basePalette (car elles ne sont pas dans candidates)
+      const preselectedColors = preselectedIndices.map(
+        (idx) => [...basePalette[idx]] as Vector
+      )
+
       // Utiliser le helper centralisé pour appliquer la stratégie
+      // Passer la taille de la palette de base pour distinguer CPC Classic (27) de CPC Plus (4096)
       const strategyResult = applyPaletteStrategyV2(
         paletteStrategy as PaletteStrategyName,
         candidates,
         targetColors,
-        [...preselectedIndices]
+        [...preselectedIndices],
+        { basePaletteSize: basePalette.length, preselectedColors }
       )
 
       adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {
         strategy: paletteStrategy,
-        selectedIndices: strategyResult.selectedIndices
+        selectedIndices: strategyResult.selectedIndices,
+        isCPCPlus: basePalette.length > 27
       })
 
       return strategyResult.selectedIndices
@@ -890,117 +892,6 @@ export class ReGLQuantizer {
         }
       )
     }
-  }
-
-  /**
-   * Helper: Applique les fonctions de contraste pour petites palettes
-   */
-  private applyContrastFunctionsForSmallPalettes(
-    candidateColors: Vector[],
-    preselectedColors: Vector[],
-    config: ReGLQuantizeConfig,
-    isCPCPlus: boolean
-  ): Vector[] {
-    // Assurer la présence du noir
-    this.ensureBlackPresence(candidateColors, preselectedColors, config)
-
-    // Filtrage pour mode balanced CPC Plus
-    if (
-      isCPCPlus &&
-      config.contrastStrategy === 'balanced' &&
-      config.targetColors <= 4
-    ) {
-      candidateColors = this.filterBalancedCandidates(candidateColors, config)
-    }
-
-    // Fonctions de distance et conversion
-    const distanceFn = (a: Vector, b: Vector): number =>
-      Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
-    const toRGB = (v: Vector): Vector => v
-
-    // Utiliser le sélecteur de stratégie commun
-    return selectByStrategy(
-      {
-        contrastStrategy: config.contrastStrategy,
-        targetColors: config.targetColors
-      },
-      {
-        candidates: candidateColors,
-        preselected: preselectedColors,
-        targetColors: config.targetColors,
-        distanceFn: distanceFn,
-        toRGB: toRGB
-      }
-    )
-  }
-
-  /**
-   * Helper: Assure la présence du noir dans les candidats
-   */
-  private ensureBlackPresence(
-    candidateColors: Vector[],
-    preselectedColors: Vector[],
-    config: ReGLQuantizeConfig
-  ): void {
-    if (
-      config.targetColors <= 4 &&
-      preselectedColors.length < config.targetColors
-    ) {
-      const hasBlack = candidateColors.some(
-        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
-      )
-      const hasBlackInPreselected = preselectedColors.some(
-        (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
-      )
-
-      if (!hasBlack && !hasBlackInPreselected) {
-        adapterLogger.info(
-          `[ReGL] Adding black to candidates for small palette (${config.targetColors} colors)`
-        )
-        candidateColors.unshift([0, 0, 0] as Vector)
-      }
-    }
-  }
-
-  /**
-   * Helper: Filtre les candidats pour privilégier les luminances moyennes (mode balanced)
-   */
-  private filterBalancedCandidates(
-    candidateColors: Vector[],
-    config: ReGLQuantizeConfig
-  ): Vector[] {
-    const blackColor = candidateColors.find(
-      (c) => c[0] === 0 && c[1] === 0 && c[2] === 0
-    )
-    const nonBlackCandidates = candidateColors.filter(
-      (c) => !(c[0] === 0 && c[1] === 0 && c[2] === 0)
-    )
-
-    const withLuminance = nonBlackCandidates.map((c) => {
-      const [r, g, b] = c
-      const luminance =
-        0.2126 * (r / 255) + 0.7152 * (g / 255) + 0.0722 * (b / 255)
-      return { color: c, luminance }
-    })
-
-    withLuminance.sort((a, b) => {
-      const distA = Math.abs(a.luminance - 0.5)
-      const distB = Math.abs(b.luminance - 0.5)
-      return distA - distB
-    })
-
-    const slotsForNonBlack = blackColor
-      ? config.targetColors * 2 - 1
-      : config.targetColors * 2
-    const filteredNonBlack = withLuminance
-      .slice(0, Math.min(nonBlackCandidates.length, slotsForNonBlack))
-      .map((item) => item.color)
-
-    const filteredCandidates = blackColor
-      ? [blackColor, ...filteredNonBlack]
-      : filteredNonBlack
-
-    return filteredCandidates
   }
 
   /**
