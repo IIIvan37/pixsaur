@@ -38,6 +38,10 @@ msgstr "Une nouvelle version de Pixsaur est disponible. Cliquez ci-dessous pour 
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "Une nouvelle version de Pixsaur est disponible. Mettez à jour maintenant pour bénéficier des dernières fonctionnalités et améliorations."
 
+#: src/components/raster-panel/raster-panel-view.tsx:305
+msgid "Activer l'aperçu raster"
+msgstr "Activer l'aperçu raster"
+
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:188
 msgid "palette.strategy.adaptive.label"
@@ -63,6 +67,10 @@ msgstr "Fichiers DSK supplémentaires"
 msgid "Adjustments, Source & Preview"
 msgstr "Ajustements, Source & Aperçu"
 
+#: src/components/raster-panel/raster-panel-view.tsx:373
+msgid "Ajouter une plage"
+msgstr "Ajouter une plage"
+
 #: src/app/components/adjustements/adjustement.view.tsx:73
 msgid "Ajuste la clarté globale de l'image"
 msgstr "Ajuste la clarté globale de l'image"
@@ -79,8 +87,9 @@ msgstr "Ajuste uniquement les zones claires de l'image"
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
-#: src/components/export-panel/export-config-dialog.tsx:103
+#: src/components/export-panel/export-config-dialog.tsx:117
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
+#: src/components/ui/simple-color-picker/simple-rgb-picker.tsx:66
 msgid "Annuler"
 msgstr "Annuler"
 
@@ -88,13 +97,17 @@ msgstr "Annuler"
 #~ msgid "Anti-Aliasing"
 #~ msgstr "Anti-Crénelage"
 
-#: src/app/components/preview-panel.tsx:21
+#: src/app/components/preview-panel.tsx:11
 msgid "Aperçu"
 msgstr "Aperçu"
 
 #: src/components/image-preview/image-preview-view.tsx:34
 msgid "Aucune image traitée"
 msgstr "Aucune image traitée"
+
+#: src/components/raster-panel/raster-panel-view.tsx:333
+msgid "Aucune plage raster définie."
+msgstr "Aucune plage raster définie."
 
 #: src/components/image-resize/image-resize-panel.tsx:54
 msgid "Auto (Smart CPC adapt)"
@@ -148,7 +161,7 @@ msgstr "Changer d'image"
 #~ msgid "Clear all images from workspace"
 #~ msgstr "Supprimer toutes les images du workspace"
 
-#: src/components/image-preview/image-preview.tsx:131
+#: src/components/image-preview/image-preview.tsx:134
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
 msgstr "Cliquer pour ouvrir dans un nouvel onglet"
 
@@ -169,11 +182,11 @@ msgstr "Cliquez pour sélectionner une image"
 msgid "Color {index}: {color}"
 msgstr "Couleur {index} : {color}"
 
-#: src/components/export-panel/export-config-dialog.tsx:96
+#: src/components/export-panel/export-config-dialog.tsx:110
 msgid "Configuration de l'export"
 msgstr "Configuration de l'export"
 
-#: src/components/export-panel/export-config-dialog.tsx:113
+#: src/components/export-panel/export-config-dialog.tsx:127
 msgid "Contenu du ZIP"
 msgstr "Contenu du ZIP"
 
@@ -189,6 +202,10 @@ msgstr "Convertisseur d'images Amstrad CPC"
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 
+#: src/components/raster-panel/raster-panel-view.tsx:325
+msgid "Couleur"
+msgstr "Couleur"
+
 #: src/app/components/adjustements/adjustement.view.tsx:31
 msgid "Couleur & Température"
 msgstr "Couleur & Température"
@@ -197,6 +214,10 @@ msgstr "Couleur & Température"
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:38
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Couverture Optimale"
+
+#: src/components/raster-panel/raster-panel-view.tsx:315
+msgid "Début"
+msgstr "Début"
 
 #: src/components/color-palette/color-grid/color-grid-view.tsx:74
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
@@ -238,8 +259,8 @@ msgstr "Gestionnaire DSK"
 #~ msgid "DSK Workspace"
 #~ msgstr "Workspace DSK"
 
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:158
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:164
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:180
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:186
 msgid "DSK workspace exported successfully!"
 msgstr "Workspace DSK exporté avec succès !"
 
@@ -251,6 +272,18 @@ msgstr "Stratégie dynamique selon l'image"
 #: src/app/components/adjustements/adjustement.view.tsx:48
 msgid "Effets"
 msgstr "Effets"
+
+#: src/components/raster-panel/raster-panel-view.tsx:294
+msgid "Effets Raster"
+msgstr "Effets Raster"
+
+#: src/components/raster-panel/raster-panel-view.tsx:322
+msgid "Encre"
+msgstr "Encre"
+
+#: src/components/raster-panel/raster-panel-view.tsx:107
+msgid "Encre {inkIndex}"
+msgstr "Encre {inkIndex}"
 
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #: src/components/export-panel/dsk-files-manager.tsx:65
@@ -270,7 +303,7 @@ msgstr "Exhaustive Contrast"
 msgid "Export DSK"
 msgstr "Exporter le DSK"
 
-#: src/components/export-panel/export-config-dialog.tsx:106
+#: src/components/export-panel/export-config-dialog.tsx:120
 #: src/components/export-panel/export-panel-view.tsx:25
 msgid "Exporter"
 msgstr "Exporter"
@@ -288,9 +321,13 @@ msgstr "Exposition & Tonalité"
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 
-#: src/components/export-panel/export-panel.tsx:127
+#: src/components/export-panel/export-panel.tsx:143
 msgid "File exported successfully!"
 msgstr "Fichier exporté avec succès !"
+
+#: src/components/raster-panel/raster-panel-view.tsx:319
+msgid "Fin"
+msgstr "Fin"
 
 #: src/components/image-upload/image-upload-view.tsx:203
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
@@ -355,11 +392,11 @@ msgstr "Intensité"
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 
-#: src/components/export-panel/export-config-dialog.tsx:173
+#: src/components/export-panel/export-config-dialog.tsx:187
 msgid "Label de la palette"
 msgstr "Label de la palette"
 
-#: src/components/export-panel/export-config-dialog.tsx:165
+#: src/components/export-panel/export-config-dialog.tsx:179
 msgid "Label des données"
 msgstr "Label des données"
 
@@ -376,10 +413,15 @@ msgstr "Plus tard"
 #~ msgstr "Le format DSK nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 
 #: src/components/export-panel/export-config-dialog.tsx:125
-msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
-msgstr "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+#~ msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
+#~ msgstr "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 
-#: src/components/export-panel/export-config-dialog.tsx:132
+#. placeholder {0}: Math.round(scrSizeBytes / 1024)
+#: src/components/export-panel/export-config-dialog.tsx:139
+msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
+msgstr "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
+
+#: src/components/export-panel/export-config-dialog.tsx:146
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (séquentiel)"
 
@@ -469,7 +511,7 @@ msgstr "Aucune image à ajouter"
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "Aucune image dans le workspace. Ajoutez des images converties pour construire votre fichier DSK."
 
-#: src/components/export-panel/export-config-dialog.tsx:183
+#: src/components/export-panel/export-config-dialog.tsx:197
 msgid "Nom du fichier ZIP"
 msgstr "Nom du fichier ZIP"
 
@@ -497,7 +539,7 @@ msgstr "ou cliquez pour sélectionner un fichier"
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
-#: src/components/export-panel/export-config-dialog.tsx:137
+#: src/components/export-panel/export-config-dialog.tsx:151
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
@@ -519,11 +561,11 @@ msgstr "Mode pixel"
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (aperçu)"
 
-#: src/components/export-panel/export-config-dialog.tsx:149
+#: src/components/export-panel/export-config-dialog.tsx:163
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (ratio CPC corrigé)"
 
-#: src/components/export-panel/export-config-dialog.tsx:142
+#: src/components/export-panel/export-config-dialog.tsx:156
 msgid "PNG (pixels carrés)"
 msgstr "PNG (pixels carrés)"
 
@@ -581,7 +623,7 @@ msgstr "Saturation"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 
-#: src/components/export-panel/export-config-dialog.tsx:119
+#: src/components/export-panel/export-config-dialog.tsx:133
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (format CPC entrelacé)"
 
@@ -589,7 +631,11 @@ msgstr "SCR ASM (format CPC entrelacé)"
 msgid "Sélection"
 msgstr "Sélection"
 
-#: src/components/export-panel/export-config-dialog.tsx:98
+#: src/components/raster-panel/raster-panel-view.tsx:143
+msgid "Sélectionner une couleur"
+msgstr "Sélectionner une couleur"
+
+#: src/components/export-panel/export-config-dialog.tsx:112
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 
@@ -605,6 +651,10 @@ msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumi
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:46
 msgid "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
 msgstr "Supporte les formats CPC Classic et CPC Plus. Le loader détecte automatiquement le type de matériel."
+
+#: src/components/raster-panel/raster-panel-view.tsx:261
+msgid "Supprimer la plage"
+msgstr "Supprimer la plage"
 
 #: src/app/components/adjustements/adjustement.view.tsx:91
 msgid "Teinte"
@@ -643,11 +693,12 @@ msgstr "Télécharger des fichiers"
 #~ msgid "utilisée"
 #~ msgstr "utilisée"
 
-#: src/components/export-panel/export-config-dialog.tsx:158
+#: src/components/export-panel/export-config-dialog.tsx:172
 msgid "Utiliser des labels personnalisés"
 msgstr "Utiliser des labels personnalisés"
 
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:94
+#: src/components/ui/simple-color-picker/simple-rgb-picker.tsx:69
 msgid "Valider"
 msgstr "Valider"
 

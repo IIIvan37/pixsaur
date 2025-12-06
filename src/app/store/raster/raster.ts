@@ -79,7 +79,7 @@ export const clearRasterRangesAtom = atom(null, (_get, set) => {
 })
 
 /**
- * Derived atom: check if any ranges overlap on the same ink
+ * Derived atom: check if any ranges overlap (regardless of ink)
  * Returns array of conflicting range IDs
  */
 export const rasterConflictsAtom = atom((get) => {
@@ -91,13 +91,11 @@ export const rasterConflictsAtom = atom((get) => {
       const a = ranges[i]
       const b = ranges[j]
 
-      // Check if same ink and overlapping lines
-      if (a.inkIndex === b.inkIndex) {
-        const overlaps = !(a.endLine < b.startLine || b.endLine < a.startLine)
-        if (overlaps) {
-          if (!conflicts.includes(a.id)) conflicts.push(a.id)
-          if (!conflicts.includes(b.id)) conflicts.push(b.id)
-        }
+      // Check if overlapping lines (regardless of ink)
+      const overlaps = !(a.endLine < b.startLine || b.endLine < a.startLine)
+      if (overlaps) {
+        if (!conflicts.includes(a.id)) conflicts.push(a.id)
+        if (!conflicts.includes(b.id)) conflicts.push(b.id)
       }
     }
   }
