@@ -12,6 +12,61 @@ import {
 import type { ExportConfig } from '../types'
 
 /**
+ * Create a canvas from pixel data at native dimensions
+ */
+function createCanvasFromPixelData(
+  pixelData: Uint8ClampedArray,
+  width: number,
+  height: number
+): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d', { alpha: false })
+  if (ctx) {
+    const imageData = new ImageData(pixelData, width, height)
+    ctx.putImageData(imageData, 0, 0)
+  }
+  return canvas
+}
+
+/**
+ * Scale a canvas to corrected aspect ratio
+ */
+function scaleToAspectRatio(
+  sourceCanvas: HTMLCanvasElement,
+  widthMultiplier: number,
+  heightMultiplier: number
+): HTMLCanvasElement {
+  const correctedWidth = sourceCanvas.width * widthMultiplier
+  const correctedHeight = sourceCanvas.height * heightMultiplier
+
+  const correctedCanvas = document.createElement('canvas')
+  correctedCanvas.width = correctedWidth
+  correctedCanvas.height = correctedHeight
+
+  const ctx = correctedCanvas.getContext('2d', { alpha: false })
+  if (ctx) {
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, correctedWidth, correctedHeight)
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(
+      sourceCanvas,
+      0,
+      0,
+      sourceCanvas.width,
+      sourceCanvas.height,
+      0,
+      0,
+      correctedWidth,
+      correctedHeight
+    )
+  }
+
+  return correctedCanvas
+}
+
+/**
  * Export PNG with native CPC dimensions (1:1 square pixels)
  */
 async function exportSquarePixelsPNG(
@@ -47,45 +102,17 @@ async function exportCorrectedAspectPNGWithRasters(
     rasterRanges
   )
 
-  // Create a canvas with the raster-applied image at native size
-  const nativeCanvas = document.createElement('canvas')
-  nativeCanvas.width = modeConfig.width
-  nativeCanvas.height = modeConfig.height
-  const nativeCtx = nativeCanvas.getContext('2d', { alpha: false })
-  if (nativeCtx) {
-    const imageData = new ImageData(
-      pixelData,
-      modeConfig.width,
-      modeConfig.height
-    )
-    nativeCtx.putImageData(imageData, 0, 0)
-  }
-
-  // Scale to corrected aspect ratio
-  const correctedWidth = modeConfig.width * widthMultiplier
-  const correctedHeight = modeConfig.height * heightMultiplier
-
-  const correctedCanvas = document.createElement('canvas')
-  correctedCanvas.width = correctedWidth
-  correctedCanvas.height = correctedHeight
-
-  const correctedCtx = correctedCanvas.getContext('2d', { alpha: false })
-  if (correctedCtx) {
-    correctedCtx.fillStyle = '#000000'
-    correctedCtx.fillRect(0, 0, correctedWidth, correctedHeight)
-    correctedCtx.imageSmoothingEnabled = false
-    correctedCtx.drawImage(
-      nativeCanvas,
-      0,
-      0,
-      modeConfig.width,
-      modeConfig.height,
-      0,
-      0,
-      correctedWidth,
-      correctedHeight
-    )
-  }
+  // Create canvas from pixel data and scale to corrected aspect ratio
+  const nativeCanvas = createCanvasFromPixelData(
+    pixelData,
+    modeConfig.width,
+    modeConfig.height
+  )
+  const correctedCanvas = scaleToAspectRatio(
+    nativeCanvas,
+    widthMultiplier,
+    heightMultiplier
+  )
 
   const correctedBlob = await canvasToPNGBlob(correctedCanvas)
   zip.file('pixsaur_corrected_aspect.png', correctedBlob)
@@ -110,6 +137,19 @@ export interface PNGExportData {
   rasterRanges: RasterRange[]
 }
 
+/**
+ * Check if raster data is valid for export
+ */
+function hasValidRasterData(
+  rasterData?: PNGExportData
+): rasterData is PNGExportData {
+  return Boolean(
+    rasterData &&
+      rasterData.rasterRanges.length > 0 &&
+      rasterData.globalPalette.length > 0
+  )
+}
+
 export async function exportPNGData(
   zip: JSZip,
   canvas: HTMLCanvasElement,
@@ -117,19 +157,12 @@ export async function exportPNGData(
   config: ExportConfig,
   rasterData?: PNGExportData
 ) {
-  // Export original PNG (square pixels - 1:1 ratio)
   if (config.content.includePNG) {
     await exportSquarePixelsPNG(zip, canvas, modeConfig)
   }
 
-  // Export PNG with correct aspect ratio
   if (config.content.includePNGCorrected) {
-    // If raster data is available and there are rasters, apply them
-    if (
-      rasterData &&
-      rasterData.rasterRanges.length > 0 &&
-      rasterData.globalPalette.length > 0
-    ) {
+    if (hasValidRasterData(rasterData)) {
       await exportCorrectedAspectPNGWithRasters(
         zip,
         rasterData.indexBuf,
@@ -138,7 +171,6 @@ export async function exportPNGData(
         rasterData.rasterRanges
       )
     } else {
-      // No rasters, use the canvas directly
       await exportCorrectedAspectPNG(zip, canvas, modeConfig)
     }
   }
