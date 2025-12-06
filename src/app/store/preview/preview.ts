@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import { quantifyToCPCPlus, quantizeCPC } from '@/export'
+import { quantifyToCPCPlus, quantizeCPC, rgbToIndexBufferExact } from '@/export'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import {
   DISTANCE_METRICS_BY_COLORSPACE,
@@ -639,3 +639,62 @@ function positionImageForAutoMode(
   const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
   return positioned
 }
+
+// ============================================================================
+// Index Buffer pour les Rasters
+// ============================================================================
+
+/**
+ * Index buffer de la preview image.
+ * Chaque pixel est représenté par son indice dans la palette (0-15).
+ * Utilisé pour le rendu avec rasters (modification de palette par ligne).
+ */
+export const previewIndexBufferAtom = atom(async (get) => {
+  const previewImage = await get(previewImageAtom)
+  const exportPalette = await get(exportPaletteWithSlotsAtom)
+
+  if (!previewImage || exportPalette.length === 0) {
+    return null
+  }
+
+  // Préparer la palette pour le mapping: remplacer les slots ignorés [-1,-1,-1]
+  // par une couleur valide (noir) pour que le mapping fonctionne
+  const validColors = exportPalette.filter(
+    (c) => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
+  )
+  const fallbackColor: Vector =
+    validColors.length > 0
+      ? validColors.reduce((darkest, color) => {
+          return luminance(color) < luminance(darkest) ? color : darkest
+        }, validColors[0])
+      : [0, 0, 0]
+
+  const ditheringPalette = exportPalette.map((color) =>
+    color[0] === -1 ? fallbackColor : color
+  )
+
+  // Convertir l'ImageData en index buffer
+  // rgbToIndexBufferExact attend un Uint8ClampedArray (les données RGBA)
+  // Le 3ème paramètre (quantize) doit être false car l'image est déjà quantifiée
+  // Le 4ème paramètre (fallbackToDarkest) doit être true pour gérer les pixels non trouvés
+  const indexBuffer = rgbToIndexBufferExact(
+    previewImage.data,
+    ditheringPalette,
+    false,
+    true
+  )
+
+  logger.info('[Preview] Index buffer created', {
+    width: previewImage.width,
+    height: previewImage.height,
+    bufferLength: indexBuffer.length,
+    paletteSize: ditheringPalette.length
+  })
+
+  return {
+    buffer: indexBuffer,
+    width: previewImage.width,
+    height: previewImage.height,
+    palette: ditheringPalette
+  }
+})
