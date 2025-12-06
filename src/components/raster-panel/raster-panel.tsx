@@ -3,6 +3,7 @@ import {
   cpcHardwareAtom,
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
+import { imageAtom } from '@/app/store/image/image'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
 import {
   addRasterRangeAtom,
@@ -30,6 +31,7 @@ export function RasterPanel() {
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const displayPalette = useAtomValue(displayPaletteAtom)
+  const image = useAtomValue(imageAtom)
 
   const addRange = useSetAtom(addRasterRangeAtom)
   const updateRange = useSetAtom(updateRasterRangeAtom)
@@ -38,6 +40,7 @@ export function RasterPanel() {
   // Max line is height - 1 (0-indexed)
   const maxLine = modeConfig.height - 1
   const isClassicMode = cpcHardware === 'classic'
+  const hasImage = image !== null
 
   // Extract colors from display palette slots
   const palette: Vector[] = displayPalette.map(
@@ -93,6 +96,7 @@ export function RasterPanel() {
 
   return (
     <RasterPanelView
+      disabled={!hasImage}
       enabled={enabled}
       onEnabledChange={setEnabled}
       ranges={ranges}

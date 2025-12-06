@@ -92,13 +92,14 @@ export function groupByLine(
  * Generate ASM data for CPC Classic rasters
  * Format: For each line of the image:
  *   - DB #FF, #FF if no change needed on this line
- *   - DB ink, hardware_color if raster change or restore needed
+ *   - DB ink, hardware_color if raster change needed
  *
- * When a raster ends, the next line restores the original palette color.
+ * Note: When a raster ends, the ink keeps its modified color until
+ * another raster range explicitly changes it. No automatic restore.
  *
  * @param ranges - Raster ranges to export
  * @param imageHeight - Height of the image in lines
- * @param basePalette - Base palette firmware indices (used to restore colors)
+ * @param basePalette - Base palette firmware indices (unused, kept for API compatibility)
  * @param labelName - Label name for the ASM data
  */
 export function generateClassicRasterASM(
@@ -114,26 +115,14 @@ export function generateClassicRasterASM(
   lines.push(`    ; Format: DB ink, color for each of the ${imageHeight} lines`)
   lines.push('    ; #FF, #FF = no change on this line')
   lines.push('    ; Color is CPC Classic hardware value (1 byte)')
-
-  // Track which inks were modified on the previous line
-  let previousInkModified: number | null = null
+  lines.push('    ; Note: ink color persists until next explicit change')
 
   for (let lineNum = 0; lineNum < imageHeight; lineNum++) {
     const lineEntries = grouped.get(lineNum)
 
     if (!lineEntries || lineEntries.length === 0) {
-      // No raster on this line
-      if (previousInkModified !== null) {
-        // Restore the ink to its original color from base palette
-        const originalFirmware = basePalette[previousInkModified] ?? 0
-        const hwColor = firmwareToHardware[originalFirmware]
-        lines.push(
-          `    DB ${previousInkModified}, #${hwColor.toString(16).toUpperCase().padStart(2, '0')}    ; Line ${lineNum} - restore ink ${previousInkModified}`
-        )
-        previousInkModified = null
-      } else {
-        lines.push(`    DB #FF, #FF    ; Line ${lineNum} - no change`)
-      }
+      // No raster on this line - ink keeps its current color
+      lines.push(`    DB #FF, #FF    ; Line ${lineNum} - no change`)
     } else {
       // Use first raster entry for this line (if multiple, take the first)
       const entry = lineEntries[0]
@@ -142,9 +131,11 @@ export function generateClassicRasterASM(
       lines.push(
         `    DB ${entry.inkIndex}, #${hwColor.toString(16).toUpperCase().padStart(2, '0')}    ; Line ${lineNum}`
       )
-      previousInkModified = entry.inkIndex
     }
   }
+
+  // Mark basePalette as intentionally unused
+  void basePalette
 
   return lines.join('\n')
 }
@@ -153,13 +144,14 @@ export function generateClassicRasterASM(
  * Generate ASM data for CPC Plus rasters
  * Format: For each line of the image:
  *   - DB #FF, #FF, #FF if no change needed on this line
- *   - DB ink, color_low, color_high if raster change or restore needed
+ *   - DB ink, color_low, color_high if raster change needed
  *
- * When a raster ends, the next line restores the original palette color.
+ * Note: When a raster ends, the ink keeps its modified color until
+ * another raster range explicitly changes it. No automatic restore.
  *
  * @param ranges - Raster ranges to export
  * @param imageHeight - Height of the image in lines
- * @param basePalette - Base palette as CPC Plus 12-bit values (used to restore colors)
+ * @param basePalette - Base palette as CPC Plus 12-bit values (unused, kept for API compatibility)
  * @param labelName - Label name for the ASM data
  */
 export function generatePlusRasterASM(
@@ -177,27 +169,14 @@ export function generatePlusRasterASM(
   )
   lines.push('    ; #FF, #FF, #FF = no change on this line')
   lines.push('    ; Color is CPC Plus 12-bit value (2 bytes, little-endian)')
-
-  // Track which inks were modified on the previous line
-  let previousInkModified: number | null = null
+  lines.push('    ; Note: ink color persists until next explicit change')
 
   for (let lineNum = 0; lineNum < imageHeight; lineNum++) {
     const lineEntries = grouped.get(lineNum)
 
     if (!lineEntries || lineEntries.length === 0) {
-      // No raster on this line
-      if (previousInkModified !== null) {
-        // Restore the ink to its original color from base palette
-        const originalColor = basePalette[previousInkModified] ?? 0
-        const lowByte = originalColor & 0xff
-        const highByte = (originalColor >> 8) & 0xff
-        lines.push(
-          `    DB ${previousInkModified}, #${lowByte.toString(16).toUpperCase().padStart(2, '0')}, #${highByte.toString(16).toUpperCase().padStart(2, '00')}    ; Line ${lineNum} - restore ink ${previousInkModified}`
-        )
-        previousInkModified = null
-      } else {
-        lines.push(`    DB #FF, #FF, #FF    ; Line ${lineNum} - no change`)
-      }
+      // No raster on this line - ink keeps its current color
+      lines.push(`    DB #FF, #FF, #FF    ; Line ${lineNum} - no change`)
     } else {
       // Use first raster entry for this line
       const entry = lineEntries[0]
@@ -208,9 +187,11 @@ export function generatePlusRasterASM(
       lines.push(
         `    DB ${entry.inkIndex}, #${lowByte.toString(16).toUpperCase().padStart(2, '0')}, #${highByte.toString(16).toUpperCase().padStart(2, '0')}    ; Line ${lineNum} = #${plusColor.toString(16).toUpperCase().padStart(3, '0')}`
       )
-      previousInkModified = entry.inkIndex
     }
   }
+
+  // Mark basePalette as intentionally unused
+  void basePalette
 
   return lines.join('\n')
 }

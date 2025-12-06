@@ -8,13 +8,15 @@ type SwitchProps = {
   readonly onCheckedChange: (value: boolean) => void
   readonly label?: ReactNode
   readonly id: string
+  readonly disabled?: boolean
 }
 
 export function Switch({
   checked,
   onCheckedChange,
   label,
-  id
+  id,
+  disabled = false
 }: Readonly<SwitchProps>) {
   return (
     <div className={styles.wrapper}>
@@ -24,10 +26,15 @@ export function Switch({
         </label>
       )}
       <SwitchPrimitive.Root
-        className={clsx(styles.root, checked && styles.rootChecked)}
+        className={clsx(
+          styles.root,
+          checked && styles.rootChecked,
+          disabled && styles.rootDisabled
+        )}
         id={id}
         checked={checked}
         onCheckedChange={onCheckedChange}
+        disabled={disabled}
       >
         <SwitchPrimitive.Thumb className={styles.thumb} />
       </SwitchPrimitive.Root>

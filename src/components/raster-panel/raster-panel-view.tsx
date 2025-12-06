@@ -18,6 +18,7 @@ import { vectorToHex } from '@/palettes/cpc-palette'
 import styles from './raster-panel.module.css'
 
 export interface RasterPanelViewProps {
+  readonly disabled?: boolean
   readonly enabled: boolean
   readonly onEnabledChange: (enabled: boolean) => void
   readonly ranges: RasterRange[]
@@ -280,6 +281,7 @@ function RangeRow({
 }
 
 export function RasterPanelView({
+  disabled = false,
   enabled,
   onEnabledChange,
   ranges,
@@ -306,6 +308,7 @@ export function RasterPanelView({
             id={switchId}
             checked={enabled}
             onCheckedChange={onEnabledChange}
+            disabled={disabled}
           />
           <span className={styles.toggleLabel}>
             <Trans>Activer l'aperçu raster</Trans>

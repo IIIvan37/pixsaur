@@ -131,7 +131,7 @@ describe('raster-format', () => {
       expect(asm).toContain('DB #FF, #FF') // No change marker
     })
 
-    it('should generate ASM for a single range and restore after', () => {
+    it('should generate ASM for a single range without restore after', () => {
       const ranges: RasterRange[] = [
         {
           id: 'test-1',
@@ -148,8 +148,10 @@ describe('raster-format', () => {
       expect(asm).toContain('RasterData:')
       expect(asm).toContain('DB 1, #54') // Line 10: Ink 1, hardware color 0x54 (black)
       expect(asm).toContain('Line 10')
-      // Line 11 should restore ink 1 to its original color (firmware 1 = hardware 0x44)
-      expect(asm).toContain('restore ink 1')
+      // Line 11 should NOT restore - ink keeps its color until next explicit change
+      expect(asm).not.toContain('restore')
+      // Line 11 should be no-change
+      expect(asm).toContain('Line 11 - no change')
     })
 
     it('should use custom label name', () => {
@@ -177,7 +179,7 @@ describe('raster-format', () => {
       expect(asm).toContain('DB #FF, #FF, #FF') // No change marker (3 bytes)
     })
 
-    it('should generate ASM with 3-byte entries and restore after', () => {
+    it('should generate ASM with 3-byte entries without restore after', () => {
       const ranges: RasterRange[] = [
         {
           id: 'test-1',
@@ -194,8 +196,10 @@ describe('raster-format', () => {
       expect(asm).toContain('RasterData:')
       expect(asm).toContain('DB 2, #F0, #00') // Line 20: Ink 2, color 0x0F0 little-endian
       expect(asm).toContain('Line 20')
-      // Line 21 should restore ink 2 to its original color (0x0F0)
-      expect(asm).toContain('restore ink 2')
+      // Line 21 should NOT restore - ink keeps its color until next explicit change
+      expect(asm).not.toContain('restore')
+      // Line 21 should be no-change
+      expect(asm).toContain('Line 21 - no change')
     })
   })
 })

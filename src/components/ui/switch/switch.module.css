@@ -58,3 +58,13 @@
 .rootChecked .thumb {
   transform: translateX(20px);
 }
+
+.rootDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rootDisabled:hover {
+  border-color: var(--color-border, #00df3a);
+  box-shadow: none;
+}
