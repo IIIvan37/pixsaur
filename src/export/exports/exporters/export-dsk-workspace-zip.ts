@@ -4,6 +4,10 @@ import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-u
 import { dskLogger } from '@/core'
 import { injectPaletteDataIntoSCR } from '@/export/exports/cpc-format'
 import { injectCPCPlusPaletteIntoSCR } from '@/export/exports/cpc-plus-format'
+import {
+  generateClassicRasterASM,
+  generatePlusRasterASM
+} from '@/export/exports/raster-format'
 import { exportSCR } from '../export-scr/export-scr'
 import { generateDskReadmePdf } from '../generate-dsk-readme-pdf'
 import { toASMData } from '../to-asm-data'
@@ -215,6 +219,37 @@ export async function exportDskWorkspaceZip(
         zip.file(zipFilename, binaryData)
         dskLogger.info(
           `[DSK Workspace ZIP] Added ${dskFilenames[0]} to archive (fallback)`
+        )
+      }
+
+      // Export rasters for this image if present
+      if (image.rasterRanges && image.rasterRanges.length > 0) {
+        const rasterLabel = `raster${imageIndex}`
+        const isCPCPlus = image.cpcHardware === 'plus'
+
+        // Get the base palette for restoring colors
+        const basePalette = isCPCPlus
+          ? (image.palettePlus ?? [])
+          : image.paletteFirmware
+
+        const rasterAsm = isCPCPlus
+          ? generatePlusRasterASM(
+              image.rasterRanges,
+              image.height,
+              basePalette,
+              rasterLabel
+            )
+          : generateClassicRasterASM(
+              image.rasterRanges,
+              image.height,
+              basePalette,
+              rasterLabel
+            )
+
+        const rasterFilename = `raster${imageIndex}.asm`
+        zip.file(rasterFilename, rasterAsm)
+        dskLogger.info(
+          `[DSK Workspace ZIP] Added ${rasterFilename} to archive (${image.rasterRanges.length} ranges)`
         )
       }
     }

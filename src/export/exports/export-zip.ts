@@ -1,8 +1,11 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { RasterRange } from '@/libs/pixsaur-raster/types'
 import { CPCHardware } from '@/libs/types'
 import { isTauri, saveZipFileTauri } from '@/tauri'
 import { paletteToCPCPlusValues } from './cpc-plus-format'
+import type { PNGExportData } from './exporters'
 import {
   exportLinearData,
   exportPalettePlus,
@@ -11,7 +14,32 @@ import {
   exportSCRClassic,
   exportSCRPlus
 } from './exporters'
+import {
+  generateClassicRasterASM,
+  generatePlusRasterASM
+} from './raster-format'
 import type { ExportConfig } from './types'
+
+function exportRasterData(
+  zip: JSZip,
+  rasterRanges: RasterRange[],
+  imageHeight: number,
+  isCPCPlus: boolean,
+  basePalette: number[],
+  config: ExportConfig
+) {
+  if (!config.content.includeRasters || rasterRanges.length === 0) {
+    return
+  }
+
+  const label = config.labels.enabled ? config.labels.media : 'pixsaur_raster'
+
+  // Generate ASM file (use RASM to assemble if binary is needed)
+  const asmContent = isCPCPlus
+    ? generatePlusRasterASM(rasterRanges, imageHeight, basePalette, label)
+    : generateClassicRasterASM(rasterRanges, imageHeight, basePalette, label)
+  zip.file('rasters.asm', asmContent)
+}
 
 async function exportCPCPlusData(
   zip: JSZip,
@@ -70,7 +98,8 @@ export async function exportZip(
   modeConfig: CpcModeConfig,
   cpcHardware: CPCHardware,
   reducedPalette: Array<[number, number, number]> | undefined,
-  config: ExportConfig
+  config: ExportConfig,
+  rasterRanges: RasterRange[] = []
 ): Promise<boolean> {
   const zip = new JSZip()
   const isCPCPlus = cpcHardware === CPCHardware.PLUS
@@ -111,6 +140,17 @@ export async function exportZip(
       asmLabel,
       isStandardMode
     )
+
+    // Export rasters if enabled (for Plus, convert palette to CPC Plus values)
+    const cpcPlusPalette = paletteToCPCPlusValues(reducedPalette)
+    exportRasterData(
+      zip,
+      rasterRanges,
+      modeConfig.height,
+      isCPCPlus,
+      cpcPlusPalette,
+      config
+    )
   } else {
     // ===== CPC CLASSIC EXPORT =====
 
@@ -123,11 +163,32 @@ export async function exportZip(
       asmLabel,
       isStandardMode
     )
+
+    // Export rasters if enabled (for Classic, use firmware palette)
+    exportRasterData(
+      zip,
+      rasterRanges,
+      modeConfig.height,
+      isCPCPlus,
+      paletteFirmware,
+      config
+    )
   }
 
   // Export PNG if enabled
   if (config.content.includePNG || config.content.includePNGCorrected) {
-    await exportPNGData(zip, canvas, modeConfig, config)
+    // Build global palette as Vector[] for raster rendering
+    const globalPalette: Vector[] = reducedPalette
+      ? reducedPalette.map((c) => [...c] as Vector)
+      : []
+
+    const rasterData: PNGExportData = {
+      indexBuf,
+      globalPalette,
+      rasterRanges
+    }
+
+    await exportPNGData(zip, canvas, modeConfig, config, rasterData)
   }
 
   // 5. Finalisation et téléchargement

@@ -194,3 +194,16 @@
 	box-shadow: 0 2px 8px rgba(var(--color-background), 0.4);
 }
 
+.rasterBadge {
+	display: inline-block;
+	padding: 0.125rem 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border-radius: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	font-family: system-ui, -apple-system, sans-serif;
+	background: rgba(255, 165, 0, 0.2);
+	color: #ff9500;
+	border: 1px solid rgba(255, 165, 0, 0.4);
+}

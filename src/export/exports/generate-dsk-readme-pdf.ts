@@ -67,23 +67,35 @@ export function generateDskReadmePdf(
     const mode = `Mode ${image.mode}`
     const dimensions = `${image.width}×${image.height}`
     const colors = String(image.nColors)
+    const rasters =
+      image.rasterRanges && image.rasterRanges.length > 0
+        ? `${image.rasterRanges.length} range(s)`
+        : '-'
 
     if (filenames.length === 1) {
-      filesTableData.push([filenames[0], hardware, mode, dimensions, colors])
+      filesTableData.push([
+        filenames[0],
+        hardware,
+        mode,
+        dimensions,
+        colors,
+        rasters
+      ])
     } else {
       filesTableData.push([
         `${filenames[0].replace(/_1\.BIN$/, '.BIN')} (${filenames.length} chunks)`,
         hardware,
         mode,
         dimensions,
-        colors
+        colors,
+        rasters
       ])
     }
   }
 
   autoTable(doc, {
     startY: yPosition,
-    head: [['Filename', 'Hardware', 'Mode', 'Dimensions', 'Colors']],
+    head: [['Filename', 'Hardware', 'Mode', 'Dimensions', 'Colors', 'Rasters']],
     body: filesTableData,
     theme: 'grid',
     headStyles: { fillColor: [41, 128, 185] },
@@ -91,6 +103,57 @@ export function generateDskReadmePdf(
   })
 
   yPosition = (doc as any).lastAutoTable.finalY + 10
+
+  // Check if any images have rasters
+  const hasRasters = images.some(
+    (img) => img.rasterRanges && img.rasterRanges.length > 0
+  )
+
+  if (hasRasters) {
+    if (yPosition > 230) {
+      doc.addPage()
+      yPosition = 20
+    }
+
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Raster Data', 20, yPosition)
+    yPosition += 8
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    const rasterIntro =
+      'Some images include raster data (rasterX.asm files). Rasters allow changing ink colors per scanline for advanced visual effects.'
+    const splitRasterIntro = doc.splitTextToSize(rasterIntro, 170)
+    doc.text(splitRasterIntro, 20, yPosition)
+    yPosition += 6 * splitRasterIntro.length + 4
+
+    doc.setFont('helvetica', 'bold')
+    doc.text('Format:', 20, yPosition)
+    yPosition += 6
+
+    doc.setFont('helvetica', 'normal')
+    doc.text('CPC Classic: DB ink, color (2 bytes per line)', 25, yPosition)
+    yPosition += 5
+    doc.text(
+      'CPC Plus: DB ink, color_low, color_high (3 bytes per line)',
+      25,
+      yPosition
+    )
+    yPosition += 5
+    doc.text(
+      '#FF, #FF (or #FF, #FF, #FF) = no change on this line',
+      25,
+      yPosition
+    )
+    yPosition += 8
+
+    const rasterNote =
+      'The raster data includes automatic restoration of original palette colors when a raster range ends.'
+    const splitRasterNote = doc.splitTextToSize(rasterNote, 170)
+    doc.text(splitRasterNote, 20, yPosition)
+    yPosition += 6 * splitRasterNote.length + 8
+  }
 
   if (yPosition > 250) {
     doc.addPage()
