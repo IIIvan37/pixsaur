@@ -11,6 +11,9 @@ import type { RasterRange } from './types'
  * This is exactly how CPC hardware works: the raster changes the ink definition,
  * not the image data itself.
  *
+ * Note: When a raster range ends, the ink keeps its modified color until
+ * another raster range explicitly changes it. No automatic restore to base palette.
+ *
  * @param indexBuffer - Array of ink indices (0-15) for each pixel
  * @param width - Image width in pixels
  * @param height - Image height in pixels
@@ -27,37 +30,45 @@ export function renderPreviewWithRaster(
 ): Uint8ClampedArray {
   const output = new Uint8ClampedArray(width * height * 4)
 
-  // Pre-compute which ranges affect each line for performance
-  const rangesByLine: Map<number, RasterRange[]> = new Map()
-  for (const range of rasterRanges) {
-    for (let y = range.startLine; y <= range.endLine && y < height; y++) {
-      if (!rangesByLine.has(y)) {
-        rangesByLine.set(y, [])
-      }
-      rangesByLine.get(y)!.push(range)
+  // Sort ranges by startLine to process them in order
+  const sortedRanges = [...rasterRanges].sort(
+    (a, b) => a.startLine - b.startLine
+  )
+
+  // Build a map of line -> raster changes that START on this line
+  const rasterStartsByLine: Map<number, RasterRange[]> = new Map()
+  for (const range of sortedRanges) {
+    if (!rasterStartsByLine.has(range.startLine)) {
+      rasterStartsByLine.set(range.startLine, [])
     }
+    rasterStartsByLine.get(range.startLine)!.push(range)
   }
 
-  for (let y = 0; y < height; y++) {
-    // Build the effective palette for this line
-    // Start with a copy of the global palette
-    const linePalette: Vector[] = globalPalette.map((c) => [...c] as Vector)
+  // Current palette state - starts as a copy of global palette
+  // This persists across lines (no auto-restore)
+  const currentPalette: Vector[] = globalPalette.map((c) => [...c] as Vector)
 
-    // Apply raster ranges that affect this line
-    const activeRanges = rangesByLine.get(y)
-    if (activeRanges) {
-      for (const range of activeRanges) {
-        linePalette[range.inkIndex] = range.color
+  // Track active ranges (ranges that have started but not yet ended)
+  const activeRanges: Set<RasterRange> = new Set()
+
+  for (let y = 0; y < height; y++) {
+    // Check for ranges that START on this line
+    const startingRanges = rasterStartsByLine.get(y)
+    if (startingRanges) {
+      for (const range of startingRanges) {
+        // Apply the raster change to current palette
+        currentPalette[range.inkIndex] = [...range.color] as Vector
+        activeRanges.add(range)
       }
     }
 
-    // Render pixels for this line
+    // Render pixels for this line using current palette state
     for (let x = 0; x < width; x++) {
       const pixelIndex = y * width + x
       const inkIndex = indexBuffer[pixelIndex]
 
-      // Get color from the line's palette
-      const color = linePalette[inkIndex] ?? [0, 0, 0]
+      // Get color from the current palette
+      const color = currentPalette[inkIndex] ?? [0, 0, 0]
 
       // Write RGBA to output
       const outputIndex = pixelIndex * 4
@@ -65,6 +76,15 @@ export function renderPreviewWithRaster(
       output[outputIndex + 1] = color[1] // G
       output[outputIndex + 2] = color[2] // B
       output[outputIndex + 3] = 255 // A (fully opaque)
+    }
+
+    // Remove ranges that END on this line (but don't restore color!)
+    for (const range of activeRanges) {
+      if (range.endLine === y) {
+        activeRanges.delete(range)
+        // Note: we intentionally do NOT restore currentPalette[range.inkIndex]
+        // The color persists until another range changes it
+      }
     }
   }
 
