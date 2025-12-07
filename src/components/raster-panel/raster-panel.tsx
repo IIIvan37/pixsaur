@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   cpcHardwareAtom,
   effectiveModeConfigAtom
@@ -12,6 +12,7 @@ import {
   clearRasterChangesAtom,
   rasterChangesAtom,
   rasterConflictsAtom,
+  rasterDitheringIntensityAtom,
   rasterEnabledAtom,
   removeRasterChangeAtom,
   updateRasterChangeAtom
@@ -29,6 +30,7 @@ import { RasterPanelView } from './raster-panel-view'
  */
 export function RasterPanel() {
   const [enabled, setEnabled] = useAtom(rasterEnabledAtom)
+  const ditheringIntensity = useAtomValue(rasterDitheringIntensityAtom)
   const changes = useAtomValue(rasterChangesAtom)
   const conflicts = useAtomValue(rasterConflictsAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
@@ -43,6 +45,8 @@ export function RasterPanel() {
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
 
   const [isOptimizing, setIsOptimizing] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const previousIntensityRef = useRef(ditheringIntensity)
 
   // Max line is height - 1 (0-indexed)
   const maxLine = modeConfig.height - 1
@@ -50,6 +54,49 @@ export function RasterPanel() {
   const hasImage = image !== null
   // CPC Plus Mode 1 allows 4 ink changes per line (Mode 1 = 4 colors)
   const isPlusMode1 = cpcHardware === 'plus' && modeConfig.nColors === 4
+
+  // Debounced auto-optimize when dithering intensity changes
+  // Uses resetChanges: true to clear existing raster lines and regenerate from scratch
+  const runDebouncedOptimize = useCallback(async () => {
+    if (!enabled || !isPlusMode1 || !hasImage) return
+    setIsOptimizing(true)
+    try {
+      await autoOptimize({ resetChanges: true })
+    } finally {
+      setIsOptimizing(false)
+    }
+  }, [enabled, isPlusMode1, hasImage, autoOptimize])
+
+  // Watch for dithering intensity changes and trigger debounced optimization
+  useEffect(() => {
+    // Skip if intensity hasn't actually changed or raster not enabled
+    if (
+      previousIntensityRef.current === ditheringIntensity ||
+      !enabled ||
+      !isPlusMode1
+    ) {
+      previousIntensityRef.current = ditheringIntensity
+      return
+    }
+
+    previousIntensityRef.current = ditheringIntensity
+
+    // Clear any pending debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+
+    // Debounce the optimization (300ms)
+    debounceRef.current = setTimeout(() => {
+      runDebouncedOptimize()
+    }, 300)
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [ditheringIntensity, enabled, isPlusMode1, runDebouncedOptimize])
 
   // Extract colors from display palette slots
   const palette: Vector[] = displayPalette.map(

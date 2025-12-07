@@ -34,6 +34,7 @@ import {
   userPaletteAtom
 } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
+import { rasterEnabledAtom } from '../raster/raster-config'
 
 // ============================================================================
 // Utilitaires pour le filtrage des couleurs lockées
@@ -345,6 +346,23 @@ export const positionedNormalizedImageAtom = atom(async (get) => {
   return normalized
 })
 
+/**
+ * Effective dithering configuration.
+ * When raster mode is enabled, classic dithering is disabled (mode: 'none')
+ * to avoid interference with raster-specific 1D dithering.
+ */
+export const effectiveDitheringAtom = atom((get) => {
+  const dithering = get(ditheringAtom)
+  const rasterEnabled = get(rasterEnabledAtom)
+
+  // Disable classic dithering when raster mode is active
+  if (rasterEnabled) {
+    return { ...dithering, mode: 'none' as const }
+  }
+
+  return dithering
+})
+
 // 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
   const modeConfig = get(effectiveModeConfigAtom)
@@ -353,7 +371,7 @@ export const previewImageAtom = atom(async (get) => {
   const exportPalette = await get(exportPaletteWithSlotsAtom)
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
   const normalized = await get(normalizedImageAtom)
-  const dithering = get(ditheringAtom)
+  const dithering = get(effectiveDitheringAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom) // Get center option
   if (!quantizer || !normalized) return null

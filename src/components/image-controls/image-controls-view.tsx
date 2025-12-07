@@ -1,6 +1,8 @@
 import { Trans } from '@lingui/react/macro'
+import { useAtomValue } from 'jotai'
 import { useId } from 'react'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
+import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import type { CPCHardware } from '@/libs/types'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
@@ -48,6 +50,7 @@ export function ImageControlsView({
   onHorizontalSmoothingChange
 }: Readonly<ImageControlsViewProps>) {
   const horizontalSmoothingId = useId()
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
   // Pixel mode options (0, 1, 2)
   const pixelModeOptions: Array<{ value: PixelMode; label: string }> = [
     { value: 0, label: 'Mode 0' },
@@ -121,16 +124,22 @@ export function ImageControlsView({
       <div className={styles.section}>
         <DitheringSelector />
 
-        <Flex align='center' justify='space-between' style={{ width: '100%' }}>
-          <SectionTitle>
-            <Trans>Lissage horizontal</Trans>
-          </SectionTitle>
-          <Switch
-            checked={horizontalSmoothing}
-            onCheckedChange={onHorizontalSmoothingChange}
-            id={horizontalSmoothingId}
-          />
-        </Flex>
+        {!rasterEnabled && (
+          <Flex
+            align='center'
+            justify='space-between'
+            style={{ width: '100%' }}
+          >
+            <SectionTitle>
+              <Trans>Lissage horizontal</Trans>
+            </SectionTitle>
+            <Switch
+              checked={horizontalSmoothing}
+              onCheckedChange={onHorizontalSmoothingChange}
+              id={horizontalSmoothingId}
+            />
+          </Flex>
+        )}
       </div>
 
       {/* Options avancées */}

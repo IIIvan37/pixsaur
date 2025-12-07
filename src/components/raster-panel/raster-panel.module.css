@@ -325,6 +325,29 @@
   background: rgba(239, 68, 68, 0.1);
 }
 
+.ditheringRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.ditheringLabel {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.ditheringValue {
+  min-width: 3ch;
+  text-align: right;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
 /* Responsive: stack layout on smaller screens */
 @media (max-width: 600px) {
   .headerRow {

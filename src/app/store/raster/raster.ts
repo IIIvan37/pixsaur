@@ -1,5 +1,4 @@
 import { atom } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   createRasterPreviewImageData,
@@ -21,26 +20,22 @@ import {
   previewImageAtom,
   previewIndexBufferAtom
 } from '../preview/preview'
+import {
+  MAX_CHANGES_PER_LINE_DEFAULT,
+  MAX_CHANGES_PER_LINE_PLUS_MODE1,
+  rasterChangesAtom,
+  rasterDitheringIntensityAtom,
+  rasterEnabledAtom
+} from './raster-config'
 
-/** Max raster changes per line: 1 for most modes, 4 for Plus Mode 1 only */
-export const MAX_CHANGES_PER_LINE_DEFAULT = 1
-export const MAX_CHANGES_PER_LINE_PLUS_MODE1 = 4
-
-/**
- * Whether raster mode is enabled
- */
-export const rasterEnabledAtom = atomWithStorage<boolean>(
-  'pixsaur-raster-enabled',
-  false
-)
-
-/**
- * User-defined raster changes (single line changes, no ranges)
- */
-export const rasterChangesAtom = atomWithStorage<RasterChange[]>(
-  'pixsaur-raster-changes',
-  []
-)
+// Re-export primitive atoms for external use
+export {
+  MAX_CHANGES_PER_LINE_DEFAULT,
+  MAX_CHANGES_PER_LINE_PLUS_MODE1,
+  rasterChangesAtom,
+  rasterDitheringIntensityAtom,
+  rasterEnabledAtom
+} from './raster-config'
 
 /**
  * Optimized index buffer for raster rendering.
@@ -279,100 +274,120 @@ export const effectivePreviewImageAtom = atom(async (get) => {
  *
  * Uses the source image (before dithering) to detect the actual colors needed
  * per line, then generates raster changes to adapt the palette.
+ *
+ * @param options.resetChanges - If true, clears existing changes before optimizing (useful when dithering changes)
  */
-export const autoOptimizeRasterAtom = atom(null, async (get, set) => {
-  const hardware = get(cpcHardwareAtom)
-  const modeConfig = get(effectiveModeConfigAtom)
+export const autoOptimizeRasterAtom = atom(
+  null,
+  async (get, set, options?: { resetChanges?: boolean }) => {
+    const hardware = get(cpcHardwareAtom)
+    const modeConfig = get(effectiveModeConfigAtom)
 
-  // Only works for CPC Plus + Mode 1
-  if (hardware !== 'plus' || modeConfig.nColors !== 4) {
-    return { success: false, error: 'Only available for CPC Plus Mode 1' }
-  }
+    // Only works for CPC Plus + Mode 1
+    if (hardware !== 'plus' || modeConfig.nColors !== 4) {
+      return { success: false, error: 'Only available for CPC Plus Mode 1' }
+    }
 
-  // Get the positioned normalized image (source colors, before dithering)
-  // This gives us the TRUE colors of each pixel that we need to represent
-  const sourceImage = await get(positionedNormalizedImageAtom)
-  if (!sourceImage) {
-    return { success: false, error: 'No image available' }
-  }
+    // Get the positioned normalized image (source colors, before dithering)
+    // This gives us the TRUE colors of each pixel that we need to represent
+    const sourceImage = await get(positionedNormalizedImageAtom)
+    if (!sourceImage) {
+      return { success: false, error: 'No image available' }
+    }
 
-  // Use dimensions from sourceImage
-  const { width, height } = sourceImage
+    // Use dimensions from sourceImage
+    const { width, height } = sourceImage
 
-  // Get the global palette (4 colors for Mode 1)
-  // Note: The optimization algorithm now extracts palette directly from source image,
-  // but we still need this for the initial API compatibility
-  const exportPalette = await get(exportPaletteWithSlotsAtom)
+    // Get the global palette (4 colors for Mode 1)
+    // Note: The optimization algorithm now extracts palette directly from source image,
+    // but we still need this for the initial API compatibility
+    const exportPalette = await get(exportPaletteWithSlotsAtom)
 
-  // Filter out invalid slots and take first 4 colors
-  // If no valid colors, we'll use a placeholder - the algorithm will extract from image
-  const globalPalette = exportPalette.filter((c) => c[0] !== -1).slice(0, 4)
+    // Filter out invalid slots and take first 4 colors
+    // If no valid colors, we'll use a placeholder - the algorithm will extract from image
+    const globalPalette = exportPalette.filter((c) => c[0] !== -1).slice(0, 4)
 
-  // Pad to 4 colors if needed (algorithm will override with extracted colors anyway)
-  while (globalPalette.length < 4) {
-    globalPalette.push([0, 0, 0])
-  }
+    // Pad to 4 colors if needed (algorithm will override with extracted colors anyway)
+    while (globalPalette.length < 4) {
+      globalPalette.push([0, 0, 0])
+    }
 
-  // PRE-PROCESS: Transform source image to have max 4 colors per line
-  // This ensures smooth palette transitions and better raster optimization
-  const preprocessedImage = preprocessImageForRaster(sourceImage, globalPalette)
+    // Get raster dithering intensity
+    const ditheringIntensity = get(rasterDitheringIntensityAtom)
 
-  // Get existing raster changes (without IDs for the algorithm)
-  const existingChanges = get(rasterChangesAtom).map(
-    ({ line, inkIndex, color }) => ({
-      line,
-      inkIndex,
-      color
+    // PRE-PROCESS: Transform source image to have max 4 colors per line
+    // This ensures smooth palette transitions and better raster optimization
+    const preprocessedImage = preprocessImageForRaster(
+      sourceImage,
+      globalPalette,
+      {
+        ditheringIntensity
+      }
+    )
+
+    // Get existing raster changes (without IDs for the algorithm)
+    // If resetChanges is true, start fresh (useful when dithering intensity changes)
+    const existingChanges = options?.resetChanges
+      ? []
+      : get(rasterChangesAtom).map(({ line, inkIndex, color }) => ({
+          line,
+          inkIndex,
+          color
+        }))
+
+    // Generate optimized raster changes AND matching index buffer
+    // - preprocessedImage: image with max 4 colors per line (smooth transitions)
+    // - globalPalette: initial 4-color palette
+    // - Returns both raster changes and an index buffer where each pixel
+    //   maps to its correct ink index based on per-line palettes
+    const {
+      changes: optimizedChanges,
+      indexBuffer: optimizedIndexBuffer,
+      quantizedGlobalPalette
+    } = optimizeLinePalettesWithIndexBuffer(
+      preprocessedImage,
+      globalPalette,
+      existingChanges
+    )
+
+    // Filter out any changes that exceed the mode height (safety check)
+    const maxLine = modeConfig.height - 1
+    const validChanges = optimizedChanges.filter(
+      (c: Omit<RasterChange, 'id'>) => c.line <= maxLine
+    )
+
+    // Convert to full RasterChange with IDs
+    // Preserve IDs for existing changes, generate new IDs for new changes
+    const existingIds = new Map(
+      get(rasterChangesAtom).map((c) => [`${c.line}-${c.inkIndex}`, c.id])
+    )
+    const newChanges: RasterChange[] = validChanges.map(
+      (change: Omit<RasterChange, 'id'>) => ({
+        ...change,
+        id:
+          existingIds.get(`${change.line}-${change.inkIndex}`) ??
+          generateChangeId()
+      })
+    )
+
+    // Store the optimized index buffer and palette for rendering
+    set(rasterIndexBufferAtom, {
+      buffer: optimizedIndexBuffer,
+      width,
+      height,
+      palette: quantizedGlobalPalette
     })
-  )
 
-  // Generate optimized raster changes AND matching index buffer
-  // - preprocessedImage: image with max 4 colors per line (smooth transitions)
-  // - globalPalette: initial 4-color palette
-  // - Returns both raster changes and an index buffer where each pixel
-  //   maps to its correct ink index based on per-line palettes
-  const {
-    changes: optimizedChanges,
-    indexBuffer: optimizedIndexBuffer,
-    quantizedGlobalPalette
-  } = optimizeLinePalettesWithIndexBuffer(
-    preprocessedImage,
-    globalPalette,
-    existingChanges
-  )
+    // Replace all existing changes with optimized ones
+    set(rasterChangesAtom, newChanges)
 
-  // Filter out any changes that exceed the mode height (safety check)
-  const maxLine = modeConfig.height - 1
-  const validChanges = optimizedChanges.filter((c) => c.line <= maxLine)
+    // Enable raster mode
+    set(rasterEnabledAtom, true)
 
-  // Convert to full RasterChange with IDs
-  // Preserve IDs for existing changes, generate new IDs for new changes
-  const existingIds = new Map(
-    get(rasterChangesAtom).map((c) => [`${c.line}-${c.inkIndex}`, c.id])
-  )
-  const newChanges: RasterChange[] = validChanges.map((change) => ({
-    ...change,
-    id:
-      existingIds.get(`${change.line}-${change.inkIndex}`) ?? generateChangeId()
-  }))
-
-  // Store the optimized index buffer and palette for rendering
-  set(rasterIndexBufferAtom, {
-    buffer: optimizedIndexBuffer,
-    width,
-    height,
-    palette: quantizedGlobalPalette
-  })
-
-  // Replace all existing changes with optimized ones
-  set(rasterChangesAtom, newChanges)
-
-  // Enable raster mode
-  set(rasterEnabledAtom, true)
-
-  return {
-    success: true,
-    changesCount: newChanges.length,
-    linesAffected: new Set(newChanges.map((c) => c.line)).size
+    return {
+      success: true,
+      changesCount: newChanges.length,
+      linesAffected: new Set(newChanges.map((c) => c.line)).size
+    }
   }
-})
+)

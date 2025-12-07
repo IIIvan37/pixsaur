@@ -928,6 +928,17 @@ function selectPaletteFarthestPoint(
 }
 
 /**
+ * Options for raster preprocessing
+ */
+export interface RasterPreprocessOptions {
+  /**
+   * Dithering intensity from 0 (no dithering) to 1 (full dithering)
+   * Default: 0.75 (reduced to minimize noise while maintaining quality)
+   */
+  ditheringIntensity?: number
+}
+
+/**
  * Pre-process an image using the improved raster pipeline from raster-ideas.md.
  *
  * This implements:
@@ -938,12 +949,15 @@ function selectPaletteFarthestPoint(
  *
  * @param sourceImage - Original image data
  * @param _globalPalette - IGNORED - kept for API compatibility
+ * @param options - Optional preprocessing options
  * @returns Pre-processed ImageData with max 4 colors per line
  */
 export function preprocessImageForRaster(
   sourceImage: ImageData,
-  _globalPalette: Vector<'RGB'>[]
+  _globalPalette: Vector<'RGB'>[],
+  options: RasterPreprocessOptions = {}
 ): ImageData {
+  const { ditheringIntensity = 0.75 } = options
   const { width, height, data } = sourceImage
   const outputData = new Uint8ClampedArray(data.length)
 
@@ -1084,41 +1098,26 @@ export function preprocessImageForRaster(
         // Calculate quantization error
         const error = subtractColors(correctedColor, chosenColor)
 
-        // Distribute error using modified Floyd-Steinberg for 1D + vertical
-        // Horizontal: 7/16 to right pixel
-        // Vertical: 5/16 to pixel below, 3/16 to below-left, 1/16 to below-right
+        // Distribute error with configurable intensity
+        // Base coefficients (at intensity=1): Horizontal 1/2, Vertical 1/4
+        // At intensity=0: no error propagation
+        const horizCoef = (1 / 2) * ditheringIntensity
+        const vertCoef = (1 / 4) * ditheringIntensity
 
-        // Horizontal error propagation (7/16 ≈ 0.4375)
-        if (x + 1 < width) {
-          const he = scaleError(error, 7 / 16)
+        // Horizontal error propagation
+        if (x + 1 < width && horizCoef > 0) {
+          const he = scaleError(error, horizCoef)
           horizError[x + 1][0] += he[0]
           horizError[x + 1][1] += he[1]
           horizError[x + 1][2] += he[2]
         }
 
-        // Vertical error propagation for next line
-        // Below-left (3/16)
-        if (x > 0) {
-          const ve = scaleError(error, 3 / 16)
-          newVerticalError[x - 1][0] += ve[0]
-          newVerticalError[x - 1][1] += ve[1]
-          newVerticalError[x - 1][2] += ve[2]
-        }
-
-        // Directly below (5/16)
-        {
-          const ve = scaleError(error, 5 / 16)
+        // Vertical error propagation - simplified to just below pixel
+        if (vertCoef > 0) {
+          const ve = scaleError(error, vertCoef)
           newVerticalError[x][0] += ve[0]
           newVerticalError[x][1] += ve[1]
           newVerticalError[x][2] += ve[2]
-        }
-
-        // Below-right (1/16)
-        if (x + 1 < width) {
-          const ve = scaleError(error, 1 / 16)
-          newVerticalError[x + 1][0] += ve[0]
-          newVerticalError[x + 1][1] += ve[1]
-          newVerticalError[x + 1][2] += ve[2]
         }
 
         // Write output pixel

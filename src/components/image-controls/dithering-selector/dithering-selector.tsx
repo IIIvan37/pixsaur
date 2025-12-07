@@ -1,6 +1,10 @@
 import { Trans } from '@lingui/react/macro'
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { ditheringAtom } from '@/app/store/config/config'
+import {
+  rasterDitheringIntensityAtom,
+  rasterEnabledAtom
+} from '@/app/store/raster/raster'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
@@ -52,6 +56,38 @@ export function getDefaultIntensity(mode: DitheringMode): number {
 
 export function DitheringSelector() {
   const [cfg, setCfg] = useAtom(ditheringAtom)
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const [rasterDitheringIntensity, setRasterDitheringIntensity] = useAtom(
+    rasterDitheringIntensityAtom
+  )
+
+  // Show raster dithering slider when raster mode is enabled
+  if (rasterEnabled) {
+    return (
+      <Flex
+        gap='var(--spacing-md)'
+        wrap='wrap'
+        justify='flex-start'
+        align='flex-start'
+      >
+        <div className={styles.ditheringSlider}>
+          <PixsaurSlider
+            label={<Trans>Dithering raster</Trans>}
+            description={
+              <Trans>
+                Dithering horizontal 1D appliqué lors du prétraitement raster
+              </Trans>
+            }
+            min={0}
+            max={100}
+            value={Math.round(rasterDitheringIntensity * 100)}
+            onChange={(val) => setRasterDitheringIntensity(val / 100)}
+            step={5}
+          />
+        </div>
+      </Flex>
+    )
+  }
 
   return (
     <Flex

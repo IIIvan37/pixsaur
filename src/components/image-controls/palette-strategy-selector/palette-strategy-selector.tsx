@@ -1,5 +1,6 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
 import { useMemo } from 'react'
 import {
@@ -7,6 +8,7 @@ import {
   paletteStrategyAtom
 } from '@/app/store/config/config'
 import type { PaletteStrategy } from '@/app/store/config/types'
+import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import { logger } from '@/core'
 import {
   type PaletteStrategyOption,
@@ -200,6 +202,7 @@ export function PaletteStrategySelector() {
   const { _ } = useLingui()
   const [paletteStrategy, setPaletteStrategy] = useAtom(paletteStrategyAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
 
   const paletteStrategies = useMemo(() => getPaletteStrategies(_), [_])
 
@@ -214,6 +217,23 @@ export function PaletteStrategySelector() {
   // Visible uniquement pour les modes avec moins de 16 couleurs (mode 1: 4 couleurs, mode 2: 2 couleurs)
   if (modeConfig.nColors >= 16) {
     return null
+  }
+
+  // Hide when raster mode is enabled - raster uses its own per-line palette extraction
+  if (rasterEnabled) {
+    return (
+      <div
+        style={{
+          fontFamily: 'var(--font-family)',
+          fontSize: 'var(--font-size-sm)',
+          color: 'var(--color-foreground-muted)',
+          fontStyle: 'italic',
+          padding: 'var(--spacing-sm) 0'
+        }}
+      >
+        <Trans>Stratégie de palette non utilisée en mode raster</Trans>
+      </div>
+    )
   }
 
   const currentStrategy = paletteStrategies.find(
