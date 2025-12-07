@@ -1,4 +1,5 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useState } from 'react'
 import {
   cpcHardwareAtom,
   effectiveModeConfigAtom
@@ -7,6 +8,8 @@ import { imageAtom } from '@/app/store/image/image'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
 import {
   addRasterChangeAtom,
+  autoOptimizeRasterAtom,
+  clearRasterChangesAtom,
   rasterChangesAtom,
   rasterConflictsAtom,
   rasterEnabledAtom,
@@ -36,6 +39,10 @@ export function RasterPanel() {
   const addChange = useSetAtom(addRasterChangeAtom)
   const updateChange = useSetAtom(updateRasterChangeAtom)
   const removeChange = useSetAtom(removeRasterChangeAtom)
+  const clearAllChanges = useSetAtom(clearRasterChangesAtom)
+  const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
+
+  const [isOptimizing, setIsOptimizing] = useState(false)
 
   // Max line is height - 1 (0-indexed)
   const maxLine = modeConfig.height - 1
@@ -100,6 +107,15 @@ export function RasterPanel() {
     removeChange(id)
   }
 
+  const handleAutoOptimize = async () => {
+    setIsOptimizing(true)
+    try {
+      await autoOptimize()
+    } finally {
+      setIsOptimizing(false)
+    }
+  }
+
   return (
     <RasterPanelView
       disabled={!hasImage}
@@ -113,9 +129,12 @@ export function RasterPanel() {
       cpcPalette={cpcFullPalette}
       isClassicMode={isClassicMode}
       isPlusMode1={isPlusMode1}
+      isOptimizing={isOptimizing}
       onAddChange={handleAddChange}
       onUpdateChange={handleUpdateChange}
       onRemoveChange={handleRemoveChange}
+      onClearAll={clearAllChanges}
+      onAutoOptimize={handleAutoOptimize}
     />
   )
 }

@@ -83,6 +83,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
     "netlify-cli": "^23.9.5",
+    "pngjs": "^7.0.0",
     "postcss": "^8.5.3",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",

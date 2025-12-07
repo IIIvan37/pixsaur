@@ -240,6 +240,33 @@
   font-size: 0.8125rem;
 }
 
+.autoOptimizeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, var(--primary-alpha, rgba(59, 130, 246, 0.15)) 0%, rgba(147, 51, 234, 0.15) 100%);
+  border: 1px solid var(--primary, #3b82f6);
+  border-radius: 6px;
+  color: var(--primary, #3b82f6);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.autoOptimizeButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-alpha, rgba(59, 130, 246, 0.25)) 0%, rgba(147, 51, 234, 0.25) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.autoOptimizeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .emptyState {
   padding: 1rem;
   text-align: center;
@@ -268,6 +295,34 @@
   border-color: var(--primary);
   color: var(--primary);
   background: var(--primary-alpha);
+}
+
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actionButtons .addButton {
+  flex: 1;
+}
+
+.clearButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--background-secondary);
+  border: 1px solid var(--error, #ef4444);
+  border-radius: 6px;
+  color: var(--error, #ef4444);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.clearButton:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* Responsive: stack layout on smaller screens */

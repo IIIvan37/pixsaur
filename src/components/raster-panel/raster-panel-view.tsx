@@ -30,6 +30,8 @@ export interface RasterPanelViewProps {
   readonly isClassicMode: boolean
   /** CPC Plus + Mode 1 allows 4 ink changes per line */
   readonly isPlusMode1: boolean
+  /** Whether auto-optimization is in progress */
+  readonly isOptimizing?: boolean
   readonly onAddChange: () => void
   readonly onUpdateChange: (
     id: string,
@@ -37,6 +39,10 @@ export interface RasterPanelViewProps {
     value: number | Vector<'RGB'>
   ) => void
   readonly onRemoveChange: (id: string) => void
+  /** Clear all raster changes */
+  readonly onClearAll?: () => void
+  /** Auto-optimize palette per line (CPC Plus Mode 1 only) */
+  readonly onAutoOptimize?: () => void
 }
 
 /**
@@ -239,9 +245,12 @@ export function RasterPanelView({
   cpcPalette,
   isClassicMode,
   isPlusMode1,
+  isOptimizing = false,
   onAddChange,
   onUpdateChange,
-  onRemoveChange
+  onRemoveChange,
+  onClearAll,
+  onAutoOptimize
 }: RasterPanelViewProps) {
   const switchId = useId()
 
@@ -276,6 +285,22 @@ export function RasterPanelView({
               )}
             </span>
           </div>
+        )}
+
+        {enabled && isPlusMode1 && onAutoOptimize && (
+          <button
+            type='button'
+            className={styles.autoOptimizeButton}
+            onClick={onAutoOptimize}
+            disabled={isOptimizing}
+          >
+            <Icon name='GearIcon' />
+            {isOptimizing ? (
+              <Trans>Optimisation...</Trans>
+            ) : (
+              <Trans>Auto-optimiser les palettes</Trans>
+            )}
+          </button>
         )}
 
         {enabled && (
@@ -322,14 +347,27 @@ export function RasterPanelView({
               </div>
             )}
 
-            <button
-              type='button'
-              className={styles.addButton}
-              onClick={onAddChange}
-            >
-              <Icon name='PlusIcon' />
-              <Trans>Ajouter un changement</Trans>
-            </button>
+            <div className={styles.actionButtons}>
+              <button
+                type='button'
+                className={styles.addButton}
+                onClick={onAddChange}
+              >
+                <Icon name='PlusIcon' />
+                <Trans>Ajouter un changement</Trans>
+              </button>
+
+              {changes.length > 0 && onClearAll && (
+                <button
+                  type='button'
+                  className={styles.clearButton}
+                  onClick={onClearAll}
+                >
+                  <Icon name='TrashIcon' />
+                  <Trans>Tout supprimer</Trans>
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>

@@ -301,6 +301,50 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   return palette
 })
 
+// 4b. Image normalisée aux dimensions CPC (avant dithering)
+// Utilisée pour l'optimisation des rasters ligne par ligne
+export const normalizedImageAtom = atom(async (get) => {
+  const modeConfig = get(effectiveModeConfigAtom)
+  const processed = await get(smoothedImageAtom)
+  const resizeMode = get(resizeModeAtom)
+
+  if (!processed) return null
+
+  // En mode origin, l'image est déjà aux bonnes dimensions CPC
+  // En mode auto, on normalise aux dimensions CPC
+  const normalized =
+    resizeMode === 'origin'
+      ? processed
+      : getVisualRegionNormalized(processed, modeConfig)
+
+  return normalized
+})
+
+// 4c. Image normalisée positionnée (mêmes dimensions que previewImage)
+// Utilisée pour l'optimisation des rasters - doit avoir exactement les mêmes
+// dimensions que previewIndexBufferAtom pour que les indices correspondent
+export const positionedNormalizedImageAtom = atom(async (get) => {
+  const modeConfig = get(effectiveModeConfigAtom)
+  const normalized = await get(normalizedImageAtom)
+  const resizeMode = get(resizeModeAtom)
+  const centerImage = get(centerImageAtom)
+  const exportPalette = await get(exportPaletteWithSlotsAtom)
+
+  if (!normalized) return null
+
+  // En mode auto, appliquer le même positionnement que previewImageAtom
+  if (resizeMode === 'auto') {
+    return positionImageForAutoMode(
+      normalized,
+      modeConfig,
+      exportPalette,
+      centerImage
+    )
+  }
+
+  return normalized
+})
+
 // 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
   const modeConfig = get(effectiveModeConfigAtom)
@@ -308,11 +352,11 @@ export const previewImageAtom = atom(async (get) => {
   // Utiliser la palette avec slots pour que les indices correspondent à l'export
   const exportPalette = await get(exportPaletteWithSlotsAtom)
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
-  const processed = await get(smoothedImageAtom)
+  const normalized = await get(normalizedImageAtom)
   const dithering = get(ditheringAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom) // Get center option
-  if (!quantizer || !processed) return null
+  if (!quantizer || !normalized) return null
 
   // Préparer la palette pour le dithering: remplacer les slots ignorés [-1,-1,-1]
   // par une couleur valide (noir) pour que le dithering fonctionne
@@ -330,15 +374,6 @@ export const previewImageAtom = atom(async (get) => {
   const ditheringPalette = exportPalette.map((color) =>
     color[0] === -1 ? fallbackColor : color
   )
-
-  // En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
-  // On ne doit PAS appliquer getVisualRegionNormalized qui re-scale avec le pixel aspect ratio
-  const normalized =
-    resizeMode === 'origin'
-      ? processed // Utiliser directement l'image sans normalisation
-      : getVisualRegionNormalized(processed, modeConfig)
-
-  if (!normalized) return null
 
   const previewBuffer = quantizer.dither(normalized, ditheringPalette, {
     mode: dithering.mode,

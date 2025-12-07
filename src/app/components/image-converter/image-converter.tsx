@@ -3,10 +3,12 @@ import CrtEffect from '@/components/crt-effect'
 import DskWorkspacePanel from '@/components/dsk-workspace/dsk-workspace-panel'
 import RasterPanel from '@/components/raster-panel/raster-panel'
 import { useImageAdjustement } from '@/hooks/use-image-adjustement'
+import { useRasterAutoClear } from '@/hooks/use-raster-auto-clear'
 import styles from './image-converter.module.css'
 
 export default function ImageConverter() {
   useImageAdjustement()
+  useRasterAutoClear()
 
   return (
     <div className={styles.wrapper}>
