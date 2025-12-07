@@ -1,7 +1,7 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useId, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import Icon from '@/components/ui/icon'
 import PixsaurPopover from '@/components/ui/popover'
@@ -41,40 +41,55 @@ export interface RasterPanelViewProps {
   readonly onClearAll?: () => void
 }
 
+/** Group changes by line number */
+interface LineGroup {
+  line: number
+  changes: RasterChange[]
+}
+
+function groupChangesByLine(changes: RasterChange[]): LineGroup[] {
+  const groups = new Map<number, RasterChange[]>()
+
+  for (const change of changes) {
+    const existing = groups.get(change.line) || []
+    existing.push(change)
+    groups.set(change.line, existing)
+  }
+
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([line, lineChanges]) => ({
+      line,
+      changes: lineChanges.sort((a, b) => a.inkIndex - b.inkIndex)
+    }))
+}
+
 /**
- * Compact ink selector - small colored squares
+ * Ink selector - small colored squares to pick ink number
  */
 function InkSelector({
-  palette,
   nColors,
   selectedInk,
   onSelectInk
 }: {
-  palette: Vector[]
   nColors: number
   selectedInk: number
   onSelectInk: (ink: number) => void
 }) {
-  const { _ } = useLingui()
   const inkIndices = Array.from({ length: nColors }, (_, i) => i)
 
   return (
-    <div className={styles.inkSelector}>
+    <div className={styles.inkSelectorGrid}>
       {inkIndices.map((inkIndex) => {
-        const color = palette[inkIndex] || [0, 0, 0]
         const isSelected = inkIndex === selectedInk
         return (
           <button
-            key={`ink-slot-${inkIndex}`}
+            key={`ink-${inkIndex}`}
             type='button'
-            className={`${styles.inkButton} ${isSelected ? styles.inkSelected : ''}`}
-            style={{
-              backgroundColor: `#${vectorToHex(color as Vector<'RGB'>)}`
-            }}
+            className={`${styles.inkSelectorButton} ${isSelected ? styles.inkSelectorSelected : ''}`}
             onClick={() => onSelectInk(inkIndex)}
-            title={_(msg`Encre ${inkIndex}`)}
           >
-            <span className={styles.inkNumber}>{inkIndex}</span>
+            {inkIndex}
           </button>
         )
       })}
@@ -83,17 +98,23 @@ function InkSelector({
 }
 
 /**
- * Color trigger button with popover
+ * Ink and color trigger button with popover
  */
-function ColorTrigger({
+function InkColorTrigger({
   color,
+  inkIndex,
+  nColors,
   cpcPalette,
   isClassicMode,
+  onInkChange,
   onColorChange
 }: {
   color: Vector<'RGB'>
+  inkIndex: number
+  nColors: number
   cpcPalette: CPCColor[]
   isClassicMode: boolean
+  onInkChange: (ink: number) => void
   onColorChange: (color: Vector<'RGB'>) => void
 }) {
   const { _ } = useLingui()
@@ -107,9 +128,11 @@ function ColorTrigger({
       trigger={
         <button
           type='button'
-          className={styles.colorTriggerButton}
-          title={_(msg`Sélectionner une couleur`)}
+          className={styles.inkColorButton}
+          title={_(msg`Encre ${inkIndex}`)}
         >
+          <span className={styles.inkLabel}>{inkIndex}</span>
+          <span className={styles.arrow}>→</span>
           <span
             className={styles.colorSwatch}
             style={{ backgroundColor: `#${vectorToHex(color)}` }}
@@ -117,114 +140,138 @@ function ColorTrigger({
         </button>
       }
     >
-      {isClassicMode ? (
-        <SimpleColorGrid
-          palette={cpcPalette}
-          onColorSelect={(c) => {
-            onColorChange(c.vector as Vector<'RGB'>)
-            setIsOpen(false)
-          }}
-        />
-      ) : (
-        <SimpleRgbPicker
-          initialColor={color}
-          onColorConfirm={(c) => {
-            onColorChange(c as Vector<'RGB'>)
-          }}
-          onClose={() => setIsOpen(false)}
-        />
-      )}
+      <div className={styles.inkColorPopover}>
+        <div className={styles.popoverSection}>
+          <span className={styles.popoverLabel}>
+            <Trans>Encre</Trans>
+          </span>
+          <InkSelector
+            nColors={nColors}
+            selectedInk={inkIndex}
+            onSelectInk={(ink) => {
+              onInkChange(ink)
+            }}
+          />
+        </div>
+        <div className={styles.popoverSection}>
+          <span className={styles.popoverLabel}>
+            <Trans>Couleur</Trans>
+          </span>
+          {isClassicMode ? (
+            <SimpleColorGrid
+              palette={cpcPalette}
+              onColorSelect={(c) => {
+                onColorChange(c.vector as Vector<'RGB'>)
+                setIsOpen(false)
+              }}
+            />
+          ) : (
+            <SimpleRgbPicker
+              initialColor={color}
+              onColorConfirm={(c) => {
+                onColorChange(c as Vector<'RGB'>)
+              }}
+              onClose={() => setIsOpen(false)}
+            />
+          )}
+        </div>
+      </div>
     </PixsaurPopover>
   )
 }
 
 /**
- * Compact change row - single line with all controls
+ * Compact line row - shows all ink changes for one line
  */
-function ChangeRow({
-  change,
-  index,
-  hasConflict,
-  maxLine,
-  palette,
+function LineRow({
+  group,
+  conflicts,
   nColors,
+  maxLine,
   cpcPalette,
   isClassicMode,
-  onUpdate,
-  onRemove
+  onUpdateChange,
+  onRemoveChange
 }: {
-  change: RasterChange
-  index: number
-  hasConflict: boolean
-  maxLine: number
-  palette: Vector[]
+  group: LineGroup
+  conflicts: string[]
   nColors: number
+  maxLine: number
   cpcPalette: CPCColor[]
   isClassicMode: boolean
-  onUpdate: (
+  onUpdateChange: (
+    id: string,
     field: keyof Omit<RasterChange, 'id'>,
     value: number | Vector<'RGB'>
   ) => void
-  onRemove: () => void
+  onRemoveChange: (id: string) => void
 }) {
   const { _ } = useLingui()
+  const hasConflict = group.changes.some((c) => conflicts.includes(c.id))
+  const [isLinePopoverOpen, setIsLinePopoverOpen] = useState(false)
+
+  // Handle line number change for all changes in this group
+  const handleLineChange = (newLine: number) => {
+    const clampedLine = Math.max(0, Math.min(maxLine, newLine))
+    for (const change of group.changes) {
+      onUpdateChange(change.id, 'line', clampedLine)
+    }
+  }
+
   return (
-    <div
-      className={`${styles.changeRow} ${hasConflict ? styles.conflict : ''}`}
-    >
-      {/* Change number */}
-      <span className={styles.changeNumber}>{index + 1}</span>
-
-      {/* Line slider */}
-      <div className={styles.lineSliderGroup}>
-        <span className={styles.sliderValue}>{change.line}</span>
-        <PixsaurSlider
-          min={0}
-          max={maxLine}
-          value={change.line}
-          onChange={(val) => onUpdate('line', val)}
-          hideLabel
-          showTooltip={false}
-        />
-      </div>
-
-      {/* Ink selector */}
-      <div className={styles.inkGroup}>
-        <InkSelector
-          palette={palette}
-          nColors={nColors}
-          selectedInk={change.inkIndex}
-          onSelectInk={(ink) => {
-            onUpdate('inkIndex', ink)
-            // When changing ink, use the palette color for that ink
-            const inkColor = palette[ink] || [0, 0, 0]
-            onUpdate('color', inkColor as Vector<'RGB'>)
-          }}
-        />
-      </div>
-
-      {/* Color picker */}
-      <ColorTrigger
-        color={change.color}
-        cpcPalette={cpcPalette}
-        isClassicMode={isClassicMode}
-        onColorChange={(c) => onUpdate('color', c)}
-      />
-
-      {/* Delete button */}
-      <button
-        type='button'
-        className={styles.deleteButton}
-        onClick={onRemove}
-        title={_(msg`Supprimer le changement`)}
+    <div className={`${styles.lineRow} ${hasConflict ? styles.conflict : ''}`}>
+      <PixsaurPopover
+        open={isLinePopoverOpen}
+        onOpenChange={setIsLinePopoverOpen}
+        variant='default'
+        trigger={
+          <button
+            type='button'
+            className={styles.lineButton}
+            title={_(msg`Ligne ${group.line}`)}
+          >
+            {group.line}
+          </button>
+        }
       >
-        <Icon name='TrashIcon' />
-      </button>
-
-      {/* Conflict indicator */}
-      <span className={styles.conflictIcon}>
-        {hasConflict && <Icon name='ExclamationTriangleIcon' />}
-      </span>
+        <div className={styles.linePopover}>
+          <PixsaurSlider
+            label={<Trans>Ligne</Trans>}
+            min={0}
+            max={maxLine}
+            value={group.line}
+            onChange={handleLineChange}
+          />
+        </div>
+      </PixsaurPopover>
+      <div className={styles.inkChanges}>
+        {group.changes.map((change) => (
+          <div key={change.id} className={styles.inkChange}>
+            <InkColorTrigger
+              color={change.color}
+              inkIndex={change.inkIndex}
+              nColors={nColors}
+              cpcPalette={cpcPalette}
+              isClassicMode={isClassicMode}
+              onInkChange={(ink) => onUpdateChange(change.id, 'inkIndex', ink)}
+              onColorChange={(c) => onUpdateChange(change.id, 'color', c)}
+            />
+            <button
+              type='button'
+              className={styles.removeInkButton}
+              onClick={() => onRemoveChange(change.id)}
+              title={_(msg`Supprimer le changement`)}
+            >
+              <Icon name='Cross2Icon' />
+            </button>
+          </div>
+        ))}
+      </div>
+      {hasConflict && (
+        <span className={styles.conflictIcon}>
+          <Icon name='ExclamationTriangleIcon' />
+        </span>
+      )}
     </div>
   )
 }
@@ -247,25 +294,39 @@ export function RasterPanelView({
   onClearAll
 }: RasterPanelViewProps) {
   const switchId = useId()
+  const lineGroups = useMemo(() => groupChangesByLine(changes), [changes])
+
+  // Count unique colors: palette colors + raster colors
+  const uniqueColorsCount = useMemo(() => {
+    const colorSet = new Set<string>()
+    // Add palette colors
+    for (const color of palette) {
+      colorSet.add(color.join(','))
+    }
+    // Add raster change colors
+    for (const change of changes) {
+      colorSet.add(change.color.join(','))
+    }
+    return colorSet.size
+  }, [palette, changes])
+
+  const titleWithSwitch = (
+    <div className={styles.titleRow}>
+      <span>
+        <Trans>Effets Raster</Trans>
+      </span>
+      <Switch
+        id={switchId}
+        checked={enabled}
+        onCheckedChange={onEnabledChange}
+        disabled={disabled}
+      />
+    </div>
+  )
 
   return (
-    <CollapsibleSection
-      title={<Trans>Effets Raster</Trans>}
-      defaultOpen={false}
-    >
+    <CollapsibleSection title={titleWithSwitch} defaultOpen={false}>
       <div className={styles.container}>
-        <div className={styles.toggleRow}>
-          <Switch
-            id={switchId}
-            checked={enabled}
-            onCheckedChange={onEnabledChange}
-            disabled={disabled}
-          />
-          <span className={styles.toggleLabel}>
-            <Trans>Activer l'aperçu raster</Trans>
-          </span>
-        </div>
-
         {enabled && (
           <div className={styles.modeInfo}>
             <span className={styles.modeBadge}>
@@ -274,48 +335,33 @@ export function RasterPanelView({
             <span className={styles.modeHint}>
               <Trans>Raster: changements d'encre par ligne</Trans>
             </span>
+            {changes.length > 0 && (
+              <span className={styles.uniqueColorsCount}>
+                <Trans>{uniqueColorsCount} couleur(s) unique(s)</Trans>
+              </span>
+            )}
           </div>
         )}
 
         {enabled && (
           <>
-            {changes.length > 0 && (
-              <div className={styles.headerRow}>
-                <span className={styles.headerLabel}>#</span>
-                <span className={styles.headerLabel}>
-                  <Trans>Ligne</Trans>
-                </span>
-                <span className={styles.headerLabel}>
-                  <Trans>Encre</Trans>
-                </span>
-                <span className={styles.headerLabel}>
-                  <Trans>Couleur</Trans>
-                </span>
-                <span />
-              </div>
-            )}
-
-            {changes.length === 0 ? (
+            {lineGroups.length === 0 ? (
               <div className={styles.emptyState}>
                 <Trans>Aucun changement raster défini.</Trans>
               </div>
             ) : (
-              <div className={styles.changesList}>
-                {changes.map((change, index) => (
-                  <ChangeRow
-                    key={change.id}
-                    change={change}
-                    index={index}
-                    hasConflict={conflicts.includes(change.id)}
-                    maxLine={maxLine}
-                    palette={palette}
+              <div className={styles.linesList}>
+                {lineGroups.map((group) => (
+                  <LineRow
+                    key={group.line}
+                    group={group}
+                    conflicts={conflicts}
                     nColors={nColors}
+                    maxLine={maxLine}
                     cpcPalette={cpcPalette}
                     isClassicMode={isClassicMode}
-                    onUpdate={(field, value) =>
-                      onUpdateChange(change.id, field, value)
-                    }
-                    onRemove={() => onRemoveChange(change.id)}
+                    onUpdateChange={onUpdateChange}
+                    onRemoveChange={onRemoveChange}
                   />
                 ))}
               </div>

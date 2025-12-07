@@ -22,8 +22,6 @@ import {
   previewIndexBufferAtom
 } from '../preview/preview'
 import {
-  MAX_CHANGES_PER_LINE_DEFAULT,
-  MAX_CHANGES_PER_LINE_PLUS_MODE1,
   rasterChangesAtom,
   rasterDitheringIntensityAtom,
   rasterEnabledAtom,
@@ -32,8 +30,6 @@ import {
 
 // Re-export primitive atoms for external use
 export {
-  MAX_CHANGES_PER_LINE_DEFAULT,
-  MAX_CHANGES_PER_LINE_PLUS_MODE1,
   rasterChangesAtom,
   rasterDitheringIntensityAtom,
   rasterEnabledAtom,
@@ -165,21 +161,12 @@ export const clearRasterRangesAtom = clearRasterChangesAtom
 /**
  * Derived atom: check for conflicts
  * - Same ink modified twice on same line = always a conflict
- * - Too many changes on same line = conflict
- *   - CPC Plus Mode 1 allows 4 changes per line
- *   - All other modes allow only 1 change per line
+ * - Too many changes on same line = conflict based on user setting
  * Returns array of conflicting change IDs
  */
 export const rasterConflictsAtom = atom((get) => {
   const changes = get(rasterChangesAtom)
-  const hardware = get(cpcHardwareAtom)
-  const modeConfig = get(effectiveModeConfigAtom)
-
-  // Only CPC Plus + Mode 1 (4 colors) allows 4 ink changes per line
-  const isPlusMode1 = hardware === 'plus' && modeConfig.nColors === 4
-  const maxChangesPerLine = isPlusMode1
-    ? MAX_CHANGES_PER_LINE_PLUS_MODE1
-    : MAX_CHANGES_PER_LINE_DEFAULT
+  const maxChangesPerLine = get(rasterMaxChangesPerLineAtom)
   const conflicts: string[] = []
 
   // Group by line
@@ -207,7 +194,7 @@ export const rasterConflictsAtom = atom((get) => {
 
     // Check for too many changes on same line
     if (lineChanges.length > maxChangesPerLine) {
-      // All changes on this line are in conflict (exceeds hardware limit)
+      // All changes on this line are in conflict (exceeds user limit)
       for (const change of lineChanges) {
         if (!conflicts.includes(change.id)) conflicts.push(change.id)
       }
@@ -342,8 +329,16 @@ export const autoOptimizeRasterAtom = atom(
           color
         }))
 
-    // Get max changes per line setting
-    const maxChangesPerLine = get(rasterMaxChangesPerLineAtom)
+    // Get max changes per line setting, clamped to hardware limit
+    // CPC Classic: max 2 changes per line
+    // CPC Plus: max 4 changes per line
+    // Also limited by number of colors in current mode
+    const hardwareMax = isClassicMode ? 2 : 4
+    const maxAllowedChanges = Math.min(modeConfig.nColors, hardwareMax)
+    const maxChangesPerLine = Math.min(
+      get(rasterMaxChangesPerLineAtom),
+      maxAllowedChanges
+    )
 
     // Generate optimized raster changes AND matching index buffer
     // - preprocessedImage: image with max nColors per line (smooth transitions)

@@ -523,8 +523,10 @@ function selectBestColorsForLine(
   const newPalette: Vector<'RGB'>[] = [...quantizedCurrent]
   const coveredPixels = new Set<string>()
 
-  // If current palette covers well (>70%), keep it entirely for stability
-  if (coverageRatio >= 0.7) {
+  // For raster optimization, we want to allow color changes even with good coverage
+  // Use a higher threshold (90%) to only skip when coverage is near-perfect
+  // This allows more color variation for gradient/raster effects
+  if (coverageRatio >= 0.9) {
     return newPalette
   }
 

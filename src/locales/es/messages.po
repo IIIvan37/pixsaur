@@ -30,6 +30,10 @@ msgstr "{0} imagen(es) lista(s) para exportar"
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} restante"
 
+#: src/components/raster-panel/raster-panel-view.tsx:340
+msgid "{uniqueColorsCount} couleur(s) unique(s)"
+msgstr "{uniqueColorsCount} color(es) único(s)"
+
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
 msgstr "Una nueva versión de Pixsaur está disponible. Haga clic a continuación para descargarla e instalarla automáticamente."
@@ -39,8 +43,8 @@ msgstr "Una nueva versión de Pixsaur está disponible. Haga clic a continuació
 #~ msgstr "Una nueva versión de Pixsaur está disponible. Actualice ahora para obtener las últimas funciones y mejoras."
 
 #: src/components/raster-panel/raster-panel-view.tsx:265
-msgid "Activer l'aperçu raster"
-msgstr "Activar vista previa raster"
+#~ msgid "Activer l'aperçu raster"
+#~ msgstr "Activar vista previa raster"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:190
@@ -67,7 +71,7 @@ msgstr "Archivos DSK adicionales"
 msgid "Adjustments, Source & Preview"
 msgstr "Ajustes, Fuente y Vista previa"
 
-#: src/components/raster-panel/raster-panel-view.tsx:331
+#: src/components/raster-panel/raster-panel-view.tsx:377
 msgid "Ajouter un changement"
 msgstr "Añadir cambio"
 
@@ -105,7 +109,7 @@ msgstr "Cancelar"
 msgid "Aperçu"
 msgstr "Vista previa"
 
-#: src/components/raster-panel/raster-panel-view.tsx:300
+#: src/components/raster-panel/raster-panel-view.tsx:350
 msgid "Aucun changement raster défini."
 msgstr "No hay cambios raster definidos."
 
@@ -214,7 +218,7 @@ msgstr "Convertidor de imágenes Amstrad CPC"
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Corrección no lineal del brillo (0.1-3.0, 1.0 = neutro)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:292
+#: src/components/raster-panel/raster-panel-view.tsx:158
 msgid "Couleur"
 msgstr "Color"
 
@@ -293,15 +297,15 @@ msgstr "Estrategia dinámica según la imagen"
 msgid "Effets"
 msgstr "Efectos"
 
-#: src/components/raster-panel/raster-panel-view.tsx:253
+#: src/components/raster-panel/raster-panel-view.tsx:316
 msgid "Effets Raster"
 msgstr "Efectos Raster"
 
-#: src/components/raster-panel/raster-panel-view.tsx:289
+#: src/components/raster-panel/raster-panel-view.tsx:146
 msgid "Encre"
 msgstr "Tinta"
 
-#: src/components/raster-panel/raster-panel-view.tsx:75
+#: src/components/raster-panel/raster-panel-view.tsx:132
 msgid "Encre {inkIndex}"
 msgstr "Tinta {inkIndex}"
 
@@ -445,9 +449,14 @@ msgstr "Más tarde"
 msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
 msgstr "El formato SCR requiere tamaño <= 16 KB (tamaño actual: {0} KB)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:286
+#: src/components/raster-panel/raster-panel-view.tsx:239
 msgid "Ligne"
 msgstr "Línea"
+
+#. placeholder {0}: group.line
+#: src/components/raster-panel/raster-panel-view.tsx:231
+msgid "Ligne {0}"
+msgstr "Línea {0}"
 
 #: src/components/export-panel/export-config-dialog.tsx:148
 msgid "Linear ASM (séquentiel)"
@@ -618,7 +627,7 @@ msgstr "Procesador"
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Diversidad Pura"
 
-#: src/components/raster-panel/raster-panel-view.tsx:275
+#: src/components/raster-panel/raster-panel-view.tsx:336
 msgid "Raster: changements d'encre par ligne"
 msgstr "Raster: cambios de tinta por línea"
 
@@ -676,8 +685,8 @@ msgid "Sélection"
 msgstr "Selección"
 
 #: src/components/raster-panel/raster-panel-view.tsx:111
-msgid "Sélectionner une couleur"
-msgstr "Seleccionar un color"
+#~ msgid "Sélectionner une couleur"
+#~ msgstr "Seleccionar un color"
 
 #: src/components/export-panel/export-config-dialog.tsx:114
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
@@ -704,7 +713,7 @@ msgstr "Soporta los formatos CPC Classic y CPC Plus. El cargador detecta automá
 #~ msgid "Supprimer la plage"
 #~ msgstr "Eliminar rango"
 
-#: src/components/raster-panel/raster-panel-view.tsx:219
+#: src/components/raster-panel/raster-panel-view.tsx:263
 msgid "Supprimer le changement"
 msgstr "Eliminar cambio"
 
@@ -725,7 +734,7 @@ msgstr "Temperatura"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Prueba todas las combinaciones, maximiza contraste (mejor calidad)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:341
+#: src/components/raster-panel/raster-panel-view.tsx:387
 msgid "Tout supprimer"
 msgstr "Eliminar todo"
 

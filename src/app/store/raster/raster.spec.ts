@@ -1,8 +1,6 @@
 import { createStore } from 'jotai'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
-import { CPCHardware } from '@/libs/types'
-import { cpcHardwareAtom, pixelModeAtom } from '../config/config'
 import {
   addRasterChangeAtom,
   clearRasterChangesAtom,
@@ -10,6 +8,7 @@ import {
   rasterChangesAtom,
   rasterConflictsAtom,
   rasterEnabledAtom,
+  rasterMaxChangesPerLineAtom,
   removeRasterChangeAtom,
   updateRasterChangeAtom
 } from './raster'
@@ -248,10 +247,9 @@ describe('Raster Store', () => {
       expect(conflicts).toHaveLength(2)
     })
 
-    it('should not detect conflicts: different inks, same line (CPC Plus Mode 1)', () => {
-      // CPC Plus Mode 1 allows up to 4 ink changes per line
-      store.set(cpcHardwareAtom, CPCHardware.PLUS)
-      store.set(pixelModeAtom, 1) // Mode 1 = 4 colors
+    it('should not detect conflicts: different inks, same line when maxChangesPerLine >= 2', () => {
+      // Allow up to 4 ink changes per line
+      store.set(rasterMaxChangesPerLineAtom, 4)
 
       store.set(addRasterChangeAtom, {
         inkIndex: 0,
@@ -265,14 +263,13 @@ describe('Raster Store', () => {
       })
 
       const conflicts = store.get(rasterConflictsAtom)
-      // Different inks on same line is OK on CPC Plus Mode 1
+      // Different inks on same line is OK when maxChangesPerLine >= 2
       expect(conflicts).toEqual([])
     })
 
-    it('should detect conflicts: different inks, same line (CPC Plus Mode 0)', () => {
-      // CPC Plus Mode 0 allows only 1 ink change per line (same as Classic)
-      store.set(cpcHardwareAtom, CPCHardware.PLUS)
-      store.set(pixelModeAtom, 0) // Mode 0 = 16 colors
+    it('should detect conflicts: different inks, same line when maxChangesPerLine = 1', () => {
+      // Allow only 1 ink change per line (default)
+      store.set(rasterMaxChangesPerLineAtom, 1)
 
       store.set(addRasterChangeAtom, {
         inkIndex: 0,
@@ -286,27 +283,7 @@ describe('Raster Store', () => {
       })
 
       const conflicts = store.get(rasterConflictsAtom)
-      // On CPC Plus Mode 0, even different inks on same line is a conflict
-      expect(conflicts).toHaveLength(2)
-    })
-
-    it('should detect conflicts: different inks, same line (CPC Classic)', () => {
-      // CPC Classic allows only 1 ink change per line
-      store.set(cpcHardwareAtom, CPCHardware.CLASSIC)
-
-      store.set(addRasterChangeAtom, {
-        inkIndex: 0,
-        line: 50,
-        color: [255, 0, 0] as [number, number, number]
-      })
-      store.set(addRasterChangeAtom, {
-        inkIndex: 1,
-        line: 50,
-        color: [0, 255, 0] as [number, number, number]
-      })
-
-      const conflicts = store.get(rasterConflictsAtom)
-      // On CPC Classic, even different inks on same line is a conflict
+      // When maxChangesPerLine is 1, more than 1 change on same line is a conflict
       expect(conflicts).toHaveLength(2)
     })
 
