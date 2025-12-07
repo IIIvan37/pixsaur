@@ -38,6 +38,7 @@ export interface ZipContentConfig {
   includePalettes: boolean // Include palette files (firmware/hardware for Classic, CPC+ values for Plus)
   includePNG: boolean // Include PNG preview
   includePNGCorrected: boolean // Include PNG with corrected aspect ratio
+  includeRasters: boolean // Include raster ASM data (only when rasters enabled)
 }
 
 /**
@@ -90,7 +91,8 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
     includeLinear: true,
     includePalettes: true,
     includePNG: true,
-    includePNGCorrected: true
+    includePNGCorrected: true,
+    includeRasters: true
   },
   labels: {
     enabled: true,

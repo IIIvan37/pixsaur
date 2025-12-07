@@ -12,6 +12,7 @@ import {
   IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
+import { rasterEnabledAtom, rasterRangesAtom } from '@/app/store/raster/raster'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
 import { dskLogger } from '@/core'
@@ -33,6 +34,8 @@ export default function DskWorkspacePanel() {
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const dskImages = useAtomValue(dskImagesAtom)
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const rasterRanges = useAtomValue(rasterRangesAtom)
   const [isExporting, setIsExporting] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
@@ -157,7 +160,10 @@ export default function DskWorkspacePanel() {
           paletteFirmware,
           palettePlus,
           thumbnailDataUrl,
-          paletteColors
+          paletteColors,
+          // Include raster ranges if rasters are enabled
+          rasterRanges:
+            rasterEnabled && rasterRanges.length > 0 ? rasterRanges : undefined
         }
       })()
     : undefined

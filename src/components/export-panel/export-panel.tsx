@@ -11,6 +11,7 @@ import {
   IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
+import { rasterRangesAtom } from '@/app/store/raster/raster'
 import { Notification } from '@/components/ui/notification/notification'
 import type { ExportConfig } from '@/export'
 import { exportZip, rgbToIndexBufferExact } from '@/export'
@@ -25,6 +26,7 @@ export default function ExportPanel() {
   const exportPalette = useAtomValue(exportPaletteWithSlotsAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
+  const rasterRanges = useAtomValue(rasterRangesAtom)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
@@ -135,7 +137,8 @@ export default function ExportPanel() {
       modeConfig,
       cpcHardware,
       paletteForExport,
-      config
+      config,
+      rasterRanges
     )
 
     // Show success message

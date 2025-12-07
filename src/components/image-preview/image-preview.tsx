@@ -10,9 +10,9 @@ import {
 } from '@/app/store/config/config'
 import {
   previewCanvasSizeAtom,
-  previewCanvasWidthAtom,
-  previewImageAtom
+  previewCanvasWidthAtom
 } from '@/app/store/preview/preview'
+import { effectivePreviewImageAtom } from '@/app/store/raster/raster'
 import { createCorrectedAspectCanvas } from '@/export'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 import { isTauri } from '@/tauri'
@@ -25,7 +25,7 @@ const ImagePreview = () => {
   const { _ } = useLingui()
   const ref = useRef<HTMLCanvasElement>(null)
   const smoothing = useAtomValue(smoothingAtom)
-  const previewImage = useAtomValue(previewImageAtom)
+  const previewImage = useAtomValue(effectivePreviewImageAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
 
   const setWidth = useSetAtom(previewCanvasWidthAtom)

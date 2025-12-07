@@ -1,4 +1,5 @@
 import { atom } from 'jotai'
+import { atomWithStorage } from 'jotai/utils'
 import { getWidthStepForMode } from '@/export'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
@@ -264,8 +265,12 @@ export const setPaletteStrategyAtom = atom(
   }
 )
 
-// CPC Hardware selection atom
-export const cpcHardwareAtom = atom<CPCHardware>(CPCHardware.CLASSIC)
+// CPC Hardware selection atom - persisted to localStorage
+// This ensures consistency between locked colors and hardware selection
+export const cpcHardwareAtom = atomWithStorage<CPCHardware>(
+  'pixsaur-cpc-hardware',
+  CPCHardware.CLASSIC
+)
 
 // Setter for CPC Hardware
 export const setCpcHardwareAtom = atom(

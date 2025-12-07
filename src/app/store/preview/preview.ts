@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import { quantifyToCPCPlus, quantizeCPC } from '@/export'
+import { quantifyToCPCPlus, quantizeCPC, rgbToIndexBufferExact } from '@/export'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import {
   DISTANCE_METRICS_BY_COLORSPACE,
@@ -34,6 +34,7 @@ import {
   userPaletteAtom
 } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
+import { rasterEnabledAtom } from '../raster/raster-config'
 
 // ============================================================================
 // Utilitaires pour le filtrage des couleurs lockées
@@ -301,6 +302,67 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   return palette
 })
 
+// 4b. Image normalisée aux dimensions CPC (avant dithering)
+// Utilisée pour l'optimisation des rasters ligne par ligne
+export const normalizedImageAtom = atom(async (get) => {
+  const modeConfig = get(effectiveModeConfigAtom)
+  const processed = await get(smoothedImageAtom)
+  const resizeMode = get(resizeModeAtom)
+
+  if (!processed) return null
+
+  // En mode origin, l'image est déjà aux bonnes dimensions CPC
+  // En mode auto, on normalise aux dimensions CPC
+  const normalized =
+    resizeMode === 'origin'
+      ? processed
+      : getVisualRegionNormalized(processed, modeConfig)
+
+  return normalized
+})
+
+// 4c. Image normalisée positionnée (mêmes dimensions que previewImage)
+// Utilisée pour l'optimisation des rasters - doit avoir exactement les mêmes
+// dimensions que previewIndexBufferAtom pour que les indices correspondent
+export const positionedNormalizedImageAtom = atom(async (get) => {
+  const modeConfig = get(effectiveModeConfigAtom)
+  const normalized = await get(normalizedImageAtom)
+  const resizeMode = get(resizeModeAtom)
+  const centerImage = get(centerImageAtom)
+  const exportPalette = await get(exportPaletteWithSlotsAtom)
+
+  if (!normalized) return null
+
+  // En mode auto, appliquer le même positionnement que previewImageAtom
+  if (resizeMode === 'auto') {
+    return positionImageForAutoMode(
+      normalized,
+      modeConfig,
+      exportPalette,
+      centerImage
+    )
+  }
+
+  return normalized
+})
+
+/**
+ * Effective dithering configuration.
+ * When raster mode is enabled, classic dithering is disabled (mode: 'none')
+ * to avoid interference with raster-specific 1D dithering.
+ */
+export const effectiveDitheringAtom = atom((get) => {
+  const dithering = get(ditheringAtom)
+  const rasterEnabled = get(rasterEnabledAtom)
+
+  // Disable classic dithering when raster mode is active
+  if (rasterEnabled) {
+    return { ...dithering, mode: 'none' as const }
+  }
+
+  return dithering
+})
+
 // 5. Image preview finale avec cache dithering optimisé
 export const previewImageAtom = atom(async (get) => {
   const modeConfig = get(effectiveModeConfigAtom)
@@ -308,11 +370,11 @@ export const previewImageAtom = atom(async (get) => {
   // Utiliser la palette avec slots pour que les indices correspondent à l'export
   const exportPalette = await get(exportPaletteWithSlotsAtom)
   // reducedRgb n'est plus nécessaire: le dithering retourne déjà du RGB
-  const processed = await get(smoothedImageAtom)
-  const dithering = get(ditheringAtom)
+  const normalized = await get(normalizedImageAtom)
+  const dithering = get(effectiveDitheringAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom) // Get center option
-  if (!quantizer || !processed) return null
+  if (!quantizer || !normalized) return null
 
   // Préparer la palette pour le dithering: remplacer les slots ignorés [-1,-1,-1]
   // par une couleur valide (noir) pour que le dithering fonctionne
@@ -330,15 +392,6 @@ export const previewImageAtom = atom(async (get) => {
   const ditheringPalette = exportPalette.map((color) =>
     color[0] === -1 ? fallbackColor : color
   )
-
-  // En mode origin, l'image est déjà aux bonnes dimensions CPC (160x200, 320x200, 640x200)
-  // On ne doit PAS appliquer getVisualRegionNormalized qui re-scale avec le pixel aspect ratio
-  const normalized =
-    resizeMode === 'origin'
-      ? processed // Utiliser directement l'image sans normalisation
-      : getVisualRegionNormalized(processed, modeConfig)
-
-  if (!normalized) return null
 
   const previewBuffer = quantizer.dither(normalized, ditheringPalette, {
     mode: dithering.mode,
@@ -639,3 +692,62 @@ function positionImageForAutoMode(
   const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
   return positioned
 }
+
+// ============================================================================
+// Index Buffer pour les Rasters
+// ============================================================================
+
+/**
+ * Index buffer de la preview image.
+ * Chaque pixel est représenté par son indice dans la palette (0-15).
+ * Utilisé pour le rendu avec rasters (modification de palette par ligne).
+ */
+export const previewIndexBufferAtom = atom(async (get) => {
+  const previewImage = await get(previewImageAtom)
+  const exportPalette = await get(exportPaletteWithSlotsAtom)
+
+  if (!previewImage || exportPalette.length === 0) {
+    return null
+  }
+
+  // Préparer la palette pour le mapping: remplacer les slots ignorés [-1,-1,-1]
+  // par une couleur valide (noir) pour que le mapping fonctionne
+  const validColors = exportPalette.filter(
+    (c) => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
+  )
+  const fallbackColor: Vector =
+    validColors.length > 0
+      ? validColors.reduce((darkest, color) => {
+          return luminance(color) < luminance(darkest) ? color : darkest
+        }, validColors[0])
+      : [0, 0, 0]
+
+  const ditheringPalette = exportPalette.map((color) =>
+    color[0] === -1 ? fallbackColor : color
+  )
+
+  // Convertir l'ImageData en index buffer
+  // rgbToIndexBufferExact attend un Uint8ClampedArray (les données RGBA)
+  // Le 3ème paramètre (quantize) doit être false car l'image est déjà quantifiée
+  // Le 4ème paramètre (fallbackToDarkest) doit être true pour gérer les pixels non trouvés
+  const indexBuffer = rgbToIndexBufferExact(
+    previewImage.data,
+    ditheringPalette,
+    false,
+    true
+  )
+
+  logger.info('[Preview] Index buffer created', {
+    width: previewImage.width,
+    height: previewImage.height,
+    bufferLength: indexBuffer.length,
+    paletteSize: ditheringPalette.length
+  })
+
+  return {
+    buffer: indexBuffer,
+    width: previewImage.width,
+    height: previewImage.height,
+    palette: ditheringPalette
+  }
+})

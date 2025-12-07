@@ -1,5 +1,5 @@
 import { createStore } from 'jotai'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { CPCHardware } from '@/libs/types'
 import { userPaletteAtom } from '../../palette/palette'
 import {
@@ -47,6 +47,12 @@ describe('Config Store', () => {
 
   beforeEach(() => {
     store = createStore()
+    // Clear localStorage before each test
+    localStorage.clear()
+  })
+
+  afterEach(() => {
+    localStorage.clear()
   })
 
   describe('Basic Configuration Atoms', () => {
@@ -293,6 +299,44 @@ describe('Config Store', () => {
       // All colors should be unlocked
       const updatedPalette = store.get(userPaletteAtom)
       expect(updatedPalette.every((slot) => !slot.locked)).toBe(true)
+    })
+
+    it('should persist CPC hardware selection in localStorage', () => {
+      // Set hardware to PLUS
+      store.set(setCpcHardwareAtom, CPCHardware.PLUS)
+
+      // Verify it's stored in localStorage
+      const stored = localStorage.getItem('pixsaur-cpc-hardware')
+      expect(stored).toBe(JSON.stringify(CPCHardware.PLUS))
+    })
+
+    it('should use atomWithStorage for persistence (integration test)', () => {
+      // This test verifies the atom is configured with atomWithStorage
+      // by checking the localStorage key is used when setting a value
+
+      // Clear any existing value
+      localStorage.removeItem('pixsaur-cpc-hardware')
+
+      // Set the value
+      store.set(cpcHardwareAtom, CPCHardware.PLUS)
+
+      // Verify localStorage was updated
+      const stored = localStorage.getItem('pixsaur-cpc-hardware')
+      expect(stored).toBe(JSON.stringify(CPCHardware.PLUS))
+
+      // Verify we can read it back
+      expect(store.get(cpcHardwareAtom)).toBe(CPCHardware.PLUS)
+    })
+
+    it('should default to CLASSIC when localStorage is empty', () => {
+      // Ensure localStorage is empty
+      localStorage.removeItem('pixsaur-cpc-hardware')
+
+      // Create a fresh store
+      const freshStore = createStore()
+
+      // Should default to CLASSIC
+      expect(freshStore.get(cpcHardwareAtom)).toBe(CPCHardware.CLASSIC)
     })
   })
 

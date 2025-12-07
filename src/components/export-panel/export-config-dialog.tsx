@@ -4,6 +4,7 @@ import { Trans } from '@lingui/react/macro'
 import { useAtomValue } from 'jotai'
 import { useEffect, useState } from 'react'
 import { effectiveModeConfigAtom } from '@/app/store/config/config'
+import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import Button from '@/components/ui/button'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import PixsaurDialog from '@/components/ui/dialog/dialog'
@@ -33,6 +34,7 @@ export default function ExportConfigDialog({
   const { _ } = useLingui()
   const [config, setConfig] = useState<ExportConfig>(DEFAULT_EXPORT_CONFIG)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
 
   // Calculate SCR size in bytes for current dimensions and mode
   const scrSizeBytes =
@@ -162,6 +164,15 @@ export default function ExportConfigDialog({
             }
             label={_(msg`PNG (aspect ratio CPC correct)`)}
           />
+          {rasterEnabled && (
+            <Checkbox
+              checked={config.content.includeRasters}
+              onChange={(e) =>
+                updateContent('includeRasters', e.target.checked)
+              }
+              label={_(msg`Rasters (données ASM)`)}
+            />
+          )}
         </div>
       </div>
 
