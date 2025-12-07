@@ -1,16 +1,21 @@
 import { Trans } from '@lingui/react/macro'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useState } from 'react'
 import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
+import { imageAtom } from '@/app/store/image/image'
 import {
+  autoOptimizeRasterAtom,
   rasterDitheringIntensityAtom,
   rasterEnabledAtom,
   rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster'
+import Button from '@/components/ui/button'
 import Flex from '@/components/ui/flex'
+import Icon from '@/components/ui/icon'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
@@ -64,61 +69,85 @@ export function DitheringSelector() {
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
+  const image = useAtomValue(imageAtom)
   const [rasterDitheringIntensity, setRasterDitheringIntensity] = useAtom(
     rasterDitheringIntensityAtom
   )
   const [maxChangesPerLine, setMaxChangesPerLine] = useAtom(
     rasterMaxChangesPerLineAtom
   )
+  const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
+  const [isOptimizing, setIsOptimizing] = useState(false)
 
   // Maximum changes per line depends on:
   // - Hardware: CPC Plus can do 4 changes/line, Classic can do 2
   // - Mode 2: only 2 inks available, so max 2 changes regardless of hardware
   const hardwareMax = cpcHardware === 'plus' ? 4 : 2
   const maxAllowedChanges = Math.min(modeConfig.nColors, hardwareMax)
+  const hasImage = image !== null
+
+  const handleAutoOptimize = async () => {
+    if (isOptimizing) return // Prevent multiple clicks
+    setIsOptimizing(true)
+    try {
+      await autoOptimize()
+    } finally {
+      setIsOptimizing(false)
+    }
+  }
 
   // Show raster dithering slider when raster mode is enabled
   if (rasterEnabled) {
     return (
-      <Flex
-        gap='var(--spacing-md)'
-        wrap='wrap'
-        justify='flex-start'
-        align='flex-start'
-        direction='column'
-      >
-        <div className={styles.ditheringSlider}>
-          <PixsaurSlider
-            label={<Trans>Changements par ligne</Trans>}
-            description={
-              <Trans>
-                Nombre maximum de changements d'encre par ligne (1 = raster
-                classique)
-              </Trans>
-            }
-            min={1}
-            max={maxAllowedChanges}
-            value={Math.min(maxChangesPerLine, maxAllowedChanges)}
-            onChange={setMaxChangesPerLine}
-            step={1}
-          />
+      <div className={styles.slidersRow}>
+        <div className={styles.slidersGroup}>
+          <div className={styles.ditheringSlider}>
+            <PixsaurSlider
+              label={<Trans>Changements par ligne</Trans>}
+              description={
+                <Trans>
+                  Nombre maximum de changements d'encre par ligne (1 = raster
+                  classique)
+                </Trans>
+              }
+              min={1}
+              max={maxAllowedChanges}
+              value={Math.min(maxChangesPerLine, maxAllowedChanges)}
+              onChange={setMaxChangesPerLine}
+              step={1}
+            />
+          </div>
+          <div className={styles.ditheringSlider}>
+            <PixsaurSlider
+              label={<Trans>Dithering raster</Trans>}
+              description={
+                <Trans>
+                  Dithering horizontal 1D appliqué lors du prétraitement raster
+                </Trans>
+              }
+              min={0}
+              max={100}
+              value={Math.round(rasterDitheringIntensity * 100)}
+              onChange={(val) => setRasterDitheringIntensity(val / 100)}
+              step={5}
+            />
+          </div>
         </div>
-        <div className={styles.ditheringSlider}>
-          <PixsaurSlider
-            label={<Trans>Dithering raster</Trans>}
-            description={
-              <Trans>
-                Dithering horizontal 1D appliqué lors du prétraitement raster
-              </Trans>
-            }
-            min={0}
-            max={100}
-            value={Math.round(rasterDitheringIntensity * 100)}
-            onChange={(val) => setRasterDitheringIntensity(val / 100)}
-            step={5}
-          />
-        </div>
-      </Flex>
+        {hasImage && (
+          <Button
+            variant='secondary'
+            onClick={handleAutoOptimize}
+            disabled={isOptimizing}
+          >
+            <Icon name='GearIcon' />
+            {isOptimizing ? (
+              <Trans>Optimisation...</Trans>
+            ) : (
+              <Trans>Générer les rasters</Trans>
+            )}
+          </Button>
+        )}
+      </div>
     )
   }
 

@@ -28,12 +28,8 @@ export interface RasterPanelViewProps {
   readonly nColors: number
   readonly cpcPalette: CPCColor[]
   readonly isClassicMode: boolean
-  /** Whether auto-optimization is available for current mode */
-  readonly canAutoOptimize?: boolean
   /** CPC Plus hardware mode */
   readonly isPlusMode: boolean
-  /** Whether auto-optimization is in progress */
-  readonly isOptimizing?: boolean
   readonly onAddChange: () => void
   readonly onUpdateChange: (
     id: string,
@@ -43,8 +39,6 @@ export interface RasterPanelViewProps {
   readonly onRemoveChange: (id: string) => void
   /** Clear all raster changes */
   readonly onClearAll?: () => void
-  /** Auto-optimize palette per line (CPC Plus Mode 1 only) */
-  readonly onAutoOptimize?: () => void
 }
 
 /**
@@ -246,14 +240,11 @@ export function RasterPanelView({
   nColors,
   cpcPalette,
   isClassicMode,
-  canAutoOptimize = true,
   isPlusMode,
-  isOptimizing = false,
   onAddChange,
   onUpdateChange,
   onRemoveChange,
-  onClearAll,
-  onAutoOptimize
+  onClearAll
 }: RasterPanelViewProps) {
   const switchId = useId()
 
@@ -284,22 +275,6 @@ export function RasterPanelView({
               <Trans>Raster: changements d'encre par ligne</Trans>
             </span>
           </div>
-        )}
-
-        {enabled && canAutoOptimize && onAutoOptimize && (
-          <button
-            type='button'
-            className={styles.autoOptimizeButton}
-            onClick={onAutoOptimize}
-            disabled={isOptimizing}
-          >
-            <Icon name='GearIcon' />
-            {isOptimizing ? (
-              <Trans>Optimisation...</Trans>
-            ) : (
-              <Trans>Auto-optimiser les palettes</Trans>
-            )}
-          </button>
         )}
 
         {enabled && (

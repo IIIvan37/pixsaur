@@ -46,7 +46,7 @@ export function RasterPanel() {
   const clearAllChanges = useSetAtom(clearRasterChangesAtom)
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
 
-  const [isOptimizing, setIsOptimizing] = useState(false)
+  const [, setIsOptimizing] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previousIntensityRef = useRef(ditheringIntensity)
   const previousMaxChangesRef = useRef(maxChangesPerLine)
@@ -136,24 +136,14 @@ export function RasterPanel() {
     previousHardwareRef.current = cpcHardware
     previousModeRef.current = modeConfig.nColors
 
-    // Skip if nothing changed or raster not enabled or no changes to clear
-    if (
-      (!hardwareChanged && !modeChanged) ||
-      !enabled ||
-      changes.length === 0
-    ) {
+    // Skip if nothing changed or raster not enabled
+    if ((!hardwareChanged && !modeChanged) || !enabled) {
       return
     }
 
-    // Clear all raster changes when hardware or mode changes
+    // Clear all raster changes and index buffer when hardware or mode changes
     clearAllChanges()
-  }, [
-    cpcHardware,
-    modeConfig.nColors,
-    enabled,
-    changes.length,
-    clearAllChanges
-  ])
+  }, [cpcHardware, modeConfig.nColors, enabled, clearAllChanges])
 
   // Extract colors from display palette slots
   const palette: Vector[] = displayPalette.map(
@@ -215,15 +205,6 @@ export function RasterPanel() {
     removeChange(id)
   }
 
-  const handleAutoOptimize = async () => {
-    setIsOptimizing(true)
-    try {
-      await autoOptimize()
-    } finally {
-      setIsOptimizing(false)
-    }
-  }
-
   return (
     <RasterPanelView
       disabled={!hasImage}
@@ -236,14 +217,11 @@ export function RasterPanel() {
       nColors={modeConfig.nColors}
       cpcPalette={cpcFullPalette}
       isClassicMode={isClassicMode}
-      canAutoOptimize={hasImage}
       isPlusMode={isPlusMode}
-      isOptimizing={isOptimizing}
       onAddChange={handleAddChange}
       onUpdateChange={handleUpdateChange}
       onRemoveChange={handleRemoveChange}
       onClearAll={clearAllChanges}
-      onAutoOptimize={handleAutoOptimize}
     />
   )
 }

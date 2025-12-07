@@ -1,3 +1,17 @@
 .ditheringSlider {
   width: 10.71rem; /* 150px / 14 */
+  flex-shrink: 0;
+}
+
+.slidersRow {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.slidersGroup {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: flex-end;
 }
