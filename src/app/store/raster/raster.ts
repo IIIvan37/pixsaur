@@ -270,6 +270,10 @@ export const effectivePreviewImageAtom = atom(async (get) => {
 export const autoOptimizeRasterAtom = atom(
   null,
   async (get, set, options?: { resetChanges?: boolean }) => {
+    // Clear any existing raster data immediately to prevent visual persistence
+    set(rasterChangesAtom, [])
+    set(rasterIndexBufferAtom, null)
+
     const modeConfig = get(effectiveModeConfigAtom)
     const hardware = get(cpcHardwareAtom)
 
