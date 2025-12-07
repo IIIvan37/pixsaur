@@ -47,7 +47,7 @@ function createDefaultProps(
     nColors: 4,
     cpcPalette: mockCpcPalette,
     isClassicMode: true,
-    isPlusMode1: false,
+    isPlusMode: false,
     onAddChange: vi.fn(),
     onUpdateChange: vi.fn(),
     onRemoveChange: vi.fn(),
@@ -114,58 +114,75 @@ describe('RasterPanelView', () => {
   })
 
   describe('Mode indicator', () => {
-    it('should show CPC badge when not in Plus Mode 1', async () => {
+    it('should show CPC Classic badge when in Classic mode', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, isPlusMode1: false })}
+          {...createDefaultProps({
+            enabled: true,
+            isPlusMode: false,
+            isClassicMode: true
+          })}
         />
       )
       await expandSection()
-      expect(screen.getByText('CPC')).toBeInTheDocument()
+      expect(screen.getByText('CPC Classic')).toBeInTheDocument()
     })
 
-    it('should show CPC Plus Mode 1 badge in Plus Mode 1', async () => {
+    it('should show CPC Plus badge in Plus mode', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, isPlusMode1: true })}
+          {...createDefaultProps({
+            enabled: true,
+            isPlusMode: true,
+            isClassicMode: false
+          })}
         />
       )
       await expandSection()
-      expect(screen.getByText('CPC Plus Mode 1')).toBeInTheDocument()
+      expect(screen.getByText('CPC Plus')).toBeInTheDocument()
     })
 
-    it('should show 1 change per line hint when not in Plus Mode 1', async () => {
+    it('should show raster hint in Classic mode', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, isPlusMode1: false })}
+          {...createDefaultProps({
+            enabled: true,
+            isPlusMode: false,
+            isClassicMode: true
+          })}
         />
       )
       await expandSection()
       // Check that modeHint element exists (text is mocked in tests)
-      const modeInfo = screen.getByText('CPC').parentElement
+      const modeInfo = screen.getByText('CPC Classic').parentElement
       expect(modeInfo?.querySelectorAll('span')).toHaveLength(2) // badge + hint
     })
 
-    it('should show 4 changes per line hint in Plus Mode 1', async () => {
+    it('should show raster hint in Plus mode', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: true, isPlusMode1: true })}
+          {...createDefaultProps({
+            enabled: true,
+            isPlusMode: true,
+            isClassicMode: false
+          })}
         />
       )
       await expandSection()
       // Check that modeHint element exists (text is mocked in tests)
-      const modeInfo = screen.getByText('CPC Plus Mode 1').parentElement
+      const modeInfo = screen.getByText('CPC Plus').parentElement
       expect(modeInfo?.querySelectorAll('span')).toHaveLength(2) // badge + hint
     })
 
     it('should not show mode indicator when raster is disabled', async () => {
       render(
         <RasterPanelView
-          {...createDefaultProps({ enabled: false, isPlusMode1: false })}
+          {...createDefaultProps({ enabled: false, isPlusMode: false })}
         />
       )
       await expandSection()
-      expect(screen.queryByText('CPC')).not.toBeInTheDocument()
+      expect(screen.queryByText('CPC Classic')).not.toBeInTheDocument()
+      expect(screen.queryByText('CPC Plus')).not.toBeInTheDocument()
     })
   })
 

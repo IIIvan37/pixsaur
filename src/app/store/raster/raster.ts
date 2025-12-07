@@ -6,6 +6,7 @@ import {
   preprocessImageForRaster
 } from '@/libs/pixsaur-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
+import { cpcPalette } from '@/palettes/cpc-palette'
 import {
   configAtom,
   cpcHardwareAtom,
@@ -25,7 +26,8 @@ import {
   MAX_CHANGES_PER_LINE_PLUS_MODE1,
   rasterChangesAtom,
   rasterDitheringIntensityAtom,
-  rasterEnabledAtom
+  rasterEnabledAtom,
+  rasterMaxChangesPerLineAtom
 } from './raster-config'
 
 // Re-export primitive atoms for external use
@@ -34,7 +36,8 @@ export {
   MAX_CHANGES_PER_LINE_PLUS_MODE1,
   rasterChangesAtom,
   rasterDitheringIntensityAtom,
-  rasterEnabledAtom
+  rasterEnabledAtom,
+  rasterMaxChangesPerLineAtom
 } from './raster-config'
 
 /**
@@ -280,13 +283,13 @@ export const effectivePreviewImageAtom = atom(async (get) => {
 export const autoOptimizeRasterAtom = atom(
   null,
   async (get, set, options?: { resetChanges?: boolean }) => {
-    const hardware = get(cpcHardwareAtom)
     const modeConfig = get(effectiveModeConfigAtom)
+    const hardware = get(cpcHardwareAtom)
 
-    // Only works for CPC Plus + Mode 1
-    if (hardware !== 'plus' || modeConfig.nColors !== 4) {
-      return { success: false, error: 'Only available for CPC Plus Mode 1' }
-    }
+    // Determine if we're in CPC Classic mode (27 colors) or Plus mode (4096 colors)
+    const isClassicMode = hardware === 'classic'
+    // CPC Classic palette is used to constrain colors to the 27 hardware colors
+    const cpcClassicPalette = isClassicMode ? cpcPalette : undefined
 
     // Get the positioned normalized image (source colors, before dithering)
     // This gives us the TRUE colors of each pixel that we need to represent
@@ -298,30 +301,34 @@ export const autoOptimizeRasterAtom = atom(
     // Use dimensions from sourceImage
     const { width, height } = sourceImage
 
-    // Get the global palette (4 colors for Mode 1)
+    // Get the global palette (nColors for the current mode)
     // Note: The optimization algorithm now extracts palette directly from source image,
     // but we still need this for the initial API compatibility
     const exportPalette = await get(exportPaletteWithSlotsAtom)
 
-    // Filter out invalid slots and take first 4 colors
+    // Filter out invalid slots and take first nColors
     // If no valid colors, we'll use a placeholder - the algorithm will extract from image
-    const globalPalette = exportPalette.filter((c) => c[0] !== -1).slice(0, 4)
+    const globalPalette = exportPalette
+      .filter((c) => c[0] !== -1)
+      .slice(0, modeConfig.nColors)
 
-    // Pad to 4 colors if needed (algorithm will override with extracted colors anyway)
-    while (globalPalette.length < 4) {
+    // Pad to nColors if needed (algorithm will override with extracted colors anyway)
+    while (globalPalette.length < modeConfig.nColors) {
       globalPalette.push([0, 0, 0])
     }
 
     // Get raster dithering intensity
     const ditheringIntensity = get(rasterDitheringIntensityAtom)
 
-    // PRE-PROCESS: Transform source image to have max 4 colors per line
+    // PRE-PROCESS: Transform source image to have max nColors per line
     // This ensures smooth palette transitions and better raster optimization
     const preprocessedImage = preprocessImageForRaster(
       sourceImage,
       globalPalette,
       {
-        ditheringIntensity
+        ditheringIntensity,
+        nColors: modeConfig.nColors,
+        cpcClassicPalette
       }
     )
 
@@ -335,9 +342,12 @@ export const autoOptimizeRasterAtom = atom(
           color
         }))
 
+    // Get max changes per line setting
+    const maxChangesPerLine = get(rasterMaxChangesPerLineAtom)
+
     // Generate optimized raster changes AND matching index buffer
-    // - preprocessedImage: image with max 4 colors per line (smooth transitions)
-    // - globalPalette: initial 4-color palette
+    // - preprocessedImage: image with max nColors per line (smooth transitions)
+    // - globalPalette: initial nColors palette
     // - Returns both raster changes and an index buffer where each pixel
     //   maps to its correct ink index based on per-line palettes
     const {
@@ -347,7 +357,12 @@ export const autoOptimizeRasterAtom = atom(
     } = optimizeLinePalettesWithIndexBuffer(
       preprocessedImage,
       globalPalette,
-      existingChanges
+      existingChanges,
+      {
+        maxChangesPerLine,
+        nColors: modeConfig.nColors,
+        cpcClassicPalette
+      }
     )
 
     // Filter out any changes that exceed the mode height (safety check)

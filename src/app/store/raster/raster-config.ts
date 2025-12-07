@@ -23,6 +23,17 @@ export const rasterDitheringIntensityAtom = atomWithStorage<number>(
 )
 
 /**
+ * Maximum number of ink changes per line
+ * 1 = classic raster (one ink change per HBL)
+ * 4 = full raster (all 4 inks can change per line)
+ * Default: 1 for classic raster behavior
+ */
+export const rasterMaxChangesPerLineAtom = atomWithStorage<number>(
+  'pixsaur-raster-max-changes-per-line',
+  1
+)
+
+/**
  * User-defined raster changes (single line changes, no ranges)
  */
 export const rasterChangesAtom = atomWithStorage<RasterChange[]>(

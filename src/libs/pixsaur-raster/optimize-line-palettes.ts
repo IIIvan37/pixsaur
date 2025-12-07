@@ -55,6 +55,17 @@ function findClosestColorIndex(
 }
 
 /**
+ * Find the closest color in the palette to the given color
+ */
+function findClosestColor(
+  color: Vector<'RGB'>,
+  palette: Vector<'RGB'>[]
+): Vector<'RGB'> {
+  const index = findClosestColorIndex(color, palette)
+  return palette[index]
+}
+
+/**
  * Weighted color pixel for median cut algorithm
  */
 interface WeightedPixel {
@@ -348,9 +359,18 @@ export function posterizeImage(
  */
 export function extractGlobalPaletteFromImage(
   sourceImage: ImageData,
-  maxColors: number = 4
+  maxColors: number = 4,
+  cpcClassicPalette?: Vector<'RGB'>[]
 ): Vector<'RGB'>[] {
   const { width, height, data } = sourceImage
+
+  // Helper to quantize based on hardware mode
+  const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
+    if (cpcClassicPalette) {
+      return findClosestColor(color, cpcClassicPalette)
+    }
+    return quantizeToCPCPlus(color)
+  }
 
   // Build histogram of all colors in the image
   const colorFrequency = new Map<
@@ -362,8 +382,8 @@ export function extractGlobalPaletteFromImage(
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4
       const color: Vector<'RGB'> = [data[idx], data[idx + 1], data[idx + 2]]
-      // Quantize immediately to CPC Plus to reduce unique colors
-      const quantized = quantizeToCPCPlus(color)
+      // Quantize immediately to hardware palette to reduce unique colors
+      const quantized = quantize(color)
       const key = colorKey(quantized)
 
       const existing = colorFrequency.get(key)
@@ -421,15 +441,24 @@ function selectBestColorsForLine(
   colorFrequencies: Map<string, { color: Vector<'RGB'>; count: number }>,
   currentPalette: Vector<'RGB'>[],
   _basePalette: Vector<'RGB'>[] | null = null,
-  maxColors: number = 4
+  maxColors: number = 4,
+  cpcClassicPalette?: Vector<'RGB'>[]
 ): Vector<'RGB'>[] {
+  // Helper to quantize based on hardware mode
+  const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
+    if (cpcClassicPalette) {
+      return findClosestColor(color, cpcClassicPalette)
+    }
+    return quantizeToCPCPlus(color)
+  }
+
   // If we have ≤maxColors unique colors, return all of them
   if (colorFrequencies.size <= maxColors) {
     return Array.from(colorFrequencies.values()).map((v) => v.color)
   }
 
   // Quantize current palette
-  const quantizedCurrent = currentPalette.map((c) => quantizeToCPCPlus(c))
+  const quantizedCurrent = currentPalette.map((c) => quantize(c))
 
   // Collect all line colors with their frequencies (NOT quantized yet)
   const lineColors = Array.from(colorFrequencies.entries())
@@ -533,7 +562,7 @@ function selectBestColorsForLine(
       let slotIndex = 0
       for (const { color } of uncoveredColors) {
         if (slotIndex >= poorSlots.length) break
-        newPalette[poorSlots[slotIndex]] = quantizeToCPCPlus(color)
+        newPalette[poorSlots[slotIndex]] = quantize(color)
         slotIndex++
       }
     }
@@ -544,7 +573,7 @@ function selectBestColorsForLine(
   // Poor coverage (<40%): need to select colors based on line content
   // Use median cut on the most frequent line colors
   const pixels: WeightedPixel[] = lineColors.map(({ color, count }) => ({
-    color: quantizeToCPCPlus(color),
+    color: quantize(color),
     weight: count
   }))
 
@@ -653,6 +682,26 @@ export interface OptimizationResult {
 }
 
 /**
+ * Options for line palette optimization
+ */
+export interface OptimizationOptions {
+  /** Maximum number of ink changes per line (1 = classic raster, 4 = full raster) */
+  maxChangesPerLine?: number
+  /**
+   * Number of colors per line for the current CPC mode.
+   * Mode 0: 16 colors, Mode 1: 4 colors, Mode 2: 2 colors.
+   * Default: 4 (Mode 1)
+   */
+  nColors?: number
+  /**
+   * CPC Classic hardware palette (27 colors).
+   * When provided, colors are constrained to this fixed palette instead of
+   * using CPC Plus 4096-color quantization.
+   */
+  cpcClassicPalette?: Vector<'RGB'>[]
+}
+
+/**
  * Main optimization function for images that already respect the 4-colors-per-line constraint.
  *
  * This algorithm:
@@ -667,59 +716,90 @@ export interface OptimizationResult {
  * @param sourceImage - The source image (should have ≤4 colors per line for best results)
  * @param globalPalette - Initial 4-color palette (used for line 0)
  * @param existingChanges - Existing raster changes to preserve
+ * @param options - Optimization options (maxChangesPerLine)
  * @returns Object with raster changes and matching index buffer
  */
 export function optimizeLinePalettesWithIndexBuffer(
-  sourceImage: ImageData,
+  preprocessedImage: ImageData,
   _globalPalette: Vector<'RGB'>[],
-  existingChanges: Omit<RasterChange, 'id'>[] = []
+  existingChanges: Omit<RasterChange, 'id'>[] = [],
+  options: OptimizationOptions = {}
 ): OptimizationResult {
-  const { width, height: imageHeight, data } = sourceImage
+  const { maxChangesPerLine = 4, nColors = 4, cpcClassicPalette } = options
+  const { width, height: imageHeight, data } = preprocessedImage
+
   const changes: Omit<RasterChange, 'id'>[] = []
   const indexBuffer = new Uint8Array(width * imageHeight)
+
+  // Helper function to quantize a color based on hardware mode
+  // CPC Classic: constrain to 27-color palette
+  // CPC Plus: quantize to 4096 colors (4 bits per channel)
+  const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
+    if (cpcClassicPalette) {
+      return findClosestColor(color, cpcClassicPalette)
+    }
+    return quantizeToCPCPlus(color)
+  }
 
   // Create a set of existing changes for fast lookup
   const existingChangeSet = new Set(
     existingChanges.map((c) => `${c.line}-${c.inkIndex}`)
   )
 
-  // CRITICAL FIX: Extract palette from the SOURCE IMAGE, not from external palette
-  // This prevents colors that don't exist in the image (like turquoise green) from being used
-  const extractedPalette = extractGlobalPaletteFromImage(sourceImage, 4)
+  // CRITICAL FIX: Extract palette from the ANALYSIS IMAGE (source at CPC dimensions)
+  // This finds the best global palette from the true colors before preprocessing
+  // Use nColors from current mode (Mode 0: 16, Mode 1: 4, Mode 2: 2)
+  const extractedPalette = extractGlobalPaletteFromImage(
+    preprocessedImage,
+    nColors,
+    cpcClassicPalette
+  )
 
   // Initialize with extracted palette
   const basePalette = [...extractedPalette]
 
-  // Pad to 4 colors if needed
-  while (basePalette.length < 4) {
+  // Pad to nColors if needed
+  while (basePalette.length < nColors) {
     basePalette.push([0, 0, 0])
   }
 
-  const numInks = 4
+  const numInks = nColors
 
   // Current palette starts from base and evolves line by line
   let currentPalette = [...basePalette]
 
   // Process each line
   for (let line = 0; line < imageHeight; line++) {
-    // Extract color frequencies from this line
-    const colorFrequencies = extractLineColorFrequencies(sourceImage, line)
+    // Extract color frequencies from this line using the ANALYSIS IMAGE
+    // This gives us the true colors the user wants to represent
+    const colorFrequencies = extractLineColorFrequencies(
+      preprocessedImage,
+      line
+    )
 
     // Select best colors for this line, constrained to drift from base palette
     const lineColors = selectBestColorsForLine(
       colorFrequencies,
       currentPalette,
       basePalette, // Pass global palette as anchor for drift constraints
-      4
+      nColors,
+      cpcClassicPalette
     )
 
-    // Quantize line colors to CPC Plus format
-    const quantizedLineColors = lineColors.map((c) => quantizeToCPCPlus(c))
+    // Quantize line colors to hardware color format
+    const quantizedLineColors = lineColors.map((c) => quantizeColor(c))
 
     // Assign colors to ink indices, minimizing changes from previous line
-    const newPalette = assignColorsToInks(quantizedLineColors, currentPalette)
+    let newPalette = assignColorsToInks(quantizedLineColors, currentPalette)
 
-    // Generate raster changes for inks that changed
+    // Collect all potential changes for this line
+    const lineChanges: Array<{
+      inkIndex: number
+      prevColor: Vector<'RGB'>
+      newColor: Vector<'RGB'>
+      impact: number
+    }> = []
+
     for (let inkIndex = 0; inkIndex < numInks; inkIndex++) {
       const prevColor = currentPalette[inkIndex]
       const newColor = newPalette[inkIndex]
@@ -729,12 +809,57 @@ export function optimizeLinePalettesWithIndexBuffer(
 
       // Check if color changed
       if (!colorsEqual(prevColor, newColor)) {
-        changes.push({
-          line,
+        // Calculate impact: how many pixels on this line use this ink
+        // and how much the color differs
+        const colorDiff = colorDistanceSquared(prevColor, newColor)
+        // Count pixels that would benefit from this change
+        // Use analysisData to measure impact based on original source colors
+        let pixelCount = 0
+        const lineStart = line * width
+        for (let x = 0; x < width; x++) {
+          const pixelIdx = (lineStart + x) * 4
+          const pixelColor: Vector<'RGB'> = [
+            data[pixelIdx],
+            data[pixelIdx + 1],
+            data[pixelIdx + 2]
+          ]
+          const quantizedPixel = quantizeColor(pixelColor)
+          // Check if this pixel is closer to the new color than the old
+          const distToNew = colorDistanceSquared(quantizedPixel, newColor)
+          const distToOld = colorDistanceSquared(quantizedPixel, prevColor)
+          if (distToNew < distToOld) {
+            pixelCount++
+          }
+        }
+        lineChanges.push({
           inkIndex,
-          color: newColor
+          prevColor,
+          newColor,
+          impact: pixelCount * colorDiff
         })
       }
+    }
+
+    // Apply maxChangesPerLine constraint: keep only the most impactful changes
+    if (lineChanges.length > maxChangesPerLine) {
+      // Sort by impact (descending) and keep only top N
+      lineChanges.sort((a, b) => b.impact - a.impact)
+      lineChanges.length = maxChangesPerLine
+
+      // Rebuild newPalette with only the selected changes
+      newPalette = [...currentPalette]
+      for (const change of lineChanges) {
+        newPalette[change.inkIndex] = change.newColor
+      }
+    }
+
+    // Add the selected changes
+    for (const change of lineChanges) {
+      changes.push({
+        line,
+        inkIndex: change.inkIndex,
+        color: change.newColor
+      })
     }
 
     // Build color -> ink index map for this line
@@ -755,7 +880,7 @@ export function optimizeLinePalettesWithIndexBuffer(
         data[pixelIdx + 1],
         data[pixelIdx + 2]
       ]
-      const quantizedPixel = quantizeToCPCPlus(pixelColor)
+      const quantizedPixel = quantizeColor(pixelColor)
       const key = colorKey(quantizedPixel)
 
       // Find the ink index for this color
@@ -936,6 +1061,18 @@ export interface RasterPreprocessOptions {
    * Default: 0.75 (reduced to minimize noise while maintaining quality)
    */
   ditheringIntensity?: number
+  /**
+   * Number of colors per line for the current CPC mode.
+   * Mode 0: 16 colors, Mode 1: 4 colors, Mode 2: 2 colors.
+   * Default: 4 (Mode 1)
+   */
+  nColors?: number
+  /**
+   * CPC Classic hardware palette (27 colors).
+   * When provided, colors are constrained to this fixed palette instead of
+   * using CPC Plus 4096-color quantization.
+   */
+  cpcClassicPalette?: Vector<'RGB'>[]
 }
 
 /**
@@ -957,13 +1094,28 @@ export function preprocessImageForRaster(
   _globalPalette: Vector<'RGB'>[],
   options: RasterPreprocessOptions = {}
 ): ImageData {
-  const { ditheringIntensity = 0.75 } = options
+  const { ditheringIntensity = 0.75, nColors = 4, cpcClassicPalette } = options
   const { width, height, data } = sourceImage
   const outputData = new Uint8ClampedArray(data.length)
 
+  // Helper function to quantize a color based on hardware mode
+  // CPC Classic: constrain to 27-color palette
+  // CPC Plus: quantize to 4096 colors (4 bits per channel)
+  const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
+    if (cpcClassicPalette) {
+      return findClosestColor(color, cpcClassicPalette)
+    }
+    return quantizeToCPCPlus(color)
+  }
+
   // Extract initial global palette from the source image
-  const extractedPalette = extractGlobalPaletteFromImage(sourceImage, 4)
-  while (extractedPalette.length < 4) {
+  // Use nColors from the current mode (Mode 0: 16, Mode 1: 4, Mode 2: 2)
+  const extractedPalette = extractGlobalPaletteFromImage(
+    sourceImage,
+    nColors,
+    cpcClassicPalette
+  )
+  while (extractedPalette.length < nColors) {
     extractedPalette.push([0, 0, 0])
   }
 
@@ -996,7 +1148,7 @@ export function preprocessImageForRaster(
 
       // Apply vertical error correction
       const correctedColor = addColors(sourceColor, verticalError[x])
-      const quantized = quantizeToCPCPlus(correctedColor)
+      const quantized = quantizeColor(correctedColor)
       const key = colorKey(quantized)
 
       const existing = colorHistogram.get(key)
@@ -1008,32 +1160,35 @@ export function preprocessImageForRaster(
     }
 
     // Step 2: Select palette using farthest point sampling
+    // Limited to nColors for the current mode (Mode 2 = 2, Mode 1 = 4, Mode 0 = 16)
     const linePalette = selectPaletteFarthestPoint(
       colorHistogram,
-      4,
+      nColors,
       previousPalette
     )
 
-    // Ensure 4 colors
-    while (linePalette.length < 4) {
+    // Ensure nColors colors
+    while (linePalette.length < nColors) {
       for (const pc of previousPalette) {
-        if (linePalette.length >= 4) break
+        if (linePalette.length >= nColors) break
         const key = colorKey(pc)
         if (!linePalette.some((c) => colorKey(c) === key)) {
           linePalette.push(pc)
         }
       }
-      if (linePalette.length < 4) {
+      if (linePalette.length < nColors) {
         linePalette.push([0, 0, 0])
       }
     }
 
-    // Quantize palette to CPC Plus
-    const quantizedPalette = linePalette.map((c) => quantizeToCPCPlus(c))
+    // Quantize palette to hardware color space
+    const quantizedPalette = linePalette.map((c) => quantizeColor(c))
 
-    // Check if this line already satisfies the 4-color constraint
-    // If so, skip dithering to preserve the original colors
-    const lineAlreadySatisfiesConstraint = colorHistogram.size <= 4
+    // Check if this line already satisfies the nColors constraint
+    // If so and dithering is disabled, skip dithering to preserve the original colors
+    // If dithering is enabled (intensity > 0), always apply it for visual consistency
+    const lineAlreadySatisfiesConstraint =
+      colorHistogram.size <= nColors && ditheringIntensity === 0
 
     // New vertical error buffer for next line
     const newVerticalError: [number, number, number][] = new Array(width)
@@ -1041,7 +1196,7 @@ export function preprocessImageForRaster(
       .map(() => [0, 0, 0])
 
     if (lineAlreadySatisfiesConstraint) {
-      // Line already has ≤4 colors: direct mapping without dithering
+      // Line already has ≤nColors colors: direct mapping without dithering
       for (let x = 0; x < width; x++) {
         const pixelIdx = lineStart + x * 4
         const sourceColor: Vector<'RGB'> = [
@@ -1051,7 +1206,7 @@ export function preprocessImageForRaster(
         ]
 
         // Quantize and find exact match in palette
-        const quantizedSource = quantizeToCPCPlus(sourceColor)
+        const quantizedSource = quantizeColor(sourceColor)
         const closestIdx = findClosestColorIndex(
           quantizedSource,
           quantizedPalette

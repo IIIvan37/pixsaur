@@ -14,6 +14,7 @@ import {
   rasterConflictsAtom,
   rasterDitheringIntensityAtom,
   rasterEnabledAtom,
+  rasterMaxChangesPerLineAtom,
   removeRasterChangeAtom,
   updateRasterChangeAtom
 } from '@/app/store/raster/raster'
@@ -31,6 +32,7 @@ import { RasterPanelView } from './raster-panel-view'
 export function RasterPanel() {
   const [enabled, setEnabled] = useAtom(rasterEnabledAtom)
   const ditheringIntensity = useAtomValue(rasterDitheringIntensityAtom)
+  const maxChangesPerLine = useAtomValue(rasterMaxChangesPerLineAtom)
   const changes = useAtomValue(rasterChangesAtom)
   const conflicts = useAtomValue(rasterConflictsAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
@@ -47,34 +49,33 @@ export function RasterPanel() {
   const [isOptimizing, setIsOptimizing] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previousIntensityRef = useRef(ditheringIntensity)
+  const previousMaxChangesRef = useRef(maxChangesPerLine)
+  const previousHardwareRef = useRef(cpcHardware)
+  const previousModeRef = useRef(modeConfig.nColors)
 
   // Max line is height - 1 (0-indexed)
   const maxLine = modeConfig.height - 1
   const isClassicMode = cpcHardware === 'classic'
   const hasImage = image !== null
-  // CPC Plus Mode 1 allows 4 ink changes per line (Mode 1 = 4 colors)
-  const isPlusMode1 = cpcHardware === 'plus' && modeConfig.nColors === 4
+  // CPC Plus allows smooth color transitions, Classic uses 27-color palette
+  const isPlusMode = cpcHardware === 'plus'
 
   // Debounced auto-optimize when dithering intensity changes
   // Uses resetChanges: true to clear existing raster lines and regenerate from scratch
   const runDebouncedOptimize = useCallback(async () => {
-    if (!enabled || !isPlusMode1 || !hasImage) return
+    if (!enabled || !hasImage) return
     setIsOptimizing(true)
     try {
       await autoOptimize({ resetChanges: true })
     } finally {
       setIsOptimizing(false)
     }
-  }, [enabled, isPlusMode1, hasImage, autoOptimize])
+  }, [enabled, hasImage, autoOptimize])
 
   // Watch for dithering intensity changes and trigger debounced optimization
   useEffect(() => {
     // Skip if intensity hasn't actually changed or raster not enabled
-    if (
-      previousIntensityRef.current === ditheringIntensity ||
-      !enabled ||
-      !isPlusMode1
-    ) {
+    if (previousIntensityRef.current === ditheringIntensity || !enabled) {
       previousIntensityRef.current = ditheringIntensity
       return
     }
@@ -96,7 +97,63 @@ export function RasterPanel() {
         clearTimeout(debounceRef.current)
       }
     }
-  }, [ditheringIntensity, enabled, isPlusMode1, runDebouncedOptimize])
+  }, [ditheringIntensity, enabled, runDebouncedOptimize])
+
+  // Watch for maxChangesPerLine changes and trigger debounced optimization
+  useEffect(() => {
+    // Skip if value hasn't actually changed or raster not enabled
+    if (previousMaxChangesRef.current === maxChangesPerLine || !enabled) {
+      previousMaxChangesRef.current = maxChangesPerLine
+      return
+    }
+
+    previousMaxChangesRef.current = maxChangesPerLine
+
+    // Clear any pending debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+
+    // Debounce the optimization (300ms)
+    debounceRef.current = setTimeout(() => {
+      runDebouncedOptimize()
+    }, 300)
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [maxChangesPerLine, enabled, runDebouncedOptimize])
+
+  // Watch for hardware (classic/plus) or mode (0/1/2) changes and clear rasters
+  // User will need to regenerate manually after changing hardware/mode
+  useEffect(() => {
+    const hardwareChanged = previousHardwareRef.current !== cpcHardware
+    const modeChanged = previousModeRef.current !== modeConfig.nColors
+
+    // Update refs
+    previousHardwareRef.current = cpcHardware
+    previousModeRef.current = modeConfig.nColors
+
+    // Skip if nothing changed or raster not enabled or no changes to clear
+    if (
+      (!hardwareChanged && !modeChanged) ||
+      !enabled ||
+      changes.length === 0
+    ) {
+      return
+    }
+
+    // Clear all raster changes when hardware or mode changes
+    clearAllChanges()
+  }, [
+    cpcHardware,
+    modeConfig.nColors,
+    enabled,
+    changes.length,
+    clearAllChanges
+  ])
 
   // Extract colors from display palette slots
   const palette: Vector[] = displayPalette.map(
@@ -107,18 +164,22 @@ export function RasterPanel() {
     // Find the last change (by creation order) to determine where to add the new one
     const lastChange = changes[changes.length - 1]
 
-    // For CPC Plus Mode 1 only, we can have up to 4 ink changes per line
+    // Allow multiple ink changes per line up to maxChangesPerLine
     // Check if we can add another ink on the same line
-    if (isPlusMode1 && lastChange) {
+    if (lastChange) {
       const changesOnLastLine = changes.filter(
         (c) => c.line === lastChange.line
       )
       const usedInks = new Set(changesOnLastLine.map((c) => c.inkIndex))
 
-      // If less than 4 inks used on this line, add another ink on same line
-      if (changesOnLastLine.length < 4) {
-        // Find next available ink (0-3 for Mode 1)
-        const nextInk = [0, 1, 2, 3].find((ink) => !usedInks.has(ink)) ?? 0
+      // If less than maxChangesPerLine inks used on this line, add another ink on same line
+      if (changesOnLastLine.length < maxChangesPerLine) {
+        // Find next available ink
+        const availableInks = Array.from(
+          { length: modeConfig.nColors },
+          (_, i) => i
+        )
+        const nextInk = availableInks.find((ink) => !usedInks.has(ink)) ?? 0
         const defaultColor = palette[nextInk] || [0, 0, 0]
 
         addChange({
@@ -175,7 +236,8 @@ export function RasterPanel() {
       nColors={modeConfig.nColors}
       cpcPalette={cpcFullPalette}
       isClassicMode={isClassicMode}
-      isPlusMode1={isPlusMode1}
+      canAutoOptimize={hasImage}
+      isPlusMode={isPlusMode}
       isOptimizing={isOptimizing}
       onAddChange={handleAddChange}
       onUpdateChange={handleUpdateChange}

@@ -28,8 +28,10 @@ export interface RasterPanelViewProps {
   readonly nColors: number
   readonly cpcPalette: CPCColor[]
   readonly isClassicMode: boolean
-  /** CPC Plus + Mode 1 allows 4 ink changes per line */
-  readonly isPlusMode1: boolean
+  /** Whether auto-optimization is available for current mode */
+  readonly canAutoOptimize?: boolean
+  /** CPC Plus hardware mode */
+  readonly isPlusMode: boolean
   /** Whether auto-optimization is in progress */
   readonly isOptimizing?: boolean
   readonly onAddChange: () => void
@@ -244,7 +246,8 @@ export function RasterPanelView({
   nColors,
   cpcPalette,
   isClassicMode,
-  isPlusMode1,
+  canAutoOptimize = true,
+  isPlusMode,
   isOptimizing = false,
   onAddChange,
   onUpdateChange,
@@ -275,19 +278,15 @@ export function RasterPanelView({
         {enabled && (
           <div className={styles.modeInfo}>
             <span className={styles.modeBadge}>
-              {isPlusMode1 ? 'CPC Plus Mode 1' : 'CPC'}
+              {isPlusMode ? 'CPC Plus' : 'CPC Classic'}
             </span>
             <span className={styles.modeHint}>
-              {isPlusMode1 ? (
-                <Trans>4 changements d'encre par ligne maximum</Trans>
-              ) : (
-                <Trans>1 changement d'encre par ligne maximum</Trans>
-              )}
+              <Trans>Raster: changements d'encre par ligne</Trans>
             </span>
           </div>
         )}
 
-        {enabled && isPlusMode1 && onAutoOptimize && (
+        {enabled && canAutoOptimize && onAutoOptimize && (
           <button
             type='button'
             className={styles.autoOptimizeButton}

@@ -1,9 +1,14 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
-import { ditheringAtom } from '@/app/store/config/config'
+import {
+  cpcHardwareAtom,
+  ditheringAtom,
+  effectiveModeConfigAtom
+} from '@/app/store/config/config'
 import {
   rasterDitheringIntensityAtom,
-  rasterEnabledAtom
+  rasterEnabledAtom,
+  rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
@@ -57,9 +62,20 @@ export function getDefaultIntensity(mode: DitheringMode): number {
 export function DitheringSelector() {
   const [cfg, setCfg] = useAtom(ditheringAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const modeConfig = useAtomValue(effectiveModeConfigAtom)
+  const cpcHardware = useAtomValue(cpcHardwareAtom)
   const [rasterDitheringIntensity, setRasterDitheringIntensity] = useAtom(
     rasterDitheringIntensityAtom
   )
+  const [maxChangesPerLine, setMaxChangesPerLine] = useAtom(
+    rasterMaxChangesPerLineAtom
+  )
+
+  // Maximum changes per line depends on:
+  // - Hardware: CPC Plus can do 4 changes/line, Classic can do 2
+  // - Mode 2: only 2 inks available, so max 2 changes regardless of hardware
+  const hardwareMax = cpcHardware === 'plus' ? 4 : 2
+  const maxAllowedChanges = Math.min(modeConfig.nColors, hardwareMax)
 
   // Show raster dithering slider when raster mode is enabled
   if (rasterEnabled) {
@@ -69,7 +85,24 @@ export function DitheringSelector() {
         wrap='wrap'
         justify='flex-start'
         align='flex-start'
+        direction='column'
       >
+        <div className={styles.ditheringSlider}>
+          <PixsaurSlider
+            label={<Trans>Changements par ligne</Trans>}
+            description={
+              <Trans>
+                Nombre maximum de changements d'encre par ligne (1 = raster
+                classique)
+              </Trans>
+            }
+            min={1}
+            max={maxAllowedChanges}
+            value={Math.min(maxChangesPerLine, maxAllowedChanges)}
+            onChange={setMaxChangesPerLine}
+            step={1}
+          />
+        </div>
         <div className={styles.ditheringSlider}>
           <PixsaurSlider
             label={<Trans>Dithering raster</Trans>}
