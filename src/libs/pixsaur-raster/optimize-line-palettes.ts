@@ -34,6 +34,17 @@ function colorDistanceSquared(a: Vector<'RGB'>, b: Vector<'RGB'>): number {
 }
 
 /**
+ * Clamp error values to prevent runaway accumulation
+ */
+function clampError(error: Vector<'RGB'>): Vector<'RGB'> {
+  return [
+    Math.max(-255, Math.min(255, error[0])),
+    Math.max(-255, Math.min(255, error[1])),
+    Math.max(-255, Math.min(255, error[2]))
+  ]
+}
+
+/**
  * Find the index of the closest color in the palette to the given color
  */
 function findClosestColorIndex(
@@ -925,10 +936,7 @@ export function optimizeLinePalettesWithIndexBuffer(
 /**
  * Add two colors (with clamping)
  */
-function addColors(
-  a: Vector<'RGB'>,
-  b: [number, number, number]
-): Vector<'RGB'> {
+function addColors(a: Vector<'RGB'>, b: Vector<'RGB'>): Vector<'RGB'> {
   return [
     Math.max(0, Math.min(255, a[0] + b[0])),
     Math.max(0, Math.min(255, a[1] + b[1])),
@@ -1123,7 +1131,7 @@ export function preprocessImageForRaster(
 
   // Vertical error buffer: stores error to propagate to next line
   // Each entry is [errR, errG, errB] for each x position
-  let verticalError: [number, number, number][] = new Array(width)
+  let verticalError: Vector<'RGB'>[] = new Array(width)
     .fill(null)
     .map(() => [0, 0, 0])
 
@@ -1193,7 +1201,7 @@ export function preprocessImageForRaster(
       colorHistogram.size <= nColors && ditheringIntensity === 0
 
     // New vertical error buffer for next line
-    const newVerticalError: [number, number, number][] = new Array(width)
+    const newVerticalError: Vector<'RGB'>[] = new Array(width)
       .fill(null)
       .map(() => [0, 0, 0])
 
@@ -1227,7 +1235,7 @@ export function preprocessImageForRaster(
     } else {
       // Line has >4 colors: apply dithering
       // Horizontal error buffer for this line
-      const horizError: [number, number, number][] = new Array(width)
+      const horizError: Vector<'RGB'>[] = new Array(width)
         .fill(null)
         .map(() => [0, 0, 0])
 
@@ -1264,17 +1272,23 @@ export function preprocessImageForRaster(
         // Horizontal error propagation
         if (x + 1 < width && horizCoef > 0) {
           const he = scaleError(error, horizCoef)
-          horizError[x + 1][0] += he[0]
-          horizError[x + 1][1] += he[1]
-          horizError[x + 1][2] += he[2]
+          const newHorizError = clampError([
+            horizError[x + 1][0] + he[0],
+            horizError[x + 1][1] + he[1],
+            horizError[x + 1][2] + he[2]
+          ])
+          horizError[x + 1] = newHorizError
         }
 
         // Vertical error propagation - simplified to just below pixel
         if (vertCoef > 0) {
           const ve = scaleError(error, vertCoef)
-          newVerticalError[x][0] += ve[0]
-          newVerticalError[x][1] += ve[1]
-          newVerticalError[x][2] += ve[2]
+          const newVertError = clampError([
+            newVerticalError[x][0] + ve[0],
+            newVerticalError[x][1] + ve[1],
+            newVerticalError[x][2] + ve[2]
+          ])
+          newVerticalError[x] = newVertError
         }
 
         // Write output pixel

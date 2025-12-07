@@ -130,7 +130,7 @@ describe('raster-format', () => {
       const asm = generateClassicRasterASM(changes, 200, basePalette)
 
       expect(asm).toContain('RasterData:')
-      expect(asm).toContain('DB 1, #54') // Line 10: Ink 1, hardware color 0x54 (black)
+      expect(asm).toContain('DB 1, 1, #54') // Line 10: Ink 1, hardware color 0x54 (black)
       expect(asm).toContain('Line 10')
       // Line 11 should NOT restore - ink keeps its color until next explicit change
       expect(asm).not.toContain('restore')
@@ -199,9 +199,8 @@ describe('raster-format', () => {
       const asm = generatePlusRasterASM(changes, 200, basePalette)
 
       expect(asm).toContain('RasterData:')
-      // Mode 1: outputs 4 colors, ink2 changed to red (0x0F0)
-      // Palette after change: [0x000, 0x00F, 0x0F0 (red), 0xF00]
-      expect(asm).toContain('DW #000, #00F, #0F0, #F00') // Line 20: all 4 colors
+      // Mode 1: change ink2 to red (0x0F0)
+      expect(asm).toContain('DB 1 : DB 2 : DW #0F0') // Line 20: 1 change
       expect(asm).toContain('Line 20')
       // Line 21 should be no-change
       expect(asm).toContain('Line 21 - no change')
@@ -227,7 +226,7 @@ describe('raster-format', () => {
 
       expect(asm).toContain('Line 10')
       // Both ink0 (white=0xFFF) and ink1 (magenta=0x0FF) changed on line 10
-      expect(asm).toContain('DW #FFF, #0FF, #0F0, #F00')
+      expect(asm).toContain('DB 2 : DB 0 : DW #FFF : DB 1 : DW #0FF')
     })
 
     it('should handle changes on different lines', () => {
@@ -251,9 +250,9 @@ describe('raster-format', () => {
       expect(asm).toContain('Line 10')
       expect(asm).toContain('Line 30')
       // Line 10: ink0 changed to white
-      expect(asm).toContain('DW #FFF, #00F, #0F0, #F00')
-      // Line 30: ink1 changed to green (palette retains ink0=white)
-      expect(asm).toContain('DW #FFF, #F00, #0F0, #F00')
+      expect(asm).toContain('DB 1 : DB 0 : DW #FFF')
+      // Line 30: ink1 changed to green
+      expect(asm).toContain('DB 1 : DB 1 : DW #F00')
     })
 
     it('should track palette state across lines', () => {
@@ -265,9 +264,9 @@ describe('raster-format', () => {
       const asm = generatePlusRasterASM(changes, 15, basePalette)
 
       // Line 5: ink0 becomes red (0x0F0), others stay black
-      expect(asm).toContain('DW #0F0, #000, #000, #000')
+      expect(asm).toContain('DB 1 : DB 0 : DW #0F0')
       // Line 10: ink0 stays red (0x0F0), ink1 becomes green (0xF00)
-      expect(asm).toContain('DW #0F0, #F00, #000, #000')
+      expect(asm).toContain('DB 1 : DB 1 : DW #F00')
     })
   })
 })
