@@ -310,87 +310,86 @@ export function RasterPanelView({
     return colorSet.size
   }, [palette, changes])
 
-  const titleWithSwitch = (
-    <div className={styles.titleRow}>
-      <span>
-        <Trans>Effets Raster</Trans>
-      </span>
-      <Switch
-        id={switchId}
-        checked={enabled}
-        onCheckedChange={onEnabledChange}
-        disabled={disabled}
-      />
-    </div>
-  )
+  const title = <Trans>Effets Raster</Trans>
 
   return (
-    <CollapsibleSection title={titleWithSwitch} defaultOpen={false}>
-      <div className={styles.container}>
-        {enabled && (
-          <div className={styles.modeInfo}>
-            <span className={styles.modeBadge}>
-              {isPlusMode ? 'CPC Plus' : 'CPC Classic'}
-            </span>
-            <span className={styles.modeHint}>
-              <Trans>Raster: changements d'encre par ligne</Trans>
-            </span>
-            {changes.length > 0 && (
-              <span className={styles.uniqueColorsCount}>
-                <Trans>{uniqueColorsCount} couleur(s) unique(s)</Trans>
+    <div className={styles.section}>
+      <div className={styles.titleRow}>
+        <span className={styles.sectionTitle}>{title}</span>
+        <Switch
+          id={switchId}
+          checked={enabled}
+          onCheckedChange={onEnabledChange}
+          disabled={disabled}
+        />
+      </div>
+      <CollapsibleSection title={title} defaultOpen={false}>
+        <div className={styles.container}>
+          {enabled && (
+            <div className={styles.modeInfo}>
+              <span className={styles.modeBadge}>
+                {isPlusMode ? 'CPC Plus' : 'CPC Classic'}
               </span>
-            )}
-          </div>
-        )}
-
-        {enabled && (
-          <>
-            {lineGroups.length === 0 ? (
-              <div className={styles.emptyState}>
-                <Trans>Aucun changement raster défini.</Trans>
-              </div>
-            ) : (
-              <div className={styles.linesList}>
-                {lineGroups.map((group) => (
-                  <LineRow
-                    key={group.line}
-                    group={group}
-                    conflicts={conflicts}
-                    nColors={nColors}
-                    maxLine={maxLine}
-                    cpcPalette={cpcPalette}
-                    isClassicMode={isClassicMode}
-                    onUpdateChange={onUpdateChange}
-                    onRemoveChange={onRemoveChange}
-                  />
-                ))}
-              </div>
-            )}
-
-            <div className={styles.actionButtons}>
-              <button
-                type='button'
-                className={styles.addButton}
-                onClick={onAddChange}
-              >
-                <Icon name='PlusIcon' />
-                <Trans>Ajouter un changement</Trans>
-              </button>
-
-              {changes.length > 0 && onClearAll && (
-                <button
-                  type='button'
-                  className={styles.clearButton}
-                  onClick={onClearAll}
-                >
-                  <Icon name='TrashIcon' />
-                  <Trans>Tout supprimer</Trans>
-                </button>
+              <span className={styles.modeHint}>
+                <Trans>Raster: changements d'encre par ligne</Trans>
+              </span>
+              {changes.length > 0 && (
+                <span className={styles.uniqueColorsCount}>
+                  <Trans>{uniqueColorsCount} couleur(s) unique(s)</Trans>
+                </span>
               )}
             </div>
-          </>
-        )}
-      </div>
-    </CollapsibleSection>
+          )}
+
+          {enabled && (
+            <>
+              {lineGroups.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <Trans>Aucun changement raster défini.</Trans>
+                </div>
+              ) : (
+                <div className={styles.linesList}>
+                  {lineGroups.map((group) => (
+                    <LineRow
+                      key={group.line}
+                      group={group}
+                      conflicts={conflicts}
+                      nColors={nColors}
+                      maxLine={maxLine}
+                      cpcPalette={cpcPalette}
+                      isClassicMode={isClassicMode}
+                      onUpdateChange={onUpdateChange}
+                      onRemoveChange={onRemoveChange}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className={styles.actionButtons}>
+                <button
+                  type='button'
+                  className={styles.addButton}
+                  onClick={onAddChange}
+                >
+                  <Icon name='PlusIcon' />
+                  <Trans>Ajouter un changement</Trans>
+                </button>
+
+                {changes.length > 0 && onClearAll && (
+                  <button
+                    type='button'
+                    className={styles.clearButton}
+                    onClick={onClearAll}
+                  >
+                    <Icon name='TrashIcon' />
+                    <Trans>Tout supprimer</Trans>
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </CollapsibleSection>
+    </div>
   )
 }

@@ -4,12 +4,24 @@
   gap: 0.75rem;
 }
 
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .titleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   width: 100%;
+}
+
+.sectionTitle {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 .toggleRow {
