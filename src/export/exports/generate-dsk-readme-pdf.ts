@@ -133,23 +133,29 @@ export function generateDskReadmePdf(
     yPosition += 6
 
     doc.setFont('helvetica', 'normal')
-    doc.text('CPC Classic: DB ink, color (2 bytes per line)', 25, yPosition)
-    yPosition += 5
     doc.text(
-      'CPC Plus: DB ink, color_low, color_high (3 bytes per line)',
+      'CPC Classic: DB count, ink0, color0, ink1, color1, ... (per line)',
       25,
       yPosition
     )
     yPosition += 5
     doc.text(
-      '#FF, #FF (or #FF, #FF, #FF) = no change on this line',
+      'CPC Plus: DB count : DB ink0 : DW color0 : ... (per line)',
+      25,
+      yPosition
+    )
+    yPosition += 5
+    doc.text('count = number of ink changes on this line', 25, yPosition)
+    yPosition += 5
+    doc.text(
+      'color = GA hardware value (Classic) or 12-bit value (Plus)',
       25,
       yPosition
     )
     yPosition += 8
 
     const rasterNote =
-      'The raster data includes automatic restoration of original palette colors when a raster range ends.'
+      'Each line starts with a count byte indicating how many ink changes follow. Each change includes the ink index and its new color value.'
     const splitRasterNote = doc.splitTextToSize(rasterNote, 170)
     doc.text(splitRasterNote, 20, yPosition)
     yPosition += 6 * splitRasterNote.length + 8

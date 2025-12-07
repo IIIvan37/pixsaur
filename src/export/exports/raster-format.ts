@@ -61,9 +61,7 @@ export function groupChangesByLine(
  * Generate ASM data for CPC Classic rasters
  * Format: For each line of the image:
  *   - DB #FF if no change needed on this line
- *   - DB ink, hardware_color if raster change needed
- *
- * Ink color persists until next explicit change.
+ *   - DB count, ink0, color0, ink1, color1, ... (count pairs of ink+color)
  *
  * @param changes - Raster changes to export
  * @param imageHeight - Height of the image in lines
@@ -82,9 +80,9 @@ export function generateClassicRasterASM(
   lines.push(`    ; Format: For each of the ${imageHeight} lines:`)
   lines.push('    ; DB #FF = no change on this line')
   lines.push(
-    '    ; DB ink, color = change ink to color (CPC Classic hardware value)'
+    '    ; DB count, ink0, color0, [ink1, color1, ...] = count pairs of (ink, color)'
   )
-  lines.push('    ; Note: ink color persists until next explicit change')
+  lines.push('    ; Colors are CPC Classic hardware values')
 
   for (let lineNum = 0; lineNum < imageHeight; lineNum++) {
     const lineChanges = grouped.get(lineNum)
@@ -93,12 +91,17 @@ export function generateClassicRasterASM(
       // No change on this line
       lines.push(`    DB #FF    ; Line ${lineNum} - no change`)
     } else {
-      // Use first change for this line (if multiple, take the first)
-      const change = lineChanges[0]
-      const [r, g, b] = change.color
-      const hwColor = rgbToClassicHardware(r, g, b)
+      // Export count + pairs of (ink, color)
+      const pairs: string[] = []
+      for (const change of lineChanges) {
+        const [r, g, b] = change.color
+        const hwColor = rgbToClassicHardware(r, g, b)
+        pairs.push(
+          `${change.inkIndex}, #${hwColor.toString(16).toUpperCase().padStart(2, '0')}`
+        )
+      }
       lines.push(
-        `    DB ${change.inkIndex}, #${hwColor.toString(16).toUpperCase().padStart(2, '0')}    ; Line ${lineNum}`
+        `    DB ${lineChanges.length}, ${pairs.join(', ')}    ; Line ${lineNum}`
       )
     }
   }
@@ -110,17 +113,14 @@ export function generateClassicRasterASM(
 }
 
 /**
- * Generate ASM data for CPC Plus rasters (Mode 1 only)
+ * Generate ASM data for CPC Plus rasters
  * Format: For each line of the image:
  *   - DB #FF if no change needed on this line
- *   - DW color0, color1, color2, color3 if any ink changes (8 bytes, little-endian)
- *
- * In Mode 1, we have 4 inks and can change all 4 per line.
- * Colors not explicitly changed use basePalette values.
+ *   - DB count, ink0, DW color0, [ink1, DW color1, ...] (count triplets of ink + 12-bit color)
  *
  * @param changes - Raster changes to export
  * @param imageHeight - Height of the image in lines
- * @param basePalette - Base palette as CPC Plus 12-bit values
+ * @param basePalette - Base palette as CPC Plus 12-bit values (unused, kept for API compatibility)
  * @param labelName - Label name for the ASM data
  */
 export function generatePlusRasterASM(
@@ -132,18 +132,11 @@ export function generatePlusRasterASM(
   const grouped = groupChangesByLine(changes)
 
   const lines: string[] = [`${labelName}:`]
-  lines.push(`    ; CPC Plus Mode 1 Raster Data (${imageHeight} lines)`)
+  lines.push(`    ; CPC Plus Raster Data (${imageHeight} lines)`)
   lines.push('    ; DB #FF = no change on this line')
   lines.push(
-    '    ; DW ink0, ink1, ink2, ink3 = set all 4 inks (12-bit colors, little-endian)'
+    '    ; DB count, ink0, DW color0, [ink1, DW color1, ...] = count triplets (ink, 12-bit color)'
   )
-
-  // Track current palette state (starts with base palette)
-  const currentPalette = [...basePalette.slice(0, 4)]
-  // Ensure we have 4 entries
-  while (currentPalette.length < 4) {
-    currentPalette.push(0)
-  }
 
   for (let lineNum = 0; lineNum < imageHeight; lineNum++) {
     const lineChanges = grouped.get(lineNum)
@@ -152,20 +145,34 @@ export function generatePlusRasterASM(
       // No change on this line
       lines.push(`    DB #FF    ; Line ${lineNum} - no change`)
     } else {
-      // Apply changes to current palette
+      // Export count + triplets of (ink, color as DW)
+      const parts: string[] = [`${lineChanges.length}`]
       for (const change of lineChanges) {
-        if (change.inkIndex >= 0 && change.inkIndex < 4) {
-          const [r, g, b] = change.color
-          currentPalette[change.inkIndex] = rgbToCPCPlus(r, g, b)
-        }
+        const [r, g, b] = change.color
+        const cpcPlusColor = rgbToCPCPlus(r, g, b)
+        parts.push(`${change.inkIndex}`)
+        parts.push(
+          `#${cpcPlusColor.toString(16).toUpperCase().padStart(3, '0')}`
+        )
       }
-
-      // Output all 4 colors as 12-bit values
-      lines.push(
-        `    DW #${currentPalette[0].toString(16).toUpperCase().padStart(3, '0')}, #${currentPalette[1].toString(16).toUpperCase().padStart(3, '0')}, #${currentPalette[2].toString(16).toUpperCase().padStart(3, '0')}, #${currentPalette[3].toString(16).toUpperCase().padStart(3, '0')}    ; Line ${lineNum}`
-      )
+      // Format: DB count, ink0 : DW color0 : DB ink1 : DW color1 ...
+      // Simplified: just list them with proper types
+      const formatted: string[] = []
+      formatted.push(`DB ${lineChanges.length}`)
+      for (const change of lineChanges) {
+        const [r, g, b] = change.color
+        const cpcPlusColor = rgbToCPCPlus(r, g, b)
+        formatted.push(`DB ${change.inkIndex}`)
+        formatted.push(
+          `DW #${cpcPlusColor.toString(16).toUpperCase().padStart(3, '0')}`
+        )
+      }
+      lines.push(`    ${formatted.join(' : ')}    ; Line ${lineNum}`)
     }
   }
+
+  // Mark basePalette as intentionally unused
+  void basePalette
 
   return lines.join('\n')
 }
