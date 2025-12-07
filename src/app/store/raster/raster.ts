@@ -3,7 +3,8 @@ import { atomWithStorage } from 'jotai/utils'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   createRasterPreviewImageData,
-  optimizeLinePalettesWithIndexBuffer
+  optimizeLinePalettesWithIndexBuffer,
+  preprocessImageForRaster
 } from '@/libs/pixsaur-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import {
@@ -275,6 +276,9 @@ export const effectivePreviewImageAtom = atom(async (get) => {
  * Action atom to auto-optimize raster changes for CPC Plus Mode 1.
  * Analyzes each line of the image and generates optimal 4-color palettes.
  * Only available when CPC Plus hardware AND Mode 1 (4 colors) are selected.
+ *
+ * Uses the source image (before dithering) to detect the actual colors needed
+ * per line, then generates raster changes to adapt the palette.
  */
 export const autoOptimizeRasterAtom = atom(null, async (get, set) => {
   const hardware = get(cpcHardwareAtom)
@@ -285,8 +289,8 @@ export const autoOptimizeRasterAtom = atom(null, async (get, set) => {
     return { success: false, error: 'Only available for CPC Plus Mode 1' }
   }
 
-  // Get the positioned normalized image (same dimensions as index buffer)
-  // This gives us the TRUE colors of each pixel, positioned correctly
+  // Get the positioned normalized image (source colors, before dithering)
+  // This gives us the TRUE colors of each pixel that we need to represent
   const sourceImage = await get(positionedNormalizedImageAtom)
   if (!sourceImage) {
     return { success: false, error: 'No image available' }
@@ -296,17 +300,22 @@ export const autoOptimizeRasterAtom = atom(null, async (get, set) => {
   const { width, height } = sourceImage
 
   // Get the global palette (4 colors for Mode 1)
+  // Note: The optimization algorithm now extracts palette directly from source image,
+  // but we still need this for the initial API compatibility
   const exportPalette = await get(exportPaletteWithSlotsAtom)
-  if (exportPalette.length === 0) {
-    return { success: false, error: 'No palette available' }
-  }
 
   // Filter out invalid slots and take first 4 colors
+  // If no valid colors, we'll use a placeholder - the algorithm will extract from image
   const globalPalette = exportPalette.filter((c) => c[0] !== -1).slice(0, 4)
 
-  if (globalPalette.length < 4) {
-    return { success: false, error: 'Need 4 colors in palette' }
+  // Pad to 4 colors if needed (algorithm will override with extracted colors anyway)
+  while (globalPalette.length < 4) {
+    globalPalette.push([0, 0, 0])
   }
+
+  // PRE-PROCESS: Transform source image to have max 4 colors per line
+  // This ensures smooth palette transitions and better raster optimization
+  const preprocessedImage = preprocessImageForRaster(sourceImage, globalPalette)
 
   // Get existing raster changes (without IDs for the algorithm)
   const existingChanges = get(rasterChangesAtom).map(
@@ -318,7 +327,7 @@ export const autoOptimizeRasterAtom = atom(null, async (get, set) => {
   )
 
   // Generate optimized raster changes AND matching index buffer
-  // - sourceImage: original colors (before dithering)
+  // - preprocessedImage: image with max 4 colors per line (smooth transitions)
   // - globalPalette: initial 4-color palette
   // - Returns both raster changes and an index buffer where each pixel
   //   maps to its correct ink index based on per-line palettes
@@ -327,7 +336,7 @@ export const autoOptimizeRasterAtom = atom(null, async (get, set) => {
     indexBuffer: optimizedIndexBuffer,
     quantizedGlobalPalette
   } = optimizeLinePalettesWithIndexBuffer(
-    sourceImage,
+    preprocessedImage,
     globalPalette,
     existingChanges
   )
