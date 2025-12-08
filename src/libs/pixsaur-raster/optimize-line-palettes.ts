@@ -1,3 +1,4 @@
+import { weightedRGBDistance } from '../pixsaur-color/src/metric/distance'
 import type { Vector } from '../pixsaur-color/src/type'
 import type { RasterChange } from './types'
 
@@ -24,16 +25,6 @@ function colorKey(color: Vector<'RGB'>): string {
 }
 
 /**
- * Calculate squared Euclidean distance between two colors
- */
-function colorDistanceSquared(a: Vector<'RGB'>, b: Vector<'RGB'>): number {
-  const dr = a[0] - b[0]
-  const dg = a[1] - b[1]
-  const db = a[2] - b[2]
-  return dr * dr + dg * dg + db * db
-}
-
-/**
  * Clamp error values to prevent runaway accumulation
  */
 function clampError(error: Vector<'RGB'>): Vector<'RGB'> {
@@ -52,10 +43,10 @@ function findClosestColorIndex(
   palette: Vector<'RGB'>[]
 ): number {
   let bestIndex = 0
-  let bestDistance = colorDistanceSquared(color, palette[0])
+  let bestDistance = weightedRGBDistance(color, palette[0])
 
   for (let i = 1; i < palette.length; i++) {
-    const distance = colorDistanceSquared(color, palette[i])
+    const distance = weightedRGBDistance(color, palette[i])
     if (distance < bestDistance) {
       bestDistance = distance
       bestIndex = i
@@ -498,7 +489,7 @@ function selectBestColorsForLine(
 
     for (const { color, count } of lineColors) {
       // Compare source color to palette color
-      const dist = colorDistanceSquared(color, palColor)
+      const dist = weightedRGBDistance(color, palColor)
       if (dist <= COLOR_FAMILY_THRESHOLD) {
         coverage += count
         sumR += color[0] * count
@@ -549,7 +540,7 @@ function selectBestColorsForLine(
       if (rep.coverage > totalPixels * 0.1) {
         // This palette entry is useful, keep it
         for (const { color } of lineColors) {
-          const dist = colorDistanceSquared(
+          const dist = weightedRGBDistance(
             color,
             quantizedCurrent[rep.palIndex]
           )
@@ -603,7 +594,7 @@ function selectBestColorsForLine(
 
     for (let i = 0; i < result.length; i++) {
       if (usedSlots.has(i)) continue
-      const dist = colorDistanceSquared(selectedColor, result[i])
+      const dist = weightedRGBDistance(selectedColor, result[i])
       if (dist < bestDist) {
         bestDist = dist
         bestSlot = i
@@ -824,7 +815,7 @@ export function optimizeLinePalettesWithIndexBuffer(
       if (!colorsEqual(prevColor, newColor)) {
         // Calculate impact: how many pixels on this line use this ink
         // and how much the color differs
-        const colorDiff = colorDistanceSquared(prevColor, newColor)
+        const colorDiff = weightedRGBDistance(prevColor, newColor)
         // Count pixels that would benefit from this change
         // Use analysisData to measure impact based on original source colors
         let pixelCount = 0
@@ -838,8 +829,8 @@ export function optimizeLinePalettesWithIndexBuffer(
           ]
           const quantizedPixel = quantizeColor(pixelColor)
           // Check if this pixel is closer to the new color than the old
-          const distToNew = colorDistanceSquared(quantizedPixel, newColor)
-          const distToOld = colorDistanceSquared(quantizedPixel, prevColor)
+          const distToNew = weightedRGBDistance(quantizedPixel, newColor)
+          const distToOld = weightedRGBDistance(quantizedPixel, prevColor)
           if (distToNew < distToOld) {
             pixelCount++
           }
@@ -1022,7 +1013,7 @@ function selectPaletteFarthestPoint(
       // Calculate minimum distance to all already-selected colors
       let minDist = Number.POSITIVE_INFINITY
       for (const palColor of palette) {
-        const dist = colorDistanceSquared(color, palColor)
+        const dist = weightedRGBDistance(color, palColor)
         if (dist < minDist) {
           minDist = dist
         }
@@ -1036,7 +1027,7 @@ function selectPaletteFarthestPoint(
       let continuityBonus = 1.0
       if (previousPalette) {
         for (const prevColor of previousPalette) {
-          const dist = colorDistanceSquared(color, prevColor)
+          const dist = weightedRGBDistance(color, prevColor)
           if (dist < 17 * 17 * 3) {
             // Within 1 CPC step
             continuityBonus = 1.5 // 50% bonus
