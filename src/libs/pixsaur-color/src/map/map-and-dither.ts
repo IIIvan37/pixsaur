@@ -664,6 +664,379 @@ const DITHER_MODES: Record<string, DitherFn> = {
       distFn
     )
 }
+
+/**
+ * Apply Floyd-Steinberg dithering with dynamic per-line palettes
+ */
+function applyFloydSteinbergDitherWithDynamicPalette(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  intensity: number,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixelCS = new Float32Array(3)
+  const w3 = width * 3
+  const errorBuf = new Float32Array(bufCS) // copy for error accumulation
+
+  // Floyd-Steinberg diffusion pattern: right 7/16, down-left 3/16, down 5/16, down-right 1/16
+  const offsets = [3, -3 + w3, w3, 3 + w3]
+  const weights = [7 / 16, 3 / 16, 5 / 16, 1 / 16].map((w) => w * intensity)
+
+  for (let y = 0; y < height; y++) {
+    const palette = getPaletteForLine(y)
+    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
+      Array.from(v)
+    )
+
+    for (let x = 0; x < width; x++) {
+      const idx3 = (y * width + x) * 3
+
+      // Get current pixel value with accumulated error
+      pixelCS[0] = errorBuf[idx3]
+      pixelCS[1] = errorBuf[idx3 + 1]
+      pixelCS[2] = errorBuf[idx3 + 2]
+
+      // Find nearest palette color for this line
+      const bestIndex = findNearestPaletteColor(pixelCS, paletteCS, distFn)
+
+      // Set output color
+      const outIdx = (y * width + x) * 4
+      const color = paletteOut[bestIndex]
+      out[outIdx + 0] = color[0]
+      out[outIdx + 1] = color[1]
+      out[outIdx + 2] = color[2]
+      out[outIdx + 3] = 255
+
+      // Compute and distribute quantization error
+      const errR = pixelCS[0] - paletteCS[bestIndex][0]
+      const errG = pixelCS[1] - paletteCS[bestIndex][1]
+      const errB = pixelCS[2] - paletteCS[bestIndex][2]
+
+      // Distribute error to neighboring pixels
+      // With dynamic palettes (raster mode), only diffuse horizontally on same line
+      // because palette changes between lines make vertical error diffusion meaningless
+      for (let i = 0; i < 4; i++) {
+        const nIdx = idx3 + offsets[i]
+        const ny = Math.floor(nIdx / w3)
+        const nx = (nIdx % w3) / 3
+
+        // Only diffuse to same line (horizontal diffusion only)
+        if (ny === y && nx >= 0 && nx < width) {
+          errorBuf[nIdx + 0] += errR * weights[i]
+          errorBuf[nIdx + 1] += errG * weights[i]
+          errorBuf[nIdx + 2] += errB * weights[i]
+        }
+      }
+    }
+  }
+
+  return out
+}
+
+/**
+ * Apply Atkinson dithering with dynamic per-line palettes
+ */
+function applyAtkinsonDitherWithDynamicPalette(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  intensity: number,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+  const errorBuf = new Float32Array(bufCS) // copy for error accumulation
+
+  // Atkinson diffusion offsets (relative to current pixel)
+  const offsets = [
+    [1, 0],
+    [2, 0],
+    [-1, 1],
+    [0, 1],
+    [1, 1],
+    [0, 2]
+  ]
+
+  for (let y = 0; y < height; y++) {
+    const palette = getPaletteForLine(y)
+    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
+      Array.from(v)
+    )
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const i3 = idx * 3
+      const i4 = idx * 4
+
+      // Get pixel with accumulated error
+      pixel[0] = errorBuf[i3]
+      pixel[1] = errorBuf[i3 + 1]
+      pixel[2] = errorBuf[i3 + 2]
+
+      // Find nearest palette color for this line
+      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+
+      // Set output color
+      const color = paletteOut[bestIndex]
+      out[i4 + 0] = color[0]
+      out[i4 + 1] = color[1]
+      out[i4 + 2] = color[2]
+      out[i4 + 3] = 255
+
+      // Compute error
+      const errR = (pixel[0] - paletteCS[bestIndex][0]) * intensity
+      const errG = (pixel[1] - paletteCS[bestIndex][1]) * intensity
+      const errB = (pixel[2] - paletteCS[bestIndex][2]) * intensity
+
+      // Distribute error (1/8 to each neighbor)
+      // With dynamic palettes (raster mode), only diffuse horizontally on same line
+      // because palette changes between lines make vertical error diffusion meaningless
+      for (const [dx, dy] of offsets) {
+        const nx = x + dx
+        const ny = y + dy
+
+        // Only diffuse to same line (horizontal diffusion only)
+        if (ny === y && nx >= 0 && nx < width) {
+          const nIdx = (ny * width + nx) * 3
+          errorBuf[nIdx + 0] += errR / 8
+          errorBuf[nIdx + 1] += errG / 8
+          errorBuf[nIdx + 2] += errB / 8
+        }
+      }
+    }
+  }
+
+  return out
+}
+
+/**
+ * Apply Bayer dithering with dynamic per-line palettes
+ */
+function applyBayerDitherWithDynamicPalette(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  mode: BayerMode,
+  intensity: number,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+  const bayerMatrix = BAYER_MATRICES[mode]
+  const { size, matrix } = bayerMatrix
+  const maxBayer = size * size
+
+  for (let y = 0; y < height; y++) {
+    const palette = getPaletteForLine(y)
+    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
+      Array.from(v)
+    )
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const i3 = idx * 3
+      const i4 = idx * 4
+
+      // Get Bayer threshold
+      const bayerValue = matrix[y % size][x % size] / maxBayer - 0.5
+      const noise = bayerValue * intensity * 255
+
+      // Get pixel with Bayer noise
+      pixel[0] = bufCS[i3] + noise
+      pixel[1] = bufCS[i3 + 1] + noise
+      pixel[2] = bufCS[i3 + 2] + noise
+
+      // Find nearest palette color for this line
+      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+
+      // Set output color
+      const color = paletteOut[bestIndex]
+      out[i4 + 0] = color[0]
+      out[i4 + 1] = color[1]
+      out[i4 + 2] = color[2]
+      out[i4 + 3] = 255
+    }
+  }
+
+  return out
+}
+
+/**
+ * Apply no dithering with dynamic per-line palettes (simple nearest color mapping)
+ */
+function applyNoDitherWithDynamicPalette(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+
+  for (let y = 0; y < height; y++) {
+    const palette = getPaletteForLine(y)
+    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
+      Array.from(v)
+    )
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const i3 = idx * 3
+      const i4 = idx * 4
+
+      // Get pixel
+      pixel[0] = bufCS[i3]
+      pixel[1] = bufCS[i3 + 1]
+      pixel[2] = bufCS[i3 + 2]
+
+      // Find nearest palette color for this line
+      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+
+      // Set output color
+      const color = paletteOut[bestIndex]
+      out[i4 + 0] = color[0]
+      out[i4 + 1] = color[1]
+      out[i4 + 2] = color[2]
+      out[i4 + 3] = 255
+    }
+  }
+
+  return out
+}
+
+/**
+ * Apply Yliluoma 1 dithering with dynamic per-line palettes
+ */
+function applyYliluoma1DitherWithDynamicPalette(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  intensity: number,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const { size, matrix } = BAYER_MATRICES.bayer8x8
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+
+  for (let y = 0; y < height; y++) {
+    const palette = getPaletteForLine(y)
+    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
+      Array.from(v)
+    )
+
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const i3 = i * 3
+      const o = i * 4
+
+      pixel[0] = bufCS[i3 + 0]
+      pixel[1] = bufCS[i3 + 1]
+      pixel[2] = bufCS[i3 + 2]
+
+      const tx = x % size
+      const ty = y % size
+      const t = matrix[ty][tx] / (size * size) - 0.5
+      const [dx, dy, dz] = pseudoRandomVec(x, y, intensity * t * 2 * 255)
+
+      pixel[0] = Math.max(0, Math.min(255, pixel[0] + dx))
+      pixel[1] = Math.max(0, Math.min(255, pixel[1] + dy))
+      pixel[2] = Math.max(0, Math.min(255, pixel[2] + dz))
+
+      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+
+      const color = paletteOut[bestIndex]
+      out[o + 0] = color[0]
+      out[o + 1] = color[1]
+      out[o + 2] = color[2]
+      out[o + 3] = 255
+    }
+  }
+
+  return out
+}
+
+/**
+ * Apply Yliluoma 2 dithering with dynamic per-line palettes
+ */
+function applyYliluoma2DitherWithDynamicPalette(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  intensity: number,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const { size, matrix } = BAYER_MATRICES.bayer8x8
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+  const errorBuf = new Float32Array(width * height * 3)
+
+  for (let y = 0; y < height; y++) {
+    const palette = getPaletteForLine(y)
+    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
+      Array.from(v)
+    )
+
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const i3 = i * 3
+      const o4 = i * 4
+
+      const r = bufCS[i3 + 0] + errorBuf[i3 + 0]
+      const g = bufCS[i3 + 1] + errorBuf[i3 + 1]
+      const b = bufCS[i3 + 2] + errorBuf[i3 + 2]
+
+      pixel[0] = r
+      pixel[1] = g
+      pixel[2] = b
+
+      let best = 0,
+        second = 0
+      let bestD = Infinity,
+        secondD = Infinity
+      for (let p = 0; p < paletteCS.length; p++) {
+        const d = distFn(pixel, paletteCS[p])
+        if (d < bestD) {
+          second = best
+          secondD = bestD
+          best = p
+          bestD = d
+        } else if (d < secondD) {
+          second = p
+          secondD = d
+        }
+      }
+
+      const t = matrix[y % size][x % size] / (size * size)
+      const w = Math.max(0, Math.min(1, (t - 0.5) * intensity + 0.5))
+      const mix = w < 0.5 ? best : second
+
+      const errR = r - paletteCS[mix][0]
+      const errG = g - paletteCS[mix][1]
+      const errB = b - paletteCS[mix][2]
+
+      errorBuf[i3 + 0] = errR * intensity
+      errorBuf[i3 + 1] = errG * intensity
+      errorBuf[i3 + 2] = errB * intensity
+
+      const color = paletteOut[mix]
+      out[o4 + 0] = color[0]
+      out[o4 + 1] = color[1]
+      out[o4 + 2] = color[2]
+      out[o4 + 3] = 255
+    }
+  }
+
+  return out
+}
+
 function buildPalette(
   palette: Vector[],
   toRGB: (v: Vector) => number[]
@@ -681,6 +1054,13 @@ function buildPalette(
       paletteCS.push(Float32Array.from(color))
     }
   }
+
+  // Ensure we have at least one color (fallback to black if palette is empty)
+  if (paletteOut.length === 0) {
+    paletteOut.push(Uint8ClampedArray.from([0, 0, 0, 255]))
+    paletteCS.push(Float32Array.from([0, 0, 0]))
+  }
+
   return { paletteOut, paletteCS }
 }
 
@@ -716,5 +1096,108 @@ export function mapAndDither(
   } else {
     logger.warn(`Unsupported dithering mode: ${mode}`)
     return new Uint8ClampedArray(N * 4)
+  }
+}
+
+/**
+ * Apply dithering with dynamic per-line palettes (for raster optimization).
+ *
+ * This version processes the entire image at once (allowing error diffusion between lines)
+ * while using different palettes for different lines.
+ *
+ * @param srcData - Source image data (RGBA)
+ * @param width - Image width
+ * @param height - Image height
+ * @param getPaletteForLine - Function that returns the palette for a given line (y coordinate)
+ * @param config - Dithering configuration
+ * @param colorSpace - Color space for distance calculations
+ * @returns RGBA image data after dithering
+ */
+export function mapAndDitherWithDynamicPalette(
+  srcData: Uint8ClampedArray,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  config: DitheringConfig,
+  colorSpace: ColorSpace
+): Uint8ClampedArray {
+  const { mode } = config
+  const N = width * height
+
+  const distFn = getDistanceFn(
+    colorSpace,
+    DISTANCE_METRICS_BY_COLORSPACE[colorSpace][0]
+  )
+
+  const bufCS = new Float32Array(N * 3)
+  for (let i = 0, j = 0; i < srcData.length; i += 4, j += 3) {
+    const cs = [srcData[i], srcData[i + 1], srcData[i + 2]]
+    bufCS[j] = cs[0]
+    bufCS[j + 1] = cs[1]
+    bufCS[j + 2] = cs[2]
+  }
+
+  // Use specialized functions for dynamic palette support
+  switch (mode) {
+    case 'floydSteinberg':
+      return applyFloydSteinbergDitherWithDynamicPalette(
+        bufCS,
+        width,
+        height,
+        getPaletteForLine,
+        config.intensity,
+        distFn
+      )
+    case 'atkinson':
+      return applyAtkinsonDitherWithDynamicPalette(
+        bufCS,
+        width,
+        height,
+        getPaletteForLine,
+        config.intensity,
+        distFn
+      )
+    case 'bayer2x2':
+    case 'bayer4x4':
+    case 'bayer8x8':
+    case 'halftone4x4':
+      return applyBayerDitherWithDynamicPalette(
+        bufCS,
+        width,
+        height,
+        getPaletteForLine,
+        mode as BayerMode,
+        config.intensity,
+        distFn
+      )
+    case 'ylioluma1':
+      return applyYliluoma1DitherWithDynamicPalette(
+        bufCS,
+        width,
+        height,
+        getPaletteForLine,
+        config.intensity,
+        distFn
+      )
+    case 'ylioluma2':
+      return applyYliluoma2DitherWithDynamicPalette(
+        bufCS,
+        width,
+        height,
+        getPaletteForLine,
+        config.intensity,
+        distFn
+      )
+    case 'none':
+      return applyNoDitherWithDynamicPalette(
+        bufCS,
+        width,
+        height,
+        getPaletteForLine,
+        distFn
+      )
+    default:
+      logger.warn(`Unsupported dithering mode for dynamic palette: ${mode}`)
+      return new Uint8ClampedArray(N * 4)
   }
 }

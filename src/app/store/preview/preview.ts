@@ -34,7 +34,6 @@ import {
   userPaletteAtom
 } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
-import { rasterEnabledAtom } from '../raster/raster-config'
 
 // ============================================================================
 // Utilitaires pour le filtrage des couleurs lockées
@@ -348,18 +347,12 @@ export const positionedNormalizedImageAtom = atom(async (get) => {
 
 /**
  * Effective dithering configuration.
- * When raster mode is enabled, classic dithering is disabled (mode: 'none')
- * to avoid interference with raster-specific 1D dithering.
+ * Returns the user-configured dithering settings.
+ * In raster mode, this dithering is applied AFTER raster optimization
+ * using per-line palettes.
  */
 export const effectiveDitheringAtom = atom((get) => {
   const dithering = get(ditheringAtom)
-  const rasterEnabled = get(rasterEnabledAtom)
-
-  // Disable classic dithering when raster mode is active
-  if (rasterEnabled) {
-    return { ...dithering, mode: 'none' as const }
-  }
-
   return dithering
 })
 

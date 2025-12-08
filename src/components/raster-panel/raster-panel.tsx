@@ -1,23 +1,21 @@
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   cpcHardwareAtom,
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
-import { imageAtom } from '@/app/store/image/image'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
 import {
   addRasterChangeAtom,
-  autoOptimizeRasterAtom,
   clearRasterChangesAtom,
   rasterChangesAtom,
   rasterConflictsAtom,
-  rasterDitheringIntensityAtom,
   rasterEnabledAtom,
   rasterMaxChangesPerLineAtom,
   removeRasterChangeAtom,
   updateRasterChangeAtom
 } from '@/app/store/raster/raster'
+import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { cpcFullPalette } from '@/palettes/cpc-palette'
@@ -31,14 +29,12 @@ import { RasterPanelView } from './raster-panel-view'
  */
 export function RasterPanel() {
   const enabled = useAtomValue(rasterEnabledAtom)
-  const ditheringIntensity = useAtomValue(rasterDitheringIntensityAtom)
   const maxChangesPerLineRaw = useAtomValue(rasterMaxChangesPerLineAtom)
   const changes = useAtomValue(rasterChangesAtom)
   const conflicts = useAtomValue(rasterConflictsAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const displayPalette = useAtomValue(displayPaletteAtom)
-  const image = useAtomValue(imageAtom)
 
   // Limit maxChangesPerLine according to hardware capabilities
   // Classic: max 2 inks per line, Plus: max 4 inks per line
@@ -49,87 +45,18 @@ export function RasterPanel() {
   const updateChange = useSetAtom(updateRasterChangeAtom)
   const removeChange = useSetAtom(removeRasterChangeAtom)
   const clearAllChanges = useSetAtom(clearRasterChangesAtom)
-  const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
 
-  const [, setIsOptimizing] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const previousIntensityRef = useRef(ditheringIntensity)
-  const previousMaxChangesRef = useRef(maxChangesPerLine)
+  // Auto-regenerate rasters when parameters change (if already generated)
+  useAutoRegenerateRasters()
+
   const previousHardwareRef = useRef(cpcHardware)
   const previousModeRef = useRef(modeConfig.nColors)
 
   // Max line is height - 1 (0-indexed)
   const maxLine = modeConfig.height - 1
   const isClassicMode = cpcHardware === 'classic'
-  const hasImage = image !== null
   // CPC Plus allows smooth color transitions, Classic uses 27-color palette
   const isPlusMode = cpcHardware === 'plus'
-
-  // Debounced auto-optimize when dithering intensity changes
-  // Uses resetChanges: true to clear existing raster lines and regenerate from scratch
-  const runDebouncedOptimize = useCallback(async () => {
-    if (!enabled || !hasImage) return
-    setIsOptimizing(true)
-    try {
-      await autoOptimize({ resetChanges: true })
-    } finally {
-      setIsOptimizing(false)
-    }
-  }, [enabled, hasImage, autoOptimize])
-
-  // Watch for dithering intensity changes and trigger debounced optimization
-  useEffect(() => {
-    // Skip if intensity hasn't actually changed or raster not enabled
-    if (previousIntensityRef.current === ditheringIntensity || !enabled) {
-      previousIntensityRef.current = ditheringIntensity
-      return
-    }
-
-    previousIntensityRef.current = ditheringIntensity
-
-    // Clear any pending debounce
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
-    }
-
-    // Debounce the optimization (300ms)
-    debounceRef.current = setTimeout(() => {
-      runDebouncedOptimize()
-    }, 300)
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current)
-      }
-    }
-  }, [ditheringIntensity, enabled, runDebouncedOptimize])
-
-  // Watch for maxChangesPerLine changes and trigger debounced optimization
-  useEffect(() => {
-    // Skip if value hasn't actually changed or raster not enabled
-    if (previousMaxChangesRef.current === maxChangesPerLine || !enabled) {
-      previousMaxChangesRef.current = maxChangesPerLine
-      return
-    }
-
-    previousMaxChangesRef.current = maxChangesPerLine
-
-    // Clear any pending debounce
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current)
-    }
-
-    // Debounce the optimization (300ms)
-    debounceRef.current = setTimeout(() => {
-      runDebouncedOptimize()
-    }, 300)
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current)
-      }
-    }
-  }, [maxChangesPerLine, enabled, runDebouncedOptimize])
 
   // Watch for hardware (classic/plus) or mode (0/1/2) changes and clear rasters
   // User will need to regenerate manually after changing hardware/mode
@@ -245,6 +172,7 @@ export function RasterPanel() {
 
   return (
     <RasterPanelView
+      enabled={enabled}
       changes={changes}
       conflicts={conflicts}
       maxLine={maxLine}

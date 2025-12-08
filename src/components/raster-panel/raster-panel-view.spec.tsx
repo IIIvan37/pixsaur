@@ -38,6 +38,7 @@ function createDefaultProps(
   overrides?: Partial<RasterPanelViewProps>
 ): RasterPanelViewProps {
   return {
+    enabled: true,
     changes: [],
     conflicts: [],
     maxLine: 199,
