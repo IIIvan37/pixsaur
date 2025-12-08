@@ -2,6 +2,7 @@ import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   cpcHardwareAtom,
+  ditheringAtom,
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
 import { imageAtom } from '@/app/store/image/image'
@@ -10,6 +11,7 @@ import {
   addRasterChangeAtom,
   autoOptimizeRasterAtom,
   clearRasterChangesAtom,
+  hasGeneratedRastersAtom,
   rasterChangesAtom,
   rasterConflictsAtom,
   rasterDitheringIntensityAtom,
@@ -39,6 +41,8 @@ export function RasterPanel() {
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const displayPalette = useAtomValue(displayPaletteAtom)
   const image = useAtomValue(imageAtom)
+  const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
+  const finalDithering = useAtomValue(ditheringAtom)
 
   // Limit maxChangesPerLine according to hardware capabilities
   // Classic: max 2 inks per line, Plus: max 4 inks per line
@@ -55,6 +59,7 @@ export function RasterPanel() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const previousIntensityRef = useRef(ditheringIntensity)
   const previousMaxChangesRef = useRef(maxChangesPerLine)
+  const previousFinalDitheringRef = useRef(finalDithering)
   const previousHardwareRef = useRef(cpcHardware)
   const previousModeRef = useRef(modeConfig.nColors)
 
@@ -79,8 +84,12 @@ export function RasterPanel() {
 
   // Watch for dithering intensity changes and trigger debounced optimization
   useEffect(() => {
-    // Skip if intensity hasn't actually changed or raster not enabled
-    if (previousIntensityRef.current === ditheringIntensity || !enabled) {
+    // Skip if intensity hasn't actually changed, raster not enabled, or no auto-generated rasters
+    if (
+      previousIntensityRef.current === ditheringIntensity ||
+      !enabled ||
+      !hasGeneratedRasters
+    ) {
       previousIntensityRef.current = ditheringIntensity
       return
     }
@@ -102,12 +111,16 @@ export function RasterPanel() {
         clearTimeout(debounceRef.current)
       }
     }
-  }, [ditheringIntensity, enabled, runDebouncedOptimize])
+  }, [ditheringIntensity, enabled, hasGeneratedRasters, runDebouncedOptimize])
 
   // Watch for maxChangesPerLine changes and trigger debounced optimization
   useEffect(() => {
-    // Skip if value hasn't actually changed or raster not enabled
-    if (previousMaxChangesRef.current === maxChangesPerLine || !enabled) {
+    // Skip if value hasn't actually changed, raster not enabled, or no auto-generated rasters
+    if (
+      previousMaxChangesRef.current === maxChangesPerLine ||
+      !enabled ||
+      !hasGeneratedRasters
+    ) {
       previousMaxChangesRef.current = maxChangesPerLine
       return
     }
@@ -129,7 +142,39 @@ export function RasterPanel() {
         clearTimeout(debounceRef.current)
       }
     }
-  }, [maxChangesPerLine, enabled, runDebouncedOptimize])
+  }, [maxChangesPerLine, enabled, hasGeneratedRasters, runDebouncedOptimize])
+
+  // Watch for final dithering config changes and trigger debounced optimization
+  useEffect(() => {
+    // Check if dithering config actually changed
+    const ditheringChanged =
+      previousFinalDitheringRef.current.mode !== finalDithering.mode ||
+      previousFinalDitheringRef.current.intensity !== finalDithering.intensity
+
+    // Skip if dithering hasn't changed, raster not enabled, or no auto-generated rasters
+    if (!ditheringChanged || !enabled || !hasGeneratedRasters) {
+      previousFinalDitheringRef.current = finalDithering
+      return
+    }
+
+    previousFinalDitheringRef.current = finalDithering
+
+    // Clear any pending debounce
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+    }
+
+    // Debounce the optimization (300ms)
+    debounceRef.current = setTimeout(() => {
+      runDebouncedOptimize()
+    }, 300)
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+      }
+    }
+  }, [finalDithering, enabled, hasGeneratedRasters, runDebouncedOptimize])
 
   // Watch for hardware (classic/plus) or mode (0/1/2) changes and clear rasters
   // User will need to regenerate manually after changing hardware/mode

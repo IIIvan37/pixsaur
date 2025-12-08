@@ -30,7 +30,7 @@ msgstr "{0} Bild(er) bereit zum Exportieren"
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} verbleibend"
 
-#: src/components/raster-panel/raster-panel-view.tsx:340
+#: src/components/raster-panel/raster-panel-view.tsx:351
 msgid "{uniqueColorsCount} couleur(s) unique(s)"
 msgstr "{uniqueColorsCount} einzigartige Farbe(n)"
 
@@ -71,7 +71,7 @@ msgstr "Zusätzliche DSK-Dateien"
 msgid "Adjustments, Source & Preview"
 msgstr "Anpassungen, Quelle & Vorschau"
 
-#: src/components/raster-panel/raster-panel-view.tsx:377
+#: src/components/raster-panel/raster-panel-view.tsx:386
 msgid "Ajouter un changement"
 msgstr "Änderung hinzufügen"
 
@@ -109,7 +109,7 @@ msgstr "Abbrechen"
 msgid "Aperçu"
 msgstr "Vorschau"
 
-#: src/components/raster-panel/raster-panel-view.tsx:350
+#: src/components/raster-panel/raster-panel-view.tsx:358
 msgid "Aucun changement raster défini."
 msgstr "Keine Raster-Änderungen definiert."
 
@@ -161,7 +161,7 @@ msgstr "RGB-Kanäle"
 msgid "Centrer l'image"
 msgstr "Bild zentrieren"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:106
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:149
 msgid "Changements par ligne"
 msgstr "Änderungen pro Zeile"
 
@@ -217,7 +217,7 @@ msgstr "Amstrad CPC Bildkonverter"
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Nichtlineare Helligkeitskorrektur (0.1-3.0, 1.0 = neutral)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:158
+#: src/components/raster-panel/raster-panel-view.tsx:160
 msgid "Couleur"
 msgstr "Farbe"
 
@@ -239,7 +239,7 @@ msgstr "Abdeckungsoptimiert"
 msgid "Déverrouiller"
 msgstr "Entsperren"
 
-#: src/components/image-controls/image-controls-view.tsx:106
+#: src/components/image-controls/image-controls-view.tsx:107
 msgid "Dimensions"
 msgstr "Abmessungen"
 
@@ -252,11 +252,15 @@ msgstr "Abmessungen"
 msgid "palette.strategy.dithering-aware.label"
 msgstr "Dithering-Optimiert"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:124
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:214
+msgid "Dithering final"
+msgstr "Endgültiges Dithering"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:167
 msgid "Dithering horizontal 1D appliqué lors du prétraitement raster"
 msgstr "Horizontales 1D-Dithering bei Raster-Vorverarbeitung"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:122
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:165
 msgid "Dithering raster"
 msgstr "Raster-Dithering"
 
@@ -296,15 +300,15 @@ msgstr "Dynamische Strategie basierend auf dem Bild"
 msgid "Effets"
 msgstr "Effekte"
 
-#: src/components/raster-panel/raster-panel-view.tsx:316
+#: src/components/raster-panel/raster-panel-view.tsx:336
 msgid "Effets Raster"
 msgstr "Raster-Effekte"
 
-#: src/components/raster-panel/raster-panel-view.tsx:146
+#: src/components/raster-panel/raster-panel-view.tsx:147
 msgid "Encre"
 msgstr "Tinte"
 
-#: src/components/raster-panel/raster-panel-view.tsx:132
+#: src/components/raster-panel/raster-panel-view.tsx:133
 msgid "Encre {inkIndex}"
 msgstr "Tinte {inkIndex}"
 
@@ -375,7 +379,7 @@ msgstr "Frequenzpriorität (80%) mit mäßiger Vielfalt"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:146
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:192
 msgid "Générer les rasters"
 msgstr "Raster generieren"
 
@@ -383,7 +387,7 @@ msgstr "Raster generieren"
 msgid "Glissez & déposez une image ici"
 msgstr "Ziehen Sie ein Bild hierher"
 
-#: src/components/image-controls/image-controls-view.tsx:82
+#: src/components/image-controls/image-controls-view.tsx:83
 msgid "Hardware"
 msgstr "Hardware"
 
@@ -411,7 +415,7 @@ msgstr "Update installieren"
 #~ msgid "Installing..."
 #~ msgstr "Wird installiert..."
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:191
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:236
 msgid "Intensité"
 msgstr "Intensität"
 
@@ -448,12 +452,12 @@ msgstr "Später"
 msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
 msgstr "SCR-Format erfordert Größe <= 16 KB (aktuelle Größe: {0} KB)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:239
+#: src/components/raster-panel/raster-panel-view.tsx:248
 msgid "Ligne"
 msgstr "Zeile"
 
 #. placeholder {0}: group.line
-#: src/components/raster-panel/raster-panel-view.tsx:231
+#: src/components/raster-panel/raster-panel-view.tsx:240
 msgid "Ligne {0}"
 msgstr "Zeile {0}"
 
@@ -465,7 +469,7 @@ msgstr "Linear ASM (sequenziell)"
 #~ msgid "Lissage"
 #~ msgstr "Glättung"
 
-#: src/components/image-controls/image-controls-view.tsx:134
+#: src/components/image-controls/image-controls-view.tsx:138
 msgid "Lissage horizontal"
 msgstr "Horizontale Glättung"
 
@@ -487,6 +491,10 @@ msgstr "Luminanz-Bins mit Frequenzpriorität"
 msgid "Luminosité"
 msgstr "Helligkeit"
 
+#: src/components/raster-panel/raster-panel-view.tsx:347
+msgid "Max {maxChangesPerLine} changement(s) par ligne"
+msgstr ""
+
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:46
 msgid "palette.strategy.coverage-aware.desc"
@@ -507,12 +515,16 @@ msgstr "Speicher"
 #~ msgstr "Modus"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:169
-msgid "Mode de dithering"
-msgstr "Dithering-Modus"
+#~ msgid "Mode de dithering"
+#~ msgstr "Dithering-Modus"
 
 #: src/components/image-resize/image-resize-panel.tsx:37
 msgid "Mode de redimensionnement"
 msgstr "Größenänderungsmodus"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:134
+msgid "Mode Raster"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:106
@@ -552,7 +564,7 @@ msgstr "Noch keine Bilder im Arbeitsbereich. Fügen Sie konvertierte Bilder hinz
 msgid "Nom du fichier ZIP"
 msgstr "ZIP-Dateiname"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:108
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:151
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Maximale Tintenänderungen pro Zeile (1 = klassischer Raster)"
 
@@ -564,7 +576,7 @@ msgstr "Nicht genügend Speicherplatz auf DSK"
 msgid "Ombres"
 msgstr "Schatten"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:144
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:188
 msgid "Optimisation..."
 msgstr "Optimierung..."
 
@@ -598,7 +610,7 @@ msgstr "Perzeptuell Ausgewogen"
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perzeptuell Kontrast"
 
-#: src/components/image-controls/image-controls-view.tsx:94
+#: src/components/image-controls/image-controls-view.tsx:95
 msgid "Pixel Mode"
 msgstr "Pixelmodus"
 
@@ -628,12 +640,16 @@ msgid "palette.strategy.diversity-first-max.label"
 msgstr "Reine Vielfalt"
 
 #: src/components/raster-panel/raster-panel-view.tsx:336
-msgid "Raster: changements d'encre par ligne"
-msgstr "Raster: Tintenänderungen pro Zeile"
+#~ msgid "Raster: changements d'encre par ligne"
+#~ msgstr "Raster: Tintenänderungen pro Zeile"
 
 #: src/components/export-panel/export-config-dialog.tsx:173
 msgid "Rasters (données ASM)"
 msgstr "Rasters (ASM-Daten)"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:190
+msgid "Rasters générés"
+msgstr ""
 
 #: src/components/source-selector/source-selector-view.tsx:112
 #~ msgid "Redimensionner"
@@ -713,7 +729,7 @@ msgstr "Unterstützt CPC Classic und CPC Plus Formate. Der Lader erkennt automat
 #~ msgid "Supprimer la plage"
 #~ msgstr "Bereich entfernen"
 
-#: src/components/raster-panel/raster-panel-view.tsx:263
+#: src/components/raster-panel/raster-panel-view.tsx:288
 msgid "Supprimer le changement"
 msgstr "Änderung entfernen"
 
@@ -734,7 +750,7 @@ msgstr "Temperatur"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Testet alle Kombinationen, maximiert Kontrast (beste Qualität)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:387
+#: src/components/raster-panel/raster-panel-view.tsx:396
 msgid "Tout supprimer"
 msgstr "Alle entfernen"
 

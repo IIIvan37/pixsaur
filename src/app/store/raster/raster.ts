@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
+  applyDitheringWithRaster,
   createRasterPreviewImageData,
   optimizeLinePalettesWithIndexBuffer,
   preprocessImageForRaster
@@ -404,6 +405,30 @@ export const autoOptimizeRasterAtom = atom(
       }
     )
 
+    // Apply user-configured final dithering AFTER raster optimization
+    // This ensures dithering respects per-line palettes from raster changes
+    const ditheringConfig = get(ditheringAtom)
+    let finalIndexBuffer = optimizedIndexBuffer
+
+    // Only apply final dithering if user has a dithering mode configured
+    if (ditheringConfig.mode !== 'none' && ditheringConfig.intensity > 0) {
+      // Convert optimized changes to the format expected by applyDitheringWithRaster
+      const rasterChangesForDithering: Array<Omit<RasterChange, 'id'>> =
+        optimizedChanges.map(({ line, inkIndex, color }) => ({
+          line,
+          inkIndex,
+          color
+        }))
+
+      finalIndexBuffer = applyDitheringWithRaster(
+        preprocessedImage,
+        quantizedGlobalPalette,
+        rasterChangesForDithering,
+        ditheringConfig,
+        modeConfig.nColors
+      )
+    }
+
     // Filter out any changes that exceed the mode height (safety check)
     const maxLine = modeConfig.height - 1
     const validChanges = optimizedChanges.filter(
@@ -426,7 +451,7 @@ export const autoOptimizeRasterAtom = atom(
 
     // Store the optimized index buffer and palette for rendering
     set(rasterIndexBufferAtom, {
-      buffer: optimizedIndexBuffer,
+      buffer: finalIndexBuffer,
       width,
       height,
       palette: quantizedGlobalPalette

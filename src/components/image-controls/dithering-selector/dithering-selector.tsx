@@ -242,55 +242,53 @@ export function DitheringSelector({
         </div>
       )}
 
-      {/* Mode dithering normal - visible seulement si raster désactivé */}
-      {!rasterEnabled && (
-        <Flex
-          gap='var(--spacing-md)'
-          wrap='wrap'
-          justify='flex-start'
-          align='flex-start'
-        >
-          <Flex direction='column' gap='var(--spacing-xs)' align='flex-start'>
-            <div
-              style={{
-                fontFamily: 'var(--font-family)',
-                fontSize: 'var(--font-size-sm)',
-                color: 'var(--color-foreground)'
-              }}
-            >
-              <Trans>Mode de dithering</Trans>
-            </div>
-            <Select
-              value={cfg.mode}
-              onValueChange={(value) => {
-                const newMode = value as DitheringMode
-                setCfg({
-                  mode: newMode,
-                  intensity: getDefaultIntensity(newMode)
-                })
-              }}
-            >
-              {MODES.map((mode) => (
-                <SelectItem key={mode.value} value={mode.value}>
-                  {mode.label}
-                </SelectItem>
-              ))}
-            </Select>
-          </Flex>
-
-          <div className={styles.ditheringSlider}>
-            <PixsaurSlider
-              label={<Trans>Intensité</Trans>}
-              min={0}
-              max={100}
-              value={Math.round(cfg.intensity * 100)}
-              onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
-              step={1}
-              disabled={cfg.mode === 'ylioluma2'}
-            />
+      {/* Mode dithering final - toujours visible */}
+      <Flex
+        gap='var(--spacing-md)'
+        wrap='wrap'
+        justify='flex-start'
+        align='flex-start'
+      >
+        <Flex direction='column' gap='var(--spacing-xs)' align='flex-start'>
+          <div
+            style={{
+              fontFamily: 'var(--font-family)',
+              fontSize: 'var(--font-size-sm)',
+              color: 'var(--color-foreground)'
+            }}
+          >
+            <Trans>Dithering final</Trans>
           </div>
+          <Select
+            value={cfg.mode}
+            onValueChange={(value) => {
+              const newMode = value as DitheringMode
+              setCfg({
+                mode: newMode,
+                intensity: getDefaultIntensity(newMode)
+              })
+            }}
+          >
+            {MODES.map((mode) => (
+              <SelectItem key={mode.value} value={mode.value}>
+                {mode.label}
+              </SelectItem>
+            ))}
+          </Select>
         </Flex>
-      )}
+
+        <div className={styles.ditheringSlider}>
+          <PixsaurSlider
+            label={<Trans>Intensité</Trans>}
+            min={0}
+            max={100}
+            value={Math.round(cfg.intensity * 100)}
+            onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
+            step={1}
+            disabled={cfg.mode === 'ylioluma2'}
+          />
+        </div>
+      </Flex>
     </>
   )
 }
