@@ -79,7 +79,7 @@ jobs:
         include:
           - platform: "macos-14" # macOS ARM64 (M1/M2/M3) - native build
             args: ""
-          - platform: "macos-13" # macOS Intel (x86_64) - native build
+          - platform: "macos-latest" # macOS Intel (x86_64) - uses latest available
             args: ""
           - platform: "ubuntu-22.04"
             args: "--bundles appimage"
