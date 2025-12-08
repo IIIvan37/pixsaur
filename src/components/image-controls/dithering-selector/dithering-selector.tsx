@@ -9,6 +9,7 @@ import {
 import { imageAtom } from '@/app/store/image/image'
 import {
   autoOptimizeRasterAtom,
+  hasGeneratedRastersAtom,
   rasterDitheringIntensityAtom,
   rasterEnabledAtom,
   rasterMaxChangesPerLineAtom
@@ -70,6 +71,7 @@ export function DitheringSelector() {
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const image = useAtomValue(imageAtom)
+  const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
   const [rasterDitheringIntensity, setRasterDitheringIntensity] = useAtom(
     rasterDitheringIntensityAtom
   )
@@ -137,11 +139,13 @@ export function DitheringSelector() {
           <Button
             variant='secondary'
             onClick={handleAutoOptimize}
-            disabled={isOptimizing}
+            disabled={isOptimizing || hasGeneratedRasters}
           >
             <Icon name='GearIcon' />
             {isOptimizing ? (
               <Trans>Optimisation...</Trans>
+            ) : hasGeneratedRasters ? (
+              <Trans>Rasters générés</Trans>
             ) : (
               <Trans>Générer les rasters</Trans>
             )}
