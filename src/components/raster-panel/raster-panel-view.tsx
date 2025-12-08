@@ -333,7 +333,16 @@ export function RasterPanelView({
     return colorSet.size
   }, [palette, changes])
 
-  const title = <Trans>Effets Raster</Trans>
+  const title = (
+    <>
+      <Trans>Effets Raster</Trans>
+      {changes.length > 0 && (
+        <span className={styles.uniqueColorsCount}>
+          <Trans>{uniqueColorsCount} couleur(s) unique(s)</Trans>
+        </span>
+      )}
+    </>
+  )
 
   return (
     <div className={styles.section}>
@@ -346,11 +355,6 @@ export function RasterPanelView({
             <span className={styles.modeHint}>
               <Trans>Max {maxChangesPerLine} changement(s) par ligne</Trans>
             </span>
-            {changes.length > 0 && (
-              <span className={styles.uniqueColorsCount}>
-                <Trans>{uniqueColorsCount} couleur(s) unique(s)</Trans>
-              </span>
-            )}
           </div>
 
           {lineGroups.length === 0 ? (
