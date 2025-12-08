@@ -172,6 +172,7 @@ export function RasterPanel() {
 
   return (
     <RasterPanelView
+      enabled={enabled}
       changes={changes}
       conflicts={conflicts}
       maxLine={maxLine}

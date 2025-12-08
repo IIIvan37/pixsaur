@@ -17,6 +17,7 @@ import { vectorToHex } from '@/palettes/cpc-palette'
 import styles from './raster-panel.module.css'
 
 export interface RasterPanelViewProps {
+  readonly enabled: boolean
   readonly changes: RasterChange[]
   readonly conflicts: string[]
   readonly maxLine: number
@@ -303,6 +304,7 @@ function LineRow({
 }
 
 export function RasterPanelView({
+  enabled,
   changes,
   conflicts,
   maxLine,
@@ -316,7 +318,7 @@ export function RasterPanelView({
   onUpdateChange,
   onRemoveChange,
   onClearAll
-}: RasterPanelViewProps) {
+}: Readonly<RasterPanelViewProps>) {
   const lineGroups = useMemo(() => groupChangesByLine(changes), [changes])
 
   // Count unique colors: palette colors + raster colors
@@ -346,7 +348,12 @@ export function RasterPanelView({
 
   return (
     <div className={styles.section}>
-      <CollapsibleSection title={title} defaultOpen={false}>
+      <CollapsibleSection
+        title={title}
+        defaultOpen={false}
+        disabled={!enabled}
+        open={enabled ? undefined : false}
+      >
         <div className={styles.container}>
           <div className={styles.modeInfo}>
             <span className={styles.modeBadge}>
