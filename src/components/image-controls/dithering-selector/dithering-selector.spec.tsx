@@ -5,18 +5,53 @@ import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import { renderWithI18n } from '@/test-utils'
 import { DitheringSelector, getDefaultIntensity } from './dithering-selector'
 
-// Mock the jotai atom
+// Mock the jotai atoms
 const mockDitheringAtom = {
   mode: 'floydSteinberg' as DitheringMode,
   intensity: 0.5
 }
 const mockSetDitheringAtom = vi.fn()
+const mockSetRasterEnabledAtom = vi.fn()
+const mockSetRasterDitheringIntensity = vi.fn()
+const mockSetMaxChangesPerLine = vi.fn()
+const mockAutoOptimize = vi.fn()
 
 vi.mock('jotai', async () => {
   const actual = await vi.importActual('jotai')
   return {
     ...actual,
-    useAtom: vi.fn(() => [mockDitheringAtom, mockSetDitheringAtom])
+    useAtom: vi.fn((atom) => {
+      // Mock different atoms based on their identity
+      const atomName = atom.toString()
+      if (atomName.includes('rasterEnabled')) {
+        return [false, mockSetRasterEnabledAtom] // rasterEnabled = false pour tester le mode dithering normal
+      }
+      if (atomName.includes('rasterDitheringIntensity')) {
+        return [0.5, mockSetRasterDitheringIntensity]
+      }
+      if (atomName.includes('rasterMaxChangesPerLine')) {
+        return [2, mockSetMaxChangesPerLine]
+      }
+      // Default: ditheringAtom
+      return [mockDitheringAtom, mockSetDitheringAtom]
+    }),
+    useAtomValue: vi.fn((atom) => {
+      const atomName = atom.toString()
+      if (atomName.includes('effectiveModeConfig')) {
+        return { nColors: 4 } // Mode 1
+      }
+      if (atomName.includes('cpcHardware')) {
+        return 'classic'
+      }
+      if (atomName.includes('image')) {
+        return null
+      }
+      if (atomName.includes('hasGeneratedRasters')) {
+        return false
+      }
+      return null
+    }),
+    useSetAtom: vi.fn(() => mockAutoOptimize)
   }
 })
 
@@ -24,7 +59,9 @@ vi.mock('jotai', async () => {
 vi.mock('./dithering-selector.module.css', () => ({
   __esModule: true,
   default: {
-    ditheringSlider: 'ditheringSlider'
+    ditheringSlider: 'ditheringSlider',
+    slidersRow: 'slidersRow',
+    slidersGroup: 'slidersGroup'
   }
 }))
 
@@ -55,6 +92,7 @@ vi.mock('@/components/ui/slider', () => ({
   default: (
     props: React.ComponentProps<'input'> & {
       label: React.ReactNode
+      description?: React.ReactNode
       onChange: (value: number) => void
       disabled?: boolean
     }
@@ -72,6 +110,39 @@ vi.mock('@/components/ui/slider', () => ({
       />
     </label>
   )
+}))
+
+vi.mock('@/components/ui/switch', () => ({
+  __esModule: true,
+  Switch: ({ checked, onCheckedChange, id }: any) => (
+    <button
+      type='button'
+      role='switch'
+      aria-checked={checked}
+      onClick={() => onCheckedChange(!checked)}
+      id={id}
+      data-state={checked ? 'checked' : 'unchecked'}
+    />
+  )
+}))
+
+vi.mock('@/components/ui/button', () => ({
+  __esModule: true,
+  default: ({ children, onClick, disabled, variant }: any) => (
+    <button
+      type='button'
+      onClick={onClick}
+      disabled={disabled}
+      data-variant={variant}
+    >
+      {children}
+    </button>
+  )
+}))
+
+vi.mock('@/components/ui/icon', () => ({
+  __esModule: true,
+  default: ({ name }: any) => <span data-icon={name} />
 }))
 
 describe('getDefaultIntensity', () => {

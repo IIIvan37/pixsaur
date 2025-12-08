@@ -72,10 +72,11 @@ describe('RasterPanelView', () => {
       expect(screen.getByRole('button')).toBeInTheDocument()
     })
 
-    it('should render the enable switch when section is expanded', async () => {
+    it('should render mode badge when section is expanded', async () => {
       render(<RasterPanelView {...createDefaultProps()} />)
       await expandSection()
-      expect(screen.getByRole('switch')).toBeInTheDocument()
+      // The mode badge should be visible (no switch anymore, moved to DitheringSelector)
+      expect(screen.getByText('CPC Classic')).toBeInTheDocument()
     })
   })
 
@@ -146,46 +147,52 @@ describe('RasterPanelView', () => {
       const modeInfo = screen.getByText('CPC Plus').parentElement
       expect(modeInfo?.querySelectorAll('span')).toHaveLength(2) // badge + hint
     })
-
-    it('should not show mode indicator when raster is disabled', async () => {
-      render(<RasterPanelView {...createDefaultProps()} />)
-      await expandSection()
-      expect(screen.queryByText('CPC Classic')).not.toBeInTheDocument()
-      expect(screen.queryByText('CPC Plus')).not.toBeInTheDocument()
-    })
   })
 
   describe('Empty state', () => {
     it('should show empty state when enabled with no changes', async () => {
       render(<RasterPanelView {...createDefaultProps()} />)
       await expandSection()
-      // Check for empty state container
-      const container = screen.getByRole('switch').parentElement?.parentElement
-      expect(container).toBeInTheDocument()
+      // Check for empty state message
+      expect(
+        screen.getByText('Aucun changement raster défini.')
+      ).toBeInTheDocument()
     })
   })
 
   describe('Adding changes', () => {
     it('should call onAddChange when add button is clicked', async () => {
       const onAddChange = vi.fn()
-      render(<RasterPanelView {...createDefaultProps()} />)
+      render(<RasterPanelView {...createDefaultProps({ onAddChange })} />)
       await expandSection()
 
-      // Find the add button (contains PlusIcon)
-      const buttons = screen.getAllByRole('button')
-      const addButton = buttons.find((btn) => btn.querySelector('svg'))
-      if (addButton) {
-        await userEvent.click(addButton)
-      }
+      // Find the add button by text
+      const addButton = screen.getByRole('button', { name: /ajouter/i })
+      await userEvent.click(addButton)
 
       expect(onAddChange).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('Displaying changes', () => {
+    const mockChanges: RasterChange[] = [
+      {
+        id: 'change-1',
+        inkIndex: 0,
+        line: 0,
+        color: [255, 0, 0]
+      },
+      {
+        id: 'change-2',
+        inkIndex: 1,
+        line: 60,
+        color: [0, 255, 0]
+      }
+    ]
+
     it('should display change rows', async () => {
       const { container } = render(
-        <RasterPanelView {...createDefaultProps()} />
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
       )
       await expandSection()
 
@@ -195,7 +202,9 @@ describe('RasterPanelView', () => {
     })
 
     it('should display line values', async () => {
-      render(<RasterPanelView {...createDefaultProps()} />)
+      render(
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
+      )
       await expandSection()
 
       // The values should be displayed as text (use getAllByText for multiple matches)
@@ -385,8 +394,19 @@ describe('RasterPanelView', () => {
   })
 
   describe('Slider interactions', () => {
+    const mockChanges: RasterChange[] = [
+      {
+        id: 'change-1',
+        inkIndex: 0,
+        line: 10,
+        color: [255, 0, 0]
+      }
+    ]
+
     it('should display current line value', async () => {
-      render(<RasterPanelView {...createDefaultProps()} />)
+      render(
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
+      )
       await expandSection()
 
       expect(screen.getByText('10')).toBeInTheDocument()
@@ -394,7 +414,7 @@ describe('RasterPanelView', () => {
 
     it('should render slider for line', async () => {
       const { container } = render(
-        <RasterPanelView {...createDefaultProps()} />
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
       )
       await expandSection()
 
