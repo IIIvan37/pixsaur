@@ -716,12 +716,15 @@ function applyFloydSteinbergDitherWithDynamicPalette(
       const errB = pixelCS[2] - paletteCS[bestIndex][2]
 
       // Distribute error to neighboring pixels
+      // With dynamic palettes (raster mode), only diffuse horizontally on same line
+      // because palette changes between lines make vertical error diffusion meaningless
       for (let i = 0; i < 4; i++) {
         const nIdx = idx3 + offsets[i]
-        // Check bounds
         const ny = Math.floor(nIdx / w3)
         const nx = (nIdx % w3) / 3
-        if (ny >= 0 && ny < height && nx >= 0 && nx < width) {
+
+        // Only diffuse to same line (horizontal diffusion only)
+        if (ny === y && nx >= 0 && nx < width) {
           errorBuf[nIdx + 0] += errR * weights[i]
           errorBuf[nIdx + 1] += errG * weights[i]
           errorBuf[nIdx + 2] += errB * weights[i]
@@ -790,10 +793,14 @@ function applyAtkinsonDitherWithDynamicPalette(
       const errB = (pixel[2] - paletteCS[bestIndex][2]) * intensity
 
       // Distribute error (1/8 to each neighbor)
+      // With dynamic palettes (raster mode), only diffuse horizontally on same line
+      // because palette changes between lines make vertical error diffusion meaningless
       for (const [dx, dy] of offsets) {
         const nx = x + dx
         const ny = y + dy
-        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+
+        // Only diffuse to same line (horizontal diffusion only)
+        if (ny === y && nx >= 0 && nx < width) {
           const nIdx = (ny * width + nx) * 3
           errorBuf[nIdx + 0] += errR / 8
           errorBuf[nIdx + 1] += errG / 8

@@ -109,6 +109,24 @@ export function DitheringSelector({
     }
   }, [maxChangesPerLine, maxAllowedChanges, setMaxChangesPerLine])
 
+  // When raster is enabled, switch to a compatible dithering mode if current mode is incompatible
+  useEffect(() => {
+    if (rasterEnabled) {
+      if (
+        cfg.mode === 'floydSteinberg' ||
+        cfg.mode === 'atkinson' ||
+        cfg.mode === 'ylioluma1' ||
+        cfg.mode === 'ylioluma2'
+      ) {
+        // Switch to bayer2x2 as default compatible mode
+        setCfg({
+          mode: 'bayer2x2',
+          intensity: getDefaultIntensity('bayer2x2')
+        })
+      }
+    }
+  }, [rasterEnabled, cfg.mode, setCfg])
+
   const handleAutoOptimize = async () => {
     if (isOptimizing) return // Prevent multiple clicks
     setIsOptimizing(true)
@@ -122,6 +140,18 @@ export function DitheringSelector({
   const handleRasterEnabledChange =
     onRasterEnabledChange ?? setRasterEnabledAtom
   const rasterEnabledId = 'raster-enabled-switch'
+
+  // Filter modes based on raster state
+  // When raster is enabled, exclude error-diffusion algorithms that don't work well with dynamic palettes
+  const availableModes = rasterEnabled
+    ? MODES.filter(
+        (mode) =>
+          mode.value !== 'floydSteinberg' &&
+          mode.value !== 'atkinson' &&
+          mode.value !== 'ylioluma1' &&
+          mode.value !== 'ylioluma2'
+      )
+    : MODES
 
   return (
               }
@@ -273,7 +303,7 @@ export function DitheringSelector({
               })
             }}
           >
-            {MODES.map((mode) => (
+            {availableModes.map((mode) => (
               <SelectItem key={mode.value} value={mode.value}>
                 {mode.label}
               </SelectItem>
