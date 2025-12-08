@@ -194,7 +194,7 @@ describe('DitheringSelector', () => {
   it('should render dithering mode selector and intensity slider', () => {
     renderWithI18n(<DitheringSelector />)
 
-    expect(screen.getByText('Mode de dithering')).toBeInTheDocument()
+    expect(screen.getByText('Dithering final')).toBeInTheDocument()
     expect(screen.getByText('Intensité')).toBeInTheDocument()
     expect(screen.getByRole('combobox')).toBeInTheDocument()
     expect(screen.getByRole('slider')).toBeInTheDocument()
@@ -205,7 +205,7 @@ describe('DitheringSelector', () => {
     mockDitheringAtom.mode = 'ylioluma2'
     renderWithI18n(<DitheringSelector />)
 
-    expect(screen.getByText('Mode de dithering')).toBeInTheDocument()
+    expect(screen.getByText('Dithering final')).toBeInTheDocument()
     expect(screen.getByText('Intensité')).toBeInTheDocument()
     const slider = screen.getByRole('slider')
     expect(slider).toBeDisabled()
