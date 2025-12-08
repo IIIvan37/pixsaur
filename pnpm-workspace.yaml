@@ -1,2 +1,4 @@
 ignoredBuiltDependencies:
   - sharp
+onlyBuiltDependencies:
+  - canvas

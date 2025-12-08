@@ -38,13 +38,12 @@ function createDefaultProps(
   overrides?: Partial<RasterPanelViewProps>
 ): RasterPanelViewProps {
   return {
-    enabled: false,
-    onEnabledChange: vi.fn(),
     changes: [],
     conflicts: [],
     maxLine: 199,
     palette: mockPalette,
     nColors: 4,
+    maxChangesPerLine: 2,
     cpcPalette: mockCpcPalette,
     isClassicMode: true,
     isPlusMode: false,
@@ -73,38 +72,17 @@ describe('RasterPanelView', () => {
       expect(screen.getByRole('button')).toBeInTheDocument()
     })
 
-    it('should render the enable switch when section is expanded', async () => {
+    it('should render mode badge when section is expanded', async () => {
       render(<RasterPanelView {...createDefaultProps()} />)
       await expandSection()
-      expect(screen.getByRole('switch')).toBeInTheDocument()
-    })
-
-    it('should have switch unchecked when disabled', async () => {
-      render(<RasterPanelView {...createDefaultProps({ enabled: false })} />)
-      await expandSection()
-      expect(screen.getByRole('switch')).not.toBeChecked()
-    })
-
-    it('should have switch checked when enabled', async () => {
-      render(<RasterPanelView {...createDefaultProps({ enabled: true })} />)
-      await expandSection()
-      expect(screen.getByRole('switch')).toBeChecked()
+      // The mode badge should be visible (no switch anymore, moved to DitheringSelector)
+      expect(screen.getByText('CPC Classic')).toBeInTheDocument()
     })
   })
 
-  describe('Enable/Disable toggle', () => {
-    it('should call onEnabledChange when switch is clicked', async () => {
-      const onEnabledChange = vi.fn()
-      render(<RasterPanelView {...createDefaultProps({ onEnabledChange })} />)
-      await expandSection()
-
-      await userEvent.click(screen.getByRole('switch'))
-
-      expect(onEnabledChange).toHaveBeenCalledWith(true)
-    })
-
-    it('should not show add button when raster is disabled', async () => {
-      render(<RasterPanelView {...createDefaultProps({ enabled: false })} />)
+  describe('Raster Changes', () => {
+    it('should show add button', async () => {
+      render(<RasterPanelView {...createDefaultProps()} />)
       await expandSection()
       // The add button should not be rendered when enabled is false
       expect(
@@ -118,7 +96,6 @@ describe('RasterPanelView', () => {
       render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             isPlusMode: false,
             isClassicMode: true
           })}
@@ -132,7 +109,6 @@ describe('RasterPanelView', () => {
       render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             isPlusMode: true,
             isClassicMode: false
           })}
@@ -146,7 +122,6 @@ describe('RasterPanelView', () => {
       render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             isPlusMode: false,
             isClassicMode: true
           })}
@@ -162,7 +137,6 @@ describe('RasterPanelView', () => {
       render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             isPlusMode: true,
             isClassicMode: false
           })}
@@ -173,49 +147,28 @@ describe('RasterPanelView', () => {
       const modeInfo = screen.getByText('CPC Plus').parentElement
       expect(modeInfo?.querySelectorAll('span')).toHaveLength(2) // badge + hint
     })
-
-    it('should not show mode indicator when raster is disabled', async () => {
-      render(
-        <RasterPanelView
-          {...createDefaultProps({ enabled: false, isPlusMode: false })}
-        />
-      )
-      await expandSection()
-      expect(screen.queryByText('CPC Classic')).not.toBeInTheDocument()
-      expect(screen.queryByText('CPC Plus')).not.toBeInTheDocument()
-    })
   })
 
   describe('Empty state', () => {
     it('should show empty state when enabled with no changes', async () => {
-      render(
-        <RasterPanelView
-          {...createDefaultProps({ enabled: true, changes: [] })}
-        />
-      )
+      render(<RasterPanelView {...createDefaultProps()} />)
       await expandSection()
-      // Check for empty state container
-      const container = screen.getByRole('switch').parentElement?.parentElement
-      expect(container).toBeInTheDocument()
+      // Check for empty state message
+      expect(
+        screen.getByText('Aucun changement raster défini.')
+      ).toBeInTheDocument()
     })
   })
 
   describe('Adding changes', () => {
     it('should call onAddChange when add button is clicked', async () => {
       const onAddChange = vi.fn()
-      render(
-        <RasterPanelView
-          {...createDefaultProps({ enabled: true, onAddChange })}
-        />
-      )
+      render(<RasterPanelView {...createDefaultProps({ onAddChange })} />)
       await expandSection()
 
-      // Find the add button (contains PlusIcon)
-      const buttons = screen.getAllByRole('button')
-      const addButton = buttons.find((btn) => btn.querySelector('svg'))
-      if (addButton) {
-        await userEvent.click(addButton)
-      }
+      // Find the add button by text
+      const addButton = screen.getByRole('button', { name: /ajouter/i })
+      await userEvent.click(addButton)
 
       expect(onAddChange).toHaveBeenCalledTimes(1)
     })
@@ -237,11 +190,9 @@ describe('RasterPanelView', () => {
       }
     ]
 
-    it('should render change rows when changes exist', async () => {
+    it('should display change rows', async () => {
       const { container } = render(
-        <RasterPanelView
-          {...createDefaultProps({ enabled: true, changes: mockChanges })}
-        />
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
       )
       await expandSection()
 
@@ -252,9 +203,7 @@ describe('RasterPanelView', () => {
 
     it('should display line values', async () => {
       render(
-        <RasterPanelView
-          {...createDefaultProps({ enabled: true, changes: mockChanges })}
-        />
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
       )
       await expandSection()
 
@@ -280,7 +229,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: mockChanges,
             onRemoveChange
           })}
@@ -320,7 +268,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: conflictingChanges,
             conflicts: ['change-1', 'change-2']
           })}
@@ -352,7 +299,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: nonConflictingChanges,
             conflicts: []
           })}
@@ -383,7 +329,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: mockChanges,
             nColors: 4
           })}
@@ -412,7 +357,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: mockChanges,
             nColors: 4,
             onUpdateChange
@@ -461,9 +405,7 @@ describe('RasterPanelView', () => {
 
     it('should display current line value', async () => {
       render(
-        <RasterPanelView
-          {...createDefaultProps({ enabled: true, changes: mockChanges })}
-        />
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
       )
       await expandSection()
 
@@ -472,9 +414,7 @@ describe('RasterPanelView', () => {
 
     it('should render slider for line', async () => {
       const { container } = render(
-        <RasterPanelView
-          {...createDefaultProps({ enabled: true, changes: mockChanges })}
-        />
+        <RasterPanelView {...createDefaultProps({ changes: mockChanges })} />
       )
       await expandSection()
 
@@ -504,7 +444,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: mockChanges,
             isClassicMode: true
           })}
@@ -521,7 +460,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: mockChanges,
             isClassicMode: true
           })}
@@ -549,7 +487,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: changeWithInk2,
             isClassicMode: true
           })}
@@ -577,7 +514,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: changeWithInk0,
             nColors: 4,
             onUpdateChange
@@ -624,7 +560,6 @@ describe('RasterPanelView', () => {
       const { container } = render(
         <RasterPanelView
           {...createDefaultProps({
-            enabled: true,
             changes: changeWithInk0,
             nColors: 4,
             onUpdateChange

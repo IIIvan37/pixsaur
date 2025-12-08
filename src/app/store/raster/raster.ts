@@ -58,7 +58,7 @@ export const clearRasterChangesAtom = atom(null, (_get, set) => {
 })
 
 /**
- * Atom that tracks the "signature" of inputs that should trigger raster clear.
+ * Signature of all inputs that affect raster generation.
  * When any of these change, rasters should be cleared.
  */
 export const rasterInputSignatureAtom = atom((get) => {
@@ -66,6 +66,8 @@ export const rasterInputSignatureAtom = atom((get) => {
   const adjustments = get(configAtom)
   const strategy = get(paletteStrategyAtom)
   const dithering = get(ditheringAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
+  const hardware = get(cpcHardwareAtom)
 
   // Create a signature from all relevant inputs
   return {
@@ -73,8 +75,25 @@ export const rasterInputSignatureAtom = atom((get) => {
     adjustments: JSON.stringify(adjustments),
     strategy,
     ditheringMode: dithering.mode,
-    ditheringIntensity: dithering.intensity
+    ditheringIntensity: dithering.intensity,
+    modeConfig: JSON.stringify(modeConfig),
+    hardware
   }
+})
+
+/**
+ * Derived atom: returns true if rasters have been auto-generated
+ * and the buffer dimensions match current mode config
+ */
+export const hasGeneratedRastersAtom = atom((get) => {
+  const buffer = get(rasterIndexBufferAtom)
+  if (!buffer) return false
+
+  // Validate that buffer dimensions match current mode config
+  const modeConfig = get(effectiveModeConfigAtom)
+  return (
+    buffer.width === modeConfig.width && buffer.height === modeConfig.height
+  )
 })
 
 /**
@@ -225,10 +244,22 @@ export const rasterPreviewImageAtom = atom(async (get) => {
     return null
   }
 
+  // Get current mode config to validate dimensions
+  const modeConfig = get(effectiveModeConfigAtom)
+
   // Check if we have an optimized raster index buffer
   const rasterIndexBuffer = get(rasterIndexBufferAtom)
 
   if (rasterIndexBuffer) {
+    // Validate that buffer dimensions match current mode config
+    if (
+      rasterIndexBuffer.width !== modeConfig.width ||
+      rasterIndexBuffer.height !== modeConfig.height
+    ) {
+      // Dimensions changed, buffer is stale - return null
+      return null
+    }
+
     // Use the optimized index buffer from auto-optimization
     // This ensures pixel-to-ink mapping is consistent with raster changes
     const { buffer, width, height, palette } = rasterIndexBuffer
@@ -238,6 +269,15 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   // Fallback to standard preview index buffer for manual raster changes
   const indexBufferData = await get(previewIndexBufferAtom)
   if (!indexBufferData) {
+    return null
+  }
+
+  // Validate that buffer dimensions match current mode config
+  if (
+    indexBufferData.width !== modeConfig.width ||
+    indexBufferData.height !== modeConfig.height
+  ) {
+    // Dimensions changed, buffer is stale - return null
     return null
   }
 
