@@ -19,6 +19,7 @@ import Flex from '@/components/ui/flex'
 import Icon from '@/components/ui/icon'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import styles from './dithering-selector.module.css'
 
@@ -65,9 +66,17 @@ export function getDefaultIntensity(mode: DitheringMode): number {
   }
 }
 
-export function DitheringSelector() {
+export function DitheringSelector({
+  rasterEnabled: rasterEnabledProp,
+  onRasterEnabledChange
+}: {
+  rasterEnabled?: boolean
+  onRasterEnabledChange?: (enabled: boolean) => void
+} = {}) {
   const [cfg, setCfg] = useAtom(ditheringAtom)
-  const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const [rasterEnabledAtomValue, setRasterEnabledAtom] =
+    useAtom(rasterEnabledAtom)
+  const rasterEnabled = rasterEnabledProp ?? rasterEnabledAtomValue
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const image = useAtomValue(imageAtom)
@@ -98,109 +107,136 @@ export function DitheringSelector() {
     }
   }
 
-  // Show raster dithering slider when raster mode is enabled
-  if (rasterEnabled) {
-    return (
-      <div className={styles.slidersRow}>
-        <div className={styles.slidersGroup}>
-          <div className={styles.ditheringSlider}>
-            <PixsaurSlider
-              label={<Trans>Changements par ligne</Trans>}
-              description={
-                <Trans>
-                  Nombre maximum de changements d'encre par ligne (1 = raster
-                  classique)
-                </Trans>
-              }
-              min={1}
-              max={maxAllowedChanges}
-              value={Math.min(maxChangesPerLine, maxAllowedChanges)}
-              onChange={setMaxChangesPerLine}
-              step={1}
-            />
-          </div>
-          <div className={styles.ditheringSlider}>
-            <PixsaurSlider
-              label={<Trans>Dithering raster</Trans>}
-              description={
-                <Trans>
-                  Dithering horizontal 1D appliqué lors du prétraitement raster
-                </Trans>
-              }
-              min={0}
-              max={100}
-              value={Math.round(rasterDitheringIntensity * 100)}
-              onChange={(val) => setRasterDitheringIntensity(val / 100)}
-              step={5}
-            />
-          </div>
-        </div>
-        {hasImage && (
-          <Button
-            variant='secondary'
-            onClick={handleAutoOptimize}
-            disabled={isOptimizing || hasGeneratedRasters}
-          >
-            <Icon name='GearIcon' />
-            {isOptimizing ? (
-              <Trans>Optimisation...</Trans>
-            ) : hasGeneratedRasters ? (
-              <Trans>Rasters générés</Trans>
-            ) : (
-              <Trans>Générer les rasters</Trans>
-            )}
-          </Button>
-        )}
-      </div>
-    )
-  }
+  const handleRasterEnabledChange =
+    onRasterEnabledChange ?? setRasterEnabledAtom
+  const rasterEnabledId = 'raster-enabled-switch'
 
   return (
-    <Flex
-      gap='var(--spacing-md)'
-      wrap='wrap'
-      justify='flex-start'
-      align='flex-start'
-    >
-      <Flex direction='column' gap='var(--spacing-xs)' align='flex-start'>
+    <>
+      {/* Switch Mode Raster - toujours visible */}
+      <Flex align='center' justify='space-between' style={{ width: '100%' }}>
         <div
           style={{
             fontFamily: 'var(--font-family)',
             fontSize: 'var(--font-size-sm)',
+            fontWeight: 500,
             color: 'var(--color-foreground)'
           }}
         >
-          <Trans>Mode de dithering</Trans>
+          <Trans>Mode Raster</Trans>
         </div>
-        <Select
-          value={cfg.mode}
-          onValueChange={(value) => {
-            const newMode = value as DitheringMode
-            setCfg({
-              mode: newMode,
-              intensity: getDefaultIntensity(newMode)
-            })
-          }}
-        >
-          {MODES.map((mode) => (
-            <SelectItem key={mode.value} value={mode.value}>
-              {mode.label}
-            </SelectItem>
-          ))}
-        </Select>
+        <Switch
+          checked={rasterEnabled}
+          onCheckedChange={handleRasterEnabledChange}
+          id={rasterEnabledId}
+        />
       </Flex>
 
-      <div className={styles.ditheringSlider}>
-        <PixsaurSlider
-          label={<Trans>Intensité</Trans>}
-          min={0}
-          max={100}
-          value={Math.round(cfg.intensity * 100)}
-          onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
-          step={1}
-          disabled={cfg.mode === 'ylioluma2'}
-        />
-      </div>
-    </Flex>
+      {/* Sliders et bouton - visible seulement si raster activé */}
+      {rasterEnabled && (
+        <div className={styles.slidersRow}>
+          <div className={styles.slidersGroup}>
+            <div className={styles.ditheringSlider}>
+              <PixsaurSlider
+                label={<Trans>Changements par ligne</Trans>}
+                description={
+                  <Trans>
+                    Nombre maximum de changements d'encre par ligne (1 = raster
+                    classique)
+                  </Trans>
+                }
+                min={1}
+                max={maxAllowedChanges}
+                value={Math.min(maxChangesPerLine, maxAllowedChanges)}
+                onChange={setMaxChangesPerLine}
+                step={1}
+              />
+            </div>
+            <div className={styles.ditheringSlider}>
+              <PixsaurSlider
+                label={<Trans>Dithering raster</Trans>}
+                description={
+                  <Trans>
+                    Dithering horizontal 1D appliqué lors du prétraitement
+                    raster
+                  </Trans>
+                }
+                min={0}
+                max={100}
+                value={Math.round(rasterDitheringIntensity * 100)}
+                onChange={(val) => setRasterDitheringIntensity(val / 100)}
+                step={5}
+              />
+            </div>
+          </div>
+          {hasImage && (
+            <Button
+              variant='secondary'
+              onClick={handleAutoOptimize}
+              disabled={isOptimizing || hasGeneratedRasters}
+            >
+              <Icon name='GearIcon' />
+              {isOptimizing ? (
+                <Trans>Optimisation...</Trans>
+              ) : hasGeneratedRasters ? (
+                <Trans>Rasters générés</Trans>
+              ) : (
+                <Trans>Générer les rasters</Trans>
+              )}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Mode dithering normal - visible seulement si raster désactivé */}
+      {!rasterEnabled && (
+        <Flex
+          gap='var(--spacing-md)'
+          wrap='wrap'
+          justify='flex-start'
+          align='flex-start'
+        >
+          <Flex direction='column' gap='var(--spacing-xs)' align='flex-start'>
+            <div
+              style={{
+                fontFamily: 'var(--font-family)',
+                fontSize: 'var(--font-size-sm)',
+                color: 'var(--color-foreground)'
+              }}
+            >
+              <Trans>Mode de dithering</Trans>
+            </div>
+            <Select
+              value={cfg.mode}
+              onValueChange={(value) => {
+                const newMode = value as DitheringMode
+                setCfg({
+                  mode: newMode,
+                  intensity: getDefaultIntensity(newMode)
+                })
+              }}
+            >
+              {MODES.map((mode) => (
+                <SelectItem key={mode.value} value={mode.value}>
+                  {mode.label}
+                </SelectItem>
+              ))}
+            </Select>
+          </Flex>
+
+          <div className={styles.ditheringSlider}>
+            <PixsaurSlider
+              label={<Trans>Intensité</Trans>}
+              min={0}
+              max={100}
+              value={Math.round(cfg.intensity * 100)}
+              onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
+              step={1}
+              disabled={cfg.mode === 'ylioluma2'}
+            />
+          </div>
+        </Flex>
+      )}
+    </>
   )
 }

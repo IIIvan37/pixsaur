@@ -1,7 +1,7 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useId, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import Icon from '@/components/ui/icon'
 import PixsaurPopover from '@/components/ui/popover'
@@ -10,7 +10,6 @@ import {
   SimpleRgbPicker
 } from '@/components/ui/simple-color-picker'
 import PixsaurSlider from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch/switch'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCColor } from '@/libs/types'
@@ -18,9 +17,6 @@ import { vectorToHex } from '@/palettes/cpc-palette'
 import styles from './raster-panel.module.css'
 
 export interface RasterPanelViewProps {
-  readonly disabled?: boolean
-  readonly enabled: boolean
-  readonly onEnabledChange: (enabled: boolean) => void
   readonly changes: RasterChange[]
   readonly conflicts: string[]
   readonly maxLine: number
@@ -277,9 +273,6 @@ function LineRow({
 }
 
 export function RasterPanelView({
-  disabled = false,
-  enabled,
-  onEnabledChange,
   changes,
   conflicts,
   maxLine,
@@ -293,7 +286,6 @@ export function RasterPanelView({
   onRemoveChange,
   onClearAll
 }: RasterPanelViewProps) {
-  const switchId = useId()
   const lineGroups = useMemo(() => groupChangesByLine(changes), [changes])
 
   // Count unique colors: palette colors + raster colors
@@ -314,80 +306,65 @@ export function RasterPanelView({
 
   return (
     <div className={styles.section}>
-      <div className={styles.titleRow}>
-        <span className={styles.sectionTitle}>{title}</span>
-        <Switch
-          id={switchId}
-          checked={enabled}
-          onCheckedChange={onEnabledChange}
-          disabled={disabled}
-        />
-      </div>
       <CollapsibleSection title={title} defaultOpen={false}>
         <div className={styles.container}>
-          {enabled && (
-            <div className={styles.modeInfo}>
-              <span className={styles.modeBadge}>
-                {isPlusMode ? 'CPC Plus' : 'CPC Classic'}
+          <div className={styles.modeInfo}>
+            <span className={styles.modeBadge}>
+              {isPlusMode ? 'CPC Plus' : 'CPC Classic'}
+            </span>
+            <span className={styles.modeHint}>
+              <Trans>Raster: changements d'encre par ligne</Trans>
+            </span>
+            {changes.length > 0 && (
+              <span className={styles.uniqueColorsCount}>
+                <Trans>{uniqueColorsCount} couleur(s) unique(s)</Trans>
               </span>
-              <span className={styles.modeHint}>
-                <Trans>Raster: changements d'encre par ligne</Trans>
-              </span>
-              {changes.length > 0 && (
-                <span className={styles.uniqueColorsCount}>
-                  <Trans>{uniqueColorsCount} couleur(s) unique(s)</Trans>
-                </span>
-              )}
+            )}
+          </div>
+
+          {lineGroups.length === 0 ? (
+            <div className={styles.emptyState}>
+              <Trans>Aucun changement raster défini.</Trans>
+            </div>
+          ) : (
+            <div className={styles.linesList}>
+              {lineGroups.map((group) => (
+                <LineRow
+                  key={group.line}
+                  group={group}
+                  conflicts={conflicts}
+                  nColors={nColors}
+                  maxLine={maxLine}
+                  cpcPalette={cpcPalette}
+                  isClassicMode={isClassicMode}
+                  onUpdateChange={onUpdateChange}
+                  onRemoveChange={onRemoveChange}
+                />
+              ))}
             </div>
           )}
 
-          {enabled && (
-            <>
-              {lineGroups.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <Trans>Aucun changement raster défini.</Trans>
-                </div>
-              ) : (
-                <div className={styles.linesList}>
-                  {lineGroups.map((group) => (
-                    <LineRow
-                      key={group.line}
-                      group={group}
-                      conflicts={conflicts}
-                      nColors={nColors}
-                      maxLine={maxLine}
-                      cpcPalette={cpcPalette}
-                      isClassicMode={isClassicMode}
-                      onUpdateChange={onUpdateChange}
-                      onRemoveChange={onRemoveChange}
-                    />
-                  ))}
-                </div>
-              )}
+          <div className={styles.actionButtons}>
+            <button
+              type='button'
+              className={styles.addButton}
+              onClick={onAddChange}
+            >
+              <Icon name='PlusIcon' />
+              <Trans>Ajouter un changement</Trans>
+            </button>
 
-              <div className={styles.actionButtons}>
-                <button
-                  type='button'
-                  className={styles.addButton}
-                  onClick={onAddChange}
-                >
-                  <Icon name='PlusIcon' />
-                  <Trans>Ajouter un changement</Trans>
-                </button>
-
-                {changes.length > 0 && onClearAll && (
-                  <button
-                    type='button'
-                    className={styles.clearButton}
-                    onClick={onClearAll}
-                  >
-                    <Icon name='TrashIcon' />
-                    <Trans>Tout supprimer</Trans>
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+            {changes.length > 0 && onClearAll && (
+              <button
+                type='button'
+                className={styles.clearButton}
+                onClick={onClearAll}
+              >
+                <Icon name='TrashIcon' />
+                <Trans>Tout supprimer</Trans>
+              </button>
+            )}
+          </div>
         </div>
       </CollapsibleSection>
     </div>

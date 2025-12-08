@@ -1,8 +1,6 @@
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue } from 'jotai'
 import { useId } from 'react'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
-import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import type { CPCHardware } from '@/libs/types'
 import Flex from '../ui/flex'
 import { SectionTitle } from '../ui/section-title'
@@ -23,6 +21,8 @@ export type ImageControlsViewProps = {
   onCpcHardwareChange: (hardware: CPCHardware) => void
   horizontalSmoothing: boolean
   onHorizontalSmoothingChange: (enabled: boolean) => void
+  rasterEnabled: boolean
+  onRasterEnabledChange: (enabled: boolean) => void
 }
 
 /**
@@ -47,10 +47,11 @@ export function ImageControlsView({
   cpcHardware,
   onCpcHardwareChange,
   horizontalSmoothing,
-  onHorizontalSmoothingChange
+  onHorizontalSmoothingChange,
+  rasterEnabled,
+  onRasterEnabledChange
 }: Readonly<ImageControlsViewProps>) {
   const horizontalSmoothingId = useId()
-  const rasterEnabled = useAtomValue(rasterEnabledAtom)
   // Pixel mode options (0, 1, 2)
   const pixelModeOptions: Array<{ value: PixelMode; label: string }> = [
     { value: 0, label: 'Mode 0' },
@@ -122,7 +123,10 @@ export function ImageControlsView({
 
       {/* Traitement d'image */}
       <div className={styles.section}>
-        <DitheringSelector />
+        <DitheringSelector
+          rasterEnabled={rasterEnabled}
+          onRasterEnabledChange={onRasterEnabledChange}
+        />
 
         {!rasterEnabled && (
           <Flex

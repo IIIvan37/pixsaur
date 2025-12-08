@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   cpcHardwareAtom,
@@ -30,7 +30,7 @@ import { RasterPanelView } from './raster-panel-view'
  * Manages raster change state and provides handlers for UI interactions.
  */
 export function RasterPanel() {
-  const [enabled, setEnabled] = useAtom(rasterEnabledAtom)
+  const enabled = useAtomValue(rasterEnabledAtom)
   const ditheringIntensity = useAtomValue(rasterDitheringIntensityAtom)
   const maxChangesPerLine = useAtomValue(rasterMaxChangesPerLineAtom)
   const changes = useAtomValue(rasterChangesAtom)
@@ -207,9 +207,6 @@ export function RasterPanel() {
 
   return (
     <RasterPanelView
-      disabled={!hasImage}
-      enabled={enabled}
-      onEnabledChange={setEnabled}
       changes={changes}
       conflicts={conflicts}
       maxLine={maxLine}

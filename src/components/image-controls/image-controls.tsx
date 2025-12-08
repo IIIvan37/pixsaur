@@ -8,6 +8,7 @@ import {
   setDimensionPresetAtom,
   setPixelModeAtom
 } from '@/app/store/config/config'
+import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import { ImageControlsView } from './image-controls-view'
 
 /**
@@ -31,6 +32,7 @@ export default function ImageControls() {
   const [horizontalSmoothing, setHorizontalSmoothing] = useAtom(
     horizontalSmoothingAtom
   )
+  const [rasterEnabled, setRasterEnabled] = useAtom(rasterEnabledAtom)
 
   return (
     <ImageControlsView
@@ -42,6 +44,8 @@ export default function ImageControls() {
       onCpcHardwareChange={onCpcHardwareChange}
       horizontalSmoothing={horizontalSmoothing}
       onHorizontalSmoothingChange={setHorizontalSmoothing}
+      rasterEnabled={rasterEnabled}
+      onRasterEnabledChange={setRasterEnabled}
     />
   )
 }
