@@ -154,52 +154,6 @@ export function DitheringSelector({
     : MODES
 
   return (
-              }
-              min={1}
-              max={maxAllowedChanges}
-              value={Math.min(maxChangesPerLine, maxAllowedChanges)}
-              onChange={setMaxChangesPerLine}
-              step={1}
-            />
-          </div>
-          <div className={styles.ditheringSlider}>
-            <PixsaurSlider
-              label={<Trans>Dithering raster</Trans>}
-              description={
-                <Trans>
-                  Dithering horizontal 1D appliqué lors du prétraitement raster
-                </Trans>
-              }
-              min={0}
-              max={100}
-              value={Math.round(rasterDitheringIntensity * 100)}
-              onChange={(val) => setRasterDitheringIntensity(val / 100)}
-              step={5}
-            />
-          </div>
-        </div>
-        {hasImage && (
-          <Button
-            variant='secondary'
-            onClick={handleAutoOptimize}
-            disabled={isOptimizing || hasGeneratedRasters}
-          >
-            <Icon name='GearIcon' />
-            {isOptimizing ? (
-              <Trans>Optimisation...</Trans>
-            ) : hasGeneratedRasters ? (
-              <Trans>Rasters générés</Trans>
-            ) : (
-              <Trans>Générer les rasters</Trans>
-            )}
-          </Button>
-        )}
-      </div>
-    )
-  }
->>>>>>> c96b8fc (fix(raster): amélioration de la gestion du cache et du feedback utilisateur)
-
-  return (
     <>
       {/* Switch Mode Raster - toujours visible */}
       <Flex align='center' justify='space-between' style={{ width: '100%' }}>
