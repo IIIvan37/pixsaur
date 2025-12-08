@@ -14,6 +14,7 @@ import {
   rasterEnabledAtom,
   rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster'
+import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
 import Button from '@/components/ui/button'
 import Flex from '@/components/ui/flex'
 import Icon from '@/components/ui/icon'
@@ -89,6 +90,9 @@ export function DitheringSelector({
   )
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
   const [isOptimizing, setIsOptimizing] = useState(false)
+
+  // Auto-regenerate rasters when parameters change (if already generated)
+  useAutoRegenerateRasters()
 
   // Maximum changes per line depends on:
   // - Hardware: CPC Plus can do 4 changes/line, Classic can do 2

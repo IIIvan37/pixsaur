@@ -136,7 +136,11 @@ export function applyDitheringWithRaster(
   }
 
   // Current palette state - starts as a copy of global palette
+  // Fill with black if palette has fewer colors than nColors
   const currentPalette: Vector[] = globalPalette.map((c) => [...c] as Vector)
+  while (currentPalette.length < nColors) {
+    currentPalette.push([0, 0, 0])
+  }
 
   // Process each line independently with its effective palette
   for (let y = 0; y < height; y++) {

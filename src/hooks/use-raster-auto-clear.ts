@@ -7,11 +7,13 @@ import {
 
 /**
  * Hook that automatically clears raster changes when the image,
- * adjustments, palette strategy, dithering settings, mode config,
- * or hardware settings change.
+ * adjustments, palette strategy, mode config, or hardware settings change.
  *
  * This ensures raster optimizations are always recalculated when
  * the underlying image processing changes.
+ *
+ * Note: Does NOT clear on dithering changes since final dithering is applied
+ * AFTER raster optimization and doesn't invalidate existing rasters.
  */
 export function useRasterAutoClear() {
   const signature = useAtomValue(rasterInputSignatureAtom)
@@ -36,8 +38,6 @@ export function useRasterAutoClear() {
         prevSignature.imageId !== signature.imageId ||
         prevSignature.adjustments !== signature.adjustments ||
         prevSignature.strategy !== signature.strategy ||
-        prevSignature.ditheringMode !== signature.ditheringMode ||
-        prevSignature.ditheringIntensity !== signature.ditheringIntensity ||
         prevSignature.modeConfig !== signature.modeConfig ||
         prevSignature.hardware !== signature.hardware
 

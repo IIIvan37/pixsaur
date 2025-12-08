@@ -5,10 +5,13 @@ import {
   addRasterChangeAtom,
   clearRasterChangesAtom,
   generateChangeId,
+  hasGeneratedRastersAtom,
   rasterChangesAtom,
   rasterConflictsAtom,
   rasterEnabledAtom,
+  rasterIndexBufferAtom,
   rasterMaxChangesPerLineAtom,
+  rasterOptimizationResultAtom,
   removeRasterChangeAtom,
   updateRasterChangeAtom
 } from './raster'
@@ -349,6 +352,77 @@ describe('Raster Store', () => {
       expect(conflicts).toContain(id2)
       expect(conflicts).toContain(id3)
       expect(conflicts).toHaveLength(2)
+    })
+  })
+
+  describe('rasterOptimizationResultAtom', () => {
+    it('should have null as default value', () => {
+      const value = store.get(rasterOptimizationResultAtom)
+      expect(value).toBe(null)
+    })
+
+    it('should store optimization result', () => {
+      const result = {
+        optimizedIndexBuffer: new Uint8Array([0, 1, 2, 3]),
+        quantizedGlobalPalette: [
+          [0, 0, 0],
+          [255, 255, 255]
+        ] as Array<[number, number, number]>,
+        rasterChanges: [
+          {
+            line: 0,
+            inkIndex: 0,
+            color: [255, 0, 0] as [number, number, number]
+          }
+        ],
+        preprocessedImage: new ImageData(2, 2),
+        width: 2,
+        height: 2
+      }
+
+      store.set(rasterOptimizationResultAtom, result)
+      expect(store.get(rasterOptimizationResultAtom)).toEqual(result)
+    })
+
+    it('should be cleared by clearRasterChangesAtom', () => {
+      const result = {
+        optimizedIndexBuffer: new Uint8Array([0, 1]),
+        quantizedGlobalPalette: [[0, 0, 0]] as Array<[number, number, number]>,
+        rasterChanges: [],
+        preprocessedImage: new ImageData(1, 2),
+        width: 1,
+        height: 2
+      }
+
+      store.set(rasterOptimizationResultAtom, result)
+      expect(store.get(rasterOptimizationResultAtom)).not.toBe(null)
+
+      store.set(clearRasterChangesAtom)
+      expect(store.get(rasterOptimizationResultAtom)).toBe(null)
+    })
+  })
+
+  describe('rasterIndexBufferAtom', () => {
+    it('should return null when no optimization result exists', () => {
+      const value = store.get(rasterIndexBufferAtom)
+      expect(value).toBe(null)
+    })
+
+    // Note: Testing rasterIndexBufferAtom with dithering requires mocking complex dependencies
+    // (ditheringAtom, effectiveModeConfigAtom, positionedNormalizedImageAtom)
+    // Integration tests cover the full dithering behavior
+  })
+
+  describe('hasGeneratedRastersAtom', () => {
+    it('should return false when no optimization result exists', () => {
+      const value = store.get(hasGeneratedRastersAtom)
+      expect(value).toBe(false)
+    })
+
+    it('should return false when rasterIndexBufferAtom is null', () => {
+      store.set(rasterOptimizationResultAtom, null)
+      const value = store.get(hasGeneratedRastersAtom)
+      expect(value).toBe(false)
     })
   })
 })
