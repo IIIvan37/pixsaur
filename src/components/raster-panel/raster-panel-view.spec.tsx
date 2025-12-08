@@ -43,6 +43,7 @@ function createDefaultProps(
     maxLine: 199,
     palette: mockPalette,
     nColors: 4,
+    maxChangesPerLine: 2,
     cpcPalette: mockCpcPalette,
     isClassicMode: true,
     isPlusMode: false,

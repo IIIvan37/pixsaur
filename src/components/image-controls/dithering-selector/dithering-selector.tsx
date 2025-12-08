@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   cpcHardwareAtom,
   ditheringAtom,
@@ -96,6 +96,14 @@ export function DitheringSelector({
   const hardwareMax = cpcHardware === 'plus' ? 4 : 2
   const maxAllowedChanges = Math.min(modeConfig.nColors, hardwareMax)
   const hasImage = image !== null
+
+  // Automatically clamp maxChangesPerLine if it exceeds hardware limits
+  // This handles localStorage values from previous sessions with different hardware
+  useEffect(() => {
+    if (maxChangesPerLine > maxAllowedChanges) {
+      setMaxChangesPerLine(maxAllowedChanges)
+    }
+  }, [maxChangesPerLine, maxAllowedChanges, setMaxChangesPerLine])
 
   const handleAutoOptimize = async () => {
     if (isOptimizing) return // Prevent multiple clicks
