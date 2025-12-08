@@ -15,7 +15,7 @@ import {
   effectiveModeConfigAtom,
   paletteStrategyAtom
 } from '../config/config'
-import { imageAtom } from '../image/image'
+import { imageAtom, selectionAtom } from '../image/image'
 import {
   exportPaletteWithSlotsAtom,
   positionedNormalizedImageAtom,
@@ -128,6 +128,7 @@ export const rasterInputSignatureAtom = atom((get) => {
   const strategy = get(paletteStrategyAtom)
   const modeConfig = get(effectiveModeConfigAtom)
   const hardware = get(cpcHardwareAtom)
+  const selection = get(selectionAtom)
 
   // Create a signature from all relevant inputs
   return {
@@ -135,7 +136,8 @@ export const rasterInputSignatureAtom = atom((get) => {
     adjustments: JSON.stringify(adjustments),
     strategy,
     modeConfig: JSON.stringify(modeConfig),
-    hardware
+    hardware,
+    selection: JSON.stringify(selection)
   }
 })
 

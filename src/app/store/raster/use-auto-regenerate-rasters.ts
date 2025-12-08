@@ -1,5 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useRef } from 'react'
+import { selectionAtom } from '../image/image'
 import {
   autoOptimizeRasterAtom,
   hasGeneratedRastersAtom,
@@ -13,6 +14,7 @@ import {
  * Only triggers if rasters have been auto-generated (preserves manual rasters).
  *
  * Watches:
+ * - selection (user's selection rectangle)
  * - rasterDitheringIntensity (internal 1D dithering)
  * - maxChangesPerLine (raster changes limit)
  *
@@ -22,11 +24,13 @@ import {
 export function useAutoRegenerateRasters() {
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
+  const selection = useAtomValue(selectionAtom)
   const rasterDitheringIntensity = useAtomValue(rasterDitheringIntensityAtom)
   const maxChangesPerLine = useAtomValue(rasterMaxChangesPerLineAtom)
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
 
   // Refs to track previous values
+  const previousSelectionRef = useRef(selection)
   const previousRasterDitheringRef = useRef(rasterDitheringIntensity)
   const previousMaxChangesRef = useRef(maxChangesPerLine)
   const isRegeneratingRef = useRef(false)
@@ -38,12 +42,15 @@ export function useAutoRegenerateRasters() {
     }
 
     // Check what changed
+    const selectionChanged =
+      JSON.stringify(previousSelectionRef.current) !== JSON.stringify(selection)
     const rasterDitheringChanged =
       previousRasterDitheringRef.current !== rasterDitheringIntensity
     const maxChangesChanged =
       previousMaxChangesRef.current !== maxChangesPerLine
 
     // Update refs
+    previousSelectionRef.current = selection
     previousRasterDitheringRef.current = rasterDitheringIntensity
     previousMaxChangesRef.current = maxChangesPerLine
 
@@ -51,7 +58,7 @@ export function useAutoRegenerateRasters() {
     if (
       !rasterEnabled ||
       !hasGeneratedRasters ||
-      (!rasterDitheringChanged && !maxChangesChanged)
+      (!selectionChanged && !rasterDitheringChanged && !maxChangesChanged)
     ) {
       return
     }
@@ -75,6 +82,7 @@ export function useAutoRegenerateRasters() {
       isRegeneratingRef.current = false
     }
   }, [
+    selection,
     rasterDitheringIntensity,
     maxChangesPerLine,
     rasterEnabled,
