@@ -481,9 +481,9 @@ export class ReGLQuantizer {
     config: ReGLQuantizeConfig
   ): number[] {
     // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
-    // Mode 0 (16 couleurs): 128 échantillons suffisent
+    // Mode 0 (16 couleurs): AUGMENTÉ à 2048 pour capturer les teintes rares
     // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
-    const sampleCount = config.targetColors <= 4 ? 1024 : 128
+    const sampleCount = config.targetColors <= 4 ? 1024 : 2048
     const sampledColors = this.sampleImageColors(imageData, sampleCount)
 
     // Récupérer les indices présélectionnés (couleurs lockées)
@@ -565,7 +565,63 @@ export class ReGLQuantizer {
   }
 
   /**
-   * Helper: Sélection par fréquence avec diversité minimale
+   * Calcule la teinte (hue) d'une couleur (0-360)
+   * Retourne -1 pour les couleurs achromatiques (gris)
+   */
+  private calculateHue(color: Vector): number {
+    const r = color[0] / 255
+    const g = color[1] / 255
+    const b = color[2] / 255
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const delta = max - min
+
+    // Couleur achromatique (gris)
+    if (delta < 0.01) return -1
+
+    let hue = 0
+    if (max === r) {
+      hue = ((g - b) / delta) % 6
+    } else if (max === g) {
+      hue = (b - r) / delta + 2
+    } else {
+      hue = (r - g) / delta + 4
+    }
+
+    hue *= 60
+    if (hue < 0) hue += 360
+
+    return hue
+  }
+
+  /**
+   * Calcule la distance circulaire entre deux teintes (0-180)
+   */
+  private calculateHueDistance(hue1: number, hue2: number): number {
+    // Si l'une des couleurs est achromatique, considérer comme différente
+    if (hue1 < 0 || hue2 < 0) return 180
+
+    let diff = Math.abs(hue1 - hue2)
+    if (diff > 180) diff = 360 - diff
+    return diff
+  }
+
+  /**
+   * Calcule la saturation d'une couleur (0-1)
+   */
+  private calculateSaturation(color: Vector): number {
+    const r = color[0] / 255
+    const g = color[1] / 255
+    const b = color[2] / 255
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    return max > 0 ? (max - min) / max : 0
+  }
+
+  /**
+   * Helper: Sélection par fréquence avec diversité de teinte
+   * En mode 0 (16 couleurs), privilégie la diversité des teintes pour éviter
+   * d'avoir trop de nuances d'une même couleur
    */
   private selectFrequentColorsWithDiversity(
     colorFrequency: Array<{
@@ -584,6 +640,10 @@ export class ReGLQuantizer {
     // Mode 0 (16 couleurs): distance plus faible acceptable
     const minDistance = targetColors && targetColors <= 4 ? 80 : 20
 
+    // Pour le mode 0, également exiger une diversité de teinte
+    const isMode0 = targetColors && targetColors > 4
+    const minHueDistance = 30 // 30 degrés minimum entre les teintes
+
     for (
       let i = 1;
       i < colorFrequency.length && result.length < frequencyBudget;
@@ -593,13 +653,51 @@ export class ReGLQuantizer {
 
       // Vérifier diversité minimale avec distance adaptative
       let isDiverse = true
-      for (const selectedColor of selectedConverted) {
-        if (
-          this.calculateDistance(candidateConverted, selectedColor) <
-          minDistance
-        ) {
-          isDiverse = false
-          break
+
+      if (isMode0) {
+        // Mode 0: vérifier aussi la diversité de teinte pour couleurs saturées
+        const candidateHue = this.calculateHue(candidateConverted)
+        const candidateSat = this.calculateSaturation(candidateConverted)
+
+        // Pour les couleurs saturées (pas les gris), vérifier la diversité de teinte
+        if (candidateSat > 0.3 && candidateHue >= 0) {
+          for (const selectedColor of selectedConverted) {
+            const selectedSat = this.calculateSaturation(selectedColor)
+
+            // Si la couleur sélectionnée est aussi saturée, vérifier la teinte
+            if (selectedSat > 0.3) {
+              const selectedHue = this.calculateHue(selectedColor)
+              const hueDistance = this.calculateHueDistance(
+                candidateHue,
+                selectedHue
+              )
+
+              // Si teintes trop proches ET distance RGB aussi proche, rejeter
+              if (hueDistance < minHueDistance) {
+                const rgbDistance = this.calculateDistance(
+                  candidateConverted,
+                  selectedColor
+                )
+                if (rgbDistance < minDistance * 2) {
+                  isDiverse = false
+                  break
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Vérifier aussi la distance RGB classique
+      if (isDiverse) {
+        for (const selectedColor of selectedConverted) {
+          if (
+            this.calculateDistance(candidateConverted, selectedColor) <
+            minDistance
+          ) {
+            isDiverse = false
+            break
+          }
         }
       }
 
@@ -612,6 +710,7 @@ export class ReGLQuantizer {
 
   /**
    * Helper: Sélection MaxMin Distance pour compléter la palette
+   * En mode 0, privilégie la diversité de teinte pour maximiser la couverture des couleurs
    */
   private selectMaxMinDistanceColors(
     colorFrequency: Array<{
@@ -626,25 +725,58 @@ export class ReGLQuantizer {
   ): void {
     const remaining = colorFrequency.filter((c) => !result.includes(c.index))
     const additionalColors = targetColors - result.length
+    const isMode0 = targetColors > 4
 
     for (let i = 0; i < additionalColors && remaining.length > 0; i++) {
-      let maxMinDistance = 0
+      let maxScore = -1
       let bestIndex = -1
 
       for (let j = 0; j < remaining.length; j++) {
         const candidateConverted = remaining[j].converted
 
-        let minDistance = Infinity
+        // Distance RGB minimale
+        let minRGBDistance = Infinity
         for (const selectedColor of selectedConverted) {
           const distance = this.calculateDistance(
             candidateConverted,
             selectedColor
           )
-          minDistance = Math.min(minDistance, distance)
+          minRGBDistance = Math.min(minRGBDistance, distance)
         }
 
-        if (minDistance > maxMinDistance) {
-          maxMinDistance = minDistance
+        let score = minRGBDistance
+
+        // En mode 0, ajouter un bonus pour la diversité de teinte
+        if (isMode0) {
+          const candidateHue = this.calculateHue(candidateConverted)
+          const candidateSat = this.calculateSaturation(candidateConverted)
+
+          // Pour les couleurs saturées, calculer la distance de teinte minimale
+          if (candidateSat > 0.2 && candidateHue >= 0) {
+            let minHueDistance = 360
+
+            for (const selectedColor of selectedConverted) {
+              const selectedSat = this.calculateSaturation(selectedColor)
+
+              if (selectedSat > 0.2) {
+                const selectedHue = this.calculateHue(selectedColor)
+                const hueDistance = this.calculateHueDistance(
+                  candidateHue,
+                  selectedHue
+                )
+                minHueDistance = Math.min(minHueDistance, hueDistance)
+              }
+            }
+
+            // Bonus pour les teintes très différentes (pondération 2x pour favoriser la diversité)
+            // Normaliser minHueDistance (0-180) pour être comparable à minRGBDistance
+            const hueBonus = (minHueDistance / 180) * 200 * 2
+            score = minRGBDistance + hueBonus
+          }
+        }
+
+        if (score > maxScore) {
+          maxScore = score
           bestIndex = j
         }
       }
@@ -726,7 +858,7 @@ export class ReGLQuantizer {
       return strategyResult.selectedIndices
     }
 
-    // Pour les palettes plus grandes (mode 0: 16 couleurs), utiliser l'ancien algorithme
+    // Pour les palettes plus grandes (mode 0: 16 couleurs), utiliser un algorithme avec diversité de teinte
     const remainingSlots = targetColors - result.length
 
     // Check si on a assez de candidats (seulement pour mode 0)
@@ -745,31 +877,115 @@ export class ReGLQuantizer {
       (idx) => [...basePalette[idx]] as Vector
     )
 
-    // Première couleur: la plus fréquente
-    result.push(colorFrequency[0].index)
-    selectedConverted.push(colorFrequency[0].converted)
+    // En mode 0, garantir la diversité de teinte en sélectionnant d'abord
+    // au moins une couleur de chaque famille de teinte présente
+    const hueBuckets = new Map() // hueBucket -> colors[]
 
-    // Ancien code de sélection adaptatif - remplacé par les stratégies v2
-    // Cette branche ne devrait jamais être exécutée car targetColors <= 4 utilise les stratégies v2
-    // Kept as fallback for targetColors > 4
-    const frequencyBudget = Math.floor(targetColors * 0.7)
+    for (const candidate of colorFrequency) {
+      const sat = this.calculateSaturation(candidate.converted)
+      const hue = this.calculateHue(candidate.converted)
 
-    // Phase 1: Ajouter les couleurs fréquentes avec diversité minimale
+      // Buckets de 45° pour avoir ~8 familles principales
+      const bucketKey = sat > 0.2 && hue >= 0 ? Math.floor(hue / 45) : 'gray'
+
+      if (!hueBuckets.has(bucketKey)) {
+        hueBuckets.set(bucketKey, [])
+      }
+      hueBuckets.get(bucketKey).push(candidate)
+    }
+
+    // Log détaillé des buckets trouvés
+    for (const [bucket, colors] of hueBuckets.entries()) {
+      const hueRange =
+        bucket === 'gray'
+          ? 'gray/desaturated'
+          : `${bucket * 45}-${((bucket as number) + 1) * 45}°`
+      adapterLogger.info(
+        `[Mode 0] Bucket ${bucket} (${hueRange}): ${colors.length} colors`
+      )
+    }
+    adapterLogger.info(
+      `[Mode 0] Found ${hueBuckets.size} hue families in image`
+    )
+
+    // Stratégie: d'abord prendre la couleur la plus fréquente de chaque bucket
+    // pour garantir la couverture, puis compléter avec les plus fréquentes
+    const bucketRepresentatives = []
+    const sortedBuckets = Array.from(hueBuckets.entries())
+      .map(([bucket, colors]) => ({
+        bucket,
+        colors: colors.sort((a: any, b: any) => b.frequency - a.frequency),
+        totalFreq: colors.reduce((sum: number, c: any) => sum + c.frequency, 0)
+      }))
+      .sort((a, b) => b.totalFreq - a.totalFreq) // Buckets les plus importants en premier
+
+    // Prendre le meilleur représentant de chaque bucket (max ~8 couleurs)
+    for (const { bucket, colors } of sortedBuckets) {
+      if (bucketRepresentatives.length < targetColors && colors.length > 0) {
+        const rep = colors[0]
+        bucketRepresentatives.push(rep)
+        const hueRange =
+          bucket === 'gray'
+            ? 'gray'
+            : `${bucket * 45}-${((bucket as number) + 1) * 45}°`
+        const [r, g, b] = rep.converted
+        adapterLogger.info(
+          `[Mode 0] Representative for bucket ${bucket} (${hueRange}): RGB(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}) freq=${rep.frequency}`
+        )
+      }
+    }
+
+    adapterLogger.info(
+      `[Mode 0] Selected ${bucketRepresentatives.length} representatives from hue families`
+    )
+
+    // Compléter avec les couleurs les plus fréquentes globalement
+    // mais en évitant les doublons de bucket dominant
+    const usedIndicesForBalance = new Set(
+      bucketRepresentatives.map((c: any) => c.index)
+    )
+    const remainingCandidates = colorFrequency.filter(
+      (c: any) => !usedIndicesForBalance.has(c.index)
+    )
+
+    // Ajouter DIRECTEMENT les représentants de bucket au résultat pour garantir la diversité
+    // Cela assure qu'on a au moins une couleur de chaque famille de teinte
+    for (const rep of bucketRepresentatives) {
+      if (!result.includes(rep.index)) {
+        result.push(rep.index)
+        selectedConverted.push(rep.converted)
+      }
+    }
+
+    adapterLogger.info(
+      `[Mode 0] Added ${result.length} bucket representatives directly to result`
+    )
+
+    // Si on a déjà assez de couleurs avec les représentants, on s'arrête là
+    if (result.length >= targetColors) {
+      return result.slice(0, targetColors)
+    }
+
+    // Sinon, compléter avec les couleurs les plus fréquentes (en évitant les doublons)
+    const frequencyBudget = targetColors - result.length
+
     this.selectFrequentColorsWithDiversity(
-      colorFrequency,
+      remainingCandidates,
       selectedConverted,
       result,
       frequencyBudget,
-      targetColors // Passer targetColors pour distance adaptative
-    )
-
-    // Phase 2: Compléter avec MaxMin Distance sur toute la palette
-    this.selectMaxMinDistanceColors(
-      colorFrequency,
-      selectedConverted,
-      result,
       targetColors
     )
+
+    // Si encore besoin, compléter avec MaxMin Distance
+    if (result.length < targetColors) {
+      this.selectMaxMinDistanceColors(
+        remainingCandidates,
+        selectedConverted,
+        result,
+        targetColors
+      )
+    }
 
     return result
   }
