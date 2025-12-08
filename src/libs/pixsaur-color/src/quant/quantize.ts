@@ -97,8 +97,9 @@ export function createQuantizer({
     const totalPixels = vecs.length
     const relativeThreshold = Math.max(1, Math.floor(totalPixels * 0.001))
 
-    // OPTIMISATION: Utiliser mode diversité pour les palettes moyennes (mode 0 = 16 couleurs)
-    const useDiversityMode = limit >= 8 && limit <= 16
+    // OPTIMISATION: Utiliser mode diversité pour les palettes moyennes et petites (mode 0 = 16 couleurs, mode 1 = 4 couleurs)
+    // Pour CPC Plus, la diversité des teintes est importante même avec peu de couleurs
+    const useDiversityMode = limit >= 4 && limit <= 16
 
     const idxs = useDiversityMode
       ? selectTopIndicesCore(counts, preIdx, 16, {
