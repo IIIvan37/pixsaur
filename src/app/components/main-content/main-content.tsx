@@ -1,7 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import PreviewPanel from '@/app/components/preview-panel'
 import SourceSection from '@/app/components/source-section'
-import ExportPanel from '@/components/export-panel/export-panel'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import styles from './main-content.module.css'
 
@@ -24,9 +23,6 @@ export default function MainContent() {
             <PreviewPanel />
           </div>
         </div>
-
-        {/* Export section - always below */}
-        <ExportPanel />
       </div>
     </CollapsibleSection>
   )

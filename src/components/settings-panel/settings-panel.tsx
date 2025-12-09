@@ -10,12 +10,19 @@ import DraggableDialog from '@/components/ui/draggable-dialog'
 import Icon from '@/components/ui/icon'
 import styles from './settings-panel.module.css'
 import { DitheringTab } from './tabs/dithering-tab.tsx'
+import { ExportTab } from './tabs/export-tab.tsx'
 import { HardwareTab } from './tabs/hardware-tab.tsx'
 import { RasterTab } from './tabs/raster-tab'
 import { ResizeTab } from './tabs/resize-tab.tsx'
 import { SourceTab } from './tabs/source-tab.tsx'
 
-type TabId = 'source' | 'resize' | 'hardware' | 'dithering' | 'raster'
+type TabId =
+  | 'source'
+  | 'resize'
+  | 'hardware'
+  | 'dithering'
+  | 'raster'
+  | 'export'
 
 interface TabDefinition {
   id: TabId
@@ -54,6 +61,12 @@ const tabs: TabDefinition[] = [
     label: <Trans>Raster</Trans>,
     icon: 'GearIcon',
     component: RasterTab
+  },
+  {
+    id: 'export',
+    label: <Trans>Export</Trans>,
+    icon: 'DownloadIcon',
+    component: ExportTab
   }
 ]
 

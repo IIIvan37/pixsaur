@@ -1,7 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import Button from '@/components/ui/button/button'
-import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import Icon from '@/components/ui/icon'
 import styles from './dsk-workspace.module.css'
 import {
@@ -41,7 +40,7 @@ export function DskWorkspaceView({
   getRemoveImageTitle
 }: Readonly<DskWorkspaceViewProps>) {
   return (
-    <CollapsibleSection title={<Trans>DSK Manager</Trans>} defaultOpen={false}>
+    <>
       <div className={styles.infoBox}>
         <Trans>
           Supports both CPC Classic and CPC Plus formats. The loader
@@ -184,6 +183,6 @@ export function DskWorkspaceView({
           </p>
         </div>
       )}
-    </CollapsibleSection>
+    </>
   )
 }
