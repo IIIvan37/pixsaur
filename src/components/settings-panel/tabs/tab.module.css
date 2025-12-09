@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.25rem;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .adjustmentsWrapper {
@@ -22,8 +24,9 @@
 
 .sliderGrid {
 	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 	gap: 1rem;
+	width: 100%;
 }
 
 .section {
@@ -81,20 +84,25 @@
   width: 1.5rem;
   height: 1.5rem;
   padding: 0;
-  background: var(--color-panel-hover);
-  border: none;
+  background: transparent;
+  border: 1px solid var(--color-border);
   border-radius: 0.25rem;
   color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 1rem;
-  transition:
-    background 0.2s,
-    color 0.2s;
+  line-height: 1;
+  transition: all 0.2s ease;
 }
 
 .resetButton:hover {
-  background: var(--color-accent);
-  color: var(--color-accent-foreground);
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: rotate(-180deg);
+}
+
+.resetButton:active {
+  transform: rotate(-180deg) scale(0.95);
 }
 
 .description {
