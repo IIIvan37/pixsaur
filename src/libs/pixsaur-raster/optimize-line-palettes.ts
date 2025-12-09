@@ -1,13 +1,87 @@
 import { weightedRGBDistance } from '../pixsaur-color/src/metric/distance'
 import type { Vector } from '../pixsaur-color/src/type'
+import {
+  HORIZONTAL_ERROR_COEFFICIENT,
+  PALETTE_CONTINUITY_BONUS,
+  PALETTE_CONTINUITY_DISTANCE,
+  PALETTE_FREQUENCY_EXPONENT,
+  VERTICAL_ERROR_COEFFICIENT
+} from './raster-constants'
 import type { RasterChange } from './types'
+
+/**
+ * Runtime tuning values for dithering error propagation coefficients
+ * Can be overridden by dev tools for fine-tuning visual quality
+ */
+export const rasterTuningOverrides = {
+  verticalErrorCoefficient: VERTICAL_ERROR_COEFFICIENT,
+  horizontalErrorCoefficient: HORIZONTAL_ERROR_COEFFICIENT,
+  paletteContinuityDistance: PALETTE_CONTINUITY_DISTANCE,
+  paletteContinuityBonus: PALETTE_CONTINUITY_BONUS,
+  paletteFrequencyExponent: PALETTE_FREQUENCY_EXPONENT
+}
 
 /**
  * Quantize an RGB color to CPC Plus 4-bit format (16 levels per component)
  */
-function quantizeToCPCPlus(color: Vector<'RGB'>): Vector<'RGB'> {
+export function quantizeToCPCPlus(color: Vector<'RGB'>): Vector<'RGB'> {
   const quantize = (v: number) => Math.round(v / 17) * 17
   return [quantize(color[0]), quantize(color[1]), quantize(color[2])]
+}
+
+/**
+ * Pre-computed lookup table for CPC Classic quantization.
+ * Maps 4096 CPC Plus colors (16×16×16) to their closest CPC Classic palette index.
+ * Built once when first needed, cached globally for performance.
+ */
+let cpcClassicLUT: Uint8Array | null = null
+let cpcClassicLUTPalette: Vector<'RGB'>[] | null = null
+
+/**
+ * Build a lookup table that maps all 4096 CPC Plus colors to CPC Classic palette indices.
+ * Each CPC Plus color (r,g,b where each component is 0,17,34,...,255) maps to the index
+ * of the closest color in the 27-color CPC Classic palette.
+ *
+ * LUT size: 4096 bytes (16×16×16)
+ * Index calculation: (r/17) * 256 + (g/17) * 16 + (b/17)
+ */
+function buildCPCClassicLUT(palette: Vector<'RGB'>[]): Uint8Array {
+  const lut = new Uint8Array(4096)
+
+  // For each of the 4096 possible CPC Plus colors
+  for (let r = 0; r < 16; r++) {
+    for (let g = 0; g < 16; g++) {
+      for (let b = 0; b < 16; b++) {
+        const color: Vector<'RGB'> = [r * 17, g * 17, b * 17]
+        const closestIdx = findClosestColorIndex(color, palette)
+        const lutIndex = r * 256 + g * 16 + b
+        lut[lutIndex] = closestIdx
+      }
+    }
+  }
+
+  return lut
+}
+
+/**
+ * Quantize a color to CPC Classic using pre-computed LUT (ultra-fast).
+ * First quantizes to CPC Plus (16 levels), then looks up closest CPC Classic color.
+ */
+function quantizeToCPCClassicWithLUT(
+  color: Vector<'RGB'>,
+  palette: Vector<'RGB'>[],
+  lut: Uint8Array
+): Vector<'RGB'> {
+  // Quantize to CPC Plus first (0, 17, 34, ..., 255)
+  const r = Math.round(color[0] / 17)
+  const g = Math.round(color[1] / 17)
+  const b = Math.round(color[2] / 17)
+
+  // Look up closest CPC Classic palette index
+  const lutIndex = r * 256 + g * 16 + b
+  const paletteIndex = lut[lutIndex]
+
+  return palette[paletteIndex]
 }
 
 /**
@@ -25,7 +99,7 @@ function colorKey(color: Vector<'RGB'>): string {
 }
 
 /**
- * Add two error vectors (no clamping, keep full precision)
+ * Add two error vectors (keep full precision for proper error diffusion)
  */
 function addErrors(
   a: [number, number, number],
@@ -37,7 +111,7 @@ function addErrors(
 /**
  * Find the index of the closest color in the palette to the given color
  */
-function findClosestColorIndex(
+export function findClosestColorIndex(
   color: Vector<'RGB'>,
   palette: Vector<'RGB'>[]
 ): number {
@@ -53,17 +127,6 @@ function findClosestColorIndex(
   }
 
   return bestIndex
-}
-
-/**
- * Find the closest color in the palette to the given color
- */
-function findClosestColor(
-  color: Vector<'RGB'>,
-  palette: Vector<'RGB'>[]
-): Vector<'RGB'> {
-  const index = findClosestColorIndex(color, palette)
-  return palette[index]
 }
 
 /**
@@ -365,10 +428,22 @@ export function extractGlobalPaletteFromImage(
 ): Vector<'RGB'>[] {
   const { width, height, data } = sourceImage
 
-  // Helper to quantize based on hardware mode
+  // Build LUT for CPC Classic if needed (done once, cached globally)
+  if (cpcClassicPalette) {
+    if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
+      cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
+      cpcClassicLUTPalette = cpcClassicPalette
+    }
+  }
+
+  // Helper to quantize based on hardware mode (with LUT for CPC Classic)
   const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
+    if (cpcClassicPalette && cpcClassicLUT) {
+      return quantizeToCPCClassicWithLUT(
+        color,
+        cpcClassicPalette,
+        cpcClassicLUT
+      )
     }
     return quantizeToCPCPlus(color)
   }
@@ -412,206 +487,49 @@ export function extractGlobalPaletteFromImage(
 }
 
 /**
- * Threshold for considering two colors as belonging to the same "family".
- * Colors within this distance are considered similar enough that we should
- * keep the same CPC color to avoid banding.
- *
- * This is ~30 units per channel = 30*30*3 = 2700
- * In source images, subtle gradients often have colors within this range.
+ * NOTE: Dithering constants are now centralized in raster-constants.ts
+ * These control Floyd-Steinberg error propagation coefficients:
+ * - VERTICAL_ERROR_COEFFICIENT: Error diffusion to pixels below (default: 1/8)
+ * - HORIZONTAL_ERROR_COEFFICIENT: Error diffusion to adjacent pixels (default: 1/2)
  */
-const COLOR_FAMILY_THRESHOLD = 30 * 30 * 3
 
 /**
- * Select the best colors for a line with color family stabilization.
+ * Select the best colors for a line based on color frequencies
  *
- * The key insight: source images often have subtle gradients where colors
- * differ by only a few RGB values per line. When quantized to CPC Plus,
- * these tiny differences can map to DIFFERENT CPC colors, causing visible banding.
- *
- * Solution: For each ink slot, if the dominant source color on this line
- * is "in the same family" as what the current palette color represents,
- * we KEEP the current CPC color rather than switching to a slightly different one.
- *
- * @param colorFrequencies - Map of color frequencies for this line
- * @param currentPalette - The current palette (from previous line)
- * @param basePalette - The original global palette (anchor point)
+ * Since preprocessImageForRaster always reduces each line to exactly 4 colors
+ * via Floyd-Steinberg dithering + Farthest Point Sampling, this function
  * @param maxColors - Maximum colors to select (default 4)
  * @returns Selected colors for this line
  */
+/**
+ * Select the best colors for a line based on color frequencies
+ *
+ * Since preprocessImageForRaster always reduces each line to exactly 4 colors
+ * via Floyd-Steinberg dithering + Farthest Point Sampling, this function
+ * always returns immediately with the line colors.
+ *
+ * The extensive palette optimization logic below (coverage checks, median cut,
+ * replacement distance) is never executed in practice.
+ */
 function selectBestColorsForLine(
   colorFrequencies: Map<string, { color: Vector<'RGB'>; count: number }>,
-  currentPalette: Vector<'RGB'>[],
+  _currentPalette: Vector<'RGB'>[],
   _basePalette: Vector<'RGB'>[] | null = null,
   maxColors: number = 4,
-  cpcClassicPalette?: Vector<'RGB'>[]
+  _cpcClassicPalette?: Vector<'RGB'>[]
 ): Vector<'RGB'>[] {
-  // Helper to quantize based on hardware mode
-  const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
-    }
-    return quantizeToCPCPlus(color)
-  }
-
-  // If we have ≤maxColors unique colors, return all of them
+  // preprocessImageForRaster guarantees colorFrequencies.size <= maxColors (always 4)
+  // So this always executes and returns immediately
   if (colorFrequencies.size <= maxColors) {
     return Array.from(colorFrequencies.values()).map((v) => v.color)
   }
 
-  // Quantize current palette
-  const quantizedCurrent = currentPalette.map((c) => quantize(c))
-
-  // Collect all line colors with their frequencies (NOT quantized yet)
-  const lineColors = Array.from(colorFrequencies.entries())
-    .map(([, { color, count }]) => ({ color, count }))
-    .sort((a, b) => b.count - a.count)
-
-  // Calculate total pixels
-  const totalPixels = lineColors.reduce((sum, { count }) => sum + count, 0)
-
-  // For each current palette color, find how many line pixels it "represents"
-  // A palette color represents a line pixel if that pixel's color is within
-  // COLOR_FAMILY_THRESHOLD of the palette color (before CPC quantization)
-  const paletteRepresentation: {
-    palIndex: number
-    coverage: number
-    avgSourceColor: Vector<'RGB'>
-  }[] = []
-
-  for (let palIndex = 0; palIndex < quantizedCurrent.length; palIndex++) {
-    const palColor = quantizedCurrent[palIndex]
-    let coverage = 0
-    let sumR = 0,
-      sumG = 0,
-      sumB = 0,
-      sumWeight = 0
-
-    for (const { color, count } of lineColors) {
-      // Compare source color to palette color
-      const dist = weightedRGBDistance(color, palColor)
-      if (dist <= COLOR_FAMILY_THRESHOLD) {
-        coverage += count
-        sumR += color[0] * count
-        sumG += color[1] * count
-        sumB += color[2] * count
-        sumWeight += count
-      }
-    }
-
-    const avgSourceColor: Vector<'RGB'> =
-      sumWeight > 0
-        ? [
-            Math.round(sumR / sumWeight),
-            Math.round(sumG / sumWeight),
-            Math.round(sumB / sumWeight)
-          ]
-        : palColor
-
-    paletteRepresentation.push({ palIndex, coverage, avgSourceColor })
-  }
-
-  // Sort by coverage (most representative first)
-  paletteRepresentation.sort((a, b) => b.coverage - a.coverage)
-
-  // Calculate total coverage by current palette
-  const totalCoverage = paletteRepresentation.reduce(
-    (sum, p) => sum + p.coverage,
-    0
+  // Dead code: never reached because preprocessing guarantees ≤4 colors per line
+  // Kept for historical reference but could be removed entirely
+  throw new Error(
+    'selectBestColorsForLine: Unexpected >4 colors per line. ' +
+      'This indicates preprocessImageForRaster is not reducing to 4 colors.'
   )
-  const coverageRatio = totalCoverage / totalPixels
-
-  // Build new palette
-  const newPalette: Vector<'RGB'>[] = [...quantizedCurrent]
-  const coveredPixels = new Set<string>()
-
-  // For raster optimization, we want to allow color changes even with good coverage
-  // Use a higher threshold (90%) to only skip when coverage is near-perfect
-  // This allows more color variation for gradient/raster effects
-  if (coverageRatio >= 0.9) {
-    return newPalette
-  }
-
-  // If coverage is moderate (40-70%), keep the well-representing colors
-  // but replace poorly-representing ones
-  if (coverageRatio >= 0.4) {
-    // Mark which line colors are covered by good palette entries
-    for (const rep of paletteRepresentation) {
-      if (rep.coverage > totalPixels * 0.1) {
-        // This palette entry is useful, keep it
-        for (const { color } of lineColors) {
-          const dist = weightedRGBDistance(
-            color,
-            quantizedCurrent[rep.palIndex]
-          )
-          if (dist <= COLOR_FAMILY_THRESHOLD) {
-            coveredPixels.add(colorKey(color))
-          }
-        }
-      }
-    }
-
-    // Find uncovered line colors
-    const uncoveredColors = lineColors.filter(
-      ({ color }) => !coveredPixels.has(colorKey(color))
-    )
-
-    if (uncoveredColors.length > 0) {
-      // Find palette slots with poor coverage to replace
-      const poorSlots = paletteRepresentation
-        .filter((rep) => rep.coverage < totalPixels * 0.05)
-        .map((rep) => rep.palIndex)
-
-      // Replace poor slots with best uncovered colors
-      let slotIndex = 0
-      for (const { color } of uncoveredColors) {
-        if (slotIndex >= poorSlots.length) break
-        newPalette[poorSlots[slotIndex]] = quantize(color)
-        slotIndex++
-      }
-    }
-
-    return newPalette
-  }
-
-  // Poor coverage (<40%): need to select colors based on line content
-  // Use median cut on the most frequent line colors
-  const pixels: WeightedPixel[] = lineColors.map(({ color, count }) => ({
-    color: quantize(color),
-    weight: count
-  }))
-
-  const selectedColors = medianCut(pixels, maxColors)
-
-  // Try to match selected colors to existing palette slots for stability
-  const usedSlots = new Set<number>()
-  const result: Vector<'RGB'>[] = [...quantizedCurrent]
-
-  for (const selectedColor of selectedColors) {
-    // Find the best matching slot (closest current color)
-    let bestSlot = -1
-    let bestDist = Number.POSITIVE_INFINITY
-
-    for (let i = 0; i < result.length; i++) {
-      if (usedSlots.has(i)) continue
-      const dist = weightedRGBDistance(selectedColor, result[i])
-      if (dist < bestDist) {
-        bestDist = dist
-        bestSlot = i
-      }
-    }
-
-    if (bestSlot >= 0) {
-      // Only replace if the new color is significantly different
-      // This prevents oscillation between very similar CPC colors
-      if (bestDist > 17 * 17 * 3) {
-        // More than 1 CPC step difference
-        result[bestSlot] = selectedColor
-      }
-      usedSlots.add(bestSlot)
-    }
-  }
-
-  return result
 }
 
 /**
@@ -720,7 +638,6 @@ export interface OptimizationOptions {
  * @param globalPalette - Initial 4-color palette (used for line 0)
  * @param existingChanges - Existing raster changes to preserve
  * @param options - Optimization options (maxChangesPerLine)
- * @returns Object with raster changes and matching index buffer
  */
 export function optimizeLinePalettesWithIndexBuffer(
   preprocessedImage: ImageData,
@@ -734,12 +651,24 @@ export function optimizeLinePalettesWithIndexBuffer(
   const changes: Omit<RasterChange, 'id'>[] = []
   const indexBuffer = new Uint8Array(width * imageHeight)
 
+  // Build LUT for CPC Classic if needed (done once, cached globally)
+  if (cpcClassicPalette) {
+    if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
+      cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
+      cpcClassicLUTPalette = cpcClassicPalette
+    }
+  }
+
   // Helper function to quantize a color based on hardware mode
-  // CPC Classic: constrain to 27-color palette
+  // CPC Classic: use pre-computed LUT (ultra-fast array lookup)
   // CPC Plus: quantize to 4096 colors (4 bits per channel)
   const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
+    if (cpcClassicPalette && cpcClassicLUT) {
+      return quantizeToCPCClassicWithLUT(
+        color,
+        cpcClassicPalette,
+        cpcClassicLUT
+      )
     }
     return quantizeToCPCPlus(color)
   }
@@ -924,7 +853,7 @@ export function optimizeLinePalettesWithIndexBuffer(
 // ============================================================================
 
 /**
- * Add color and error (clamp only final result to valid RGB range)
+ * Add color and error, clamping only the final result to valid RGB range
  */
 function addColors(
   color: Vector<'RGB'>,
@@ -935,16 +864,6 @@ function addColors(
     Math.max(0, Math.min(255, color[1] + error[1])),
     Math.max(0, Math.min(255, color[2] + error[2]))
   ]
-}
-
-/**
- * Subtract two colors (for error calculation)
- */
-function subtractColors(
-  a: Vector<'RGB'>,
-  b: Vector<'RGB'>
-): [number, number, number] {
-  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
 /**
@@ -1021,18 +940,20 @@ function selectPaletteFarthestPoint(
         }
       }
 
-      // Score = distance * sqrt(frequency) to balance distance and importance
+      // Score = distance * (frequency ^ exponent) to balance distance and importance
       // High frequency colors that are far from selected colors are preferred
-      const score = minDist * Math.sqrt(count)
+      // Exponent controls frequency influence: 0.5 = sqrt (balanced), 1.0 = linear (strong)
+      const frequencyWeight =
+        count ** rasterTuningOverrides.paletteFrequencyExponent
+      const score = minDist * frequencyWeight
 
       // Bonus for colors similar to previous palette (continuity)
       let continuityBonus = 1.0
       if (previousPalette) {
         for (const prevColor of previousPalette) {
           const dist = weightedRGBDistance(color, prevColor)
-          if (dist < 17 * 17 * 3) {
-            // Within 1 CPC step
-            continuityBonus = 1.5 // 50% bonus
+          if (dist < rasterTuningOverrides.paletteContinuityDistance) {
+            continuityBonus = rasterTuningOverrides.paletteContinuityBonus
             break
           }
         }
@@ -1061,6 +982,11 @@ function selectPaletteFarthestPoint(
 export interface RasterPreprocessOptions {
   /**
    * Dithering intensity from 0 (no dithering) to 1 (full dithering)
+   *
+   * ANTI-BANDING: Lower values (0.5-0.6) can help reduce banding by creating
+   * cleaner color boundaries that the optimizer can work with better.
+   * Higher values (0.7-0.9) add texture but may create noise.
+   *
    * Default: 0.75 (reduced to minimize noise while maintaining quality)
    */
   ditheringIntensity?: number
@@ -1101,12 +1027,24 @@ export function preprocessImageForRaster(
   const { width, height, data } = sourceImage
   const outputData = new Uint8ClampedArray(data.length)
 
+  // Build LUT for CPC Classic if needed (done once, cached globally)
+  if (cpcClassicPalette) {
+    if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
+      cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
+      cpcClassicLUTPalette = cpcClassicPalette
+    }
+  }
+
   // Helper function to quantize a color based on hardware mode
-  // CPC Classic: constrain to 27-color palette
+  // CPC Classic: use pre-computed LUT (ultra-fast array lookup)
   // CPC Plus: quantize to 4096 colors (4 bits per channel)
   const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
+    if (cpcClassicPalette && cpcClassicLUT) {
+      return quantizeToCPCClassicWithLUT(
+        color,
+        cpcClassicPalette,
+        cpcClassicLUT
+      )
     }
     return quantizeToCPCPlus(color)
   }
@@ -1241,8 +1179,28 @@ export function preprocessImageForRaster(
         ]
 
         // Apply accumulated error (vertical from previous line + horizontal from left)
-        const totalError = addErrors(verticalError[x], horizError[x])
-        const correctedColor = addColors(sourceColor, totalError)
+        const rawTotalError = addErrors(verticalError[x], horizError[x])
+
+        // Clamp accumulated error to prevent runaway values
+        // Allow ±128 per channel (half the color range) to preserve dithering quality
+        // while preventing extreme artifacts
+        const totalError: [number, number, number] = [
+          Math.max(-128, Math.min(128, rawTotalError[0])),
+          Math.max(-128, Math.min(128, rawTotalError[1])),
+          Math.max(-128, Math.min(128, rawTotalError[2]))
+        ]
+
+        // Add error to source color (may go out of [0,255] range temporarily)
+        const targetR = sourceColor[0] + totalError[0]
+        const targetG = sourceColor[1] + totalError[1]
+        const targetB = sourceColor[2] + totalError[2]
+
+        // Clamp to valid RGB range for palette lookup
+        const correctedColor: Vector<'RGB'> = [
+          Math.max(0, Math.min(255, targetR)),
+          Math.max(0, Math.min(255, targetG)),
+          Math.max(0, Math.min(255, targetB))
+        ]
 
         // Find closest palette color
         const closestIdx = findClosestColorIndex(
@@ -1251,22 +1209,41 @@ export function preprocessImageForRaster(
         )
         const chosenColor = quantizedPalette[closestIdx]
 
-        // Calculate quantization error
-        const error = subtractColors(correctedColor, chosenColor)
+        // Calculate quantization error based on UNCLAMPED target color
+        // This is key: if we wanted targetR=-100 but clamped to 0, and chose color 0,
+        // the error is 0-(-100)=100, not 0-0=0
+        const rawError: [number, number, number] = [
+          targetR - chosenColor[0],
+          targetG - chosenColor[1],
+          targetB - chosenColor[2]
+        ]
+
+        // Clamp the error before propagation to prevent runaway accumulation
+        // Use a dynamic threshold based on dithering intensity
+        // At intensity=1: ±32, at intensity=0.5: ±16, etc.
+        const maxError = 32 * ditheringIntensity
+        const error: [number, number, number] = [
+          Math.max(-maxError, Math.min(maxError, rawError[0])),
+          Math.max(-maxError, Math.min(maxError, rawError[1])),
+          Math.max(-maxError, Math.min(maxError, rawError[2]))
+        ]
 
         // Distribute error with configurable intensity
-        // Base coefficients (at intensity=1): Horizontal 1/2, Vertical 1/4
+        // Base coefficients from raster-constants.ts
+        // Horizontal: 1/2, Vertical: 1/8 (reduced to minimize vertical banding)
         // At intensity=0: no error propagation
-        const horizCoef = (1 / 2) * ditheringIntensity
-        const vertCoef = (1 / 4) * ditheringIntensity
+        const horizCoef =
+          rasterTuningOverrides.horizontalErrorCoefficient * ditheringIntensity
+        const vertCoef =
+          rasterTuningOverrides.verticalErrorCoefficient * ditheringIntensity
 
-        // Horizontal error propagation (no clamping, keep precision)
+        // Horizontal error propagation
         if (x + 1 < width && horizCoef > 0) {
           const he = scaleError(error, horizCoef)
           horizError[x + 1] = addErrors(horizError[x + 1], he)
         }
 
-        // Vertical error propagation - simplified to just below pixel (no clamping)
+        // Vertical error propagation - simplified to just below pixel
         if (vertCoef > 0) {
           const ve = scaleError(error, vertCoef)
           newVerticalError[x] = addErrors(newVerticalError[x], ve)

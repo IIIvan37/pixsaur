@@ -13,12 +13,18 @@ import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { createRasterPreviewImageData } from '@/libs/pixsaur-raster/render-with-raster'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type {
   AdjustmentConfig,
   ImageProcessor,
   PaletteStrategy
 } from '../interfaces'
-import { imageAdjustmentFragmentShader, simpleVertexShader } from '../shaders'
+import {
+  imageAdjustmentFragmentShader,
+  rasterFragmentShader,
+  simpleVertexShader
+} from '../shaders'
 import { ReGLQuantizer } from './regl-quantizer'
 
 /**
@@ -37,6 +43,9 @@ export class ReGLProcessor implements ImageProcessor {
   private imageAdjustmentCommand?: any
   private inputTexture?: any
 
+  // GPU Raster preview
+  private rasterPreviewCommand?: any
+
   // Capacités détectées
   private readonly reglCapabilities: {
     canUseReGL: boolean
@@ -54,6 +63,7 @@ export class ReGLProcessor implements ImageProcessor {
         this.quantizer = new ReGLQuantizer(regl)
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
+        this.initializeRasterPreview(regl)
         adapterLogger.info(
           '[ADAPTER] ReGL quantizer and GPU adjustments initialized successfully'
         )
@@ -118,6 +128,163 @@ export class ReGLProcessor implements ImageProcessor {
       primitive: 'triangle strip',
       count: 4
     })
+  }
+
+  /**
+   * Initialise la commande GPU pour l'aperçu raster (palettes par ligne)
+   */
+  private initializeRasterPreview(regl: REGL.Regl): void {
+    // Définir la commande de rendu raster
+    this.rasterPreviewCommand = regl({
+      frag: rasterFragmentShader,
+      vert: simpleVertexShader,
+      attributes: {
+        a_position: [
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1]
+        ]
+      },
+      uniforms: {
+        u_indexTex: (_ctx, props: any) => props.indexTex,
+        u_paletteTex: (_ctx, props: any) => props.paletteTex,
+        u_height: (_ctx, props: any) => props.height
+      },
+      primitive: 'triangle strip',
+      count: 4
+    })
+  }
+
+  /**
+   * Construit une LUT palette 2D (16 x H) RGBA8 à partir de la palette globale et des changements raster
+   */
+  private buildPaletteLUT(
+    globalPalette: Vector[],
+    rasterChanges: RasterChange[],
+    height: number
+  ): Uint8Array {
+    const lut = new Uint8Array(16 * height * 4)
+
+    // regrouper par ligne
+    const changesByLine = new Map<number, RasterChange[]>()
+    for (const change of rasterChanges) {
+      const list = changesByLine.get(change.line)
+      if (list) list.push(change)
+      else changesByLine.set(change.line, [change])
+    }
+
+    // palette courante mutable
+    const cur: Vector[] = globalPalette.map((c) => [c[0], c[1], c[2]] as Vector)
+
+    for (let y = 0; y < height; y++) {
+      const onLine = changesByLine.get(y)
+      if (onLine) {
+        for (const ch of onLine) {
+          cur[ch.inkIndex] = [ch.color[0], ch.color[1], ch.color[2]] as Vector
+        }
+      }
+
+      for (let i = 0; i < 16; i++) {
+        const off = (y * 16 + i) * 4
+        const c = cur[i] || ([0, 0, 0] as Vector)
+        lut[off] = c[0]
+        lut[off + 1] = c[1]
+        lut[off + 2] = c[2]
+        lut[off + 3] = 255
+      }
+    }
+
+    return lut
+  }
+
+  /**
+   * Rendu d'un aperçu raster via GPU (fallback CPU si indisponible)
+   */
+  renderRasterPreview(
+    indexBuffer: Uint8Array,
+    width: number,
+    height: number,
+    globalPalette: Vector[],
+    rasterChanges: RasterChange[]
+  ): ImageData {
+    // GPU disponible ?
+    if (this.regl && this.rasterPreviewCommand) {
+      adapterLogger.info(
+        `[RASTER] Rendering raster preview via GPU (${width}x${height}, ${rasterChanges.length} changes)`
+      )
+      const regl = this.regl
+
+      // Construire textures d'entrée
+      // Texture d'indices: empaqueter indice dans canal A d'une RGBA8
+      const indexRgba = new Uint8Array(width * height * 4)
+      for (let i = 0, j = 3; i < indexBuffer.length; i++, j += 4) {
+        indexRgba[j] = indexBuffer[i]
+      }
+
+      const indexTex = regl.texture({
+        width,
+        height,
+        format: 'rgba',
+        type: 'uint8',
+        data: indexRgba
+      })
+
+      const paletteLUT = this.buildPaletteLUT(
+        globalPalette,
+        rasterChanges,
+        height
+      )
+      const paletteTex = regl.texture({
+        width: 16,
+        height,
+        format: 'rgba',
+        type: 'uint8',
+        data: paletteLUT
+      })
+
+      // Framebuffer de sortie
+      const outTex = regl.texture({
+        width,
+        height,
+        format: 'rgba',
+        type: 'uint8'
+      })
+      const fbo = regl.framebuffer({ color: outTex })
+
+      // Rendu
+      fbo.use(() => {
+        this.rasterPreviewCommand!({
+          indexTex,
+          paletteTex,
+          height
+        })
+      })
+
+      // Lecture
+      const result = new Uint8Array(width * height * 4)
+      regl.read({ framebuffer: fbo, data: result })
+
+      // Nettoyage
+      fbo.destroy()
+      outTex.destroy()
+      indexTex.destroy()
+      paletteTex.destroy()
+
+      return new ImageData(new Uint8ClampedArray(result.buffer), width, height)
+    }
+
+    // Fallback CPU
+    adapterLogger.info(
+      `[RASTER] Rendering raster preview via CPU fallback (${width}x${height}, ${rasterChanges.length} changes)`
+    )
+    return createRasterPreviewImageData(
+      indexBuffer,
+      width,
+      height,
+      globalPalette,
+      rasterChanges
+    )
   }
 
   /**

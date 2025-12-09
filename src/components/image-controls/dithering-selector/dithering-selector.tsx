@@ -14,6 +14,7 @@ import {
   rasterEnabledAtom,
   rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster'
+import { rasterTuningEnabledAtom } from '@/app/store/raster/raster-tuning'
 import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
 import Button from '@/components/ui/button'
 import Flex from '@/components/ui/flex'
@@ -21,6 +22,7 @@ import Icon from '@/components/ui/icon'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
+import { isDevelopment } from '@/core'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import styles from './dithering-selector.module.css'
 
@@ -90,6 +92,7 @@ export function DitheringSelector({
   )
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
   const [isOptimizing, setIsOptimizing] = useState(false)
+  const tuningEnabled = useAtomValue(rasterTuningEnabledAtom)
 
   // Auto-regenerate rasters when parameters change (if already generated)
   useAutoRegenerateRasters()
@@ -215,13 +218,20 @@ export function DitheringSelector({
             <Button
               variant='secondary'
               onClick={handleAutoOptimize}
-              disabled={isOptimizing || hasGeneratedRasters}
+              disabled={
+                isOptimizing ||
+                (hasGeneratedRasters && !(isDevelopment() && tuningEnabled))
+              }
             >
               <Icon name='GearIcon' />
               {isOptimizing ? (
                 <Trans>Optimisation...</Trans>
               ) : hasGeneratedRasters ? (
-                <Trans>Rasters générés</Trans>
+                isDevelopment() && tuningEnabled ? (
+                  <Trans>Régénérer les rasters</Trans>
+                ) : (
+                  <Trans>Rasters générés</Trans>
+                )
               ) : (
                 <Trans>Générer les rasters</Trans>
               )}

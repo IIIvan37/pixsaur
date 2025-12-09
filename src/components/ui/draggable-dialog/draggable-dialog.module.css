@@ -1,0 +1,141 @@
+/* Draggable Dialog Styles */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: transparent;
+  z-index: 1000;
+  animation: fadeIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.content {
+  position: fixed;
+  z-index: 1001;
+  background-color: var(--color-background, #0a0a0a);
+  border: 1px solid var(--color-border, #1a1a1a);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.2),
+              0 8px 32px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  max-width: 90vw;
+  max-height: 85vh;
+  min-width: 400px;
+  animation: slideIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md, 0.75rem) var(--spacing-lg, 1rem);
+  border-bottom: 1px solid var(--color-border, #1a1a1a);
+  background: var(--color-panel, #1a1a1a);
+  border-radius: var(--radius-md, 8px) var(--radius-md, 8px) 0 0;
+}
+
+.dragHandle {
+  all: unset;
+  flex: 1;
+  padding: 0;
+  user-select: none;
+  cursor: grab;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.title {
+  color: var(--color-foreground, #00ff00);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: var(--font-size-sm, 0.75rem);
+  font-weight: 700;
+  text-shadow: 0 0 2px var(--color-accent, #00ff00);
+  font-family: var(--font-family, monospace);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 0.5rem);
+}
+
+.closeButton {
+  all: unset;
+  cursor: pointer;
+  color: var(--color-foreground-muted, #999);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm, 4px);
+  transition: all 0.15s ease;
+}
+
+.closeButton:hover {
+  color: var(--color-foreground, #00ff00);
+  text-shadow: 0 0 4px var(--color-accent, #00ff00);
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid var(--color-accent, #00ff00);
+  outline-offset: 2px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.body {
+  padding: var(--spacing-lg, 1rem);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Scrollbar styling */
+.body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.body::-webkit-scrollbar-track {
+  background: var(--color-background, #0a0a0a);
+}
+
+.body::-webkit-scrollbar-thumb {
+  background: var(--color-border, #1a1a1a);
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--color-accent, #00ff00);
+}
+
+.body::-webkit-scrollbar-thumb:hover {
+  background: var(--color-panel, #111);
+  border-color: var(--color-green-400, #4ade80);
+}

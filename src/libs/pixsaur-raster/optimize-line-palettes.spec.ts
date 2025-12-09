@@ -416,59 +416,9 @@ describe('optimize-line-palettes', () => {
       }
     })
 
-    it('should handle lines with more than 4 colors by selecting representative colors', () => {
-      // Global palette is now ignored - palette is extracted from image
-      const globalPalette: Vector<'RGB'>[] = [
-        [0, 0, 0], // Black - not in our test colors
-        [17, 17, 17], // Dark gray - not in our test colors
-        [34, 34, 34], // Gray - not in our test colors
-        [51, 51, 51] // Light gray - not in our test colors
-      ]
-
-      // Create an image where each line has 6 colors, but only 4 are frequent
-      // Pattern: C0 appears 4 times, C1 appears 3 times, C2 appears 2 times, C3 appears 2 times
-      // C4 appears 1 time, C5 appears 1 time (these should be dropped)
-      const width = 13 // 4+3+2+2+1+1 = 13 pixels
-      const c0: Vector<'RGB'> = [255, 0, 0] // Red - 4 times (most frequent)
-      const c1: Vector<'RGB'> = [0, 255, 0] // Green - 3 times
-      const c2: Vector<'RGB'> = [0, 0, 255] // Blue - 2 times
-      const c3: Vector<'RGB'> = [255, 255, 0] // Yellow - 2 times
-      const c4: Vector<'RGB'> = [255, 0, 255] // Magenta - 1 time (should be dropped)
-      const c5: Vector<'RGB'> = [0, 255, 255] // Cyan - 1 time (should be dropped)
-
-      // Manually create pixel data with specific frequencies
-      const data = new Uint8ClampedArray(width * 1 * 4)
-      const pixelColors = [c0, c0, c0, c0, c1, c1, c1, c2, c2, c3, c3, c4, c5]
-      for (let x = 0; x < width; x++) {
-        const idx = x * 4
-        const color = pixelColors[x]
-        data[idx] = color[0]
-        data[idx + 1] = color[1]
-        data[idx + 2] = color[2]
-        data[idx + 3] = 255
-      }
-      const imageData = new ImageData(data, width, 1)
-
-      const { changes, indexBuffer } = optimizeLinePalettesWithIndexBuffer(
-        imageData,
-        globalPalette,
-        []
-      )
-
-      // Now palette is extracted from image - it should be [red, green, blue, yellow]
-      // Since extracted palette matches line 0, we expect 0 changes
-      expect(changes.length).toBe(0)
-
-      // Index buffer should map all pixels to valid ink indices (0-3)
-      for (let i = 0; i < indexBuffer.length; i++) {
-        expect(indexBuffer[i]).toBeGreaterThanOrEqual(0)
-        expect(indexBuffer[i]).toBeLessThan(4)
-      }
-
-      // The dropped colors (c4, c5) should be mapped to closest colors in palette
-      // c4 (magenta 255,0,255) should map to either red (255,0,0) or blue (0,0,255)
-      // c5 (cyan 0,255,255) should map to either green (0,255,0) or blue (0,0,255)
-      // We just verify they have valid indices, not the exact mapping
-    })
+    // Test removed: This tested a scenario where lines have >4 colors,
+    // but in practice preprocessImageForRaster always reduces to exactly 4 colors
+    // via Floyd-Steinberg dithering + Farthest Point Sampling.
+    // The logic to handle >4 colors has been removed as dead code.
   })
 })
