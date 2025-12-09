@@ -20,6 +20,8 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { cpcFullPalette } from '@/palettes/cpc-palette'
 import { RasterPanelView } from './raster-panel-view'
+import { RasterTuningButton } from './raster-tuning-button'
+import { RasterTuningPanel } from './raster-tuning-panel'
 
 /**
  * RasterPanel container component.
@@ -169,24 +171,27 @@ export function RasterPanel() {
   const handleRemoveChange = (id: string) => {
     removeChange(id)
   }
-
   return (
-    <RasterPanelView
-      enabled={enabled}
-      changes={changes}
-      conflicts={conflicts}
-      maxLine={maxLine}
-      palette={palette}
-      nColors={modeConfig.nColors}
-      maxChangesPerLine={maxChangesPerLine}
-      cpcPalette={cpcFullPalette}
-      isClassicMode={isClassicMode}
-      isPlusMode={isPlusMode}
-      onAddChange={handleAddChange}
-      onUpdateChange={handleUpdateChange}
-      onRemoveChange={handleRemoveChange}
-      onClearAll={clearAllChanges}
-    />
+    <>
+      <RasterTuningPanel />
+      <RasterTuningButton />
+      <RasterPanelView
+        enabled={enabled}
+        changes={changes}
+        conflicts={conflicts}
+        maxLine={maxLine}
+        palette={palette}
+        nColors={modeConfig.nColors}
+        maxChangesPerLine={maxChangesPerLine}
+        cpcPalette={cpcFullPalette}
+        isClassicMode={isClassicMode}
+        isPlusMode={isPlusMode}
+        onAddChange={handleAddChange}
+        onUpdateChange={handleUpdateChange}
+        onRemoveChange={handleRemoveChange}
+        onClearAll={clearAllChanges}
+      />
+    </>
   )
 }
 

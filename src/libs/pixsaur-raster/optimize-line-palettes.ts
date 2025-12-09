@@ -1,6 +1,19 @@
 import { weightedRGBDistance } from '../pixsaur-color/src/metric/distance'
 import type { Vector } from '../pixsaur-color/src/type'
+import {
+  HORIZONTAL_ERROR_COEFFICIENT,
+  VERTICAL_ERROR_COEFFICIENT
+} from './raster-constants'
 import type { RasterChange } from './types'
+
+/**
+ * Runtime tuning values for dithering error propagation coefficients
+ * Can be overridden by dev tools for fine-tuning visual quality
+ */
+export const rasterTuningOverrides = {
+  verticalErrorCoefficient: VERTICAL_ERROR_COEFFICIENT,
+  horizontalErrorCoefficient: HORIZONTAL_ERROR_COEFFICIENT
+}
 
 /**
  * Quantize an RGB color to CPC Plus 4-bit format (16 levels per component)
@@ -412,206 +425,49 @@ export function extractGlobalPaletteFromImage(
 }
 
 /**
- * Threshold for considering two colors as belonging to the same "family".
- * Colors within this distance are considered similar enough that we should
- * keep the same CPC color to avoid banding.
- *
- * This is ~30 units per channel = 30*30*3 = 2700
- * In source images, subtle gradients often have colors within this range.
+ * NOTE: Dithering constants are now centralized in raster-constants.ts
+ * These control Floyd-Steinberg error propagation coefficients:
+ * - VERTICAL_ERROR_COEFFICIENT: Error diffusion to pixels below (default: 1/8)
+ * - HORIZONTAL_ERROR_COEFFICIENT: Error diffusion to adjacent pixels (default: 1/2)
  */
-const COLOR_FAMILY_THRESHOLD = 30 * 30 * 3
 
 /**
- * Select the best colors for a line with color family stabilization.
+ * Select the best colors for a line based on color frequencies
  *
- * The key insight: source images often have subtle gradients where colors
- * differ by only a few RGB values per line. When quantized to CPC Plus,
- * these tiny differences can map to DIFFERENT CPC colors, causing visible banding.
- *
- * Solution: For each ink slot, if the dominant source color on this line
- * is "in the same family" as what the current palette color represents,
- * we KEEP the current CPC color rather than switching to a slightly different one.
- *
- * @param colorFrequencies - Map of color frequencies for this line
- * @param currentPalette - The current palette (from previous line)
- * @param basePalette - The original global palette (anchor point)
+ * Since preprocessImageForRaster always reduces each line to exactly 4 colors
+ * via Floyd-Steinberg dithering + Farthest Point Sampling, this function
  * @param maxColors - Maximum colors to select (default 4)
  * @returns Selected colors for this line
  */
+/**
+ * Select the best colors for a line based on color frequencies
+ *
+ * Since preprocessImageForRaster always reduces each line to exactly 4 colors
+ * via Floyd-Steinberg dithering + Farthest Point Sampling, this function
+ * always returns immediately with the line colors.
+ *
+ * The extensive palette optimization logic below (coverage checks, median cut,
+ * replacement distance) is never executed in practice.
+ */
 function selectBestColorsForLine(
   colorFrequencies: Map<string, { color: Vector<'RGB'>; count: number }>,
-  currentPalette: Vector<'RGB'>[],
+  _currentPalette: Vector<'RGB'>[],
   _basePalette: Vector<'RGB'>[] | null = null,
   maxColors: number = 4,
-  cpcClassicPalette?: Vector<'RGB'>[]
+  _cpcClassicPalette?: Vector<'RGB'>[]
 ): Vector<'RGB'>[] {
-  // Helper to quantize based on hardware mode
-  const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
-    }
-    return quantizeToCPCPlus(color)
-  }
-
-  // If we have ≤maxColors unique colors, return all of them
+  // preprocessImageForRaster guarantees colorFrequencies.size <= maxColors (always 4)
+  // So this always executes and returns immediately
   if (colorFrequencies.size <= maxColors) {
     return Array.from(colorFrequencies.values()).map((v) => v.color)
   }
 
-  // Quantize current palette
-  const quantizedCurrent = currentPalette.map((c) => quantize(c))
-
-  // Collect all line colors with their frequencies (NOT quantized yet)
-  const lineColors = Array.from(colorFrequencies.entries())
-    .map(([, { color, count }]) => ({ color, count }))
-    .sort((a, b) => b.count - a.count)
-
-  // Calculate total pixels
-  const totalPixels = lineColors.reduce((sum, { count }) => sum + count, 0)
-
-  // For each current palette color, find how many line pixels it "represents"
-  // A palette color represents a line pixel if that pixel's color is within
-  // COLOR_FAMILY_THRESHOLD of the palette color (before CPC quantization)
-  const paletteRepresentation: {
-    palIndex: number
-    coverage: number
-    avgSourceColor: Vector<'RGB'>
-  }[] = []
-
-  for (let palIndex = 0; palIndex < quantizedCurrent.length; palIndex++) {
-    const palColor = quantizedCurrent[palIndex]
-    let coverage = 0
-    let sumR = 0,
-      sumG = 0,
-      sumB = 0,
-      sumWeight = 0
-
-    for (const { color, count } of lineColors) {
-      // Compare source color to palette color
-      const dist = weightedRGBDistance(color, palColor)
-      if (dist <= COLOR_FAMILY_THRESHOLD) {
-        coverage += count
-        sumR += color[0] * count
-        sumG += color[1] * count
-        sumB += color[2] * count
-        sumWeight += count
-      }
-    }
-
-    const avgSourceColor: Vector<'RGB'> =
-      sumWeight > 0
-        ? [
-            Math.round(sumR / sumWeight),
-            Math.round(sumG / sumWeight),
-            Math.round(sumB / sumWeight)
-          ]
-        : palColor
-
-    paletteRepresentation.push({ palIndex, coverage, avgSourceColor })
-  }
-
-  // Sort by coverage (most representative first)
-  paletteRepresentation.sort((a, b) => b.coverage - a.coverage)
-
-  // Calculate total coverage by current palette
-  const totalCoverage = paletteRepresentation.reduce(
-    (sum, p) => sum + p.coverage,
-    0
+  // Dead code: never reached because preprocessing guarantees ≤4 colors per line
+  // Kept for historical reference but could be removed entirely
+  throw new Error(
+    'selectBestColorsForLine: Unexpected >4 colors per line. ' +
+      'This indicates preprocessImageForRaster is not reducing to 4 colors.'
   )
-  const coverageRatio = totalCoverage / totalPixels
-
-  // Build new palette
-  const newPalette: Vector<'RGB'>[] = [...quantizedCurrent]
-  const coveredPixels = new Set<string>()
-
-  // For raster optimization, we want to allow color changes even with good coverage
-  // Use a higher threshold (90%) to only skip when coverage is near-perfect
-  // This allows more color variation for gradient/raster effects
-  if (coverageRatio >= 0.9) {
-    return newPalette
-  }
-
-  // If coverage is moderate (40-70%), keep the well-representing colors
-  // but replace poorly-representing ones
-  if (coverageRatio >= 0.4) {
-    // Mark which line colors are covered by good palette entries
-    for (const rep of paletteRepresentation) {
-      if (rep.coverage > totalPixels * 0.1) {
-        // This palette entry is useful, keep it
-        for (const { color } of lineColors) {
-          const dist = weightedRGBDistance(
-            color,
-            quantizedCurrent[rep.palIndex]
-          )
-          if (dist <= COLOR_FAMILY_THRESHOLD) {
-            coveredPixels.add(colorKey(color))
-          }
-        }
-      }
-    }
-
-    // Find uncovered line colors
-    const uncoveredColors = lineColors.filter(
-      ({ color }) => !coveredPixels.has(colorKey(color))
-    )
-
-    if (uncoveredColors.length > 0) {
-      // Find palette slots with poor coverage to replace
-      const poorSlots = paletteRepresentation
-        .filter((rep) => rep.coverage < totalPixels * 0.05)
-        .map((rep) => rep.palIndex)
-
-      // Replace poor slots with best uncovered colors
-      let slotIndex = 0
-      for (const { color } of uncoveredColors) {
-        if (slotIndex >= poorSlots.length) break
-        newPalette[poorSlots[slotIndex]] = quantize(color)
-        slotIndex++
-      }
-    }
-
-    return newPalette
-  }
-
-  // Poor coverage (<40%): need to select colors based on line content
-  // Use median cut on the most frequent line colors
-  const pixels: WeightedPixel[] = lineColors.map(({ color, count }) => ({
-    color: quantize(color),
-    weight: count
-  }))
-
-  const selectedColors = medianCut(pixels, maxColors)
-
-  // Try to match selected colors to existing palette slots for stability
-  const usedSlots = new Set<number>()
-  const result: Vector<'RGB'>[] = [...quantizedCurrent]
-
-  for (const selectedColor of selectedColors) {
-    // Find the best matching slot (closest current color)
-    let bestSlot = -1
-    let bestDist = Number.POSITIVE_INFINITY
-
-    for (let i = 0; i < result.length; i++) {
-      if (usedSlots.has(i)) continue
-      const dist = weightedRGBDistance(selectedColor, result[i])
-      if (dist < bestDist) {
-        bestDist = dist
-        bestSlot = i
-      }
-    }
-
-    if (bestSlot >= 0) {
-      // Only replace if the new color is significantly different
-      // This prevents oscillation between very similar CPC colors
-      if (bestDist > 17 * 17 * 3) {
-        // More than 1 CPC step difference
-        result[bestSlot] = selectedColor
-      }
-      usedSlots.add(bestSlot)
-    }
-  }
-
-  return result
 }
 
 /**
@@ -1051,6 +907,11 @@ function selectPaletteFarthestPoint(
 export interface RasterPreprocessOptions {
   /**
    * Dithering intensity from 0 (no dithering) to 1 (full dithering)
+   *
+   * ANTI-BANDING: Lower values (0.5-0.6) can help reduce banding by creating
+   * cleaner color boundaries that the optimizer can work with better.
+   * Higher values (0.7-0.9) add texture but may create noise.
+   *
    * Default: 0.75 (reduced to minimize noise while maintaining quality)
    */
   ditheringIntensity?: number
@@ -1281,10 +1142,13 @@ export function preprocessImageForRaster(
         ]
 
         // Distribute error with configurable intensity
-        // Base coefficients (at intensity=1): Horizontal 1/2, Vertical 1/4
+        // Base coefficients from raster-constants.ts
+        // Horizontal: 1/2, Vertical: 1/8 (reduced to minimize vertical banding)
         // At intensity=0: no error propagation
-        const horizCoef = (1 / 2) * ditheringIntensity
-        const vertCoef = (1 / 4) * ditheringIntensity
+        const horizCoef =
+          rasterTuningOverrides.horizontalErrorCoefficient * ditheringIntensity
+        const vertCoef =
+          rasterTuningOverrides.verticalErrorCoefficient * ditheringIntensity
 
         // Horizontal error propagation
         if (x + 1 < width && horizCoef > 0) {

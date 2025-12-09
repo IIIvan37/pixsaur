@@ -210,6 +210,9 @@ export class ReGLProcessor implements ImageProcessor {
   ): ImageData {
     // GPU disponible ?
     if (this.regl && this.rasterPreviewCommand) {
+      adapterLogger.info(
+        `[RASTER] Rendering raster preview via GPU (${width}x${height}, ${rasterChanges.length} changes)`
+      )
       const regl = this.regl
 
       // Construire textures d'entrée
@@ -272,6 +275,9 @@ export class ReGLProcessor implements ImageProcessor {
     }
 
     // Fallback CPU
+    adapterLogger.info(
+      `[RASTER] Rendering raster preview via CPU fallback (${width}x${height}, ${rasterChanges.length} changes)`
+    )
     return createRasterPreviewImageData(
       indexBuffer,
       width,
