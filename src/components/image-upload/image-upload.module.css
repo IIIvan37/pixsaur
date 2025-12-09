@@ -1,15 +1,15 @@
 @keyframes pulseBorder {
   0% {
-    border-color: #00ff00;
-    box-shadow: 0 0 4px #00ff00;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 4px rgba(var(--accent-rgb), 0.4);
   }
   50% {
-    border-color: #00cc00;
-    box-shadow: 0 0 12px #00ff00;
+    border-color: var(--color-accent-hover);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.6);
   }
   100% {
-    border-color: #00ff00;
-    box-shadow: 0 0 4px #00ff00;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 4px rgba(var(--accent-rgb), 0.4);
   }
 }
 
@@ -22,8 +22,8 @@
    */
   min-width: 0;
   max-height: 300px;
-  border: 2px dashed #00ff00;
-  background-color: black;
+  border: 2px dashed var(--color-accent);
+  background-color: var(--color-background);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -36,31 +36,31 @@
 
 .dropzoneActive {
   animation: pulseBorder 1s infinite ease-in-out;
-  background-color: rgba(0, 255, 0, 0.05);
+  background-color: rgba(var(--accent-rgb), 0.05);
   cursor: copy;
 }
 
 .icon {
   width: 32px;
   height: 32px;
-  color: #00ff00;
+  color: var(--color-accent);
   margin-bottom: 8px;
 }
 
 .primaryText {
   font-size: 14px;
-  color: #00ff00;
+  color: var(--color-text-primary);
   margin: 4px 0;
 }
 
 .secondaryText {
   font-size: 12px;
-  color: #00cc00;
+  color: var(--color-text-secondary);
   margin: 2px 0;
 }
 
 .helpText {
   font-size: 10px;
-  color: #009900;
+  color: var(--color-text-muted);
   margin-top: 4px;
 }

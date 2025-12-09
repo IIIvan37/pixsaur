@@ -2,7 +2,8 @@
  * Raster tab content - extracted from RasterTuningPanel
  */
 
-import { Trans } from '@lingui/react/macro'
+import { msg, Trans } from '@lingui/macro'
+import { useLingui } from '@lingui/react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useId, useRef, useState } from 'react'
 import {
@@ -62,6 +63,7 @@ interface TuningSliderProps {
   defaultValue: number
   format?: (value: number) => string
   description?: string
+  resetTitle?: string
 }
 
 function TuningSlider({
@@ -73,7 +75,8 @@ function TuningSlider({
   step,
   defaultValue,
   format = (v) => v.toFixed(2),
-  description
+  description,
+  resetTitle = 'Reset to default'
 }: TuningSliderProps) {
   return (
     <div className={styles.tuningRow}>
@@ -86,7 +89,7 @@ function TuningSlider({
               type='button'
               className={styles.resetButton}
               onClick={() => onChange(defaultValue)}
-              title='Reset to default'
+              title={resetTitle}
             >
               ↺
             </button>
@@ -108,6 +111,7 @@ function TuningSlider({
 }
 
 export function RasterTab() {
+  const { _ } = useLingui()
   const rasterEnabledId = useId()
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
   const [rasterEnabled, setRasterEnabled] = useAtom(rasterEnabledAtom)
@@ -344,7 +348,7 @@ export function RasterTab() {
         </h3>
 
         <TuningSlider
-          label='Changements par ligne'
+          label={_(msg`Changements par ligne`)}
           value={Math.min(maxChangesPerLine, hardwareLimit)}
           onChange={setMaxChangesPerLine}
           min={1}
@@ -352,11 +356,14 @@ export function RasterTab() {
           step={1}
           defaultValue={1}
           format={(v) => v.toFixed(0)}
-          description="Nombre maximum de changements d'encre par ligne (1 = raster classique)"
+          description={_(
+            msg`Nombre maximum de changements d'encre par ligne (1 = raster classique)`
+          )}
+          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
 
         <TuningSlider
-          label='Dithering raster'
+          label={_(msg`Dithering raster`)}
           value={Math.round(rasterDitheringIntensity * 100)}
           onChange={(val) => setRasterDitheringIntensity(val / 100)}
           min={0}
@@ -364,7 +371,10 @@ export function RasterTab() {
           step={5}
           defaultValue={0}
           format={(v) => `${v}%`}
-          description="Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
+          description={_(
+            msg`Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes`
+          )}
+          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
 
         {image && (
@@ -394,25 +404,31 @@ export function RasterTab() {
         </h3>
 
         <TuningSlider
-          label='Vertical Error Coefficient'
+          label={_(msg`Coefficient d'erreur verticale`)}
           value={verticalErrorCoef}
           onChange={setVerticalErrorCoef}
           min={0.0}
           max={0.5}
           step={0.025}
           defaultValue={VERTICAL_ERROR_COEFFICIENT}
-          description='Propagation verticale des erreurs de quantification (lower = moins de banding)'
+          description={_(
+            msg`Propagation verticale des erreurs de quantification (lower = moins de banding)`
+          )}
+          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
 
         <TuningSlider
-          label='Horizontal Error Coefficient'
+          label={_(msg`Coefficient d'erreur horizontale`)}
           value={horizontalErrorCoef}
           onChange={setHorizontalErrorCoef}
           min={0.0}
           max={1.0}
           step={0.05}
           defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
-          description='Propagation horizontale des erreurs de quantification entre pixels'
+          description={_(
+            msg`Propagation horizontale des erreurs de quantification entre pixels`
+          )}
+          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
       </div>
 
@@ -424,7 +440,7 @@ export function RasterTab() {
         </h3>
 
         <TuningSlider
-          label='Continuity Distance'
+          label={_(msg`Distance de continuité`)}
           value={paletteContinuityDistance}
           onChange={setPaletteContinuityDistance}
           min={200}
@@ -432,29 +448,38 @@ export function RasterTab() {
           step={50}
           defaultValue={PALETTE_CONTINUITY_DISTANCE}
           format={(v) => v.toFixed(0)}
-          description='Lower = more palette changes, higher = more stability'
+          description={_(
+            msg`Plus bas = plus de changements de palette, plus haut = plus de stabilité`
+          )}
+          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
 
         <TuningSlider
-          label='Continuity Bonus'
+          label={_(msg`Bonus de continuité`)}
           value={paletteContinuityBonus}
           onChange={setPaletteContinuityBonus}
           min={1.0}
           max={3.0}
           step={0.1}
           defaultValue={PALETTE_CONTINUITY_BONUS}
-          description='Higher = stronger preference for previous palette colors'
+          description={_(
+            msg`Plus haut = préférence plus forte pour les couleurs de la palette précédente`
+          )}
+          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
 
         <TuningSlider
-          label='Frequency Weight'
+          label={_(msg`Poids de fréquence`)}
           value={paletteFrequencyExponent}
           onChange={setPaletteFrequencyExponent}
           min={0.0}
           max={1.0}
           step={0.05}
           defaultValue={PALETTE_FREQUENCY_EXPONENT}
-          description='0 = pure diversity, 0.5 = balanced, 1 = prefer frequent colors'
+          description={_(
+            msg`0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
+          )}
+          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
       </div>
 

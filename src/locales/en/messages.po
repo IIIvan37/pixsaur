@@ -18,7 +18,7 @@ msgstr ""
 #~ msgstr "{0} (used)"
 
 #. placeholder {0}: images.length
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:171
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:170
 msgid "{0} image(s) ready to export"
 msgstr "{0} image(s) ready to export"
 
@@ -26,11 +26,11 @@ msgstr "{0} image(s) ready to export"
 #~ msgid "{0} remaining"
 #~ msgstr "{0} remaining"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:173
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:172
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} remaining"
 
-#: src/components/raster-panel/raster-panel-view.tsx:351
+#: src/components/raster-panel/raster-panel-view.tsx:343
 msgid "{uniqueColorsCount} couleur(s) unique(s)"
 msgstr "{uniqueColorsCount} unique color(s)"
 
@@ -42,12 +42,20 @@ msgstr "A new version of Pixsaur is available. Click below to download and insta
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 
+#: src/components/settings-panel/tabs/raster-tab.tsx:327
+msgid "Active le mode raster pour utiliser des palettes optimisées par ligne."
+msgstr "Enable raster mode to use line-optimized palettes."
+
 #: src/components/raster-panel/raster-panel-view.tsx:265
 #~ msgid "Activer l'aperçu raster"
 #~ msgstr "Enable raster preview"
 
+#: src/components/settings-panel/tabs/dithering-tab.tsx:87
+msgid "Activer le lissage horizontal"
+msgstr "Enable horizontal smoothing"
+
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:190
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:189
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptive"
 
@@ -55,7 +63,7 @@ msgstr "Adaptive"
 msgid "Add current converted image to DSK workspace"
 msgstr "Add current converted image to DSK workspace"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:57
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:56
 msgid "Add Current Image"
 msgstr "Add Current Image"
 
@@ -68,10 +76,10 @@ msgid "Additional DSK Files"
 msgstr "Additional DSK Files"
 
 #: src/app/components/main-content/main-content.tsx:12
-msgid "Adjustments, Source & Preview"
-msgstr "Adjustments, Source & Preview"
+#~ msgid "Adjustments, Source & Preview"
+#~ msgstr "Adjustments, Source & Preview"
 
-#: src/components/raster-panel/raster-panel-view.tsx:386
+#: src/components/raster-panel/raster-panel-view.tsx:397
 msgid "Ajouter un changement"
 msgstr "Add change"
 
@@ -80,18 +88,22 @@ msgstr "Add change"
 #~ msgstr "Add range"
 
 #: src/app/components/adjustements/adjustement.view.tsx:73
+#: src/components/settings-panel/tabs/source-tab.tsx:93
 msgid "Ajuste la clarté globale de l'image"
 msgstr "Ajuste la clarté globale de l'image"
 
 #: src/app/components/adjustements/adjustement.view.tsx:79
+#: src/components/settings-panel/tabs/source-tab.tsx:102
 msgid "Ajuste la différence entre les tons clairs et foncés"
 msgstr "Ajuste la différence entre les tons clairs et foncés"
 
 #: src/app/components/adjustements/adjustement.view.tsx:143
+#: src/components/settings-panel/tabs/source-tab.tsx:192
 msgid "Ajuste uniquement les zones claires de l'image"
 msgstr "Ajuste uniquement les zones claires de l'image"
 
 #: src/app/components/adjustements/adjustement.view.tsx:148
+#: src/components/settings-panel/tabs/source-tab.tsx:200
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
@@ -109,7 +121,11 @@ msgstr "Cancel"
 msgid "Aperçu"
 msgstr "Preview"
 
-#: src/components/raster-panel/raster-panel-view.tsx:358
+#: src/components/settings-panel/tabs/dithering-tab.tsx:74
+msgid "Applique un lissage horizontal pour réduire les artefacts de pixels. Désactivé en mode raster."
+msgstr "Applies horizontal smoothing to reduce pixel artifacts. Disabled in raster mode."
+
+#: src/components/raster-panel/raster-panel-view.tsx:369
 msgid "Aucun changement raster défini."
 msgstr "No raster changes defined."
 
@@ -122,52 +138,78 @@ msgstr "No processed image"
 #~ msgstr "No raster ranges defined."
 
 #: src/components/image-resize/image-resize-panel.tsx:54
+#: src/components/settings-panel/tabs/resize-tab.tsx:60
 msgid "Auto (Smart CPC adapt)"
 msgstr "Auto (Smart CPC adapt)"
 
+#: src/components/settings-panel/tabs/resize-tab.tsx:39
+msgid "Auto: redimensionnement intelligent avec correction du ratio CPC (recommandé). Origin: conserve la taille de sélection originale (pixel-perfect, pas de mise à l'échelle)."
+msgstr "Auto: smart resizing with CPC ratio correction (recommended). Origin: keeps original selection size (pixel-perfect, no scaling)."
+
 #: src/app/components/adjustements/adjustement.view.tsx:110
+#: src/components/settings-panel/tabs/source-tab.tsx:146
 msgid "Balance bleu/orange (-100 = froid, +100 = chaud)"
 msgstr "Balance bleu/orange (-100 = froid, +100 = chaud)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:116
+#: src/components/settings-panel/tabs/source-tab.tsx:156
 msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Balance vert/magenta pour corriger les dominantes de couleur"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:115
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:114
 msgid "palette.strategy.balanced-score-max.label"
 msgstr "Balanced Contrast Max"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:91
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:90
 msgid "palette.strategy.frequency-max.desc"
 msgstr "Balanced frequency (60%) and diversity (40%)"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:100
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:99
 msgid "palette.strategy.balanced-score-balanced.label"
 msgstr "Balanced Score"
 
 #: src/app/components/adjustements/adjustement.view.tsx:67
+#: src/components/settings-panel/tabs/source-tab.tsx:84
 #: src/components/ui/rgb-slider/rgb-slider.tsx:60
 msgid "Bleu"
 msgstr "Blue"
 
 #: src/app/components/adjustements/adjustement.view.tsx:26
+#: src/components/settings-panel/tabs/source-tab.tsx:38
 msgid "Canaux RGB"
 msgstr "RGB Channels"
 
+#: src/components/settings-panel/tabs/resize-tab.tsx:76
+msgid "Centrage de l'image"
+msgstr "Image centering"
+
+#: src/components/settings-panel/tabs/resize-tab.tsx:79
+msgid "Centre automatiquement l'image dans le canvas aux dimensions CPC cibles."
+msgstr "Automatically centers the image in the canvas to target CPC dimensions."
+
 #: src/components/image-resize/image-resize-panel.tsx:73
+#: src/components/settings-panel/tabs/resize-tab.tsx:92
 msgid "Centrer l'image"
 msgstr "Center image"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:149
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:163
 msgid "Changements par ligne"
 msgstr "Changes per line"
 
-#: src/app/components/source-section.tsx:33
+#: src/components/settings-panel/tabs/raster-tab.tsx:469
+msgid "Changements Raster"
+msgstr "Raster Changes"
+
+#: src/app/components/source-section.tsx:32
 msgid "Changer d'image"
 msgstr "Change image"
+
+#: src/components/settings-panel/tabs/dithering-tab.tsx:40
+msgid "Choisissez la stratégie de génération de palette pour optimiser la qualité visuelle."
+msgstr "Choose the palette generation strategy to optimize visual quality."
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:77
 #~ msgid "Clear"
@@ -201,34 +243,53 @@ msgstr "Color {index}: {color}"
 msgid "Configuration de l'export"
 msgstr "Export Configuration"
 
+#: src/components/settings-panel/tabs/dithering-tab.tsx:53
+msgid "Configuration du Dithering"
+msgstr "Dithering Configuration"
+
 #: src/components/export-panel/export-config-dialog.tsx:129
 msgid "Contenu du ZIP"
 msgstr "ZIP Contents"
 
 #: src/app/components/adjustements/adjustement.view.tsx:77
+#: src/components/settings-panel/tabs/source-tab.tsx:100
 msgid "Contraste"
 msgstr "Contrast"
 
-#: src/app/app.tsx:135
+#: src/app/app.tsx:137
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Image Converter"
 
 #: src/app/components/adjustements/adjustement.view.tsx:125
+#: src/components/settings-panel/tabs/source-tab.tsx:168
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:160
+#: src/components/raster-panel/raster-panel-view.tsx:161
 msgid "Couleur"
 msgstr "Color"
 
 #: src/app/components/adjustements/adjustement.view.tsx:31
+#: src/components/settings-panel/tabs/source-tab.tsx:43
 msgid "Couleur & Température"
 msgstr "Color & Temperature"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:40
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:39
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Coverage Aware"
+
+#: src/components/settings-panel/tabs/hardware-tab.tsx:56
+msgid "CPC Classic: palette de 27 couleurs fixes. CPC Plus: palette de 4096 couleurs."
+msgstr "CPC Classic: fixed 27-color palette. CPC Plus: 4096-color palette."
+
+#: src/components/settings-panel/tabs/hardware-tab.tsx:65
+msgid "CPC Hardware"
+msgstr "CPC Hardware"
+
+#: src/components/settings-panel/tabs/hardware-tab.tsx:92
+msgid "CPC Pixel Mode"
+msgstr "CPC Pixel Mode"
 
 #: src/components/raster-panel/raster-panel-view.tsx:315
 #~ msgid "Début"
@@ -239,7 +300,11 @@ msgstr "Coverage Aware"
 msgid "Déverrouiller"
 msgstr "Unlock"
 
-#: src/components/image-controls/image-controls-view.tsx:107
+#: src/components/settings-panel/tabs/hardware-tab.tsx:120
+msgid "Dimension Preset"
+msgstr "Dimension Preset"
+
+#: src/components/settings-panel/tabs/hardware-tab.tsx:108
 msgid "Dimensions"
 msgstr "Dimensions"
 
@@ -247,30 +312,40 @@ msgstr "Dimensions"
 #~ msgid "Disquette DSK (image écran)"
 #~ msgstr "Disquette DSK (image écran)"
 
+#: src/components/settings-panel/settings-panel.tsx:55
+msgid "Dithering"
+msgstr "Dithering"
+
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:55
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:54
 msgid "palette.strategy.dithering-aware.label"
 msgstr "Dithering Aware"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:214
+#: src/components/raster-panel/raster-tuning-panel.tsx:180
+#: src/components/settings-panel/tabs/raster-tab.tsx:395
+msgid "Dithering Error Propagation"
+msgstr "Dithering Error Propagation"
+
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:212
+#: src/components/settings-panel/tabs/dithering-controls.tsx:90
 msgid "Dithering final"
 msgstr "Final dithering"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:167
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:181
 msgid "Dithering horizontal 1D appliqué lors du prétraitement raster"
 msgstr "Horizontal 1D dithering applied during raster preprocessing"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:165
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:179
 msgid "Dithering raster"
 msgstr "Raster dithering"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:160
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:159
 msgid "palette.strategy.diversity-first-balanced.label"
 msgstr "Diversity Balanced"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:166
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:165
 msgid "palette.strategy.diversity-first-balanced.desc"
 msgstr "Dominant diversity (90%) with slight frequency (10%)"
 
@@ -279,12 +354,12 @@ msgid "Downloading..."
 msgstr "Downloading..."
 
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:44
-msgid "DSK Manager"
-msgstr "DSK Manager"
+#~ msgid "DSK Manager"
+#~ msgstr "DSK Manager"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:69
-#~ msgid "DSK Workspace"
-#~ msgstr "DSK Workspace"
+#: src/components/settings-panel/tabs/export-tab.tsx:31
+msgid "DSK Workspace"
+msgstr "DSK Workspace"
 
 #: src/components/dsk-workspace/dsk-workspace-panel.tsx:186
 #: src/components/dsk-workspace/dsk-workspace-panel.tsx:192
@@ -292,23 +367,24 @@ msgid "DSK workspace exported successfully!"
 msgstr "DSK workspace exported successfully!"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:193
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:192
 msgid "palette.strategy.adaptive.desc"
 msgstr "Dynamic strategy based on image"
 
 #: src/app/components/adjustements/adjustement.view.tsx:48
+#: src/components/settings-panel/tabs/source-tab.tsx:60
 msgid "Effets"
 msgstr "Effects"
 
-#: src/components/raster-panel/raster-panel-view.tsx:336
+#: src/components/raster-panel/raster-panel-view.tsx:340
 msgid "Effets Raster"
 msgstr "Raster Effects"
 
-#: src/components/raster-panel/raster-panel-view.tsx:147
+#: src/components/raster-panel/raster-panel-view.tsx:148
 msgid "Encre"
 msgstr "Ink"
 
-#: src/components/raster-panel/raster-panel-view.tsx:133
+#: src/components/raster-panel/raster-panel-view.tsx:134
 msgid "Encre {inkIndex}"
 msgstr "Ink {inkIndex}"
 
@@ -322,13 +398,25 @@ msgid "Exec"
 msgstr "Exec"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:25
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:24
 msgid "palette.strategy.exhaustive-contrast.label"
 msgstr "Exhaustive Contrast"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:168
+#: src/components/settings-panel/settings-panel.tsx:67
+msgid "Export"
+msgstr "Export"
+
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:167
 msgid "Export DSK"
 msgstr "Export DSK"
+
+#: src/components/settings-panel/tabs/export-tab.tsx:15
+msgid "Export Options"
+msgstr "Export Options"
+
+#: src/components/settings-panel/tabs/export-tab.tsx:18
+msgid "Export your converted images to various formats compatible with CPC emulators and real hardware."
+msgstr "Export your converted images to various formats compatible with CPC emulators and real hardware."
 
 #: src/components/export-panel/export-config-dialog.tsx:122
 #: src/components/export-panel/export-panel-view.tsx:25
@@ -336,10 +424,12 @@ msgid "Exporter"
 msgstr "Export"
 
 #: src/app/components/adjustements/adjustement.view.tsx:132
+#: src/components/settings-panel/tabs/source-tab.tsx:178
 msgid "Exposition"
 msgstr "Exposure"
 
 #: src/app/components/adjustements/adjustement.view.tsx:36
+#: src/components/settings-panel/tabs/source-tab.tsx:48
 msgid "Exposition & Tonalité"
 msgstr "Exposure & Tone"
 
@@ -361,37 +451,47 @@ msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Supported formats: PNG, JPEG, GIF, BMP, WEBP, SVG"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:70
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:69
 msgid "palette.strategy.frequency-balanced.label"
 msgstr "Frequency Balanced"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:85
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:84
 msgid "palette.strategy.frequency-max.label"
 msgstr "Frequency Contrast"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:76
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:75
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Frequency priority (80%) with moderate diversity"
 
 #: src/app/components/adjustements/adjustement.view.tsx:123
+#: src/components/settings-panel/tabs/source-tab.tsx:166
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:192
+#: src/components/settings-panel/tabs/raster-tab.tsx:385
 msgid "Générer les rasters"
 msgstr "Generate rasters"
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:472
+msgid "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
+msgstr "Manage ink changes per line (automatically generated or manual)"
 
 #: src/components/image-upload/image-upload-view.tsx:198
 msgid "Glissez & déposez une image ici"
 msgstr "Drag & drop an image here"
 
-#: src/components/image-controls/image-controls-view.tsx:83
+#: src/components/settings-panel/settings-panel.tsx:49
 msgid "Hardware"
 msgstr "Hardware"
 
+#: src/components/settings-panel/tabs/hardware-tab.tsx:53
+msgid "Hardware CPC"
+msgstr "CPC Hardware"
+
 #: src/app/components/adjustements/adjustement.view.tsx:142
+#: src/components/settings-panel/tabs/source-tab.tsx:191
 msgid "Hautes lumières"
 msgstr "Highlights"
 
@@ -403,7 +503,7 @@ msgstr "Height"
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 
-#: src/app/components/source-section.tsx:32
+#: src/app/components/source-section.tsx:31
 msgid "Image source"
 msgstr "Image source"
 
@@ -415,11 +515,13 @@ msgstr "Install Update"
 #~ msgid "Installing..."
 #~ msgstr "Installing..."
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:236
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:234
+#: src/components/settings-panel/tabs/dithering-controls.tsx:112
 msgid "Intensité"
 msgstr "Intensity"
 
 #: src/app/components/adjustements/adjustement.view.tsx:86
+#: src/components/settings-panel/tabs/source-tab.tsx:112
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 
@@ -452,12 +554,12 @@ msgstr "Later"
 msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
 msgstr "SCR format requires size <= 16 KB (current size: {0} KB)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:248
+#: src/components/raster-panel/raster-panel-view.tsx:249
 msgid "Ligne"
 msgstr "Line"
 
 #. placeholder {0}: group.line
-#: src/components/raster-panel/raster-panel-view.tsx:240
+#: src/components/raster-panel/raster-panel-view.tsx:241
 msgid "Ligne {0}"
 msgstr "Line {0}"
 
@@ -469,7 +571,7 @@ msgstr "Linear ASM (sequential)"
 #~ msgid "Lissage"
 #~ msgstr "Smoothing"
 
-#: src/components/image-controls/image-controls-view.tsx:138
+#: src/components/settings-panel/tabs/dithering-tab.tsx:71
 msgid "Lissage horizontal"
 msgstr "Horizontal Smoothing"
 
@@ -478,30 +580,31 @@ msgid "Load"
 msgstr "Load"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:151
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:150
 msgid "palette.strategy.perceptual-max.desc"
 msgstr "Luminance bins with diversity priority"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:136
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:135
 msgid "palette.strategy.perceptual-balanced.desc"
 msgstr "Luminance bins with frequency priority"
 
 #: src/app/components/adjustements/adjustement.view.tsx:72
+#: src/components/settings-panel/tabs/source-tab.tsx:92
 msgid "Luminosité"
 msgstr "Brightness"
 
-#: src/components/raster-panel/raster-panel-view.tsx:347
+#: src/components/raster-panel/raster-panel-view.tsx:363
 msgid "Max {maxChangesPerLine} changement(s) par ligne"
-msgstr ""
+msgstr "Max {maxChangesPerLine} change(s) per line"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:46
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:45
 msgid "palette.strategy.coverage-aware.desc"
 msgstr "Maximizes pixel coverage (minimizes global error)"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:181
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:180
 msgid "palette.strategy.diversity-first-max.desc"
 msgstr "Maximum diversity (100%), frequency ignored"
 
@@ -513,37 +616,46 @@ msgstr "Memory"
 #~ msgid "Mode"
 #~ msgstr "Mode"
 
+#: src/components/settings-panel/tabs/hardware-tab.tsx:84
+msgid "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
+msgstr "Mode 0: 160 pixels wide, Mode 1: 320 pixels, Mode 2: 640 pixels"
+
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:169
 #~ msgid "Mode de dithering"
 #~ msgstr "Dithering mode"
 
 #: src/components/image-resize/image-resize-panel.tsx:37
+#: src/components/settings-panel/tabs/resize-tab.tsx:36
 msgid "Mode de redimensionnement"
 msgstr "Resize mode"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:134
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:148
+#: src/components/settings-panel/tabs/raster-tab.tsx:324
 msgid "Mode Raster"
-msgstr ""
+msgstr "Raster Mode"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:106
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:105
 msgid "palette.strategy.balanced-score-balanced.desc"
 msgstr "Multi-criteria balanced (50% freq, 25% div, 25% lum)"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:121
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:120
 msgid "palette.strategy.balanced-score-max.desc"
 msgstr "Multi-criteria with contrast (30% freq, 35% div, 35% lum)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:68
+#: src/components/settings-panel/tabs/source-tab.tsx:85
 msgid "Multiplie le canal bleu (0-2x)"
 msgstr "Multiplie le canal bleu (0-2x)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:58
+#: src/components/settings-panel/tabs/source-tab.tsx:69
 msgid "Multiplie le canal rouge (0-2x)"
 msgstr "Multiplie le canal rouge (0-2x)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:63
+#: src/components/settings-panel/tabs/source-tab.tsx:77
 msgid "Multiplie le canal vert (0-2x)"
 msgstr "Multiplie le canal vert (0-2x)"
 
@@ -555,7 +667,7 @@ msgstr "No additional files. Upload or add files to include them in the DSK."
 msgid "No image to add"
 msgstr "No image to add"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:180
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:179
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "No images in workspace yet. Add converted images to build your DSK file."
 
@@ -563,19 +675,25 @@ msgstr "No images in workspace yet. Add converted images to build your DSK file.
 msgid "Nom du fichier ZIP"
 msgstr "ZIP File Name"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:151
+#: src/components/image-controls/dithering-selector/dithering-selector.tsx:165
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Maximum ink changes per line (1 = classic raster)"
+
+#. js-lingui-explicit-id
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:242
+msgid "palette.strategy.disabled.raster"
+msgstr "Disabled (raster mode)"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:76
 msgid "Not enough space on DSK"
 msgstr "Not enough space on DSK"
 
 #: src/app/components/adjustements/adjustement.view.tsx:147
+#: src/components/settings-panel/tabs/source-tab.tsx:199
 msgid "Ombres"
 msgstr "Shadows"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:188
+#: src/components/settings-panel/tabs/raster-tab.tsx:381
 msgid "Optimisation..."
 msgstr "Optimizing..."
 
@@ -584,6 +702,7 @@ msgid "Options de couleur"
 msgstr "Color options"
 
 #: src/components/image-resize/image-resize-panel.tsx:61
+#: src/components/settings-panel/tabs/resize-tab.tsx:67
 msgid "Origin (No Scale)"
 msgstr "Origin (No Scale)"
 
@@ -595,21 +714,42 @@ msgstr "or click to select a file"
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
+#: src/components/settings-panel/settings-button.tsx:21
+msgid "Ouvrir le panneau des paramètres"
+msgstr "Open settings panel"
+
+#: src/components/settings-panel/settings-button.tsx:20
+msgid "Ouvrir les paramètres"
+msgstr "Open settings"
+
+#: src/components/raster-panel/raster-tuning-panel.tsx:209
+#: src/components/settings-panel/tabs/raster-tab.tsx:425
+msgid "Palette Selection"
+msgstr "Palette Selection"
+
 #: src/components/export-panel/export-config-dialog.tsx:153
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
+#: src/components/settings-panel/settings-button.tsx:25
+msgid "Paramètres"
+msgstr "Settings"
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:345
+msgid "Paramètres Raster"
+msgstr "Raster Parameters"
+
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:130
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:129
 msgid "palette.strategy.perceptual-balanced.label"
 msgstr "Perceptual Balanced"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:145
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:144
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptual Contrast"
 
-#: src/components/image-controls/image-controls-view.tsx:95
+#: src/components/settings-panel/tabs/hardware-tab.tsx:81
 msgid "Pixel Mode"
 msgstr "Pixel Mode"
 
@@ -626,6 +766,7 @@ msgid "PNG (pixels carrés)"
 msgstr "PNG (square pixels)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:152
+#: src/components/settings-panel/tabs/source-tab.tsx:207
 msgid "Posterisation"
 msgstr "Posterization"
 
@@ -634,9 +775,17 @@ msgid "Processeur"
 msgstr "Processor"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:175
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:174
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Pure Diversity"
+
+#: src/components/settings-panel/settings-panel.tsx:61
+msgid "Raster"
+msgstr "Raster"
+
+#: src/components/raster-panel/raster-tuning-panel.tsx:172
+msgid "Raster Tuning"
+msgstr "Raster Tuning"
 
 #: src/components/raster-panel/raster-panel-view.tsx:336
 #~ msgid "Raster: changements d'encre par ligne"
@@ -646,13 +795,17 @@ msgstr "Pure Diversity"
 msgid "Rasters (données ASM)"
 msgstr "Rasters (ASM data)"
 
-#: src/components/image-controls/dithering-selector/dithering-selector.tsx:190
+#: src/components/settings-panel/tabs/raster-tab.tsx:383
 msgid "Rasters générés"
-msgstr ""
+msgstr "Generated Rasters"
 
 #: src/components/source-selector/source-selector-view.tsx:112
 #~ msgid "Redimensionner"
 #~ msgstr "Resize"
+
+#: src/components/settings-panel/tabs/source-tab.tsx:209
+msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche"
+msgstr "Reduces the number of color levels for a poster effect"
 
 #: src/app/components/adjustements/adjustement.view.tsx:155
 #~ msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (2-256)"
@@ -663,6 +816,7 @@ msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=norm
 msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:206
+#: src/components/settings-panel/tabs/source-tab.tsx:251
 msgid "Réinitialiser"
 msgstr "Reset"
 
@@ -674,20 +828,28 @@ msgstr "Remove file"
 msgid "Remove image from workspace"
 msgstr "Remove image from workspace"
 
+#: src/components/settings-panel/settings-panel.tsx:43
+msgid "Resize"
+msgstr "Resize"
+
 #: src/app/components/adjustements/adjustement.view.tsx:93
+#: src/components/settings-panel/tabs/source-tab.tsx:122
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
 msgstr "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:57
+#: src/components/settings-panel/tabs/source-tab.tsx:68
 #: src/components/ui/rgb-slider/rgb-slider.tsx:58
 msgid "Rouge"
 msgstr "Red"
 
 #: src/app/components/adjustements/adjustement.view.tsx:84
+#: src/components/settings-panel/tabs/source-tab.tsx:110
 msgid "Saturation"
 msgstr "Saturation"
 
 #: src/app/components/adjustements/adjustement.view.tsx:102
+#: src/components/settings-panel/tabs/source-tab.tsx:134
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 
@@ -696,6 +858,7 @@ msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (interlaced CPC format)"
 
 #: src/components/image-resize/image-resize-panel.tsx:43
+#: src/components/settings-panel/tabs/resize-tab.tsx:49
 msgid "Sélection"
 msgstr "Selection"
 
@@ -703,24 +866,45 @@ msgstr "Selection"
 #~ msgid "Sélectionner une couleur"
 #~ msgstr "Select a color"
 
+#: src/components/settings-panel/tabs/dithering-tab.tsx:56
+msgid "Sélectionnez l'algorithme de dithering et ajustez les paramètres pour optimiser le rendu final."
+msgstr "Select the dithering algorithm and adjust parameters to optimize the final rendering."
+
 #: src/components/export-panel/export-config-dialog.tsx:114
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Select files to include in ZIP archive"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:61
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:60
 msgid "palette.strategy.dithering-aware.desc"
 msgstr "Selects colors that blend well in dithering"
 
+#: src/components/settings-panel/settings-panel.tsx:85
+msgid "Settings"
+msgstr "Settings"
+
 #: src/app/components/adjustements/adjustement.view.tsx:134
+#: src/components/settings-panel/tabs/source-tab.tsx:180
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:234
-msgid "Stratégie de palette non utilisée en mode raster"
-msgstr "Palette strategy not used in raster mode"
+#: src/components/settings-panel/settings-panel.tsx:37
+msgid "Source"
+msgstr "Source"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:46
+#: src/components/settings-panel/tabs/hardware-tab.tsx:111
+msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
+msgstr "Standard: standard CPC dimensions. Overscan: uses full displayable area. Custom: custom dimensions."
+
+#: src/components/settings-panel/tabs/dithering-tab.tsx:34
+msgid "Stratégie de palette"
+msgstr "Palette Strategy"
+
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:234
+#~ msgid "Stratégie de palette non utilisée en mode raster"
+#~ msgstr "Palette strategy not used in raster mode"
+
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:45
 msgid "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
 msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
 
@@ -728,28 +912,31 @@ msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects 
 #~ msgid "Supprimer la plage"
 #~ msgstr "Remove range"
 
-#: src/components/raster-panel/raster-panel-view.tsx:288
+#: src/components/raster-panel/raster-panel-view.tsx:289
 msgid "Supprimer le changement"
 msgstr "Remove change"
 
 #: src/app/components/adjustements/adjustement.view.tsx:91
+#: src/components/settings-panel/tabs/source-tab.tsx:120
 msgid "Teinte"
 msgstr "Hue"
 
 #: src/app/components/adjustements/adjustement.view.tsx:114
+#: src/components/settings-panel/tabs/source-tab.tsx:154
 msgid "Teinte colorée"
 msgstr "Tint"
 
 #: src/app/components/adjustements/adjustement.view.tsx:109
+#: src/components/settings-panel/tabs/source-tab.tsx:144
 msgid "Température"
 msgstr "Temperature"
 
 #. js-lingui-explicit-id
-#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:31
+#: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:30
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Tests all combinations, maximizes contrast (best quality)"
 
-#: src/components/raster-panel/raster-panel-view.tsx:396
+#: src/components/raster-panel/raster-panel-view.tsx:407
 msgid "Tout supprimer"
 msgstr "Remove all"
 
@@ -795,11 +982,13 @@ msgstr "Version"
 #~ msgstr "Version {updateVersion}"
 
 #: src/app/components/adjustements/adjustement.view.tsx:62
+#: src/components/settings-panel/tabs/source-tab.tsx:76
 #: src/components/ui/rgb-slider/rgb-slider.tsx:59
 msgid "Vert"
 msgstr "Green"
 
 #: src/app/components/adjustements/adjustement.view.tsx:100
+#: src/components/settings-panel/tabs/source-tab.tsx:132
 msgid "Vibrance"
 msgstr "Vibrance"
 
