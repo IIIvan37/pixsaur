@@ -35,10 +35,10 @@ import {
 } from '@/app/store/raster/raster-tuning'
 import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
 import { RasterPanelView } from '@/components/raster-panel/raster-panel-view'
+import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
 import Button from '@/components/ui/button'
 import Flex from '@/components/ui/flex'
 import Icon from '@/components/ui/icon'
-import PixsaurSlider from '@/components/ui/slider/slider'
 import { Switch } from '@/components/ui/switch'
 import logger from '@/core/logger'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
@@ -53,63 +53,6 @@ import {
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { cpcFullPalette } from '@/palettes/cpc-palette'
 import styles from './tab.module.css'
-
-interface TuningSliderProps {
-  label: string
-  value: number
-  onChange: (value: number) => void
-  min: number
-  max: number
-  step: number
-  defaultValue: number
-  format?: (value: number) => string
-  description?: string
-  resetTitle?: string
-}
-
-function TuningSlider({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-  step,
-  defaultValue,
-  format = (v) => v.toFixed(2),
-  description,
-  resetTitle = 'Reset to default'
-}: TuningSliderProps) {
-  return (
-    <div className={styles.tuningRow}>
-      <div className={styles.tuningHeader}>
-        <span className={styles.tuningLabel}>{label}</span>
-        <div className={styles.tuningValue}>
-          <span className={styles.currentValue}>{format(value)}</span>
-          {value !== defaultValue && (
-            <button
-              type='button'
-              className={styles.resetButton}
-              onClick={() => onChange(defaultValue)}
-              title={resetTitle}
-            >
-              ↺
-            </button>
-          )}
-        </div>
-      </div>
-      <PixsaurSlider
-        min={min}
-        max={max}
-        value={value}
-        step={step}
-        onChange={onChange}
-        hideLabel
-        showTooltip={false}
-      />
-      {description && <div className={styles.description}>{description}</div>}
-    </div>
-  )
-}
 
 export function RasterTab() {
   const { _ } = useLingui()
