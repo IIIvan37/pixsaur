@@ -78,9 +78,9 @@ jobs:
       matrix:
         include:
           - platform: "macos-14" # macOS ARM64 (M1/M2/M3) - native build
-            args: ""
-          - platform: "macos-latest" # macOS Intel (x86_64) - uses latest available
-            args: ""
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-14" # macOS Intel (x86_64) - cross-compile from ARM64
+            args: "--target x86_64-apple-darwin"
           - platform: "ubuntu-22.04"
             args: "--bundles appimage"
             bundle-type: "appimage"
