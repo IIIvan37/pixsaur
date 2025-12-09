@@ -1,6 +1,5 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
-import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
 import { useMemo } from 'react'
 import {
@@ -198,6 +197,13 @@ const getPaletteStrategies = (
     }
   ] as const
 
+// Hook to check if palette strategy is disabled
+export function usePaletteStrategyDisabled() {
+  const modeConfig = useAtomValue(effectiveModeConfigAtom)
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  return modeConfig.nColors >= 16 || rasterEnabled
+}
+
 export function PaletteStrategySelector() {
   const { _ } = useLingui()
   const [paletteStrategy, setPaletteStrategy] = useAtom(paletteStrategyAtom)
@@ -219,26 +225,28 @@ export function PaletteStrategySelector() {
     return null
   }
 
-  // Hide when raster mode is enabled - raster uses its own per-line palette extraction
-  if (rasterEnabled) {
-    return (
-      <div
-        style={{
-          fontFamily: 'var(--font-family)',
-          fontSize: 'var(--font-size-sm)',
-          color: 'var(--color-foreground-muted)',
-          fontStyle: 'italic',
-          padding: 'var(--spacing-sm) 0'
-        }}
-      >
-        <Trans>Stratégie de palette non utilisée en mode raster</Trans>
-      </div>
-    )
-  }
-
   const currentStrategy = paletteStrategies.find(
     (s) => s.value === paletteStrategy
   )
+
+  // Disable when raster mode is enabled - raster uses its own per-line palette extraction
+  if (rasterEnabled) {
+    return (
+      <PaletteStrategySelectorView
+        strategies={paletteStrategies}
+        currentStrategy={paletteStrategy}
+        currentDescription={currentStrategy?.description}
+        onStrategyChange={handleStrategyChange}
+        disabled={true}
+        disabledReason={_(
+          msg({
+            id: 'palette.strategy.disabled.raster',
+            message: 'Non utilisée en mode raster (palette extraite par ligne)'
+          })
+        )}
+      />
+    )
+  }
 
   return (
     <PaletteStrategySelectorView

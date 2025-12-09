@@ -4,11 +4,15 @@
 
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { effectiveModeConfigAtom } from '@/app/store/config/config'
+import { imageAtom } from '@/app/store/image/image'
 import {
   autoOptimizeRasterAtom,
   hasGeneratedRastersAtom,
-  rasterEnabledAtom
+  rasterDitheringIntensityAtom,
+  rasterEnabledAtom,
+  rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster'
 import {
   horizontalErrorCoefficientAtom,
@@ -17,7 +21,11 @@ import {
   paletteFrequencyExponentAtom,
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
+import Button from '@/components/ui/button'
+import Flex from '@/components/ui/flex'
+import Icon from '@/components/ui/icon'
 import PixsaurSlider from '@/components/ui/slider/slider'
+import { Switch } from '@/components/ui/switch'
 import logger from '@/core/logger'
 import { rasterTuningOverrides } from '@/libs/pixsaur-raster/optimize-line-palettes'
 import {
@@ -85,9 +93,31 @@ function TuningSlider({
 }
 
 export function RasterTab() {
+  const rasterEnabledId = useId()
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
-  const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const [rasterEnabled, setRasterEnabled] = useAtom(rasterEnabledAtom)
   const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
+  const modeConfig = useAtomValue(effectiveModeConfigAtom)
+  const image = useAtomValue(imageAtom)
+  const [isOptimizing, setIsOptimizing] = useState(false)
+
+  const handleAutoOptimize = async () => {
+    setIsOptimizing(true)
+    try {
+      await autoOptimize({ resetChanges: true })
+    } catch (error) {
+      logger.error('Failed to generate rasters:', error)
+    } finally {
+      setIsOptimizing(false)
+    }
+  }
+
+  const [rasterDitheringIntensity, setRasterDitheringIntensity] = useAtom(
+    rasterDitheringIntensityAtom
+  )
+  const [maxChangesPerLine, setMaxChangesPerLine] = useAtom(
+    rasterMaxChangesPerLineAtom
+  )
 
   const [verticalErrorCoef, setVerticalErrorCoef] = useAtom(
     verticalErrorCoefficientAtom
@@ -152,8 +182,86 @@ export function RasterTab() {
     autoOptimize
   ])
 
+  // Calculate max allowed changes based on mode
+  const maxAllowedChanges =
+    modeConfig.mode === 0 ? 8 : modeConfig.mode === 1 ? 4 : 2
+
   return (
     <div className={styles.tabContent}>
+      {/* Switch Mode Raster */}
+      <div className={styles.section}>
+        <Flex align='center' justify='space-between' style={{ width: '100%' }}>
+          <div>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Mode Raster</Trans>
+            </h3>
+            <p className={styles.description}>
+              <Trans>
+                Active le mode raster pour utiliser des palettes optimisées par
+                ligne.
+              </Trans>
+            </p>
+          </div>
+          <Switch
+            checked={rasterEnabled}
+            onCheckedChange={setRasterEnabled}
+            id={rasterEnabledId}
+          />
+        </Flex>
+      </div>
+
+      <div className={styles.separator} />
+
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          <Trans>Paramètres Raster</Trans>
+        </h3>
+
+        <TuningSlider
+          label='Changements par ligne'
+          value={Math.min(maxChangesPerLine, maxAllowedChanges)}
+          onChange={setMaxChangesPerLine}
+          min={1}
+          max={maxAllowedChanges}
+          step={1}
+          defaultValue={1}
+          format={(v) => v.toFixed(0)}
+          description="Nombre maximum de changements d'encre par ligne (1 = raster classique)"
+        />
+
+        <TuningSlider
+          label='Dithering raster'
+          value={Math.round(rasterDitheringIntensity * 100)}
+          onChange={(val) => setRasterDitheringIntensity(val / 100)}
+          min={0}
+          max={100}
+          step={5}
+          defaultValue={0}
+          format={(v) => `${v}%`}
+          description="Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
+        />
+
+        {image && (
+          <Button
+            variant='secondary'
+            onClick={handleAutoOptimize}
+            disabled={isOptimizing || hasGeneratedRasters}
+            style={{ marginTop: 'var(--spacing-md)', width: '100%' }}
+          >
+            <Icon name='GearIcon' />
+            {isOptimizing ? (
+              <Trans>Optimisation...</Trans>
+            ) : hasGeneratedRasters ? (
+              <Trans>Rasters générés</Trans>
+            ) : (
+              <Trans>Générer les rasters</Trans>
+            )}
+          </Button>
+        )}
+      </div>
+
+      <div className={styles.separator} />
+
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>
           <Trans>Dithering Error Propagation</Trans>
@@ -167,7 +275,7 @@ export function RasterTab() {
           max={0.5}
           step={0.025}
           defaultValue={VERTICAL_ERROR_COEFFICIENT}
-          description='Lower = less vertical banding'
+          description='Propagation verticale des erreurs de quantification (lower = moins de banding)'
         />
 
         <TuningSlider
@@ -178,6 +286,7 @@ export function RasterTab() {
           max={1.0}
           step={0.05}
           defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
+          description='Propagation horizontale des erreurs de quantification entre pixels'
         />
       </div>
 

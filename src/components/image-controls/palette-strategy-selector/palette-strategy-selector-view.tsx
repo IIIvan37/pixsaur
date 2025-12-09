@@ -13,20 +13,27 @@ export interface PaletteStrategySelectorViewProps {
   readonly currentStrategy: PaletteStrategy
   readonly currentDescription?: string
   readonly onStrategyChange: (value: PaletteStrategy) => void
+  readonly disabled?: boolean
+  readonly disabledReason?: string
 }
 
 export function PaletteStrategySelectorView({
   strategies,
   currentStrategy,
   currentDescription,
-  onStrategyChange
+  onStrategyChange,
+  disabled = false,
+  disabledReason
 }: PaletteStrategySelectorViewProps) {
   return (
     <div className={styles.container}>
-      <div className={styles.label}>Stratégie de palette</div>
+      <div className={styles.label} style={{ opacity: disabled ? 0.5 : 1 }}>
+        Stratégie de palette
+      </div>
       <Select
         value={currentStrategy}
         onValueChange={(value) => onStrategyChange(value as PaletteStrategy)}
+        disabled={disabled}
       >
         {strategies.map((strategy) => (
           <SelectItem key={strategy.value} value={strategy.value}>
@@ -34,8 +41,12 @@ export function PaletteStrategySelectorView({
           </SelectItem>
         ))}
       </Select>
-      {currentDescription && (
-        <div className={styles.description}>{currentDescription}</div>
+      {disabled && disabledReason ? (
+        <div className={styles.disabledReason}>{disabledReason}</div>
+      ) : (
+        currentDescription && (
+          <div className={styles.description}>{currentDescription}</div>
+        )
       )}
     </div>
   )

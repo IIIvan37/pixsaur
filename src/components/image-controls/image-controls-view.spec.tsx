@@ -1,11 +1,7 @@
 import { screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, it, vi } from 'vitest'
+import { beforeEach, describe, it } from 'vitest'
 import { renderWithI18n } from '@/test-utils'
-import {
-  ImageControlsView,
-  type ImageControlsViewProps
-} from './image-controls-view'
+import { ImageControlsView } from './image-controls-view'
 
 // Mock CSS modules and Slider if needed
 vi.mock('../styles/image-converter.module.css', () => ({
@@ -39,31 +35,17 @@ vi.mock('@/components/ui/slider', () => ({
 }))
 
 describe('ImageControlsView', () => {
-  let onRasterEnabledChange: ReturnType<typeof vi.fn>
-  let props: ImageControlsViewProps
-
   beforeEach(() => {
-    onRasterEnabledChange = vi.fn()
-    props = {
-      rasterEnabled: false,
-      onRasterEnabledChange
-    }
+    // No setup needed
   })
 
   it('renders the component without crashing', () => {
-    renderWithI18n(<ImageControlsView {...props} />)
+    renderWithI18n(<ImageControlsView />)
     expect(screen.getByText(/Palette/i)).toBeInTheDocument()
   })
 
-  it('renders raster/dithering selector', () => {
-    renderWithI18n(<ImageControlsView {...props} />)
-    expect(screen.getByText(/Traitement d'image/i)).toBeInTheDocument()
-  })
-
-  it('calls onRasterEnabledChange when raster is toggled', async () => {
-    renderWithI18n(<ImageControlsView {...props} />)
-    const rasterSwitch = screen.getByRole('switch', { name: /Raster/i })
-    await userEvent.click(rasterSwitch)
-    expect(onRasterEnabledChange).toHaveBeenCalledWith(true)
+  it('renders processor selector', () => {
+    renderWithI18n(<ImageControlsView />)
+    expect(screen.getByText(/Processeur/i)).toBeInTheDocument()
   })
 })
