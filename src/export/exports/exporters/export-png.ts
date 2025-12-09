@@ -24,7 +24,7 @@ function createCanvasFromPixelData(
   canvas.height = height
   const ctx = canvas.getContext('2d', { alpha: false })
   if (ctx) {
-    const imageData = ctx.createImageData(width, height)
+    const imageData = new ImageData(width, height)
     imageData.data.set(pixelData)
     ctx.putImageData(imageData, 0, 0)
   }
