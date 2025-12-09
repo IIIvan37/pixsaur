@@ -1,5 +1,4 @@
 import { Trans } from '@lingui/react/macro'
-import Adjustments from '@/app/components/adjustements/adjustements'
 import PreviewPanel from '@/app/components/preview-panel'
 import SourceSection from '@/app/components/source-section'
 import ExportPanel from '@/components/export-panel/export-panel'
@@ -9,17 +8,13 @@ import styles from './main-content.module.css'
 export default function MainContent() {
   return (
     <CollapsibleSection
-      title={<Trans>Adjustments, Source & Preview</Trans>}
+      title={<Trans>Source & Preview</Trans>}
       defaultOpen={true}
     >
       <div className={styles.content}>
-        {/* Three columns side by side */}
+        {/* Two columns side by side */}
         <div className={styles.flexRow}>
-          <div className={styles.flexColumn}>
-            <Adjustments />
-          </div>
-
-          {/* Left side: Source Image and Adjustments */}
+          {/* Left side: Source Image */}
           <div className={styles.flexColumnGrow}>
             <SourceSection />
           </div>

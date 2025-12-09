@@ -1,5 +1,5 @@
 /**
- * Raster tuning panel component
+ * Raster tab content - extracted from RasterTuningPanel
  */
 
 import { Trans } from '@lingui/react/macro'
@@ -15,11 +15,8 @@ import {
   paletteContinuityBonusAtom,
   paletteContinuityDistanceAtom,
   paletteFrequencyExponentAtom,
-  rasterTuningEnabledAtom,
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
-import DraggableDialog from '@/components/ui/draggable-dialog'
-import Icon from '@/components/ui/icon'
 import PixsaurSlider from '@/components/ui/slider/slider'
 import logger from '@/core/logger'
 import { rasterTuningOverrides } from '@/libs/pixsaur-raster/optimize-line-palettes'
@@ -30,7 +27,7 @@ import {
   PALETTE_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from '@/libs/pixsaur-raster/raster-constants'
-import styles from './raster-tuning-panel.module.css'
+import styles from './tab.module.css'
 
 interface TuningSliderProps {
   label: string
@@ -87,8 +84,7 @@ function TuningSlider({
   )
 }
 
-export function RasterTuningPanel() {
-  const [enabled, setEnabled] = useAtom(rasterTuningEnabledAtom)
+export function RasterTab() {
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
@@ -110,14 +106,10 @@ export function RasterTuningPanel() {
     paletteFrequencyExponentAtom
   )
 
-  // Ref to prevent re-triggering during regeneration
   const isRegeneratingRef = useRef(false)
 
-  // Sync atom values to rasterTuningOverrides and re-optimize automatically
   useEffect(() => {
-    // Skip if already regenerating or if rasters aren't enabled/generated
     if (isRegeneratingRef.current || !rasterEnabled || !hasGeneratedRasters) {
-      // Still update the overrides even if we don't regenerate
       rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
       rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
       rasterTuningOverrides.paletteContinuityDistance =
@@ -133,12 +125,9 @@ export function RasterTuningPanel() {
     rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
     rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
 
-    // Set flag to prevent re-triggering
     isRegeneratingRef.current = true
 
-    // Debounce the regeneration (200ms) to avoid too many updates
     const timeoutId = setTimeout(() => {
-      // Auto-regenerate with new values
       autoOptimize({ resetChanges: true })
         .catch((error) => {
           logger.error('Failed to regenerate rasters:', error)
@@ -164,86 +153,75 @@ export function RasterTuningPanel() {
   ])
 
   return (
-    <DraggableDialog
-      open={enabled}
-      onOpenChange={setEnabled}
-      title={
-        <>
-          <Icon name='GearIcon' /> <Trans>Raster Tuning</Trans>
-        </>
-      }
-      defaultPosition={{ x: 120, y: 80 }}
-    >
-      <div className={styles.content}>
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>
-            <Trans>Dithering Error Propagation</Trans>
-          </h3>
+    <div className={styles.tabContent}>
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          <Trans>Dithering Error Propagation</Trans>
+        </h3>
 
-          <TuningSlider
-            label='Vertical Error Coefficient'
-            value={verticalErrorCoef}
-            onChange={setVerticalErrorCoef}
-            min={0.0}
-            max={0.5}
-            step={0.025}
-            defaultValue={VERTICAL_ERROR_COEFFICIENT}
-            description='Lower = less vertical banding'
-          />
+        <TuningSlider
+          label='Vertical Error Coefficient'
+          value={verticalErrorCoef}
+          onChange={setVerticalErrorCoef}
+          min={0.0}
+          max={0.5}
+          step={0.025}
+          defaultValue={VERTICAL_ERROR_COEFFICIENT}
+          description='Lower = less vertical banding'
+        />
 
-          <TuningSlider
-            label='Horizontal Error Coefficient'
-            value={horizontalErrorCoef}
-            onChange={setHorizontalErrorCoef}
-            min={0.0}
-            max={1.0}
-            step={0.05}
-            defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
-          />
-        </div>
-
-        <div className={styles.separator} />
-
-        <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>
-            <Trans>Palette Selection</Trans>
-          </h3>
-
-          <TuningSlider
-            label='Continuity Distance'
-            value={paletteContinuityDistance}
-            onChange={setPaletteContinuityDistance}
-            min={200}
-            max={2000}
-            step={50}
-            defaultValue={PALETTE_CONTINUITY_DISTANCE}
-            format={(v) => v.toFixed(0)}
-            description='Lower = more palette changes, higher = more stability'
-          />
-
-          <TuningSlider
-            label='Continuity Bonus'
-            value={paletteContinuityBonus}
-            onChange={setPaletteContinuityBonus}
-            min={1.0}
-            max={3.0}
-            step={0.1}
-            defaultValue={PALETTE_CONTINUITY_BONUS}
-            description='Higher = stronger preference for previous palette colors'
-          />
-
-          <TuningSlider
-            label='Frequency Weight'
-            value={paletteFrequencyExponent}
-            onChange={setPaletteFrequencyExponent}
-            min={0.0}
-            max={1.0}
-            step={0.05}
-            defaultValue={PALETTE_FREQUENCY_EXPONENT}
-            description='0 = pure diversity, 0.5 = balanced, 1 = prefer frequent colors'
-          />
-        </div>
+        <TuningSlider
+          label='Horizontal Error Coefficient'
+          value={horizontalErrorCoef}
+          onChange={setHorizontalErrorCoef}
+          min={0.0}
+          max={1.0}
+          step={0.05}
+          defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
+        />
       </div>
-    </DraggableDialog>
+
+      <div className={styles.separator} />
+
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>
+          <Trans>Palette Selection</Trans>
+        </h3>
+
+        <TuningSlider
+          label='Continuity Distance'
+          value={paletteContinuityDistance}
+          onChange={setPaletteContinuityDistance}
+          min={200}
+          max={2000}
+          step={50}
+          defaultValue={PALETTE_CONTINUITY_DISTANCE}
+          format={(v) => v.toFixed(0)}
+          description='Lower = more palette changes, higher = more stability'
+        />
+
+        <TuningSlider
+          label='Continuity Bonus'
+          value={paletteContinuityBonus}
+          onChange={setPaletteContinuityBonus}
+          min={1.0}
+          max={3.0}
+          step={0.1}
+          defaultValue={PALETTE_CONTINUITY_BONUS}
+          description='Higher = stronger preference for previous palette colors'
+        />
+
+        <TuningSlider
+          label='Frequency Weight'
+          value={paletteFrequencyExponent}
+          onChange={setPaletteFrequencyExponent}
+          min={0.0}
+          max={1.0}
+          step={0.05}
+          defaultValue={PALETTE_FREQUENCY_EXPONENT}
+          description='0 = pure diversity, 0.5 = balanced, 1 = prefer frequent colors'
+        />
+      </div>
+    </div>
   )
 }
