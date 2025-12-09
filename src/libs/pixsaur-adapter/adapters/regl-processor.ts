@@ -13,6 +13,8 @@ import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
 import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/color-transform/adjust'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { createRasterPreviewImageData } from '@/libs/pixsaur-raster/render-with-raster'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type {
   AdjustmentConfig,
   ImageProcessor,
@@ -24,8 +26,6 @@ import {
   simpleVertexShader
 } from '../shaders'
 import { ReGLQuantizer } from './regl-quantizer'
-import type { RasterChange } from '@/libs/pixsaur-raster/types'
-import { createRasterPreviewImageData } from '@/libs/pixsaur-raster/render-with-raster'
 
 /**
  * Adaptateur ReGL pour le traitement d'images
@@ -227,7 +227,11 @@ export class ReGLProcessor implements ImageProcessor {
         data: indexRgba
       })
 
-      const paletteLUT = this.buildPaletteLUT(globalPalette, rasterChanges, height)
+      const paletteLUT = this.buildPaletteLUT(
+        globalPalette,
+        rasterChanges,
+        height
+      )
       const paletteTex = regl.texture({
         width: 16,
         height,

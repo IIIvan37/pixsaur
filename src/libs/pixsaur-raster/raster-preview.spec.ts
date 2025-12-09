@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   createRasterPreviewImageData,
@@ -6,7 +6,9 @@ import {
 } from '@/libs/pixsaur-raster/render-with-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 
-function makePalette(overrides: Partial<Record<number, Vector>> = {}): Vector[] {
+function makePalette(
+  overrides: Partial<Record<number, Vector>> = {}
+): Vector[] {
   const base: Vector[] = new Array(16).fill(0).map(() => [0, 0, 0]) as Vector[]
   for (const [k, v] of Object.entries(overrides)) {
     base[Number(k)] = v as Vector
@@ -23,11 +25,7 @@ describe('renderPreviewWithRaster (CPU)', () => {
     const width = 4
     const height = 3
     // Indices pattern: 0,1,0,1 repeated for each line
-    const indexBuffer = new Uint8Array([
-      0, 1, 0, 1,
-      0, 1, 0, 1,
-      0, 1, 0, 1
-    ])
+    const indexBuffer = new Uint8Array([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
 
     const globalPalette = makePalette({
       0: [255, 0, 0], // red
@@ -49,10 +47,19 @@ describe('renderPreviewWithRaster (CPU)', () => {
 
     const expected = [
       // line 0 uses global palette (ink1 = green)
-      ...rgba(255, 0, 0), ...rgba(0, 255, 0), ...rgba(255, 0, 0), ...rgba(0, 255, 0),
+      ...rgba(255, 0, 0),
+      ...rgba(0, 255, 0),
+      ...rgba(255, 0, 0),
+      ...rgba(0, 255, 0),
       // line 1 and 2 use updated palette (ink1 = blue) and persist
-      ...rgba(255, 0, 0), ...rgba(0, 0, 255), ...rgba(255, 0, 0), ...rgba(0, 0, 255),
-      ...rgba(255, 0, 0), ...rgba(0, 0, 255), ...rgba(255, 0, 0), ...rgba(0, 0, 255)
+      ...rgba(255, 0, 0),
+      ...rgba(0, 0, 255),
+      ...rgba(255, 0, 0),
+      ...rgba(0, 0, 255),
+      ...rgba(255, 0, 0),
+      ...rgba(0, 0, 255),
+      ...rgba(255, 0, 0),
+      ...rgba(0, 0, 255)
     ]
 
     expect(Array.from(out)).toEqual(expected)
@@ -61,11 +68,7 @@ describe('renderPreviewWithRaster (CPU)', () => {
   it('handles multiple changes on the same and subsequent lines', () => {
     const width = 4
     const height = 3
-    const indexBuffer = new Uint8Array([
-      0, 1, 0, 1,
-      0, 1, 0, 1,
-      0, 1, 0, 1
-    ])
+    const indexBuffer = new Uint8Array([0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
 
     const globalPalette = makePalette({
       0: [10, 20, 30],
@@ -92,11 +95,20 @@ describe('renderPreviewWithRaster (CPU)', () => {
 
     const expected = [
       // line 0: both changes applied immediately
-      ...rgba(...orange), ...rgba(...magenta), ...rgba(...orange), ...rgba(...magenta),
+      ...rgba(...(orange as [number, number, number])),
+      ...rgba(...(magenta as [number, number, number])),
+      ...rgba(...(orange as [number, number, number])),
+      ...rgba(...(magenta as [number, number, number])),
       // line 1: same as line 0 (persist)
-      ...rgba(...orange), ...rgba(...magenta), ...rgba(...orange), ...rgba(...magenta),
+      ...rgba(...(orange as [number, number, number])),
+      ...rgba(...(magenta as [number, number, number])),
+      ...rgba(...(orange as [number, number, number])),
+      ...rgba(...(magenta as [number, number, number])),
       // line 2: ink0 changed again to cyan, ink1 still magenta
-      ...rgba(...cyan), ...rgba(...magenta), ...rgba(...cyan), ...rgba(...magenta)
+      ...rgba(...(cyan as [number, number, number])),
+      ...rgba(...(magenta as [number, number, number])),
+      ...rgba(...(cyan as [number, number, number])),
+      ...rgba(...(magenta as [number, number, number]))
     ]
 
     expect(Array.from(out)).toEqual(expected)
@@ -105,15 +117,24 @@ describe('renderPreviewWithRaster (CPU)', () => {
   it('createRasterPreviewImageData returns ImageData matching raw renderer', () => {
     const width = 2
     const height = 2
-    const indexBuffer = new Uint8Array([
-      0, 1,
-      1, 0
-    ])
+    const indexBuffer = new Uint8Array([0, 1, 1, 0])
     const palette = makePalette({ 0: [1, 2, 3], 1: [4, 5, 6] })
     const rasterChanges: RasterChange[] = []
 
-    const raw = renderPreviewWithRaster(indexBuffer, width, height, palette, rasterChanges)
-    const img = createRasterPreviewImageData(indexBuffer, width, height, palette, rasterChanges)
+    const raw = renderPreviewWithRaster(
+      indexBuffer,
+      width,
+      height,
+      palette,
+      rasterChanges
+    )
+    const img = createRasterPreviewImageData(
+      indexBuffer,
+      width,
+      height,
+      palette,
+      rasterChanges
+    )
 
     expect(img.width).toBe(width)
     expect(img.height).toBe(height)

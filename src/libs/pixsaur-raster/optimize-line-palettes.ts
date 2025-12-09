@@ -5,7 +5,7 @@ import type { RasterChange } from './types'
 /**
  * Quantize an RGB color to CPC Plus 4-bit format (16 levels per component)
  */
-function quantizeToCPCPlus(color: Vector<'RGB'>): Vector<'RGB'> {
+export function quantizeToCPCPlus(color: Vector<'RGB'>): Vector<'RGB'> {
   const quantize = (v: number) => Math.round(v / 17) * 17
   return [quantize(color[0]), quantize(color[1]), quantize(color[2])]
 }
@@ -37,7 +37,7 @@ function addErrors(
 /**
  * Find the index of the closest color in the palette to the given color
  */
-function findClosestColorIndex(
+export function findClosestColorIndex(
   color: Vector<'RGB'>,
   palette: Vector<'RGB'>[]
 ): number {

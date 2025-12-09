@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { createRasterPreviewImageData } from '@/libs/pixsaur-raster/render-with-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
+import { ReGLProcessor } from './regl-processor'
 
 function makePalette(
   overrides: Partial<Record<number, Vector>> = {}
@@ -14,7 +14,7 @@ function makePalette(
   return base
 }
 
-describe('ReGLProcessor CPU fallback', () => {
+describe('ReGLProcessor CPU fallback (colocated)', () => {
   it('renderRasterPreview matches CPU implementation when ReGL is unavailable', () => {
     // Instantiate with undefined ReGL to force CPU path
     const processor = new ReGLProcessor(undefined)

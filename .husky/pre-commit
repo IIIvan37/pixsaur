@@ -1,5 +1,21 @@
 #!/bin/sh
 
+# Ensure Node version from .nvmrc (strict) and pnpm via Corepack
+if [ -z "$NVM_DIR" ]; then
+  export NVM_DIR="$HOME/.nvm"
+fi
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  . "$NVM_DIR/nvm.sh"
+  nvm use 24.11.0 >/dev/null 2>&1 || true
+fi
+
+if ! command -v pnpm >/dev/null 2>&1; then
+  if command -v corepack >/dev/null 2>&1; then
+    corepack enable >/dev/null 2>&1 || true
+    corepack prepare pnpm@10.11.0 --activate >/dev/null 2>&1 || true
+  fi
+fi
+
 echo "🔍 Running TypeScript checks..."
 npx tsc --noEmit
 
