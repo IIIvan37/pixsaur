@@ -2,7 +2,6 @@
  * Raster tab content - extracted from RasterTuningPanel
  */
 
-import { msg } from '@lingui/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
@@ -292,7 +291,7 @@ export function RasterTab() {
         </h3>
 
         <TuningSlider
-          label={_(msg`Changements par ligne`)}
+          label={_(`Changements par ligne`)}
           value={Math.min(maxChangesPerLine, hardwareLimit)}
           onChange={setMaxChangesPerLine}
           min={1}
@@ -301,13 +300,13 @@ export function RasterTab() {
           defaultValue={1}
           format={(v) => v.toFixed(0)}
           description={_(
-            msg`Nombre maximum de changements d'encre par ligne (1 = raster classique)`
+            `Nombre maximum de changements d'encre par ligne (1 = raster classique)`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Dithering raster`)}
+          label={_(`Dithering raster`)}
           value={Math.round(rasterDitheringIntensity * 100)}
           onChange={(val) => setRasterDitheringIntensity(val / 100)}
           min={0}
@@ -316,9 +315,9 @@ export function RasterTab() {
           defaultValue={0}
           format={(v) => `${v}%`}
           description={_(
-            msg`Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes`
+            `Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         {image && (
@@ -344,11 +343,11 @@ export function RasterTab() {
 
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>
-          <Trans>Dithering Error Propagation</Trans>
+          <Trans>Propagation d'erreur de dithering</Trans>
         </h3>
 
         <TuningSlider
-          label={_(msg`Coefficient d'erreur verticale`)}
+          label={_(`Coefficient d'erreur verticale`)}
           value={verticalErrorCoef}
           onChange={setVerticalErrorCoef}
           min={0.0}
@@ -356,13 +355,13 @@ export function RasterTab() {
           step={0.025}
           defaultValue={VERTICAL_ERROR_COEFFICIENT}
           description={_(
-            msg`Propagation verticale des erreurs de quantification (lower = moins de banding)`
+            `Propagation verticale des erreurs de quantification (lower = moins de banding)`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Coefficient d'erreur horizontale`)}
+          label={_(`Coefficient d'erreur horizontale`)}
           value={horizontalErrorCoef}
           onChange={setHorizontalErrorCoef}
           min={0.0}
@@ -370,9 +369,9 @@ export function RasterTab() {
           step={0.05}
           defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
           description={_(
-            msg`Propagation horizontale des erreurs de quantification entre pixels`
+            `Propagation horizontale des erreurs de quantification entre pixels`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
       </div>
 
@@ -380,11 +379,11 @@ export function RasterTab() {
 
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>
-          <Trans>Palette Selection</Trans>
+          <Trans>Sélection de palette</Trans>
         </h3>
 
         <TuningSlider
-          label={_(msg`Distance de continuité`)}
+          label={_(`Distance de continuité`)}
           value={paletteContinuityDistance}
           onChange={setPaletteContinuityDistance}
           min={200}
@@ -393,13 +392,13 @@ export function RasterTab() {
           defaultValue={PALETTE_CONTINUITY_DISTANCE}
           format={(v) => v.toFixed(0)}
           description={_(
-            msg`Plus bas = plus de changements de palette, plus haut = plus de stabilité`
+            `Plus bas = plus de changements de palette, plus haut = plus de stabilité`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Bonus de continuité`)}
+          label={_(`Bonus de continuité`)}
           value={paletteContinuityBonus}
           onChange={setPaletteContinuityBonus}
           min={1.0}
@@ -407,13 +406,13 @@ export function RasterTab() {
           step={0.1}
           defaultValue={PALETTE_CONTINUITY_BONUS}
           description={_(
-            msg`Plus haut = préférence plus forte pour les couleurs de la palette précédente`
+            `Plus haut = préférence plus forte pour les couleurs de la palette précédente`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Poids de fréquence`)}
+          label={_(`Poids de fréquence`)}
           value={paletteFrequencyExponent}
           onChange={setPaletteFrequencyExponent}
           min={0.0}
@@ -421,9 +420,9 @@ export function RasterTab() {
           step={0.05}
           defaultValue={PALETTE_FREQUENCY_EXPONENT}
           description={_(
-            msg`0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
+            `0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
       </div>
 

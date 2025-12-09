@@ -35,8 +35,8 @@ msgid "{uniqueColorsCount} couleur(s) unique(s)"
 msgstr "{uniqueColorsCount} color(es) único(s)"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:424
-msgid "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
-msgstr ""
+#~ msgid "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
+#~ msgstr "0 = diversidad pura, 0.5 = equilibrado, 1 = preferir colores frecuentes"
 
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
@@ -46,7 +46,7 @@ msgstr "Una nueva versión de Pixsaur está disponible. Haga clic a continuació
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "Una nueva versión de Pixsaur está disponible. Actualice ahora para obtener las últimas funciones y mejoras."
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:273
+#: src/components/settings-panel/tabs/raster-tab.tsx:272
 msgid "Active le mode raster pour utiliser des palettes optimisées par ligne."
 msgstr "Activa el modo raster para usar paletas optimizadas por línea."
 
@@ -182,8 +182,8 @@ msgid "Bleu"
 msgstr "Azul"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:402
-msgid "Bonus de continuité"
-msgstr ""
+#~ msgid "Bonus de continuité"
+#~ msgstr "Bonificación de Continuidad"
 
 #: src/app/components/adjustements/adjustement.view.tsx:26
 #: src/components/settings-panel/tabs/source-tab.tsx:38
@@ -204,11 +204,10 @@ msgid "Centrer l'image"
 msgstr "Centrar imagen"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:163
-#: src/components/settings-panel/tabs/raster-tab.tsx:295
 msgid "Changements par ligne"
 msgstr "Cambios por línea"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:436
+#: src/components/settings-panel/tabs/raster-tab.tsx:435
 msgid "Changements Raster"
 msgstr "Cambios Raster"
 
@@ -242,12 +241,12 @@ msgid "Cliquez pour sélectionner une image"
 msgstr "Haga clic para seleccionar una imagen"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:365
-msgid "Coefficient d'erreur horizontale"
-msgstr ""
+#~ msgid "Coefficient d'erreur horizontale"
+#~ msgstr "Coeficiente de Error Horizontal"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:351
-msgid "Coefficient d'erreur verticale"
-msgstr ""
+#~ msgid "Coefficient d'erreur verticale"
+#~ msgstr "Coeficiente de Error Vertical"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:187
 #~ msgid "Color {i}: {color}"
@@ -331,8 +330,8 @@ msgstr "Dimensiones"
 #~ msgstr "Disquete DSK (imagen de pantalla)"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:387
-msgid "Distance de continuité"
-msgstr ""
+#~ msgid "Distance de continuité"
+#~ msgstr "Distancia de Continuidad"
 
 #: src/components/settings-panel/settings-panel.tsx:56
 msgid "Dithering"
@@ -344,7 +343,6 @@ msgid "palette.strategy.dithering-aware.label"
 msgstr "Tramado Óptimo"
 
 #: src/components/raster-panel/raster-tuning-panel.tsx:180
-#: src/components/settings-panel/tabs/raster-tab.tsx:347
 msgid "Dithering Error Propagation"
 msgstr "Propagación de Error de Dithering"
 
@@ -358,7 +356,6 @@ msgid "Dithering horizontal 1D appliqué lors du prétraitement raster"
 msgstr "Tramado horizontal 1D aplicado durante preprocesamiento raster"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:179
-#: src/components/settings-panel/tabs/raster-tab.tsx:310
 msgid "Dithering raster"
 msgstr "Tramado raster"
 
@@ -493,11 +490,11 @@ msgstr "Prioridad de frecuencia (80%) con diversidad moderada"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:337
+#: src/components/settings-panel/tabs/raster-tab.tsx:336
 msgid "Générer les rasters"
 msgstr "Generar rasters"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:439
+#: src/components/settings-panel/tabs/raster-tab.tsx:438
 msgid "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
 msgstr "Gestión de cambios de tinta por línea (generados automáticamente o manuales)"
 
@@ -653,7 +650,7 @@ msgid "Mode de redimensionnement"
 msgstr "Modo de redimensionamiento"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:148
-#: src/components/settings-panel/tabs/raster-tab.tsx:270
+#: src/components/settings-panel/tabs/raster-tab.tsx:269
 msgid "Mode Raster"
 msgstr "Modo Raster"
 
@@ -699,7 +696,6 @@ msgid "Nom du fichier ZIP"
 msgstr "Nombre del archivo ZIP"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:165
-#: src/components/settings-panel/tabs/raster-tab.tsx:304
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Cambios de tinta máximos por línea (1 = raster clásico)"
 
@@ -717,7 +713,7 @@ msgstr "No hay suficiente espacio en el DSK"
 msgid "Ombres"
 msgstr "Sombras"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:333
+#: src/components/settings-panel/tabs/raster-tab.tsx:332
 msgid "Optimisation..."
 msgstr "Optimizando..."
 
@@ -748,10 +744,9 @@ msgstr "Abrir panel de configuración"
 
 #: src/components/settings-panel/settings-button.tsx:35
 msgid "Ouvrir les paramètres (⌘,)"
-msgstr ""
+msgstr "Abrir configuración (⌘,)"
 
 #: src/components/raster-panel/raster-tuning-panel.tsx:209
-#: src/components/settings-panel/tabs/raster-tab.tsx:383
 msgid "Palette Selection"
 msgstr "Selección de Paleta"
 
@@ -763,7 +758,7 @@ msgstr "Paletas (firmware/hardware)"
 msgid "Paramètres"
 msgstr "Configuración"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:291
+#: src/components/settings-panel/tabs/raster-tab.tsx:290
 msgid "Paramètres Raster"
 msgstr "Parámetros Raster"
 
@@ -782,12 +777,12 @@ msgid "Pixel Mode"
 msgstr "Modo de píxel"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:396
-msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
-msgstr ""
+#~ msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
+#~ msgstr "Más bajo = más cambios de paleta, más alto = más estabilidad"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:410
-msgid "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
-msgstr ""
+#~ msgid "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
+#~ msgstr "Más alto = preferencia más fuerte por los colores de la paleta anterior"
 
 #: src/components/export-panel/export-config-dialog.tsx:97
 #~ msgid "PNG (aperçu)"
@@ -802,8 +797,8 @@ msgid "PNG (pixels carrés)"
 msgstr "PNG (píxeles cuadrados)"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:416
-msgid "Poids de fréquence"
-msgstr ""
+#~ msgid "Poids de fréquence"
+#~ msgstr "Peso de Frecuencia"
 
 #: src/app/components/adjustements/adjustement.view.tsx:152
 #: src/components/settings-panel/tabs/source-tab.tsx:207
@@ -811,20 +806,24 @@ msgid "Posterisation"
 msgstr "Posterización"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:319
-msgid "Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
-msgstr ""
+#~ msgid "Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
+#~ msgstr "Preprocesamiento de dithering 1D aplicado a la imagen antes de la extracción de paletas"
 
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
 msgstr "Procesador"
 
+#: src/components/settings-panel/tabs/raster-tab.tsx:346
+msgid "Propagation d'erreur de dithering"
+msgstr "Propagación de Error de Dithering"
+
 #: src/components/settings-panel/tabs/raster-tab.tsx:373
-msgid "Propagation horizontale des erreurs de quantification entre pixels"
-msgstr ""
+#~ msgid "Propagation horizontale des erreurs de quantification entre pixels"
+#~ msgstr "Propagación horizontal de errores de cuantización entre píxeles"
 
 #: src/components/settings-panel/tabs/raster-tab.tsx:359
-msgid "Propagation verticale des erreurs de quantification (lower = moins de banding)"
-msgstr ""
+#~ msgid "Propagation verticale des erreurs de quantification (lower = moins de banding)"
+#~ msgstr "Propagación vertical de errores de cuantización (más bajo = menos bandas)"
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:174
@@ -847,7 +846,7 @@ msgstr "Ajuste Raster"
 msgid "Rasters (données ASM)"
 msgstr "Rasters (datos ASM)"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:335
+#: src/components/settings-panel/tabs/raster-tab.tsx:334
 msgid "Rasters générés"
 msgstr "Rasters Generados"
 
@@ -879,8 +878,8 @@ msgstr "Restablecer"
 #: src/components/settings-panel/tabs/raster-tab.tsx:398
 #: src/components/settings-panel/tabs/raster-tab.tsx:412
 #: src/components/settings-panel/tabs/raster-tab.tsx:426
-msgid "Réinitialiser à la valeur par défaut"
-msgstr ""
+#~ msgid "Réinitialiser à la valeur par défaut"
+#~ msgstr "Restablecer al valor predeterminado"
 
 #: src/components/export-panel/dsk-files-manager.tsx:214
 msgid "Remove file"
@@ -923,6 +922,10 @@ msgstr "SCR ASM (formato CPC entrelazado)"
 #: src/components/settings-panel/tabs/resize-tab.tsx:49
 msgid "Sélection"
 msgstr "Selección"
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:382
+msgid "Sélection de palette"
+msgstr "Selección de Paleta"
 
 #: src/components/raster-panel/raster-panel-view.tsx:111
 #~ msgid "Sélectionner une couleur"
