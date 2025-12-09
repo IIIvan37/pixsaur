@@ -9,6 +9,7 @@ interface DraggableDialogProps {
   title: string | React.ReactNode
   children: React.ReactNode
   defaultPosition?: { x: number; y: number }
+  onOpenAutoFocus?: (event: Event) => void
 }
 
 export default function DraggableDialog({
@@ -16,7 +17,8 @@ export default function DraggableDialog({
   onOpenChange,
   title,
   children,
-  defaultPosition = { x: 100, y: 100 }
+  defaultPosition = { x: 100, y: 100 },
+  onOpenAutoFocus
 }: DraggableDialogProps) {
   const [position, setPosition] = useState(defaultPosition)
   const [isDragging, setIsDragging] = useState(false)
@@ -95,6 +97,7 @@ export default function DraggableDialog({
           }}
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={() => onOpenChange(false)}
+          onOpenAutoFocus={onOpenAutoFocus}
         >
           <div className={styles.header}>
             <button

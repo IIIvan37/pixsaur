@@ -3,8 +3,9 @@
  */
 
 import { Trans } from '@lingui/react/macro'
+import * as Tabs from '@radix-ui/react-tabs'
 import { useAtom } from 'jotai'
-import { useState } from 'react'
+import { useRef } from 'react'
 import { settingsPanelEnabledAtom } from '@/app/store/settings/settings-panel'
 import DraggableDialog from '@/components/ui/draggable-dialog'
 import Icon from '@/components/ui/icon'
@@ -72,9 +73,7 @@ const tabs: TabDefinition[] = [
 
 export function SettingsPanel() {
   const [enabled, setEnabled] = useAtom(settingsPanelEnabledAtom)
-  const [activeTab, setActiveTab] = useState<TabId>('source')
-
-  const ActiveComponent = tabs.find((t) => t.id === activeTab)?.component
+  const firstTabRef = useRef<HTMLButtonElement>(null)
 
   return (
     <DraggableDialog
@@ -86,25 +85,39 @@ export function SettingsPanel() {
         </>
       }
       defaultPosition={{ x: 100, y: 60 }}
+      onOpenAutoFocus={(e) => {
+        e.preventDefault()
+        // Focus the first tab for immediate keyboard navigation
+        setTimeout(() => {
+          firstTabRef.current?.focus()
+        }, 0)
+      }}
     >
-      <div className={styles.container}>
-        <div className={styles.tabs}>
-          {tabs.map((tab) => (
-            <button
+      <Tabs.Root defaultValue='source' className={styles.container}>
+        <Tabs.List className={styles.tabs} aria-label='Settings tabs'>
+          {tabs.map((tab, index) => (
+            <Tabs.Trigger
               key={tab.id}
-              type='button'
-              className={`${styles.tab} ${activeTab === tab.id ? styles.active : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              value={tab.id}
+              className={styles.tab}
+              ref={index === 0 ? firstTabRef : undefined}
             >
               <Icon name={tab.icon as any} />
               <span>{tab.label}</span>
-            </button>
+            </Tabs.Trigger>
           ))}
-        </div>
-        <div className={styles.content}>
-          {ActiveComponent && <ActiveComponent />}
-        </div>
-      </div>
+        </Tabs.List>
+        {tabs.map((tab) => (
+          <Tabs.Content
+            key={tab.id}
+            value={tab.id}
+            className={styles.content}
+            tabIndex={-1}
+          >
+            <tab.component />
+          </Tabs.Content>
+        ))}
+      </Tabs.Root>
     </DraggableDialog>
   )
 }
