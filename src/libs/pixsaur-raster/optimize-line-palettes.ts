@@ -2,6 +2,9 @@ import { weightedRGBDistance } from '../pixsaur-color/src/metric/distance'
 import type { Vector } from '../pixsaur-color/src/type'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
+  PALETTE_CONTINUITY_BONUS,
+  PALETTE_CONTINUITY_DISTANCE,
+  PALETTE_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from './raster-constants'
 import type { RasterChange } from './types'
@@ -12,7 +15,10 @@ import type { RasterChange } from './types'
  */
 export const rasterTuningOverrides = {
   verticalErrorCoefficient: VERTICAL_ERROR_COEFFICIENT,
-  horizontalErrorCoefficient: HORIZONTAL_ERROR_COEFFICIENT
+  horizontalErrorCoefficient: HORIZONTAL_ERROR_COEFFICIENT,
+  paletteContinuityDistance: PALETTE_CONTINUITY_DISTANCE,
+  paletteContinuityBonus: PALETTE_CONTINUITY_BONUS,
+  paletteFrequencyExponent: PALETTE_FREQUENCY_EXPONENT
 }
 
 /**
@@ -21,6 +27,61 @@ export const rasterTuningOverrides = {
 export function quantizeToCPCPlus(color: Vector<'RGB'>): Vector<'RGB'> {
   const quantize = (v: number) => Math.round(v / 17) * 17
   return [quantize(color[0]), quantize(color[1]), quantize(color[2])]
+}
+
+/**
+ * Pre-computed lookup table for CPC Classic quantization.
+ * Maps 4096 CPC Plus colors (16×16×16) to their closest CPC Classic palette index.
+ * Built once when first needed, cached globally for performance.
+ */
+let cpcClassicLUT: Uint8Array | null = null
+let cpcClassicLUTPalette: Vector<'RGB'>[] | null = null
+
+/**
+ * Build a lookup table that maps all 4096 CPC Plus colors to CPC Classic palette indices.
+ * Each CPC Plus color (r,g,b where each component is 0,17,34,...,255) maps to the index
+ * of the closest color in the 27-color CPC Classic palette.
+ *
+ * LUT size: 4096 bytes (16×16×16)
+ * Index calculation: (r/17) * 256 + (g/17) * 16 + (b/17)
+ */
+function buildCPCClassicLUT(palette: Vector<'RGB'>[]): Uint8Array {
+  const lut = new Uint8Array(4096)
+
+  // For each of the 4096 possible CPC Plus colors
+  for (let r = 0; r < 16; r++) {
+    for (let g = 0; g < 16; g++) {
+      for (let b = 0; b < 16; b++) {
+        const color: Vector<'RGB'> = [r * 17, g * 17, b * 17]
+        const closestIdx = findClosestColorIndex(color, palette)
+        const lutIndex = r * 256 + g * 16 + b
+        lut[lutIndex] = closestIdx
+      }
+    }
+  }
+
+  return lut
+}
+
+/**
+ * Quantize a color to CPC Classic using pre-computed LUT (ultra-fast).
+ * First quantizes to CPC Plus (16 levels), then looks up closest CPC Classic color.
+ */
+function quantizeToCPCClassicWithLUT(
+  color: Vector<'RGB'>,
+  palette: Vector<'RGB'>[],
+  lut: Uint8Array
+): Vector<'RGB'> {
+  // Quantize to CPC Plus first (0, 17, 34, ..., 255)
+  const r = Math.round(color[0] / 17)
+  const g = Math.round(color[1] / 17)
+  const b = Math.round(color[2] / 17)
+
+  // Look up closest CPC Classic palette index
+  const lutIndex = r * 256 + g * 16 + b
+  const paletteIndex = lut[lutIndex]
+
+  return palette[paletteIndex]
 }
 
 /**
@@ -66,17 +127,6 @@ export function findClosestColorIndex(
   }
 
   return bestIndex
-}
-
-/**
- * Find the closest color in the palette to the given color
- */
-function findClosestColor(
-  color: Vector<'RGB'>,
-  palette: Vector<'RGB'>[]
-): Vector<'RGB'> {
-  const index = findClosestColorIndex(color, palette)
-  return palette[index]
 }
 
 /**
@@ -378,10 +428,22 @@ export function extractGlobalPaletteFromImage(
 ): Vector<'RGB'>[] {
   const { width, height, data } = sourceImage
 
-  // Helper to quantize based on hardware mode
+  // Build LUT for CPC Classic if needed (done once, cached globally)
+  if (cpcClassicPalette) {
+    if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
+      cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
+      cpcClassicLUTPalette = cpcClassicPalette
+    }
+  }
+
+  // Helper to quantize based on hardware mode (with LUT for CPC Classic)
   const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
+    if (cpcClassicPalette && cpcClassicLUT) {
+      return quantizeToCPCClassicWithLUT(
+        color,
+        cpcClassicPalette,
+        cpcClassicLUT
+      )
     }
     return quantizeToCPCPlus(color)
   }
@@ -576,7 +638,6 @@ export interface OptimizationOptions {
  * @param globalPalette - Initial 4-color palette (used for line 0)
  * @param existingChanges - Existing raster changes to preserve
  * @param options - Optimization options (maxChangesPerLine)
- * @returns Object with raster changes and matching index buffer
  */
 export function optimizeLinePalettesWithIndexBuffer(
   preprocessedImage: ImageData,
@@ -590,12 +651,24 @@ export function optimizeLinePalettesWithIndexBuffer(
   const changes: Omit<RasterChange, 'id'>[] = []
   const indexBuffer = new Uint8Array(width * imageHeight)
 
+  // Build LUT for CPC Classic if needed (done once, cached globally)
+  if (cpcClassicPalette) {
+    if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
+      cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
+      cpcClassicLUTPalette = cpcClassicPalette
+    }
+  }
+
   // Helper function to quantize a color based on hardware mode
-  // CPC Classic: constrain to 27-color palette
+  // CPC Classic: use pre-computed LUT (ultra-fast array lookup)
   // CPC Plus: quantize to 4096 colors (4 bits per channel)
   const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
+    if (cpcClassicPalette && cpcClassicLUT) {
+      return quantizeToCPCClassicWithLUT(
+        color,
+        cpcClassicPalette,
+        cpcClassicLUT
+      )
     }
     return quantizeToCPCPlus(color)
   }
@@ -867,18 +940,20 @@ function selectPaletteFarthestPoint(
         }
       }
 
-      // Score = distance * sqrt(frequency) to balance distance and importance
+      // Score = distance * (frequency ^ exponent) to balance distance and importance
       // High frequency colors that are far from selected colors are preferred
-      const score = minDist * Math.sqrt(count)
+      // Exponent controls frequency influence: 0.5 = sqrt (balanced), 1.0 = linear (strong)
+      const frequencyWeight =
+        count ** rasterTuningOverrides.paletteFrequencyExponent
+      const score = minDist * frequencyWeight
 
       // Bonus for colors similar to previous palette (continuity)
       let continuityBonus = 1.0
       if (previousPalette) {
         for (const prevColor of previousPalette) {
           const dist = weightedRGBDistance(color, prevColor)
-          if (dist < 17 * 17 * 3) {
-            // Within 1 CPC step
-            continuityBonus = 1.5 // 50% bonus
+          if (dist < rasterTuningOverrides.paletteContinuityDistance) {
+            continuityBonus = rasterTuningOverrides.paletteContinuityBonus
             break
           }
         }
@@ -952,12 +1027,24 @@ export function preprocessImageForRaster(
   const { width, height, data } = sourceImage
   const outputData = new Uint8ClampedArray(data.length)
 
+  // Build LUT for CPC Classic if needed (done once, cached globally)
+  if (cpcClassicPalette) {
+    if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
+      cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
+      cpcClassicLUTPalette = cpcClassicPalette
+    }
+  }
+
   // Helper function to quantize a color based on hardware mode
-  // CPC Classic: constrain to 27-color palette
+  // CPC Classic: use pre-computed LUT (ultra-fast array lookup)
   // CPC Plus: quantize to 4096 colors (4 bits per channel)
   const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette) {
-      return findClosestColor(color, cpcClassicPalette)
+    if (cpcClassicPalette && cpcClassicLUT) {
+      return quantizeToCPCClassicWithLUT(
+        color,
+        cpcClassicPalette,
+        cpcClassicLUT
+      )
     }
     return quantizeToCPCPlus(color)
   }

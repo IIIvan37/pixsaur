@@ -3,11 +3,18 @@
  */
 
 import { Trans } from '@lingui/macro'
-import { useAtom, useSetAtom } from 'jotai'
-import { useEffect } from 'react'
-import { autoOptimizeRasterAtom } from '@/app/store/raster/raster'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { useEffect, useRef } from 'react'
+import {
+  autoOptimizeRasterAtom,
+  hasGeneratedRastersAtom,
+  rasterEnabledAtom
+} from '@/app/store/raster/raster'
 import {
   horizontalErrorCoefficientAtom,
+  paletteContinuityBonusAtom,
+  paletteContinuityDistanceAtom,
+  paletteFrequencyExponentAtom,
   rasterTuningEnabledAtom,
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
@@ -15,9 +22,13 @@ import DraggableDialog from '@/components/ui/draggable-dialog'
 import Icon from '@/components/ui/icon'
 import PixsaurSlider from '@/components/ui/slider/slider'
 import { isDevelopment } from '@/core'
+import logger from '@/core/logger'
 import { rasterTuningOverrides } from '@/libs/pixsaur-raster/optimize-line-palettes'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
+  PALETTE_CONTINUITY_BONUS,
+  PALETTE_CONTINUITY_DISTANCE,
+  PALETTE_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from '@/libs/pixsaur-raster/raster-constants'
 import styles from './raster-tuning-panel.module.css'
@@ -80,6 +91,8 @@ function TuningSlider({
 export function RasterTuningPanel() {
   const [enabled, setEnabled] = useAtom(rasterTuningEnabledAtom)
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
 
   const [verticalErrorCoef, setVerticalErrorCoef] = useAtom(
     verticalErrorCoefficientAtom
@@ -88,15 +101,68 @@ export function RasterTuningPanel() {
     horizontalErrorCoefficientAtom
   )
 
-  // Sync atom values to rasterTuningOverrides
+  const [paletteContinuityDistance, setPaletteContinuityDistance] = useAtom(
+    paletteContinuityDistanceAtom
+  )
+  const [paletteContinuityBonus, setPaletteContinuityBonus] = useAtom(
+    paletteContinuityBonusAtom
+  )
+  const [paletteFrequencyExponent, setPaletteFrequencyExponent] = useAtom(
+    paletteFrequencyExponentAtom
+  )
+
+  // Ref to prevent re-triggering during regeneration
+  const isRegeneratingRef = useRef(false)
+
+  // Sync atom values to rasterTuningOverrides and re-optimize automatically
   useEffect(() => {
+    // Skip if already regenerating or if rasters aren't enabled/generated
+    if (isRegeneratingRef.current || !rasterEnabled || !hasGeneratedRasters) {
+      // Still update the overrides even if we don't regenerate
+      rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
+      rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
+      rasterTuningOverrides.paletteContinuityDistance =
+        paletteContinuityDistance
+      rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
+      rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
+      return
+    }
+
     rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
     rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
-  }, [verticalErrorCoef, horizontalErrorCoef])
+    rasterTuningOverrides.paletteContinuityDistance = paletteContinuityDistance
+    rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
+    rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
 
-  const handleReOptimize = async () => {
-    await autoOptimize({ resetChanges: true })
-  }
+    // Set flag to prevent re-triggering
+    isRegeneratingRef.current = true
+
+    // Debounce the regeneration (200ms) to avoid too many updates
+    const timeoutId = setTimeout(() => {
+      // Auto-regenerate with new values
+      autoOptimize({ resetChanges: true })
+        .catch((error) => {
+          logger.error('Failed to regenerate rasters:', error)
+        })
+        .finally(() => {
+          isRegeneratingRef.current = false
+        })
+    }, 200)
+
+    return () => {
+      clearTimeout(timeoutId)
+      isRegeneratingRef.current = false
+    }
+  }, [
+    verticalErrorCoef,
+    horizontalErrorCoef,
+    paletteContinuityDistance,
+    paletteContinuityBonus,
+    paletteFrequencyExponent,
+    rasterEnabled,
+    hasGeneratedRasters,
+    autoOptimize
+  ])
 
   // Only show in development
   if (!isDevelopment()) {
@@ -144,13 +210,45 @@ export function RasterTuningPanel() {
 
         <div className={styles.separator} />
 
-        <button
-          type='button'
-          className={styles.reoptimizeButton}
-          onClick={handleReOptimize}
-        >
-          <Trans>Re-optimize with new values</Trans>
-        </button>
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>
+            <Trans>Palette Selection</Trans>
+          </h3>
+
+          <TuningSlider
+            label='Continuity Distance'
+            value={paletteContinuityDistance}
+            onChange={setPaletteContinuityDistance}
+            min={200}
+            max={2000}
+            step={50}
+            defaultValue={PALETTE_CONTINUITY_DISTANCE}
+            format={(v) => v.toFixed(0)}
+            description='Lower = more palette changes, higher = more stability'
+          />
+
+          <TuningSlider
+            label='Continuity Bonus'
+            value={paletteContinuityBonus}
+            onChange={setPaletteContinuityBonus}
+            min={1.0}
+            max={3.0}
+            step={0.1}
+            defaultValue={PALETTE_CONTINUITY_BONUS}
+            description='Higher = stronger preference for previous palette colors'
+          />
+
+          <TuningSlider
+            label='Frequency Weight'
+            value={paletteFrequencyExponent}
+            onChange={setPaletteFrequencyExponent}
+            min={0.0}
+            max={1.0}
+            step={0.05}
+            defaultValue={PALETTE_FREQUENCY_EXPONENT}
+            description='0 = pure diversity, 0.5 = balanced, 1 = prefer frequent colors'
+          />
+        </div>
       </div>
     </DraggableDialog>
   )
