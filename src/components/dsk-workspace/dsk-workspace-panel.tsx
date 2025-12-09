@@ -161,8 +161,8 @@ export default function DskWorkspacePanel() {
           palettePlus,
           thumbnailDataUrl,
           paletteColors,
-          // Include raster ranges if rasters are enabled
-          rasterRanges:
+          // Include raster changes if rasters are enabled
+          rasterChanges:
             rasterEnabled && rasterRanges.length > 0 ? rasterRanges : undefined
         }
       })()

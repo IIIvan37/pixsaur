@@ -153,7 +153,7 @@ describe('export-png', () => {
           [0, 0, 0],
           [255, 0, 0]
         ] as Vector[],
-        rasterRanges: []
+        rasterChanges: []
       }
 
       await exportPNGData(
@@ -181,7 +181,7 @@ describe('export-png', () => {
         }
       }
 
-      const rasterRanges: RasterChange[] = [
+      const rasterChanges: RasterChange[] = [
         {
           id: 'test-1',
           line: 50,
@@ -196,7 +196,7 @@ describe('export-png', () => {
           [0, 0, 0],
           [128, 128, 128]
         ] as Vector[],
-        rasterRanges
+        rasterChanges
       }
 
       await exportPNGData(
@@ -247,7 +247,7 @@ describe('export-png', () => {
       const rasterData: PNGExportData = {
         indexBuf: new Uint8Array(160 * 200),
         globalPalette: [], // Empty palette
-        rasterRanges: [
+        rasterChanges: [
           {
             id: 'test-1',
             line: 50,
@@ -394,7 +394,7 @@ describe('export-png', () => {
       ]
 
       // Raster changes ink 1 to red on line 1
-      const rasterRanges: RasterChange[] = [
+      const rasterChanges: RasterChange[] = [
         {
           id: 'test-1',
           line: 1,
@@ -406,7 +406,7 @@ describe('export-png', () => {
       const rasterData: PNGExportData = {
         indexBuf,
         globalPalette,
-        rasterRanges
+        rasterChanges
       }
 
       const modeConfig: CpcModeConfig = {

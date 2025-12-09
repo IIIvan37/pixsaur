@@ -2,8 +2,8 @@
  * Raster tab content - extracted from RasterTuningPanel
  */
 
-import { msg, Trans } from '@lingui/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useId, useRef, useState } from 'react'
 import {
@@ -34,10 +34,10 @@ import {
 } from '@/app/store/raster/raster-tuning'
 import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
 import { RasterPanelView } from '@/components/raster-panel/raster-panel-view'
+import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
 import Button from '@/components/ui/button'
 import Flex from '@/components/ui/flex'
 import Icon from '@/components/ui/icon'
-import PixsaurSlider from '@/components/ui/slider/slider'
 import { Switch } from '@/components/ui/switch'
 import logger from '@/core/logger'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
@@ -52,63 +52,6 @@ import {
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { cpcFullPalette } from '@/palettes/cpc-palette'
 import styles from './tab.module.css'
-
-interface TuningSliderProps {
-  label: string
-  value: number
-  onChange: (value: number) => void
-  min: number
-  max: number
-  step: number
-  defaultValue: number
-  format?: (value: number) => string
-  description?: string
-  resetTitle?: string
-}
-
-function TuningSlider({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-  step,
-  defaultValue,
-  format = (v) => v.toFixed(2),
-  description,
-  resetTitle = 'Reset to default'
-}: TuningSliderProps) {
-  return (
-    <div className={styles.tuningRow}>
-      <div className={styles.tuningHeader}>
-        <span className={styles.tuningLabel}>{label}</span>
-        <div className={styles.tuningValue}>
-          <span className={styles.currentValue}>{format(value)}</span>
-          {value !== defaultValue && (
-            <button
-              type='button'
-              className={styles.resetButton}
-              onClick={() => onChange(defaultValue)}
-              title={resetTitle}
-            >
-              ↺
-            </button>
-          )}
-        </div>
-      </div>
-      <PixsaurSlider
-        min={min}
-        max={max}
-        value={value}
-        step={step}
-        onChange={onChange}
-        hideLabel
-        showTooltip={false}
-      />
-      {description && <div className={styles.description}>{description}</div>}
-    </div>
-  )
-}
 
 export function RasterTab() {
   const { _ } = useLingui()
@@ -348,7 +291,7 @@ export function RasterTab() {
         </h3>
 
         <TuningSlider
-          label={_(msg`Changements par ligne`)}
+          label={_(`Changements par ligne`)}
           value={Math.min(maxChangesPerLine, hardwareLimit)}
           onChange={setMaxChangesPerLine}
           min={1}
@@ -357,13 +300,13 @@ export function RasterTab() {
           defaultValue={1}
           format={(v) => v.toFixed(0)}
           description={_(
-            msg`Nombre maximum de changements d'encre par ligne (1 = raster classique)`
+            `Nombre maximum de changements d'encre par ligne (1 = raster classique)`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Dithering raster`)}
+          label={_(`Dithering raster`)}
           value={Math.round(rasterDitheringIntensity * 100)}
           onChange={(val) => setRasterDitheringIntensity(val / 100)}
           min={0}
@@ -372,9 +315,9 @@ export function RasterTab() {
           defaultValue={0}
           format={(v) => `${v}%`}
           description={_(
-            msg`Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes`
+            `Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         {image && (
@@ -400,11 +343,11 @@ export function RasterTab() {
 
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>
-          <Trans>Dithering Error Propagation</Trans>
+          <Trans>Propagation d'erreur de dithering</Trans>
         </h3>
 
         <TuningSlider
-          label={_(msg`Coefficient d'erreur verticale`)}
+          label={_(`Coefficient d'erreur verticale`)}
           value={verticalErrorCoef}
           onChange={setVerticalErrorCoef}
           min={0.0}
@@ -412,13 +355,13 @@ export function RasterTab() {
           step={0.025}
           defaultValue={VERTICAL_ERROR_COEFFICIENT}
           description={_(
-            msg`Propagation verticale des erreurs de quantification (lower = moins de banding)`
+            `Propagation verticale des erreurs de quantification (lower = moins de banding)`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Coefficient d'erreur horizontale`)}
+          label={_(`Coefficient d'erreur horizontale`)}
           value={horizontalErrorCoef}
           onChange={setHorizontalErrorCoef}
           min={0.0}
@@ -426,9 +369,9 @@ export function RasterTab() {
           step={0.05}
           defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
           description={_(
-            msg`Propagation horizontale des erreurs de quantification entre pixels`
+            `Propagation horizontale des erreurs de quantification entre pixels`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
       </div>
 
@@ -436,11 +379,11 @@ export function RasterTab() {
 
       <div className={styles.section}>
         <h3 className={styles.sectionTitle}>
-          <Trans>Palette Selection</Trans>
+          <Trans>Sélection de palette</Trans>
         </h3>
 
         <TuningSlider
-          label={_(msg`Distance de continuité`)}
+          label={_(`Distance de continuité`)}
           value={paletteContinuityDistance}
           onChange={setPaletteContinuityDistance}
           min={200}
@@ -449,13 +392,13 @@ export function RasterTab() {
           defaultValue={PALETTE_CONTINUITY_DISTANCE}
           format={(v) => v.toFixed(0)}
           description={_(
-            msg`Plus bas = plus de changements de palette, plus haut = plus de stabilité`
+            `Plus bas = plus de changements de palette, plus haut = plus de stabilité`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Bonus de continuité`)}
+          label={_(`Bonus de continuité`)}
           value={paletteContinuityBonus}
           onChange={setPaletteContinuityBonus}
           min={1.0}
@@ -463,13 +406,13 @@ export function RasterTab() {
           step={0.1}
           defaultValue={PALETTE_CONTINUITY_BONUS}
           description={_(
-            msg`Plus haut = préférence plus forte pour les couleurs de la palette précédente`
+            `Plus haut = préférence plus forte pour les couleurs de la palette précédente`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
 
         <TuningSlider
-          label={_(msg`Poids de fréquence`)}
+          label={_(`Poids de fréquence`)}
           value={paletteFrequencyExponent}
           onChange={setPaletteFrequencyExponent}
           min={0.0}
@@ -477,9 +420,9 @@ export function RasterTab() {
           step={0.05}
           defaultValue={PALETTE_FREQUENCY_EXPONENT}
           description={_(
-            msg`0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
+            `0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
           )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+          resetTitle={_(`Réinitialiser à la valeur par défau`)}
         />
       </div>
 

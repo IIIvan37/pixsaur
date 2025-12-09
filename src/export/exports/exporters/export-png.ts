@@ -3,7 +3,7 @@ import type { CpcModeConfig } from '@/app/store/config/types'
 import { getAspectRatioMultipliers } from '@/export'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { renderPreviewWithRaster } from '@/libs/pixsaur-raster/render-with-raster'
-import type { RasterRange } from '@/libs/pixsaur-raster/types'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import {
   canvasToPNGBlob,
   createCorrectedAspectCanvas,
@@ -24,7 +24,8 @@ function createCanvasFromPixelData(
   canvas.height = height
   const ctx = canvas.getContext('2d', { alpha: false })
   if (ctx) {
-    const imageData = new ImageData(pixelData, width, height)
+    const imageData = ctx.createImageData(width, height)
+    imageData.data.set(pixelData)
     ctx.putImageData(imageData, 0, 0)
   }
   return canvas
@@ -87,7 +88,7 @@ async function exportCorrectedAspectPNGWithRasters(
   indexBuf: Uint8Array,
   modeConfig: CpcModeConfig,
   globalPalette: Vector[],
-  rasterRanges: RasterRange[]
+  rasterChanges: RasterChange[]
 ) {
   const { widthMultiplier, heightMultiplier } = getAspectRatioMultipliers(
     modeConfig.mode
@@ -99,7 +100,7 @@ async function exportCorrectedAspectPNGWithRasters(
     modeConfig.width,
     modeConfig.height,
     globalPalette,
-    rasterRanges
+    rasterChanges
   )
 
   // Create canvas from pixel data and scale to corrected aspect ratio
@@ -134,7 +135,7 @@ async function exportCorrectedAspectPNG(
 export interface PNGExportData {
   indexBuf: Uint8Array
   globalPalette: Vector[]
-  rasterRanges: RasterRange[]
+  rasterChanges: RasterChange[]
 }
 
 /**
@@ -145,7 +146,7 @@ function hasValidRasterData(
 ): rasterData is PNGExportData {
   return Boolean(
     rasterData &&
-      rasterData.rasterRanges.length > 0 &&
+      rasterData.rasterChanges.length > 0 &&
       rasterData.globalPalette.length > 0
   )
 }
@@ -168,7 +169,7 @@ export async function exportPNGData(
         rasterData.indexBuf,
         modeConfig,
         rasterData.globalPalette,
-        rasterData.rasterRanges
+        rasterData.rasterChanges
       )
     } else {
       await exportCorrectedAspectPNG(zip, canvas, modeConfig)

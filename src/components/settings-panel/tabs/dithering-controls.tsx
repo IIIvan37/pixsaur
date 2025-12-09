@@ -8,52 +8,15 @@ import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
 import { ditheringAtom } from '@/app/store/config/config'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
+import {
+  ALL_DITHERING_MODES,
+  getDefaultDitheringIntensity,
+  getRasterCompatibleModes
+} from '@/components/settings-panel/shared/dithering-modes'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
-
-type DitheringModeOption = {
-  value: DitheringMode
-  label: string
-}
-
-const MODES: readonly DitheringModeOption[] = [
-  { value: 'floydSteinberg', label: 'Floyd–Steinberg' },
-  { value: 'bayer2x2', label: 'Bayer 2x2' },
-  { value: 'bayer4x4', label: 'Bayer 4x4' },
-  { value: 'bayer8x8', label: 'bayer 8x8' },
-  { value: 'ylioluma1', label: 'Ylioluma 1' },
-  { value: 'ylioluma2', label: 'Ylioluma 2' },
-  { value: 'atkinson', label: 'Atkinson' },
-  { value: 'halftone4x4', label: 'Halftone 4x4' }
-]
-
-/**
- * Returns the default intensity for a given dithering mode.
- */
-export function getDefaultIntensity(mode: DitheringMode): number {
-  switch (mode) {
-    case 'floydSteinberg':
-      return 0.5
-    case 'atkinson':
-      return 0.5
-    case 'bayer2x2':
-      return 0.25
-    case 'bayer4x4':
-      return 0.25
-    case 'bayer8x8':
-      return 0.25
-    case 'halftone4x4':
-      return 0.08
-    case 'ylioluma1':
-      return 0.16
-    case 'ylioluma2':
-      return 1
-    default:
-      return 0.5
-  }
-}
 
 export function DitheringControls() {
   const [cfg, setCfg] = useAtom(ditheringAtom)
@@ -61,14 +24,8 @@ export function DitheringControls() {
 
   // Filter modes for raster (exclude error diffusion algorithms)
   const availableModes = rasterEnabled
-    ? MODES.filter(
-        (mode) =>
-          mode.value !== 'floydSteinberg' &&
-          mode.value !== 'atkinson' &&
-          mode.value !== 'ylioluma1' &&
-          mode.value !== 'ylioluma2'
-      )
-    : MODES
+    ? getRasterCompatibleModes()
+    : ALL_DITHERING_MODES
 
   return (
     <>
@@ -95,7 +52,7 @@ export function DitheringControls() {
               const newMode = value as DitheringMode
               setCfg({
                 mode: newMode,
-                intensity: getDefaultIntensity(newMode)
+                intensity: getDefaultDitheringIntensity(newMode)
               })
             }}
           >
