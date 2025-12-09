@@ -117,14 +117,15 @@ export function DskWorkspaceView({
                       >
                         {image.cpcHardware === 'plus' ? 'Plus' : 'Classic'}
                       </span>
-                      {image.rasterRanges && image.rasterRanges.length > 0 && (
-                        <span
-                          className={styles.rasterBadge}
-                          title={`${image.rasterRanges.length} raster range(s)`}
-                        >
-                          Rasters
-                        </span>
-                      )}
+                      {image.rasterChanges &&
+                        image.rasterChanges.length > 0 && (
+                          <span
+                            className={styles.rasterBadge}
+                            title={`${image.rasterChanges.length} raster change(s)`}
+                          >
+                            Rasters
+                          </span>
+                        )}
                     </div>
                     <div className={styles.imageDetails}>
                       {getModeLabel(image.mode)} •{' '}

@@ -223,7 +223,7 @@ export async function exportDskWorkspaceZip(
       }
 
       // Export rasters for this image if present
-      if (image.rasterRanges && image.rasterRanges.length > 0) {
+      if (image.rasterChanges && image.rasterChanges.length > 0) {
         const rasterLabel = `raster${imageIndex}`
         const isCPCPlus = image.cpcHardware === 'plus'
 
@@ -234,13 +234,13 @@ export async function exportDskWorkspaceZip(
 
         const rasterAsm = isCPCPlus
           ? generatePlusRasterASM(
-              image.rasterRanges,
+              image.rasterChanges,
               image.height,
               basePalette,
               rasterLabel
             )
           : generateClassicRasterASM(
-              image.rasterRanges,
+              image.rasterChanges,
               image.height,
               basePalette,
               rasterLabel
@@ -249,7 +249,7 @@ export async function exportDskWorkspaceZip(
         const rasterFilename = `raster${imageIndex}.asm`
         zip.file(rasterFilename, rasterAsm)
         dskLogger.info(
-          `[DSK Workspace ZIP] Added ${rasterFilename} to archive (${image.rasterRanges.length} ranges)`
+          `[DSK Workspace ZIP] Added ${rasterFilename} to archive (${image.rasterChanges.length} changes)`
         )
       }
     }

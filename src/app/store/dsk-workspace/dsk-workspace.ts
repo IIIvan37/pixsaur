@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
-import type { RasterRange } from '@/libs/pixsaur-raster/types'
+import type { RasterChange } from '@/libs/pixsaur-raster/types'
 
 export interface DskImage {
   id: string
@@ -18,7 +18,7 @@ export interface DskImage {
   palettePlus?: number[] // CPC Plus 16-bit palette values (optional, only for CPC Plus)
   thumbnailDataUrl?: string // Base64 data URL for preview
   paletteColors?: string[] // RGB hex colors for palette display
-  rasterRanges?: RasterRange[] // Raster ranges for this image (optional)
+  rasterChanges?: RasterChange[] // Raster changes for this image (optional)
 }
 
 interface DskWorkspaceData {
@@ -62,7 +62,7 @@ export const addImageToDskAtom = atom(
       palettePlus?: number[]
       thumbnailDataUrl?: string
       paletteColors?: string[]
-      rasterRanges?: RasterRange[]
+      rasterChanges?: RasterChange[]
     }
   ) => {
     const workspace = get(dskWorkspaceStorageAtom)

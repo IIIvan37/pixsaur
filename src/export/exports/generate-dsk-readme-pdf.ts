@@ -68,8 +68,8 @@ export function generateDskReadmePdf(
     const dimensions = `${image.width}×${image.height}`
     const colors = String(image.nColors)
     const rasters =
-      image.rasterRanges && image.rasterRanges.length > 0
-        ? `${image.rasterRanges.length} range(s)`
+      image.rasterChanges && image.rasterChanges.length > 0
+        ? `${image.rasterChanges.length} range(s)`
         : '-'
 
     if (filenames.length === 1) {
@@ -106,7 +106,7 @@ export function generateDskReadmePdf(
 
   // Check if any images have rasters
   const hasRasters = images.some(
-    (img) => img.rasterRanges && img.rasterRanges.length > 0
+    (img) => img.rasterChanges && img.rasterChanges.length > 0
   )
 
   if (hasRasters) {

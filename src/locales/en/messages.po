@@ -18,7 +18,7 @@ msgstr ""
 #~ msgstr "{0} (used)"
 
 #. placeholder {0}: images.length
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:170
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:171
 msgid "{0} image(s) ready to export"
 msgstr "{0} image(s) ready to export"
 
@@ -26,13 +26,17 @@ msgstr "{0} image(s) ready to export"
 #~ msgid "{0} remaining"
 #~ msgstr "{0} remaining"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:172
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:173
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} remaining"
 
 #: src/components/raster-panel/raster-panel-view.tsx:343
 msgid "{uniqueColorsCount} couleur(s) unique(s)"
 msgstr "{uniqueColorsCount} unique color(s)"
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:424
+msgid "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
+msgstr ""
 
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
@@ -42,7 +46,7 @@ msgstr "A new version of Pixsaur is available. Click below to download and insta
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:327
+#: src/components/settings-panel/tabs/raster-tab.tsx:273
 msgid "Active le mode raster pour utiliser des palettes optimisées par ligne."
 msgstr "Enable raster mode to use line-optimized palettes."
 
@@ -177,6 +181,10 @@ msgstr "Balanced Score"
 msgid "Bleu"
 msgstr "Blue"
 
+#: src/components/settings-panel/tabs/raster-tab.tsx:402
+msgid "Bonus de continuité"
+msgstr ""
+
 #: src/app/components/adjustements/adjustement.view.tsx:26
 #: src/components/settings-panel/tabs/source-tab.tsx:38
 msgid "Canaux RGB"
@@ -196,10 +204,11 @@ msgid "Centrer l'image"
 msgstr "Center image"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:163
+#: src/components/settings-panel/tabs/raster-tab.tsx:295
 msgid "Changements par ligne"
 msgstr "Changes per line"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:469
+#: src/components/settings-panel/tabs/raster-tab.tsx:436
 msgid "Changements Raster"
 msgstr "Raster Changes"
 
@@ -230,6 +239,14 @@ msgstr "Click to open in a new tab"
 #: src/components/image-upload/image-upload-view.tsx:197
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:365
+msgid "Coefficient d'erreur horizontale"
+msgstr ""
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:351
+msgid "Coefficient d'erreur verticale"
+msgstr ""
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:187
 #~ msgid "Color {i}: {color}"
@@ -312,7 +329,11 @@ msgstr "Dimensions"
 #~ msgid "Disquette DSK (image écran)"
 #~ msgstr "Disquette DSK (image écran)"
 
-#: src/components/settings-panel/settings-panel.tsx:55
+#: src/components/settings-panel/tabs/raster-tab.tsx:387
+msgid "Distance de continuité"
+msgstr ""
+
+#: src/components/settings-panel/settings-panel.tsx:56
 msgid "Dithering"
 msgstr "Dithering"
 
@@ -322,12 +343,12 @@ msgid "palette.strategy.dithering-aware.label"
 msgstr "Dithering Aware"
 
 #: src/components/raster-panel/raster-tuning-panel.tsx:180
-#: src/components/settings-panel/tabs/raster-tab.tsx:395
+#: src/components/settings-panel/tabs/raster-tab.tsx:347
 msgid "Dithering Error Propagation"
 msgstr "Dithering Error Propagation"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:212
-#: src/components/settings-panel/tabs/dithering-controls.tsx:90
+#: src/components/settings-panel/tabs/dithering-controls.tsx:47
 msgid "Dithering final"
 msgstr "Final dithering"
 
@@ -336,6 +357,7 @@ msgid "Dithering horizontal 1D appliqué lors du prétraitement raster"
 msgstr "Horizontal 1D dithering applied during raster preprocessing"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:179
+#: src/components/settings-panel/tabs/raster-tab.tsx:310
 msgid "Dithering raster"
 msgstr "Raster dithering"
 
@@ -402,11 +424,11 @@ msgstr "Exec"
 msgid "palette.strategy.exhaustive-contrast.label"
 msgstr "Exhaustive Contrast"
 
-#: src/components/settings-panel/settings-panel.tsx:67
+#: src/components/settings-panel/settings-panel.tsx:68
 msgid "Export"
 msgstr "Export"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:167
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:168
 msgid "Export DSK"
 msgstr "Export DSK"
 
@@ -470,11 +492,11 @@ msgstr "Frequency priority (80%) with moderate diversity"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:385
+#: src/components/settings-panel/tabs/raster-tab.tsx:337
 msgid "Générer les rasters"
 msgstr "Generate rasters"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:472
+#: src/components/settings-panel/tabs/raster-tab.tsx:439
 msgid "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
 msgstr "Manage ink changes per line (automatically generated or manual)"
 
@@ -482,7 +504,7 @@ msgstr "Manage ink changes per line (automatically generated or manual)"
 msgid "Glissez & déposez une image ici"
 msgstr "Drag & drop an image here"
 
-#: src/components/settings-panel/settings-panel.tsx:49
+#: src/components/settings-panel/settings-panel.tsx:50
 msgid "Hardware"
 msgstr "Hardware"
 
@@ -516,7 +538,7 @@ msgstr "Install Update"
 #~ msgstr "Installing..."
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:234
-#: src/components/settings-panel/tabs/dithering-controls.tsx:112
+#: src/components/settings-panel/tabs/dithering-controls.tsx:69
 msgid "Intensité"
 msgstr "Intensity"
 
@@ -630,7 +652,7 @@ msgid "Mode de redimensionnement"
 msgstr "Resize mode"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:148
-#: src/components/settings-panel/tabs/raster-tab.tsx:324
+#: src/components/settings-panel/tabs/raster-tab.tsx:270
 msgid "Mode Raster"
 msgstr "Raster Mode"
 
@@ -667,7 +689,7 @@ msgstr "No additional files. Upload or add files to include them in the DSK."
 msgid "No image to add"
 msgstr "No image to add"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:179
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:180
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "No images in workspace yet. Add converted images to build your DSK file."
 
@@ -676,6 +698,7 @@ msgid "Nom du fichier ZIP"
 msgstr "ZIP File Name"
 
 #: src/components/image-controls/dithering-selector/dithering-selector.tsx:165
+#: src/components/settings-panel/tabs/raster-tab.tsx:304
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Maximum ink changes per line (1 = classic raster)"
 
@@ -693,7 +716,7 @@ msgstr "Not enough space on DSK"
 msgid "Ombres"
 msgstr "Shadows"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:381
+#: src/components/settings-panel/tabs/raster-tab.tsx:333
 msgid "Optimisation..."
 msgstr "Optimizing..."
 
@@ -714,16 +737,20 @@ msgstr "or click to select a file"
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
-#: src/components/settings-panel/settings-button.tsx:21
+#: src/components/settings-panel/settings-button.tsx:36
 msgid "Ouvrir le panneau des paramètres"
 msgstr "Open settings panel"
 
 #: src/components/settings-panel/settings-button.tsx:20
-msgid "Ouvrir les paramètres"
-msgstr "Open settings"
+#~ msgid "Ouvrir les paramètres"
+#~ msgstr "Open settings"
+
+#: src/components/settings-panel/settings-button.tsx:35
+msgid "Ouvrir les paramètres (⌘,)"
+msgstr ""
 
 #: src/components/raster-panel/raster-tuning-panel.tsx:209
-#: src/components/settings-panel/tabs/raster-tab.tsx:425
+#: src/components/settings-panel/tabs/raster-tab.tsx:383
 msgid "Palette Selection"
 msgstr "Palette Selection"
 
@@ -731,11 +758,11 @@ msgstr "Palette Selection"
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
-#: src/components/settings-panel/settings-button.tsx:25
+#: src/components/settings-panel/settings-button.tsx:40
 msgid "Paramètres"
 msgstr "Settings"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:345
+#: src/components/settings-panel/tabs/raster-tab.tsx:291
 msgid "Paramètres Raster"
 msgstr "Raster Parameters"
 
@@ -753,6 +780,14 @@ msgstr "Perceptual Contrast"
 msgid "Pixel Mode"
 msgstr "Pixel Mode"
 
+#: src/components/settings-panel/tabs/raster-tab.tsx:396
+msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
+msgstr ""
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:410
+msgid "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
+msgstr ""
+
 #: src/components/export-panel/export-config-dialog.tsx:97
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (preview)"
@@ -765,21 +800,37 @@ msgstr "PNG (correct CPC aspect ratio)"
 msgid "PNG (pixels carrés)"
 msgstr "PNG (square pixels)"
 
+#: src/components/settings-panel/tabs/raster-tab.tsx:416
+msgid "Poids de fréquence"
+msgstr ""
+
 #: src/app/components/adjustements/adjustement.view.tsx:152
 #: src/components/settings-panel/tabs/source-tab.tsx:207
 msgid "Posterisation"
 msgstr "Posterization"
 
+#: src/components/settings-panel/tabs/raster-tab.tsx:319
+msgid "Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
+msgstr ""
+
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
 msgstr "Processor"
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:373
+msgid "Propagation horizontale des erreurs de quantification entre pixels"
+msgstr ""
+
+#: src/components/settings-panel/tabs/raster-tab.tsx:359
+msgid "Propagation verticale des erreurs de quantification (lower = moins de banding)"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: src/components/image-controls/palette-strategy-selector/palette-strategy-selector.tsx:174
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Pure Diversity"
 
-#: src/components/settings-panel/settings-panel.tsx:61
+#: src/components/settings-panel/settings-panel.tsx:62
 msgid "Raster"
 msgstr "Raster"
 
@@ -795,7 +846,7 @@ msgstr "Raster Tuning"
 msgid "Rasters (données ASM)"
 msgstr "Rasters (ASM data)"
 
-#: src/components/settings-panel/tabs/raster-tab.tsx:383
+#: src/components/settings-panel/tabs/raster-tab.tsx:335
 msgid "Rasters générés"
 msgstr "Generated Rasters"
 
@@ -820,6 +871,16 @@ msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=nor
 msgid "Réinitialiser"
 msgstr "Reset"
 
+#: src/components/settings-panel/tabs/raster-tab.tsx:306
+#: src/components/settings-panel/tabs/raster-tab.tsx:321
+#: src/components/settings-panel/tabs/raster-tab.tsx:361
+#: src/components/settings-panel/tabs/raster-tab.tsx:375
+#: src/components/settings-panel/tabs/raster-tab.tsx:398
+#: src/components/settings-panel/tabs/raster-tab.tsx:412
+#: src/components/settings-panel/tabs/raster-tab.tsx:426
+msgid "Réinitialiser à la valeur par défaut"
+msgstr ""
+
 #: src/components/export-panel/dsk-files-manager.tsx:214
 msgid "Remove file"
 msgstr "Remove file"
@@ -828,7 +889,7 @@ msgstr "Remove file"
 msgid "Remove image from workspace"
 msgstr "Remove image from workspace"
 
-#: src/components/settings-panel/settings-panel.tsx:43
+#: src/components/settings-panel/settings-panel.tsx:44
 msgid "Resize"
 msgstr "Resize"
 
@@ -879,7 +940,7 @@ msgstr "Select files to include in ZIP archive"
 msgid "palette.strategy.dithering-aware.desc"
 msgstr "Selects colors that blend well in dithering"
 
-#: src/components/settings-panel/settings-panel.tsx:85
+#: src/components/settings-panel/settings-panel.tsx:84
 msgid "Settings"
 msgstr "Settings"
 
@@ -888,7 +949,7 @@ msgstr "Settings"
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 
-#: src/components/settings-panel/settings-panel.tsx:37
+#: src/components/settings-panel/settings-panel.tsx:38
 msgid "Source"
 msgstr "Source"
 
