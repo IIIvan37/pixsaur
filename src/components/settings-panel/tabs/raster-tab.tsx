@@ -2,8 +2,9 @@
  * Raster tab content - extracted from RasterTuningPanel
  */
 
-import { msg, Trans } from '@lingui/macro'
+import { msg } from '@lingui/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useId, useRef, useState } from 'react'
 import {

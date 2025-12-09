@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@lingui/core": "^5.5.1",
-    "@lingui/macro": "^5.5.1",
+    "@lingui/react/macro": "^5.5.1",
     "@lingui/react": "^5.5.1",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",

@@ -2,8 +2,9 @@
  * Floating button to open the settings panel
  */
 
-import { msg, Trans } from '@lingui/macro'
+import { msg } from '@lingui/macro'
 import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
 import { useAtom } from 'jotai'
 import { useEffect } from 'react'
 import { settingsPanelEnabledAtom } from '@/app/store/settings/settings-panel'
