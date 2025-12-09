@@ -6,7 +6,7 @@
 
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
-import { cpcHardwareAtom, ditheringAtom } from '@/app/store/config/config'
+import { ditheringAtom } from '@/app/store/config/config'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
@@ -58,19 +58,17 @@ export function getDefaultIntensity(mode: DitheringMode): number {
 export function DitheringControls() {
   const [cfg, setCfg] = useAtom(ditheringAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
-  const cpcHardware = useAtomValue(cpcHardwareAtom)
 
   // Filter modes for raster (exclude error diffusion algorithms)
-  const availableModes =
-    rasterEnabled && cpcHardware === 'classic'
-      ? MODES.filter(
-          (mode) =>
-            mode.value !== 'floydSteinberg' &&
-            mode.value !== 'atkinson' &&
-            mode.value !== 'ylioluma1' &&
-            mode.value !== 'ylioluma2'
-        )
-      : MODES
+  const availableModes = rasterEnabled
+    ? MODES.filter(
+        (mode) =>
+          mode.value !== 'floydSteinberg' &&
+          mode.value !== 'atkinson' &&
+          mode.value !== 'ylioluma1' &&
+          mode.value !== 'ylioluma2'
+      )
+    : MODES
 
   return (
     <>
