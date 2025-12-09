@@ -4,6 +4,27 @@
   gap: 24px;
 }
 
+.adjustmentsWrapper {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-sm, 12px);
+	padding: var(--spacing-xs, 8px);
+}
+
+.sectionsContainer {
+	display: flex;
+	flex-direction: column;
+	gap: var(--spacing-xs, 8px);
+	padding: 0;
+	width: 100%;
+}
+
+.sliderGrid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, max-content));
+	gap: var(--spacing-md, 16px);
+}
+
 .section {
   display: flex;
   flex-direction: column;
@@ -83,4 +104,21 @@
   height: 1px;
   background: var(--color-border);
   margin: 8px 0;
+}
+
+.switchLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.selectionInfo {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 8px 12px;
+  background: var(--color-panel-hover);
+  border-radius: 6px;
+  margin-bottom: 8px;
 }

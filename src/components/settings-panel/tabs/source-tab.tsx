@@ -3,8 +3,8 @@
  */
 
 import { Trans } from '@lingui/react/macro'
-import { ResetIcon } from '@radix-ui/react-icons'
 import { useAtomValue, useSetAtom } from 'jotai'
+import type { ReactNode } from 'react'
 import {
   configAtom,
   resetImageAdjustmentsAtom,
@@ -13,147 +13,203 @@ import {
 import type { AdjustementKey } from '@/app/store/config/types'
 import { workingImageAtom } from '@/app/store/image/image'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
+import { Header } from '@/components/ui/layout/header/header'
 import PixsaurSlider from '@/components/ui/slider'
 import styles from './tab.module.css'
 
-type AdjustmentDef = {
+type AdjustmentLabel = {
   key: AdjustementKey
-  label: string
-  description: string
+  label: ReactNode
+  description: ReactNode
   min: number
   max: number
   step: number
 }
 
-const rgbAdjustments: AdjustmentDef[] = [
+type AdjustmentSection = {
+  id: string
+  title: ReactNode
+  keys: AdjustementKey[]
+}
+
+const sections: AdjustmentSection[] = [
+  {
+    id: 'rgb',
+    title: <Trans>Canaux RGB</Trans>,
+    keys: ['red', 'green', 'blue']
+  },
+  {
+    id: 'color',
+    title: <Trans>Couleur & Température</Trans>,
+    keys: ['temperature', 'tint', 'vibrance', 'saturation', 'hue']
+  },
+  {
+    id: 'exposure',
+    title: <Trans>Exposition & Tonalité</Trans>,
+    keys: [
+      'exposure',
+      'brightness',
+      'contrast',
+      'highlights',
+      'shadows',
+      'gamma'
+    ]
+  },
+  {
+    id: 'effects',
+    title: <Trans>Effets</Trans>,
+    keys: ['posterization']
+  }
+]
+
+const labels: AdjustmentLabel[] = [
   {
     key: 'red',
-    label: 'Rouge',
-    description: 'Multiplie le canal rouge (0-2x)',
+    label: <Trans>Rouge</Trans>,
+    description: <Trans>Multiplie le canal rouge (0-2x)</Trans>,
     min: 0,
     max: 2,
     step: 0.01
   },
   {
     key: 'green',
-    label: 'Vert',
-    description: 'Multiplie le canal vert (0-2x)',
+    label: <Trans>Vert</Trans>,
+    description: <Trans>Multiplie le canal vert (0-2x)</Trans>,
     min: 0,
     max: 2,
     step: 0.01
   },
   {
     key: 'blue',
-    label: 'Bleu',
-    description: 'Multiplie le canal bleu (0-2x)',
+    label: <Trans>Bleu</Trans>,
+    description: <Trans>Multiplie le canal bleu (0-2x)</Trans>,
     min: 0,
     max: 2,
     step: 0.01
-  }
-]
-
-const colorAdjustments: AdjustmentDef[] = [
-  {
-    key: 'temperature',
-    label: 'Temperature',
-    description: 'Balance bleu/orange (-100 = froid, +100 = chaud)',
-    min: -100,
-    max: 100,
-    step: 1
-  },
-  {
-    key: 'tint',
-    label: 'Teinte coloree',
-    description: 'Balance vert/magenta pour corriger les dominantes',
-    min: -100,
-    max: 100,
-    step: 1
-  },
-  {
-    key: 'vibrance',
-    label: 'Vibrance',
-    description: 'Saturation intelligente qui booste les couleurs ternes',
-    min: -100,
-    max: 100,
-    step: 1
-  },
-  {
-    key: 'saturation',
-    label: 'Saturation',
-    description: 'Intensite des couleurs (0 = noir et blanc, 2 = tres sature)',
-    min: 0,
-    max: 2,
-    step: 0.01
-  },
-  {
-    key: 'hue',
-    label: 'Teinte',
-    description:
-      'Rotation des couleurs sur le cercle chromatique (-180 a +180)',
-    min: -180,
-    max: 180,
-    step: 1
-  }
-]
-
-const exposureAdjustments: AdjustmentDef[] = [
-  {
-    key: 'exposure',
-    label: 'Exposition',
-    description: 'Simule les stops photographiques (-3 a +3)',
-    min: -3,
-    max: 3,
-    step: 0.1
   },
   {
     key: 'brightness',
-    label: 'Luminosite',
-    description: 'Ajuste la clarte globale de l image',
+    label: <Trans>Luminosité</Trans>,
+    description: <Trans>Ajuste la clarté globale de l'image</Trans>,
     min: 0,
     max: 2,
     step: 0.01
   },
   {
     key: 'contrast',
-    label: 'Contraste',
-    description: 'Ajuste la difference entre les tons clairs et fonces',
+    label: <Trans>Contraste</Trans>,
+    description: (
+      <Trans>Ajuste la différence entre les tons clairs et foncés</Trans>
+    ),
     min: 0,
     max: 2,
     step: 0.01
   },
   {
-    key: 'highlights',
-    label: 'Hautes lumieres',
-    description: 'Ajuste uniquement les zones claires de l image',
+    key: 'saturation',
+    label: <Trans>Saturation</Trans>,
+    description: (
+      <Trans>Intensité des couleurs (0 = noir et blanc, 2 = très saturé)</Trans>
+    ),
+    min: 0,
+    max: 2,
+    step: 0.01
+  },
+  {
+    key: 'hue',
+    label: <Trans>Teinte</Trans>,
+    description: (
+      <Trans>
+        Rotation des couleurs sur le cercle chromatique (-180° à +180°)
+      </Trans>
+    ),
+    min: -180,
+    max: 180,
+    step: 1
+  },
+  {
+    key: 'vibrance',
+    label: <Trans>Vibrance</Trans>,
+    description: (
+      <Trans>
+        Saturation intelligente qui booste les couleurs ternes sans sur-saturer
+      </Trans>
+    ),
     min: -100,
     max: 100,
     step: 1
   },
   {
-    key: 'shadows',
-    label: 'Ombres',
-    description: 'Ajuste uniquement les zones sombres de l image',
+    key: 'temperature',
+    label: <Trans>Température</Trans>,
+    description: (
+      <Trans>Balance bleu/orange (-100 = froid, +100 = chaud)</Trans>
+    ),
+    min: -100,
+    max: 100,
+    step: 1
+  },
+  {
+    key: 'tint',
+    label: <Trans>Teinte colorée</Trans>,
+    description: (
+      <Trans>
+        Balance vert/magenta pour corriger les dominantes de couleur
+      </Trans>
+    ),
     min: -100,
     max: 100,
     step: 1
   },
   {
     key: 'gamma',
-    label: 'Gamma',
-    description:
-      'Correction non-lineaire de la luminosite (0.1-3.0, 1.0 = neutre)',
+    label: <Trans>Gamma</Trans>,
+    description: (
+      <Trans>
+        Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)
+      </Trans>
+    ),
     min: 0.1,
     max: 3,
     step: 0.1
-  }
-]
-
-const effectsAdjustments: AdjustmentDef[] = [
+  },
+  {
+    key: 'exposure',
+    label: <Trans>Exposition</Trans>,
+    description: (
+      <Trans>
+        Simule les stops photographiques (-3 à +3, ±1 = double/moitié de
+        lumière)
+      </Trans>
+    ),
+    min: -3,
+    max: 3,
+    step: 0.1
+  },
+  {
+    key: 'highlights',
+    label: <Trans>Hautes lumières</Trans>,
+    description: <Trans>Ajuste uniquement les zones claires de l'image</Trans>,
+    min: -100,
+    max: 100,
+    step: 1
+  },
+  {
+    key: 'shadows',
+    label: <Trans>Ombres</Trans>,
+    description: <Trans>Ajuste uniquement les zones sombres de l'image</Trans>,
+    min: -100,
+    max: 100,
+    step: 1
+  },
   {
     key: 'posterization',
-    label: 'Posterisation',
-    description:
-      'Reduit le nombre de niveaux de couleur pour un effet d affiche',
+    label: <Trans>Posterisation</Trans>,
+    description: (
+      <Trans>
+        Réduit le nombre de niveaux de couleur pour un effet d'affiche
+      </Trans>
+    ),
     min: 2,
     max: 256,
     step: 1
@@ -167,118 +223,54 @@ export function SourceTab() {
   const workingImage = useAtomValue(workingImageAtom)
   const disabled = !workingImage?.data
 
-  // Default values for image adjustments
-  const defaults: Record<AdjustementKey, number> = {
-    red: 1,
-    green: 1,
-    blue: 1,
-    brightness: 1,
-    contrast: 1,
-    saturation: 1,
-    hue: 0,
-    vibrance: 0,
-    temperature: 0,
-    tint: 0,
-    gamma: 1,
-    exposure: 0,
-    highlights: 0,
-    shadows: 0,
-    posterization: 256
-  }
-
-  const renderSlider = (adj: AdjustmentDef) => {
+  const renderSlider = (adj: AdjustmentLabel) => {
     const value = config[adj.key] as number
-    const isDefault = value === defaults[adj.key]
 
     return (
-      <div key={adj.key} className={styles.tuningRow}>
-        <div className={styles.tuningHeader}>
-          <span className={styles.tuningLabel}>{adj.label}</span>
-          {!isDefault && (
-            <button
-              type='button'
-              className={styles.resetButton}
-              onClick={() =>
-                setComponent({ key: adj.key, value: defaults[adj.key] })
-              }
-              disabled={disabled}
-              title='Reset to default'
-            >
-              <ResetIcon />
-            </button>
-          )}
-        </div>
-        <PixsaurSlider
-          showTooltip
-          disabled={disabled}
-          value={value}
-          min={adj.min}
-          max={adj.max}
-          step={adj.step}
-          onChange={(newValue: number) =>
-            setComponent({ key: adj.key, value: newValue })
-          }
-          description={adj.description}
-        />
-      </div>
+      <PixsaurSlider
+        showTooltip
+        key={adj.key}
+        disabled={disabled}
+        value={value}
+        min={adj.min}
+        max={adj.max}
+        step={adj.step}
+        onChange={(newValue: number) =>
+          setComponent({ key: adj.key, value: newValue })
+        }
+        label={adj.label}
+        description={adj.description}
+      />
     )
   }
 
   return (
-    <div className={styles.tabContent}>
-      <div className={styles.section}>
-        <div className={styles.tuningHeader}>
-          <h3 className={styles.sectionTitle}>
-            <Trans>Ajustements de l'image source</Trans>
-          </h3>
-          <button
-            type='button'
-            className={styles.resetButton}
-            onClick={() => resetAdjustments()}
-            disabled={disabled}
-            title='Reset all adjustments'
-          >
-            <ResetIcon />
-          </button>
-        </div>
+    <div className={styles.adjustmentsWrapper}>
+      <Header
+        action={resetAdjustments}
+        actionLabel={<Trans>Réinitialiser</Trans>}
+        disabled={disabled}
+      />
 
-        <CollapsibleSection
-          title={<Trans>Canaux RGB</Trans>}
-          defaultOpen={false}
-          disabled={disabled}
-        >
-          {rgbAdjustments.map(renderSlider)}
-        </CollapsibleSection>
+      <div className={styles.sectionsContainer}>
+        {sections.map((section) => {
+          const sectionLabels = labels.filter((l) =>
+            section.keys.includes(l.key)
+          )
 
-        <div className={styles.separator} />
-
-        <CollapsibleSection
-          title={<Trans>Couleur & Temperature</Trans>}
-          defaultOpen={false}
-          disabled={disabled}
-        >
-          {colorAdjustments.map(renderSlider)}
-        </CollapsibleSection>
-
-        <div className={styles.separator} />
-
-        <CollapsibleSection
-          title={<Trans>Exposition & Tonalite</Trans>}
-          defaultOpen={false}
-          disabled={disabled}
-        >
-          {exposureAdjustments.map(renderSlider)}
-        </CollapsibleSection>
-
-        <div className={styles.separator} />
-
-        <CollapsibleSection
-          title={<Trans>Effets</Trans>}
-          defaultOpen={false}
-          disabled={disabled}
-        >
-          {effectsAdjustments.map(renderSlider)}
-        </CollapsibleSection>
+          return (
+            <CollapsibleSection
+              key={section.id}
+              title={section.title}
+              defaultOpen={false}
+              disabled={disabled}
+            >
+              <div className={styles.sliderGrid}>
+                {sectionLabels.map(renderSlider)}
+              </div>
+            </CollapsibleSection>
+          )
+        })}
       </div>
     </div>
   )
