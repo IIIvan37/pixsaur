@@ -86,13 +86,30 @@ elif [ "$PLATFORM" = "macos" ]; then
     ARCH=$(uname -m)
     if [ "$ARCH" = "arm64" ]; then
         ARCH_SUFFIX="_aarch64"
+        TARGET_DIR="aarch64-apple-darwin"
     elif [ "$ARCH" = "x86_64" ]; then
         ARCH_SUFFIX="_x64"
+        TARGET_DIR="x86_64-apple-darwin"
     else
         ARCH_SUFFIX=""
+        TARGET_DIR="release"
     fi
     
-    cd src-tauri/target/release/bundle/macos
+    # Chercher le bundle dans le répertoire de la target spécifique
+    # Essayer d'abord avec target spécifique, puis fallback sur release par défaut
+    if [ -d "src-tauri/target/${TARGET_DIR}/release/bundle/macos" ]; then
+        BUNDLE_DIR="src-tauri/target/${TARGET_DIR}/release/bundle/macos"
+    elif [ -d "src-tauri/target/release/bundle/macos" ]; then
+        BUNDLE_DIR="src-tauri/target/release/bundle/macos"
+    else
+        echo "Error: Cannot find macOS bundle directory"
+        echo "Tried: src-tauri/target/${TARGET_DIR}/release/bundle/macos"
+        echo "Tried: src-tauri/target/release/bundle/macos"
+        exit 1
+    fi
+    
+    echo "Using bundle directory: ${BUNDLE_DIR}"
+    cd "${BUNDLE_DIR}"
     
     for app in *.app; do
         if [ -d "$app" ]; then
