@@ -82,34 +82,48 @@ if [ "$PLATFORM" = "linux" ]; then
 elif [ "$PLATFORM" = "macos" ]; then
     echo "Processing macOS .app bundles..."
     
-    # Détecter l'architecture
-    ARCH=$(uname -m)
-    if [ "$ARCH" = "arm64" ]; then
-        ARCH_SUFFIX="_aarch64"
-        TARGET_DIR="aarch64-apple-darwin"
-    elif [ "$ARCH" = "x86_64" ]; then
-        ARCH_SUFFIX="_x64"
-        TARGET_DIR="x86_64-apple-darwin"
-    else
-        ARCH_SUFFIX=""
-        TARGET_DIR="release"
-    fi
+    # Chercher dans tous les répertoires de target possibles
+    # L'ordre de recherche détermine la priorité
+    TARGET_DIRS=(
+        "aarch64-apple-darwin/release/bundle/macos"
+        "x86_64-apple-darwin/release/bundle/macos"
+        "release/bundle/macos"
+    )
     
-    # Chercher le bundle dans le répertoire de la target spécifique
-    # Essayer d'abord avec target spécifique, puis fallback sur release par défaut
-    if [ -d "src-tauri/target/${TARGET_DIR}/release/bundle/macos" ]; then
-        BUNDLE_DIR="src-tauri/target/${TARGET_DIR}/release/bundle/macos"
-    elif [ -d "src-tauri/target/release/bundle/macos" ]; then
-        BUNDLE_DIR="src-tauri/target/release/bundle/macos"
-    else
+    BUNDLE_DIR=""
+    for target_dir in "${TARGET_DIRS[@]}"; do
+        if [ -d "src-tauri/target/${target_dir}" ]; then
+            BUNDLE_DIR="src-tauri/target/${target_dir}"
+            echo "Found bundle directory: ${BUNDLE_DIR}"
+            break
+        fi
+    done
+    
+    if [ -z "$BUNDLE_DIR" ]; then
         echo "Error: Cannot find macOS bundle directory"
-        echo "Tried: src-tauri/target/${TARGET_DIR}/release/bundle/macos"
-        echo "Tried: src-tauri/target/release/bundle/macos"
+        echo "Searched in:"
+        for target_dir in "${TARGET_DIRS[@]}"; do
+            echo "  - src-tauri/target/${target_dir}"
+        done
         exit 1
     fi
     
-    echo "Using bundle directory: ${BUNDLE_DIR}"
     cd "${BUNDLE_DIR}"
+    
+    # Détecter le suffixe d'architecture à partir du chemin du bundle
+    if [[ "$BUNDLE_DIR" == *"aarch64-apple-darwin"* ]]; then
+        ARCH_SUFFIX="_aarch64"
+    elif [[ "$BUNDLE_DIR" == *"x86_64-apple-darwin"* ]]; then
+        ARCH_SUFFIX="_x64"
+    else
+        # Fallback: détecter depuis l'architecture du système
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "arm64" ]; then
+            ARCH_SUFFIX="_aarch64"
+        else
+            ARCH_SUFFIX="_x64"
+        fi
+    fi
     
     for app in *.app; do
         if [ -d "$app" ]; then
