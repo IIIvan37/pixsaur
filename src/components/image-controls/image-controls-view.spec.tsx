@@ -41,7 +41,7 @@ describe('ImageControlsView', () => {
 
   it('renders the component without crashing', () => {
     renderWithI18n(<ImageControlsView />)
-    expect(screen.getByText(/Palette/i)).toBeInTheDocument()
+    expect(screen.getByText(/Processeur/i)).toBeInTheDocument()
   })
 
   it('renders processor selector', () => {
