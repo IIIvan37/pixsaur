@@ -8,6 +8,7 @@ import {
 } from '@/libs/pixsaur-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { cpcPalette } from '@/palettes/cpc-palette'
+import { imageProcessorAtom } from '../adapters/processors'
 import {
   configAtom,
   cpcHardwareAtom,
@@ -323,6 +324,20 @@ export const rasterPreviewImageAtom = atom(async (get) => {
     // Use the optimized index buffer from auto-optimization
     // This ensures pixel-to-ink mapping is consistent with raster changes
     const { buffer, width, height, palette } = rasterIndexBuffer
+    const processor = get(imageProcessorAtom)
+    if (processor) {
+      try {
+        return processor.renderRasterPreview(
+          buffer,
+          width,
+          height,
+          palette,
+          changes
+        )
+      } catch (_e) {
+        // Fallback CPU if GPU path fails
+      }
+    }
     return createRasterPreviewImageData(buffer, width, height, palette, changes)
   }
 
@@ -342,6 +357,20 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   }
 
   const { buffer, width, height, palette } = indexBufferData
+  const processor = get(imageProcessorAtom)
+  if (processor) {
+    try {
+      return processor.renderRasterPreview(
+        buffer,
+        width,
+        height,
+        palette,
+        changes
+      )
+    } catch (_e) {
+      // Fallback CPU if GPU path fails
+    }
+  }
   return createRasterPreviewImageData(buffer, width, height, palette, changes)
 })
 

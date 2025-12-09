@@ -25,7 +25,7 @@ function colorKey(color: Vector<'RGB'>): string {
 }
 
 /**
- * Add two error vectors (no clamping, keep full precision)
+ * Add two error vectors (keep full precision for proper error diffusion)
  */
 function addErrors(
   a: [number, number, number],
@@ -924,7 +924,7 @@ export function optimizeLinePalettesWithIndexBuffer(
 // ============================================================================
 
 /**
- * Add color and error (clamp only final result to valid RGB range)
+ * Add color and error, clamping only the final result to valid RGB range
  */
 function addColors(
   color: Vector<'RGB'>,
@@ -935,16 +935,6 @@ function addColors(
     Math.max(0, Math.min(255, color[1] + error[1])),
     Math.max(0, Math.min(255, color[2] + error[2]))
   ]
-}
-
-/**
- * Subtract two colors (for error calculation)
- */
-function subtractColors(
-  a: Vector<'RGB'>,
-  b: Vector<'RGB'>
-): [number, number, number] {
-  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
 /**
@@ -1241,8 +1231,28 @@ export function preprocessImageForRaster(
         ]
 
         // Apply accumulated error (vertical from previous line + horizontal from left)
-        const totalError = addErrors(verticalError[x], horizError[x])
-        const correctedColor = addColors(sourceColor, totalError)
+        const rawTotalError = addErrors(verticalError[x], horizError[x])
+
+        // Clamp accumulated error to prevent runaway values
+        // Allow ±128 per channel (half the color range) to preserve dithering quality
+        // while preventing extreme artifacts
+        const totalError: [number, number, number] = [
+          Math.max(-128, Math.min(128, rawTotalError[0])),
+          Math.max(-128, Math.min(128, rawTotalError[1])),
+          Math.max(-128, Math.min(128, rawTotalError[2]))
+        ]
+
+        // Add error to source color (may go out of [0,255] range temporarily)
+        const targetR = sourceColor[0] + totalError[0]
+        const targetG = sourceColor[1] + totalError[1]
+        const targetB = sourceColor[2] + totalError[2]
+
+        // Clamp to valid RGB range for palette lookup
+        const correctedColor: Vector<'RGB'> = [
+          Math.max(0, Math.min(255, targetR)),
+          Math.max(0, Math.min(255, targetG)),
+          Math.max(0, Math.min(255, targetB))
+        ]
 
         // Find closest palette color
         const closestIdx = findClosestColorIndex(
@@ -1251,8 +1261,24 @@ export function preprocessImageForRaster(
         )
         const chosenColor = quantizedPalette[closestIdx]
 
-        // Calculate quantization error
-        const error = subtractColors(correctedColor, chosenColor)
+        // Calculate quantization error based on UNCLAMPED target color
+        // This is key: if we wanted targetR=-100 but clamped to 0, and chose color 0,
+        // the error is 0-(-100)=100, not 0-0=0
+        const rawError: [number, number, number] = [
+          targetR - chosenColor[0],
+          targetG - chosenColor[1],
+          targetB - chosenColor[2]
+        ]
+
+        // Clamp the error before propagation to prevent runaway accumulation
+        // Use a dynamic threshold based on dithering intensity
+        // At intensity=1: ±32, at intensity=0.5: ±16, etc.
+        const maxError = 32 * ditheringIntensity
+        const error: [number, number, number] = [
+          Math.max(-maxError, Math.min(maxError, rawError[0])),
+          Math.max(-maxError, Math.min(maxError, rawError[1])),
+          Math.max(-maxError, Math.min(maxError, rawError[2]))
+        ]
 
         // Distribute error with configurable intensity
         // Base coefficients (at intensity=1): Horizontal 1/2, Vertical 1/4
@@ -1260,13 +1286,13 @@ export function preprocessImageForRaster(
         const horizCoef = (1 / 2) * ditheringIntensity
         const vertCoef = (1 / 4) * ditheringIntensity
 
-        // Horizontal error propagation (no clamping, keep precision)
+        // Horizontal error propagation
         if (x + 1 < width && horizCoef > 0) {
           const he = scaleError(error, horizCoef)
           horizError[x + 1] = addErrors(horizError[x + 1], he)
         }
 
-        // Vertical error propagation - simplified to just below pixel (no clamping)
+        // Vertical error propagation - simplified to just below pixel
         if (vertCoef > 0) {
           const ve = scaleError(error, vertCoef)
           newVerticalError[x] = addErrors(newVerticalError[x], ve)

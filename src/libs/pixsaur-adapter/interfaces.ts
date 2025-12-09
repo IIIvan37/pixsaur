@@ -68,6 +68,17 @@ export interface ImageProcessor {
   ): Promise<Vector[]>
 
   /**
+   * Rendu de l'aperçu raster (palettes par ligne). GPU si disponible, sinon CPU.
+   */
+  renderRasterPreview(
+    indexBuffer: Uint8Array,
+    width: number,
+    height: number,
+    globalPalette: Vector[],
+    rasterChanges: Array<{ line: number; inkIndex: number; color: Vector }>
+  ): ImageData
+
+  /**
    * Nettoie les ressources (WebGL contexts, etc.)
    */
   dispose(): void
