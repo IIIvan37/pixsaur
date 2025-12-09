@@ -227,10 +227,6 @@ export function RasterTab() {
     autoOptimize
   ])
 
-  // Calculate max allowed changes based on mode
-  const maxAllowedChanges =
-    modeConfig.mode === 0 ? 8 : modeConfig.mode === 1 ? 4 : 2
-
   // Raster panel helper variables
   const maxLine = modeConfig.height - 1
   const isClassicMode = cpcHardware === 'classic'
@@ -349,10 +345,10 @@ export function RasterTab() {
 
         <TuningSlider
           label='Changements par ligne'
-          value={Math.min(maxChangesPerLine, maxAllowedChanges)}
+          value={Math.min(maxChangesPerLine, hardwareLimit)}
           onChange={setMaxChangesPerLine}
           min={1}
-          max={maxAllowedChanges}
+          max={hardwareLimit}
           step={1}
           defaultValue={1}
           format={(v) => v.toFixed(0)}
