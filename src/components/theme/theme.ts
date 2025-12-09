@@ -3,30 +3,30 @@ export const theme = {
     dark: '#000000',
     light: '#FFFFFF',
     background: '#000000',
-    foreground: '#00DF3A',
-    accent: '#00FF00',
-    accentHover: '#00CC00',
-    accentActive: '#00AA00',
-    border: '#005500',
-    error: '#FF5555',
+    foreground: '#A8B5A8',
+    accent: '#6B9E6B',
+    accentHover: '#5A8A5A',
+    accentActive: '#4A7A4A',
+    border: '#3A4A3A',
+    error: '#D97373',
     hover: {
-      primary: '#00CC00',
-      secondary: 'rgba(0, 255, 0, 0.05)'
+      primary: '#5A8A5A',
+      secondary: 'rgba(107, 158, 107, 0.08)'
     },
     pressed: {
-      primary: '#005500',
-      secondary: '#003300'
+      primary: '#3A4A3A',
+      secondary: '#2A3A2A'
     },
     focus: {
-      ring: '#00FF00',
-      glow: '#00FF88'
+      ring: '#6B9E6B',
+      glow: '#7AAE7A'
     },
     disabled: {
-      thumb: '#004400',
-      border: '#007700',
-      range: '#005500',
-      track: '#002200',
-      text: '#007700'
+      thumb: '#3A4A3A',
+      border: '#4A5A4A',
+      range: '#3A4A3A',
+      track: '#2A3A2A',
+      text: '#5A6A5A'
     }
   },
 
@@ -54,8 +54,8 @@ export const theme = {
     md: '0.29rem'
   },
   shadow: {
-    glow: '0 0 0.29rem #00FF00',
-    inner: 'inset 0 0 0.14rem #00FF00'
+    glow: '0 0 0.29rem rgba(107, 158, 107, 0.5)',
+    inner: 'inset 0 0 0.14rem rgba(107, 158, 107, 0.3)'
   },
   spinner: {
     size: '1rem',

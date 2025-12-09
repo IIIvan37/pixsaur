@@ -1,6 +1,5 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { ImageResizePanel } from '@/components/image-resize/image-resize-panel'
 import { ImageSelector } from '@/components/image-selector'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -70,11 +69,7 @@ export default function SourceSection() {
       />
 
       {img ? (
-        <>
-          <ImageSelector />
-          {/* Resize mode controls - placed after source selection */}
-          <ImageResizePanel />
-        </>
+        <ImageSelector />
       ) : (
         <ImageUpload onImageLoaded={handleImageLoaded} />
       )}

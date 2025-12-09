@@ -55,8 +55,29 @@ src-tauri/Cargo.lock
 *.temp
 .cache
 
+# Debug scripts at root
+analyze-*.js
+compare-*.js
+debug-*.js
+find-*.js
+
+# Test files at root
+test.html
+
+# Temporary images at root
+*.png
+*.jpg
+*.jpeg
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
+!src/**/*.png
+!src/**/*.jpg
+!src/**/*.jpeg
+
 # Test coverage
 coverage/
+coverage.json
 .nyc_output/
 
 # Build artifacts

@@ -1,5 +1,5 @@
 /**
- * Development-only atoms for tuning raster dithering constants
+ * Atoms for tuning raster dithering and palette selection parameters
  */
 
 import { atomWithStorage } from 'jotai/utils'

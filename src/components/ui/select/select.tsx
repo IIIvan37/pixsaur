@@ -8,11 +8,21 @@ type Props = {
   readonly value: string
   readonly onValueChange: (value: string) => void
   readonly children: ReactNode
+  readonly disabled?: boolean
 }
 
-export function Select({ value, onValueChange, children }: Props) {
+export function Select({
+  value,
+  onValueChange,
+  children,
+  disabled = false
+}: Props) {
   return (
-    <RadixSelect.Root value={value} onValueChange={onValueChange}>
+    <RadixSelect.Root
+      value={value}
+      onValueChange={onValueChange}
+      disabled={disabled}
+    >
       <RadixSelect.Trigger className={styles.trigger}>
         <RadixSelect.Value />
         <RadixSelect.Icon className={styles.icon}>

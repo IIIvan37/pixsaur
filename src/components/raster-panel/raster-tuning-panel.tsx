@@ -1,8 +1,8 @@
 /**
- * Development-only raster tuning panel component
+ * Raster tuning panel component
  */
 
-import { Trans } from '@lingui/macro'
+import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useRef } from 'react'
 import {
@@ -21,7 +21,6 @@ import {
 import DraggableDialog from '@/components/ui/draggable-dialog'
 import Icon from '@/components/ui/icon'
 import PixsaurSlider from '@/components/ui/slider/slider'
-import { isDevelopment } from '@/core'
 import logger from '@/core/logger'
 import { rasterTuningOverrides } from '@/libs/pixsaur-raster/optimize-line-palettes'
 import {
@@ -164,18 +163,13 @@ export function RasterTuningPanel() {
     autoOptimize
   ])
 
-  // Only show in development
-  if (!isDevelopment()) {
-    return null
-  }
-
   return (
     <DraggableDialog
       open={enabled}
       onOpenChange={setEnabled}
       title={
         <>
-          <Icon name='GearIcon' /> <Trans>Raster Tuning (Dev)</Trans>
+          <Icon name='GearIcon' /> <Trans>Raster Tuning</Trans>
         </>
       }
       defaultPosition={{ x: 120, y: 80 }}

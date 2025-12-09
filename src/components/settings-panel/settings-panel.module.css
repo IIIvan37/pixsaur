@@ -1,0 +1,92 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-width: 600px;
+  max-width: 800px;
+  min-height: 400px;
+  max-height: 80vh;
+  overflow: hidden;
+  flex: 1;
+  padding: var(--spacing-lg, 1rem);
+  padding-top: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  padding-top: 1rem;
+  background: var(--color-panel-background);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s,
+    transform 0.1s;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tab:hover:not(.active) {
+  background: var(--color-panel-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.tab.active,
+.tab[data-state='active'] {
+  background: rgba(var(--accent-rgb), 0.15);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  font-weight: 600;
+  box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+
+.tab svg {
+  width: 16px;
+  height: 16px;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  min-height: 0;
+}
+
+/* Scrollbar styling */
+.content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: var(--color-background, #0a0a0a);
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--color-border, #1a1a1a);
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--color-accent);
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-panel, #111);
+  border-color: var(--color-accent-hover);
+}

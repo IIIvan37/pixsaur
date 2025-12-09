@@ -17,3 +17,11 @@
   color: var(--color-muted);
   margin-top: var(--spacing-xs);
 }
+
+.disabledReason {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  color: var(--color-foreground-muted);
+  font-style: italic;
+  margin-top: var(--spacing-xs);
+}

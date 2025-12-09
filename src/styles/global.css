@@ -11,7 +11,7 @@
 html {
   font-size: 14px; /* 1rem = 14px */
   background-color: var(--color-background, black);
-  color: var(--color-foreground, #00df3a);
+  color: var(--color-foreground, #A8B5A8);
   font-family: var(--font-family, monospace);
 }
 

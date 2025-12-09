@@ -1,28 +1,21 @@
 import { Trans } from '@lingui/react/macro'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useEffect, useState } from 'react'
+import { useAtom, useAtomValue } from 'jotai'
+import { useEffect } from 'react'
 import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
-import { imageAtom } from '@/app/store/image/image'
 import {
-  autoOptimizeRasterAtom,
-  hasGeneratedRastersAtom,
   rasterDitheringIntensityAtom,
   rasterEnabledAtom,
   rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster'
-import { rasterTuningEnabledAtom } from '@/app/store/raster/raster-tuning'
 import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
-import Button from '@/components/ui/button'
 import Flex from '@/components/ui/flex'
-import Icon from '@/components/ui/icon'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
-import { isDevelopment } from '@/core'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import styles from './dithering-selector.module.css'
 
@@ -82,17 +75,12 @@ export function DitheringSelector({
   const rasterEnabled = rasterEnabledProp ?? rasterEnabledAtomValue
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
-  const image = useAtomValue(imageAtom)
-  const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
   const [rasterDitheringIntensity, setRasterDitheringIntensity] = useAtom(
     rasterDitheringIntensityAtom
   )
   const [maxChangesPerLine, setMaxChangesPerLine] = useAtom(
     rasterMaxChangesPerLineAtom
   )
-  const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
-  const [isOptimizing, setIsOptimizing] = useState(false)
-  const tuningEnabled = useAtomValue(rasterTuningEnabledAtom)
 
   // Auto-regenerate rasters when parameters change (if already generated)
   useAutoRegenerateRasters()
@@ -102,7 +90,6 @@ export function DitheringSelector({
   // - Mode 2: only 2 inks available, so max 2 changes regardless of hardware
   const hardwareMax = cpcHardware === 'plus' ? 4 : 2
   const maxAllowedChanges = Math.min(modeConfig.nColors, hardwareMax)
-  const hasImage = image !== null
 
   // Automatically clamp maxChangesPerLine if it exceeds hardware limits
   // This handles localStorage values from previous sessions with different hardware
@@ -129,16 +116,6 @@ export function DitheringSelector({
       }
     }
   }, [rasterEnabled, cfg.mode, setCfg])
-
-  const handleAutoOptimize = async () => {
-    if (isOptimizing) return // Prevent multiple clicks
-    setIsOptimizing(true)
-    try {
-      await autoOptimize()
-    } finally {
-      setIsOptimizing(false)
-    }
-  }
 
   const handleRasterEnabledChange =
     onRasterEnabledChange ?? setRasterEnabledAtom
@@ -214,29 +191,6 @@ export function DitheringSelector({
               />
             </div>
           </div>
-          {hasImage && (
-            <Button
-              variant='secondary'
-              onClick={handleAutoOptimize}
-              disabled={
-                isOptimizing ||
-                (hasGeneratedRasters && !(isDevelopment() && tuningEnabled))
-              }
-            >
-              <Icon name='GearIcon' />
-              {isOptimizing ? (
-                <Trans>Optimisation...</Trans>
-              ) : hasGeneratedRasters ? (
-                isDevelopment() && tuningEnabled ? (
-                  <Trans>Régénérer les rasters</Trans>
-                ) : (
-                  <Trans>Rasters générés</Trans>
-                )
-              ) : (
-                <Trans>Générer les rasters</Trans>
-              )}
-            </Button>
-          )}
         </div>
       )}
 

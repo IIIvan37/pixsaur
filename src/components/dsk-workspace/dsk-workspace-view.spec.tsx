@@ -83,7 +83,9 @@ describe('DskWorkspaceView', () => {
   describe('Rendering', () => {
     it('should render the component', () => {
       renderWithI18n(<DskWorkspaceView {...defaultProps} />)
-      expect(screen.getByTestId('collapsible-section')).toBeInTheDocument()
+      expect(
+        screen.getByText(/Supporte les formats CPC Classic et CPC Plus/i)
+      ).toBeInTheDocument()
     })
 
     it('should render add button', () => {

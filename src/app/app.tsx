@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { useEffect } from 'react'
 import { LanguageSelector } from '@/components/language-selector'
+import { SettingsPanel } from '@/components/settings-panel/settings-panel'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
@@ -116,6 +117,7 @@ export default function App() {
     <I18nProviderWrapper>
       <ThemeProvider>
         {(dev || tauri) && <Updater />}
+        <SettingsPanel />
         <main className={styles.container}>
           <div className={styles.content}>
             <header className={styles.header}>

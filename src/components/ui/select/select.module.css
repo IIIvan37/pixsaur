@@ -26,7 +26,7 @@
   padding: var(--spacing-xs) 0;
   font-family: var(--font-family);
   font-size: var(--font-size-sm);
-  z-index: 100;
+  z-index: 1002;
 }
 
 .item {

@@ -1,9 +1,12 @@
 import {
+  AspectRatioIcon,
+  BlendingModeIcon,
   CheckIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronUpIcon,
+  ComponentInstanceIcon,
   Cross2Icon,
   DownloadIcon,
   ExclamationTriangleIcon,
@@ -22,7 +25,14 @@ import { logger } from '@/core'
 
 // Mapping statique des icônes pour éviter l'accès dynamique
 const ICON_MAP = {
-  PlusIcon,
+  AspectRatioIcon,
+  BlendingModeIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronUpIcon,
+  ComponentInstanceIcon,
   Cross2Icon,
   DownloadIcon,
   ExclamationTriangleIcon,
@@ -32,14 +42,10 @@ const ICON_MAP = {
   ImageIcon,
   InfoCircledIcon,
   LockClosedIcon,
+  PlusIcon,
   ReloadIcon,
   TrashIcon,
-  UploadIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronUpIcon
+  UploadIcon
 } as const
 
 // Types d'icônes disponibles
