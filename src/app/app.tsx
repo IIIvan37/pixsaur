@@ -1,7 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { useEffect } from 'react'
 import { LanguageSelector } from '@/components/language-selector'
-import { SettingsButton } from '@/components/settings-panel/settings-button'
 import { SettingsPanel } from '@/components/settings-panel/settings-panel'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import Icon from '@/components/ui/icon'
@@ -147,7 +146,6 @@ export default function App() {
                 >
                   <Icon name='GitHubLogoIcon' size={20} />
                 </a>
-                <SettingsButton />
                 <LanguageSelector />
               </div>
             </header>
