@@ -11,6 +11,7 @@ import type REGL from 'regl'
 import type { PaletteStrategy } from '@/app/store/config/types'
 import { adapterLogger } from '@/core'
 import { weightedRGBDistance } from '@/libs/pixsaur-color/src/metric/distance'
+import { findClosestColorIndex } from '@/libs/pixsaur-color/src/metric/find-closest'
 import {
   applyPaletteStrategyV2,
   type ColorCandidate,
@@ -620,7 +621,11 @@ export class ReGLQuantizer {
     const colorCount = new Map<number, number>()
 
     for (const sample of sampledColors) {
-      const closestIndex = this.findClosestColorIndex(sample, basePalette)
+      const closestIndex = findClosestColorIndex(
+        sample,
+        basePalette,
+        this.calculateDistance
+      )
       if (!usedIndices.has(closestIndex)) {
         colorCount.set(closestIndex, (colorCount.get(closestIndex) || 0) + 1)
       }
@@ -1082,30 +1087,8 @@ export class ReGLQuantizer {
    * Utilise weightedRGBDistance (ITU-R BT.601) directement sans racine carrée
    * Note: Utilisé uniquement pour comparaisons, donc √ inutile (ordre préservé)
    */
-  private calculateDistance(color1: Vector, color2: Vector): number {
+  private calculateDistance = (color1: Vector, color2: Vector): number => {
     return weightedRGBDistance(color1, color2)
-  }
-
-  /**
-   * Trouve l'index de la couleur la plus proche
-   */
-  private findClosestColorIndex(
-    pixel: Vector,
-    palette: readonly Vector[]
-  ): number {
-    let minDistance = Infinity
-    let closestIndex = 0
-
-    for (let i = 0; i < palette.length; i++) {
-      const distance = this.calculateDistance(pixel, palette[i])
-
-      if (distance < minDistance) {
-        minDistance = distance
-        closestIndex = i
-      }
-    }
-
-    return closestIndex
   }
 
   /**

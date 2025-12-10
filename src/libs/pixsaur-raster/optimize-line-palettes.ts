@@ -1,4 +1,5 @@
 import { weightedRGBDistance } from '../pixsaur-color/src/metric/distance'
+import { findClosestColorIndex } from '../pixsaur-color/src/metric/find-closest'
 import type { Vector } from '../pixsaur-color/src/type'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
@@ -53,7 +54,11 @@ function buildCPCClassicLUT(palette: Vector<'RGB'>[]): Uint8Array {
     for (let g = 0; g < 16; g++) {
       for (let b = 0; b < 16; b++) {
         const color: Vector<'RGB'> = [r * 17, g * 17, b * 17]
-        const closestIdx = findClosestColorIndex(color, palette)
+        const closestIdx = findClosestColorIndex(
+          color,
+          palette,
+          weightedRGBDistance
+        )
         const lutIndex = r * 256 + g * 16 + b
         lut[lutIndex] = closestIdx
       }
@@ -106,27 +111,6 @@ function addErrors(
   b: [number, number, number]
 ): [number, number, number] {
   return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
-}
-
-/**
- * Find the index of the closest color in the palette to the given color
- */
-export function findClosestColorIndex(
-  color: Vector<'RGB'>,
-  palette: Vector<'RGB'>[]
-): number {
-  let bestIndex = 0
-  let bestDistance = weightedRGBDistance(color, palette[0])
-
-  for (let i = 1; i < palette.length; i++) {
-    const distance = weightedRGBDistance(color, palette[i])
-    if (distance < bestDistance) {
-      bestDistance = distance
-      bestIndex = i
-    }
-  }
-
-  return bestIndex
 }
 
 /**
@@ -820,7 +804,11 @@ export function optimizeLinePalettesWithIndexBuffer(
 
       // If color not in palette (was not frequent enough), find closest color
       if (inkIndex === undefined) {
-        inkIndex = findClosestColorIndex(quantizedPixel, newPalette)
+        inkIndex = findClosestColorIndex(
+          quantizedPixel,
+          newPalette,
+          weightedRGBDistance
+        )
       }
 
       indexBuffer[lineStart + x] = inkIndex
@@ -1150,7 +1138,8 @@ export function preprocessImageForRaster(
         const quantizedSource = quantizeColor(sourceColor)
         const closestIdx = findClosestColorIndex(
           quantizedSource,
-          quantizedPalette
+          quantizedPalette,
+          weightedRGBDistance
         )
         const chosenColor = quantizedPalette[closestIdx]
 
@@ -1205,7 +1194,8 @@ export function preprocessImageForRaster(
         // Find closest palette color
         const closestIdx = findClosestColorIndex(
           correctedColor,
-          quantizedPalette
+          quantizedPalette,
+          weightedRGBDistance
         )
         const chosenColor = quantizedPalette[closestIdx]
 
