@@ -132,3 +132,137 @@ export function rgbToHsv(
     v: calculateValue(color)
   }
 }
+
+/**
+ * Calcule la distance de teinte minimale entre un candidat et un ensemble de couleurs
+ * Ignore les couleurs peu saturées (gris) car leur teinte n'est pas significative
+ *
+ * @param candidateColor - Couleur candidate RGB [0-255, 0-255, 0-255]
+ * @param selectedColors - Ensemble de couleurs RGB déjà sélectionnées
+ * @param saturationThreshold - Seuil de saturation minimale pour considérer la teinte (default: 0.15)
+ * @param deltaThreshold - Seuil pour détecter les couleurs achromatiques (default: 0.01)
+ * @returns Distance de teinte minimale (0-180), ou 180 si le candidat est peu saturé
+ *
+ * @example
+ * ```ts
+ * calculateMinHueDistance([255, 0, 0], [[0, 255, 0], [0, 0, 255]]) // ~120
+ * calculateMinHueDistance([128, 128, 128], [[255, 0, 0]]) // 180 (gris, pas de teinte significative)
+ * ```
+ */
+export function calculateMinHueDistance(
+  candidateColor: Vector,
+  selectedColors: Vector[],
+  saturationThreshold = 0.15,
+  deltaThreshold = 0.01
+): number {
+  const candidateHue = calculateHue(candidateColor, deltaThreshold)
+  const candidateSat = calculateSaturation(candidateColor)
+
+  // Si le candidat est peu saturé, sa teinte n'est pas significative
+  if (candidateSat < saturationThreshold) return 180
+
+  let minDist = 180
+  for (const selected of selectedColors) {
+    const selectedSat = calculateSaturation(selected)
+    // Ignorer les couleurs peu saturées dans la comparaison
+    if (selectedSat < saturationThreshold) continue
+
+    const selectedHue = calculateHue(selected, deltaThreshold)
+    const dist = calculateHueDistance(candidateHue, selectedHue)
+    minDist = Math.min(minDist, dist)
+  }
+
+  return minDist
+}
+
+/**
+ * Calcule la distance de teinte minimale dans un ensemble de couleurs
+ * Ignore les couleurs peu saturées (gris)
+ *
+ * @param colors - Ensemble de couleurs RGB [0-255, 0-255, 0-255]
+ * @param saturationThreshold - Seuil de saturation minimale (default: 0.15)
+ * @param deltaThreshold - Seuil pour détecter les couleurs achromatiques (default: 0.01)
+ * @returns Distance de teinte minimale trouvée (0-180)
+ *
+ * @example
+ * ```ts
+ * calculateMinHueDistanceInSet([[255, 0, 0], [0, 255, 0], [0, 0, 255]]) // 120
+ * calculateMinHueDistanceInSet([[255, 0, 0], [255, 128, 0]]) // ~30
+ * ```
+ */
+export function calculateMinHueDistanceInSet(
+  colors: Vector[],
+  saturationThreshold = 0.15,
+  deltaThreshold = 0.01
+): number {
+  let minHueDist = 180
+
+  for (let i = 0; i < colors.length; i++) {
+    const sat1 = calculateSaturation(colors[i])
+    if (sat1 < saturationThreshold) continue
+
+    const hue1 = calculateHue(colors[i], deltaThreshold)
+    if (hue1 < 0) continue
+
+    for (let j = i + 1; j < colors.length; j++) {
+      const sat2 = calculateSaturation(colors[j])
+      if (sat2 < saturationThreshold) continue
+
+      const hue2 = calculateHue(colors[j], deltaThreshold)
+      if (hue2 < 0) continue
+
+      const dist = calculateHueDistance(hue1, hue2)
+      minHueDist = Math.min(minHueDist, dist)
+    }
+  }
+
+  return minHueDist
+}
+
+/**
+ * Vérifie si une couleur est visuellement colorée (saturée et visible)
+ * Une couleur doit avoir une saturation suffisante, une luminosité minimale et ne pas être trop claire
+ *
+ * @param color - Couleur RGB [0-255, 0-255, 0-255]
+ * @param minSaturation - Saturation minimale (default: 0.3)
+ * @param minLuminance - Luminance minimale (default: 0.2)
+ * @param maxValue - Valeur/brightness maximale (default: 0.95)
+ * @param highSaturationThreshold - Seuil de saturation élevée permettant une luminance plus basse (default: 0.7)
+ * @param highSaturationMinLuminance - Luminance minimale pour couleurs très saturées (default: 0.15)
+ * @returns true si la couleur est visuellement colorée
+ *
+ * @example
+ * ```ts
+ * isVisuallyColorful([255, 0, 0])      // true (rouge pur)
+ * isVisuallyColorful([255, 200, 200])  // false (rose pâle, peu saturé)
+ * isVisuallyColorful([128, 128, 128])  // false (gris)
+ * isVisuallyColorful([50, 0, 0])       // false (rouge très sombre)
+ * ```
+ */
+export function isVisuallyColorful(
+  color: Vector,
+  minSaturation = 0.3,
+  minLuminance = 0.2,
+  maxValue = 0.95,
+  highSaturationThreshold = 0.7,
+  highSaturationMinLuminance = 0.15
+): boolean {
+  const saturation = calculateSaturation(color)
+  const value = calculateValue(color)
+
+  // Import luminance from luminance module to avoid circular dependency
+  // Use a simple approximation here or require it as parameter
+  const lum = (color[0] * 0.2126 + color[1] * 0.7152 + color[2] * 0.0722) / 255
+
+  // Les couleurs très saturées peuvent avoir une luminance plus basse
+  const effectiveMinLuminance =
+    saturation > highSaturationThreshold
+      ? highSaturationMinLuminance
+      : minLuminance
+
+  return (
+    saturation >= minSaturation &&
+    lum >= effectiveMinLuminance &&
+    value <= maxValue
+  )
+}

@@ -7,8 +7,10 @@ import { weightedRGBDistance } from '../metric/distance'
 import type { Vector } from '../type'
 import {
   calculateHue,
-  calculateHueDistance,
-  calculateSaturation
+  calculateMinHueDistance,
+  calculateMinHueDistanceInSet,
+  calculateSaturation,
+  isVisuallyColorful
 } from '../utils/hsv'
 import {
   luminance as calculateLuminance,
@@ -34,9 +36,6 @@ const SATURATION_MIN_THRESHOLD = 0.15
 const SATURATION_LOW_THRESHOLD = 0.01
 
 // Weights and coefficients
-const LUMINANCE_WEIGHT_R = 0.299
-const LUMINANCE_WEIGHT_G = 0.587
-const LUMINANCE_WEIGHT_B = 0.114
 const BRIGHTNESS_BONUS_HIGH = 1
 const BRIGHTNESS_BONUS_LOW = 0.3
 const SATURATION_SCORE_BASE = 0.7
@@ -122,19 +121,15 @@ function isCPCClassicPalette(
  * Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
  */
 function calculateVividnessForColor(color: Vector): number {
-  const [r, g, b] = color
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
+  const max = Math.max(...color)
+  const min = Math.min(...color)
   const saturation = max === 0 ? 0 : (max - min) / max
-  const luminance =
-    (LUMINANCE_WEIGHT_R * r + LUMINANCE_WEIGHT_G * g + LUMINANCE_WEIGHT_B * b) /
-    255
+  const lum = calculateLuminance(color)
 
   // Saturation est le facteur principal (puissance 2 pour accentuer)
   // Pénaliser les couleurs trop sombres ou trop claires
   const brightnessBonus =
-    luminance > LUMINANCE_DARK_THRESHOLD &&
-    luminance < LUMINANCE_BRIGHT_THRESHOLD
+    lum > LUMINANCE_DARK_THRESHOLD && lum < LUMINANCE_BRIGHT_THRESHOLD
       ? BRIGHTNESS_BONUS_HIGH
       : BRIGHTNESS_BONUS_LOW
 
@@ -142,40 +137,9 @@ function calculateVividnessForColor(color: Vector): number {
   return (
     saturation *
     saturation *
-    (SATURATION_SCORE_BASE + SATURATION_SCORE_LUMINANCE * luminance) *
+    (SATURATION_SCORE_BASE + SATURATION_SCORE_LUMINANCE * lum) *
     brightnessBonus
   )
-}
-
-/**
- * Calcule la distance de teinte minimale entre un candidat et les couleurs sélectionnées
- * Ignore les couleurs peu saturées (gris) car leur teinte n'est pas significative
- */
-function calculateMinHueDistance(
-  candidate: ColorCandidate,
-  selectedColors: Vector[]
-): number {
-  const candidateHue = calculateHue(
-    candidate.converted,
-    SATURATION_LOW_THRESHOLD
-  )
-  const candidateSat = calculateSaturation(candidate.converted)
-
-  // Si le candidat est peu saturé, sa teinte n'est pas significative
-  if (candidateSat < SATURATION_MIN_THRESHOLD) return HUE_SIMILARITY_MAX
-
-  let minDist = HUE_SIMILARITY_MAX
-  for (const selected of selectedColors) {
-    const selectedSat = calculateSaturation(selected)
-    // Ignorer les couleurs peu saturées dans la comparaison
-    if (selectedSat < SATURATION_MIN_THRESHOLD) continue
-
-    const selectedHue = calculateHue(selected, SATURATION_LOW_THRESHOLD)
-    const dist = calculateHueDistance(candidateHue, selectedHue)
-    minDist = Math.min(minDist, dist)
-  }
-
-  return minDist
 }
 
 /**
@@ -208,38 +172,6 @@ function filterCandidatesWithHueDiversity(
     return sorted.slice(0, maxCandidates)
   }
 
-  // Fonction pour calculer la "vivacité" d'une couleur
-  // Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
-  const calculateVividness = (color: Vector): number => {
-    const [r, g, b] = color
-    const max = Math.max(r, g, b)
-    const min = Math.min(r, g, b)
-    const saturation = max === 0 ? 0 : (max - min) / max
-    const luminance =
-      (LUMINANCE_WEIGHT_R * r +
-        LUMINANCE_WEIGHT_G * g +
-        LUMINANCE_WEIGHT_B * b) /
-      255
-
-    // Saturation est le facteur principal (puissance 2 pour accentuer)
-    // Luminance ne sert qu'à départager les couleurs très saturées
-    // Pénaliser les couleurs trop sombres ou trop claires
-    const brightnessBonus =
-      luminance > LUMINANCE_DARK_THRESHOLD &&
-      luminance < LUMINANCE_BRIGHT_THRESHOLD
-        ? BRIGHTNESS_BONUS_HIGH
-        : BRIGHTNESS_BONUS_LOW
-
-    // Score = saturation² * (base + luminance_weight * luminance) * brightnessBonus
-    // La saturation domine, la luminance n'ajoute qu'un petit bonus
-    return (
-      saturation *
-      saturation *
-      (SATURATION_SCORE_BASE + SATURATION_SCORE_LUMINANCE * luminance) *
-      brightnessBonus
-    )
-  }
-
   // Pour CPC Plus, assurer une diversité de teinte
   const selectedCandidates: ColorCandidate[] = []
 
@@ -262,20 +194,20 @@ function filterCandidatesWithHueDiversity(
     } else {
       const sat = calculateSaturation(c.converted)
       if (sat >= SATURATION_MIN_THRESHOLD) {
-        // Saturée mais trop sombre ou trop claire
+        // Couleur saturée mais trop sombre pour le groupe hue
         darkColors.push(c)
       } else {
-        // Vraiment grise
+        // Vraiment gris/désaturé
         grays.push(c)
       }
     }
   }
 
-  // Trier chaque groupe de teinte par vivacité (les plus vives en premier)
   for (const group of hueGroups) {
     group.sort(
       (a, b) =>
-        calculateVividness(b.converted) - calculateVividness(a.converted)
+        calculateVividnessForColor(b.converted) -
+        calculateVividnessForColor(a.converted)
     )
   }
 
@@ -555,8 +487,10 @@ function calculateDiversityScore(params: DiversityScoreParams): number | null {
   // Pour CPC Plus, vérifier aussi la distance de teinte minimale
   if (!params.isCPCClassic && params.minHueDistance > 0) {
     const minHueDist = calculateMinHueDistance(
-      params.candidate,
-      params.selectedColors
+      params.candidate.converted,
+      params.selectedColors,
+      SATURATION_MIN_THRESHOLD,
+      SATURATION_LOW_THRESHOLD
     )
     if (minHueDist < params.minHueDistance) return null
   }
@@ -573,8 +507,10 @@ function calculateDiversityScore(params: DiversityScoreParams): number | null {
   if (!params.isCPCClassic) {
     const saturation = calculateSaturation(params.candidate.color)
     const hueDistance = calculateMinHueDistance(
-      params.candidate,
-      params.selectedColors
+      params.candidate.converted,
+      params.selectedColors,
+      SATURATION_MIN_THRESHOLD,
+      SATURATION_LOW_THRESHOLD
     )
     // Bonus combiné saturation + teinte
     saturationBonus =
@@ -797,7 +733,12 @@ function selectByFrequencyCore(
 
     // Pour CPC Plus, vérifier aussi la distance de teinte
     if (isDiverse && !isCPCClassic && minHueDistance > 0) {
-      const hueDist = calculateMinHueDistance(candidate, selectedConverted)
+      const hueDist = calculateMinHueDistance(
+        candidate.converted,
+        selectedConverted,
+        SATURATION_MIN_THRESHOLD,
+        SATURATION_LOW_THRESHOLD
+      )
       if (hueDist < minHueDistance) {
         isDiverse = false
       }
@@ -892,7 +833,12 @@ function findBestBalancedScoreCandidate(
 
     // Pour CPC Plus, vérifier la distance de teinte minimale
     if (!isCPCClassic && minHueDistance > 0) {
-      const hueDist = calculateMinHueDistance(candidate, selectedColors)
+      const hueDist = calculateMinHueDistance(
+        candidate.converted,
+        selectedColors,
+        SATURATION_MIN_THRESHOLD,
+        SATURATION_LOW_THRESHOLD
+      )
       if (hueDist < minHueDistance) continue
     }
 
@@ -907,7 +853,14 @@ function findBestBalancedScoreCandidate(
     // Pour CPC Plus, bonus de teinte dans le score
     const hueBonus = isCPCClassic
       ? 0
-      : (calculateMinHueDistance(candidate, selectedColors) / 180) * 0.15
+      : (calculateMinHueDistance(
+          candidate.converted,
+          selectedColors,
+          SATURATION_MIN_THRESHOLD,
+          SATURATION_LOW_THRESHOLD
+        ) /
+          180) *
+        0.15
 
     if (totalScore + hueBonus > bestScore) {
       bestScore = totalScore + hueBonus
@@ -1060,7 +1013,12 @@ function selectByPerceptualCore(
         (idx) => candidates.find((c) => c.index === idx)!.converted
       )
       const filtered = inBin.filter((c) => {
-        const hueDist = calculateMinHueDistance(c, selectedColors)
+        const hueDist = calculateMinHueDistance(
+          c.converted,
+          selectedColors,
+          SATURATION_MIN_THRESHOLD,
+          SATURATION_LOW_THRESHOLD
+        )
         return hueDist >= minHueDistance
       })
       if (filtered.length > 0) {
@@ -1393,65 +1351,10 @@ function calculateMinDistanceInSetV2(
 }
 
 /**
- * Calcule la distance de teinte minimale dans un ensemble de couleurs
- */
-function calculateMinHueDistanceInSet(colors: Vector[]): number {
-  let minHueDist = 180
-
-  for (let i = 0; i < colors.length; i++) {
-    const sat1 = calculateSaturation(colors[i])
-    if (sat1 < 0.15) continue // Ignorer les couleurs peu saturées
-
-    const hue1 = calculateHue(colors[i], SATURATION_LOW_THRESHOLD)
-    if (hue1 < 0) continue
-
-    for (let j = i + 1; j < colors.length; j++) {
-      const sat2 = calculateSaturation(colors[j])
-      if (sat2 < 0.15) continue
-
-      const hue2 = calculateHue(colors[j], SATURATION_LOW_THRESHOLD)
-      if (hue2 < 0) continue
-
-      const dist = calculateHueDistance(hue1, hue2)
-      minHueDist = Math.min(minHueDist, dist)
-    }
-  }
-
-  return minHueDist
-}
-
-/**
- * Vérifie si une couleur est visuellement colorée (pas grise ni trop sombre)
- * Une couleur doit avoir une saturation suffisante ET une luminosité minimale
- */
-function isVisuallyColorful(color: Vector): boolean {
-  const [r, g, b] = color
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-
-  // Saturation HSV
-  const saturation = max === 0 ? 0 : (max - min) / max
-
-  // Luminance perceptuelle (formule standard)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-
-  // Brightness HSV (pour détecter les couleurs trop claires)
-  const brightness = max / 255
-
-  // Une couleur est visuellement colorée si:
-  // - Elle a une saturation >= 0.30 (pas grise) - seuil relevé pour plus de saturation
-  // - ET une luminance >= 0.20 (pas trop sombre - seuil abaissé pour inclure les couleurs saturées sombres)
-  // - ET une brightness <= 0.95 (pas trop claire/blanche)
-  // Les couleurs très saturées (>0.7) peuvent avoir une luminance plus basse
-  const minLuminance = saturation > 0.7 ? 0.15 : 0.2
-  return saturation >= 0.3 && luminance >= minLuminance && brightness <= 0.95
-}
-
-/**
  * Compte le nombre de couleurs visuellement colorées
  */
 function countVisuallyColorfulColors(colors: Vector[]): number {
-  return colors.filter(isVisuallyColorful).length
+  return colors.filter((c) => isVisuallyColorful(c)).length
 }
 
 /**
