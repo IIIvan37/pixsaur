@@ -21,6 +21,75 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 
 /**
+ * Constantes pour la configuration GPU
+ */
+const MIN_PIXELS_FOR_GPU_DEFAULT = 128 * 128 // Seuil minimum de pixels pour utiliser le GPU
+const MIN_TEXTURE_SIZE_FOR_GPU = 1024 // Taille minimale de texture pour utiliser le GPU
+
+/**
+ * Constantes pour la palette CPC
+ */
+const CPC_CLASSIC_PALETTE_SIZE = 27 // Palette CPC Classic (27 couleurs)
+const CPC_MODE_0_COLORS = 16 // Mode 0: 16 couleurs
+const CPC_MODE_1_MAX_COLORS = 4 // Mode 1: 2-4 couleurs
+const CPC_PLUS_SPECIAL_MODE = 512 // Mode spécial CPC Plus (représente 16 couleurs)
+
+/**
+ * Constantes pour l'échantillonnage
+ */
+const SAMPLE_COUNT_MODE_0_CLASSIC = 256 // Échantillons pour mode 0 CPC Classic
+const SAMPLE_COUNT_MODE_0_PLUS = 2048 // Échantillons augmentés pour mode 0 CPC Plus (teintes rares)
+const SAMPLE_COUNT_MODE_1_2 = 1024 // Échantillons pour modes 1-2 (petites palettes)
+
+/**
+ * Constantes pour les seuils de couleur
+ */
+const RGB_NORMALIZATION_FACTOR = 255 // Facteur de normalisation RGB (0-255 → 0-1)
+const SATURATION_THRESHOLD_FOR_HUE = 0.2 // Seuil de saturation pour considérer la teinte
+const SATURATION_THRESHOLD_HIGH = 0.3 // Seuil de saturation élevé pour couleurs vibrantes
+const DELTA_MIN_FOR_HUE = 0.01 // Delta minimum pour calculer la teinte (évite division par zéro)
+
+/**
+ * Constantes pour la distance de teinte
+ */
+const HUE_RANGE_DEGREES = 360 // Plage complète de teinte en degrés
+const HUE_HALF_RANGE = 180 // Demi-plage de teinte (distance max circulaire)
+const HUE_BUCKET_SIZE_DEGREES = 45 // Taille de bucket de teinte en degrés (~8 familles)
+const MIN_HUE_DISTANCE_MODE_0 = 30 // Distance minimale de teinte pour diversité en mode 0
+
+/**
+ * Constantes pour la distance RGB
+ */
+const MIN_RGB_DISTANCE_MODE_0 = 20 // Distance RGB minimale pour mode 0
+const MIN_RGB_DISTANCE_MODE_1_2 = 80 // Distance RGB minimale pour modes 1-2 (contraste élevé)
+
+/**
+ * Constantes pour les coefficients de luminance perceptuelle (ITU-R BT.601)
+ */
+const LUMINANCE_WEIGHT_RED = 0.299 // Coefficient rouge pour luminance perceptuelle
+const LUMINANCE_WEIGHT_GREEN = 0.587 // Coefficient vert pour luminance perceptuelle
+const LUMINANCE_WEIGHT_BLUE = 0.114 // Coefficient bleu pour luminance perceptuelle
+
+/**
+ * Constantes pour les bonus de diversité
+ */
+const HUE_BONUS_WEIGHT = 2 // Poids du bonus de teinte (favorise diversité)
+const HUE_BONUS_NORMALIZATION = 200 // Normalisation du bonus de teinte pour être comparable à RGB
+
+/**
+ * Constantes pour les multiplicateurs de candidats
+ */
+const CANDIDATE_MULTIPLIER_SMALL_PALETTE = 4 // Multiplicateur de candidats pour petites palettes (≤4 couleurs)
+const CANDIDATE_MULTIPLIER_LARGE_PALETTE = 1 // Multiplicateur de candidats pour grandes palettes
+const CANDIDATE_POOL_CLASSIC_RATIO = 0.5 // Ratio du pool de candidats pour CPC Classic
+const CANDIDATE_POOL_PLUS_RATIO = 0.01 // Ratio du pool de candidats pour CPC Plus
+
+/**
+ * Constantes pour les seuils par défaut
+ */
+const DEFAULT_THRESHOLD = 10 // Seuil par défaut pour le filtrage adaptatif
+
+/**
  * Shaders GLSL pour ReGL - Extraction pour améliorer la lisibilité
  */
 
@@ -41,7 +110,7 @@ export interface ReGLQuantizeConfig extends QuantizeConfig {
   /** Pre-selected (locked) colors as CPC indices */
   readonly preselectedIndices?: readonly number[]
 
-  /** Threshold for adaptive filtering (default: 10) */
+  /** Threshold for adaptive filtering (default: DEFAULT_THRESHOLD) */
   readonly threshold?: number
 
   /** Whether threshold is relative to palette size (default: false) */
@@ -185,7 +254,8 @@ export class ReGLQuantizer {
     }
 
     const pixels = imageData.width * imageData.height
-    const minPixelsForGPU = config.gpuOptions?.minPixelsForGPU ?? 128 * 128
+    const minPixelsForGPU =
+      config.gpuOptions?.minPixelsForGPU ?? MIN_PIXELS_FOR_GPU_DEFAULT
 
     const shouldUse = pixels >= minPixelsForGPU
 
@@ -223,7 +293,7 @@ export class ReGLQuantizer {
     const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
 
     // GPU disponible si la taille texture est suffisante (pas besoin d'extensions)
-    const canUseGPU = maxTextureSize >= 1024
+    const canUseGPU = maxTextureSize >= MIN_TEXTURE_SIZE_FOR_GPU
 
     const capabilities: ReGLCapabilities = {
       hasFloatTextures,
@@ -446,9 +516,12 @@ export class ReGLQuantizer {
     config: ReGLQuantizeConfig
   ): number[] {
     // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
-    // Mode 0 (16 couleurs): 256 échantillons suffisent pour CPC Classic
+    // Mode 0 (16 couleurs): échantillons suffisent pour CPC Classic
     // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
-    const sampleCount = config.targetColors <= 4 ? 1024 : 256
+    const sampleCount =
+      config.targetColors <= CPC_MODE_1_MAX_COLORS
+        ? SAMPLE_COUNT_MODE_1_2
+        : SAMPLE_COUNT_MODE_0_CLASSIC
     const sampledColors = this.sampleImageColors(imageData, sampleCount)
 
     // Récupérer les indices présélectionnés (couleurs lockées)
@@ -456,7 +529,9 @@ export class ReGLQuantizer {
 
     // Use actual targetColors from config, not the candidatesCount passed as parameter
     const actualTargetColors =
-      config.targetColors === 512 ? 16 : config.targetColors
+      config.targetColors === CPC_PLUS_SPECIAL_MODE
+        ? CPC_MODE_0_COLORS
+        : config.targetColors
 
     // CPU: Calcul rapide des couleurs dominantes avec diversité (incluant les présélectionnées)
     const selected = this.selectDiverseColorsFast(
@@ -481,9 +556,12 @@ export class ReGLQuantizer {
     config: ReGLQuantizeConfig
   ): number[] {
     // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
-    // Mode 0 (16 couleurs): AUGMENTÉ à 2048 pour capturer les teintes rares
+    // Mode 0 (16 couleurs): AUGMENTÉ pour capturer les teintes rares
     // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
-    const sampleCount = config.targetColors <= 4 ? 1024 : 2048
+    const sampleCount =
+      config.targetColors <= CPC_MODE_1_MAX_COLORS
+        ? SAMPLE_COUNT_MODE_1_2
+        : SAMPLE_COUNT_MODE_0_PLUS
     const sampledColors = this.sampleImageColors(imageData, sampleCount)
 
     // Récupérer les indices présélectionnés (couleurs lockées)
@@ -569,15 +647,15 @@ export class ReGLQuantizer {
    * Retourne -1 pour les couleurs achromatiques (gris)
    */
   private calculateHue(color: Vector): number {
-    const r = color[0] / 255
-    const g = color[1] / 255
-    const b = color[2] / 255
+    const r = color[0] / RGB_NORMALIZATION_FACTOR
+    const g = color[1] / RGB_NORMALIZATION_FACTOR
+    const b = color[2] / RGB_NORMALIZATION_FACTOR
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
     const delta = max - min
 
     // Couleur achromatique (gris)
-    if (delta < 0.01) return -1
+    if (delta < DELTA_MIN_FOR_HUE) return -1
 
     let hue = 0
     if (max === r) {
@@ -589,7 +667,7 @@ export class ReGLQuantizer {
     }
 
     hue *= 60
-    if (hue < 0) hue += 360
+    if (hue < 0) hue += HUE_RANGE_DEGREES
 
     return hue
   }
@@ -599,10 +677,10 @@ export class ReGLQuantizer {
    */
   private calculateHueDistance(hue1: number, hue2: number): number {
     // Si l'une des couleurs est achromatique, considérer comme différente
-    if (hue1 < 0 || hue2 < 0) return 180
+    if (hue1 < 0 || hue2 < 0) return HUE_HALF_RANGE
 
     let diff = Math.abs(hue1 - hue2)
-    if (diff > 180) diff = 360 - diff
+    if (diff > HUE_HALF_RANGE) diff = HUE_RANGE_DEGREES - diff
     return diff
   }
 
@@ -610,9 +688,9 @@ export class ReGLQuantizer {
    * Calcule la saturation d'une couleur (0-1)
    */
   private calculateSaturation(color: Vector): number {
-    const r = color[0] / 255
-    const g = color[1] / 255
-    const b = color[2] / 255
+    const r = color[0] / RGB_NORMALIZATION_FACTOR
+    const g = color[1] / RGB_NORMALIZATION_FACTOR
+    const b = color[2] / RGB_NORMALIZATION_FACTOR
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
     return max > 0 ? (max - min) / max : 0
@@ -638,11 +716,14 @@ export class ReGLQuantizer {
     // Distance minimale adaptative selon la taille de la palette cible
     // Modes 1-2 (2-4 couleurs): nécessitent un contraste beaucoup plus élevé
     // Mode 0 (16 couleurs): distance plus faible acceptable
-    const minDistance = targetColors && targetColors <= 4 ? 80 : 20
+    const minDistance =
+      targetColors && targetColors <= CPC_MODE_1_MAX_COLORS
+        ? MIN_RGB_DISTANCE_MODE_1_2
+        : MIN_RGB_DISTANCE_MODE_0
 
     // Pour le mode 0, également exiger une diversité de teinte
-    const isMode0 = targetColors && targetColors > 4
-    const minHueDistance = 30 // 30 degrés minimum entre les teintes
+    const isMode0 = targetColors && targetColors > CPC_MODE_1_MAX_COLORS
+    const minHueDistance = MIN_HUE_DISTANCE_MODE_0 // degrés minimum entre les teintes
 
     for (
       let i = 1;
@@ -660,12 +741,12 @@ export class ReGLQuantizer {
         const candidateSat = this.calculateSaturation(candidateConverted)
 
         // Pour les couleurs saturées (pas les gris), vérifier la diversité de teinte
-        if (candidateSat > 0.3 && candidateHue >= 0) {
+        if (candidateSat > SATURATION_THRESHOLD_HIGH && candidateHue >= 0) {
           for (const selectedColor of selectedConverted) {
             const selectedSat = this.calculateSaturation(selectedColor)
 
             // Si la couleur sélectionnée est aussi saturée, vérifier la teinte
-            if (selectedSat > 0.3) {
+            if (selectedSat > SATURATION_THRESHOLD_HIGH) {
               const selectedHue = this.calculateHue(selectedColor)
               const hueDistance = this.calculateHueDistance(
                 candidateHue,
@@ -725,7 +806,7 @@ export class ReGLQuantizer {
   ): void {
     const remaining = colorFrequency.filter((c) => !result.includes(c.index))
     const additionalColors = targetColors - result.length
-    const isMode0 = targetColors > 4
+    const isMode0 = targetColors > CPC_MODE_1_MAX_COLORS
 
     for (let i = 0; i < additionalColors && remaining.length > 0; i++) {
       let maxScore = -1
@@ -752,13 +833,16 @@ export class ReGLQuantizer {
           const candidateSat = this.calculateSaturation(candidateConverted)
 
           // Pour les couleurs saturées, calculer la distance de teinte minimale
-          if (candidateSat > 0.2 && candidateHue >= 0) {
+          if (
+            candidateSat > SATURATION_THRESHOLD_FOR_HUE &&
+            candidateHue >= 0
+          ) {
             let minHueDistance = 360
 
             for (const selectedColor of selectedConverted) {
               const selectedSat = this.calculateSaturation(selectedColor)
 
-              if (selectedSat > 0.2) {
+              if (selectedSat > SATURATION_THRESHOLD_FOR_HUE) {
                 const selectedHue = this.calculateHue(selectedColor)
                 const hueDistance = this.calculateHueDistance(
                   candidateHue,
@@ -768,9 +852,12 @@ export class ReGLQuantizer {
               }
             }
 
-            // Bonus pour les teintes très différentes (pondération 2x pour favoriser la diversité)
+            // Bonus pour les teintes très différentes (pondération pour favoriser la diversité)
             // Normaliser minHueDistance (0-180) pour être comparable à minRGBDistance
-            const hueBonus = (minHueDistance / 180) * 200 * 2
+            const hueBonus =
+              (minHueDistance / HUE_HALF_RANGE) *
+              HUE_BONUS_NORMALIZATION *
+              HUE_BONUS_WEIGHT
             score = minRGBDistance + hueBonus
           }
         }
@@ -819,7 +906,7 @@ export class ReGLQuantizer {
 
     // Utiliser la nouvelle stratégie de sélection de palette pour les petites palettes
     // IMPORTANT: Doit être fait AVANT tout return early
-    if (targetColors <= 4) {
+    if (targetColors <= CPC_MODE_1_MAX_COLORS) {
       adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
         strategy: paletteStrategy,
         targetColors,
@@ -862,7 +949,10 @@ export class ReGLQuantizer {
     const remainingSlots = targetColors - result.length
 
     // Check si on a assez de candidats (seulement pour mode 0)
-    if (colorFrequency.length <= remainingSlots && targetColors > 4) {
+    if (
+      colorFrequency.length <= remainingSlots &&
+      targetColors > CPC_MODE_1_MAX_COLORS
+    ) {
       adapterLogger.info(
         '[ReGLQuantizer] Not enough candidates, returning all',
         {
@@ -885,8 +975,11 @@ export class ReGLQuantizer {
       const sat = this.calculateSaturation(candidate.converted)
       const hue = this.calculateHue(candidate.converted)
 
-      // Buckets de 45° pour avoir ~8 familles principales
-      const bucketKey = sat > 0.2 && hue >= 0 ? Math.floor(hue / 45) : 'gray'
+      // Buckets pour avoir ~8 familles principales
+      const bucketKey =
+        sat > SATURATION_THRESHOLD_FOR_HUE && hue >= 0
+          ? Math.floor(hue / HUE_BUCKET_SIZE_DEGREES)
+          : 'gray'
 
       if (!hueBuckets.has(bucketKey)) {
         hueBuckets.set(bucketKey, [])
@@ -899,7 +992,7 @@ export class ReGLQuantizer {
       const hueRange =
         bucket === 'gray'
           ? 'gray/desaturated'
-          : `${bucket * 45}-${((bucket as number) + 1) * 45}°`
+          : `${bucket * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
       adapterLogger.info(
         `[Mode 0] Bucket ${bucket} (${hueRange}): ${colors.length} colors`
       )
@@ -927,10 +1020,10 @@ export class ReGLQuantizer {
         const hueRange =
           bucket === 'gray'
             ? 'gray'
-            : `${bucket * 45}-${((bucket as number) + 1) * 45}°`
+            : `${bucket * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
         const [r, g, b] = rep.converted
         adapterLogger.info(
-          `[Mode 0] Representative for bucket ${bucket} (${hueRange}): RGB(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}) freq=${rep.frequency}`
+          `[Mode 0] Representative for bucket ${bucket} (${hueRange}): RGB(${Math.round(r * RGB_NORMALIZATION_FACTOR)}, ${Math.round(g * RGB_NORMALIZATION_FACTOR)}, ${Math.round(b * RGB_NORMALIZATION_FACTOR)}) freq=${rep.frequency}`
         )
       }
     }
@@ -1001,8 +1094,12 @@ export class ReGLQuantizer {
     const db = color1[2] - color2[2]
 
     // ITU-R BT.601 luma coefficients (perceptual weights)
-    // Green (0.587) > Red (0.299) > Blue (0.114)
-    return Math.sqrt(dr * dr * 0.299 + dg * dg * 0.587 + db * db * 0.114)
+    // Green > Red > Blue
+    return Math.sqrt(
+      dr * dr * LUMINANCE_WEIGHT_RED +
+        dg * dg * LUMINANCE_WEIGHT_GREEN +
+        db * db * LUMINANCE_WEIGHT_BLUE
+    )
   }
 
   /**
@@ -1059,20 +1156,27 @@ export class ReGLQuantizer {
     config: ReGLQuantizeConfig
   ): number[] {
     const isMode0Based =
-      config.targetColors === 16 || config.targetColors === 512
+      config.targetColors === CPC_MODE_0_COLORS ||
+      config.targetColors === CPC_PLUS_SPECIAL_MODE
     // Support any targetColors <= 4 for mode 1 (allows locked empty slots reducing count)
-    const isMode1Based = config.targetColors >= 1 && config.targetColors <= 4
+    const isMode1Based =
+      config.targetColors >= 1 && config.targetColors <= CPC_MODE_1_MAX_COLORS
     const isMode2Based = config.targetColors <= 2
-    const isCPCPlus = basePalette.length > 27
+    const isCPCPlus = basePalette.length > CPC_CLASSIC_PALETTE_SIZE
     const actualTargetColors =
-      config.targetColors === 512 ? 16 : config.targetColors
+      config.targetColors === CPC_PLUS_SPECIAL_MODE
+        ? CPC_MODE_0_COLORS
+        : config.targetColors
     const useOptimizedSelection = isMode0Based || isMode1Based || isMode2Based
 
     if (isCPCPlus && useOptimizedSelection) {
-      const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
+      const candidateMultiplier =
+        config.targetColors <= CPC_MODE_1_MAX_COLORS
+          ? CANDIDATE_MULTIPLIER_SMALL_PALETTE
+          : CANDIDATE_MULTIPLIER_LARGE_PALETTE
       const candidatesCount = Math.min(
         actualTargetColors * candidateMultiplier,
-        Math.floor(basePalette.length * 0.01)
+        Math.floor(basePalette.length * CANDIDATE_POOL_PLUS_RATIO)
       )
 
       return this.selectCPCPlusOptimized(
@@ -1082,10 +1186,13 @@ export class ReGLQuantizer {
         config
       )
     } else if (!isCPCPlus && useOptimizedSelection) {
-      const candidateMultiplier = config.targetColors <= 4 ? 4 : 1
+      const candidateMultiplier =
+        config.targetColors <= CPC_MODE_1_MAX_COLORS
+          ? CANDIDATE_MULTIPLIER_SMALL_PALETTE
+          : CANDIDATE_MULTIPLIER_LARGE_PALETTE
       const candidatesCount = Math.min(
         actualTargetColors * candidateMultiplier,
-        Math.floor(basePalette.length * 0.5)
+        Math.floor(basePalette.length * CANDIDATE_POOL_CLASSIC_RATIO)
       )
 
       return this.selectCPCClassicOptimized(
@@ -1101,7 +1208,7 @@ export class ReGLQuantizer {
         preselectedIndices,
         actualTargetColors,
         {
-          threshold: config.threshold ?? 10,
+          threshold: config.threshold ?? DEFAULT_THRESHOLD,
           isRelativeThreshold: config.isRelativeThreshold ?? false,
           diversityMode: useOptimizedSelection,
           basePalette: useOptimizedSelection ? basePalette : undefined
