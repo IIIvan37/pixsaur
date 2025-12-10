@@ -158,21 +158,11 @@ export const hasGeneratedRastersAtom = atom((get) => {
 })
 
 /**
- * @deprecated Use rasterChangesAtom instead
- */
-export const rasterRangesAtom = rasterChangesAtom
-
-/**
  * Generate a unique ID for a new raster change
  */
 export function generateChangeId(): string {
   return `raster-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
-
-/**
- * @deprecated Use generateChangeId instead
- */
-export const generateRangeId = generateChangeId
 
 /**
  * Action atom to add a new raster change
@@ -189,11 +179,6 @@ export const addRasterChangeAtom = atom(
     return newChange.id
   }
 )
-
-/**
- * @deprecated Use addRasterChangeAtom instead
- */
-export const addRasterRangeAtom = addRasterChangeAtom
 
 /**
  * Action atom to update an existing raster change
@@ -213,11 +198,6 @@ export const updateRasterChangeAtom = atom(
 )
 
 /**
- * @deprecated Use updateRasterChangeAtom instead
- */
-export const updateRasterRangeAtom = updateRasterChangeAtom
-
-/**
  * Action atom to remove a raster change by ID
  */
 export const removeRasterChangeAtom = atom(null, (get, set, id: string) => {
@@ -227,16 +207,6 @@ export const removeRasterChangeAtom = atom(null, (get, set, id: string) => {
     changes.filter((c) => c.id !== id)
   )
 })
-
-/**
- * @deprecated Use removeRasterChangeAtom instead
- */
-export const removeRasterRangeAtom = removeRasterChangeAtom
-
-/**
- * @deprecated Use clearRasterChangesAtom instead
- */
-export const clearRasterRangesAtom = clearRasterChangesAtom
 
 /**
  * Derived atom: check for conflicts

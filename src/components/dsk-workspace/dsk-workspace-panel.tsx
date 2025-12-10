@@ -12,7 +12,7 @@ import {
   IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
-import { rasterEnabledAtom, rasterRangesAtom } from '@/app/store/raster/raster'
+import { rasterChangesAtom, rasterEnabledAtom } from '@/app/store/raster/raster'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
 import { dskLogger } from '@/core'
@@ -35,7 +35,7 @@ export default function DskWorkspacePanel() {
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const dskImages = useAtomValue(dskImagesAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
-  const rasterRanges = useAtomValue(rasterRangesAtom)
+  const rasterChanges = useAtomValue(rasterChangesAtom)
   const [isExporting, setIsExporting] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
@@ -163,7 +163,9 @@ export default function DskWorkspacePanel() {
           paletteColors,
           // Include raster changes if rasters are enabled
           rasterChanges:
-            rasterEnabled && rasterRanges.length > 0 ? rasterRanges : undefined
+            rasterEnabled && rasterChanges.length > 0
+              ? rasterChanges
+              : undefined
         }
       })()
     : undefined
