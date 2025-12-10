@@ -56,7 +56,6 @@
   min-width: 3rem;
   text-align: right;
   font-family: var(--font-family, monospace);
-  font-weight: 600;
 }
 
 .resetButton {
