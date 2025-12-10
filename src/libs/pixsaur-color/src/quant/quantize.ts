@@ -71,13 +71,10 @@ export function createQuantizer({
   quantConfig
 }: CreateQuantizerInput) {
   const { distanceMetric } = quantConfig
-
-  // Pour RGB seulement, pas de conversion nécessaire
-  const toW = (rgb: Vector) => rgb
   const distFn: DistanceFn = getDistanceFn('RGB', distanceMetric)
 
   const vecs = bufferToVectors(buf)
-  const workingPal = basePalette.map((c) => toW([...c] as Vector))
+  const workingPal = basePalette.map((c) => [...c] as Vector)
 
   const preIdx = preselected
     .map((c) =>
@@ -89,7 +86,7 @@ export function createQuantizer({
 
   const reducePalette = (limit: number): Vector[] => {
     const counts = new Uint32Array(
-      buildWeightedHistogram(vecs.map(toW), workingPal, distFn)
+      buildWeightedHistogram(vecs, workingPal, distFn)
     )
 
     // Calculate relative threshold based on image size (0.1% of pixels, minimum 1)
