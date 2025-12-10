@@ -10,6 +10,7 @@
 import type REGL from 'regl'
 import type { PaletteStrategy } from '@/app/store/config/types'
 import { adapterLogger } from '@/core'
+import { weightedRGBDistance } from '@/libs/pixsaur-color/src/metric/distance'
 import {
   applyPaletteStrategyV2,
   type ColorCandidate,
@@ -62,13 +63,6 @@ const MIN_HUE_DISTANCE_MODE_0 = 30 // Distance minimale de teinte pour diversit�
  */
 const MIN_RGB_DISTANCE_MODE_0 = 20 // Distance RGB minimale pour mode 0
 const MIN_RGB_DISTANCE_MODE_1_2 = 80 // Distance RGB minimale pour modes 1-2 (contraste élevé)
-
-/**
- * Constantes pour les coefficients de luminance perceptuelle (ITU-R BT.601)
- */
-const LUMINANCE_WEIGHT_RED = 0.299 // Coefficient rouge pour luminance perceptuelle
-const LUMINANCE_WEIGHT_GREEN = 0.587 // Coefficient vert pour luminance perceptuelle
-const LUMINANCE_WEIGHT_BLUE = 0.114 // Coefficient bleu pour luminance perceptuelle
 
 /**
  * Constantes pour les bonus de diversité
@@ -1084,22 +1078,12 @@ export class ReGLQuantizer {
   }
 
   /**
-   * Calcule la distance entre deux couleurs avec poids perceptuels
-   * Utilise les coefficients ITU-R BT.601 (luma) pour refléter la sensibilité de l'œil humain
+   * Calcule la distance perceptuelle entre deux couleurs (au carré pour performance)
+   * Utilise weightedRGBDistance (ITU-R BT.601) directement sans racine carrée
+   * Note: Utilisé uniquement pour comparaisons, donc √ inutile (ordre préservé)
    */
   private calculateDistance(color1: Vector, color2: Vector): number {
-    // RGB - Distance pondérée perceptuelle
-    const dr = color1[0] - color2[0]
-    const dg = color1[1] - color2[1]
-    const db = color1[2] - color2[2]
-
-    // ITU-R BT.601 luma coefficients (perceptual weights)
-    // Green > Red > Blue
-    return Math.sqrt(
-      dr * dr * LUMINANCE_WEIGHT_RED +
-        dg * dg * LUMINANCE_WEIGHT_GREEN +
-        db * db * LUMINANCE_WEIGHT_BLUE
-    )
+    return weightedRGBDistance(color1, color2)
   }
 
   /**
