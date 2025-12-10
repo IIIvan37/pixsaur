@@ -11,6 +11,52 @@ import {
   isDark
 } from './select-contrast-subset'
 
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+// Luminance thresholds
+const LUMINANCE_DARK_THRESHOLD = 0.25
+const LUMINANCE_BRIGHT_THRESHOLD = 0.85
+const LUMINANCE_MID_MIN = 0.4
+const LUMINANCE_MID_MAX = 0.6
+const LUMINANCE_VERY_DARK_THRESHOLD = 0.1
+const LUMINANCE_DARK_UPPER = 0.3
+const LUMINANCE_BRIGHT_LOWER = 0.7
+
+// Saturation thresholds
+const SATURATION_MIN_THRESHOLD = 0.15
+const SATURATION_LOW_THRESHOLD = 0.01
+
+// Weights and coefficients
+const LUMINANCE_WEIGHT_R = 0.299
+const LUMINANCE_WEIGHT_G = 0.587
+const LUMINANCE_WEIGHT_B = 0.114
+const BRIGHTNESS_BONUS_HIGH = 1
+const BRIGHTNESS_BONUS_LOW = 0.3
+const SATURATION_SCORE_BASE = 0.7
+const SATURATION_SCORE_LUMINANCE = 0.3
+
+// Distance thresholds
+const MIN_DISTANCE_FROM_PRESELECTED = 50
+const HUE_SIMILARITY_MAX = 180
+
+// Palette size limits
+const MAX_CANDIDATES_CLASSIC = 12
+const MAX_CANDIDATES_PLUS = 16
+const DARK_COUNT_CLASSIC = 2
+const DARK_COUNT_PLUS = 4
+const BRIGHT_COUNT_CLASSIC = 2
+const BRIGHT_COUNT_PLUS = 4
+
+// Balance and diversity
+const FREQUENCY_VARIANCE_THRESHOLD = 3
+const BALANCE_BONUS_MISSING_RANGE = 0.2
+const BALANCE_BONUS_DARK = 0.5
+const BALANCE_BONUS_BRIGHT = 0.5
+const BALANCE_BONUS_MID = 0.3
+const SATURATION_BONUS_WEIGHT = 0.2
+
 export interface ColorCandidate {
   index: number
   frequency: number
@@ -88,14 +134,25 @@ function calculateVividnessForColor(color: Vector): number {
   const max = Math.max(r, g, b)
   const min = Math.min(r, g, b)
   const saturation = max === 0 ? 0 : (max - min) / max
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const luminance =
+    (LUMINANCE_WEIGHT_R * r + LUMINANCE_WEIGHT_G * g + LUMINANCE_WEIGHT_B * b) /
+    255
 
   // Saturation est le facteur principal (puissance 2 pour accentuer)
-  // Pénaliser les couleurs trop sombres (< 0.25) ou trop claires (> 0.85)
-  const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1 : 0.3
+  // Pénaliser les couleurs trop sombres ou trop claires
+  const brightnessBonus =
+    luminance > LUMINANCE_DARK_THRESHOLD &&
+    luminance < LUMINANCE_BRIGHT_THRESHOLD
+      ? BRIGHTNESS_BONUS_HIGH
+      : BRIGHTNESS_BONUS_LOW
 
-  // Score = saturation² * (0.7 + 0.3 * luminance) * brightnessBonus
-  return saturation * saturation * (0.7 + 0.3 * luminance) * brightnessBonus
+  // Score = saturation² * (base + luminance_weight * luminance) * brightnessBonus
+  return (
+    saturation *
+    saturation *
+    (SATURATION_SCORE_BASE + SATURATION_SCORE_LUMINANCE * luminance) *
+    brightnessBonus
+  )
 }
 
 /**
@@ -111,7 +168,7 @@ function calculateHue(color: Vector): number {
   const delta = max - min
 
   // Couleur achromatique (gris)
-  if (delta < 0.01) return -1
+  if (delta < SATURATION_LOW_THRESHOLD) return -1
 
   let hue = 0
   if (max === r) {
@@ -153,13 +210,13 @@ function calculateMinHueDistance(
   const candidateSat = calculateSaturation(candidate.converted)
 
   // Si le candidat est peu saturé, sa teinte n'est pas significative
-  if (candidateSat < 0.15) return 180
+  if (candidateSat < SATURATION_MIN_THRESHOLD) return HUE_SIMILARITY_MAX
 
-  let minDist = 180
+  let minDist = HUE_SIMILARITY_MAX
   for (const selected of selectedColors) {
     const selectedSat = calculateSaturation(selected)
     // Ignorer les couleurs peu saturées dans la comparaison
-    if (selectedSat < 0.15) continue
+    if (selectedSat < SATURATION_MIN_THRESHOLD) continue
 
     const selectedHue = calculateHue(selected)
     const dist = calculateHueDistance(candidateHue, selectedHue)
@@ -185,12 +242,9 @@ function filterCandidatesWithHueDiversity(
 
   // Fonction pour vérifier si un candidat est trop proche d'une couleur à éviter
   const isTooCloseToAvoidedColors = (candidate: ColorCandidate): boolean => {
-    const MIN_DISTANCE = 50
     for (const avoidColor of colorsToAvoid) {
       const dist = calculatePerceptualDistance(candidate.converted, avoidColor)
-      if (dist < MIN_DISTANCE) {
-        return true
-      }
+      if (dist < MIN_DISTANCE_FROM_PRESELECTED) return true
     }
     return false
   }
@@ -209,16 +263,29 @@ function filterCandidatesWithHueDiversity(
     const max = Math.max(r, g, b)
     const min = Math.min(r, g, b)
     const saturation = max === 0 ? 0 : (max - min) / max
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    const luminance =
+      (LUMINANCE_WEIGHT_R * r +
+        LUMINANCE_WEIGHT_G * g +
+        LUMINANCE_WEIGHT_B * b) /
+      255
 
     // Saturation est le facteur principal (puissance 2 pour accentuer)
     // Luminance ne sert qu'à départager les couleurs très saturées
-    // Pénaliser les couleurs trop sombres (< 0.25) ou trop claires (> 0.85)
-    const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1 : 0.3
+    // Pénaliser les couleurs trop sombres ou trop claires
+    const brightnessBonus =
+      luminance > LUMINANCE_DARK_THRESHOLD &&
+      luminance < LUMINANCE_BRIGHT_THRESHOLD
+        ? BRIGHTNESS_BONUS_HIGH
+        : BRIGHTNESS_BONUS_LOW
 
-    // Score = saturation² * (0.7 + 0.3 * luminance) * brightnessBonus
+    // Score = saturation² * (base + luminance_weight * luminance) * brightnessBonus
     // La saturation domine, la luminance n'ajoute qu'un petit bonus
-    return saturation * saturation * (0.7 + 0.3 * luminance) * brightnessBonus
+    return (
+      saturation *
+      saturation *
+      (SATURATION_SCORE_BASE + SATURATION_SCORE_LUMINANCE * luminance) *
+      brightnessBonus
+    )
   }
 
   // Pour CPC Plus, assurer une diversité de teinte
@@ -242,7 +309,7 @@ function filterCandidatesWithHueDiversity(
       }
     } else {
       const sat = calculateSaturation(c.converted)
-      if (sat >= 0.15) {
+      if (sat >= SATURATION_MIN_THRESHOLD) {
         // Saturée mais trop sombre ou trop claire
         darkColors.push(c)
       } else {
@@ -442,13 +509,21 @@ function calculateLuminanceBalanceBonus(
   candidateLum: number,
   selectedLuminances: number[]
 ): number {
-  const hasDark = selectedLuminances.some((l) => l < 0.25)
+  const hasDark = selectedLuminances.some((l) => l < LUMINANCE_DARK_THRESHOLD)
   const hasBright = selectedLuminances.some((l) => l > 0.75)
-  const hasMid = selectedLuminances.some((l) => l >= 0.4 && l <= 0.6)
+  const hasMid = selectedLuminances.some(
+    (l) => l >= LUMINANCE_MID_MIN && l <= LUMINANCE_MID_MAX
+  )
 
-  if (!hasDark && candidateLum < 0.25) return 0.5
-  if (!hasBright && candidateLum > 0.75) return 0.5
-  if (!hasMid && candidateLum >= 0.4 && candidateLum <= 0.6) return 0.3
+  if (!hasDark && candidateLum < LUMINANCE_DARK_THRESHOLD)
+    return BALANCE_BONUS_DARK
+  if (!hasBright && candidateLum > 0.75) return BALANCE_BONUS_BRIGHT
+  if (
+    !hasMid &&
+    candidateLum >= LUMINANCE_MID_MIN &&
+    candidateLum <= LUMINANCE_MID_MAX
+  )
+    return BALANCE_BONUS_MID
 
   return 0
 }
@@ -476,11 +551,13 @@ function calculateBalancedScore(
   }
   const luminanceScore = minLumDist
 
-  const hasDark = selectedLuminances.some((l) => l < 0.3)
-  const hasBright = selectedLuminances.some((l) => l > 0.7)
+  const hasDark = selectedLuminances.some((l) => l < LUMINANCE_DARK_UPPER)
+  const hasBright = selectedLuminances.some((l) => l > LUMINANCE_BRIGHT_LOWER)
   let balanceBonus = 0
-  if (!hasDark && candidateLum < 0.3) balanceBonus = 0.2
-  if (!hasBright && candidateLum > 0.7) balanceBonus = 0.2
+  if (!hasDark && candidateLum < LUMINANCE_DARK_UPPER)
+    balanceBonus = BALANCE_BONUS_MISSING_RANGE
+  if (!hasBright && candidateLum > LUMINANCE_BRIGHT_LOWER)
+    balanceBonus = BALANCE_BONUS_MISSING_RANGE
 
   return (
     freqScore * weights.frequency +
@@ -548,7 +625,9 @@ function calculateDiversityScore(params: DiversityScoreParams): number | null {
       params.selectedColors
     )
     // Bonus combiné saturation + teinte
-    saturationBonus = saturation * 0.2 + (hueDistance / 180) * 0.2
+    saturationBonus =
+      saturation * SATURATION_BONUS_WEIGHT +
+      (hueDistance / HUE_SIMILARITY_MAX) * SATURATION_BONUS_WEIGHT
   }
 
   const freqScore =
@@ -1277,8 +1356,8 @@ export const selectByAdaptive: PaletteStrategyFunction = (
   const maxFrequency = Math.max(...candidates.map((c) => c.frequency))
   const frequencyVariance = maxFrequency / avgFrequency
 
-  // Si une couleur domine fortement (variance > 3), privilégier la fréquence
-  if (frequencyVariance > 3) {
+  // Si une couleur domine fortement, privilégier la fréquence
+  if (frequencyVariance > FREQUENCY_VARIANCE_THRESHOLD) {
     return selectByFrequencyBalanced(
       candidates,
       targetColors,
@@ -1786,7 +1865,6 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   // Filtrer les candidats trop proches des couleurs présélectionnées (lockées)
   // pour éviter d'avoir des doublons visuels
   if (preselectedColors.length > 0) {
-    const MIN_DISTANCE_FROM_PRESELECTED = 50 // Distance minimale en RGB
     remainingCandidates = remainingCandidates.filter((c) => {
       for (const preColor of preselectedColors) {
         const dist = calculatePerceptualDistance(c.converted, preColor)
@@ -1821,13 +1899,15 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   // C(12, 4) = 495 combinaisons - acceptable
   // C(16, 4) = 1820 combinaisons - limite acceptable pour CPC Plus
   // C(20, 4) = 4845 combinaisons - trop lent
-  const MAX_CANDIDATES = isCPCClassic ? 12 : 16
+  const maxCandidates = isCPCClassic
+    ? MAX_CANDIDATES_CLASSIC
+    : MAX_CANDIDATES_PLUS
 
   // Pour CPC Plus, on veut plus de couleurs sombres et claires pour maximiser le contraste
-  const darkCount = isCPCClassic ? 2 : 4
-  const brightCount = isCPCClassic ? 2 : 4
+  const darkCount = isCPCClassic ? DARK_COUNT_CLASSIC : DARK_COUNT_PLUS
+  const brightCount = isCPCClassic ? BRIGHT_COUNT_CLASSIC : BRIGHT_COUNT_PLUS
 
-  if (remainingCandidates.length > MAX_CANDIDATES) {
+  if (remainingCandidates.length > maxCandidates) {
     if (isCPCClassic) {
       // Pour CPC Classic : garder les plus fréquents avec contraste luminance
       const sorted = [...remainingCandidates].sort(
@@ -1852,7 +1932,7 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
       bright.slice(0, brightCount).forEach(addUnique)
       // Compléter avec les couleurs les plus fréquentes (toutes catégories)
       for (const c of sorted) {
-        if (selectedCandidates.length >= MAX_CANDIDATES) break
+        if (selectedCandidates.length >= maxCandidates) break
         addUnique(c)
       }
 
@@ -1862,7 +1942,7 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
       // Passer les couleurs présélectionnées pour éviter de sélectionner des couleurs trop proches
       remainingCandidates = filterCandidatesWithHueDiversity(
         remainingCandidates,
-        MAX_CANDIDATES,
+        maxCandidates,
         false, // isCPCClassic = false
         preselectedColors // Couleurs lockées à éviter
       )
@@ -1895,15 +1975,13 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
 
   // GARANTIR une couleur VRAIMENT sombre (proche du noir) dans la sélection finale
   // On utilise un seuil plus strict que isDark() pour forcer une couleur proche du noir
-  const DARK_LUMINANCE_THRESHOLD = 0.1 // Plus strict que isDark (0.2)
-
   const hasDarkPreselected = preselectedColors.some(
-    (c) => calculateLuminance(c) < DARK_LUMINANCE_THRESHOLD
+    (c) => calculateLuminance(c) < LUMINANCE_VERY_DARK_THRESHOLD
   )
   const hasDarkInCombo = bestCombo.some(
     (i) =>
       calculateLuminance(remainingCandidates[i].converted) <
-      DARK_LUMINANCE_THRESHOLD
+      LUMINANCE_VERY_DARK_THRESHOLD
   )
 
   if (!hasDarkPreselected && !hasDarkInCombo && bestCombo.length > 0) {
@@ -1920,7 +1998,7 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
     // Remplacer la dernière couleur par la plus sombre si elle est vraiment sombre
     if (
       darkestIdx >= 0 &&
-      darkestLum < 0.3 &&
+      darkestLum < LUMINANCE_DARK_UPPER &&
       !bestCombo.includes(darkestIdx)
     ) {
       bestCombo = [...bestCombo]
