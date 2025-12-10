@@ -54,6 +54,13 @@
   position: relative;
 }
 
+.tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb, 168, 181, 168), 0.2);
+  z-index: 1;
+}
+
 @media (max-width: 768px) {
   .tab {
     padding: 0.5rem 0.75rem;

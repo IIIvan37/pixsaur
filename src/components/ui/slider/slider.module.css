@@ -32,10 +32,16 @@
   padding: 0 var(--spacing-xs);
 }
 
-.infoIcon:hover,
+.infoIcon:hover {
+  opacity: 1;
+}
+
 .infoIcon:focus-visible {
   opacity: 1;
-  outline: none;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 168, 181, 168), 0.2);
 }
 
 .descriptionTooltip {
@@ -199,6 +205,15 @@
   transition:
     transform 0.15s ease,
     box-shadow 0.2s ease;
+}
+
+.sliderThumb:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+  box-shadow:
+    0 0 0 6px rgba(var(--accent-rgb, 168, 181, 168), 0.3),
+    0 0 8px var(--color-accent);
+  transform: translate(-50%, -50%) scale(1.3);
 }
 
 .sliderRoot:hover .sliderTrack,
