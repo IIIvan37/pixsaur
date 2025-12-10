@@ -86,7 +86,7 @@ export function RasterPanel() {
 
   const handleAddChange = () => {
     // Find the last change (by creation order) to determine where to add the new one
-    const lastChange = changes[changes.length - 1]
+    const lastChange = changes.at(-1)
 
     // Allow multiple ink changes per line up to maxChangesPerLine
     // Check if we can add another ink on the same line
