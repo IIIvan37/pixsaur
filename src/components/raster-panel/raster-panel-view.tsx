@@ -58,7 +58,7 @@ function groupChangesByLine(changes: RasterChange[]): LineGroup[] {
     .sort(([a], [b]) => a - b)
     .map(([line, lineChanges]) => ({
       line,
-      changes: lineChanges.sort((a, b) => a.inkIndex - b.inkIndex)
+      changes: [...lineChanges].sort((a, b) => a.inkIndex - b.inkIndex)
     }))
 }
 
