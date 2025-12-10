@@ -4,6 +4,7 @@ import {
   AVAILABLE_STRATEGIES,
   applyPaletteStrategyV2,
   type ColorCandidate,
+  convertPreselectedToIndices,
   isValidPaletteStrategy,
   type PaletteStrategyName,
   selectByAdaptive,
@@ -19,6 +20,86 @@ import {
 } from './palette-strategies-v2'
 
 describe('palette-strategies-v2', () => {
+  describe('convertPreselectedToIndices', () => {
+    it('should convert preselected colors to their indices in base palette', () => {
+      const basePalette: Vector[] = [
+        [255, 0, 0], // 0: rouge
+        [0, 255, 0], // 1: vert
+        [0, 0, 255], // 2: bleu
+        [255, 255, 0] // 3: jaune
+      ]
+      const preselected: Vector[] = [
+        [0, 255, 0], // vert (index 1)
+        [0, 0, 255] // bleu (index 2)
+      ]
+
+      const result = convertPreselectedToIndices(preselected, basePalette)
+
+      expect(result).toEqual([1, 2])
+    })
+
+    it('should filter out colors not found in base palette', () => {
+      const basePalette: Vector[] = [
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255]
+      ]
+      const preselected: Vector[] = [
+        [0, 255, 0], // vert (index 1) - exists
+        [128, 128, 128], // gris - does not exist
+        [0, 0, 255] // bleu (index 2) - exists
+      ]
+
+      const result = convertPreselectedToIndices(preselected, basePalette)
+
+      expect(result).toEqual([1, 2])
+    })
+
+    it('should return empty array when no preselected colors match', () => {
+      const basePalette: Vector[] = [
+        [255, 0, 0],
+        [0, 255, 0]
+      ]
+      const preselected: Vector[] = [
+        [128, 128, 128],
+        [64, 64, 64]
+      ]
+
+      const result = convertPreselectedToIndices(preselected, basePalette)
+
+      expect(result).toEqual([])
+    })
+
+    it('should handle empty preselected array', () => {
+      const basePalette: Vector[] = [
+        [255, 0, 0],
+        [0, 255, 0]
+      ]
+      const preselected: Vector[] = []
+
+      const result = convertPreselectedToIndices(preselected, basePalette)
+
+      expect(result).toEqual([])
+    })
+
+    it('should handle duplicate preselected colors', () => {
+      const basePalette: Vector[] = [
+        [255, 0, 0],
+        [0, 255, 0],
+        [0, 0, 255]
+      ]
+      const preselected: Vector[] = [
+        [0, 255, 0], // vert (index 1)
+        [0, 255, 0], // vert again (index 1)
+        [0, 0, 255] // bleu (index 2)
+      ]
+
+      const result = convertPreselectedToIndices(preselected, basePalette)
+
+      expect(result).toEqual([1, 1, 2]) // includes duplicates
+    })
+  })
+
   // Créer des candidats de test avec différentes caractéristiques
   const createTestCandidates = (): ColorCandidate[] => [
     {
