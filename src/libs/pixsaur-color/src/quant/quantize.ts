@@ -9,6 +9,7 @@ import type { Vector } from '../type'
 import {
   applyPaletteStrategyV2,
   type ColorCandidate,
+  convertPreselectedToIndices,
   type PaletteStrategyName
 } from './palette-strategies-v2'
 import { selectTopIndices, selectTopIndicesCore } from './select-to-indices'
@@ -76,13 +77,7 @@ export function createQuantizer({
   const vecs = bufferToVectors(buf)
   const workingPal = basePalette.map((c) => [...c] as Vector)
 
-  const preIdx = preselected
-    .map((c) =>
-      basePalette.findIndex(
-        (p) => p[0] === c[0] && p[1] === c[1] && p[2] === c[2]
-      )
-    )
-    .filter((i) => i >= 0)
+  const preIdx = convertPreselectedToIndices(preselected, basePalette)
 
   const reducePalette = (limit: number): Vector[] => {
     const counts = new Uint32Array(

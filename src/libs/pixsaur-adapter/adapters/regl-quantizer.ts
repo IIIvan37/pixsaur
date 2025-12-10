@@ -15,6 +15,7 @@ import { findClosestColorIndex } from '@/libs/pixsaur-color/src/metric/find-clos
 import {
   applyPaletteStrategyV2,
   type ColorCandidate,
+  convertPreselectedToIndices,
   type PaletteStrategyName
 } from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
@@ -433,7 +434,7 @@ export class ReGLQuantizer {
     config: ReGLQuantizeConfig
   ): Promise<readonly Vector[]> {
     // Convertir preselected en indices
-    const preselectedIndices = this.convertPreselectedToIndices(
+    const preselectedIndices = convertPreselectedToIndices(
       preselected,
       basePalette
     )
@@ -1045,28 +1046,6 @@ export class ReGLQuantizer {
    */
   private calculateDistance = (color1: Vector, color2: Vector): number => {
     return weightedRGBDistance(color1, color2)
-  }
-
-  /**
-   * Helper: Convertit les couleurs pré-sélectionnées en indices
-   */
-  private convertPreselectedToIndices(
-    preselected: readonly Vector[],
-    basePalette: readonly Vector[]
-  ): number[] {
-    const preselectedIndices: number[] = []
-    for (const preselectedColor of preselected) {
-      const index = basePalette.findIndex(
-        (color) =>
-          color[0] === preselectedColor[0] &&
-          color[1] === preselectedColor[1] &&
-          color[2] === preselectedColor[2]
-      )
-      if (index >= 0) {
-        preselectedIndices.push(index)
-      }
-    }
-    return preselectedIndices
   }
 
   /**

@@ -61,6 +61,33 @@ const BALANCE_BONUS_BRIGHT = 0.5
 const BALANCE_BONUS_MID = 0.3
 const SATURATION_BONUS_WEIGHT = 0.2
 
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+/**
+ * Converts preselected colors to their indices in the base palette
+ * @param preselected - Array of preselected color vectors
+ * @param basePalette - The base palette to search in
+ * @returns Array of indices corresponding to the preselected colors
+ */
+export function convertPreselectedToIndices(
+  preselected: readonly Vector[],
+  basePalette: readonly Vector[]
+): number[] {
+  return preselected
+    .map((c) =>
+      basePalette.findIndex(
+        (p) => p[0] === c[0] && p[1] === c[1] && p[2] === c[2]
+      )
+    )
+    .filter((i) => i >= 0)
+}
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
 export interface ColorCandidate {
   index: number
   frequency: number
