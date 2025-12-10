@@ -65,7 +65,7 @@ function groupChangesByLine(changes: RasterChange[]): LineGroup[] {
 /**
  * Ink selector - small colored squares to pick ink number
  */
-function InkSelector({
+export function InkSelector({
   nColors,
   selectedInk,
   onSelectInk,
@@ -100,7 +100,7 @@ function InkSelector({
 /**
  * Ink and color trigger button with popover
  */
-function InkColorTrigger({
+export function InkColorTrigger({
   color,
   inkIndex,
   nColors,
