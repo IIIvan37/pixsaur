@@ -12,7 +12,6 @@ import {
   type PaletteStrategyName
 } from './palette-strategies-v2'
 import { selectTopIndices, selectTopIndicesCore } from './select-to-indices'
-import { selectByStrategy } from './strategy-selector'
 
 export type DitheringMode =
   | 'floydSteinberg'
@@ -34,8 +33,9 @@ export type PaletteStrategy = PaletteStrategyName
 
 export type QuantizeConfig = {
   distanceMetric: DistanceMetric
-  contrastStrategy?: 'max' | 'balanced' // Stratégie de contraste pour petites palettes (legacy)
-  paletteStrategy?: PaletteStrategy // Nouvelle stratégie v2 (prioritaire si définie)
+  /** @deprecated Use paletteStrategy instead. Legacy contrastStrategy is automatically converted to v2 strategies. */
+  contrastStrategy?: 'max' | 'balanced'
+  paletteStrategy?: PaletteStrategy
 }
 
 /**
@@ -74,7 +74,6 @@ export function createQuantizer({
 
   // Pour RGB seulement, pas de conversion nécessaire
   const toW = (rgb: Vector) => rgb
-  const fromW = (rgb: Vector) => rgb
   const distFn: DistanceFn = getDistanceFn('RGB', distanceMetric)
 
   const vecs = bufferToVectors(buf)
@@ -112,20 +111,26 @@ export function createQuantizer({
 
     const out = idxs.map((i: number) => workingPal[i])
 
-    // Si paletteStrategy v2 est définie, utiliser les nouvelles stratégies (comme le GPU)
-    if (quantConfig.paletteStrategy && limit <= 4) {
+    // Utiliser paletteStrategy v2 (prioritaire) ou convertir contrastStrategy legacy
+    const strategy: PaletteStrategyName | undefined =
+      quantConfig.paletteStrategy ||
+      (quantConfig.contrastStrategy
+        ? quantConfig.contrastStrategy === 'balanced'
+          ? 'balanced-score-balanced'
+          : 'diversity-first-max'
+        : undefined)
+
+    if (strategy && limit <= 16) {
       // Construire les candidats avec fréquences à partir de l'histogramme
       const candidates: ColorCandidate[] = idxs.map((idx: number) => ({
         index: idx,
-        frequency: counts[idx] / vecs.length, // Normaliser la fréquence
+        frequency: counts[idx] / vecs.length,
         color: [...workingPal[idx]] as Vector,
         converted: [...workingPal[idx]] as Vector
       }))
 
-      // Utiliser le helper centralisé pour appliquer la stratégie
-      // Passer la taille de la palette de base pour distinguer CPC Classic (27) de CPC Plus (4096)
       const strategyResult = applyPaletteStrategyV2(
-        quantConfig.paletteStrategy,
+        strategy,
         candidates,
         limit,
         [...preIdx],
@@ -137,19 +142,8 @@ export function createQuantizer({
       )
     }
 
-    // Fallback: Utiliser le sélecteur de stratégie legacy (contrastStrategy)
-    const selectedW = selectByStrategy(
-      { contrastStrategy: quantConfig.contrastStrategy, targetColors: limit },
-      {
-        candidates: out,
-        preselected: preIdx.map((i) => [...workingPal[i]] as Vector),
-        targetColors: limit,
-        distanceFn: distFn,
-        toRGB: fromW
-      }
-    )
-
-    return selectedW
+    // Fallback: retourner les couleurs les plus fréquentes
+    return out.slice(0, limit)
   }
 
   return {
