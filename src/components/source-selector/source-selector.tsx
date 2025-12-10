@@ -253,6 +253,8 @@ export const SourceSelector = ({
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseLeave}
       onDoubleClick={onDoubleClick}
+      logicalWidth={width}
+      logicalHeight={height}
     />
   )
 }

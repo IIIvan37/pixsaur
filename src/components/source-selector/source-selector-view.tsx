@@ -14,6 +14,8 @@ export interface SourceSelectorViewProps {
   readonly onMouseUp: () => void
   readonly onMouseLeave: () => void
   readonly onDoubleClick: () => void
+  readonly logicalWidth?: number
+  readonly logicalHeight?: number
 }
 export function SourceSelectorView({
   rect,
@@ -24,7 +26,9 @@ export function SourceSelectorView({
   onMouseMove,
   onMouseUp,
   onMouseLeave,
-  onDoubleClick
+  onDoubleClick,
+  logicalWidth,
+  logicalHeight
 }: SourceSelectorViewProps) {
   const { _ } = useLingui()
   const handleSize = 6
@@ -145,6 +149,31 @@ export function SourceSelectorView({
           />
         )
       })}
+
+      {/* Dimensions label */}
+      {logicalWidth !== undefined && logicalHeight !== undefined && (
+        <div
+          style={{
+            position: 'absolute',
+            top: `${rect.y + rect.height}%`,
+            left: `${rect.x}%`,
+            transform: 'translateY(4px)',
+            padding: '2px 6px',
+            backgroundColor: 'rgba(0, 255, 0, 0.9)',
+            color: '#000',
+            fontSize: '11px',
+            fontWeight: 600,
+            fontFamily: 'monospace',
+            borderRadius: '2px',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+            zIndex: 4
+          }}
+        >
+          {Math.round((rect.width / 100) * logicalWidth)} ×{' '}
+          {Math.round((rect.height / 100) * logicalHeight)}
+        </div>
+      )}
     </section>
   )
 }
