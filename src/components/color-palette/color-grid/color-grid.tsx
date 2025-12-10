@@ -4,13 +4,13 @@ import type { CPCColor } from '@/libs/types'
 import { ColorGridView } from './color-grid-view'
 
 type ColorGridProps = {
-  fullPalette: CPCColor[]
-  slots: PaletteSlot[]
-  slotIndex: number
-  focusedColorIndex: number
-  onColorSelect: (color: CPCColor, slotIndex: number) => void
-  onClearSlot?: (index: number) => void
-  colorOptionRefs?: React.RefObject<(HTMLButtonElement | null)[]>
+  readonly fullPalette: CPCColor[]
+  readonly slots: PaletteSlot[]
+  readonly slotIndex: number
+  readonly focusedColorIndex: number
+  readonly onColorSelect: (color: CPCColor, slotIndex: number) => void
+  readonly onClearSlot?: (index: number) => void
+  readonly colorOptionRefs?: React.RefObject<(HTMLButtonElement | null)[]>
 }
 
 export const ColorGrid: React.FC<ColorGridProps> = ({

@@ -15,14 +15,14 @@ import {
 import { DskWorkspaceView } from './dsk-workspace-view'
 
 interface DskWorkspaceProps {
-  onExport: () => void
-  currentImageData?: {
-    name: string
-    scrData: Uint8Array
-    mode: 0 | 1 | 2
-    width: number
-    height: number
-    overscan: boolean
+  readonly onExport: () => void
+  readonly currentImageData?: {
+    readonly name: string
+    readonly scrData: Uint8Array
+    readonly mode: 0 | 1 | 2
+    readonly width: number
+    readonly height: number
+    readonly overscan: boolean
     nColors: number
     scaleX: number
     scaleY: number

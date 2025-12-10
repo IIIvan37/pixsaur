@@ -948,7 +948,7 @@ function selectPaletteFarthestPoint(
       const score = minDist * frequencyWeight
 
       // Bonus for colors similar to previous palette (continuity)
-      let continuityBonus = 1.0
+      let continuityBonus = 1
       if (previousPalette) {
         for (const prevColor of previousPalette) {
           const dist = weightedRGBDistance(color, prevColor)

@@ -92,7 +92,7 @@ function calculateVividnessForColor(color: Vector): number {
 
   // Saturation est le facteur principal (puissance 2 pour accentuer)
   // Pénaliser les couleurs trop sombres (< 0.25) ou trop claires (> 0.85)
-  const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1.0 : 0.3
+  const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1 : 0.3
 
   // Score = saturation² * (0.7 + 0.3 * luminance) * brightnessBonus
   return saturation * saturation * (0.7 + 0.3 * luminance) * brightnessBonus
@@ -214,7 +214,7 @@ function filterCandidatesWithHueDiversity(
     // Saturation est le facteur principal (puissance 2 pour accentuer)
     // Luminance ne sert qu'à départager les couleurs très saturées
     // Pénaliser les couleurs trop sombres (< 0.25) ou trop claires (> 0.85)
-    const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1.0 : 0.3
+    const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1 : 0.3
 
     // Score = saturation² * (0.7 + 0.3 * luminance) * brightnessBonus
     // La saturation domine, la luminance n'ajoute qu'un petit bonus
@@ -1463,7 +1463,7 @@ function findBestCombinationV2(
       const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
       // Saturation² pour favoriser fortement les couleurs très saturées
       // Luminance ne sert qu'à départager
-      const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1.0 : 0.3
+      const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1 : 0.3
       return sum + saturation * saturation * brightnessBonus
     }, 0)
   }
@@ -1933,7 +1933,7 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
     const candidate = remainingCandidates[i]
     result.push(candidate.index)
     // Score basé sur la position dans la combinaison optimale
-    scores.set(candidate.index, 1.0 - i * 0.1)
+    scores.set(candidate.index, 1 - i * 0.1)
   }
 
   return { selectedIndices: result, scores }

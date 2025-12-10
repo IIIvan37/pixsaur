@@ -2,7 +2,7 @@
  * Raster tab content - extracted from RasterTuningPanel
  */
 
-import { msg } from '@lingui/macro'
+import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
@@ -187,7 +187,7 @@ export function RasterTab() {
 
   // Raster panel handlers
   const handleAddChange = () => {
-    const lastChange = changes[changes.length - 1]
+    const lastChange = changes.at(-1)
 
     if (lastChange) {
       const changesOnLastLine = changes.filter(
@@ -351,7 +351,7 @@ export function RasterTab() {
           label={_(msg`Coefficient d'erreur verticale`)}
           value={verticalErrorCoef}
           onChange={setVerticalErrorCoef}
-          min={0.0}
+          min={0}
           max={0.5}
           step={0.025}
           defaultValue={VERTICAL_ERROR_COEFFICIENT}
@@ -365,8 +365,8 @@ export function RasterTab() {
           label={_(msg`Coefficient d'erreur horizontale`)}
           value={horizontalErrorCoef}
           onChange={setHorizontalErrorCoef}
-          min={0.0}
-          max={1.0}
+          min={0}
+          max={1}
           step={0.05}
           defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
           description={_(
@@ -402,8 +402,8 @@ export function RasterTab() {
           label={_(msg`Bonus de continuité`)}
           value={paletteContinuityBonus}
           onChange={setPaletteContinuityBonus}
-          min={1.0}
-          max={3.0}
+          min={1}
+          max={3}
           step={0.1}
           defaultValue={PALETTE_CONTINUITY_BONUS}
           description={_(
@@ -416,8 +416,8 @@ export function RasterTab() {
           label={_(msg`Poids de fréquence`)}
           value={paletteFrequencyExponent}
           onChange={setPaletteFrequencyExponent}
-          min={0.0}
-          max={1.0}
+          min={0}
+          max={1}
           step={0.05}
           defaultValue={PALETTE_FREQUENCY_EXPONENT}
           description={_(
