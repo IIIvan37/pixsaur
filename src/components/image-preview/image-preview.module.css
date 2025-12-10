@@ -47,31 +47,34 @@
   bottom: var(--spacing-lg);
   left: 50%;
   transform: translateX(-50%) translateY(4px);
-  
+
   /* Style moderne */
-  background: linear-gradient(135deg, 
-    var(--color-background) 0%, 
+  background: linear-gradient(
+    135deg,
+    var(--color-background) 0%,
     color-mix(in srgb, var(--color-background) 95%, var(--color-accent)) 100%
   );
   color: var(--color-foreground);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
-  box-shadow: 
+  box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  
+
   /* Typographie */
   font-family: var(--font-family);
   font-size: var(--font-size-xs);
   line-height: 1.4;
   white-space: nowrap;
-  
+
   /* Animation */
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
   z-index: 100;
 }
 
@@ -82,17 +85,17 @@
 
 /* Flèche du tooltip */
 .canvasWrapper[data-tooltip]::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: calc(var(--spacing-lg) - 5px);
   left: 50%;
   transform: translateX(-50%);
-  
+
   width: 0;
   height: 0;
   border: 5px solid transparent;
   border-bottom-color: var(--color-border);
-  
+
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease-out;

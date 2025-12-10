@@ -38,7 +38,7 @@
 }
 
 .checkbox:checked::after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   color: var(--color-dark);
   font-size: 14px;

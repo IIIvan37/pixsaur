@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
 
 /* === Box sizing universel === */
 *,
@@ -11,7 +11,7 @@
 html {
   font-size: 14px; /* 1rem = 14px */
   background-color: var(--color-background, black);
-  color: var(--color-foreground, #A8B5A8);
+  color: var(--color-foreground, #a8b5a8);
   font-family: var(--font-family, monospace);
 }
 

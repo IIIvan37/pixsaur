@@ -47,6 +47,19 @@
       "trailingCommas": "none"
     }
   },
+  "css": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineEnding": "lf",
+      "lineWidth": 80,
+      "quoteStyle": "double"
+    },
+    "linter": {
+      "enabled": true
+    }
+  },
   "files": {
     "includes": [
       "**/*.js",
@@ -54,6 +67,7 @@
       "**/*.tsx",
       "**/*.jsx",
       "**/*.json",
+      "**/*.css",
       "!**/node_modules",
       "!**/dist",
       "!**/build",
