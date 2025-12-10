@@ -6,12 +6,14 @@
 
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
+import { useEffect } from 'react'
 import { ditheringAtom } from '@/app/store/config/config'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import {
   ALL_DITHERING_MODES,
   getDefaultDitheringIntensity,
-  getRasterCompatibleModes
+  getRasterCompatibleModes,
+  isRasterCompatibleMode
 } from '@/components/settings-panel/shared/dithering-modes'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
@@ -21,6 +23,21 @@ import type { DitheringMode } from '@/libs/pixsaur-color/src'
 export function DitheringControls() {
   const [cfg, setCfg] = useAtom(ditheringAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
+
+  // When raster is enabled, switch to a compatible dithering mode if current mode is incompatible
+  useEffect(() => {
+    if (
+      rasterEnabled &&
+      cfg.mode !== 'none' &&
+      !isRasterCompatibleMode(cfg.mode)
+    ) {
+      // Switch to bayer2x2 as default compatible mode
+      setCfg({
+        mode: 'bayer2x2',
+        intensity: getDefaultDitheringIntensity('bayer2x2')
+      })
+    }
+  }, [rasterEnabled, cfg.mode, setCfg])
 
   // Filter modes for raster (exclude error diffusion algorithms)
   const availableModes = rasterEnabled

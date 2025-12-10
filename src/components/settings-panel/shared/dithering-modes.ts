@@ -34,6 +34,13 @@ const ERROR_DIFFUSION_MODES: readonly DitheringMode[] = [
 ] as const
 
 /**
+ * Check if a dithering mode is compatible with raster mode
+ */
+export function isRasterCompatibleMode(mode: DitheringMode): boolean {
+  return !ERROR_DIFFUSION_MODES.includes(mode)
+}
+
+/**
  * Returns dithering modes compatible with raster mode
  * (excludes error diffusion algorithms)
  */

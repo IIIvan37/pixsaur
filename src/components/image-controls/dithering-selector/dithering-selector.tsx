@@ -12,6 +12,7 @@ import {
   rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster'
 import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
+import { isRasterCompatibleMode } from '@/components/settings-panel/shared/dithering-modes'
 import Flex from '@/components/ui/flex'
 import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
@@ -101,19 +102,16 @@ export function DitheringSelector({
 
   // When raster is enabled, switch to a compatible dithering mode if current mode is incompatible
   useEffect(() => {
-    if (rasterEnabled) {
-      if (
-        cfg.mode === 'floydSteinberg' ||
-        cfg.mode === 'atkinson' ||
-        cfg.mode === 'ylioluma1' ||
-        cfg.mode === 'ylioluma2'
-      ) {
-        // Switch to bayer2x2 as default compatible mode
-        setCfg({
-          mode: 'bayer2x2',
-          intensity: getDefaultIntensity('bayer2x2')
-        })
-      }
+    if (
+      rasterEnabled &&
+      cfg.mode !== 'none' &&
+      !isRasterCompatibleMode(cfg.mode)
+    ) {
+      // Switch to bayer2x2 as default compatible mode
+      setCfg({
+        mode: 'bayer2x2',
+        intensity: getDefaultIntensity('bayer2x2')
+      })
     }
   }, [rasterEnabled, cfg.mode, setCfg])
 
@@ -124,13 +122,7 @@ export function DitheringSelector({
   // Filter modes based on raster state
   // When raster is enabled, exclude error-diffusion algorithms that don't work well with dynamic palettes
   const availableModes = rasterEnabled
-    ? MODES.filter(
-        (mode) =>
-          mode.value !== 'floydSteinberg' &&
-          mode.value !== 'atkinson' &&
-          mode.value !== 'ylioluma1' &&
-          mode.value !== 'ylioluma2'
-      )
+    ? MODES.filter((mode) => isRasterCompatibleMode(mode.value))
     : MODES
 
   return (
