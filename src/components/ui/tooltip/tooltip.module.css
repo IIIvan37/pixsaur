@@ -10,32 +10,35 @@
 .tooltipContent {
   position: absolute;
   z-index: 100;
-  
+
   /* Style visuel moderne */
-  background: linear-gradient(135deg, 
-    var(--color-background) 0%, 
+  background: linear-gradient(
+    135deg,
+    var(--color-background) 0%,
     color-mix(in srgb, var(--color-background) 95%, var(--color-accent)) 100%
   );
   color: var(--color-foreground);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
-  box-shadow: 
+  box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.15),
     0 0 0 1px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  
+
   /* Typographie */
   font-family: var(--font-family);
   font-size: var(--font-size-xs);
   line-height: 1.4;
   white-space: nowrap;
   max-width: 300px;
-  
+
   /* Animation */
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  transition:
+    opacity 0.2s ease-out,
+    transform 0.2s ease-out;
 }
 
 /* Positions */
@@ -133,24 +136,28 @@
 
 /* Variantes */
 .success .tooltipContent {
-  background: linear-gradient(135deg, 
-    color-mix(in srgb, var(--color-success) 10%, var(--color-background)) 0%, 
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-success) 10%, var(--color-background)) 0%,
     color-mix(in srgb, var(--color-success) 5%, var(--color-background)) 100%
   );
   border-color: var(--color-success);
 }
 
 .error .tooltipContent {
-  background: linear-gradient(135deg, 
-    color-mix(in srgb, var(--color-destructive) 10%, var(--color-background)) 0%, 
-    color-mix(in srgb, var(--color-destructive) 5%, var(--color-background)) 100%
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-destructive) 10%, var(--color-background)) 0%,
+    color-mix(in srgb, var(--color-destructive) 5%, var(--color-background))
+      100%
   );
   border-color: var(--color-destructive);
 }
 
 .warning .tooltipContent {
-  background: linear-gradient(135deg, 
-    color-mix(in srgb, #ff9800 10%, var(--color-background)) 0%, 
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ff9800 10%, var(--color-background)) 0%,
     color-mix(in srgb, #ff9800 5%, var(--color-background)) 100%
   );
   border-color: #ff9800;

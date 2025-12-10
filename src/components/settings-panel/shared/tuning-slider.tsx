@@ -6,16 +6,16 @@ import PixsaurSlider from '@/components/ui/slider/slider'
 import styles from '../tabs/tab.module.css'
 
 interface TuningSliderProps {
-  label: string
-  value: number
-  onChange: (value: number) => void
-  min: number
-  max: number
-  step: number
-  defaultValue: number
-  format?: (value: number) => string
-  description?: string
-  resetTitle?: string
+  readonly label: string
+  readonly value: number
+  readonly onChange: (value: number) => void
+  readonly min: number
+  readonly max: number
+  readonly step: number
+  readonly defaultValue: number
+  readonly format?: (value: number) => string
+  readonly description?: string
+  readonly resetTitle?: string
 }
 
 export function TuningSlider({

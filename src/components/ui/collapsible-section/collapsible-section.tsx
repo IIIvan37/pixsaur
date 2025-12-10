@@ -4,12 +4,12 @@ import { useState } from 'react'
 import styles from './collapsible-section.module.css'
 
 interface CollapsibleSectionProps {
-  title: ReactNode
-  children: ReactNode
-  defaultOpen?: boolean
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
-  disabled?: boolean
+  readonly title: ReactNode
+  readonly children: ReactNode
+  readonly defaultOpen?: boolean
+  readonly open?: boolean
+  readonly onOpenChange?: (open: boolean) => void
+  readonly disabled?: boolean
 }
 
 export function CollapsibleSection({

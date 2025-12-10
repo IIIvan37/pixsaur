@@ -1,24 +1,10 @@
 /**
  * Converts an RGBA buffer to an array of palette indices by finding the exact RGB match in the provided palette.
  */
+
+import { quantizeCPC } from '@/export/cpc-calculations'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { findDarkestColor } from '../color-utils'
-
-function quantizeCPC(value: number): number {
-  const levels = [0, 128, 255]
-  let best = levels[0]
-  let bestDist = Math.abs(value - best)
-
-  for (const lvl of levels) {
-    const dist = Math.abs(value - lvl)
-    if (dist < bestDist) {
-      bestDist = dist
-      best = lvl
-    }
-  }
-
-  return best
-}
 
 function findDarkestColorIndex(palette: Vector[]): number {
   if (palette.length === 0) return 0

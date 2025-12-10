@@ -33,15 +33,15 @@ import {
 import styles from './raster-tuning-panel.module.css'
 
 interface TuningSliderProps {
-  label: string
-  value: number
-  onChange: (value: number) => void
-  min: number
-  max: number
-  step: number
-  defaultValue: number
-  format?: (value: number) => string
-  description?: string
+  readonly label: string
+  readonly value: number
+  readonly onChange: (value: number) => void
+  readonly min: number
+  readonly max: number
+  readonly step: number
+  readonly defaultValue: number
+  readonly format?: (value: number) => string
+  readonly description?: string
 }
 
 function TuningSlider({
@@ -184,7 +184,7 @@ export function RasterTuningPanel() {
             label='Vertical Error Coefficient'
             value={verticalErrorCoef}
             onChange={setVerticalErrorCoef}
-            min={0.0}
+            min={0}
             max={0.5}
             step={0.025}
             defaultValue={VERTICAL_ERROR_COEFFICIENT}
@@ -195,8 +195,8 @@ export function RasterTuningPanel() {
             label='Horizontal Error Coefficient'
             value={horizontalErrorCoef}
             onChange={setHorizontalErrorCoef}
-            min={0.0}
-            max={1.0}
+            min={0}
+            max={1}
             step={0.05}
             defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
           />
@@ -225,8 +225,8 @@ export function RasterTuningPanel() {
             label='Continuity Bonus'
             value={paletteContinuityBonus}
             onChange={setPaletteContinuityBonus}
-            min={1.0}
-            max={3.0}
+            min={1}
+            max={3}
             step={0.1}
             defaultValue={PALETTE_CONTINUITY_BONUS}
             description='Higher = stronger preference for previous palette colors'
@@ -236,8 +236,8 @@ export function RasterTuningPanel() {
             label='Frequency Weight'
             value={paletteFrequencyExponent}
             onChange={setPaletteFrequencyExponent}
-            min={0.0}
-            max={1.0}
+            min={0}
+            max={1}
             step={0.05}
             defaultValue={PALETTE_FREQUENCY_EXPONENT}
             description='0 = pure diversity, 0.5 = balanced, 1 = prefer frequent colors'

@@ -17,8 +17,9 @@
   font-size: var(--font-size-md, 0.8125rem);
   font-family: var(--font-family, monospace);
   cursor: pointer;
-  box-shadow: 0 0 15px rgba(0, 255, 0, 0.4),
-              0 4px 12px rgba(0, 0, 0, 0.8);
+  box-shadow:
+    0 0 15px rgba(0, 255, 0, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.8);
   transition: all 0.2s ease;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -28,8 +29,9 @@
   transform: translateY(-2px);
   background: var(--color-green-400, #4ade80);
   border-color: var(--color-green-400, #4ade80);
-  box-shadow: 0 0 20px rgba(0, 255, 0, 0.6),
-              0 6px 16px rgba(0, 0, 0, 0.9);
+  box-shadow:
+    0 0 20px rgba(0, 255, 0, 0.6),
+    0 6px 16px rgba(0, 0, 0, 0.9);
 }
 
 .button:active {

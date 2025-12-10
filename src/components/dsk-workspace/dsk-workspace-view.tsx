@@ -15,16 +15,16 @@ import {
 } from './dsk-workspace-utils'
 
 interface DskWorkspaceViewProps {
-  images: DskImage[]
-  hasImages: boolean
-  canAddCurrentImage: boolean
-  addButtonTitle: string
-  remainingSpace: string
-  onAddCurrentImage: () => void
-  onRemoveImage: (imageId: string) => void
-  onExport: () => void
-  getColorTitle: (index: number, color: string) => string
-  getRemoveImageTitle: () => string
+  readonly images: DskImage[]
+  readonly hasImages: boolean
+  readonly canAddCurrentImage: boolean
+  readonly addButtonTitle: string
+  readonly remainingSpace: string
+  readonly onAddCurrentImage: () => void
+  readonly onRemoveImage: (imageId: string) => void
+  readonly onExport: () => void
+  readonly getColorTitle: (index: number, color: string) => string
+  readonly getRemoveImageTitle: () => string
 }
 
 export function DskWorkspaceView({

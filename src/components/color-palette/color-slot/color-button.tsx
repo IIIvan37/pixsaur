@@ -4,15 +4,15 @@ import { forwardRef } from 'react'
 import styles from './color-button.module.css'
 
 type ColorButtonProps = {
-  colorHex: string
-  className?: string
-  title?: string
-  role?: string
-  disabled?: boolean
-  tabIndex?: number
-  onClick?: React.MouseEventHandler<HTMLButtonElement>
-  buttonRef?: (el: HTMLButtonElement | null) => void
-  'aria-pressed'?: boolean | 'true' | 'false' | 'mixed'
+  readonly colorHex: string
+  readonly className?: string
+  readonly title?: string
+  readonly role?: string
+  readonly disabled?: boolean
+  readonly tabIndex?: number
+  readonly onClick?: React.MouseEventHandler<HTMLButtonElement>
+  readonly buttonRef?: (el: HTMLButtonElement | null) => void
+  readonly 'aria-pressed'?: boolean | 'true' | 'false' | 'mixed'
   children?: React.ReactNode
 }
 

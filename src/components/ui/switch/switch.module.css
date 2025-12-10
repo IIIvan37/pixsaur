@@ -6,7 +6,7 @@
 
 .label {
   color: var(--color-foreground);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: "JetBrains Mono", monospace;
   font-size: clamp(0.875rem, 0.9vw, 1rem);
   user-select: none;
 }

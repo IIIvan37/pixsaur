@@ -12,7 +12,7 @@ vi.mock('../../src/histogram')
 vi.mock('../../src/map')
 vi.mock('../../src/metric/distance')
 vi.mock('../../src/quant/select-to-indices')
-vi.mock('../../src/quant/strategy-selector')
+vi.mock('../../src/quant/palette-strategies-v2')
 
 describe('quantize.ts', () => {
   beforeEach(() => {

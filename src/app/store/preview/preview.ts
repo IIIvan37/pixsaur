@@ -532,24 +532,20 @@ export const displayPaletteAtom = atom(async (get) => {
 
   for (let i = 0; i < 16; i++) {
     const slot = userPalette[i]
-    if (i >= modeConfig.nColors) {
-      // Hors du mode actuel: garder le slot tel quel
+    if (i >= modeConfig.nColors || slot?.locked) {
+      // Hors du mode actuel ou slot locké: garder le slot tel quel
       displaySlots.push({ ...slot })
-    } else if (slot?.locked) {
-      // Slot locké: garder tel quel (avec ou sans couleur)
-      displaySlots.push({ ...slot })
-    } else {
+    } else if (reducedIndex < filteredReduced.length) {
       // Slot non locké: utiliser la couleur de filteredReduced
-      if (reducedIndex < filteredReduced.length) {
-        const color = filteredReduced[reducedIndex]
-        displaySlots.push({
-          color: color,
-          locked: false
-        })
-        reducedIndex++
-      } else {
-        displaySlots.push({ color: null, locked: false })
-      }
+      const color = filteredReduced[reducedIndex]
+      displaySlots.push({
+        color: color,
+        locked: false
+      })
+      reducedIndex++
+    } else {
+      // Slot non locké: pas de couleur disponible
+      displaySlots.push({ color: null, locked: false })
     }
   }
 
@@ -561,6 +557,44 @@ export const IGNORED_SLOT: Vector = [-1, -1, -1]
 
 // Palette pour l'export: reconstruit la palette complète avec les slots vides lockés
 // Les slots vides lockés sont marqués avec IGNORED_SLOT [-1, -1, -1] pour indiquer qu'ils sont ignorés
+// Helper pour quantifier une couleur selon le hardware CPC
+function quantifyColorForHardware(
+  color: Vector,
+  cpcHardware: 'classic' | 'plus'
+): Vector {
+  const result = [...color] as Vector
+  if (cpcHardware === 'classic') {
+    result[0] = quantizeCPC(result[0])
+    result[1] = quantizeCPC(result[1])
+    result[2] = quantizeCPC(result[2])
+  } else {
+    result[0] = quantifyToCPCPlus(result[0])
+    result[1] = quantifyToCPCPlus(result[1])
+    result[2] = quantifyToCPCPlus(result[2])
+  }
+  return result
+}
+
+// Helper pour traiter un slot de palette
+function processSlot(
+  slot: PaletteSlot | undefined,
+  filteredReduced: Vector[],
+  reducedIndex: { value: number },
+  darkestColor: Vector,
+  cpcHardware: 'classic' | 'plus'
+): Vector {
+  if (slot?.locked && slot.color === null) {
+    return IGNORED_SLOT
+  }
+  if (slot?.locked && slot.color) {
+    return quantifyColorForHardware(slot.color, cpcHardware)
+  }
+  if (reducedIndex.value < filteredReduced.length) {
+    return filteredReduced[reducedIndex.value++]
+  }
+  return darkestColor
+}
+
 export const exportPaletteWithSlotsAtom = atom(async (get) => {
   const reducedPalette = await get(reducedPaletteRgbAtom)
   const userPalette = get(userPaletteAtom)
@@ -584,35 +618,18 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
 
   // Reconstruire la palette complète en utilisant userPalette comme référence
   const fullPalette: Vector[] = []
-  let reducedIndex = 0 // Compteur pour parcourir filteredReduced
+  const reducedIndex = { value: 0 } // Compteur mutable pour parcourir filteredReduced
 
   for (let i = 0; i < modeConfig.nColors; i++) {
-    const slot = userPalette[i]
-    if (slot?.locked && slot.color === null) {
-      // Slot vide locké: marquer comme ignoré avec [-1, -1, -1]
-      fullPalette.push(IGNORED_SLOT)
-    } else if (slot?.locked && slot.color) {
-      // Slot avec couleur lockée: quantifier la couleur du slot selon le hardware
-      const color = [...slot.color] as Vector
-      if (cpcHardware === 'classic') {
-        color[0] = quantizeCPC(color[0])
-        color[1] = quantizeCPC(color[1])
-        color[2] = quantizeCPC(color[2])
-      } else {
-        color[0] = quantifyToCPCPlus(color[0])
-        color[1] = quantifyToCPCPlus(color[1])
-        color[2] = quantifyToCPCPlus(color[2])
-      }
-      fullPalette.push(color)
-    } else {
-      // Slot non locké: utiliser filteredReduced avec un compteur
-      if (reducedIndex < filteredReduced.length) {
-        fullPalette.push(filteredReduced[reducedIndex])
-        reducedIndex++
-      } else {
-        fullPalette.push(darkestColor)
-      }
-    }
+    fullPalette.push(
+      processSlot(
+        userPalette[i],
+        filteredReduced,
+        reducedIndex,
+        darkestColor,
+        cpcHardware
+      )
+    )
   }
 
   logger.info('[Preview] exportPaletteWithSlotsAtom', {

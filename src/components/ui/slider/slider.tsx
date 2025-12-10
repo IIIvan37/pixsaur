@@ -4,16 +4,16 @@ import { type ReactNode, useEffect, useRef, useState } from 'react'
 import styles from './slider.module.css'
 
 type PixsaurSliderProps = {
-  min: number
-  max: number
-  value: number
-  step?: number
-  onChange: (val: number) => void
-  label?: ReactNode
-  description?: ReactNode
-  hideLabel?: boolean
-  disabled?: boolean
-  showTooltip?: boolean
+  readonly min: number
+  readonly max: number
+  readonly value: number
+  readonly step?: number
+  readonly onChange: (val: number) => void
+  readonly label?: ReactNode
+  readonly description?: ReactNode
+  readonly hideLabel?: boolean
+  readonly disabled?: boolean
+  readonly showTooltip?: boolean
 }
 
 export default function PixsaurSlider({

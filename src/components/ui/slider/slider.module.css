@@ -42,7 +42,11 @@
   position: fixed;
   min-width: 200px;
   max-width: 320px;
-  background: linear-gradient(135deg, rgba(20, 20, 20, 0.98), rgba(10, 10, 10, 0.98));
+  background: linear-gradient(
+    135deg,
+    rgba(20, 20, 20, 0.98),
+    rgba(10, 10, 10, 0.98)
+  );
   backdrop-filter: blur(8px);
   color: var(--color-foreground);
   font-size: var(--font-size-xs);
@@ -50,7 +54,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-md);
   z-index: 1000;
-  box-shadow: 
+  box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.5),
     0 2px 8px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -84,15 +88,15 @@
   .descriptionTooltip {
     max-width: calc(100vw - 40px);
   }
-  
+
   .tooltipAlignCenter {
     transform: translateX(-50%);
   }
-  
+
   .tooltipAlignLeft {
     transform: translateX(0);
   }
-  
+
   .tooltipAlignRight {
     transform: translateX(-100%);
   }
@@ -109,7 +113,11 @@
   position: absolute;
   top: -32px;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, rgba(30, 30, 30, 0.98), rgba(15, 15, 15, 0.98));
+  background: linear-gradient(
+    135deg,
+    rgba(30, 30, 30, 0.98),
+    rgba(15, 15, 15, 0.98)
+  );
   backdrop-filter: blur(8px);
   color: var(--color-foreground);
   font-size: var(--font-size-sm);
@@ -120,11 +128,11 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: 
+  transition:
     opacity 0.2s ease,
     transform 0.2s ease;
   z-index: 5;
-  box-shadow: 
+  box-shadow:
     0 4px 16px rgba(0, 0, 0, 0.4),
     0 1px 4px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);

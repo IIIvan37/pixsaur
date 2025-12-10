@@ -146,7 +146,7 @@ function processAtkinsonPixel(
   pixel[2] = errorBuf[i3 + 2]
 
   // Find nearest palette color
-  const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+  const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
 
   // Set output color
   const color = paletteOut[bestIndex]
@@ -188,29 +188,6 @@ function distributeAtkinsonError(
       errorBuf[nIdx + 2] += errB / 8
     }
   }
-}
-
-/**
- * Helper function to find the nearest palette color
- * Reduces cognitive complexity by extracting color matching logic
- */
-function findNearestPaletteColor(
-  pixel: Float32Array,
-  paletteCS: Float32Array[],
-  distFn: DistanceFn
-): number {
-  let best = 0
-  let bestD = Infinity
-
-  for (let p = 0; p < paletteCS.length; p++) {
-    const d = distFn(pixel, paletteCS[p])
-    if (d < bestD) {
-      bestD = d
-      best = p
-    }
-  }
-
-  return best
 }
 
 export function applyYliluoma1Dither(
@@ -363,7 +340,7 @@ export function applyBayerDither(
       pixelCS[1] = bufCS[i3 + 1] + threshold
       pixelCS[2] = bufCS[i3 + 2] + threshold
 
-      const bestIndex = findNearestPaletteColor(pixelCS, paletteCS, distFn)
+      const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
 
       const rgb = paletteOut[bestIndex]
       out[i4 + 0] = rgb[0]
@@ -420,6 +397,7 @@ import {
   type DistanceFn,
   getDistanceFn
 } from '../metric/distance'
+import { findClosestColorIndex } from '../metric/find-closest'
 import type { DitheringConfig } from '../quant'
 import type { ColorSpace, Vector } from '../type'
 
@@ -509,7 +487,7 @@ function processFloydSteinbergPixel(
   pixelCS[2] = bufCS[idx3 + 2]
 
   // Find nearest palette color
-  const bestIndex = findNearestPaletteColor(pixelCS, paletteCS, distFn)
+  const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
 
   // Set output color
   const outIdx = (y * width + x) * 4
@@ -700,7 +678,7 @@ function applyFloydSteinbergDitherWithDynamicPalette(
       pixelCS[2] = errorBuf[idx3 + 2]
 
       // Find nearest palette color for this line
-      const bestIndex = findNearestPaletteColor(pixelCS, paletteCS, distFn)
+      const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
 
       // Set output color
       const outIdx = (y * width + x) * 4
@@ -778,7 +756,7 @@ function applyAtkinsonDitherWithDynamicPalette(
       pixel[2] = errorBuf[i3 + 2]
 
       // Find nearest palette color for this line
-      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
 
       // Set output color
       const color = paletteOut[bestIndex]
@@ -852,7 +830,7 @@ function applyBayerDitherWithDynamicPalette(
       pixel[2] = bufCS[i3 + 2] + noise
 
       // Find nearest palette color for this line
-      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
 
       // Set output color
       const color = paletteOut[bestIndex]
@@ -896,7 +874,7 @@ function applyNoDitherWithDynamicPalette(
       pixel[2] = bufCS[i3 + 2]
 
       // Find nearest palette color for this line
-      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
 
       // Set output color
       const color = paletteOut[bestIndex]
@@ -949,7 +927,7 @@ function applyYliluoma1DitherWithDynamicPalette(
       pixel[1] = Math.max(0, Math.min(255, pixel[1] + dy))
       pixel[2] = Math.max(0, Math.min(255, pixel[2] + dz))
 
-      const bestIndex = findNearestPaletteColor(pixel, paletteCS, distFn)
+      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
 
       const color = paletteOut[bestIndex]
       out[o + 0] = color[0]

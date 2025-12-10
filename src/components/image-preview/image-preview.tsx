@@ -124,8 +124,7 @@ const ImagePreview = () => {
         // Open new window and inject HTML content
         const newWindow = window.open('', '_blank')
         if (newWindow) {
-          newWindow.document.write(html)
-          newWindow.document.close()
+          newWindow.document.documentElement.innerHTML = html
         }
       }
     }, 'image/png')

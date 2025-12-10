@@ -58,23 +58,23 @@ function groupChangesByLine(changes: RasterChange[]): LineGroup[] {
     .sort(([a], [b]) => a - b)
     .map(([line, lineChanges]) => ({
       line,
-      changes: lineChanges.sort((a, b) => a.inkIndex - b.inkIndex)
+      changes: [...lineChanges].sort((a, b) => a.inkIndex - b.inkIndex)
     }))
 }
 
 /**
  * Ink selector - small colored squares to pick ink number
  */
-function InkSelector({
+export function InkSelector({
   nColors,
   selectedInk,
   onSelectInk,
   allowedInks
 }: {
-  nColors: number
-  selectedInk: number
-  onSelectInk: (ink: number) => void
-  allowedInks?: number[]
+  readonly nColors: number
+  readonly selectedInk: number
+  readonly onSelectInk: (ink: number) => void
+  readonly allowedInks?: number[]
 }) {
   const inkIndices = allowedInks ?? Array.from({ length: nColors }, (_, i) => i)
 
@@ -100,7 +100,7 @@ function InkSelector({
 /**
  * Ink and color trigger button with popover
  */
-function InkColorTrigger({
+export function InkColorTrigger({
   color,
   inkIndex,
   nColors,
@@ -110,14 +110,14 @@ function InkColorTrigger({
   onColorChange,
   allowedInks
 }: {
-  color: Vector<'RGB'>
-  inkIndex: number
-  nColors: number
-  cpcPalette: CPCColor[]
-  isClassicMode: boolean
-  onInkChange: (ink: number) => void
-  onColorChange: (color: Vector<'RGB'>) => void
-  allowedInks?: number[]
+  readonly color: Vector<'RGB'>
+  readonly inkIndex: number
+  readonly nColors: number
+  readonly cpcPalette: CPCColor[]
+  readonly isClassicMode: boolean
+  readonly onInkChange: (ink: number) => void
+  readonly onColorChange: (color: Vector<'RGB'>) => void
+  readonly allowedInks?: number[]
 }) {
   const { _ } = useLingui()
   const [isOpen, setIsOpen] = useState(false)
@@ -197,19 +197,19 @@ function LineRow({
   onUpdateChange,
   onRemoveChange
 }: {
-  group: LineGroup
-  conflicts: string[]
-  nColors: number
-  maxLine: number
-  maxChangesPerLine: number
-  cpcPalette: CPCColor[]
-  isClassicMode: boolean
-  onUpdateChange: (
+  readonly group: LineGroup
+  readonly conflicts: string[]
+  readonly nColors: number
+  readonly maxLine: number
+  readonly maxChangesPerLine: number
+  readonly cpcPalette: CPCColor[]
+  readonly isClassicMode: boolean
+  readonly onUpdateChange: (
     id: string,
     field: keyof Omit<RasterChange, 'id'>,
     value: number | Vector<'RGB'>
   ) => void
-  onRemoveChange: (id: string) => void
+  readonly onRemoveChange: (id: string) => void
 }) {
   const { _ } = useLingui()
   const hasConflict = group.changes.some((c) => conflicts.includes(c.id))

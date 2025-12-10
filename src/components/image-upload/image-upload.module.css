@@ -28,8 +28,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-family: 'Fira Code', monospace;
-  transition: border-color 0.2s, background-color 0.2s;
+  font-family: "Fira Code", monospace;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
   padding: 2rem;
   cursor: pointer;
 }

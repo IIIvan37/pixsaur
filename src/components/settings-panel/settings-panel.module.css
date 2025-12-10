@@ -78,7 +78,7 @@
 }
 
 .tab.active,
-.tab[data-state='active'] {
+.tab[data-state="active"] {
   background: rgba(var(--accent-rgb), 0.15);
   color: var(--color-accent);
   border-color: var(--color-accent);

@@ -4,12 +4,12 @@ import Icon from '@/components/ui/icon'
 import styles from './draggable-dialog.module.css'
 
 interface DraggableDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  title: string | React.ReactNode
-  children: React.ReactNode
-  defaultPosition?: { x: number; y: number }
-  onOpenAutoFocus?: (event: Event) => void
+  readonly open: boolean
+  readonly onOpenChange: (open: boolean) => void
+  readonly title: string | React.ReactNode
+  readonly children: React.ReactNode
+  readonly defaultPosition?: { readonly x: number; readonly y: number }
+  readonly onOpenAutoFocus?: (event: Event) => void
 }
 
 export default function DraggableDialog({
