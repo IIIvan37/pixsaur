@@ -1,4 +1,5 @@
 import { atom } from 'jotai'
+import { logger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   applyDitheringWithRaster,
@@ -419,10 +420,7 @@ export const effectivePreviewImageAtom = atom(async (get) => {
 export const autoOptimizeRasterAtom = atom(
   null,
   async (get, set, options?: { resetChanges?: boolean }) => {
-    // Don't clear existing raster data immediately - keep showing old preview
-    // until new one is ready to prevent flickering
-    // set(rasterChangesAtom, [])
-    // set(rasterOptimizationResultAtom, null)
+    logger.time('[RASTER] autoOptimizeRasterAtom - Total')
 
     const modeConfig = get(effectiveModeConfigAtom)
     const hardware = get(cpcHardwareAtom)
@@ -432,20 +430,26 @@ export const autoOptimizeRasterAtom = atom(
     // CPC Classic palette is used to constrain colors to the 27 hardware colors
     const cpcClassicPalette = isClassicMode ? cpcPalette : undefined
 
+    logger.time('[RASTER] Get positioned image')
     // Get the positioned normalized image (source colors, before dithering)
     // This gives us the TRUE colors of each pixel that we need to represent
     const sourceImage = await get(positionedNormalizedImageAtom)
+    logger.timeEnd('[RASTER] Get positioned image')
+
     if (!sourceImage) {
+      logger.timeEnd('[RASTER] autoOptimizeRasterAtom - Total')
       return { success: false, error: 'No image available' }
     }
 
     // Use dimensions from sourceImage
     const { width, height } = sourceImage
 
+    logger.time('[RASTER] Get export palette')
     // Get the global palette (nColors for the current mode)
     // Note: The optimization algorithm now extracts palette directly from source image,
     // but we still need this for the initial API compatibility
     const exportPalette = await get(exportPaletteWithSlotsAtom)
+    logger.timeEnd('[RASTER] Get export palette')
 
     // Filter out invalid slots and take first nColors
     // If no valid colors, we'll use a placeholder - the algorithm will extract from image
@@ -461,6 +465,7 @@ export const autoOptimizeRasterAtom = atom(
     // Get raster dithering intensity
     const ditheringIntensity = get(rasterDitheringIntensityAtom)
 
+    logger.time('[RASTER] Preprocess image')
     // PRE-PROCESS: Transform source image to have max nColors per line
     // This ensures smooth palette transitions and better raster optimization
     const preprocessedImage = preprocessImageForRaster(
@@ -472,6 +477,7 @@ export const autoOptimizeRasterAtom = atom(
         cpcClassicPalette
       }
     )
+    logger.timeEnd('[RASTER] Preprocess image')
 
     // Get existing raster changes (without IDs for the algorithm)
     // If resetChanges is true, start fresh (useful when dithering intensity changes)
@@ -494,6 +500,7 @@ export const autoOptimizeRasterAtom = atom(
       maxAllowedChanges
     )
 
+    logger.time('[RASTER] Optimize line palettes')
     // Generate optimized raster changes AND matching index buffer
     // - preprocessedImage: image with max nColors per line (smooth transitions)
     // - globalPalette: initial nColors palette
@@ -513,6 +520,7 @@ export const autoOptimizeRasterAtom = atom(
         cpcClassicPalette
       }
     )
+    logger.timeEnd('[RASTER] Optimize line palettes')
 
     // Filter out any changes that exceed the mode height (safety check)
     const maxLine = modeConfig.height - 1
@@ -554,6 +562,11 @@ export const autoOptimizeRasterAtom = atom(
 
     // Enable raster mode
     set(rasterEnabledAtom, true)
+
+    logger.timeEnd('[RASTER] autoOptimizeRasterAtom - Total')
+    logger.info(
+      `[RASTER] Optimization complete: ${newChanges.length} changes, ${new Set(newChanges.map((c) => c.line)).size} lines affected`
+    )
 
     return {
       success: true,
