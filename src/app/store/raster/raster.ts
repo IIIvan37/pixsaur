@@ -209,6 +209,55 @@ export const removeRasterChangeAtom = atom(null, (get, set, id: string) => {
 })
 
 /**
+ * Helper to check for duplicate ink changes on a line
+ */
+function findDuplicateInkConflicts(
+  lineChanges: RasterChange[],
+  conflicts: string[]
+): void {
+  const inksSeen = new Map<number, string>()
+  for (const change of lineChanges) {
+    const existingId = inksSeen.get(change.inkIndex)
+    if (existingId) {
+      if (!conflicts.includes(existingId)) conflicts.push(existingId)
+      if (!conflicts.includes(change.id)) conflicts.push(change.id)
+    } else {
+      inksSeen.set(change.inkIndex, change.id)
+    }
+  }
+}
+
+/**
+ * Helper to check if a line exceeds max changes limit
+ */
+function findExcessChangesConflicts(
+  lineChanges: RasterChange[],
+  maxChangesPerLine: number,
+  conflicts: string[]
+): void {
+  if (lineChanges.length > maxChangesPerLine) {
+    for (const change of lineChanges) {
+      if (!conflicts.includes(change.id)) conflicts.push(change.id)
+    }
+  }
+}
+
+/**
+ * Helper to group changes by line number
+ */
+function groupChangesByLine(
+  changes: RasterChange[]
+): Map<number, RasterChange[]> {
+  const byLine = new Map<number, RasterChange[]>()
+  for (const change of changes) {
+    const existing = byLine.get(change.line) || []
+    existing.push(change)
+    byLine.set(change.line, existing)
+  }
+  return byLine
+}
+
+/**
  * Derived atom: check for conflicts
  * - Same ink modified twice on same line = always a conflict
  * - Too many changes on same line = conflict based on user setting
@@ -219,36 +268,11 @@ export const rasterConflictsAtom = atom((get) => {
   const maxChangesPerLine = get(rasterMaxChangesPerLineAtom)
   const conflicts: string[] = []
 
-  // Group by line
-  const byLine = new Map<number, RasterChange[]>()
-  for (const change of changes) {
-    const existing = byLine.get(change.line) || []
-    existing.push(change)
-    byLine.set(change.line, existing)
-  }
+  const byLine = groupChangesByLine(changes)
 
-  // Check conflicts for each line
   for (const [, lineChanges] of byLine) {
-    // Check for same ink modified twice on same line
-    const inksSeen = new Map<number, string>()
-    for (const change of lineChanges) {
-      if (inksSeen.has(change.inkIndex)) {
-        // Conflict: same ink modified twice on same line
-        const existingId = inksSeen.get(change.inkIndex)!
-        if (!conflicts.includes(existingId)) conflicts.push(existingId)
-        if (!conflicts.includes(change.id)) conflicts.push(change.id)
-      } else {
-        inksSeen.set(change.inkIndex, change.id)
-      }
-    }
-
-    // Check for too many changes on same line
-    if (lineChanges.length > maxChangesPerLine) {
-      // All changes on this line are in conflict (exceeds user limit)
-      for (const change of lineChanges) {
-        if (!conflicts.includes(change.id)) conflicts.push(change.id)
-      }
-    }
+    findDuplicateInkConflicts(lineChanges, conflicts)
+    findExcessChangesConflicts(lineChanges, maxChangesPerLine, conflicts)
   }
 
   return conflicts
