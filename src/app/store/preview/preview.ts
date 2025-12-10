@@ -532,24 +532,20 @@ export const displayPaletteAtom = atom(async (get) => {
 
   for (let i = 0; i < 16; i++) {
     const slot = userPalette[i]
-    if (i >= modeConfig.nColors) {
-      // Hors du mode actuel: garder le slot tel quel
+    if (i >= modeConfig.nColors || slot?.locked) {
+      // Hors du mode actuel ou slot locké: garder le slot tel quel
       displaySlots.push({ ...slot })
-    } else if (slot?.locked) {
-      // Slot locké: garder tel quel (avec ou sans couleur)
-      displaySlots.push({ ...slot })
-    } else {
+    } else if (reducedIndex < filteredReduced.length) {
       // Slot non locké: utiliser la couleur de filteredReduced
-      if (reducedIndex < filteredReduced.length) {
-        const color = filteredReduced[reducedIndex]
-        displaySlots.push({
-          color: color,
-          locked: false
-        })
-        reducedIndex++
-      } else {
-        displaySlots.push({ color: null, locked: false })
-      }
+      const color = filteredReduced[reducedIndex]
+      displaySlots.push({
+        color: color,
+        locked: false
+      })
+      reducedIndex++
+    } else {
+      // Slot non locké: pas de couleur disponible
+      displaySlots.push({ color: null, locked: false })
     }
   }
 
@@ -604,14 +600,13 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
         color[2] = quantifyToCPCPlus(color[2])
       }
       fullPalette.push(color)
-    } else {
+    } else if (reducedIndex < filteredReduced.length) {
       // Slot non locké: utiliser filteredReduced avec un compteur
-      if (reducedIndex < filteredReduced.length) {
-        fullPalette.push(filteredReduced[reducedIndex])
-        reducedIndex++
-      } else {
-        fullPalette.push(darkestColor)
-      }
+      fullPalette.push(filteredReduced[reducedIndex])
+      reducedIndex++
+    } else {
+      // Slot non locké: pas de couleur disponible, utiliser la plus sombre
+      fullPalette.push(darkestColor)
     }
   }
 
