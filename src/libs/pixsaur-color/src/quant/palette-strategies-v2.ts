@@ -6,6 +6,11 @@
 import { weightedRGBDistance } from '../metric/distance'
 import type { Vector } from '../type'
 import {
+  calculateHue,
+  calculateHueDistance,
+  calculateSaturation
+} from '../utils/hsv'
+import {
   luminance as calculateLuminance,
   isBright,
   isDark
@@ -113,19 +118,6 @@ function isCPCClassicPalette(
 }
 
 /**
- * Calcule la saturation d'une couleur (0-1)
- * Saturation = (Max - Min) / Max (si Max > 0)
- */
-function calculateSaturation(color: Vector): number {
-  const r = color[0] / 255
-  const g = color[1] / 255
-  const b = color[2] / 255
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  return max > 0 ? (max - min) / max : 0
-}
-
-/**
  * Calcule la "vivacité" d'une couleur
  * Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
  */
@@ -156,49 +148,6 @@ function calculateVividnessForColor(color: Vector): number {
 }
 
 /**
- * Calcule la teinte (hue) d'une couleur (0-360)
- * Retourne -1 pour les couleurs achromatiques (gris)
- */
-function calculateHue(color: Vector): number {
-  const r = color[0] / 255
-  const g = color[1] / 255
-  const b = color[2] / 255
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const delta = max - min
-
-  // Couleur achromatique (gris)
-  if (delta < SATURATION_LOW_THRESHOLD) return -1
-
-  let hue = 0
-  if (max === r) {
-    hue = ((g - b) / delta) % 6
-  } else if (max === g) {
-    hue = (b - r) / delta + 2
-  } else {
-    hue = (r - g) / delta + 4
-  }
-
-  hue *= 60
-  if (hue < 0) hue += 360
-
-  return hue
-}
-
-/**
- * Calcule la distance circulaire entre deux teintes (0-180)
- * Retourne 180 si l'une des couleurs est achromatique (considérée comme très différente)
- */
-function calculateHueDistance(hue1: number, hue2: number): number {
-  // Si l'une des couleurs est achromatique, considérer comme très différente
-  if (hue1 < 0 || hue2 < 0) return 180
-
-  let diff = Math.abs(hue1 - hue2)
-  if (diff > 180) diff = 360 - diff
-  return diff
-}
-
-/**
  * Calcule la distance de teinte minimale entre un candidat et les couleurs sélectionnées
  * Ignore les couleurs peu saturées (gris) car leur teinte n'est pas significative
  */
@@ -206,7 +155,10 @@ function calculateMinHueDistance(
   candidate: ColorCandidate,
   selectedColors: Vector[]
 ): number {
-  const candidateHue = calculateHue(candidate.converted)
+  const candidateHue = calculateHue(
+    candidate.converted,
+    SATURATION_LOW_THRESHOLD
+  )
   const candidateSat = calculateSaturation(candidate.converted)
 
   // Si le candidat est peu saturé, sa teinte n'est pas significative
@@ -218,7 +170,7 @@ function calculateMinHueDistance(
     // Ignorer les couleurs peu saturées dans la comparaison
     if (selectedSat < SATURATION_MIN_THRESHOLD) continue
 
-    const selectedHue = calculateHue(selected)
+    const selectedHue = calculateHue(selected, SATURATION_LOW_THRESHOLD)
     const dist = calculateHueDistance(candidateHue, selectedHue)
     minDist = Math.min(minDist, dist)
   }
@@ -300,7 +252,7 @@ function filterCandidatesWithHueDiversity(
   for (const c of sorted) {
     if (isVisuallyColorful(c.converted)) {
       // Couleur visuellement colorée (saturée ET lumineuse)
-      const hue = calculateHue(c.converted)
+      const hue = calculateHue(c.converted, SATURATION_LOW_THRESHOLD)
       if (hue >= 0) {
         const groupIndex = Math.floor(hue / 60) % 6
         hueGroups[groupIndex].push(c)
@@ -1450,14 +1402,14 @@ function calculateMinHueDistanceInSet(colors: Vector[]): number {
     const sat1 = calculateSaturation(colors[i])
     if (sat1 < 0.15) continue // Ignorer les couleurs peu saturées
 
-    const hue1 = calculateHue(colors[i])
+    const hue1 = calculateHue(colors[i], SATURATION_LOW_THRESHOLD)
     if (hue1 < 0) continue
 
     for (let j = i + 1; j < colors.length; j++) {
       const sat2 = calculateSaturation(colors[j])
       if (sat2 < 0.15) continue
 
-      const hue2 = calculateHue(colors[j])
+      const hue2 = calculateHue(colors[j], SATURATION_LOW_THRESHOLD)
       if (hue2 < 0) continue
 
       const dist = calculateHueDistance(hue1, hue2)
@@ -1648,7 +1600,7 @@ function findBestCombinationV2(
     // Initialiser usedHues avec les couleurs présélectionnées (lockées)
     // pour éviter de sélectionner des couleurs trop similaires
     for (const preColor of preselectedColors) {
-      const preHue = calculateHue(preColor)
+      const preHue = calculateHue(preColor, SATURATION_LOW_THRESHOLD)
       const preSat = calculateSaturation(preColor)
       if (preSat > 0.2 && preHue >= 0) {
         usedHues.push(preHue)
@@ -1699,7 +1651,7 @@ function findBestCombinationV2(
       if (selectedArrayIndices.length >= neededColors) break
       if (selectedArrayIndices.includes(arrayIndex)) continue // Déjà sélectionné (couleur sombre)
 
-      const hue = calculateHue(candidate.converted)
+      const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
       const saturation = calculateSaturation(candidate.converted)
       const luminance = calculateLuminance(candidate.converted)
 
@@ -1746,7 +1698,7 @@ function findBestCombinationV2(
         if (selectedArrayIndices.length >= neededColors) break
         if (selectedArrayIndices.includes(arrayIndex)) continue
 
-        const hue = calculateHue(candidate.converted)
+        const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
         const saturation = calculateSaturation(candidate.converted)
         const isSaturated = saturation > 0.2
 
@@ -1783,7 +1735,7 @@ function findBestCombinationV2(
         if (selectedArrayIndices.length >= neededColors) break
         if (selectedArrayIndices.includes(arrayIndex)) continue
 
-        const hue = calculateHue(candidate.converted)
+        const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
         const saturation = calculateSaturation(candidate.converted)
         const isSaturated = saturation > 0.2
 

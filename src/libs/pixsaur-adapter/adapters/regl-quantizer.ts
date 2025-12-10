@@ -20,6 +20,11 @@ import {
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import {
+  calculateHue,
+  calculateHueDistance,
+  calculateSaturation
+} from '@/libs/pixsaur-color/src/utils/hsv'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 
 /**
@@ -54,7 +59,6 @@ const DELTA_MIN_FOR_HUE = 0.01 // Delta minimum pour calculer la teinte (évite 
 /**
  * Constantes pour la distance de teinte
  */
-const HUE_RANGE_DEGREES = 360 // Plage complète de teinte en degrés
 const HUE_HALF_RANGE = 180 // Demi-plage de teinte (distance max circulaire)
 const HUE_BUCKET_SIZE_DEGREES = 45 // Taille de bucket de teinte en degrés (~8 familles)
 const MIN_HUE_DISTANCE_MODE_0 = 30 // Distance minimale de teinte pour diversité en mode 0
@@ -642,60 +646,6 @@ export class ReGLQuantizer {
   }
 
   /**
-   * Calcule la teinte (hue) d'une couleur (0-360)
-   * Retourne -1 pour les couleurs achromatiques (gris)
-   */
-  private calculateHue(color: Vector): number {
-    const r = color[0] / RGB_NORMALIZATION_FACTOR
-    const g = color[1] / RGB_NORMALIZATION_FACTOR
-    const b = color[2] / RGB_NORMALIZATION_FACTOR
-    const max = Math.max(r, g, b)
-    const min = Math.min(r, g, b)
-    const delta = max - min
-
-    // Couleur achromatique (gris)
-    if (delta < DELTA_MIN_FOR_HUE) return -1
-
-    let hue = 0
-    if (max === r) {
-      hue = ((g - b) / delta) % 6
-    } else if (max === g) {
-      hue = (b - r) / delta + 2
-    } else {
-      hue = (r - g) / delta + 4
-    }
-
-    hue *= 60
-    if (hue < 0) hue += HUE_RANGE_DEGREES
-
-    return hue
-  }
-
-  /**
-   * Calcule la distance circulaire entre deux teintes (0-180)
-   */
-  private calculateHueDistance(hue1: number, hue2: number): number {
-    // Si l'une des couleurs est achromatique, considérer comme différente
-    if (hue1 < 0 || hue2 < 0) return HUE_HALF_RANGE
-
-    let diff = Math.abs(hue1 - hue2)
-    if (diff > HUE_HALF_RANGE) diff = HUE_RANGE_DEGREES - diff
-    return diff
-  }
-
-  /**
-   * Calcule la saturation d'une couleur (0-1)
-   */
-  private calculateSaturation(color: Vector): number {
-    const r = color[0] / RGB_NORMALIZATION_FACTOR
-    const g = color[1] / RGB_NORMALIZATION_FACTOR
-    const b = color[2] / RGB_NORMALIZATION_FACTOR
-    const max = Math.max(r, g, b)
-    const min = Math.min(r, g, b)
-    return max > 0 ? (max - min) / max : 0
-  }
-
-  /**
    * Helper: Sélection par fréquence avec diversité de teinte
    * En mode 0 (16 couleurs), privilégie la diversité des teintes pour éviter
    * d'avoir trop de nuances d'une même couleur
@@ -736,18 +686,18 @@ export class ReGLQuantizer {
 
       if (isMode0) {
         // Mode 0: vérifier aussi la diversité de teinte pour couleurs saturées
-        const candidateHue = this.calculateHue(candidateConverted)
-        const candidateSat = this.calculateSaturation(candidateConverted)
+        const candidateHue = calculateHue(candidateConverted, DELTA_MIN_FOR_HUE)
+        const candidateSat = calculateSaturation(candidateConverted)
 
         // Pour les couleurs saturées (pas les gris), vérifier la diversité de teinte
         if (candidateSat > SATURATION_THRESHOLD_HIGH && candidateHue >= 0) {
           for (const selectedColor of selectedConverted) {
-            const selectedSat = this.calculateSaturation(selectedColor)
+            const selectedSat = calculateSaturation(selectedColor)
 
             // Si la couleur sélectionnée est aussi saturée, vérifier la teinte
             if (selectedSat > SATURATION_THRESHOLD_HIGH) {
-              const selectedHue = this.calculateHue(selectedColor)
-              const hueDistance = this.calculateHueDistance(
+              const selectedHue = calculateHue(selectedColor, DELTA_MIN_FOR_HUE)
+              const hueDistance = calculateHueDistance(
                 candidateHue,
                 selectedHue
               )
@@ -828,8 +778,11 @@ export class ReGLQuantizer {
 
         // En mode 0, ajouter un bonus pour la diversité de teinte
         if (isMode0) {
-          const candidateHue = this.calculateHue(candidateConverted)
-          const candidateSat = this.calculateSaturation(candidateConverted)
+          const candidateHue = calculateHue(
+            candidateConverted,
+            DELTA_MIN_FOR_HUE
+          )
+          const candidateSat = calculateSaturation(candidateConverted)
 
           // Pour les couleurs saturées, calculer la distance de teinte minimale
           if (
@@ -839,11 +792,14 @@ export class ReGLQuantizer {
             let minHueDistance = 360
 
             for (const selectedColor of selectedConverted) {
-              const selectedSat = this.calculateSaturation(selectedColor)
+              const selectedSat = calculateSaturation(selectedColor)
 
               if (selectedSat > SATURATION_THRESHOLD_FOR_HUE) {
-                const selectedHue = this.calculateHue(selectedColor)
-                const hueDistance = this.calculateHueDistance(
+                const selectedHue = calculateHue(
+                  selectedColor,
+                  DELTA_MIN_FOR_HUE
+                )
+                const hueDistance = calculateHueDistance(
                   candidateHue,
                   selectedHue
                 )
@@ -971,8 +927,8 @@ export class ReGLQuantizer {
     const hueBuckets = new Map() // hueBucket -> colors[]
 
     for (const candidate of colorFrequency) {
-      const sat = this.calculateSaturation(candidate.converted)
-      const hue = this.calculateHue(candidate.converted)
+      const sat = calculateSaturation(candidate.converted)
+      const hue = calculateHue(candidate.converted, DELTA_MIN_FOR_HUE)
 
       // Buckets pour avoir ~8 familles principales
       const bucketKey =
