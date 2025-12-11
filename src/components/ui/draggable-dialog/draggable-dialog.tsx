@@ -84,9 +84,8 @@ export default function DraggableDialog({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange} modal={false}>
       <Dialog.Portal>
-        <Dialog.Overlay className={styles.overlay} />
         <Dialog.Content
           ref={contentRef}
           className={styles.content}
@@ -95,7 +94,6 @@ export default function DraggableDialog({
             top: `${position.y}px`,
             cursor: isDragging ? 'grabbing' : 'default'
           }}
-          onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={() => onOpenChange(false)}
           onOpenAutoFocus={onOpenAutoFocus}
         >
