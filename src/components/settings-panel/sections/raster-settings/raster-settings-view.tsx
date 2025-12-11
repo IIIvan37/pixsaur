@@ -281,7 +281,7 @@ export function RasterSettingsView({
         />
       </div>
 
-      {rasterEnabled && changes.length > 0 && (
+      {rasterEnabled && (
         <>
           <div className={styles.separator} />
 
