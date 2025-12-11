@@ -5,8 +5,8 @@
 import { useAtom, useAtomValue } from 'jotai'
 import { horizontalSmoothingAtom } from '@/app/store/config/config'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
-import { usePaletteStrategyDisabled } from '@/components/image-controls/palette-strategy-selector/palette-strategy-selector'
 import { DitheringSettingsView } from './dithering-settings-view'
+import { usePaletteStrategyDisabled } from './palette-strategy-selector/palette-strategy-selector'
 
 export function DitheringSettings() {
   const [horizontalSmoothing, setHorizontalSmoothing] = useAtom(

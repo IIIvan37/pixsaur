@@ -4,10 +4,10 @@
 
 import { Trans } from '@lingui/react/macro'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
-import { CustomDimensionsInput } from '@/components/image-controls/custom-dimensions-input/custom-dimensions-input'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 import type { CPCHardware } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
+import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 
 type HardwareSettingsViewProps = {
   cpcHardware: CPCHardware

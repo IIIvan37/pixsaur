@@ -4,11 +4,11 @@
 
 import { Trans } from '@lingui/react/macro'
 import { useId } from 'react'
-import { PaletteStrategySelector } from '@/components/image-controls/palette-strategy-selector/palette-strategy-selector'
 import Flex from '@/components/ui/flex'
 import { Switch } from '@/components/ui/switch'
 import styles from '../../tabs/tab.module.css'
 import { DitheringControls } from './dithering-controls'
+import { PaletteStrategySelector } from './palette-strategy-selector/palette-strategy-selector'
 
 type DitheringSettingsViewProps = {
   horizontalSmoothing: boolean

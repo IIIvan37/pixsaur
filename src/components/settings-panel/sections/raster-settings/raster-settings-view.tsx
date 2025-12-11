@@ -6,7 +6,6 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useId } from 'react'
-import { RasterPanelView } from '@/components/raster-panel/raster-panel-view'
 import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
 import Button from '@/components/ui/button'
 import Flex from '@/components/ui/flex'
@@ -23,6 +22,7 @@ import {
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCColor } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
+import { RasterPanelView } from './raster-panel-view'
 
 type RasterSettingsViewProps = {
   // Raster mode
