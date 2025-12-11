@@ -7,8 +7,8 @@ import { useId } from 'react'
 import { PaletteStrategySelector } from '@/components/image-controls/palette-strategy-selector/palette-strategy-selector'
 import Flex from '@/components/ui/flex'
 import { Switch } from '@/components/ui/switch'
-import { DitheringControls } from '../../tabs/dithering-controls'
 import styles from '../../tabs/tab.module.css'
+import { DitheringControls } from './dithering-controls'
 
 type DitheringSettingsViewProps = {
   horizontalSmoothing: boolean
