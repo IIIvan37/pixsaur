@@ -28,16 +28,16 @@ export interface ResizeConfig {
 /**
  * Get normalized canvas dimensions for origin mode with aspect ratio correction
  *
- * En mode origin, on veut que l'image source respecte le pixel aspect ratio.
- * Le canvas doit avoir les dimensions CPC natives (160, 320, 640).
- * C'est lors de l'affichage que le pixel aspect ratio sera appliqué.
+ * Le canvas de preview est toujours 320×200 (aspect ratio CPC standard).
+ * - Mode 0 (ratio 2:1) : 160×200 CPC → 320×200 écran (pixels 2x larges)
+ * - Mode 1 (ratio 1:1) : 320×200 CPC → 320×200 écran (pixels carrés)
+ * - Mode 2 (ratio 0.5:1) : 640×200 CPC → 320×200 écran (pixels 2x hauts)
  */
 export function getNormalizedTargetSize(modeConfig: CpcModeConfig): {
   width: number
   height: number
 } {
   const ratio = modeConfig.scaleX / modeConfig.scaleY
-  // Utiliser les dimensions de la config (peut être custom ou standard)
   return {
     width: modeConfig.width * ratio,
     height: modeConfig.height
