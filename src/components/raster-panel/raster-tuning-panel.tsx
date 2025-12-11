@@ -3,13 +3,7 @@
  */
 
 import { Trans } from '@lingui/react/macro'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useEffect, useRef } from 'react'
-import {
-  autoOptimizeRasterAtom,
-  hasGeneratedRastersAtom,
-  rasterEnabledAtom
-} from '@/app/store/raster/raster'
+import { useAtom } from 'jotai'
 import {
   horizontalErrorCoefficientAtom,
   paletteContinuityBonusAtom,
@@ -18,11 +12,10 @@ import {
   rasterTuningEnabledAtom,
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
+import { useRasterTuningRegeneration } from '@/app/store/raster/use-raster-tuning-regeneration'
+import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
 import DraggableDialog from '@/components/ui/draggable-dialog'
 import Icon from '@/components/ui/icon'
-import PixsaurSlider from '@/components/ui/slider/slider'
-import logger from '@/core/logger'
-import { rasterTuningOverrides } from '@/libs/pixsaur-raster/optimize-line-palettes'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
   PALETTE_CONTINUITY_BONUS,
@@ -32,66 +25,8 @@ import {
 } from '@/libs/pixsaur-raster/raster-constants'
 import styles from './raster-tuning-panel.module.css'
 
-interface TuningSliderProps {
-  readonly label: string
-  readonly value: number
-  readonly onChange: (value: number) => void
-  readonly min: number
-  readonly max: number
-  readonly step: number
-  readonly defaultValue: number
-  readonly format?: (value: number) => string
-  readonly description?: string
-}
-
-function TuningSlider({
-  label,
-  value,
-  onChange,
-  min,
-  max,
-  step,
-  defaultValue,
-  format = (v) => v.toFixed(2),
-  description
-}: TuningSliderProps) {
-  return (
-    <div className={styles.tuningRow}>
-      <div className={styles.tuningHeader}>
-        <span className={styles.tuningLabel}>{label}</span>
-        <div className={styles.tuningValue}>
-          <span className={styles.currentValue}>{format(value)}</span>
-          {value !== defaultValue && (
-            <button
-              type='button'
-              className={styles.resetButton}
-              onClick={() => onChange(defaultValue)}
-              title='Reset to default'
-            >
-              ↺
-            </button>
-          )}
-        </div>
-      </div>
-      <PixsaurSlider
-        min={min}
-        max={max}
-        value={value}
-        step={step}
-        onChange={onChange}
-        hideLabel
-        showTooltip={false}
-      />
-      {description && <div className={styles.description}>{description}</div>}
-    </div>
-  )
-}
-
 export function RasterTuningPanel() {
   const [enabled, setEnabled] = useAtom(rasterTuningEnabledAtom)
-  const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
-  const rasterEnabled = useAtomValue(rasterEnabledAtom)
-  const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
 
   const [verticalErrorCoef, setVerticalErrorCoef] = useAtom(
     verticalErrorCoefficientAtom
@@ -110,58 +45,8 @@ export function RasterTuningPanel() {
     paletteFrequencyExponentAtom
   )
 
-  // Ref to prevent re-triggering during regeneration
-  const isRegeneratingRef = useRef(false)
-
-  // Sync atom values to rasterTuningOverrides and re-optimize automatically
-  useEffect(() => {
-    // Skip if already regenerating or if rasters aren't enabled/generated
-    if (isRegeneratingRef.current || !rasterEnabled || !hasGeneratedRasters) {
-      // Still update the overrides even if we don't regenerate
-      rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
-      rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
-      rasterTuningOverrides.paletteContinuityDistance =
-        paletteContinuityDistance
-      rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
-      rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
-      return
-    }
-
-    rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
-    rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
-    rasterTuningOverrides.paletteContinuityDistance = paletteContinuityDistance
-    rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
-    rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
-
-    // Set flag to prevent re-triggering
-    isRegeneratingRef.current = true
-
-    // Debounce the regeneration (200ms) to avoid too many updates
-    const timeoutId = setTimeout(() => {
-      // Auto-regenerate with new values
-      autoOptimize({ resetChanges: true })
-        .catch((error) => {
-          logger.error('Failed to regenerate rasters:', error)
-        })
-        .finally(() => {
-          isRegeneratingRef.current = false
-        })
-    }, 200)
-
-    return () => {
-      clearTimeout(timeoutId)
-      isRegeneratingRef.current = false
-    }
-  }, [
-    verticalErrorCoef,
-    horizontalErrorCoef,
-    paletteContinuityDistance,
-    paletteContinuityBonus,
-    paletteFrequencyExponent,
-    rasterEnabled,
-    hasGeneratedRasters,
-    autoOptimize
-  ])
+  // Auto-regenerate rasters when tuning parameters change
+  useRasterTuningRegeneration()
 
   return (
     <DraggableDialog

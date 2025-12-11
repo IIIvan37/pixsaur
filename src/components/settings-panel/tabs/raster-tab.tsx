@@ -34,6 +34,7 @@ import {
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
 import { useAutoRegenerateRasters } from '@/app/store/raster/use-auto-regenerate-rasters'
+import { useRasterTuningRegeneration } from '@/app/store/raster/use-raster-tuning-regeneration'
 import { RasterPanelView } from '@/components/raster-panel/raster-panel-view'
 import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
 import Button from '@/components/ui/button'
@@ -42,7 +43,6 @@ import Icon from '@/components/ui/icon'
 import { Switch } from '@/components/ui/switch'
 import logger from '@/core/logger'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { rasterTuningOverrides } from '@/libs/pixsaur-raster/optimize-line-palettes'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
   PALETTE_CONTINUITY_BONUS,
@@ -112,7 +112,9 @@ export function RasterTab() {
   // Auto-regenerate rasters when parameters change
   useAutoRegenerateRasters()
 
-  const isRegeneratingRef = useRef(false)
+  // Auto-regenerate rasters when tuning parameters change
+  useRasterTuningRegeneration()
+
   const previousHardwareRef = useRef(cpcHardware)
   const previousModeRef = useRef(modeConfig.nColors)
 
@@ -130,50 +132,6 @@ export function RasterTab() {
 
     clearAllChanges()
   }, [cpcHardware, modeConfig.nColors, rasterEnabled, clearAllChanges])
-
-  useEffect(() => {
-    if (isRegeneratingRef.current || !rasterEnabled || !hasGeneratedRasters) {
-      rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
-      rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
-      rasterTuningOverrides.paletteContinuityDistance =
-        paletteContinuityDistance
-      rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
-      rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
-      return
-    }
-
-    rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
-    rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
-    rasterTuningOverrides.paletteContinuityDistance = paletteContinuityDistance
-    rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
-    rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
-
-    isRegeneratingRef.current = true
-
-    const timeoutId = setTimeout(() => {
-      autoOptimize({ resetChanges: true })
-        .catch((error) => {
-          logger.error('Failed to regenerate rasters:', error)
-        })
-        .finally(() => {
-          isRegeneratingRef.current = false
-        })
-    }, 200)
-
-    return () => {
-      clearTimeout(timeoutId)
-      isRegeneratingRef.current = false
-    }
-  }, [
-    verticalErrorCoef,
-    horizontalErrorCoef,
-    paletteContinuityDistance,
-    paletteContinuityBonus,
-    paletteFrequencyExponent,
-    rasterEnabled,
-    hasGeneratedRasters,
-    autoOptimize
-  ])
 
   // Raster panel helper variables
   const maxLine = modeConfig.height - 1

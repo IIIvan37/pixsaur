@@ -1,0 +1,19 @@
+/* Image adjustments styles */
+
+.adjustmentsWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.sectionsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.sliderGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
