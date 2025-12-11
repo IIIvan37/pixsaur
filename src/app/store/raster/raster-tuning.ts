@@ -5,6 +5,8 @@
 import { atomWithStorage } from 'jotai/utils'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
+  MODE_0_LINE_WEIGHT,
+  MODE_0_PIXEL_WEIGHT,
   PALETTE_CONTINUITY_BONUS,
   PALETTE_CONTINUITY_DISTANCE,
   PALETTE_FREQUENCY_EXPONENT,
@@ -62,4 +64,23 @@ export const paletteContinuityBonusAtom = atomWithStorage(
 export const paletteFrequencyExponentAtom = atomWithStorage(
   'raster-palette-frequency-exponent',
   PALETTE_FREQUENCY_EXPONENT
+)
+
+/**
+ * Mode 0 CPC Plus: Pixel frequency weight for global palette extraction
+ * Default: 1 (baseline)
+ */
+export const mode0PixelWeightAtom = atomWithStorage(
+  'raster-mode0-pixel-weight',
+  MODE_0_PIXEL_WEIGHT
+)
+
+/**
+ * Mode 0 CPC Plus: Line coverage weight for global palette extraction
+ * Higher = prefer colors that span many lines
+ * Default: 2 (double weight vs pixels)
+ */
+export const mode0LineWeightAtom = atomWithStorage(
+  'raster-mode0-line-weight',
+  MODE_0_LINE_WEIGHT
 )

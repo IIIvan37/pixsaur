@@ -3,12 +3,34 @@ import { findClosestColorIndex } from '../pixsaur-color/src/metric/find-closest'
 import type { Vector } from '../pixsaur-color/src/type'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
+  MODE_0_LINE_WEIGHT,
+  MODE_0_PIXEL_WEIGHT,
   PALETTE_CONTINUITY_BONUS,
   PALETTE_CONTINUITY_DISTANCE,
   PALETTE_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from './raster-constants'
 import type { RasterChange } from './types'
+
+/**
+ * Mode 0 CPC Plus raster optimization constants.
+ * The Gate Array can only modify 4 CONSECUTIVE ink registers per line.
+ * Solution: Use indices 0-3 as raster slots (dynamic), indices 4-15 as fixed palette.
+ */
+const MODE_0_RASTER_SLOTS = 4 // Indices 0-3: can change per line
+const MODE_0_FIXED_COLORS = 12 // Indices 4-15: fixed for entire image
+const MODE_0_TOTAL_COLORS = 16
+
+/**
+ * Detect if we're in Mode 0 CPC Plus (requires special raster handling)
+ * CPC Classic doesn't have the consecutive ink constraint.
+ */
+function isMode0CPCPlus(
+  nColors: number,
+  cpcClassicPalette?: Vector<'RGB'>[]
+): boolean {
+  return nColors === MODE_0_TOTAL_COLORS && !cpcClassicPalette
+}
 
 /**
  * Runtime tuning values for dithering error propagation coefficients
@@ -19,7 +41,10 @@ export const rasterTuningOverrides = {
   horizontalErrorCoefficient: HORIZONTAL_ERROR_COEFFICIENT,
   paletteContinuityDistance: PALETTE_CONTINUITY_DISTANCE,
   paletteContinuityBonus: PALETTE_CONTINUITY_BONUS,
-  paletteFrequencyExponent: PALETTE_FREQUENCY_EXPONENT
+  paletteFrequencyExponent: PALETTE_FREQUENCY_EXPONENT,
+  // Mode 0 CPC Plus global palette extraction weights
+  mode0PixelWeight: MODE_0_PIXEL_WEIGHT,
+  mode0LineWeight: MODE_0_LINE_WEIGHT
 }
 
 /**
@@ -478,6 +503,109 @@ export function extractGlobalPaletteFromImage(
  */
 
 /**
+ * Extract 12 global colors for Mode 0 CPC Plus raster optimization.
+ * Uses a "globalScore" that favors colors appearing on many lines (not just total pixel count).
+ *
+ * Algorithm from MODE_0_RASTER_OPTIMIZATION.md:
+ * 1. Quantize image to ~24-32 intermediate colors
+ * 2. For each color: count total pixels AND number of lines where it appears
+ * 3. globalScore = w1 * pixelCount + w2 * lineCount (w1=1, w2=2)
+ * 4. Return top 12 colors by globalScore
+ *
+ * @param sourceImage - Source image to analyze
+ * @param cpcClassicPalette - CPC Classic palette (should be undefined for CPC Plus)
+ * @returns 12 colors ordered by globalScore (most global first)
+ */
+function extractGlobalColorsForMode0Plus(
+  sourceImage: ImageData,
+  cpcClassicPalette?: Vector<'RGB'>[]
+): Vector<'RGB'>[] {
+  const { width, height, data } = sourceImage
+
+  // Build LUT for CPC Classic if needed (should not happen for CPC Plus)
+  if (cpcClassicPalette) {
+    if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
+      cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
+      cpcClassicLUTPalette = cpcClassicPalette
+    }
+  }
+
+  // Helper to quantize based on hardware mode
+  const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
+    if (cpcClassicPalette && cpcClassicLUT) {
+      return quantizeToCPCClassicWithLUT(
+        color,
+        cpcClassicPalette,
+        cpcClassicLUT
+      )
+    }
+    return quantizeToCPCPlus(color)
+  }
+
+  // Track color statistics: pixelCount AND lineCount
+  const colorStats = new Map<
+    string,
+    {
+      color: Vector<'RGB'>
+      pixelCount: number
+      lines: Set<number> // track which lines this color appears on
+    }
+  >()
+
+  // Scan entire image
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      const color: Vector<'RGB'> = [data[idx], data[idx + 1], data[idx + 2]]
+      const quantized = quantize(color)
+      const key = colorKey(quantized)
+
+      const existing = colorStats.get(key)
+      if (existing) {
+        existing.pixelCount++
+        existing.lines.add(y)
+      } else {
+        colorStats.set(key, {
+          color: quantized,
+          pixelCount: 1,
+          lines: new Set([y])
+        })
+      }
+    }
+  }
+
+  // Calculate globalScore and sort
+  // globalScore = w1 * pixelCount + w2 * lineCount
+  // w2 is weighted higher to favor colors that span many lines
+  const W1 = rasterTuningOverrides.mode0PixelWeight
+  const W2 = rasterTuningOverrides.mode0LineWeight
+
+  const colorScores = Array.from(colorStats.values())
+    .map((stats) => ({
+      color: stats.color,
+      pixelCount: stats.pixelCount,
+      lineCount: stats.lines.size,
+      globalScore: W1 * stats.pixelCount + W2 * stats.lines.size * (width / 4) // normalize lineCount
+    }))
+    .sort((a, b) => b.globalScore - a.globalScore)
+
+  // If we have <= 12 colors, return them all
+  if (colorScores.length <= MODE_0_FIXED_COLORS) {
+    return colorScores.map((c) => c.color)
+  }
+
+  // Use median cut to reduce to 12 colors if there are too many
+  // This provides better color distribution than just taking top 12 by score
+  const topCandidates = colorScores.slice(0, 24) // Take top 24 candidates
+  const pixels: WeightedPixel[] = topCandidates.map((c) => ({
+    color: c.color,
+    weight: c.globalScore
+  }))
+
+  return medianCut(pixels, MODE_0_FIXED_COLORS)
+}
+
+/**
  * Select the best colors for a line based on color frequencies
  *
  * Since preprocessImageForRaster always reduces each line to exactly 4 colors
@@ -662,24 +790,59 @@ export function optimizeLinePalettesWithIndexBuffer(
     existingChanges.map((c) => `${c.line}-${c.inkIndex}`)
   )
 
-  // CRITICAL FIX: Extract palette from the ANALYSIS IMAGE (source at CPC dimensions)
-  // This finds the best global palette from the true colors before preprocessing
-  // Use nColors from current mode (Mode 0: 16, Mode 1: 4, Mode 2: 2)
-  const extractedPalette = extractGlobalPaletteFromImage(
-    preprocessedImage,
-    nColors,
-    cpcClassicPalette
-  )
+  // Detect Mode 0 CPC Plus for special raster handling
+  // In Mode 0 CPC Plus, the Gate Array can only modify 4 CONSECUTIVE ink registers per line
+  // Solution: indices 0-3 = raster slots (dynamic), indices 4-15 = fixed palette (12 colors)
+  const isMode0Plus = isMode0CPCPlus(nColors, cpcClassicPalette)
 
-  // Initialize with extracted palette
-  const basePalette = [...extractedPalette]
+  // For Mode 0 CPC Plus: extract 12 global colors for fixed palette (indices 4-15)
+  // For other modes: use standard extraction
+  let basePalette: Vector<'RGB'>[]
+  let rasterSlotStart: number
+  let rasterSlotEnd: number
 
-  // Pad to nColors if needed
-  while (basePalette.length < nColors) {
-    basePalette.push([0, 0, 0])
+  if (isMode0Plus) {
+    // Mode 0 CPC Plus: 12 fixed colors (indices 4-15) + 4 raster slots (indices 0-3)
+    const globalColors = extractGlobalColorsForMode0Plus(
+      preprocessedImage,
+      cpcClassicPalette
+    )
+
+    // Build palette: [slot0, slot1, slot2, slot3, fixed4, fixed5, ..., fixed15]
+    // Initialize raster slots with first 4 global colors (will be overwritten per line)
+    basePalette = new Array(MODE_0_TOTAL_COLORS)
+
+    // Indices 0-3: raster slots (initialized to black, will change per line)
+    for (let i = 0; i < MODE_0_RASTER_SLOTS; i++) {
+      basePalette[i] = [0, 0, 0]
+    }
+
+    // Indices 4-15: fixed global colors
+    for (let i = 0; i < MODE_0_FIXED_COLORS; i++) {
+      basePalette[MODE_0_RASTER_SLOTS + i] = globalColors[i] || [0, 0, 0]
+    }
+
+    // Only indices 0-3 can be modified by raster changes
+    rasterSlotStart = 0
+    rasterSlotEnd = MODE_0_RASTER_SLOTS
+  } else {
+    // Standard mode: extract palette normally, all indices can be modified
+    const extractedPalette = extractGlobalPaletteFromImage(
+      preprocessedImage,
+      nColors,
+      cpcClassicPalette
+    )
+    basePalette = [...extractedPalette]
+
+    // Pad to nColors if needed
+    while (basePalette.length < nColors) {
+      basePalette.push([0, 0, 0])
+    }
+
+    // All indices can be modified
+    rasterSlotStart = 0
+    rasterSlotEnd = nColors
   }
-
-  const numInks = nColors
 
   // Current palette starts from base and evolves line by line
   let currentPalette = [...basePalette]
@@ -693,20 +856,109 @@ export function optimizeLinePalettesWithIndexBuffer(
       line
     )
 
-    // Select best colors for this line, constrained to drift from base palette
-    const lineColors = selectBestColorsForLine(
-      colorFrequencies,
-      currentPalette,
-      basePalette, // Pass global palette as anchor for drift constraints
-      nColors,
-      cpcClassicPalette
-    )
+    let newPalette: Vector<'RGB'>[]
 
-    // Quantize line colors to hardware color format
-    const quantizedLineColors = lineColors.map((c) => quantizeColor(c))
+    if (isMode0Plus) {
+      // MODE 0 CPC PLUS: Special handling for 12 fixed + 4 raster slots
+      // Find the best 4 colors for raster slots (0-3) that complement the 12 fixed colors (4-15)
 
-    // Assign colors to ink indices, minimizing changes from previous line
-    let newPalette = assignColorsToInks(quantizedLineColors, currentPalette)
+      // Fixed palette (indices 4-15)
+      const fixedPalette = basePalette.slice(MODE_0_RASTER_SLOTS)
+
+      // Find colors that are NOT well covered by the fixed palette
+      // These should go into the raster slots
+      const uncoveredColors: Array<{
+        color: Vector<'RGB'>
+        error: number
+        count: number
+      }> = []
+
+      for (const { color, count } of colorFrequencies.values()) {
+        const quantized = quantizeColor(color)
+        // Find closest color in fixed palette
+        const closestFixedIdx = findClosestColorIndex(
+          quantized,
+          fixedPalette,
+          weightedRGBDistance
+        )
+        const closestFixed = fixedPalette[closestFixedIdx]
+        const error = weightedRGBDistance(quantized, closestFixed)
+
+        // If error is significant, this color needs a raster slot
+        if (error > 0) {
+          uncoveredColors.push({ color: quantized, error, count })
+        }
+      }
+
+      // Sort by error * count (colors with high error AND high frequency are prioritized)
+      uncoveredColors.sort((a, b) => b.error * b.count - a.error * a.count)
+
+      // Select up to 4 colors for raster slots
+      const rasterColors: Vector<'RGB'>[] = []
+      const usedKeys = new Set<string>()
+
+      for (const { color } of uncoveredColors) {
+        if (rasterColors.length >= MODE_0_RASTER_SLOTS) break
+        const key = colorKey(color)
+        if (!usedKeys.has(key)) {
+          rasterColors.push(color)
+          usedKeys.add(key)
+        }
+      }
+
+      // Build new palette: raster slots + fixed colors
+      newPalette = [...currentPalette]
+
+      // Assign raster colors to slots 0-3, trying to minimize changes from previous line
+      const previousRasterSlots = currentPalette.slice(0, MODE_0_RASTER_SLOTS)
+      const assignedSlots = new Set<number>()
+      const assignedColors = new Set<string>()
+
+      // First pass: exact matches with previous slots
+      for (let slot = 0; slot < MODE_0_RASTER_SLOTS; slot++) {
+        const prevKey = colorKey(previousRasterSlots[slot])
+        for (const rasterColor of rasterColors) {
+          const rasterKey = colorKey(rasterColor)
+          if (rasterKey === prevKey && !assignedColors.has(rasterKey)) {
+            newPalette[slot] = rasterColor
+            assignedSlots.add(slot)
+            assignedColors.add(rasterKey)
+            break
+          }
+        }
+      }
+
+      // Second pass: assign remaining colors to unused slots
+      for (const rasterColor of rasterColors) {
+        const rasterKey = colorKey(rasterColor)
+        if (assignedColors.has(rasterKey)) continue
+
+        for (let slot = 0; slot < MODE_0_RASTER_SLOTS; slot++) {
+          if (!assignedSlots.has(slot)) {
+            newPalette[slot] = rasterColor
+            assignedSlots.add(slot)
+            assignedColors.add(rasterKey)
+            break
+          }
+        }
+      }
+    } else {
+      // STANDARD MODE: Use existing logic
+      // Select best colors for this line, constrained to drift from base palette
+      const lineColors = selectBestColorsForLine(
+        colorFrequencies,
+        currentPalette,
+        basePalette, // Pass global palette as anchor for drift constraints
+        nColors,
+        cpcClassicPalette
+      )
+
+      // Quantize line colors to hardware color format
+      const quantizedLineColors = lineColors.map((c) => quantizeColor(c))
+
+      // Assign colors to ink indices, minimizing changes from previous line
+      newPalette = assignColorsToInks(quantizedLineColors, currentPalette)
+    }
 
     // Collect all potential changes for this line
     const lineChanges: Array<{
@@ -716,7 +968,10 @@ export function optimizeLinePalettesWithIndexBuffer(
       impact: number
     }> = []
 
-    for (let inkIndex = 0; inkIndex < numInks; inkIndex++) {
+    // IMPORTANT: Only iterate over modifiable indices
+    // Mode 0 CPC Plus: only indices 0-3 can change (rasterSlotStart to rasterSlotEnd)
+    // Other modes: all indices can change
+    for (let inkIndex = rasterSlotStart; inkIndex < rasterSlotEnd; inkIndex++) {
       const prevColor = currentPalette[inkIndex]
       const newColor = newPalette[inkIndex]
 

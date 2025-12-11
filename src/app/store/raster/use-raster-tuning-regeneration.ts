@@ -13,6 +13,8 @@ import {
 } from './raster'
 import {
   horizontalErrorCoefficientAtom,
+  mode0LineWeightAtom,
+  mode0PixelWeightAtom,
   paletteContinuityBonusAtom,
   paletteContinuityDistanceAtom,
   paletteFrequencyExponentAtom,
@@ -33,6 +35,8 @@ export function useRasterTuningRegeneration() {
   const paletteContinuityDistance = useAtomValue(paletteContinuityDistanceAtom)
   const paletteContinuityBonus = useAtomValue(paletteContinuityBonusAtom)
   const paletteFrequencyExponent = useAtomValue(paletteFrequencyExponentAtom)
+  const mode0PixelWeight = useAtomValue(mode0PixelWeightAtom)
+  const mode0LineWeight = useAtomValue(mode0LineWeightAtom)
 
   const isRegeneratingRef = useRef(false)
 
@@ -43,6 +47,8 @@ export function useRasterTuningRegeneration() {
     rasterTuningOverrides.paletteContinuityDistance = paletteContinuityDistance
     rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
     rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
+    rasterTuningOverrides.mode0PixelWeight = mode0PixelWeight
+    rasterTuningOverrides.mode0LineWeight = mode0LineWeight
 
     // Skip regeneration if already regenerating or if rasters aren't enabled/generated
     if (isRegeneratingRef.current || !rasterEnabled || !hasGeneratedRasters) {
@@ -73,6 +79,8 @@ export function useRasterTuningRegeneration() {
     paletteContinuityDistance,
     paletteContinuityBonus,
     paletteFrequencyExponent,
+    mode0PixelWeight,
+    mode0LineWeight,
     rasterEnabled,
     hasGeneratedRasters,
     autoOptimize

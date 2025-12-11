@@ -14,6 +14,8 @@ import { Switch } from '@/components/ui/switch'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
+  MODE_0_LINE_WEIGHT,
+  MODE_0_PIXEL_WEIGHT,
   PALETTE_CONTINUITY_BONUS,
   PALETTE_CONTINUITY_DISTANCE,
   PALETTE_FREQUENCY_EXPONENT,
@@ -56,6 +58,13 @@ type RasterSettingsViewProps = {
   paletteFrequencyExponent: number
   onPaletteFrequencyExponentChange: (value: number) => void
 
+  // Mode 0 CPC Plus specific
+  isMode0Plus: boolean
+  mode0PixelWeight: number
+  onMode0PixelWeightChange: (value: number) => void
+  mode0LineWeight: number
+  onMode0LineWeightChange: (value: number) => void
+
   // Raster panel
   changes: RasterChange[]
   conflicts: string[]
@@ -97,6 +106,11 @@ export function RasterSettingsView({
   onPaletteContinuityBonusChange,
   paletteFrequencyExponent,
   onPaletteFrequencyExponentChange,
+  isMode0Plus,
+  mode0PixelWeight,
+  onMode0PixelWeightChange,
+  mode0LineWeight,
+  onMode0LineWeightChange,
   changes,
   conflicts,
   maxLine,
@@ -280,6 +294,55 @@ export function RasterSettingsView({
           resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
         />
       </div>
+
+      {/* Mode 0 CPC Plus specific settings */}
+      {isMode0Plus && (
+        <>
+          <div className={styles.separator} />
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Mode 0 CPC Plus (12+4)</Trans>
+            </h3>
+            <p className={styles.description}>
+              <Trans>
+                En Mode 0 CPC Plus, 12 couleurs sont fixes (indices 4-15) et 4
+                slots raster (indices 0-3) peuvent changer par ligne.
+              </Trans>
+            </p>
+
+            <TuningSlider
+              label={_(msg`Poids fréquence pixels`)}
+              value={mode0PixelWeight}
+              onChange={onMode0PixelWeightChange}
+              min={0}
+              max={5}
+              step={0.5}
+              defaultValue={MODE_0_PIXEL_WEIGHT}
+              format={(v) => v.toFixed(1)}
+              description={_(
+                msg`Influence du nombre total de pixels sur la sélection des 12 couleurs fixes`
+              )}
+              resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+            />
+
+            <TuningSlider
+              label={_(msg`Poids couverture lignes`)}
+              value={mode0LineWeight}
+              onChange={onMode0LineWeightChange}
+              min={0}
+              max={5}
+              step={0.5}
+              defaultValue={MODE_0_LINE_WEIGHT}
+              format={(v) => v.toFixed(1)}
+              description={_(
+                msg`Influence du nombre de lignes où la couleur apparaît (plus haut = favorise les couleurs globales)`
+              )}
+              resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+            />
+          </div>
+        </>
+      )}
 
       {rasterEnabled && (
         <>

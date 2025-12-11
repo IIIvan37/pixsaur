@@ -27,6 +27,8 @@ import {
 } from '@/app/store/raster/raster-config'
 import {
   horizontalErrorCoefficientAtom,
+  mode0LineWeightAtom,
+  mode0PixelWeightAtom,
   paletteContinuityBonusAtom,
   paletteContinuityDistanceAtom,
   paletteFrequencyExponentAtom,
@@ -79,6 +81,10 @@ export function RasterSettings() {
     paletteFrequencyExponentAtom
   )
 
+  // Mode 0 CPC Plus specific
+  const [mode0PixelWeight, setMode0PixelWeight] = useAtom(mode0PixelWeightAtom)
+  const [mode0LineWeight, setMode0LineWeight] = useAtom(mode0LineWeightAtom)
+
   // Raster panel
   const changes = useAtomValue(rasterChangesAtom)
   const conflicts = useAtomValue(rasterConflictsAtom)
@@ -91,6 +97,9 @@ export function RasterSettings() {
   const cpcPalette = cpcFullPalette
   const isClassicMode = cpcHardware === 'classic'
   const isPlusMode = cpcHardware === 'plus'
+
+  // Mode 0 CPC Plus detection (for special raster handling)
+  const isMode0Plus = isPlusMode && nColors === 16
 
   const addChange = useSetAtom(addRasterChangeAtom)
   const updateChange = useSetAtom(updateRasterChangeAtom)
@@ -170,6 +179,11 @@ export function RasterSettings() {
       onPaletteContinuityBonusChange={setPaletteContinuityBonus}
       paletteFrequencyExponent={paletteFrequencyExponent}
       onPaletteFrequencyExponentChange={setPaletteFrequencyExponent}
+      isMode0Plus={isMode0Plus}
+      mode0PixelWeight={mode0PixelWeight}
+      onMode0PixelWeightChange={setMode0PixelWeight}
+      mode0LineWeight={mode0LineWeight}
+      onMode0LineWeightChange={setMode0LineWeight}
       changes={changes}
       conflicts={conflicts}
       maxLine={maxLine}

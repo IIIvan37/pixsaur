@@ -75,3 +75,30 @@ export const PALETTE_CONTINUITY_BONUS = 1.5
  * Value: 0.5 (square root)
  */
 export const PALETTE_FREQUENCY_EXPONENT = 0.5
+
+/**
+ * Mode 0 CPC Plus global palette extraction constants.
+ *
+ * These control how the 12 "fixed" colors are selected for Mode 0 CPC Plus.
+ * The algorithm uses a globalScore = W1 * pixelCount + W2 * lineCount * (width/4)
+ * to favor colors that appear on many lines (not just total pixel count).
+ */
+
+/**
+ * Weight for pixel frequency in Mode 0 global color scoring.
+ *
+ * Higher values favor colors with more total pixels.
+ *
+ * Value: 1 (baseline weight)
+ */
+export const MODE_0_PIXEL_WEIGHT = 1
+
+/**
+ * Weight for line coverage in Mode 0 global color scoring.
+ *
+ * Higher values favor colors that appear on many different lines,
+ * which is important for raster optimization (colors should span the image).
+ *
+ * Value: 2 (double weight compared to pixel count)
+ */
+export const MODE_0_LINE_WEIGHT = 2
