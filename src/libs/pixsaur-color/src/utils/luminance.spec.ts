@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  findDarkestColor,
   isBright,
   isDark,
   luminance,
@@ -139,6 +140,63 @@ describe('luminance utilities', () => {
       expect(isBright([200, 200, 200])).toBe(false)
       // Color with luminance just above 0.8
       expect(isBright([220, 220, 220])).toBe(true)
+    })
+  })
+
+  describe('findDarkestColor', () => {
+    it('should return the darkest color from palette', () => {
+      const palette: Array<[number, number, number]> = [
+        [255, 255, 255], // white
+        [128, 128, 128], // gray
+        [0, 0, 0] // black - darkest
+      ]
+
+      const result = findDarkestColor(palette)
+      expect(result).toEqual([0, 0, 0])
+    })
+
+    it('should handle single color palette', () => {
+      const result = findDarkestColor([[100, 150, 200]])
+      expect(result).toEqual([100, 150, 200])
+    })
+
+    it('should throw error for empty palette', () => {
+      expect(() => findDarkestColor([])).toThrow('Palette cannot be empty')
+    })
+
+    it('should find darkest color based on luminance not just RGB values', () => {
+      const palette: Array<[number, number, number]> = [
+        [0, 0, 255], // blue
+        [0, 255, 0], // green (high luminance)
+        [100, 0, 0] // dark red
+      ]
+
+      const result = findDarkestColor(palette)
+      // Dark red should be darker than blue because of gamma-corrected luminance
+      expect(result).toEqual([100, 0, 0])
+    })
+
+    it('should return first color when all colors have same luminance', () => {
+      const palette: Array<[number, number, number]> = [
+        [128, 128, 128],
+        [128, 128, 128],
+        [128, 128, 128]
+      ]
+
+      const result = findDarkestColor(palette)
+      expect(result).toEqual([128, 128, 128])
+    })
+
+    it('should handle pure black as darkest', () => {
+      const palette: Array<[number, number, number]> = [
+        [255, 0, 0], // red
+        [0, 255, 0], // green
+        [0, 0, 255], // blue
+        [0, 0, 0] // black
+      ]
+
+      const result = findDarkestColor(palette)
+      expect(result).toEqual([0, 0, 0])
     })
   })
 })

@@ -29,7 +29,8 @@ export default defineConfig(({ mode }) => ({
         '**/*.setup.*',
         '**/wdyr.js',
         '**/*.d.ts',
-        '**/*.css'
+        '**/*.css',
+        '**/*.glsl'
       ]
     }
   },
