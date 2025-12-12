@@ -115,64 +115,59 @@ export function generateClassicRasterASM(
 /**
  * Generate ASM data for CPC Plus rasters
  * Format: For each line of the image:
- *   - DB #FF if no change needed on this line
- *   - DB count, ink0, DW color0, [ink1, DW color1, ...] (count triplets of ink + 12-bit color)
+ *   - DW color(N-1), color(N-2), ..., color0 where N = numRasterSlots
+ *
+ * This format exports ALL raster slot colors in REVERSE ORDER (N-1 to 0) for EVERY line.
+ * Reverse order is required for stack-based loading on real hardware (POP).
+ * If no change on a line, the previous line's colors are repeated.
  *
  * @param changes - Raster changes to export
  * @param imageHeight - Height of the image in lines
- * @param basePalette - Base palette as CPC Plus 12-bit values (unused, kept for API compatibility)
+ * @param basePalette - Base palette as CPC Plus 12-bit values for each ink
  * @param labelName - Label name for the ASM data
+ * @param numRasterSlots - Number of raster slots (inks 0 to N-1), default 4
  */
 export function generatePlusRasterASM(
   changes: RasterChange[],
   imageHeight: number,
   basePalette: number[],
-  labelName = 'RasterData'
+  labelName = 'RasterData',
+  numRasterSlots = 4
 ): string {
   const grouped = groupChangesByLine(changes)
 
+  // Track current palette state for each raster slot (inks 0 to N-1)
+  // Initialize with base palette values
+  const currentPalette = basePalette.slice(0, numRasterSlots)
+
   const lines: string[] = [`${labelName}:`]
-  lines.push(`    ; CPC Plus Raster Data (${imageHeight} lines)`)
-  lines.push('    ; DB #FF = no change on this line')
   lines.push(
-    '    ; DB count, ink0, DW color0, [ink1, DW color1, ...] = count triplets (ink, 12-bit color)'
+    `    ; CPC Plus Raster Data (${imageHeight} lines, ${numRasterSlots} raster slots)`
   )
+  lines.push(
+    `    ; Each line: DW color${numRasterSlots - 1}, ..., color1, color0 (reverse order for stack loading)`
+  )
+  lines.push('    ; Colors are 12-bit CPC Plus format (0GRB)')
 
   for (let lineNum = 0; lineNum < imageHeight; lineNum++) {
     const lineChanges = grouped.get(lineNum)
 
-    if (!lineChanges || lineChanges.length === 0) {
-      // No change on this line
-      lines.push(`    DB #FF    ; Line ${lineNum} - no change`)
-    } else {
-      // Export count + triplets of (ink, color as DW)
-      const parts: string[] = [`${lineChanges.length}`]
+    // Apply any changes to current palette state
+    if (lineChanges && lineChanges.length > 0) {
       for (const change of lineChanges) {
-        const [r, g, b] = change.color
-        const cpcPlusColor = rgbToCPCPlus(r, g, b)
-        parts.push(`${change.inkIndex}`)
-        parts.push(
-          `#${cpcPlusColor.toString(16).toUpperCase().padStart(3, '0')}`
-        )
+        if (change.inkIndex < numRasterSlots) {
+          const [r, g, b] = change.color
+          currentPalette[change.inkIndex] = rgbToCPCPlus(r, g, b)
+        }
       }
-      // Format: DB count, ink0 : DW color0 : DB ink1 : DW color1 ...
-      // Simplified: just list them with proper types
-      const formatted: string[] = []
-      formatted.push(`DB ${lineChanges.length}`)
-      for (const change of lineChanges) {
-        const [r, g, b] = change.color
-        const cpcPlusColor = rgbToCPCPlus(r, g, b)
-        formatted.push(`DB ${change.inkIndex}`)
-        formatted.push(
-          `DW #${cpcPlusColor.toString(16).toUpperCase().padStart(3, '0')}`
-        )
-      }
-      lines.push(`    ${formatted.join(' : ')}    ; Line ${lineNum}`)
     }
-  }
 
-  // Mark basePalette as intentionally unused
-  void basePalette
+    // Export all raster slot colors in REVERSE order (N-1 to 0) for stack loading
+    const colorValues = [...currentPalette]
+      .reverse()
+      .map((color) => `#${color.toString(16).toUpperCase().padStart(3, '0')}`)
+    lines.push(`    DW ${colorValues.join(', ')}    ; Line ${lineNum}`)
+  }
 
   return lines.join('\n')
 }
