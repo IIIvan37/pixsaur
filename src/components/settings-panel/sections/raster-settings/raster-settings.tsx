@@ -27,8 +27,6 @@ import {
 } from '@/app/store/raster/raster-config'
 import {
   horizontalErrorCoefficientAtom,
-  mode0LineWeightAtom,
-  mode0PixelWeightAtom,
   preprocessContinuityBonusAtom,
   preprocessContinuityDistanceAtom,
   preprocessFrequencyExponentAtom,
@@ -70,10 +68,6 @@ export function RasterSettings() {
     horizontalErrorCoefficientAtom
   )
 
-  // Mode 0 CPC Plus specific
-  const [mode0PixelWeight, setMode0PixelWeight] = useAtom(mode0PixelWeightAtom)
-  const [mode0LineWeight, setMode0LineWeight] = useAtom(mode0LineWeightAtom)
-
   // Preprocessing parameters (base palette extraction)
   const [preprocessContinuityDistance, setPreprocessContinuityDistance] =
     useAtom(preprocessContinuityDistanceAtom)
@@ -96,9 +90,6 @@ export function RasterSettings() {
   const cpcPalette = cpcFullPalette
   const isClassicMode = cpcHardware === 'classic'
   const isPlusMode = cpcHardware === 'plus'
-
-  // Mode 0 CPC Plus detection (for special raster handling)
-  const isMode0Plus = isPlusMode && nColors === 16
 
   // Preprocessing parameters are only useful for modes with few colors (Mode 1 = 4, Mode 2 = 2)
   // In Mode 0 (16 colors), each line rarely has >16 unique colors after quantization,
@@ -184,11 +175,6 @@ export function RasterSettings() {
       onPreprocessContinuityBonusChange={setPreprocessContinuityBonus}
       preprocessFrequencyExponent={preprocessFrequencyExponent}
       onPreprocessFrequencyExponentChange={setPreprocessFrequencyExponent}
-      isMode0Plus={isMode0Plus}
-      mode0PixelWeight={mode0PixelWeight}
-      onMode0PixelWeightChange={setMode0PixelWeight}
-      mode0LineWeight={mode0LineWeight}
-      onMode0LineWeightChange={setMode0LineWeight}
       changes={changes}
       conflicts={conflicts}
       maxLine={maxLine}

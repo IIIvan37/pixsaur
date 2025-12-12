@@ -6,8 +6,6 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
-  MODE_0_LINE_WEIGHT,
-  MODE_0_PIXEL_WEIGHT,
   PREPROCESS_CONTINUITY_BONUS,
   PREPROCESS_CONTINUITY_DISTANCE,
   PREPROCESS_FREQUENCY_EXPONENT,
@@ -15,8 +13,6 @@ import {
 } from '@/libs/pixsaur-raster/raster-constants'
 import {
   horizontalErrorCoefficientAtom,
-  mode0LineWeightAtom,
-  mode0PixelWeightAtom,
   preprocessContinuityBonusAtom,
   preprocessContinuityDistanceAtom,
   preprocessFrequencyExponentAtom,
@@ -65,32 +61,6 @@ describe('raster-tuning atoms', () => {
       const store = createStore()
       store.set(horizontalErrorCoefficientAtom, 0.75)
       expect(store.get(horizontalErrorCoefficientAtom)).toBe(0.75)
-    })
-  })
-
-  describe('mode0PixelWeightAtom', () => {
-    it('should have default value from constants', () => {
-      const store = createStore()
-      expect(store.get(mode0PixelWeightAtom)).toBe(MODE_0_PIXEL_WEIGHT)
-    })
-
-    it('should be settable', () => {
-      const store = createStore()
-      store.set(mode0PixelWeightAtom, 2)
-      expect(store.get(mode0PixelWeightAtom)).toBe(2)
-    })
-  })
-
-  describe('mode0LineWeightAtom', () => {
-    it('should have default value from constants', () => {
-      const store = createStore()
-      expect(store.get(mode0LineWeightAtom)).toBe(MODE_0_LINE_WEIGHT)
-    })
-
-    it('should be settable', () => {
-      const store = createStore()
-      store.set(mode0LineWeightAtom, 3)
-      expect(store.get(mode0LineWeightAtom)).toBe(3)
     })
   })
 

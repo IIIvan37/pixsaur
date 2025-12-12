@@ -13,8 +13,6 @@ import {
 } from './raster'
 import {
   horizontalErrorCoefficientAtom,
-  mode0LineWeightAtom,
-  mode0PixelWeightAtom,
   preprocessContinuityBonusAtom,
   preprocessContinuityDistanceAtom,
   preprocessFrequencyExponentAtom,
@@ -32,8 +30,6 @@ export function useRasterTuningRegeneration() {
 
   const verticalErrorCoef = useAtomValue(verticalErrorCoefficientAtom)
   const horizontalErrorCoef = useAtomValue(horizontalErrorCoefficientAtom)
-  const mode0PixelWeight = useAtomValue(mode0PixelWeightAtom)
-  const mode0LineWeight = useAtomValue(mode0LineWeightAtom)
   const preprocessContinuityDistance = useAtomValue(
     preprocessContinuityDistanceAtom
   )
@@ -48,8 +44,6 @@ export function useRasterTuningRegeneration() {
     // Always update the overrides
     rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
     rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
-    rasterTuningOverrides.mode0PixelWeight = mode0PixelWeight
-    rasterTuningOverrides.mode0LineWeight = mode0LineWeight
     rasterTuningOverrides.preprocessContinuityDistance =
       preprocessContinuityDistance
     rasterTuningOverrides.preprocessContinuityBonus = preprocessContinuityBonus
@@ -82,8 +76,6 @@ export function useRasterTuningRegeneration() {
   }, [
     verticalErrorCoef,
     horizontalErrorCoef,
-    mode0PixelWeight,
-    mode0LineWeight,
     preprocessContinuityDistance,
     preprocessContinuityBonus,
     preprocessFrequencyExponent,

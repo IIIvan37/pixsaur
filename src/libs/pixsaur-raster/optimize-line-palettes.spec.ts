@@ -6,7 +6,6 @@ import {
   quantizeToCPCPlus,
   rasterTuningOverrides
 } from './optimize-line-palettes'
-import { MODE_0_LINE_WEIGHT, MODE_0_PIXEL_WEIGHT } from './raster-constants'
 
 /**
  * Create a simple ImageData with specified colors at given positions
@@ -96,39 +95,6 @@ describe('quantizeToCPCPlus', () => {
   it('should handle mixed channel values', () => {
     expect(quantizeToCPCPlus([255, 0, 128])).toEqual([255, 0, 136]) // 128/17 ≈ 7.5 → 8*17 = 136
     expect(quantizeToCPCPlus([100, 200, 50])).toEqual([102, 204, 51])
-  })
-})
-
-describe('rasterTuningOverrides', () => {
-  // Store original values
-  let originalMode0PixelWeight: number
-  let originalMode0LineWeight: number
-
-  beforeEach(() => {
-    // Save original values
-    originalMode0PixelWeight = rasterTuningOverrides.mode0PixelWeight
-    originalMode0LineWeight = rasterTuningOverrides.mode0LineWeight
-  })
-
-  afterEach(() => {
-    // Restore original values
-    rasterTuningOverrides.mode0PixelWeight = originalMode0PixelWeight
-    rasterTuningOverrides.mode0LineWeight = originalMode0LineWeight
-  })
-
-  it('should have default values from constants', () => {
-    expect(rasterTuningOverrides.mode0PixelWeight).toBe(MODE_0_PIXEL_WEIGHT)
-    expect(rasterTuningOverrides.mode0LineWeight).toBe(MODE_0_LINE_WEIGHT)
-  })
-
-  it('should allow overriding mode0PixelWeight', () => {
-    rasterTuningOverrides.mode0PixelWeight = 3
-    expect(rasterTuningOverrides.mode0PixelWeight).toBe(3)
-  })
-
-  it('should allow overriding mode0LineWeight', () => {
-    rasterTuningOverrides.mode0LineWeight = 5
-    expect(rasterTuningOverrides.mode0LineWeight).toBe(5)
   })
 })
 
@@ -245,45 +211,6 @@ describe('extractGlobalPaletteFromImage', () => {
     const palette = extractGlobalPaletteFromImage(image, 4)
 
     expect(palette.length).toBe(4)
-  })
-})
-
-describe('Mode 0 CPC Plus weight tuning', () => {
-  let originalMode0PixelWeight: number
-  let originalMode0LineWeight: number
-
-  beforeEach(() => {
-    originalMode0PixelWeight = rasterTuningOverrides.mode0PixelWeight
-    originalMode0LineWeight = rasterTuningOverrides.mode0LineWeight
-  })
-
-  afterEach(() => {
-    rasterTuningOverrides.mode0PixelWeight = originalMode0PixelWeight
-    rasterTuningOverrides.mode0LineWeight = originalMode0LineWeight
-  })
-
-  it('should allow setting pixel weight to 0', () => {
-    rasterTuningOverrides.mode0PixelWeight = 0
-    expect(rasterTuningOverrides.mode0PixelWeight).toBe(0)
-  })
-
-  it('should allow setting line weight to 0', () => {
-    rasterTuningOverrides.mode0LineWeight = 0
-    expect(rasterTuningOverrides.mode0LineWeight).toBe(0)
-  })
-
-  it('should support high weight values', () => {
-    rasterTuningOverrides.mode0PixelWeight = 5
-    rasterTuningOverrides.mode0LineWeight = 5
-    expect(rasterTuningOverrides.mode0PixelWeight).toBe(5)
-    expect(rasterTuningOverrides.mode0LineWeight).toBe(5)
-  })
-
-  it('should support decimal weight values', () => {
-    rasterTuningOverrides.mode0PixelWeight = 1.5
-    rasterTuningOverrides.mode0LineWeight = 2.5
-    expect(rasterTuningOverrides.mode0PixelWeight).toBe(1.5)
-    expect(rasterTuningOverrides.mode0LineWeight).toBe(2.5)
   })
 })
 

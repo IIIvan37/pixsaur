@@ -51,11 +51,6 @@ function createDefaultProps(overrides = {}) {
     onPreprocessContinuityBonusChange: vi.fn(),
     preprocessFrequencyExponent: 0.5,
     onPreprocessFrequencyExponentChange: vi.fn(),
-    isMode0Plus: false,
-    mode0PixelWeight: 1,
-    onMode0PixelWeightChange: vi.fn(),
-    mode0LineWeight: 2,
-    onMode0LineWeightChange: vi.fn(),
     changes: [],
     conflicts: [],
     maxLine: 199,
@@ -143,42 +138,6 @@ describe('RasterSettingsView', () => {
     })
   })
 
-  describe('Mode 0 Plus section visibility', () => {
-    it('should show Mode 0 Plus section when isMode0Plus is true', () => {
-      renderWithProviders(
-        <RasterSettingsView {...createDefaultProps({ isMode0Plus: true })} />
-      )
-
-      expect(screen.getByText('Mode 0 CPC Plus (12+4)')).toBeInTheDocument()
-    })
-
-    it('should hide Mode 0 Plus section when isMode0Plus is false', () => {
-      renderWithProviders(
-        <RasterSettingsView {...createDefaultProps({ isMode0Plus: false })} />
-      )
-
-      expect(
-        screen.queryByText('Mode 0 CPC Plus (12+4)')
-      ).not.toBeInTheDocument()
-    })
-
-    it('should show pixel weight slider when isMode0Plus is true', () => {
-      renderWithProviders(
-        <RasterSettingsView {...createDefaultProps({ isMode0Plus: true })} />
-      )
-
-      expect(screen.getByText('Poids fréquence pixels')).toBeInTheDocument()
-    })
-
-    it('should show line weight slider when isMode0Plus is true', () => {
-      renderWithProviders(
-        <RasterSettingsView {...createDefaultProps({ isMode0Plus: true })} />
-      )
-
-      expect(screen.getByText('Poids couverture lignes')).toBeInTheDocument()
-    })
-  })
-
   describe('Combined visibility scenarios', () => {
     it('should show preprocessing params in Mode 1 (4 colors) Plus mode', () => {
       // Mode 1 = 4 colors, showPreprocessParams should be true (nColors < 16)
@@ -186,7 +145,6 @@ describe('RasterSettingsView', () => {
         <RasterSettingsView
           {...createDefaultProps({
             showPreprocessParams: true,
-            isMode0Plus: false,
             nColors: 4,
             isPlusMode: true
           })}
@@ -195,9 +153,6 @@ describe('RasterSettingsView', () => {
 
       // Check for preprocessing sliders (unique to that section)
       expect(screen.getByText('Distance de continuité')).toBeInTheDocument()
-      expect(
-        screen.queryByText('Mode 0 CPC Plus (12+4)')
-      ).not.toBeInTheDocument()
     })
 
     it('should show preprocessing params in Mode 2 (2 colors) Classic mode', () => {
@@ -206,7 +161,6 @@ describe('RasterSettingsView', () => {
         <RasterSettingsView
           {...createDefaultProps({
             showPreprocessParams: true,
-            isMode0Plus: false,
             nColors: 2,
             isClassicMode: true,
             isPlusMode: false
@@ -216,18 +170,14 @@ describe('RasterSettingsView', () => {
 
       // Check for preprocessing sliders (unique to that section)
       expect(screen.getByText('Distance de continuité')).toBeInTheDocument()
-      expect(
-        screen.queryByText('Mode 0 CPC Plus (12+4)')
-      ).not.toBeInTheDocument()
     })
 
-    it('should hide preprocessing params and show Mode 0 Plus in Mode 0 Plus', () => {
-      // Mode 0 Plus = 16 colors, showPreprocessParams should be false
+    it('should hide preprocessing params in Mode 0', () => {
+      // Mode 0 = 16 colors, showPreprocessParams should be false
       renderWithProviders(
         <RasterSettingsView
           {...createDefaultProps({
             showPreprocessParams: false,
-            isMode0Plus: true,
             nColors: 16,
             isPlusMode: true
           })}
@@ -236,29 +186,6 @@ describe('RasterSettingsView', () => {
 
       expect(
         screen.queryByText('Extraction palette de base')
-      ).not.toBeInTheDocument()
-      expect(screen.getByText('Mode 0 CPC Plus (12+4)')).toBeInTheDocument()
-    })
-
-    it('should hide both sections in Mode 0 Classic', () => {
-      // Mode 0 Classic = 16 colors, no Mode 0 Plus specific section
-      renderWithProviders(
-        <RasterSettingsView
-          {...createDefaultProps({
-            showPreprocessParams: false,
-            isMode0Plus: false,
-            nColors: 16,
-            isClassicMode: true,
-            isPlusMode: false
-          })}
-        />
-      )
-
-      expect(
-        screen.queryByText('Extraction palette de base')
-      ).not.toBeInTheDocument()
-      expect(
-        screen.queryByText('Mode 0 CPC Plus (12+4)')
       ).not.toBeInTheDocument()
     })
   })

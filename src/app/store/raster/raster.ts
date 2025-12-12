@@ -4,6 +4,8 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   applyDitheringWithRaster,
   createRasterPreviewImageData,
+  MODE_0_FIXED_COLORS,
+  MODE_0_TOTAL_COLORS,
   optimizeLinePalettesWithIndexBuffer,
   preprocessImageForRaster
 } from '@/libs/pixsaur-raster'
@@ -453,23 +455,48 @@ export const autoOptimizeRasterAtom = atom(
     // Use dimensions from sourceImage
     const { width, height } = sourceImage
 
-    logger.time('[RASTER] Get export palette')
-    // Get the global palette (nColors for the current mode)
-    // Note: The optimization algorithm now extracts palette directly from source image,
-    // but we still need this for the initial API compatibility
+    // Detect Mode 0 CPC Plus (16 colors, Plus hardware)
+    // In this mode, only 12 colors are fixed (indices 4-15), indices 0-3 are raster slots
+    const isMode0Plus =
+      modeConfig.nColors === MODE_0_TOTAL_COLORS && hardware === 'plus'
+
+    logger.time('[RASTER] Get/calculate palette')
+    // Get the global palette from the same quantization as non-raster mode
     const exportPalette = await get(exportPaletteWithSlotsAtom)
-    logger.timeEnd('[RASTER] Get export palette')
 
-    // Filter out invalid slots and take first nColors
-    // If no valid colors, we'll use a placeholder - the algorithm will extract from image
-    const globalPalette = exportPalette
-      .filter((c) => c[0] !== -1)
-      .slice(0, modeConfig.nColors)
+    let globalPalette: Vector<'RGB'>[]
 
-    // Pad to nColors if needed (algorithm will override with extracted colors anyway)
-    while (globalPalette.length < modeConfig.nColors) {
-      globalPalette.push([0, 0, 0])
+    if (isMode0Plus) {
+      // Mode 0 CPC Plus: take the 12 best colors (first 12) for fixed palette
+      // These will be placed at indices 4-15 by the optimizer
+      // Indices 0-3 are raster slots that will be filled dynamically per line
+      globalPalette = exportPalette
+        .filter((c) => c[0] !== -1)
+        .slice(0, MODE_0_FIXED_COLORS) as Vector<'RGB'>[]
+
+      // Pad to 12 colors if needed
+      while (globalPalette.length < MODE_0_FIXED_COLORS) {
+        globalPalette.push([0, 0, 0])
+      }
+
+      logger.info(
+        '[RASTER] Mode 0 Plus: using first 12 colors for fixed palette',
+        {
+          paletteLength: globalPalette.length
+        }
+      )
+    } else {
+      // Standard modes (Mode 1, Mode 2, Mode 0 Classic): use export palette directly
+      globalPalette = exportPalette
+        .filter((c) => c[0] !== -1)
+        .slice(0, modeConfig.nColors) as Vector<'RGB'>[]
+
+      // Pad to nColors if needed
+      while (globalPalette.length < modeConfig.nColors) {
+        globalPalette.push([0, 0, 0])
+      }
     }
+    logger.timeEnd('[RASTER] Get/calculate palette')
 
     // Get raster dithering intensity
     const ditheringIntensity = get(rasterDitheringIntensityAtom)
@@ -512,7 +539,8 @@ export const autoOptimizeRasterAtom = atom(
     logger.time('[RASTER] Optimize line palettes')
     // Generate optimized raster changes AND matching index buffer
     // - preprocessedImage: image with max nColors per line (smooth transitions)
-    // - globalPalette: initial nColors palette
+    // - globalPalette: initial nColors palette (from same quantization as non-raster mode)
+    // - useProvidedPalette: true to reuse the same palette calculation as non-raster mode
     // - Returns both raster changes and an index buffer where each pixel
     //   maps to its correct ink index based on per-line palettes
     const {
@@ -526,7 +554,8 @@ export const autoOptimizeRasterAtom = atom(
       {
         maxChangesPerLine,
         nColors: modeConfig.nColors,
-        cpcClassicPalette
+        cpcClassicPalette,
+        useProvidedPalette: true // Use the same palette as non-raster mode
       }
     )
     logger.timeEnd('[RASTER] Optimize line palettes')

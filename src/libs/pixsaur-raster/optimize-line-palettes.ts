@@ -3,8 +3,6 @@ import { findClosestColorIndex } from '../pixsaur-color/src/metric/find-closest'
 import type { Vector } from '../pixsaur-color/src/type'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
-  MODE_0_LINE_WEIGHT,
-  MODE_0_PIXEL_WEIGHT,
   PREPROCESS_CONTINUITY_BONUS,
   PREPROCESS_CONTINUITY_DISTANCE,
   PREPROCESS_FREQUENCY_EXPONENT,
@@ -17,9 +15,9 @@ import type { RasterChange } from './types'
  * The Gate Array can only modify 4 CONSECUTIVE ink registers per line.
  * Solution: Use indices 0-3 as raster slots (dynamic), indices 4-15 as fixed palette.
  */
-const MODE_0_RASTER_SLOTS = 4 // Indices 0-3: can change per line
-const MODE_0_FIXED_COLORS = 12 // Indices 4-15: fixed for entire image
-const MODE_0_TOTAL_COLORS = 16
+export const MODE_0_RASTER_SLOTS = 4 // Indices 0-3: can change per line
+export const MODE_0_FIXED_COLORS = 12 // Indices 4-15: fixed for entire image
+export const MODE_0_TOTAL_COLORS = 16
 
 /**
  * Detect if we're in Mode 0 CPC Plus (requires special raster handling)
@@ -40,10 +38,6 @@ export const rasterTuningOverrides = {
   // Dithering error propagation
   verticalErrorCoefficient: VERTICAL_ERROR_COEFFICIENT,
   horizontalErrorCoefficient: HORIZONTAL_ERROR_COEFFICIENT,
-
-  // Mode 0 CPC Plus global palette extraction weights
-  mode0PixelWeight: MODE_0_PIXEL_WEIGHT,
-  mode0LineWeight: MODE_0_LINE_WEIGHT,
 
   // Preprocessing parameters (affects base palette extraction)
   preprocessContinuityDistance: PREPROCESS_CONTINUITY_DISTANCE,
@@ -579,8 +573,8 @@ function extractGlobalColorsForMode0Plus(
   // Calculate globalScore and sort
   // globalScore = w1 * pixelCount + w2 * lineCount
   // w2 is weighted higher to favor colors that span many lines
-  const W1 = rasterTuningOverrides.mode0PixelWeight
-  const W2 = rasterTuningOverrides.mode0LineWeight
+  const W1 = 1 // Pixel frequency weight
+  const W2 = 2 // Line coverage weight
 
   const colorScores = Array.from(colorStats.values())
     .map((stats) => ({
@@ -734,6 +728,13 @@ export interface OptimizationOptions {
    * using CPC Plus 4096-color quantization.
    */
   cpcClassicPalette?: Vector<'RGB'>[]
+  /**
+   * Use the provided global palette instead of extracting it from the image.
+   * When true, the globalPalette parameter will be used directly as the base palette.
+   * This allows reusing the same quantization as the non-raster mode.
+   * Default: false (extract from image)
+   */
+  useProvidedPalette?: boolean
 }
 
 /**
@@ -749,17 +750,23 @@ export interface OptimizationOptions {
  * as it will perfectly reproduce such images.
  *
  * @param sourceImage - The source image (should have ≤4 colors per line for best results)
- * @param globalPalette - Initial 4-color palette (used for line 0)
+ * @param globalPalette - Initial palette (used for line 0). When useProvidedPalette is true,
+ *                        this palette is used directly instead of extracting from image.
  * @param existingChanges - Existing raster changes to preserve
- * @param options - Optimization options (maxChangesPerLine)
+ * @param options - Optimization options (maxChangesPerLine, useProvidedPalette, etc.)
  */
 export function optimizeLinePalettesWithIndexBuffer(
   preprocessedImage: ImageData,
-  _globalPalette: Vector<'RGB'>[],
+  globalPalette: Vector<'RGB'>[],
   existingChanges: Omit<RasterChange, 'id'>[] = [],
   options: OptimizationOptions = {}
 ): OptimizationResult {
-  const { maxChangesPerLine = 4, nColors = 4, cpcClassicPalette } = options
+  const {
+    maxChangesPerLine = 4,
+    nColors = 4,
+    cpcClassicPalette,
+    useProvidedPalette = false
+  } = options
   const { width, height: imageHeight, data } = preprocessedImage
 
   const changes: Omit<RasterChange, 'id'>[] = []
@@ -798,17 +805,46 @@ export function optimizeLinePalettesWithIndexBuffer(
   const isMode0Plus = isMode0CPCPlus(nColors, cpcClassicPalette)
 
   // For Mode 0 CPC Plus: extract 12 global colors for fixed palette (indices 4-15)
-  // For other modes: use standard extraction
+  // For other modes: use standard extraction or provided palette
   let basePalette: Vector<'RGB'>[]
   let rasterSlotStart: number
   let rasterSlotEnd: number
 
   if (isMode0Plus) {
     // Mode 0 CPC Plus: 12 fixed colors (indices 4-15) + 4 raster slots (indices 0-3)
-    const globalColors = extractGlobalColorsForMode0Plus(
-      preprocessedImage,
-      cpcClassicPalette
-    )
+    // Use provided palette if available, otherwise extract
+    let globalColors: Vector<'RGB'>[]
+    if (useProvidedPalette && globalPalette.length > 0) {
+      // Two cases:
+      // 1. Palette has exactly 12 colors (MODE_0_FIXED_COLORS) → use directly
+      // 2. Palette has 16 colors (MODE_0_TOTAL_COLORS) → take indices 4-15
+      if (globalPalette.length === MODE_0_FIXED_COLORS) {
+        // 12 colors provided: use them directly as fixed palette (indices 4-15)
+        globalColors = globalPalette.map((c) => quantizeColor(c))
+      } else if (globalPalette.length >= MODE_0_TOTAL_COLORS) {
+        // 16 colors provided: shift - use colors 4-15 as fixed palette
+        globalColors = globalPalette
+          .slice(MODE_0_RASTER_SLOTS, MODE_0_TOTAL_COLORS)
+          .map((c) => quantizeColor(c))
+      } else {
+        // Fallback: use what we have, pad with extracted colors
+        globalColors = globalPalette.map((c) => quantizeColor(c))
+        if (globalColors.length < MODE_0_FIXED_COLORS) {
+          const extracted = extractGlobalColorsForMode0Plus(
+            preprocessedImage,
+            cpcClassicPalette
+          )
+          while (globalColors.length < MODE_0_FIXED_COLORS) {
+            globalColors.push(extracted[globalColors.length] || [0, 0, 0])
+          }
+        }
+      }
+    } else {
+      globalColors = extractGlobalColorsForMode0Plus(
+        preprocessedImage,
+        cpcClassicPalette
+      )
+    }
 
     // Build palette: [slot0, slot1, slot2, slot3, fixed4, fixed5, ..., fixed15]
     // Initialize raster slots with first 4 global colors (will be overwritten per line)
@@ -828,12 +864,20 @@ export function optimizeLinePalettesWithIndexBuffer(
     rasterSlotStart = 0
     rasterSlotEnd = MODE_0_RASTER_SLOTS
   } else {
-    // Standard mode: extract palette normally, all indices can be modified
-    const extractedPalette = extractGlobalPaletteFromImage(
-      preprocessedImage,
-      nColors,
-      cpcClassicPalette
-    )
+    // Standard mode: use provided palette if available, otherwise extract
+    let extractedPalette: Vector<'RGB'>[]
+    if (useProvidedPalette && globalPalette.length >= nColors) {
+      // Use the provided palette directly, quantize to ensure hardware compatibility
+      extractedPalette = globalPalette
+        .slice(0, nColors)
+        .map((c) => quantizeColor(c))
+    } else {
+      extractedPalette = extractGlobalPaletteFromImage(
+        preprocessedImage,
+        nColors,
+        cpcClassicPalette
+      )
+    }
     basePalette = [...extractedPalette]
 
     // Pad to nColors if needed
