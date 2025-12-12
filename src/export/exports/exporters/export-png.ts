@@ -1,9 +1,5 @@
 import type JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { getAspectRatioMultipliers } from '@/export'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { renderPreviewWithRaster } from '@/libs/pixsaur-raster/render-with-raster'
-import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import {
   canvasToPNGBlob,
   createCorrectedAspectCanvas,
@@ -12,59 +8,17 @@ import {
 import type { ExportConfig } from '../types'
 
 /**
- * Create a canvas from pixel data at native dimensions
+ * Create a canvas from ImageData
  */
-function createCanvasFromPixelData(
-  pixelData: Uint8ClampedArray,
-  width: number,
-  height: number
-): HTMLCanvasElement {
+function createCanvasFromImageData(imageData: ImageData): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
+  canvas.width = imageData.width
+  canvas.height = imageData.height
   const ctx = canvas.getContext('2d', { alpha: false })
   if (ctx) {
-    const imageData = new ImageData(width, height)
-    imageData.data.set(pixelData)
     ctx.putImageData(imageData, 0, 0)
   }
   return canvas
-}
-
-/**
- * Scale a canvas to corrected aspect ratio
- */
-function scaleToAspectRatio(
-  sourceCanvas: HTMLCanvasElement,
-  widthMultiplier: number,
-  heightMultiplier: number
-): HTMLCanvasElement {
-  const correctedWidth = sourceCanvas.width * widthMultiplier
-  const correctedHeight = sourceCanvas.height * heightMultiplier
-
-  const correctedCanvas = document.createElement('canvas')
-  correctedCanvas.width = correctedWidth
-  correctedCanvas.height = correctedHeight
-
-  const ctx = correctedCanvas.getContext('2d', { alpha: false })
-  if (ctx) {
-    ctx.fillStyle = '#000000'
-    ctx.fillRect(0, 0, correctedWidth, correctedHeight)
-    ctx.imageSmoothingEnabled = false
-    ctx.drawImage(
-      sourceCanvas,
-      0,
-      0,
-      sourceCanvas.width,
-      sourceCanvas.height,
-      0,
-      0,
-      correctedWidth,
-      correctedHeight
-    )
-  }
-
-  return correctedCanvas
 }
 
 /**
@@ -81,46 +35,26 @@ async function exportSquarePixelsPNG(
 }
 
 /**
- * Export PNG with corrected CPC aspect ratio and rasters applied
+ * Export PNG with corrected CPC aspect ratio from previewImage (with rasters already applied)
+ * This is the same logic as the double-click on preview canvas
  */
-async function exportCorrectedAspectPNGWithRasters(
+async function exportCorrectedAspectPNGFromPreview(
   zip: JSZip,
-  indexBuf: Uint8Array,
-  modeConfig: CpcModeConfig,
-  globalPalette: Vector[],
-  rasterChanges: RasterChange[]
+  previewImage: ImageData,
+  modeConfig: CpcModeConfig
 ) {
-  const { widthMultiplier, heightMultiplier } = getAspectRatioMultipliers(
-    modeConfig.mode
-  )
+  // Create a canvas from the previewImage (which already has rasters applied)
+  const sourceCanvas = createCanvasFromImageData(previewImage)
 
-  // Apply rasters to the image (same as preview)
-  const pixelData = renderPreviewWithRaster(
-    indexBuf,
-    modeConfig.width,
-    modeConfig.height,
-    globalPalette,
-    rasterChanges
-  )
-
-  // Create canvas from pixel data and scale to corrected aspect ratio
-  const nativeCanvas = createCanvasFromPixelData(
-    pixelData,
-    modeConfig.width,
-    modeConfig.height
-  )
-  const correctedCanvas = scaleToAspectRatio(
-    nativeCanvas,
-    widthMultiplier,
-    heightMultiplier
-  )
+  // Apply corrected aspect ratio (same as double-click on preview)
+  const correctedCanvas = createCorrectedAspectCanvas(sourceCanvas, modeConfig)
 
   const correctedBlob = await canvasToPNGBlob(correctedCanvas)
   zip.file('pixsaur_corrected_aspect.png', correctedBlob)
 }
 
 /**
- * Export PNG with corrected CPC aspect ratio (no rasters)
+ * Export PNG with corrected CPC aspect ratio (no rasters - from source canvas)
  */
 async function exportCorrectedAspectPNG(
   zip: JSZip,
@@ -132,23 +66,22 @@ async function exportCorrectedAspectPNG(
   zip.file('pixsaur_corrected_aspect.png', correctedBlob)
 }
 
+/**
+ * PNG export data - previewImage is the ImageData with rasters already applied
+ * (same as what's displayed when double-clicking on preview canvas)
+ */
 export interface PNGExportData {
-  indexBuf: Uint8Array
-  globalPalette: Vector[]
-  rasterChanges: RasterChange[]
+  /** Preview image with rasters already applied (from effectivePreviewImageAtom) */
+  previewImage: ImageData
 }
 
 /**
- * Check if raster data is valid for export
+ * Check if raster preview data is valid for export
  */
-function hasValidRasterData(
+function hasValidPreviewData(
   rasterData?: PNGExportData
 ): rasterData is PNGExportData {
-  return Boolean(
-    rasterData &&
-      rasterData.rasterChanges.length > 0 &&
-      rasterData.globalPalette.length > 0
-  )
+  return Boolean(rasterData && rasterData.previewImage)
 }
 
 export async function exportPNGData(
@@ -163,15 +96,16 @@ export async function exportPNGData(
   }
 
   if (config.content.includePNGCorrected) {
-    if (hasValidRasterData(rasterData)) {
-      await exportCorrectedAspectPNGWithRasters(
+    if (hasValidPreviewData(rasterData)) {
+      // Use previewImage directly (has rasters already applied)
+      // This is the same rendering as double-click on preview
+      await exportCorrectedAspectPNGFromPreview(
         zip,
-        rasterData.indexBuf,
-        modeConfig,
-        rasterData.globalPalette,
-        rasterData.rasterChanges
+        rasterData.previewImage,
+        modeConfig
       )
     } else {
+      // No raster data - use source canvas
       await exportCorrectedAspectPNG(zip, canvas, modeConfig)
     }
   }

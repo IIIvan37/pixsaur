@@ -11,7 +11,10 @@ import {
   IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
-import { rasterChangesAtom } from '@/app/store/raster/raster'
+import {
+  effectivePreviewImageAtom,
+  rasterChangesAtom
+} from '@/app/store/raster/raster'
 import { Notification } from '@/components/ui/notification/notification'
 import type { ExportConfig } from '@/export'
 import { exportZip, rgbToIndexBufferExact } from '@/export'
@@ -22,6 +25,8 @@ import ExportPanelView from './export-panel-view'
 export default function ExportPanel() {
   const { _ } = useLingui()
   const image = useAtomValue(previewImageAtom)
+  // Get preview image with rasters already applied (for corrected PNG export)
+  const previewImageWithRasters = useAtomValue(effectivePreviewImageAtom)
   // Utiliser la palette avec slots pour l'export (conserve les positions des slots vides lockés)
   const exportPalette = useAtomValue(exportPaletteWithSlotsAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
@@ -130,6 +135,7 @@ export default function ExportPanel() {
     ctx?.putImageData(cleanImage, 0, 0)
 
     // Generate ZIP with selected content
+    // Pass previewImageWithRasters for correct PNG export with rasters
     const success = await exportZip(
       indexBuf,
       paletteFirmware,
@@ -138,7 +144,8 @@ export default function ExportPanel() {
       cpcHardware,
       paletteForExport,
       config,
-      rasterChanges
+      rasterChanges,
+      previewImageWithRasters ?? undefined
     )
 
     // Show success message

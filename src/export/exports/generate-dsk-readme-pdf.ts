@@ -123,7 +123,7 @@ export function generateDskReadmePdf(
     doc.setFontSize(10)
     doc.setFont('helvetica', 'normal')
     const rasterIntro =
-      'Some images include raster data (rasterX.asm files). Rasters allow changing ink colors per scanline for advanced visual effects.'
+      'Some images include raster data (rasterX.asm files). Rasters allow changing ink colors per scanline for advanced visual effects. CPC Plus uses an optimized format for stack-based loading.'
     const splitRasterIntro = doc.splitTextToSize(rasterIntro, 170)
     doc.text(splitRasterIntro, 20, yPosition)
     yPosition += 6 * splitRasterIntro.length + 4
@@ -140,22 +140,26 @@ export function generateDskReadmePdf(
     )
     yPosition += 5
     doc.text(
-      'CPC Plus: DB count : DB ink0 : DW color0 : ... (per line)',
+      'CPC Plus: DW colorN-1, ..., color1, color0 (per line)',
       25,
       yPosition
     )
     yPosition += 5
-    doc.text('count = number of ink changes on this line', 25, yPosition)
+    doc.text(
+      'count = number of ink changes on this line (Classic only)',
+      25,
+      yPosition
+    )
     yPosition += 5
     doc.text(
-      'color = GA hardware value (Classic) or 12-bit value (Plus)',
+      'color = GA hardware value (Classic) or 12-bit GRB value (Plus)',
       25,
       yPosition
     )
     yPosition += 8
 
     const rasterNote =
-      'Each line starts with a count byte indicating how many ink changes follow. Each change includes the ink index and its new color value.'
+      'CPC Classic: Each line starts with a count byte indicating how many ink changes follow. CPC Plus: Colors are stored in reverse order for efficient POP loading. The number of colors per line equals numRasterSlots (configurable, default 4).'
     const splitRasterNote = doc.splitTextToSize(rasterNote, 170)
     doc.text(splitRasterNote, 20, yPosition)
     yPosition += 6 * splitRasterNote.length + 8
