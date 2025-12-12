@@ -29,7 +29,7 @@ const mockPalette: Vector[] = [
 
 function createDefaultProps(overrides = {}) {
   return {
-    rasterEnabled: false,
+    rasterEnabled: true,
     onRasterEnabledChange: vi.fn(),
     maxChangesPerLine: 2,
     onMaxChangesPerLineChange: vi.fn(),
@@ -139,11 +139,12 @@ describe('RasterSettingsView', () => {
   })
 
   describe('Combined visibility scenarios', () => {
-    it('should show preprocessing params in Mode 1 (4 colors) Plus mode', () => {
+    it('should show preprocessing params in Mode 1 (4 colors) Plus mode when raster enabled', () => {
       // Mode 1 = 4 colors, showPreprocessParams should be true (nColors < 16)
       renderWithProviders(
         <RasterSettingsView
           {...createDefaultProps({
+            rasterEnabled: true,
             showPreprocessParams: true,
             nColors: 4,
             isPlusMode: true
@@ -155,11 +156,12 @@ describe('RasterSettingsView', () => {
       expect(screen.getByText('Distance de continuité')).toBeInTheDocument()
     })
 
-    it('should show preprocessing params in Mode 2 (2 colors) Classic mode', () => {
+    it('should show preprocessing params in Mode 2 (2 colors) Classic mode when raster enabled', () => {
       // Mode 2 = 2 colors, showPreprocessParams should be true (nColors < 16)
       renderWithProviders(
         <RasterSettingsView
           {...createDefaultProps({
+            rasterEnabled: true,
             showPreprocessParams: true,
             nColors: 2,
             isClassicMode: true,
@@ -172,11 +174,12 @@ describe('RasterSettingsView', () => {
       expect(screen.getByText('Distance de continuité')).toBeInTheDocument()
     })
 
-    it('should hide preprocessing params in Mode 0', () => {
+    it('should hide preprocessing params in Mode 0 even when raster enabled', () => {
       // Mode 0 = 16 colors, showPreprocessParams should be false
       renderWithProviders(
         <RasterSettingsView
           {...createDefaultProps({
+            rasterEnabled: true,
             showPreprocessParams: false,
             nColors: 16,
             isPlusMode: true
@@ -187,6 +190,26 @@ describe('RasterSettingsView', () => {
       expect(
         screen.queryByText('Extraction palette de base')
       ).not.toBeInTheDocument()
+    })
+
+    it('should hide all config sections when raster disabled', () => {
+      renderWithProviders(
+        <RasterSettingsView
+          {...createDefaultProps({
+            rasterEnabled: false,
+            showPreprocessParams: true
+          })}
+        />
+      )
+
+      // Only the switch section should be visible
+      expect(screen.getByText('Mode Raster')).toBeInTheDocument()
+      // Config sections should be hidden
+      expect(screen.queryByText('Paramètres Raster')).not.toBeInTheDocument()
+      expect(
+        screen.queryByText("Propagation d'erreur de dithering")
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Changements Raster')).not.toBeInTheDocument()
     })
   })
 
@@ -205,6 +228,56 @@ describe('RasterSettingsView', () => {
       )
 
       expect(screen.queryByText('Changements Raster')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Empty rasters warning', () => {
+    it('should show warning when hasGeneratedRasters is true but changes is empty', () => {
+      renderWithProviders(
+        <RasterSettingsView
+          {...createDefaultProps({
+            rasterEnabled: true,
+            hasGeneratedRasters: true,
+            changes: []
+          })}
+        />
+      )
+
+      expect(screen.getByText(/couleurs optimales/)).toBeInTheDocument()
+    })
+
+    it('should not show warning when hasGeneratedRasters is false', () => {
+      renderWithProviders(
+        <RasterSettingsView
+          {...createDefaultProps({
+            rasterEnabled: true,
+            hasGeneratedRasters: false,
+            changes: []
+          })}
+        />
+      )
+
+      expect(screen.queryByText(/couleurs optimales/)).not.toBeInTheDocument()
+    })
+
+    it('should not show warning when changes exist', () => {
+      const mockChange = {
+        id: '1',
+        line: 0,
+        inkIndex: 0,
+        color: [255, 0, 0] as [number, number, number]
+      }
+      renderWithProviders(
+        <RasterSettingsView
+          {...createDefaultProps({
+            rasterEnabled: true,
+            hasGeneratedRasters: true,
+            changes: [mockChange]
+          })}
+        />
+      )
+
+      expect(screen.queryByText(/couleurs optimales/)).not.toBeInTheDocument()
     })
   })
 })

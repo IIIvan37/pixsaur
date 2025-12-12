@@ -141,163 +141,172 @@ export function RasterSettingsView({
         </Flex>
       </div>
 
-      <div className={styles.separator} />
-
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>
-          <Trans>Paramètres Raster</Trans>
-        </h3>
-
-        <TuningSlider
-          label={_(msg`Changements par ligne`)}
-          value={Math.min(maxChangesPerLine, hardwareLimit)}
-          onChange={onMaxChangesPerLineChange}
-          min={1}
-          max={hardwareLimit}
-          step={1}
-          defaultValue={1}
-          format={(v) => v.toFixed(0)}
-          description={_(
-            msg`Nombre maximum de changements d'encre par ligne (1 = raster classique)`
-          )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-        />
-
-        <TuningSlider
-          label={_(msg`Dithering raster`)}
-          value={Math.round(rasterDitheringIntensity * 100)}
-          onChange={(val) => onRasterDitheringIntensityChange(val / 100)}
-          min={0}
-          max={100}
-          step={5}
-          defaultValue={0}
-          format={(v) => `${v}%`}
-          description={_(
-            msg`Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes`
-          )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-        />
-
-        {hasImage && (
-          <Button
-            variant='secondary'
-            onClick={onAutoOptimize}
-            disabled={isOptimizing || hasGeneratedRasters}
-            style={{ marginTop: 'var(--spacing-md)', width: '100%' }}
-          >
-            <Icon name='GearIcon' />
-            {isOptimizing ? (
-              <Trans>Optimisation...</Trans>
-            ) : hasGeneratedRasters ? (
-              <Trans>Rasters générés</Trans>
-            ) : (
-              <Trans>Générer les rasters</Trans>
-            )}
-          </Button>
-        )}
-      </div>
-
-      <div className={styles.separator} />
-
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>
-          <Trans>Propagation d'erreur de dithering</Trans>
-        </h3>
-
-        <TuningSlider
-          label={_(msg`Coefficient d'erreur verticale`)}
-          value={verticalErrorCoef}
-          onChange={onVerticalErrorCoefChange}
-          min={0}
-          max={0.5}
-          step={0.025}
-          defaultValue={VERTICAL_ERROR_COEFFICIENT}
-          description={_(
-            msg`Propagation verticale des erreurs de quantification (lower = moins de banding)`
-          )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-        />
-
-        <TuningSlider
-          label={_(msg`Coefficient d'erreur horizontale`)}
-          value={horizontalErrorCoef}
-          onChange={onHorizontalErrorCoefChange}
-          min={0}
-          max={1}
-          step={0.05}
-          defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
-          description={_(
-            msg`Propagation horizontale des erreurs de quantification entre pixels`
-          )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-        />
-      </div>
-
-      {/* Preprocessing parameters - only useful for Mode 1 (4 colors) and Mode 2 (2 colors) */}
-      {/* In Mode 0 (16 colors), lines rarely have >16 unique colors so selection algorithm doesn't apply */}
-      {showPreprocessParams && (
+      {rasterEnabled && (
         <>
           <div className={styles.separator} />
 
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>
-              <Trans>Extraction palette de base</Trans>
+              <Trans>Paramètres Raster</Trans>
             </h3>
-            <p className={styles.description}>
-              <Trans>
-                Paramètres pour l'extraction de la palette initiale depuis
-                l'image source.
-              </Trans>
-            </p>
 
             <TuningSlider
-              label={_(msg`Distance de continuité`)}
-              value={preprocessContinuityDistance}
-              onChange={onPreprocessContinuityDistanceChange}
-              min={200}
-              max={2000}
-              step={50}
-              defaultValue={PREPROCESS_CONTINUITY_DISTANCE}
+              label={_(msg`Changements par ligne`)}
+              value={Math.min(maxChangesPerLine, hardwareLimit)}
+              onChange={onMaxChangesPerLineChange}
+              min={1}
+              max={hardwareLimit}
+              step={1}
+              defaultValue={1}
               format={(v) => v.toFixed(0)}
               description={_(
-                msg`Plus bas = plus de variété, plus haut = plus de cohérence entre lignes`
+                msg`Nombre maximum de changements d'encre par ligne (1 = raster classique)`
               )}
               resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
             />
 
             <TuningSlider
-              label={_(msg`Bonus de continuité`)}
-              value={preprocessContinuityBonus}
-              onChange={onPreprocessContinuityBonusChange}
-              min={1}
-              max={3}
-              step={0.1}
-              defaultValue={PREPROCESS_CONTINUITY_BONUS}
+              label={_(msg`Dithering raster`)}
+              value={Math.round(rasterDitheringIntensity * 100)}
+              onChange={(val) => onRasterDitheringIntensityChange(val / 100)}
+              min={0}
+              max={100}
+              step={5}
+              defaultValue={0}
+              format={(v) => `${v}%`}
               description={_(
-                msg`Plus haut = préférence pour les couleurs similaires aux lignes précédentes`
+                msg`Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes`
+              )}
+              resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+            />
+
+            {hasImage && (
+              <Button
+                variant='secondary'
+                onClick={onAutoOptimize}
+                disabled={isOptimizing || hasGeneratedRasters}
+                style={{ marginTop: 'var(--spacing-md)', width: '100%' }}
+              >
+                <Icon name='GearIcon' />
+                {isOptimizing ? (
+                  <Trans>Optimisation...</Trans>
+                ) : hasGeneratedRasters ? (
+                  <Trans>Rasters générés</Trans>
+                ) : (
+                  <Trans>Générer les rasters</Trans>
+                )}
+              </Button>
+            )}
+
+            {hasGeneratedRasters && changes.length === 0 && (
+              <p className={styles.warning}>
+                <Trans>
+                  Aucun changement raster généré. L'image utilise déjà des
+                  couleurs optimales pour la palette actuelle.
+                </Trans>
+              </p>
+            )}
+          </div>
+
+          <div className={styles.separator} />
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Propagation d'erreur de dithering</Trans>
+            </h3>
+
+            <TuningSlider
+              label={_(msg`Coefficient d'erreur verticale`)}
+              value={verticalErrorCoef}
+              onChange={onVerticalErrorCoefChange}
+              min={0}
+              max={0.5}
+              step={0.025}
+              defaultValue={VERTICAL_ERROR_COEFFICIENT}
+              description={_(
+                msg`Propagation verticale des erreurs de quantification (lower = moins de banding)`
               )}
               resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
             />
 
             <TuningSlider
-              label={_(msg`Poids de fréquence`)}
-              value={preprocessFrequencyExponent}
-              onChange={onPreprocessFrequencyExponentChange}
+              label={_(msg`Coefficient d'erreur horizontale`)}
+              value={horizontalErrorCoef}
+              onChange={onHorizontalErrorCoefChange}
               min={0}
               max={1}
               step={0.05}
-              defaultValue={PREPROCESS_FREQUENCY_EXPONENT}
+              defaultValue={HORIZONTAL_ERROR_COEFFICIENT}
               description={_(
-                msg`0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
+                msg`Propagation horizontale des erreurs de quantification entre pixels`
               )}
               resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
             />
           </div>
-        </>
-      )}
 
-      {rasterEnabled && (
-        <>
+          {/* Preprocessing parameters - only useful for Mode 1 (4 colors) and Mode 2 (2 colors) */}
+          {/* In Mode 0 (16 colors), lines rarely have >16 unique colors so selection algorithm doesn't apply */}
+          {showPreprocessParams && (
+            <>
+              <div className={styles.separator} />
+
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>
+                  <Trans>Extraction palette de base</Trans>
+                </h3>
+                <p className={styles.description}>
+                  <Trans>
+                    Paramètres pour l'extraction de la palette initiale depuis
+                    l'image source.
+                  </Trans>
+                </p>
+
+                <TuningSlider
+                  label={_(msg`Distance de continuité`)}
+                  value={preprocessContinuityDistance}
+                  onChange={onPreprocessContinuityDistanceChange}
+                  min={200}
+                  max={2000}
+                  step={50}
+                  defaultValue={PREPROCESS_CONTINUITY_DISTANCE}
+                  format={(v) => v.toFixed(0)}
+                  description={_(
+                    msg`Plus bas = plus de variété, plus haut = plus de cohérence entre lignes`
+                  )}
+                  resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+                />
+
+                <TuningSlider
+                  label={_(msg`Bonus de continuité`)}
+                  value={preprocessContinuityBonus}
+                  onChange={onPreprocessContinuityBonusChange}
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  defaultValue={PREPROCESS_CONTINUITY_BONUS}
+                  description={_(
+                    msg`Plus haut = préférence pour les couleurs similaires aux lignes précédentes`
+                  )}
+                  resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+                />
+
+                <TuningSlider
+                  label={_(msg`Poids de fréquence`)}
+                  value={preprocessFrequencyExponent}
+                  onChange={onPreprocessFrequencyExponentChange}
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  defaultValue={PREPROCESS_FREQUENCY_EXPONENT}
+                  description={_(
+                    msg`0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
+                  )}
+                  resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+                />
+              </div>
+            </>
+          )}
+
           <div className={styles.separator} />
 
           <div className={styles.section}>
