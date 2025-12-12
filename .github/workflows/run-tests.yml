@@ -22,17 +22,13 @@ jobs:
       - name: Install pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@8.0.0 --activate
+          corepack prepare pnpm@10.11.0 --activate
 
       # Setup Node.js
       - name: Setup Node.js
-        run: |
-
-          curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-
-          sudo apt-get install -y nodejs
-          node --version
-          npm --version
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
       # Install dependencies
       - name: Install dependencies
