@@ -499,22 +499,24 @@ export function extractGlobalPaletteFromImage(
  */
 
 /**
- * Extract 12 global colors for Mode 0 CPC Plus raster optimization.
+ * Extract global colors for Mode 0 CPC Plus raster optimization.
  * Uses a "globalScore" that favors colors appearing on many lines (not just total pixel count).
  *
  * Algorithm from MODE_0_RASTER_OPTIMIZATION.md:
  * 1. Quantize image to ~24-32 intermediate colors
  * 2. For each color: count total pixels AND number of lines where it appears
  * 3. globalScore = w1 * pixelCount + w2 * lineCount (w1=1, w2=2)
- * 4. Return top 12 colors by globalScore
+ * 4. Return top N colors by globalScore (N = numFixedColors)
  *
  * @param sourceImage - Source image to analyze
  * @param cpcClassicPalette - CPC Classic palette (should be undefined for CPC Plus)
- * @returns 12 colors ordered by globalScore (most global first)
+ * @param numFixedColors - Number of fixed colors to extract (16 - maxChangesPerLine)
+ * @returns N colors ordered by globalScore (most global first)
  */
 function extractGlobalColorsForMode0Plus(
   sourceImage: ImageData,
-  cpcClassicPalette?: Vector<'RGB'>[]
+  cpcClassicPalette?: Vector<'RGB'>[],
+  numFixedColors: number = MODE_0_FIXED_COLORS
 ): Vector<'RGB'>[] {
   const { width, height, data } = sourceImage
 
@@ -585,20 +587,20 @@ function extractGlobalColorsForMode0Plus(
     }))
     .sort((a, b) => b.globalScore - a.globalScore)
 
-  // If we have <= 12 colors, return them all
-  if (colorScores.length <= MODE_0_FIXED_COLORS) {
+  // If we have <= numFixedColors colors, return them all
+  if (colorScores.length <= numFixedColors) {
     return colorScores.map((c) => c.color)
   }
 
-  // Use median cut to reduce to 12 colors if there are too many
-  // This provides better color distribution than just taking top 12 by score
-  const topCandidates = colorScores.slice(0, 24) // Take top 24 candidates
+  // Use median cut to reduce to numFixedColors if there are too many
+  // This provides better color distribution than just taking top N by score
+  const topCandidates = colorScores.slice(0, numFixedColors * 2) // Take top 2N candidates
   const pixels: WeightedPixel[] = topCandidates.map((c) => ({
     color: c.color,
     weight: c.globalScore
   }))
 
-  return medianCut(pixels, MODE_0_FIXED_COLORS)
+  return medianCut(pixels, numFixedColors)
 }
 
 /**
@@ -800,41 +802,46 @@ export function optimizeLinePalettesWithIndexBuffer(
   )
 
   // Detect Mode 0 CPC Plus for special raster handling
-  // In Mode 0 CPC Plus, the Gate Array can only modify 4 CONSECUTIVE ink registers per line
-  // Solution: indices 0-3 = raster slots (dynamic), indices 4-15 = fixed palette (12 colors)
+  // In Mode 0 CPC Plus, the Gate Array can only modify N CONSECUTIVE ink registers per line
+  // where N = maxChangesPerLine (1-4)
+  // Solution: indices 0 to (N-1) = raster slots (dynamic), indices N to 15 = fixed palette
   const isMode0Plus = isMode0CPCPlus(nColors, cpcClassicPalette)
 
-  // For Mode 0 CPC Plus: extract 12 global colors for fixed palette (indices 4-15)
+  // For Mode 0 CPC Plus: extract global colors for fixed palette
   // For other modes: use standard extraction or provided palette
   let basePalette: Vector<'RGB'>[]
   let rasterSlotStart: number
   let rasterSlotEnd: number
 
   if (isMode0Plus) {
-    // Mode 0 CPC Plus: 12 fixed colors (indices 4-15) + 4 raster slots (indices 0-3)
+    // Mode 0 CPC Plus: dynamic split based on maxChangesPerLine
+    // - Raster slots: indices 0 to (maxChangesPerLine - 1)
+    // - Fixed colors: indices maxChangesPerLine to 15
+    const numRasterSlots = Math.min(maxChangesPerLine, MODE_0_RASTER_SLOTS)
+    const numFixedColors = MODE_0_TOTAL_COLORS - numRasterSlots
+
     // Use provided palette if available, otherwise extract
     let globalColors: Vector<'RGB'>[]
     if (useProvidedPalette && globalPalette.length > 0) {
-      // Two cases:
-      // 1. Palette has exactly 12 colors (MODE_0_FIXED_COLORS) → use directly
-      // 2. Palette has 16 colors (MODE_0_TOTAL_COLORS) → take indices 4-15
-      if (globalPalette.length === MODE_0_FIXED_COLORS) {
-        // 12 colors provided: use them directly as fixed palette (indices 4-15)
+      // Handle different palette sizes
+      if (globalPalette.length === numFixedColors) {
+        // Exact match: use directly as fixed palette
         globalColors = globalPalette.map((c) => quantizeColor(c))
       } else if (globalPalette.length >= MODE_0_TOTAL_COLORS) {
-        // 16 colors provided: shift - use colors 4-15 as fixed palette
+        // Full 16 colors provided: take colors starting from numRasterSlots
         globalColors = globalPalette
-          .slice(MODE_0_RASTER_SLOTS, MODE_0_TOTAL_COLORS)
+          .slice(numRasterSlots, MODE_0_TOTAL_COLORS)
           .map((c) => quantizeColor(c))
       } else {
         // Fallback: use what we have, pad with extracted colors
         globalColors = globalPalette.map((c) => quantizeColor(c))
-        if (globalColors.length < MODE_0_FIXED_COLORS) {
+        if (globalColors.length < numFixedColors) {
           const extracted = extractGlobalColorsForMode0Plus(
             preprocessedImage,
-            cpcClassicPalette
+            cpcClassicPalette,
+            numFixedColors
           )
-          while (globalColors.length < MODE_0_FIXED_COLORS) {
+          while (globalColors.length < numFixedColors) {
             globalColors.push(extracted[globalColors.length] || [0, 0, 0])
           }
         }
@@ -842,27 +849,27 @@ export function optimizeLinePalettesWithIndexBuffer(
     } else {
       globalColors = extractGlobalColorsForMode0Plus(
         preprocessedImage,
-        cpcClassicPalette
+        cpcClassicPalette,
+        numFixedColors
       )
     }
 
-    // Build palette: [slot0, slot1, slot2, slot3, fixed4, fixed5, ..., fixed15]
-    // Initialize raster slots with first 4 global colors (will be overwritten per line)
+    // Build palette: [slot0, ..., slot(N-1), fixedN, fixedN+1, ..., fixed15]
     basePalette = new Array(MODE_0_TOTAL_COLORS)
 
-    // Indices 0-3: raster slots (initialized to black, will change per line)
-    for (let i = 0; i < MODE_0_RASTER_SLOTS; i++) {
+    // Indices 0 to (numRasterSlots-1): raster slots (initialized to black, will change per line)
+    for (let i = 0; i < numRasterSlots; i++) {
       basePalette[i] = [0, 0, 0]
     }
 
-    // Indices 4-15: fixed global colors
-    for (let i = 0; i < MODE_0_FIXED_COLORS; i++) {
-      basePalette[MODE_0_RASTER_SLOTS + i] = globalColors[i] || [0, 0, 0]
+    // Indices numRasterSlots to 15: fixed global colors
+    for (let i = 0; i < numFixedColors; i++) {
+      basePalette[numRasterSlots + i] = globalColors[i] || [0, 0, 0]
     }
 
-    // Only indices 0-3 can be modified by raster changes
+    // Only indices 0 to (numRasterSlots-1) can be modified by raster changes
     rasterSlotStart = 0
-    rasterSlotEnd = MODE_0_RASTER_SLOTS
+    rasterSlotEnd = numRasterSlots
   } else {
     // Standard mode: use provided palette if available, otherwise extract
     let extractedPalette: Vector<'RGB'>[]
@@ -905,11 +912,11 @@ export function optimizeLinePalettesWithIndexBuffer(
     let newPalette: Vector<'RGB'>[]
 
     if (isMode0Plus) {
-      // MODE 0 CPC PLUS: Special handling for 12 fixed + 4 raster slots
-      // Find the best 4 colors for raster slots (0-3) that complement the 12 fixed colors (4-15)
+      // MODE 0 CPC PLUS: Special handling for fixed + raster slots
+      // Find the best colors for raster slots (0 to rasterSlotEnd-1) that complement the fixed colors
 
-      // Fixed palette (indices 4-15)
-      const fixedPalette = basePalette.slice(MODE_0_RASTER_SLOTS)
+      // Fixed palette (indices rasterSlotEnd to 15)
+      const fixedPalette = basePalette.slice(rasterSlotEnd)
 
       // Find colors that are NOT well covered by the fixed palette
       // These should go into the raster slots
@@ -943,12 +950,12 @@ export function optimizeLinePalettesWithIndexBuffer(
       // Sort by error * count (colors with high error AND high frequency are prioritized)
       uncoveredColors.sort((a, b) => b.error * b.count - a.error * a.count)
 
-      // Select up to 4 colors for raster slots
+      // Select up to rasterSlotEnd colors for raster slots (respects maxChangesPerLine)
       const rasterColors: Vector<'RGB'>[] = []
       const usedKeys = new Set<string>()
 
       for (const { color } of uncoveredColors) {
-        if (rasterColors.length >= MODE_0_RASTER_SLOTS) break
+        if (rasterColors.length >= rasterSlotEnd) break
         const key = colorKey(color)
         if (!usedKeys.has(key)) {
           rasterColors.push(color)
@@ -959,13 +966,13 @@ export function optimizeLinePalettesWithIndexBuffer(
       // Build new palette: raster slots + fixed colors
       newPalette = [...currentPalette]
 
-      // Assign raster colors to slots 0-3, trying to minimize changes from previous line
-      const previousRasterSlots = currentPalette.slice(0, MODE_0_RASTER_SLOTS)
+      // Assign raster colors to slots 0 to (rasterSlotEnd-1), trying to minimize changes from previous line
+      const previousRasterSlots = currentPalette.slice(0, rasterSlotEnd)
       const assignedSlots = new Set<number>()
       const assignedColors = new Set<string>()
 
       // First pass: exact matches with previous slots
-      for (let slot = 0; slot < MODE_0_RASTER_SLOTS; slot++) {
+      for (let slot = 0; slot < rasterSlotEnd; slot++) {
         const prevKey = colorKey(previousRasterSlots[slot])
         for (const rasterColor of rasterColors) {
           const rasterKey = colorKey(rasterColor)
@@ -983,7 +990,7 @@ export function optimizeLinePalettesWithIndexBuffer(
         const rasterKey = colorKey(rasterColor)
         if (assignedColors.has(rasterKey)) continue
 
-        for (let slot = 0; slot < MODE_0_RASTER_SLOTS; slot++) {
+        for (let slot = 0; slot < rasterSlotEnd; slot++) {
           if (!assignedSlots.has(slot)) {
             newPalette[slot] = rasterColor
             assignedSlots.add(slot)
