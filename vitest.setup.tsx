@@ -41,6 +41,11 @@ vi.mock('@lingui/core/macro', () => ({
   }
 }))
 
+// Mock @lingui/react/macro - Trans from macro renders children directly
+vi.mock('@lingui/react/macro', () => ({
+  Trans: ({ children }: { children?: React.ReactNode }) => children
+}))
+
 globalThis.ImageData =
   globalThis.ImageData ||
   class {

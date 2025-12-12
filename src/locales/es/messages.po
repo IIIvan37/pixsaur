@@ -34,7 +34,7 @@ msgstr "{remainingSpace} restante"
 msgid "{uniqueColorsCount} couleur(s) unique(s)"
 msgstr "{uniqueColorsCount} color(es) único(s)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:292
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:305
 msgid "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
 msgstr "0 = diversidad pura, 0.5 = equilibrado, 1 = preferir colores frecuentes"
 
@@ -46,7 +46,7 @@ msgstr "Una nueva versión de Pixsaur está disponible. Haga clic a continuació
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "Una nueva versión de Pixsaur está disponible. Actualice ahora para obtener las últimas funciones y mejoras."
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:141
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:144
 msgid "Active le mode raster pour utiliser des palettes optimisées par ligne."
 msgstr "Activa el modo raster para usar paletas optimizadas por línea."
 
@@ -121,7 +121,7 @@ msgstr "Cancelar"
 #~ msgid "Anti-Aliasing"
 #~ msgstr "Suavizado"
 
-#: src/app/components/preview-panel.tsx:11
+#: src/app/components/preview-panel.tsx:16
 msgid "Aperçu"
 msgstr "Vista previa"
 
@@ -180,7 +180,7 @@ msgstr "Puntuación Equilibrada"
 msgid "Bleu"
 msgstr "Azul"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:270
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:283
 msgid "Bonus de continuité"
 msgstr "Bonificación de Continuidad"
 
@@ -201,11 +201,11 @@ msgstr "Centra automáticamente la imagen en el lienzo a las dimensiones CPC obj
 msgid "Centrer l'image"
 msgstr "Centrar imagen"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:163
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:166
 msgid "Changements par ligne"
 msgstr "Cambios por línea"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:352
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:368
 msgid "Changements Raster"
 msgstr "Cambios Raster"
 
@@ -238,11 +238,11 @@ msgstr "Haga clic para abrir en una nueva pestaña"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Haga clic para seleccionar una imagen"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:233
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:236
 msgid "Coefficient d'erreur horizontale"
 msgstr "Coeficiente de Error Horizontal"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:219
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:222
 msgid "Coefficient d'erreur verticale"
 msgstr "Coeficiente de Error Vertical"
 
@@ -327,7 +327,7 @@ msgstr "Dimensiones"
 #~ msgid "Disquette DSK (image écran)"
 #~ msgstr "Disquete DSK (imagen de pantalla)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:255
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:268
 msgid "Distance de continuité"
 msgstr "Distancia de Continuidad"
 
@@ -340,7 +340,7 @@ msgstr "Dithering"
 msgid "palette.strategy.dithering-aware.label"
 msgstr "Tramado Óptimo"
 
-#: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:65
+#: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:64
 msgid "Dithering Error Propagation"
 msgstr "Propagación de Error de Dithering"
 
@@ -352,7 +352,7 @@ msgstr "Tramado final"
 #~ msgid "Dithering horizontal 1D appliqué lors du prétraitement raster"
 #~ msgstr "Tramado horizontal 1D aplicado durante preprocesamiento raster"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:178
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:181
 msgid "Dithering raster"
 msgstr "Tramado raster"
 
@@ -397,7 +397,7 @@ msgstr "Efectos"
 msgid "Effets Raster"
 msgstr "Efectos Raster"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:308
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:323
 msgid "En Mode 0 CPC Plus, 12 couleurs sont fixes (indices 4-15) et 4 slots raster (indices 0-3) peuvent changer par ligne."
 msgstr "En Modo 0 CPC Plus, 12 colores son fijos (índices 4-15) y 4 slots de raster (índices 0-3) pueden cambiar por línea."
 
@@ -454,6 +454,10 @@ msgstr "Exposición"
 msgid "Exposition & Tonalité"
 msgstr "Exposición & Tonalidad"
 
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:258
+msgid "Extraction palette de base"
+msgstr "Extracción de paleta base"
+
 #. placeholder {0}: file.name
 #: src/components/export-panel/dsk-files-manager.tsx:39
 msgid "File {0} is too large (max 64KB). File skipped."
@@ -491,11 +495,11 @@ msgstr "Prioridad de frecuencia (80%) con diversidad moderada"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:205
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:208
 msgid "Générer les rasters"
 msgstr "Generar rasters"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:355
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:371
 msgid "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
 msgstr "Gestión de cambios de tinta por línea (generados automáticamente o manuales)"
 
@@ -528,11 +532,11 @@ msgstr "Altura"
 msgid "Image source"
 msgstr "Imagen de origen"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:338
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:354
 msgid "Influence du nombre de lignes où la couleur apparaît (plus haut = favorise les couleurs globales)"
 msgstr "Influencia del número de líneas donde aparece el color (más alto = favorece colores globales)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:323
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:339
 msgid "Influence du nombre total de pixels sur la sélection des 12 couleurs fixes"
 msgstr "Influencia del número total de píxeles en la selección de los 12 colores fijos"
 
@@ -644,7 +648,7 @@ msgstr "Memoria"
 #~ msgid "Mode"
 #~ msgstr "Modo"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:305
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:320
 msgid "Mode 0 CPC Plus (12+4)"
 msgstr "Modo 0 CPC Plus (12+4)"
 
@@ -660,7 +664,7 @@ msgstr "Modo 0: 160 píxeles de ancho, Modo 1: 320 píxeles, Modo 2: 640 píxele
 msgid "Mode de redimensionnement"
 msgstr "Modo de redimensionamiento"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:138
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:141
 msgid "Mode Raster"
 msgstr "Modo Raster"
 
@@ -705,7 +709,7 @@ msgstr "Aún no hay imágenes en el espacio de trabajo. Añada imágenes convert
 msgid "Nom du fichier ZIP"
 msgstr "Nombre del archivo ZIP"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:172
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:175
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Cambios de tinta máximos por línea (1 = raster clásico)"
 
@@ -723,7 +727,7 @@ msgstr "No hay suficiente espacio en el DSK"
 msgid "Ombres"
 msgstr "Sombras"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:201
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:204
 msgid "Optimisation..."
 msgstr "Optimizando..."
 
@@ -755,7 +759,7 @@ msgstr "Abrir panel de configuración"
 msgid "Ouvrir les paramètres (⌘,)"
 msgstr "Abrir configuración (⌘,)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:94
+#: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:93
 msgid "Palette Selection"
 msgstr "Selección de Paleta"
 
@@ -767,7 +771,11 @@ msgstr "Paletas (firmware/hardware)"
 msgid "Paramètres"
 msgstr "Configuración"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:159
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:261
+msgid "Paramètres pour l'extraction de la palette initiale depuis l'image source."
+msgstr "Parámetros para la extracción de la paleta inicial desde la imagen de origen."
+
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:162
 msgid "Paramètres Raster"
 msgstr "Parámetros Raster"
 
@@ -786,12 +794,20 @@ msgid "Pixel Mode"
 msgstr "Modo de píxel"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:264
-msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
-msgstr "Más bajo = más cambios de paleta, más alto = más estabilidad"
+#~ msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
+#~ msgstr "Más bajo = más cambios de paleta, más alto = más estabilidad"
+
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:277
+msgid "Plus bas = plus de variété, plus haut = plus de cohérence entre lignes"
+msgstr "Más bajo = más variedad, más alto = más coherencia entre líneas"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:278
-msgid "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
-msgstr "Más alto = preferencia más fuerte por los colores de la paleta anterior"
+#~ msgid "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
+#~ msgstr "Más alto = preferencia más fuerte por los colores de la paleta anterior"
+
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:291
+msgid "Plus haut = préférence pour les couleurs similaires aux lignes précédentes"
+msgstr "Más alto = preferencia por colores similares a las líneas anteriores"
 
 #: src/components/export-panel/export-config-dialog.tsx:97
 #~ msgid "PNG (aperçu)"
@@ -805,15 +821,15 @@ msgstr "PNG (relación de aspecto CPC correcta)"
 msgid "PNG (pixels carrés)"
 msgstr "PNG (píxeles cuadrados)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:329
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:345
 msgid "Poids couverture lignes"
 msgstr "Peso cobertura de líneas"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:284
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:297
 msgid "Poids de fréquence"
 msgstr "Peso de Frecuencia"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:314
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:330
 msgid "Poids fréquence pixels"
 msgstr "Peso frecuencia de píxeles"
 
@@ -822,7 +838,7 @@ msgstr "Peso frecuencia de píxeles"
 msgid "Posterisation"
 msgstr "Posterización"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:187
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:190
 msgid "Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
 msgstr "Preprocesamiento de dithering 1D aplicado a la imagen antes de la extracción de paletas"
 
@@ -830,15 +846,15 @@ msgstr "Preprocesamiento de dithering 1D aplicado a la imagen antes de la extrac
 msgid "Processeur"
 msgstr "Procesador"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:215
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:218
 msgid "Propagation d'erreur de dithering"
 msgstr "Propagación de Error de Dithering"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:241
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:244
 msgid "Propagation horizontale des erreurs de quantification entre pixels"
 msgstr "Propagación horizontal de errores de cuantización entre píxeles"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:227
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:230
 msgid "Propagation verticale des erreurs de quantification (lower = moins de banding)"
 msgstr "Propagación vertical de errores de cuantización (más bajo = menos bandas)"
 
@@ -851,7 +867,7 @@ msgstr "Diversidad Pura"
 msgid "Raster"
 msgstr "Raster"
 
-#: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:57
+#: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:56
 msgid "Raster Tuning"
 msgstr "Ajuste Raster"
 
@@ -863,7 +879,7 @@ msgstr "Ajuste Raster"
 msgid "Rasters (données ASM)"
 msgstr "Rasters (datos ASM)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:203
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:206
 msgid "Rasters générés"
 msgstr "Rasters Generados"
 
@@ -888,15 +904,15 @@ msgstr "Reduce el número de niveles de color para un efecto de póster (256=nor
 msgid "Réinitialiser"
 msgstr "Restablecer"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:174
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:189
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:229
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:243
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:266
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:280
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:294
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:325
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:340
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:177
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:192
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:232
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:246
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:279
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:293
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:307
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:341
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:356
 msgid "Réinitialiser à la valeur par défaut"
 msgstr "Restablecer al valor predeterminado"
 
@@ -942,8 +958,8 @@ msgid "Sélection"
 msgstr "Selección"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:251
-msgid "Sélection de palette"
-msgstr "Selección de Paleta"
+#~ msgid "Sélection de palette"
+#~ msgstr "Selección de Paleta"
 
 #: src/components/raster-panel/raster-panel-view.tsx:111
 #~ msgid "Sélectionner une couleur"

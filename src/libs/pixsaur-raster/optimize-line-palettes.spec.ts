@@ -321,3 +321,117 @@ describe('rasterTuningOverrides - other coefficients', () => {
     )
   })
 })
+
+describe('extractGlobalPaletteFromImage with tuning params', () => {
+  let originalPreprocessContinuityDistance: number
+  let originalPreprocessContinuityBonus: number
+  let originalPreprocessFrequencyExponent: number
+
+  beforeEach(() => {
+    // Save original values
+    originalPreprocessContinuityDistance =
+      rasterTuningOverrides.preprocessContinuityDistance
+    originalPreprocessContinuityBonus =
+      rasterTuningOverrides.preprocessContinuityBonus
+    originalPreprocessFrequencyExponent =
+      rasterTuningOverrides.preprocessFrequencyExponent
+  })
+
+  afterEach(() => {
+    // Restore original values
+    rasterTuningOverrides.preprocessContinuityDistance =
+      originalPreprocessContinuityDistance
+    rasterTuningOverrides.preprocessContinuityBonus =
+      originalPreprocessContinuityBonus
+    rasterTuningOverrides.preprocessFrequencyExponent =
+      originalPreprocessFrequencyExponent
+  })
+
+  it('should use selectPaletteFarthestPoint when more colors than maxColors', () => {
+    // Create an image with many unique colors (more than 4)
+    const pixels: Array<{ x: number; y: number; color: Vector<'RGB'> }> = []
+    const colors: Vector<'RGB'>[] = [
+      [255, 0, 0], // Red
+      [0, 255, 0], // Green
+      [0, 0, 255], // Blue
+      [255, 255, 0], // Yellow
+      [255, 0, 255], // Magenta
+      [0, 255, 255], // Cyan
+      [128, 128, 128], // Gray
+      [255, 128, 0] // Orange
+    ]
+
+    // Create 8x8 image with each color in different rows
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 8; x++) {
+        pixels.push({ x, y, color: colors[y] })
+      }
+    }
+
+    const image = createTestImage(8, 8, pixels)
+
+    // Request only 4 colors - should trigger farthest point selection
+    const palette = extractGlobalPaletteFromImage(image, 4)
+
+    expect(palette.length).toBe(4)
+  })
+
+  it('should respect frequencyExponent parameter', () => {
+    // Create an image with colors of varying frequency
+    const pixels: Array<{ x: number; y: number; color: Vector<'RGB'> }> = []
+
+    // High frequency color (most of the image)
+    for (let y = 0; y < 8; y++) {
+      for (let x = 0; x < 6; x++) {
+        pixels.push({ x, y, color: [255, 0, 0] }) // Red - 48 pixels
+      }
+    }
+    // Low frequency colors
+    for (let y = 0; y < 8; y++) {
+      pixels.push({ x: 6, y, color: [0, 255, 0] }) // Green - 8 pixels
+      pixels.push({ x: 7, y, color: [0, 0, 255] }) // Blue - 8 pixels
+    }
+
+    const image = createTestImage(8, 8, pixels)
+
+    // With high frequency exponent (1.0), should strongly prefer frequent colors
+    rasterTuningOverrides.preprocessFrequencyExponent = 1.0
+    const paletteHighFreq = extractGlobalPaletteFromImage(image, 2)
+
+    // With low frequency exponent (0.0), should favor diversity
+    rasterTuningOverrides.preprocessFrequencyExponent = 0.0
+    const paletteLowFreq = extractGlobalPaletteFromImage(image, 2)
+
+    // Both should have 2 colors
+    expect(paletteHighFreq.length).toBe(2)
+    expect(paletteLowFreq.length).toBe(2)
+
+    // The first color (most frequent) should be red in high freq mode
+    // Note: colors are quantized to CPC Plus, so [255, 0, 0] stays [255, 0, 0]
+    expect(paletteHighFreq[0]).toEqual([255, 0, 0])
+  })
+
+  it('should allow overriding preprocessContinuityDistance', () => {
+    rasterTuningOverrides.preprocessContinuityDistance = 500
+    expect(rasterTuningOverrides.preprocessContinuityDistance).toBe(500)
+
+    rasterTuningOverrides.preprocessContinuityDistance = 2000
+    expect(rasterTuningOverrides.preprocessContinuityDistance).toBe(2000)
+  })
+
+  it('should allow overriding preprocessContinuityBonus', () => {
+    rasterTuningOverrides.preprocessContinuityBonus = 1.0
+    expect(rasterTuningOverrides.preprocessContinuityBonus).toBe(1.0)
+
+    rasterTuningOverrides.preprocessContinuityBonus = 3.0
+    expect(rasterTuningOverrides.preprocessContinuityBonus).toBe(3.0)
+  })
+
+  it('should allow overriding preprocessFrequencyExponent', () => {
+    rasterTuningOverrides.preprocessFrequencyExponent = 0.0
+    expect(rasterTuningOverrides.preprocessFrequencyExponent).toBe(0.0)
+
+    rasterTuningOverrides.preprocessFrequencyExponent = 1.0
+    expect(rasterTuningOverrides.preprocessFrequencyExponent).toBe(1.0)
+  })
+})
