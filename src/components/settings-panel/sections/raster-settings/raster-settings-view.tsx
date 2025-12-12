@@ -16,9 +16,9 @@ import {
   HORIZONTAL_ERROR_COEFFICIENT,
   MODE_0_LINE_WEIGHT,
   MODE_0_PIXEL_WEIGHT,
-  PALETTE_CONTINUITY_BONUS,
-  PALETTE_CONTINUITY_DISTANCE,
-  PALETTE_FREQUENCY_EXPONENT,
+  PREPROCESS_CONTINUITY_BONUS,
+  PREPROCESS_CONTINUITY_DISTANCE,
+  PREPROCESS_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from '@/libs/pixsaur-raster/raster-constants'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
@@ -50,13 +50,15 @@ type RasterSettingsViewProps = {
   horizontalErrorCoef: number
   onHorizontalErrorCoefChange: (value: number) => void
 
-  // Palette selection
-  paletteContinuityDistance: number
-  onPaletteContinuityDistanceChange: (value: number) => void
-  paletteContinuityBonus: number
-  onPaletteContinuityBonusChange: (value: number) => void
-  paletteFrequencyExponent: number
-  onPaletteFrequencyExponentChange: (value: number) => void
+  // Preprocessing parameters (base palette extraction)
+  // Only shown for modes with few colors (Mode 1, Mode 2) where selection algorithm applies
+  showPreprocessParams: boolean
+  preprocessContinuityDistance: number
+  onPreprocessContinuityDistanceChange: (value: number) => void
+  preprocessContinuityBonus: number
+  onPreprocessContinuityBonusChange: (value: number) => void
+  preprocessFrequencyExponent: number
+  onPreprocessFrequencyExponentChange: (value: number) => void
 
   // Mode 0 CPC Plus specific
   isMode0Plus: boolean
@@ -100,12 +102,13 @@ export function RasterSettingsView({
   onVerticalErrorCoefChange,
   horizontalErrorCoef,
   onHorizontalErrorCoefChange,
-  paletteContinuityDistance,
-  onPaletteContinuityDistanceChange,
-  paletteContinuityBonus,
-  onPaletteContinuityBonusChange,
-  paletteFrequencyExponent,
-  onPaletteFrequencyExponentChange,
+  showPreprocessParams,
+  preprocessContinuityDistance,
+  onPreprocessContinuityDistanceChange,
+  preprocessContinuityBonus,
+  onPreprocessContinuityBonusChange,
+  preprocessFrequencyExponent,
+  onPreprocessFrequencyExponentChange,
   isMode0Plus,
   mode0PixelWeight,
   onMode0PixelWeightChange,
@@ -244,56 +247,68 @@ export function RasterSettingsView({
         />
       </div>
 
-      <div className={styles.separator} />
+      {/* Preprocessing parameters - only useful for Mode 1 (4 colors) and Mode 2 (2 colors) */}
+      {/* In Mode 0 (16 colors), lines rarely have >16 unique colors so selection algorithm doesn't apply */}
+      {showPreprocessParams && (
+        <>
+          <div className={styles.separator} />
 
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>
-          <Trans>Sélection de palette</Trans>
-        </h3>
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Extraction palette de base</Trans>
+            </h3>
+            <p className={styles.description}>
+              <Trans>
+                Paramètres pour l'extraction de la palette initiale depuis
+                l'image source.
+              </Trans>
+            </p>
 
-        <TuningSlider
-          label={_(msg`Distance de continuité`)}
-          value={paletteContinuityDistance}
-          onChange={onPaletteContinuityDistanceChange}
-          min={200}
-          max={2000}
-          step={50}
-          defaultValue={PALETTE_CONTINUITY_DISTANCE}
-          format={(v) => v.toFixed(0)}
-          description={_(
-            msg`Plus bas = plus de changements de palette, plus haut = plus de stabilité`
-          )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-        />
+            <TuningSlider
+              label={_(msg`Distance de continuité`)}
+              value={preprocessContinuityDistance}
+              onChange={onPreprocessContinuityDistanceChange}
+              min={200}
+              max={2000}
+              step={50}
+              defaultValue={PREPROCESS_CONTINUITY_DISTANCE}
+              format={(v) => v.toFixed(0)}
+              description={_(
+                msg`Plus bas = plus de variété, plus haut = plus de cohérence entre lignes`
+              )}
+              resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+            />
 
-        <TuningSlider
-          label={_(msg`Bonus de continuité`)}
-          value={paletteContinuityBonus}
-          onChange={onPaletteContinuityBonusChange}
-          min={1}
-          max={3}
-          step={0.1}
-          defaultValue={PALETTE_CONTINUITY_BONUS}
-          description={_(
-            msg`Plus haut = préférence plus forte pour les couleurs de la palette précédente`
-          )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-        />
+            <TuningSlider
+              label={_(msg`Bonus de continuité`)}
+              value={preprocessContinuityBonus}
+              onChange={onPreprocessContinuityBonusChange}
+              min={1}
+              max={3}
+              step={0.1}
+              defaultValue={PREPROCESS_CONTINUITY_BONUS}
+              description={_(
+                msg`Plus haut = préférence pour les couleurs similaires aux lignes précédentes`
+              )}
+              resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+            />
 
-        <TuningSlider
-          label={_(msg`Poids de fréquence`)}
-          value={paletteFrequencyExponent}
-          onChange={onPaletteFrequencyExponentChange}
-          min={0}
-          max={1}
-          step={0.05}
-          defaultValue={PALETTE_FREQUENCY_EXPONENT}
-          description={_(
-            msg`0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
-          )}
-          resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-        />
-      </div>
+            <TuningSlider
+              label={_(msg`Poids de fréquence`)}
+              value={preprocessFrequencyExponent}
+              onChange={onPreprocessFrequencyExponentChange}
+              min={0}
+              max={1}
+              step={0.05}
+              defaultValue={PREPROCESS_FREQUENCY_EXPONENT}
+              description={_(
+                msg`0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes`
+              )}
+              resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
+            />
+          </div>
+        </>
+      )}
 
       {/* Mode 0 CPC Plus specific settings */}
       {isMode0Plus && (

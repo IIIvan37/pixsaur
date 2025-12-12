@@ -5,9 +5,9 @@ import {
   HORIZONTAL_ERROR_COEFFICIENT,
   MODE_0_LINE_WEIGHT,
   MODE_0_PIXEL_WEIGHT,
-  PALETTE_CONTINUITY_BONUS,
-  PALETTE_CONTINUITY_DISTANCE,
-  PALETTE_FREQUENCY_EXPONENT,
+  PREPROCESS_CONTINUITY_BONUS,
+  PREPROCESS_CONTINUITY_DISTANCE,
+  PREPROCESS_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from './raster-constants'
 import type { RasterChange } from './types'
@@ -37,14 +37,18 @@ function isMode0CPCPlus(
  * Can be overridden by dev tools for fine-tuning visual quality
  */
 export const rasterTuningOverrides = {
+  // Dithering error propagation
   verticalErrorCoefficient: VERTICAL_ERROR_COEFFICIENT,
   horizontalErrorCoefficient: HORIZONTAL_ERROR_COEFFICIENT,
-  paletteContinuityDistance: PALETTE_CONTINUITY_DISTANCE,
-  paletteContinuityBonus: PALETTE_CONTINUITY_BONUS,
-  paletteFrequencyExponent: PALETTE_FREQUENCY_EXPONENT,
+
   // Mode 0 CPC Plus global palette extraction weights
   mode0PixelWeight: MODE_0_PIXEL_WEIGHT,
-  mode0LineWeight: MODE_0_LINE_WEIGHT
+  mode0LineWeight: MODE_0_LINE_WEIGHT,
+
+  // Preprocessing parameters (affects base palette extraction)
+  preprocessContinuityDistance: PREPROCESS_CONTINUITY_DISTANCE,
+  preprocessContinuityBonus: PREPROCESS_CONTINUITY_BONUS,
+  preprocessFrequencyExponent: PREPROCESS_FREQUENCY_EXPONENT
 }
 
 /**
@@ -487,12 +491,10 @@ export function extractGlobalPaletteFromImage(
       .map((v) => v.color)
   }
 
-  // Use median cut to select the best colors
-  const pixels: WeightedPixel[] = Array.from(colorFrequency.values()).map(
-    ({ color, count }) => ({ color, weight: count })
-  )
-
-  return medianCut(pixels, maxColors)
+  // Use farthest point sampling to select the best colors
+  // This uses the preprocessing tuning parameters (continuityDistance, continuityBonus, frequencyExponent)
+  // Note: previousPalette is null for global extraction (no continuity context)
+  return selectPaletteFarthestPoint(colorFrequency, maxColors, null)
 }
 
 /**
@@ -886,7 +888,11 @@ export function optimizeLinePalettesWithIndexBuffer(
 
         // If error is significant, this color needs a raster slot
         if (error > 0) {
-          uncoveredColors.push({ color: quantized, error, count })
+          uncoveredColors.push({
+            color: quantized,
+            error,
+            count
+          })
         }
       }
 
@@ -1137,6 +1143,11 @@ function selectPaletteFarthestPoint(
   maxColors: number,
   previousPalette: Vector<'RGB'>[] | null = null
 ): Vector<'RGB'>[] {
+  // Use preprocessing parameters for base palette extraction
+  const continuityDistance = rasterTuningOverrides.preprocessContinuityDistance
+  const continuityBonusValue = rasterTuningOverrides.preprocessContinuityBonus
+  const frequencyExponent = rasterTuningOverrides.preprocessFrequencyExponent
+
   const colors = Array.from(colorFrequencies.values())
 
   if (colors.length === 0) {
@@ -1186,23 +1197,22 @@ function selectPaletteFarthestPoint(
       // Score = distance * (frequency ^ exponent) to balance distance and importance
       // High frequency colors that are far from selected colors are preferred
       // Exponent controls frequency influence: 0.5 = sqrt (balanced), 1.0 = linear (strong)
-      const frequencyWeight =
-        count ** rasterTuningOverrides.paletteFrequencyExponent
+      const frequencyWeight = count ** frequencyExponent
       const score = minDist * frequencyWeight
 
       // Bonus for colors similar to previous palette (continuity)
-      let continuityBonus = 1
+      let continuityBonusFactor = 1
       if (previousPalette) {
         for (const prevColor of previousPalette) {
           const dist = weightedRGBDistance(color, prevColor)
-          if (dist < rasterTuningOverrides.paletteContinuityDistance) {
-            continuityBonus = rasterTuningOverrides.paletteContinuityBonus
+          if (dist < continuityDistance) {
+            continuityBonusFactor = continuityBonusValue
             break
           }
         }
       }
 
-      const finalScore = score * continuityBonus
+      const finalScore = score * continuityBonusFactor
 
       if (finalScore > bestScore) {
         bestScore = finalScore

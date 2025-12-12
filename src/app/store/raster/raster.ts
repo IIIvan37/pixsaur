@@ -116,6 +116,15 @@ export const rasterIndexBufferAtom = atom((get) => {
 })
 
 /**
+ * Derived atom: returns the base raster palette (quantizedGlobalPalette)
+ * This is the palette used as the base for all raster optimizations
+ */
+export const rasterBasePaletteAtom = atom((get) => {
+  const result = get(rasterOptimizationResultAtom)
+  return result?.quantizedGlobalPalette ?? null
+})
+
+/**
  * Action atom to clear all raster changes
  */
 export const clearRasterChangesAtom = atom(null, (_get, set) => {

@@ -6,9 +6,9 @@ import { Trans } from '@lingui/react/macro'
 import { useAtom } from 'jotai'
 import {
   horizontalErrorCoefficientAtom,
-  paletteContinuityBonusAtom,
-  paletteContinuityDistanceAtom,
-  paletteFrequencyExponentAtom,
+  preprocessContinuityBonusAtom,
+  preprocessContinuityDistanceAtom,
+  preprocessFrequencyExponentAtom,
   rasterTuningEnabledAtom,
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
@@ -18,9 +18,9 @@ import DraggableDialog from '@/components/ui/draggable-dialog'
 import Icon from '@/components/ui/icon'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
-  PALETTE_CONTINUITY_BONUS,
-  PALETTE_CONTINUITY_DISTANCE,
-  PALETTE_FREQUENCY_EXPONENT,
+  PREPROCESS_CONTINUITY_BONUS,
+  PREPROCESS_CONTINUITY_DISTANCE,
+  PREPROCESS_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from '@/libs/pixsaur-raster/raster-constants'
 import styles from './raster-tuning-panel.module.css'
@@ -35,14 +35,13 @@ export function RasterTuningPanel() {
     horizontalErrorCoefficientAtom
   )
 
-  const [paletteContinuityDistance, setPaletteContinuityDistance] = useAtom(
-    paletteContinuityDistanceAtom
+  const [preprocessContinuityDistance, setPreprocessContinuityDistance] =
+    useAtom(preprocessContinuityDistanceAtom)
+  const [preprocessContinuityBonus, setPreprocessContinuityBonus] = useAtom(
+    preprocessContinuityBonusAtom
   )
-  const [paletteContinuityBonus, setPaletteContinuityBonus] = useAtom(
-    paletteContinuityBonusAtom
-  )
-  const [paletteFrequencyExponent, setPaletteFrequencyExponent] = useAtom(
-    paletteFrequencyExponentAtom
+  const [preprocessFrequencyExponent, setPreprocessFrequencyExponent] = useAtom(
+    preprocessFrequencyExponentAtom
   )
 
   // Auto-regenerate rasters when tuning parameters change
@@ -96,35 +95,35 @@ export function RasterTuningPanel() {
 
           <TuningSlider
             label='Continuity Distance'
-            value={paletteContinuityDistance}
-            onChange={setPaletteContinuityDistance}
+            value={preprocessContinuityDistance}
+            onChange={setPreprocessContinuityDistance}
             min={200}
             max={2000}
             step={50}
-            defaultValue={PALETTE_CONTINUITY_DISTANCE}
+            defaultValue={PREPROCESS_CONTINUITY_DISTANCE}
             format={(v) => v.toFixed(0)}
             description='Lower = more palette changes, higher = more stability'
           />
 
           <TuningSlider
             label='Continuity Bonus'
-            value={paletteContinuityBonus}
-            onChange={setPaletteContinuityBonus}
+            value={preprocessContinuityBonus}
+            onChange={setPreprocessContinuityBonus}
             min={1}
             max={3}
             step={0.1}
-            defaultValue={PALETTE_CONTINUITY_BONUS}
+            defaultValue={PREPROCESS_CONTINUITY_BONUS}
             description='Higher = stronger preference for previous palette colors'
           />
 
           <TuningSlider
             label='Frequency Weight'
-            value={paletteFrequencyExponent}
-            onChange={setPaletteFrequencyExponent}
+            value={preprocessFrequencyExponent}
+            onChange={setPreprocessFrequencyExponent}
             min={0}
             max={1}
             step={0.05}
-            defaultValue={PALETTE_FREQUENCY_EXPONENT}
+            defaultValue={PREPROCESS_FREQUENCY_EXPONENT}
             description='0 = pure diversity, 0.5 = balanced, 1 = prefer frequent colors'
           />
         </div>

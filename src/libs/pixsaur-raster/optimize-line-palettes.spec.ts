@@ -300,20 +300,24 @@ describe('rasterTuningOverrides - other coefficients', () => {
     )
   })
 
-  it('should have paletteContinuityDistance defined', () => {
-    expect(rasterTuningOverrides.paletteContinuityDistance).toBeDefined()
-    expect(typeof rasterTuningOverrides.paletteContinuityDistance).toBe(
+  it('should have preprocessContinuityDistance defined', () => {
+    expect(rasterTuningOverrides.preprocessContinuityDistance).toBeDefined()
+    expect(typeof rasterTuningOverrides.preprocessContinuityDistance).toBe(
       'number'
     )
   })
 
-  it('should have paletteContinuityBonus defined', () => {
-    expect(rasterTuningOverrides.paletteContinuityBonus).toBeDefined()
-    expect(typeof rasterTuningOverrides.paletteContinuityBonus).toBe('number')
+  it('should have preprocessContinuityBonus defined', () => {
+    expect(rasterTuningOverrides.preprocessContinuityBonus).toBeDefined()
+    expect(typeof rasterTuningOverrides.preprocessContinuityBonus).toBe(
+      'number'
+    )
   })
 
-  it('should have paletteFrequencyExponent defined', () => {
-    expect(rasterTuningOverrides.paletteFrequencyExponent).toBeDefined()
-    expect(typeof rasterTuningOverrides.paletteFrequencyExponent).toBe('number')
+  it('should have preprocessFrequencyExponent defined', () => {
+    expect(rasterTuningOverrides.preprocessFrequencyExponent).toBeDefined()
+    expect(typeof rasterTuningOverrides.preprocessFrequencyExponent).toBe(
+      'number'
+    )
   })
 })

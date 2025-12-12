@@ -15,9 +15,9 @@ import {
   horizontalErrorCoefficientAtom,
   mode0LineWeightAtom,
   mode0PixelWeightAtom,
-  paletteContinuityBonusAtom,
-  paletteContinuityDistanceAtom,
-  paletteFrequencyExponentAtom,
+  preprocessContinuityBonusAtom,
+  preprocessContinuityDistanceAtom,
+  preprocessFrequencyExponentAtom,
   verticalErrorCoefficientAtom
 } from './raster-tuning'
 
@@ -32,11 +32,15 @@ export function useRasterTuningRegeneration() {
 
   const verticalErrorCoef = useAtomValue(verticalErrorCoefficientAtom)
   const horizontalErrorCoef = useAtomValue(horizontalErrorCoefficientAtom)
-  const paletteContinuityDistance = useAtomValue(paletteContinuityDistanceAtom)
-  const paletteContinuityBonus = useAtomValue(paletteContinuityBonusAtom)
-  const paletteFrequencyExponent = useAtomValue(paletteFrequencyExponentAtom)
   const mode0PixelWeight = useAtomValue(mode0PixelWeightAtom)
   const mode0LineWeight = useAtomValue(mode0LineWeightAtom)
+  const preprocessContinuityDistance = useAtomValue(
+    preprocessContinuityDistanceAtom
+  )
+  const preprocessContinuityBonus = useAtomValue(preprocessContinuityBonusAtom)
+  const preprocessFrequencyExponent = useAtomValue(
+    preprocessFrequencyExponentAtom
+  )
 
   const isRegeneratingRef = useRef(false)
 
@@ -44,11 +48,13 @@ export function useRasterTuningRegeneration() {
     // Always update the overrides
     rasterTuningOverrides.verticalErrorCoefficient = verticalErrorCoef
     rasterTuningOverrides.horizontalErrorCoefficient = horizontalErrorCoef
-    rasterTuningOverrides.paletteContinuityDistance = paletteContinuityDistance
-    rasterTuningOverrides.paletteContinuityBonus = paletteContinuityBonus
-    rasterTuningOverrides.paletteFrequencyExponent = paletteFrequencyExponent
     rasterTuningOverrides.mode0PixelWeight = mode0PixelWeight
     rasterTuningOverrides.mode0LineWeight = mode0LineWeight
+    rasterTuningOverrides.preprocessContinuityDistance =
+      preprocessContinuityDistance
+    rasterTuningOverrides.preprocessContinuityBonus = preprocessContinuityBonus
+    rasterTuningOverrides.preprocessFrequencyExponent =
+      preprocessFrequencyExponent
 
     // Skip regeneration if already regenerating or if rasters aren't enabled/generated
     if (isRegeneratingRef.current || !rasterEnabled || !hasGeneratedRasters) {
@@ -76,11 +82,11 @@ export function useRasterTuningRegeneration() {
   }, [
     verticalErrorCoef,
     horizontalErrorCoef,
-    paletteContinuityDistance,
-    paletteContinuityBonus,
-    paletteFrequencyExponent,
     mode0PixelWeight,
     mode0LineWeight,
+    preprocessContinuityDistance,
+    preprocessContinuityBonus,
+    preprocessFrequencyExponent,
     rasterEnabled,
     hasGeneratedRasters,
     autoOptimize

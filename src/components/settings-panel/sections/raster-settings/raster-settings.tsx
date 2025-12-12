@@ -29,9 +29,9 @@ import {
   horizontalErrorCoefficientAtom,
   mode0LineWeightAtom,
   mode0PixelWeightAtom,
-  paletteContinuityBonusAtom,
-  paletteContinuityDistanceAtom,
-  paletteFrequencyExponentAtom,
+  preprocessContinuityBonusAtom,
+  preprocessContinuityDistanceAtom,
+  preprocessFrequencyExponentAtom,
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
 import { useRasterTuningRegeneration } from '@/app/store/raster/use-raster-tuning-regeneration'
@@ -70,20 +70,19 @@ export function RasterSettings() {
     horizontalErrorCoefficientAtom
   )
 
-  // Palette selection
-  const [paletteContinuityDistance, setPaletteContinuityDistance] = useAtom(
-    paletteContinuityDistanceAtom
-  )
-  const [paletteContinuityBonus, setPaletteContinuityBonus] = useAtom(
-    paletteContinuityBonusAtom
-  )
-  const [paletteFrequencyExponent, setPaletteFrequencyExponent] = useAtom(
-    paletteFrequencyExponentAtom
-  )
-
   // Mode 0 CPC Plus specific
   const [mode0PixelWeight, setMode0PixelWeight] = useAtom(mode0PixelWeightAtom)
   const [mode0LineWeight, setMode0LineWeight] = useAtom(mode0LineWeightAtom)
+
+  // Preprocessing parameters (base palette extraction)
+  const [preprocessContinuityDistance, setPreprocessContinuityDistance] =
+    useAtom(preprocessContinuityDistanceAtom)
+  const [preprocessContinuityBonus, setPreprocessContinuityBonus] = useAtom(
+    preprocessContinuityBonusAtom
+  )
+  const [preprocessFrequencyExponent, setPreprocessFrequencyExponent] = useAtom(
+    preprocessFrequencyExponentAtom
+  )
 
   // Raster panel
   const changes = useAtomValue(rasterChangesAtom)
@@ -100,6 +99,11 @@ export function RasterSettings() {
 
   // Mode 0 CPC Plus detection (for special raster handling)
   const isMode0Plus = isPlusMode && nColors === 16
+
+  // Preprocessing parameters are only useful for modes with few colors (Mode 1 = 4, Mode 2 = 2)
+  // In Mode 0 (16 colors), each line rarely has >16 unique colors after quantization,
+  // so the farthest point selection algorithm doesn't apply and these params have no effect
+  const showPreprocessParams = nColors < 16
 
   const addChange = useSetAtom(addRasterChangeAtom)
   const updateChange = useSetAtom(updateRasterChangeAtom)
@@ -173,12 +177,13 @@ export function RasterSettings() {
       onVerticalErrorCoefChange={setVerticalErrorCoef}
       horizontalErrorCoef={horizontalErrorCoef}
       onHorizontalErrorCoefChange={setHorizontalErrorCoef}
-      paletteContinuityDistance={paletteContinuityDistance}
-      onPaletteContinuityDistanceChange={setPaletteContinuityDistance}
-      paletteContinuityBonus={paletteContinuityBonus}
-      onPaletteContinuityBonusChange={setPaletteContinuityBonus}
-      paletteFrequencyExponent={paletteFrequencyExponent}
-      onPaletteFrequencyExponentChange={setPaletteFrequencyExponent}
+      showPreprocessParams={showPreprocessParams}
+      preprocessContinuityDistance={preprocessContinuityDistance}
+      onPreprocessContinuityDistanceChange={setPreprocessContinuityDistance}
+      preprocessContinuityBonus={preprocessContinuityBonus}
+      onPreprocessContinuityBonusChange={setPreprocessContinuityBonus}
+      preprocessFrequencyExponent={preprocessFrequencyExponent}
+      onPreprocessFrequencyExponentChange={setPreprocessFrequencyExponent}
       isMode0Plus={isMode0Plus}
       mode0PixelWeight={mode0PixelWeight}
       onMode0PixelWeightChange={setMode0PixelWeight}
