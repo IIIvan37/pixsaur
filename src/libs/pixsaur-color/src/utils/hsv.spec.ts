@@ -3,8 +3,11 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateHue,
   calculateHueDistance,
+  calculateMinHueDistance,
+  calculateMinHueDistanceInSet,
   calculateSaturation,
   calculateValue,
+  isVisuallyColorful,
   rgbToHsv
 } from './hsv'
 
@@ -125,5 +128,198 @@ describe('rgbToHsv', () => {
     expect(hsv.h).toBeCloseTo(0, 0) // Reddish
     expect(hsv.s).toBeCloseTo(0.5, 2)
     expect(hsv.v).toBeCloseTo(0.784, 2)
+  })
+})
+
+describe('calculateMinHueDistance', () => {
+  it('should calculate minimum hue distance to a set of colors', () => {
+    // Red candidate compared to green and blue
+    const dist = calculateMinHueDistance(
+      [255, 0, 0],
+      [
+        [0, 255, 0],
+        [0, 0, 255]
+      ]
+    )
+    // Red (0) to Green (120) = 120, Red (0) to Blue (240) = 120
+    expect(dist).toBeCloseTo(120, 0)
+  })
+
+  it('should return 180 for low saturation candidate', () => {
+    // Gray candidate - saturation < threshold
+    const dist = calculateMinHueDistance([128, 128, 128], [[255, 0, 0]])
+    expect(dist).toBe(180)
+  })
+
+  it('should ignore low saturation colors in comparison', () => {
+    // Red candidate, only gray in set
+    const dist = calculateMinHueDistance(
+      [255, 0, 0],
+      [
+        [128, 128, 128],
+        [100, 100, 100]
+      ]
+    )
+    // No saturated colors to compare, should remain at max
+    expect(dist).toBe(180)
+  })
+
+  it('should find closest color in terms of hue', () => {
+    // Orange candidate compared to red and blue
+    const dist = calculateMinHueDistance(
+      [255, 128, 0], // Orange ~30°
+      [
+        [255, 0, 0], // Red 0°
+        [0, 0, 255] // Blue 240°
+      ]
+    )
+    // Should be close to red
+    expect(dist).toBeLessThan(60)
+  })
+
+  it('should respect custom saturation threshold', () => {
+    // Slightly saturated color with high threshold
+    const dist = calculateMinHueDistance(
+      [255, 200, 200], // Low saturation
+      [[0, 255, 0]],
+      0.5 // High threshold
+    )
+    expect(dist).toBe(180) // Below threshold
+  })
+})
+
+describe('calculateMinHueDistanceInSet', () => {
+  it('should find minimum distance between colors in set', () => {
+    // Red, Green, Blue - all 120° apart
+    const dist = calculateMinHueDistanceInSet([
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255]
+    ])
+    expect(dist).toBeCloseTo(120, 0)
+  })
+
+  it('should find closer colors', () => {
+    // Red and Orange are close
+    const dist = calculateMinHueDistanceInSet([
+      [255, 0, 0], // Red 0°
+      [255, 128, 0], // Orange ~30°
+      [0, 0, 255] // Blue 240°
+    ])
+    expect(dist).toBeLessThan(60)
+  })
+
+  it('should return 180 for all achromatic colors', () => {
+    const dist = calculateMinHueDistanceInSet([
+      [0, 0, 0],
+      [128, 128, 128],
+      [255, 255, 255]
+    ])
+    expect(dist).toBe(180)
+  })
+
+  it('should ignore achromatic colors in calculation', () => {
+    const dist = calculateMinHueDistanceInSet([
+      [255, 0, 0],
+      [128, 128, 128], // Gray - ignored
+      [0, 255, 0]
+    ])
+    // Only comparing red and green
+    expect(dist).toBeCloseTo(120, 0)
+  })
+
+  it('should handle single saturated color', () => {
+    const dist = calculateMinHueDistanceInSet([
+      [255, 0, 0],
+      [128, 128, 128],
+      [100, 100, 100]
+    ])
+    // Only one saturated color, no pairs to compare
+    expect(dist).toBe(180)
+  })
+
+  it('should handle empty set', () => {
+    const dist = calculateMinHueDistanceInSet([])
+    expect(dist).toBe(180)
+  })
+})
+
+describe('isVisuallyColorful', () => {
+  it('should return true for saturated colors below maxValue threshold', () => {
+    // Using maxValue=1.0 to allow max brightness colors
+    expect(isVisuallyColorful([255, 0, 0], 0.3, 0.2, 1.0)).toBe(true) // Red
+    expect(isVisuallyColorful([0, 255, 0], 0.3, 0.2, 1.0)).toBe(true) // Green
+    // Blue has low luminance (0.0722), needs very low minLuminance
+    // With all params: minSat=0.3, minLum=0.05, maxVal=1.0, highSatThresh=0.7, highSatMinLum=0.05
+    expect(isVisuallyColorful([0, 0, 255], 0.3, 0.05, 1.0, 0.7, 0.05)).toBe(
+      true
+    ) // Blue
+  })
+
+  it('should return false for pure colors at max value by default', () => {
+    // Default maxValue is 0.95, pure colors have value=1.0
+    expect(isVisuallyColorful([255, 0, 0])).toBe(false) // value=1 > 0.95
+  })
+
+  it('should return false for grayscale colors', () => {
+    expect(isVisuallyColorful([0, 0, 0])).toBe(false) // Black
+    expect(isVisuallyColorful([128, 128, 128])).toBe(false) // Gray
+    expect(isVisuallyColorful([255, 255, 255])).toBe(false) // White
+  })
+
+  it('should return false for pale/desaturated colors', () => {
+    expect(isVisuallyColorful([255, 200, 200])).toBe(false) // Pale pink
+    expect(isVisuallyColorful([200, 200, 255])).toBe(false) // Pale blue
+  })
+
+  it('should return false for very dark colors', () => {
+    expect(isVisuallyColorful([20, 0, 0])).toBe(false) // Very dark red
+    expect(isVisuallyColorful([0, 20, 0])).toBe(false) // Very dark green
+  })
+
+  it('should allow highly saturated colors with lower luminance threshold', () => {
+    // Deep saturated blue - value=0.78 < 0.95, saturation=1
+    // Blue luminance = 200 * 0.0722 / 255 ≈ 0.057
+    // High saturation (1.0 > 0.7) allows lower luminance (0.15 default for high sat)
+    // But 0.057 < 0.15, so still false with defaults
+    // Need to lower highSaturationMinLuminance
+    expect(isVisuallyColorful([0, 0, 200], 0.3, 0.2, 0.95, 0.7, 0.05)).toBe(
+      true
+    )
+  })
+
+  it('should respect custom saturation threshold', () => {
+    // Color with ~0.29 saturation
+    const paleColor: [number, number, number] = [255, 180, 180]
+    // saturation = (255-180)/255 ≈ 0.29
+    // value = 1.0 > 0.95, so false even with low saturation threshold
+    expect(isVisuallyColorful(paleColor, 0.1, 0.2, 1.0)).toBe(true)
+    expect(isVisuallyColorful(paleColor, 0.5)).toBe(false)
+  })
+
+  it('should return false for colors that are too bright (value > maxValue)', () => {
+    // Pure red has value=1.0 which exceeds default maxValue=0.95
+    expect(isVisuallyColorful([255, 0, 0])).toBe(false)
+  })
+
+  it('should handle medium saturation colors with medium value', () => {
+    // [200, 100, 100]: saturation=0.5, value=0.78, luminance≈0.28
+    // Meets all default thresholds
+    expect(isVisuallyColorful([200, 100, 100])).toBe(true)
+    // [100, 200, 100]: saturation=0.5, value=0.78, luminance≈0.58
+    expect(isVisuallyColorful([100, 200, 100])).toBe(true)
+  })
+
+  it('should use highSaturationMinLuminance for highly saturated colors', () => {
+    // Color with high saturation but low luminance
+    const darkSaturated: [number, number, number] = [150, 0, 0]
+    // saturation=1, value=0.59, luminance=150*0.2126/255≈0.125
+    // saturation > 0.7 so effectiveMinLuminance = 0.15
+    // 0.125 < 0.15, so should be false with defaults
+    expect(isVisuallyColorful(darkSaturated)).toBe(false)
+    // With lower highSaturationMinLuminance
+    expect(isVisuallyColorful(darkSaturated, 0.3, 0.2, 0.95, 0.7, 0.1)).toBe(
+      true
+    )
   })
 })

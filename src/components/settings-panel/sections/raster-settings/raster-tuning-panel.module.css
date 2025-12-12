@@ -25,75 +25,7 @@
   font-family: var(--font-family, monospace);
 }
 
-.tuningRow {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm, 0.5rem);
-}
-
-.tuningHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.tuningLabel {
-  color: var(--color-foreground-muted, #999);
-  font-size: var(--font-size-sm, 0.75rem);
-  font-family: var(--font-family, monospace);
-}
-
-.tuningValue {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm, 0.5rem);
-}
-
-.currentValue {
-  color: var(--color-foreground, #00ff00);
-  font-weight: 600;
-  font-size: var(--font-size-sm, 0.75rem);
-  min-width: 3rem;
-  text-align: right;
-  font-family: var(--font-family, monospace);
-}
-
-.resetButton {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 0.25rem;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  font-size: 1rem;
-  line-height: 1;
-  transition: all 0.2s ease;
-}
-
-.resetButton:hover {
-  background: rgba(var(--accent-rgb), 0.1);
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-  transform: rotate(-180deg);
-}
-
-.resetButton:active {
-  transform: rotate(-180deg) scale(0.95);
-}
-
-.description {
-  color: var(--color-foreground-muted, #666);
-  font-size: var(--font-size-xs, 0.6875rem);
-  font-style: italic;
-  margin-top: -0.25rem;
-  font-family: var(--font-family, monospace);
-  opacity: 0.7;
-}
+/* Tuning row styles are now in shared/tuning-slider.module.css */
 
 .separator {
   height: 1px;

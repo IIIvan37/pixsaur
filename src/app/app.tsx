@@ -7,10 +7,12 @@ import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
 import { VersionDisplay } from '@/components/version-display'
 import { isDevelopment, logger } from '@/core'
+
 import styles from '@/styles/app.module.css'
 import { invoke, isTauri } from '@/tauri'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
+import { useAutoRegenerateRasters } from './store/raster/use-auto-regenerate-rasters'
 
 /**
  * Check if running in Tauri environment
@@ -20,6 +22,9 @@ import { I18nProviderWrapper } from './i18n-provider'
 export default function App() {
   const tauri = isTauri()
   const dev = isDevelopment()
+
+  // Auto-regenerate rasters when selection/parameters change
+  useAutoRegenerateRasters()
 
   // Add F12 shortcut to open debug window
   useEffect(() => {

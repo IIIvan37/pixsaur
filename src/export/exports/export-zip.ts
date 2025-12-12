@@ -1,6 +1,5 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { CPCHardware } from '@/libs/types'
 import { isTauri, saveZipFileTauri } from '@/tauri'
@@ -99,7 +98,8 @@ export async function exportZip(
   cpcHardware: CPCHardware,
   reducedPalette: Array<[number, number, number]> | undefined,
   config: ExportConfig,
-  rasterChanges: RasterChange[] = []
+  rasterChanges: RasterChange[] = [],
+  previewImage?: ImageData
 ): Promise<boolean> {
   const zip = new JSZip()
   const isCPCPlus = cpcHardware === CPCHardware.PLUS
@@ -177,16 +177,11 @@ export async function exportZip(
 
   // Export PNG if enabled
   if (config.content.includePNG || config.content.includePNGCorrected) {
-    // Build global palette as Vector[] for raster rendering
-    const globalPalette: Vector[] = reducedPalette
-      ? reducedPalette.map((c) => [...c] as Vector)
-      : []
-
-    const rasterData: PNGExportData = {
-      indexBuf,
-      globalPalette,
-      rasterChanges
-    }
+    // Use previewImage directly if available (has rasters already applied)
+    // This is the same rendering as double-click on preview canvas
+    const rasterData: PNGExportData | undefined = previewImage
+      ? { previewImage }
+      : undefined
 
     await exportPNGData(zip, canvas, modeConfig, config, rasterData)
   }

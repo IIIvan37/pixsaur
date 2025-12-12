@@ -23,6 +23,13 @@
     opacity 0.2s ease;
 }
 
+.sectionHeader:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb, 168, 181, 168), 0.2);
+  z-index: 1;
+}
+
 .sectionHeader:hover:not(:disabled) {
   background: var(--color-surface-hover, rgba(255, 255, 255, 0.08));
 }

@@ -92,14 +92,10 @@ export const previewCanvasSizeAtom = atom((get) => {
   // Obtenir la configuration du mode CPC pour le pixel aspect ratio
   const modeConfig = get(effectiveModeConfigAtom)
 
-  // En mode origin, utiliser les dimensions normalisées (160/320/640)
-  // En mode auto, utiliser les dimensions du mode config
-  const canvasWidth = modeConfig.width
-  const canvasHeight = modeConfig.height
-
   // Dimensions visuelles = dimensions canvas × pixel aspect ratio
-  const visualWidth = canvasWidth * modeConfig.scaleX
-  const visualHeight = canvasHeight * modeConfig.scaleY
+  // Toujours 320×200 pour tous les modes
+  const visualWidth = modeConfig.width * modeConfig.scaleX
+  const visualHeight = modeConfig.height * modeConfig.scaleY
 
   // Calculer le scale pour fit dans le container (sans dépasser la largeur disponible)
   const scale = Math.min(containerWidth / visualWidth, 1) // Ne pas upscaler

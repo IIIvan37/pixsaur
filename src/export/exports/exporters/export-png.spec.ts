@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CpcModeConfig } from '@/app/store/config/types'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { exportPNGData, type PNGExportData } from './export-png'
 
 // Mock JSZip
@@ -24,6 +22,19 @@ const mockCanvas = {
   })),
   toBlob: mockToBlob
 } as unknown as HTMLCanvasElement
+
+// Helper to create a mock ImageData
+function createMockImageData(width: number, height: number): ImageData {
+  const data = new Uint8ClampedArray(width * height * 4)
+  // Fill with black pixels
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 0 // R
+    data[i + 1] = 0 // G
+    data[i + 2] = 0 // B
+    data[i + 3] = 255 // A
+  }
+  return { data, width, height, colorSpace: 'srgb' as const } as ImageData
+}
 
 // Mock document.createElement to return controlled canvas
 vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
@@ -137,7 +148,7 @@ describe('export-png', () => {
       )
     })
 
-    it('should export corrected aspect PNG without rasters when raster data has empty ranges', async () => {
+    it('should export corrected aspect PNG without rasters when raster data is undefined', async () => {
       const config = {
         ...defaultConfig,
         content: {
@@ -147,21 +158,12 @@ describe('export-png', () => {
         }
       }
 
-      const rasterData: PNGExportData = {
-        indexBuf: new Uint8Array(160 * 200),
-        globalPalette: [
-          [0, 0, 0],
-          [255, 0, 0]
-        ] as Vector[],
-        rasterChanges: []
-      }
-
       await exportPNGData(
         mockZip as any,
         mockCanvas,
         defaultModeConfig,
         config,
-        rasterData
+        undefined
       )
 
       expect(mockZipFile).toHaveBeenCalledTimes(1)
@@ -171,7 +173,7 @@ describe('export-png', () => {
       )
     })
 
-    it('should export corrected aspect PNG with rasters when raster data is provided', async () => {
+    it('should export corrected aspect PNG with previewImage when provided', async () => {
       const config = {
         ...defaultConfig,
         content: {
@@ -181,22 +183,8 @@ describe('export-png', () => {
         }
       }
 
-      const rasterChanges: RasterChange[] = [
-        {
-          id: 'test-1',
-          line: 50,
-          inkIndex: 1,
-          color: [255, 0, 0] as Vector
-        }
-      ]
-
       const rasterData: PNGExportData = {
-        indexBuf: new Uint8Array(160 * 200),
-        globalPalette: [
-          [0, 0, 0],
-          [128, 128, 128]
-        ] as Vector[],
-        rasterChanges
+        previewImage: createMockImageData(160, 200)
       }
 
       await exportPNGData(
@@ -234,7 +222,7 @@ describe('export-png', () => {
       )
     })
 
-    it('should fall back to canvas when globalPalette is empty', async () => {
+    it('should fall back to canvas when previewImage is undefined', async () => {
       const config = {
         ...defaultConfig,
         content: {
@@ -244,25 +232,12 @@ describe('export-png', () => {
         }
       }
 
-      const rasterData: PNGExportData = {
-        indexBuf: new Uint8Array(160 * 200),
-        globalPalette: [], // Empty palette
-        rasterChanges: [
-          {
-            id: 'test-1',
-            line: 50,
-            inkIndex: 1,
-            color: [255, 0, 0] as Vector
-          }
-        ]
-      }
-
       await exportPNGData(
         mockZip as any,
         mockCanvas,
         defaultModeConfig,
         config,
-        rasterData
+        undefined
       )
 
       // Should still export (fallback to canvas-based export)
@@ -369,8 +344,8 @@ describe('export-png', () => {
     })
   })
 
-  describe('raster application', () => {
-    it('should apply rasters to the correct lines in the output', async () => {
+  describe('previewImage usage', () => {
+    it('should use previewImage directly for corrected aspect PNG when provided', async () => {
       const config = {
         ...defaultConfig,
         content: {
@@ -379,40 +354,17 @@ describe('export-png', () => {
         }
       }
 
-      // Create a simple 4x4 image with ink index 0 everywhere
-      const width = 4
-      const height = 4
-      const indexBuf = new Uint8Array(width * height).fill(0)
-
-      // Set some pixels to ink index 1
-      indexBuf[4] = 1 // line 1, x=0
-      indexBuf[5] = 1 // line 1, x=1
-
-      const globalPalette: Vector[] = [
-        [0, 0, 0], // ink 0 = black
-        [128, 128, 128] // ink 1 = gray
-      ]
-
-      // Raster changes ink 1 to red on line 1
-      const rasterChanges: RasterChange[] = [
-        {
-          id: 'test-1',
-          line: 1,
-          inkIndex: 1,
-          color: [255, 0, 0] as Vector
-        }
-      ]
+      // Create a mock preview image (with rasters already applied)
+      const previewImage = createMockImageData(4, 4)
 
       const rasterData: PNGExportData = {
-        indexBuf,
-        globalPalette,
-        rasterChanges
+        previewImage
       }
 
       const modeConfig: CpcModeConfig = {
         mode: 0,
-        width,
-        height,
+        width: 4,
+        height: 4,
         overscan: false,
         nColors: 16,
         scaleX: 2,
@@ -427,7 +379,7 @@ describe('export-png', () => {
         rasterData
       )
 
-      // The PNG should be generated with rasters applied
+      // The PNG should be generated from previewImage
       expect(mockZipFile).toHaveBeenCalledWith(
         'pixsaur_corrected_aspect.png',
         expect.any(Blob)

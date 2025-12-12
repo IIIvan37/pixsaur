@@ -16,6 +16,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+.button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 5px rgba(var(--accent-rgb, 168, 181, 168), 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 .button:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);

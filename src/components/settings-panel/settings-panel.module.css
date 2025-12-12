@@ -54,6 +54,14 @@
   position: relative;
 }
 
+.tab:focus-visible:not(.active):not([data-state="active"]) {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-accent),
+    0 0 8px rgba(var(--accent-rgb, 168, 181, 168), 0.4);
+  z-index: 1;
+}
+
 @media (max-width: 768px) {
   .tab {
     padding: 0.5rem 0.75rem;
@@ -84,6 +92,14 @@
   border-color: var(--color-accent);
   font-weight: 600;
   box-shadow: 0 0 0 1px var(--color-accent) inset;
+}
+
+.tab.active:focus-visible,
+.tab[data-state="active"]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px var(--color-accent) inset,
+    0 0 12px rgba(var(--accent-rgb, 168, 181, 168), 0.5);
 }
 
 .tab svg {

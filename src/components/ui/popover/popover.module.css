@@ -9,13 +9,13 @@
   font-family: var(--font-family);
   font-size: var(--font-size-sm);
 
-  z-index: 50;
+  z-index: 1100;
   animation: fadeIn 0.2s ease;
 }
 
 .unstyled {
   /* Garde juste le positionnement et z-index, pas de styles visuels */
-  z-index: 50;
+  z-index: 1100;
 }
 
 .arrow {

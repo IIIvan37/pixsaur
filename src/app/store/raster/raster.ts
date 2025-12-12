@@ -1,8 +1,11 @@
 import { atom } from 'jotai'
+import { logger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   applyDitheringWithRaster,
   createRasterPreviewImageData,
+  MODE_0_FIXED_COLORS,
+  MODE_0_TOTAL_COLORS,
   optimizeLinePalettesWithIndexBuffer,
   preprocessImageForRaster
 } from '@/libs/pixsaur-raster'
@@ -37,6 +40,12 @@ export {
   rasterEnabledAtom,
   rasterMaxChangesPerLineAtom
 } from './raster-config'
+
+/**
+ * Version counter that increments each time raster optimization completes.
+ * Used to force re-evaluation of preview atoms even if data dimensions are the same.
+ */
+export const rasterVersionAtom = atom(0)
 
 /**
  * Raw optimization result from the raster algorithm (without final dithering).
@@ -106,6 +115,15 @@ export const rasterIndexBufferAtom = atom((get) => {
     height,
     palette: quantizedGlobalPalette
   }
+})
+
+/**
+ * Derived atom: returns the base raster palette (quantizedGlobalPalette)
+ * This is the palette used as the base for all raster optimizations
+ */
+export const rasterBasePaletteAtom = atom((get) => {
+  const result = get(rasterOptimizationResultAtom)
+  return result?.quantizedGlobalPalette ?? null
 })
 
 /**
@@ -289,6 +307,10 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   const enabled = get(rasterEnabledAtom)
   const changes = get(rasterChangesAtom)
 
+  // Explicitly depend on optimization result AND version to force re-evaluation
+  get(rasterOptimizationResultAtom)
+  get(rasterVersionAtom)
+
   if (!enabled || changes.length === 0) {
     return null
   }
@@ -321,18 +343,31 @@ export const rasterPreviewImageAtom = atom(async (get) => {
     const processor = get(imageProcessorAtom)
     if (processor) {
       try {
-        return processor.renderRasterPreview(
+        const preview = processor.renderRasterPreview(
           buffer,
           width,
           height,
           palette,
           changes
         )
+        // Force creation of new ImageData to avoid GPU cache issues
+        return new ImageData(
+          new Uint8ClampedArray(preview.data),
+          preview.width,
+          preview.height
+        )
       } catch (_e) {
         // Fallback CPU if GPU path fails
       }
     }
-    return createRasterPreviewImageData(buffer, width, height, palette, changes)
+    const preview = createRasterPreviewImageData(
+      buffer,
+      width,
+      height,
+      palette,
+      changes
+    )
+    return preview
   }
 
   // Fallback to standard preview index buffer for manual raster changes
@@ -372,6 +407,9 @@ export const rasterPreviewImageAtom = atom(async (get) => {
  * Effective preview image atom: returns raster preview when enabled, otherwise normal preview
  */
 export const effectivePreviewImageAtom = atom(async (get) => {
+  // Force re-evaluation when raster version changes
+  get(rasterVersionAtom)
+
   const rasterPreview = await get(rasterPreviewImageAtom)
   if (rasterPreview) {
     return rasterPreview
@@ -393,9 +431,7 @@ export const effectivePreviewImageAtom = atom(async (get) => {
 export const autoOptimizeRasterAtom = atom(
   null,
   async (get, set, options?: { resetChanges?: boolean }) => {
-    // Clear any existing raster data immediately to prevent visual persistence
-    set(rasterChangesAtom, [])
-    set(rasterOptimizationResultAtom, null)
+    logger.time('[RASTER] autoOptimizeRasterAtom - Total')
 
     const modeConfig = get(effectiveModeConfigAtom)
     const hardware = get(cpcHardwareAtom)
@@ -405,35 +441,67 @@ export const autoOptimizeRasterAtom = atom(
     // CPC Classic palette is used to constrain colors to the 27 hardware colors
     const cpcClassicPalette = isClassicMode ? cpcPalette : undefined
 
+    logger.time('[RASTER] Get positioned image')
     // Get the positioned normalized image (source colors, before dithering)
     // This gives us the TRUE colors of each pixel that we need to represent
     const sourceImage = await get(positionedNormalizedImageAtom)
+    logger.timeEnd('[RASTER] Get positioned image')
+
     if (!sourceImage) {
+      logger.timeEnd('[RASTER] autoOptimizeRasterAtom - Total')
       return { success: false, error: 'No image available' }
     }
 
     // Use dimensions from sourceImage
     const { width, height } = sourceImage
 
-    // Get the global palette (nColors for the current mode)
-    // Note: The optimization algorithm now extracts palette directly from source image,
-    // but we still need this for the initial API compatibility
+    // Detect Mode 0 CPC Plus (16 colors, Plus hardware)
+    // In this mode, only 12 colors are fixed (indices 4-15), indices 0-3 are raster slots
+    const isMode0Plus =
+      modeConfig.nColors === MODE_0_TOTAL_COLORS && hardware === 'plus'
+
+    logger.time('[RASTER] Get/calculate palette')
+    // Get the global palette from the same quantization as non-raster mode
     const exportPalette = await get(exportPaletteWithSlotsAtom)
 
-    // Filter out invalid slots and take first nColors
-    // If no valid colors, we'll use a placeholder - the algorithm will extract from image
-    const globalPalette = exportPalette
-      .filter((c) => c[0] !== -1)
-      .slice(0, modeConfig.nColors)
+    let globalPalette: Vector<'RGB'>[]
 
-    // Pad to nColors if needed (algorithm will override with extracted colors anyway)
-    while (globalPalette.length < modeConfig.nColors) {
-      globalPalette.push([0, 0, 0])
+    if (isMode0Plus) {
+      // Mode 0 CPC Plus: take the 12 best colors (first 12) for fixed palette
+      // These will be placed at indices 4-15 by the optimizer
+      // Indices 0-3 are raster slots that will be filled dynamically per line
+      globalPalette = exportPalette
+        .filter((c) => c[0] !== -1)
+        .slice(0, MODE_0_FIXED_COLORS) as Vector<'RGB'>[]
+
+      // Pad to 12 colors if needed
+      while (globalPalette.length < MODE_0_FIXED_COLORS) {
+        globalPalette.push([0, 0, 0])
+      }
+
+      logger.info(
+        '[RASTER] Mode 0 Plus: using first 12 colors for fixed palette',
+        {
+          paletteLength: globalPalette.length
+        }
+      )
+    } else {
+      // Standard modes (Mode 1, Mode 2, Mode 0 Classic): use export palette directly
+      globalPalette = exportPalette
+        .filter((c) => c[0] !== -1)
+        .slice(0, modeConfig.nColors) as Vector<'RGB'>[]
+
+      // Pad to nColors if needed
+      while (globalPalette.length < modeConfig.nColors) {
+        globalPalette.push([0, 0, 0])
+      }
     }
+    logger.timeEnd('[RASTER] Get/calculate palette')
 
     // Get raster dithering intensity
     const ditheringIntensity = get(rasterDitheringIntensityAtom)
 
+    logger.time('[RASTER] Preprocess image')
     // PRE-PROCESS: Transform source image to have max nColors per line
     // This ensures smooth palette transitions and better raster optimization
     const preprocessedImage = preprocessImageForRaster(
@@ -445,6 +513,7 @@ export const autoOptimizeRasterAtom = atom(
         cpcClassicPalette
       }
     )
+    logger.timeEnd('[RASTER] Preprocess image')
 
     // Get existing raster changes (without IDs for the algorithm)
     // If resetChanges is true, start fresh (useful when dithering intensity changes)
@@ -467,9 +536,11 @@ export const autoOptimizeRasterAtom = atom(
       maxAllowedChanges
     )
 
+    logger.time('[RASTER] Optimize line palettes')
     // Generate optimized raster changes AND matching index buffer
     // - preprocessedImage: image with max nColors per line (smooth transitions)
-    // - globalPalette: initial nColors palette
+    // - globalPalette: initial nColors palette (from same quantization as non-raster mode)
+    // - useProvidedPalette: true to reuse the same palette calculation as non-raster mode
     // - Returns both raster changes and an index buffer where each pixel
     //   maps to its correct ink index based on per-line palettes
     const {
@@ -483,9 +554,11 @@ export const autoOptimizeRasterAtom = atom(
       {
         maxChangesPerLine,
         nColors: modeConfig.nColors,
-        cpcClassicPalette
+        cpcClassicPalette,
+        useProvidedPalette: true // Use the same palette as non-raster mode
       }
     )
+    logger.timeEnd('[RASTER] Optimize line palettes')
 
     // Filter out any changes that exceed the mode height (safety check)
     const maxLine = modeConfig.height - 1
@@ -521,8 +594,17 @@ export const autoOptimizeRasterAtom = atom(
     // Replace all existing changes with optimized ones
     set(rasterChangesAtom, newChanges)
 
+    // Increment version to force preview re-evaluation
+    const currentVersion = get(rasterVersionAtom)
+    set(rasterVersionAtom, currentVersion + 1)
+
     // Enable raster mode
     set(rasterEnabledAtom, true)
+
+    logger.timeEnd('[RASTER] autoOptimizeRasterAtom - Total')
+    logger.info(
+      `[RASTER] Optimization complete: ${newChanges.length} changes, ${new Set(newChanges.map((c) => c.line)).size} lines affected`
+    )
 
     return {
       success: true,

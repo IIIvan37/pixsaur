@@ -54,7 +54,17 @@ textarea {
   color: inherit;
   background: none;
   border: none;
+}
+
+/* Désactiver l'outline par défaut sur tout sauf focus-visible */
+*:focus {
   outline: none;
+}
+
+/* Focus visible global pour navigation clavier */
+*:focus-visible {
+  outline: 2px solid var(--color-accent, #a8b5a8);
+  outline-offset: 2px;
 }
 
 button {

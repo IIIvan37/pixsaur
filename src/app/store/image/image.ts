@@ -86,6 +86,12 @@ export const setCanvasWidth = atom(null, (_get, set, width: number) => {
 
 const _selectionWritableAtom = atom<Selection | null>(null)
 
+/**
+ * Atom to track if the user is currently dragging/resizing the selection rectangle.
+ * Used to prevent expensive raster regeneration during active manipulation.
+ */
+export const isSelectionDraggingAtom = atom(false)
+
 export const selectionAtom = atom(
   (get) => get(_selectionWritableAtom) ?? get(initialSelectionAtom),
   (_get, set, newSel: Selection | null) => {

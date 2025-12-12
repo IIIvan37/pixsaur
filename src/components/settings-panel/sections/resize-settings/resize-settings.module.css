@@ -1,0 +1,10 @@
+/* Resize settings styles are inherited from parent tab.module.css */
+
+.selectionInfo {
+  padding: var(--spacing-sm);
+  background: var(--color-background-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+}

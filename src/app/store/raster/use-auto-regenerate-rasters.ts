@@ -1,6 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useRef } from 'react'
-import { selectionAtom } from '../image/image'
+import { isSelectionDraggingAtom, selectionAtom } from '../image/image'
 import {
   autoOptimizeRasterAtom,
   hasGeneratedRastersAtom,
@@ -25,6 +25,7 @@ export function useAutoRegenerateRasters() {
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const hasGeneratedRasters = useAtomValue(hasGeneratedRastersAtom)
   const selection = useAtomValue(selectionAtom)
+  const isSelectionDragging = useAtomValue(isSelectionDraggingAtom)
   const rasterDitheringIntensity = useAtomValue(rasterDitheringIntensityAtom)
   const maxChangesPerLine = useAtomValue(rasterMaxChangesPerLineAtom)
   const autoOptimize = useSetAtom(autoOptimizeRasterAtom)
@@ -63,10 +64,15 @@ export function useAutoRegenerateRasters() {
       return
     }
 
+    // Skip regeneration while user is actively dragging/resizing the selection
+    if (isSelectionDragging) {
+      return
+    }
+
     // Set flag immediately to prevent re-triggering during regeneration
     isRegeneratingRef.current = true
 
-    // Debounce the regeneration (300ms)
+    // Debounce the regeneration (800ms - increased from 300ms for better performance)
     const timeoutId = setTimeout(async () => {
       try {
         // Always reset changes when regenerating
@@ -83,6 +89,7 @@ export function useAutoRegenerateRasters() {
     }
   }, [
     selection,
+    isSelectionDragging,
     rasterDitheringIntensity,
     maxChangesPerLine,
     rasterEnabled,

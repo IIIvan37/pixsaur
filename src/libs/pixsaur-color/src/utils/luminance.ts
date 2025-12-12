@@ -67,3 +67,28 @@ export function isDark(color: Vector): boolean {
 export function isBright(color: Vector): boolean {
   return luminance(color) > 0.8
 }
+
+/**
+ * Finds the darkest color in a palette based on gamma-corrected luminance
+ * @param palette Array of RGB color vectors
+ * @returns The darkest color vector from the palette
+ * @throws Error if palette is empty
+ */
+export function findDarkestColor(palette: Vector[]): Vector {
+  if (palette.length === 0) {
+    throw new Error('Palette cannot be empty')
+  }
+
+  let darkestColor = palette[0]
+  let minLuminance = luminanceGammaCorrected(darkestColor)
+
+  for (const color of palette) {
+    const luminance = luminanceGammaCorrected(color)
+    if (luminance < minLuminance) {
+      minLuminance = luminance
+      darkestColor = color
+    }
+  }
+
+  return darkestColor
+}

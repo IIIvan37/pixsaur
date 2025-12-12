@@ -1,6 +1,10 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useState } from 'react'
-import { selectionAtom, setSelectionAtom } from '@/app/store/image/image'
+import {
+  isSelectionDraggingAtom,
+  selectionAtom,
+  setSelectionAtom
+} from '@/app/store/image/image'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { SourceSelectorView } from './source-selector-view'
 import {
@@ -46,6 +50,7 @@ export const SourceSelector = ({
 
   const selection = useAtomValue(selectionAtom)
   const setSelection = useSetAtom(setSelectionAtom)
+  const setIsSelectionDragging = useSetAtom(isSelectionDraggingAtom)
 
   const [sel, setSel] = useState<Selection>(
     selection ?? { sx: 0, sy: 0, width, height }
@@ -128,6 +133,7 @@ export const SourceSelector = ({
       if (handle) {
         setResizeHandle(handle)
         setDragging(true)
+        setIsSelectionDragging(true)
         setDragOrigin(getPercentPos(e))
         e.stopPropagation()
         return
@@ -139,11 +145,12 @@ export const SourceSelector = ({
 
       if (insideX && insideY) {
         setDragging(true)
+        setIsSelectionDragging(true)
         setDragOrigin(pos)
         setDragOffset({ dx: pos.x - rect.x, dy: pos.y - rect.y })
       }
     },
-    [rect, detectHandleHit, getPercentPos]
+    [rect, detectHandleHit, getPercentPos, setIsSelectionDragging]
   )
 
   const onMouseMove = useCallback(
@@ -224,12 +231,13 @@ export const SourceSelector = ({
   const onMouseUp = useCallback(() => {
     if (dragging) {
       setDragging(false)
+      setIsSelectionDragging(false)
       setDragOrigin(null)
       setSelection(sel)
       setResizeHandle(null)
       setHoveredHandle(null)
     }
-  }, [dragging, sel, setSelection])
+  }, [dragging, sel, setSelection, setIsSelectionDragging])
 
   const onMouseLeave = useCallback(() => {
     // Réinitialiser le hover quand on quitte la zone
@@ -253,6 +261,8 @@ export const SourceSelector = ({
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseLeave}
       onDoubleClick={onDoubleClick}
+      logicalWidth={width}
+      logicalHeight={height}
     />
   )
 }

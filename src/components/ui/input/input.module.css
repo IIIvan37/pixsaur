@@ -33,6 +33,15 @@
   box-shadow: 0 0 8px var(--color-accent);
 }
 
+.input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-color: var(--color-accent);
+  box-shadow:
+    0 0 0 4px rgba(var(--accent-rgb, 168, 181, 168), 0.2),
+    0 0 8px var(--color-accent);
+}
+
 .input::placeholder {
   color: var(--color-disabled-text);
   opacity: 0.6;

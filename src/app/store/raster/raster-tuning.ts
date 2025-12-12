@@ -5,9 +5,9 @@
 import { atomWithStorage } from 'jotai/utils'
 import {
   HORIZONTAL_ERROR_COEFFICIENT,
-  PALETTE_CONTINUITY_BONUS,
-  PALETTE_CONTINUITY_DISTANCE,
-  PALETTE_FREQUENCY_EXPONENT,
+  PREPROCESS_CONTINUITY_BONUS,
+  PREPROCESS_CONTINUITY_DISTANCE,
+  PREPROCESS_FREQUENCY_EXPONENT,
   VERTICAL_ERROR_COEFFICIENT
 } from '@/libs/pixsaur-raster/raster-constants'
 
@@ -38,28 +38,36 @@ export const horizontalErrorCoefficientAtom = atomWithStorage(
 )
 
 /**
- * Palette continuity distance threshold
+ * ============================================================================
+ * PREPROCESSING PARAMETERS
+ * Control how the image is preprocessed before raster optimization.
+ * These affect the base palette extraction.
+ * ============================================================================
+ */
+
+/**
+ * Preprocessing: Palette continuity distance threshold
  * Default: 867 (17² × 3)
  */
-export const paletteContinuityDistanceAtom = atomWithStorage(
-  'raster-palette-continuity-distance',
-  PALETTE_CONTINUITY_DISTANCE
+export const preprocessContinuityDistanceAtom = atomWithStorage(
+  'raster-preprocess-continuity-distance',
+  PREPROCESS_CONTINUITY_DISTANCE
 )
 
 /**
- * Palette continuity bonus multiplier
+ * Preprocessing: Palette continuity bonus multiplier
  * Default: 1.5 (50% bonus)
  */
-export const paletteContinuityBonusAtom = atomWithStorage(
-  'raster-palette-continuity-bonus',
-  PALETTE_CONTINUITY_BONUS
+export const preprocessContinuityBonusAtom = atomWithStorage(
+  'raster-preprocess-continuity-bonus',
+  PREPROCESS_CONTINUITY_BONUS
 )
 
 /**
- * Palette frequency exponent
+ * Preprocessing: Palette frequency exponent
  * Default: 0.5 (square root weighting)
  */
-export const paletteFrequencyExponentAtom = atomWithStorage(
-  'raster-palette-frequency-exponent',
-  PALETTE_FREQUENCY_EXPONENT
+export const preprocessFrequencyExponentAtom = atomWithStorage(
+  'raster-preprocess-frequency-exponent',
+  PREPROCESS_FREQUENCY_EXPONENT
 )
