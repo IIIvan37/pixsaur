@@ -289,6 +289,10 @@ msgstr "Couleur"
 msgid "Couleur & Température"
 msgstr "Couleur & Température"
 
+#: src/components/info-bar/info-bar.tsx:93
+msgid "Couleurs"
+msgstr "Couleurs"
+
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:39
 msgid "palette.strategy.coverage-aware.label"
@@ -319,6 +323,7 @@ msgstr "Déverrouiller"
 msgid "Dimension Preset"
 msgstr "Dimension Preset"
 
+#: src/components/info-bar/info-bar.tsx:68
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:108
 msgid "Dimensions"
 msgstr "Dimensions"
@@ -463,7 +468,7 @@ msgstr "Extraction palette de base"
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 
-#: src/components/export-panel/export-panel.tsx:146
+#: src/components/export-panel/export-panel.tsx:153
 msgid "File exported successfully!"
 msgstr "Fichier exporté avec succès !"
 
@@ -644,9 +649,9 @@ msgstr "Diversité maximale (100%), fréquence ignorée"
 msgid "Mémoire"
 msgstr "Mémoire"
 
-#: src/components/image-controls/image-controls-view.tsx:65
-#~ msgid "Mode"
-#~ msgstr "Mode"
+#: src/components/info-bar/info-bar.tsx:59
+msgid "Mode"
+msgstr "Mode"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:320
 msgid "Mode 0 CPC Plus (12+4)"
@@ -713,6 +718,10 @@ msgstr "Nom du fichier ZIP"
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 
+#: src/components/info-bar/info-bar.tsx:83
+msgid "Non"
+msgstr "Non"
+
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:242
 msgid "palette.strategy.disabled.raster"
@@ -746,6 +755,11 @@ msgstr "ou cliquez pour sélectionner un fichier"
 #: src/components/image-upload/image-upload-view.tsx:200
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
+
+#. placeholder {0}: rasterChanges.length
+#: src/components/info-bar/info-bar.tsx:81
+msgid "Oui ({0})"
+msgstr "Oui ({0})"
 
 #: src/components/settings-panel/settings-button.tsx:36
 msgid "Ouvrir le panneau des paramètres"
@@ -874,6 +888,10 @@ msgstr "Raster Tuning"
 #: src/components/raster-panel/raster-panel-view.tsx:336
 #~ msgid "Raster: changements d'encre par ligne"
 #~ msgstr "Raster: changements d'encre par ligne"
+
+#: src/components/info-bar/info-bar.tsx:77
+msgid "Rasters"
+msgstr "Rasters"
 
 #: src/components/export-panel/export-config-dialog.tsx:173
 msgid "Rasters (données ASM)"
