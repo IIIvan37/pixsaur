@@ -4,8 +4,8 @@
  * Export raster data for CPC Classic and CPC Plus.
  *
  * Format:
- * - CPC Classic: DB #FF (no change) or DB ink, hardware_color (2 bytes)
- * - CPC Plus Mode 1: DB #FF (no change) or DW color0, color1, color2, color3 (8 bytes for 4 inks)
+ * - CPC Classic: DB #00 (no change) or DB ink, hardware_color (2 bytes)
+ * - CPC Plus Mode 1: DB #00 (no change) or DW color0, color1, color2, color3 (8 bytes for 4 inks)
  */
 
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
@@ -60,7 +60,7 @@ export function groupChangesByLine(
 /**
  * Generate ASM data for CPC Classic rasters
  * Format: For each line of the image:
- *   - DB #FF if no change needed on this line
+ *   - DB #00 if no change needed on this line
  *   - DB count, ink0, color0, ink1, color1, ... (count pairs of ink+color)
  *
  * @param changes - Raster changes to export
@@ -78,7 +78,7 @@ export function generateClassicRasterASM(
 
   const lines: string[] = [`${labelName}:`]
   lines.push(`    ; Format: For each of the ${imageHeight} lines:`)
-  lines.push('    ; DB #FF = no change on this line')
+  lines.push('    ; DB #00 = no change on this line')
   lines.push(
     '    ; DB count, ink0, color0, [ink1, color1, ...] = count pairs of (ink, color)'
   )
@@ -89,7 +89,7 @@ export function generateClassicRasterASM(
 
     if (!lineChanges || lineChanges.length === 0) {
       // No change on this line
-      lines.push(`    DB #FF    ; Line ${lineNum} - no change`)
+      lines.push(`    DB #00    ; Line ${lineNum} - no change`)
     } else {
       // Export count + pairs of (ink, color)
       const pairs: string[] = []
@@ -115,10 +115,9 @@ export function generateClassicRasterASM(
 /**
  * Generate ASM data for CPC Plus rasters
  * Format: For each line of the image:
- *   - DW color(N-1), color(N-2), ..., color0 where N = numRasterSlots
+ *   - DW color0, color1, ..., color(N-1) where N = numRasterSlots
  *
- * This format exports ALL raster slot colors in REVERSE ORDER (N-1 to 0) for EVERY line.
- * Reverse order is required for stack-based loading on real hardware (POP).
+ * This format exports ALL raster slot colors in ORDER (0 to N-1) for EVERY line.
  * If no change on a line, the previous line's colors are repeated.
  *
  * @param changes - Raster changes to export
@@ -145,7 +144,7 @@ export function generatePlusRasterASM(
     `    ; CPC Plus Raster Data (${imageHeight} lines, ${numRasterSlots} raster slots)`
   )
   lines.push(
-    `    ; Each line: DW color${numRasterSlots - 1}, ..., color1, color0 (reverse order for stack loading)`
+    `    ; Each line: DW color0, color1, ..., color${numRasterSlots - 1}`
   )
   lines.push('    ; Colors are 12-bit CPC Plus format (0GRB)')
 
@@ -162,10 +161,10 @@ export function generatePlusRasterASM(
       }
     }
 
-    // Export all raster slot colors in REVERSE order (N-1 to 0) for stack loading
-    const colorValues = [...currentPalette]
-      .reverse()
-      .map((color) => `#${color.toString(16).toUpperCase().padStart(3, '0')}`)
+    // Export all raster slot colors in order (0 to N-1)
+    const colorValues = currentPalette.map(
+      (color) => `#${color.toString(16).toUpperCase().padStart(3, '0')}`
+    )
     lines.push(`    DW ${colorValues.join(', ')}    ; Line ${lineNum}`)
   }
 

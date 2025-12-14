@@ -12,7 +12,12 @@ import {
   IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
-import { rasterChangesAtom, rasterEnabledAtom } from '@/app/store/raster/raster'
+import {
+  rasterBasePaletteAtom,
+  rasterChangesAtom,
+  rasterEnabledAtom,
+  rasterIndexBufferAtom
+} from '@/app/store/raster/raster'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
 import { dskLogger } from '@/core'
@@ -20,10 +25,10 @@ import {
   downloadFile,
   exportDskWorkspaceZip,
   paletteToCPCPlusValues,
+  rgbToFirmwareIndex,
   rgbToIndexBufferExact,
   sanitizeAmsdosFilename
 } from '@/export'
-import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { isTauri, saveZipFileTauri } from '@/tauri'
 
 export default function DskWorkspacePanel() {
@@ -31,11 +36,15 @@ export default function DskWorkspacePanel() {
   const image = useAtomValue(previewImageAtom)
   // Utiliser la palette avec slots pour l'export (conserve les positions des slots vides lockés)
   const exportPalette = useAtomValue(exportPaletteWithSlotsAtom)
+  // Get raster-specific palette when raster mode is enabled
+  const rasterBasePalette = useAtomValue(rasterBasePaletteAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const dskImages = useAtomValue(dskImagesAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const rasterChanges = useAtomValue(rasterChangesAtom)
+  // Get raster index buffer (already optimized with correct ink assignments)
+  const rasterIndexBuffer = useAtomValue(rasterIndexBufferAtom)
   const [isExporting, setIsExporting] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
@@ -50,31 +59,45 @@ export default function DskWorkspacePanel() {
     color[1] === IGNORED_SLOT[1] &&
     color[2] === IGNORED_SLOT[2]
 
+  // Use raster base palette when raster mode is enabled, otherwise use export palette
+  // This ensures the exported palette matches what's displayed in the preview
+  const effectivePalette =
+    rasterEnabled && rasterBasePalette ? rasterBasePalette : exportPalette
+
+  // In raster mode, the palette is already in ink order with no ignored slots
+  const useRasterPalette = rasterEnabled && rasterBasePalette
+
   // Prepare current image data for adding to DSK
   const currentImageData = canAddCurrentImage
     ? (() => {
         // Convert palette to firmware indices (for CPC Classic) or CPC Plus values
-        const cpcPalette = getPaletteForHardware(cpcHardware)
+        // Use rgbToFirmwareIndex for robust color matching (finds closest CPC color)
 
-        // Les slots ignorés [-1,-1,-1] utilisent l'indice 0 (noir) comme placeholder
-        const paletteFirmware = exportPalette.map((colorData: unknown) => {
-          const color = Array.isArray(colorData)
-            ? colorData
-            : Array.from(colorData as ArrayLike<number>)
+        let paletteFirmware: number[]
 
-          // Slot ignoré: utiliser 0 (noir) comme placeholder
-          if (isIgnoredSlot(color)) {
-            return 0
-          }
+        if (useRasterPalette) {
+          // Raster mode: palette is already in ink order, no ignored slots
+          paletteFirmware = effectivePalette.map((colorData: unknown) => {
+            const color = Array.isArray(colorData)
+              ? colorData
+              : Array.from(colorData as ArrayLike<number>)
+            return rgbToFirmwareIndex(color[0], color[1], color[2])
+          })
+        } else {
+          // Standard mode: handle ignored slots
+          paletteFirmware = effectivePalette.map((colorData: unknown) => {
+            const color = Array.isArray(colorData)
+              ? colorData
+              : Array.from(colorData as ArrayLike<number>)
 
-          const index = cpcPalette.findIndex(
-            (c) => c[0] === color[0] && c[1] === color[1] && c[2] === color[2]
-          )
-          if (index === -1) {
-            throw new Error(`Pixel RGB [${color}] non trouvé dans la palette.`)
-          }
-          return index
-        })
+            // Slot ignoré: utiliser 0 (noir) comme placeholder
+            if (isIgnoredSlot(color)) {
+              return 0
+            }
+
+            return rgbToFirmwareIndex(color[0], color[1], color[2])
+          })
+        }
 
         // Ensure palette has 16 colors (pad with black if needed)
         while (paletteFirmware.length < 16) {
@@ -82,16 +105,16 @@ export default function DskWorkspacePanel() {
         }
 
         // For CPC Plus, also generate the 16-bit palette values
-        // Les slots ignorés sont remplacés par 0 (noir en GRB)
+        // In raster mode, no ignored slots to handle
         const palettePlus =
           cpcHardware === 'plus'
             ? paletteToCPCPlusValues(
-                exportPalette.map((color: unknown) => {
+                effectivePalette.map((color: unknown) => {
                   const c = Array.isArray(color)
                     ? color
                     : Array.from(color as ArrayLike<number>)
-                  // Slot ignoré: utiliser noir [0,0,0]
-                  if (isIgnoredSlot(c)) {
+                  // Only check for ignored slots in standard mode
+                  if (!useRasterPalette && isIgnoredSlot(c)) {
                     return [0, 0, 0] as [number, number, number]
                   }
                   return c as [number, number, number]
@@ -127,7 +150,7 @@ export default function DskWorkspacePanel() {
 
         // Convert palette to hex colors for display
         // Les slots ignorés sont affichés comme "ignored"
-        const paletteColors = exportPalette.map((color: unknown) => {
+        const paletteColors = effectivePalette.map((color: unknown) => {
           const rgb = Array.isArray(color)
             ? color
             : Array.from(color as ArrayLike<number>)
@@ -140,11 +163,17 @@ export default function DskWorkspacePanel() {
 
         // Convert RGB to palette indices (not SCR encoded yet)
         // The SCR encoding will be done by generateSCRAsmClassic in export-dsk-workspace
-        const indexBuffer = rgbToIndexBufferExact(
-          image.data,
-          exportPalette,
-          false
-        )
+        // In raster mode, use the optimized index buffer to ensure ink indices match raster changes
+        let indexBuffer: Uint8Array
+        if (useRasterPalette && rasterIndexBuffer) {
+          indexBuffer = rasterIndexBuffer.buffer
+        } else {
+          indexBuffer = rgbToIndexBufferExact(
+            image.data,
+            effectivePalette,
+            false
+          )
+        }
 
         return {
           name: sanitizeAmsdosFilename(suggestedName),

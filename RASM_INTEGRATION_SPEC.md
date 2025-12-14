@@ -312,7 +312,7 @@ Créer une disquette DSK contenant :
 Le format `.SCR` est simplement une copie brute de la VRAM CPC :
 
 - **Taille** : 16384 bytes (16Ko)
-- **Adresse** : #C000 - #FFFF
+- **Adresse** : #C000 - #00FF
 - **Contenu** : Données des 3 banks écran entrelacées
 - **Palette** : Non incluse dans le SCR (gérée par le loader)
 
