@@ -148,14 +148,21 @@ export default function ExportPanel() {
     } else {
       // CPC Plus: Use index buffer (same as Classic) but no firmware palette needed
       // The palette will be exported as GRB values instead
-      const shouldQuantize = false // CPC Plus peut utiliser toutes les couleurs RGB
-      const fallbackToDarkest = true // Use darkest color for missing colors (padding)
-      indexBuf = rgbToIndexBufferExact(
-        cleanImage.data,
-        effectivePalette,
-        shouldQuantize,
-        fallbackToDarkest
-      )
+      const useRasterPalette = rasterEnabled && rasterBasePalette
+
+      // In raster mode, use the optimized index buffer to ensure ink indices match raster changes
+      if (useRasterPalette && rasterIndexBuffer) {
+        indexBuf = rasterIndexBuffer.buffer
+      } else {
+        const shouldQuantize = false // CPC Plus peut utiliser toutes les couleurs RGB
+        const fallbackToDarkest = true // Use darkest color for missing colors (padding)
+        indexBuf = rgbToIndexBufferExact(
+          cleanImage.data,
+          effectivePalette,
+          shouldQuantize,
+          fallbackToDarkest
+        )
+      }
     }
 
     const canvas = document.createElement('canvas')

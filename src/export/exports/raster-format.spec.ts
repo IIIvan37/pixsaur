@@ -238,9 +238,9 @@ describe('raster-format', () => {
       expect(asm).toContain('DW #F00, #0F0, #00F, #000    ; Line 0')
       // Line 1: ink0=white(0xFFF), ink1=magenta(0x0FF), ink2=green(0x0F0), ink3=red(0xF00)
       // In reverse order: ink3=0xF00, ink2=0x0F0, ink1=0x0FF, ink0=0xFFF
-      expect(asm).toContain('DW #F00, #0F0, #0FF, #00F    ; Line 1')
+      expect(asm).toContain('DW #F00, #0F0, #0FF, #FFF    ; Line 1')
       // Line 2: same as line 1 (colors persist)
-      expect(asm).toContain('DW #F00, #0F0, #0FF, #00F    ; Line 2')
+      expect(asm).toContain('DW #F00, #0F0, #0FF, #FFF    ; Line 2')
     })
 
     it('should handle changes on different lines with state persistence', () => {
@@ -264,13 +264,13 @@ describe('raster-format', () => {
       // Line 0: base palette in reverse order (ink3, ink2, ink1, ink0)
       expect(asm).toContain('DW #F00, #0F0, #00F, #000    ; Line 0')
       // Line 1: ink0=white(0xFFF), others unchanged -> reverse: ink3, ink2, ink1, ink0
-      expect(asm).toContain('DW #F00, #0F0, #00F, #00F    ; Line 1')
+      expect(asm).toContain('DW #F00, #0F0, #00F, #FFF    ; Line 1')
       // Line 2: same as line 1 (no change, colors persist)
-      expect(asm).toContain('DW #F00, #0F0, #00F, #00F    ; Line 2')
+      expect(asm).toContain('DW #F00, #0F0, #00F, #FFF    ; Line 2')
       // Line 3: ink0 still white, ink1=green(0xF00) -> reverse: ink3=0xF00, ink2=0x0F0, ink1=0xF00, ink0=0xFFF
-      expect(asm).toContain('DW #F00, #0F0, #F00, #00F    ; Line 3')
+      expect(asm).toContain('DW #F00, #0F0, #F00, #FFF    ; Line 3')
       // Line 4: same as line 3
-      expect(asm).toContain('DW #F00, #0F0, #F00, #00F    ; Line 4')
+      expect(asm).toContain('DW #F00, #0F0, #F00, #FFF    ; Line 4')
     })
 
     it('should track palette state across lines', () => {
@@ -311,9 +311,9 @@ describe('raster-format', () => {
       // Line 0: base palette (2 colors only) in reverse order: ink1, ink0
       expect(asm).toContain('DW #00F, #000    ; Line 0')
       // Line 1: ink0=black(0x000), ink1=white(0xFFF) -> reverse: ink1, ink0
-      expect(asm).toContain('DW #00F, #000    ; Line 1')
+      expect(asm).toContain('DW #FFF, #000    ; Line 1')
       // Line 2: same as line 1
-      expect(asm).toContain('DW #00F, #000    ; Line 2')
+      expect(asm).toContain('DW #FFF, #000    ; Line 2')
     })
 
     it('should support 1 raster slot', () => {

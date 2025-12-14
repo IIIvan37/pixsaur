@@ -9,7 +9,7 @@ describe('toASMData', () => {
 
       expect(typeof result).toBe('string')
       expect(result).toContain('test_data:')
-      expect(result).toContain('db #00, #0F, #00, #AB')
+      expect(result).toContain('db #00, #0F, #FF, #AB')
     })
 
     it('should use default label when not provided', () => {
