@@ -81,7 +81,7 @@ export interface PNGExportData {
 function hasValidPreviewData(
   rasterData?: PNGExportData
 ): rasterData is PNGExportData {
-  return Boolean(rasterData && rasterData.previewImage)
+  return Boolean(rasterData?.previewImage)
 }
 
 export async function exportPNGData(

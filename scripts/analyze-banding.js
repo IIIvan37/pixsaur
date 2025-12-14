@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import { PNG } from 'pngjs'
 
 // Track a specific pixel position across lines to see how it changes
@@ -20,11 +20,11 @@ function trackPixels(filename, positions, startLine, endLine) {
   for (let y = startLine; y <= Math.min(endLine, height - 1); y++) {
     const pixelColors = positions.map((x) => {
       const idx = (y * width + x) * 4
-      return pixels[idx] + ',' + pixels[idx + 1] + ',' + pixels[idx + 2]
+      return `${pixels[idx]},${pixels[idx + 1]},${pixels[idx + 2]}`
     })
 
     const marker = y === 162 ? ' <== BANDE' : ''
-    console.log('Line ' + y + ': ' + pixelColors.join(' | ') + marker)
+    console.log(`Line ${y}: ${pixelColors.join(' | ')}${marker}`)
   }
 }
 

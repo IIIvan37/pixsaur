@@ -4,8 +4,8 @@
  * Export raster data for CPC Classic and CPC Plus.
  *
  * Format:
- * - CPC Classic: DB #FF (no change) or DB ink, hardware_color (2 bytes)
- * - CPC Plus Mode 1: DB #FF (no change) or DW color0, color1, color2, color3 (8 bytes for 4 inks)
+ * - CPC Classic: DB #00 (no change) or DB ink, hardware_color (2 bytes)
+ * - CPC Plus Mode 1: DB #00 (no change) or DW color0, color1, color2, color3 (8 bytes for 4 inks)
  */
 
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
@@ -60,7 +60,7 @@ export function groupChangesByLine(
 /**
  * Generate ASM data for CPC Classic rasters
  * Format: For each line of the image:
- *   - DB #FF if no change needed on this line
+ *   - DB #00 if no change needed on this line
  *   - DB count, ink0, color0, ink1, color1, ... (count pairs of ink+color)
  *
  * @param changes - Raster changes to export
@@ -78,7 +78,7 @@ export function generateClassicRasterASM(
 
   const lines: string[] = [`${labelName}:`]
   lines.push(`    ; Format: For each of the ${imageHeight} lines:`)
-  lines.push('    ; DB #FF = no change on this line')
+  lines.push('    ; DB #00 = no change on this line')
   lines.push(
     '    ; DB count, ink0, color0, [ink1, color1, ...] = count pairs of (ink, color)'
   )
@@ -89,7 +89,7 @@ export function generateClassicRasterASM(
 
     if (!lineChanges || lineChanges.length === 0) {
       // No change on this line
-      lines.push(`    DB #FF    ; Line ${lineNum} - no change`)
+      lines.push(`    DB #00    ; Line ${lineNum} - no change`)
     } else {
       // Export count + pairs of (ink, color)
       const pairs: string[] = []

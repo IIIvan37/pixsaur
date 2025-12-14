@@ -28,7 +28,7 @@ describe('generateDataSection', () => {
     const result = generateDataSection(data, 'TestData')
 
     expect(result).toContain('TestData:')
-    expect(result).toContain('DB      #00,#0F,#FF')
+    expect(result).toContain('DB      #00,#0F,#00')
   })
 
   it('should generate data without label when empty', () => {

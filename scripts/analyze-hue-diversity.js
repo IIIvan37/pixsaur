@@ -1,6 +1,4 @@
-import fs from 'node:fs'
 import { createCanvas, loadImage } from 'canvas'
-import { PNG } from 'pngjs'
 
 /**
  * Calcule la teinte (hue) d'une couleur (0-360)

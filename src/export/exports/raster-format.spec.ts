@@ -113,7 +113,7 @@ describe('raster-format', () => {
 
       expect(asm).toContain('RasterData:')
       expect(asm).toContain('200 lines')
-      expect(asm).toContain('DB #FF') // No change marker (single byte)
+      expect(asm).toContain('DB #00') // No change marker (single byte)
     })
 
     it('should generate ASM for a single change', () => {
@@ -176,7 +176,7 @@ describe('raster-format', () => {
   })
 
   describe('generatePlusRasterASM', () => {
-    it('should generate ASM with all colors for every line in reverse order (no #FF marker)', () => {
+    it('should generate ASM with all colors for every line in reverse order (no #00 marker)', () => {
       // Base palette: ink0=black, ink1=blue, ink2=green, ink3=red
       const basePalette = [0x000, 0x00f, 0x0f0, 0xf00]
       const asm = generatePlusRasterASM([], 3, basePalette)
@@ -185,8 +185,8 @@ describe('raster-format', () => {
       expect(asm).toContain('3 lines')
       expect(asm).toContain('4 raster slots')
       expect(asm).toContain('reverse order for stack loading')
-      // No #FF marker - all lines have colors
-      expect(asm).not.toContain('DB #FF')
+      // No #00 marker - all lines have colors
+      expect(asm).not.toContain('DB #00')
       // All 3 lines should have the base palette colors in REVERSE order (ink3, ink2, ink1, ink0)
       expect(asm).toContain('DW #F00, #0F0, #00F, #000    ; Line 0')
       expect(asm).toContain('DW #F00, #0F0, #00F, #000    ; Line 1')
@@ -238,9 +238,9 @@ describe('raster-format', () => {
       expect(asm).toContain('DW #F00, #0F0, #00F, #000    ; Line 0')
       // Line 1: ink0=white(0xFFF), ink1=magenta(0x0FF), ink2=green(0x0F0), ink3=red(0xF00)
       // In reverse order: ink3=0xF00, ink2=0x0F0, ink1=0x0FF, ink0=0xFFF
-      expect(asm).toContain('DW #F00, #0F0, #0FF, #FFF    ; Line 1')
+      expect(asm).toContain('DW #F00, #0F0, #0FF, #00F    ; Line 1')
       // Line 2: same as line 1 (colors persist)
-      expect(asm).toContain('DW #F00, #0F0, #0FF, #FFF    ; Line 2')
+      expect(asm).toContain('DW #F00, #0F0, #0FF, #00F    ; Line 2')
     })
 
     it('should handle changes on different lines with state persistence', () => {
@@ -264,13 +264,13 @@ describe('raster-format', () => {
       // Line 0: base palette in reverse order (ink3, ink2, ink1, ink0)
       expect(asm).toContain('DW #F00, #0F0, #00F, #000    ; Line 0')
       // Line 1: ink0=white(0xFFF), others unchanged -> reverse: ink3, ink2, ink1, ink0
-      expect(asm).toContain('DW #F00, #0F0, #00F, #FFF    ; Line 1')
+      expect(asm).toContain('DW #F00, #0F0, #00F, #00F    ; Line 1')
       // Line 2: same as line 1 (no change, colors persist)
-      expect(asm).toContain('DW #F00, #0F0, #00F, #FFF    ; Line 2')
+      expect(asm).toContain('DW #F00, #0F0, #00F, #00F    ; Line 2')
       // Line 3: ink0 still white, ink1=green(0xF00) -> reverse: ink3=0xF00, ink2=0x0F0, ink1=0xF00, ink0=0xFFF
-      expect(asm).toContain('DW #F00, #0F0, #F00, #FFF    ; Line 3')
+      expect(asm).toContain('DW #F00, #0F0, #F00, #00F    ; Line 3')
       // Line 4: same as line 3
-      expect(asm).toContain('DW #F00, #0F0, #F00, #FFF    ; Line 4')
+      expect(asm).toContain('DW #F00, #0F0, #F00, #00F    ; Line 4')
     })
 
     it('should track palette state across lines', () => {
@@ -311,9 +311,9 @@ describe('raster-format', () => {
       // Line 0: base palette (2 colors only) in reverse order: ink1, ink0
       expect(asm).toContain('DW #00F, #000    ; Line 0')
       // Line 1: ink0=black(0x000), ink1=white(0xFFF) -> reverse: ink1, ink0
-      expect(asm).toContain('DW #FFF, #000    ; Line 1')
+      expect(asm).toContain('DW #00F, #000    ; Line 1')
       // Line 2: same as line 1
-      expect(asm).toContain('DW #FFF, #000    ; Line 2')
+      expect(asm).toContain('DW #00F, #000    ; Line 2')
     })
 
     it('should support 1 raster slot', () => {
