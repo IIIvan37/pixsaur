@@ -115,10 +115,9 @@ export function generateClassicRasterASM(
 /**
  * Generate ASM data for CPC Plus rasters
  * Format: For each line of the image:
- *   - DW color(N-1), color(N-2), ..., color0 where N = numRasterSlots
+ *   - DW color0, color1, ..., color(N-1) where N = numRasterSlots
  *
- * This format exports ALL raster slot colors in REVERSE ORDER (N-1 to 0) for EVERY line.
- * Reverse order is required for stack-based loading on real hardware (POP).
+ * This format exports ALL raster slot colors in ORDER (0 to N-1) for EVERY line.
  * If no change on a line, the previous line's colors are repeated.
  *
  * @param changes - Raster changes to export
@@ -145,7 +144,7 @@ export function generatePlusRasterASM(
     `    ; CPC Plus Raster Data (${imageHeight} lines, ${numRasterSlots} raster slots)`
   )
   lines.push(
-    `    ; Each line: DW color${numRasterSlots - 1}, ..., color1, color0 (reverse order for stack loading)`
+    `    ; Each line: DW color0, color1, ..., color${numRasterSlots - 1}`
   )
   lines.push('    ; Colors are 12-bit CPC Plus format (0GRB)')
 
@@ -162,10 +161,10 @@ export function generatePlusRasterASM(
       }
     }
 
-    // Export all raster slot colors in REVERSE order (N-1 to 0) for stack loading
-    const colorValues = [...currentPalette]
-      .reverse()
-      .map((color) => `#${color.toString(16).toUpperCase().padStart(3, '0')}`)
+    // Export all raster slot colors in order (0 to N-1)
+    const colorValues = currentPalette.map(
+      (color) => `#${color.toString(16).toUpperCase().padStart(3, '0')}`
+    )
     lines.push(`    DW ${colorValues.join(', ')}    ; Line ${lineNum}`)
   }
 

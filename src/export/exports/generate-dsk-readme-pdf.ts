@@ -159,7 +159,7 @@ export function generateDskReadmePdf(
     yPosition += 8
 
     const rasterNote =
-      'CPC Classic: Each line starts with a count byte indicating how many ink changes follow. CPC Plus: Colors are stored in reverse order for efficient POP loading. The number of colors per line equals numRasterSlots (configurable, default 4).'
+      'CPC Classic: Each line starts with a count byte indicating how many ink changes follow. CPC Plus: Colors are stored in order (ink0, ink1, ...). The number of colors per line equals numRasterSlots (configurable, default 4).'
     const splitRasterNote = doc.splitTextToSize(rasterNote, 170)
     doc.text(splitRasterNote, 20, yPosition)
     yPosition += 6 * splitRasterNote.length + 8
