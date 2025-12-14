@@ -15,7 +15,8 @@ import {
 import {
   rasterBasePaletteAtom,
   rasterChangesAtom,
-  rasterEnabledAtom
+  rasterEnabledAtom,
+  rasterIndexBufferAtom
 } from '@/app/store/raster/raster'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
@@ -42,6 +43,8 @@ export default function DskWorkspacePanel() {
   const dskImages = useAtomValue(dskImagesAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const rasterChanges = useAtomValue(rasterChangesAtom)
+  // Get raster index buffer (already optimized with correct ink assignments)
+  const rasterIndexBuffer = useAtomValue(rasterIndexBufferAtom)
   const [isExporting, setIsExporting] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
@@ -160,11 +163,17 @@ export default function DskWorkspacePanel() {
 
         // Convert RGB to palette indices (not SCR encoded yet)
         // The SCR encoding will be done by generateSCRAsmClassic in export-dsk-workspace
-        const indexBuffer = rgbToIndexBufferExact(
-          image.data,
-          effectivePalette,
-          false
-        )
+        // In raster mode, use the optimized index buffer to ensure ink indices match raster changes
+        let indexBuffer: Uint8Array
+        if (useRasterPalette && rasterIndexBuffer) {
+          indexBuffer = rasterIndexBuffer.buffer
+        } else {
+          indexBuffer = rgbToIndexBufferExact(
+            image.data,
+            effectivePalette,
+            false
+          )
+        }
 
         return {
           name: sanitizeAmsdosFilename(suggestedName),
