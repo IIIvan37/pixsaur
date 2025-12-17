@@ -1,0 +1,67 @@
+Debug Raster Reconstruction
+===========================
+Image dimensions: 160x200
+Output dimensions: 320x200 (scaled 2x1)
+Mode: 0
+Overscan: false
+Index buffer size: 32000
+Raster changes: 768
+Lines with changes: 200
+
+Base palette (all 16 slots):
+  Ink 0: RGB(0, 0, 0)
+  Ink 1: RGB(0, 0, 0)
+  Ink 2: RGB(0, 0, 0)
+  Ink 3: RGB(0, 0, 0)
+  Ink 4: RGB(102, 17, 17)
+  Ink 5: RGB(0, 0, 17)
+  Ink 6: RGB(34, 0, 17)
+  Ink 7: RGB(17, 0, 17)
+  Ink 8: RGB(255, 255, 255)
+  Ink 9: RGB(255, 255, 102)
+  Ink 10: RGB(153, 204, 238)
+  Ink 11: RGB(187, 255, 238)
+  Ink 12: RGB(0, 17, 0)
+  Ink 13: RGB(0, 0, 0)
+  Ink 14: RGB(17, 17, 34)
+  Ink 15: RGB(85, 17, 17)
+
+First 20 raster changes:
+  Line 0, Ink 0: RGB(221, 85, 34)
+  Line 0, Ink 1: RGB(238, 102, 34)
+  Line 0, Ink 2: RGB(204, 51, 17)
+  Line 0, Ink 3: RGB(255, 136, 51)
+  Line 1, Ink 0: RGB(221, 119, 34)
+  Line 1, Ink 1: RGB(238, 85, 34)
+  Line 1, Ink 2: RGB(204, 68, 34)
+  Line 1, Ink 3: RGB(238, 136, 34)
+  Line 2, Ink 0: RGB(238, 102, 51)
+  Line 2, Ink 1: RGB(221, 85, 34)
+  Line 2, Ink 2: RGB(255, 136, 51)
+  Line 2, Ink 3: RGB(204, 68, 17)
+  Line 3, Ink 0: RGB(238, 136, 34)
+  Line 3, Ink 1: RGB(221, 85, 17)
+  Line 3, Ink 2: RGB(255, 102, 17)
+  Line 3, Ink 3: RGB(187, 51, 34)
+  Line 4, Ink 0: RGB(221, 85, 34)
+  Line 4, Ink 1: RGB(238, 119, 34)
+  Line 4, Ink 2: RGB(238, 153, 51)
+  Line 4, Ink 3: RGB(255, 136, 68)
+
+Index buffer distribution (all 16 values):
+  Index 0: 2563 pixels (8.0%)
+  Index 1: 2445 pixels (7.6%)
+  Index 2: 2244 pixels (7.0%)
+  Index 3: 2165 pixels (6.8%)
+  Index 4: 3244 pixels (10.1%)
+  Index 5: 776 pixels (2.4%)
+  Index 6: 1370 pixels (4.3%)
+  Index 7: 111 pixels (0.3%)
+  Index 8: 1485 pixels (4.6%)
+  Index 9: 1690 pixels (5.3%)
+  Index 10: 749 pixels (2.3%)
+  Index 11: 187 pixels (0.6%)
+  Index 12: 0 pixels (0.0%)
+  Index 13: 7951 pixels (24.8%)
+  Index 14: 2411 pixels (7.5%)
+  Index 15: 2609 pixels (8.2%)

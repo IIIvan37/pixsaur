@@ -13,6 +13,7 @@ import {
   exportSCRClassic,
   exportSCRPlus
 } from './exporters'
+import { exportDebugPNG } from './exporters/export-debug-png'
 import {
   generateClassicRasterASM,
   generatePlusRasterASM
@@ -31,7 +32,7 @@ function exportRasterData(
     return
   }
 
-  const label = config.labels.enabled ? config.labels.media : 'pixsaur_raster'
+  const label = config.labels.enabled ? config.labels.raster : 'RasterData'
 
   // Generate ASM file (use RASM to assemble if binary is needed)
   const asmContent = isCPCPlus
@@ -131,6 +132,9 @@ export async function exportZip(
       throw new Error('Reduced palette is required for CPC Plus export')
     }
 
+    // Raster mode: keep slots 0-3 as black (will be set by rasters each line)
+    // The reducedPalette already has [0,0,0] for slots 0-3 and fixed colors for 4-15
+
     await exportCPCPlusData(
       zip,
       indexBuf,
@@ -151,6 +155,19 @@ export async function exportZip(
       cpcPlusPalette,
       config
     )
+
+    // Export debug PNG for raster validation
+    if (rasterChanges.length > 0) {
+      await exportDebugPNG(
+        zip,
+        indexBuf,
+        modeConfig.width,
+        modeConfig.height,
+        reducedPalette,
+        rasterChanges,
+        modeConfig
+      )
+    }
   } else {
     // ===== CPC CLASSIC EXPORT =====
 

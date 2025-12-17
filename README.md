@@ -14,6 +14,7 @@ Transform modern images into authentic Amstrad CPC graphics with advanced palett
 
 - **Classic CPC**: 27 colors mode for authentic retro graphics
 - **CPC Plus**: 4096 colors palette for enhanced visuals
+- **Rasters**: Per-scanline palette changes for CPC Classic and CPC Plus
 - Real-time palette quantization with perceptual color matching
 
 ### Image Processing
@@ -187,6 +188,20 @@ pnpm dev
 - `pnpm tauri`: Run Tauri CLI commands
 - `pnpm tauri:dev`: Start Tauri development mode (desktop app)
 - `pnpm tauri:build`: Build the desktop application
+- `pnpm asm:expand`: Expand INCLUDE directives in RASM assembly files
+
+### Demo Programs
+
+The `asm/src/` folder contains Z80 assembly demonstration programs for displaying exported images on Amstrad CPC:
+
+| Program | Description |
+|---------|-------------|
+| `scr-plus-raster` | CPC Plus standard screen with rasters |
+| `scr-plus-raster-overscan` | CPC Plus overscan (96×280) with rasters |
+| `scr-classic-raster` | CPC Classic standard screen with rasters |
+| `scr-classic-raster-overscan` | CPC Classic overscan (96×280) with rasters |
+
+Each program includes a `Makefile` for building with RASM and running on an emulator. Extract the Pixsaur ZIP export to the `data/` folder of the demo program.
 
 ## Tech Stack
 

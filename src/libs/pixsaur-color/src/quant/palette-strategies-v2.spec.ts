@@ -10,11 +10,14 @@ import {
   selectByAdaptive,
   selectByBalancedScoreBalanced,
   selectByBalancedScoreMax,
+  selectByCoverageAware,
+  selectByDitheringAware,
   selectByDiversityFirstBalanced,
   selectByDiversityFirstMax,
   selectByExhaustiveContrast,
   selectByFrequencyBalanced,
   selectByFrequencyMax,
+  selectByMode0HueDiversity,
   selectByPerceptualBalanced,
   selectByPerceptualMax
 } from './palette-strategies-v2'
@@ -1088,8 +1091,8 @@ describe('palette-strategies-v2', () => {
   })
 
   describe('AVAILABLE_STRATEGIES', () => {
-    it('should contain all 12 strategies', () => {
-      expect(AVAILABLE_STRATEGIES).toHaveLength(12)
+    it('should contain all 13 strategies', () => {
+      expect(AVAILABLE_STRATEGIES).toHaveLength(13)
     })
 
     it('should contain exhaustive-contrast', () => {
@@ -1109,12 +1112,293 @@ describe('palette-strategies-v2', () => {
         'perceptual-max',
         'diversity-first-balanced',
         'diversity-first-max',
-        'adaptive'
+        'adaptive',
+        'mode0-hue-diversity'
       ]
 
       for (const strategy of expectedStrategies) {
         expect(AVAILABLE_STRATEGIES).toContain(strategy)
       }
+    })
+  })
+
+  describe('selectByCoverageAware', () => {
+    it('should select colors that maximize coverage', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        },
+        {
+          index: 3,
+          frequency: 40,
+          color: [255, 255, 0] as Vector,
+          converted: [255, 255, 0] as Vector
+        }
+      ]
+
+      const result = selectByCoverageAware(candidates, 3)
+
+      expect(result.selectedIndices).toHaveLength(3)
+      expect(result.selectedIndices).toContain(0) // Most frequent
+    })
+
+    it('should handle preselected indices', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByCoverageAware(candidates, 2, [1])
+
+      expect(result.selectedIndices).toHaveLength(2)
+      expect(result.selectedIndices[0]).toBe(1) // Preselected first
+    })
+
+    it('should return early when preselected fills target', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByCoverageAware(candidates, 2, [0, 1])
+
+      expect(result.selectedIndices).toHaveLength(2)
+      expect(result.selectedIndices).toEqual([0, 1])
+    })
+
+    it('should handle fewer candidates than needed', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByCoverageAware(candidates, 3)
+
+      expect(result.selectedIndices.length).toBeLessThanOrEqual(3)
+    })
+  })
+
+  describe('selectByDitheringAware', () => {
+    it('should select colors optimized for dithering', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        },
+        {
+          index: 3,
+          frequency: 40,
+          color: [128, 128, 128] as Vector,
+          converted: [128, 128, 128] as Vector
+        }
+      ]
+
+      const result = selectByDitheringAware(candidates, 3)
+
+      expect(result.selectedIndices).toHaveLength(3)
+    })
+
+    it('should handle preselected indices', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        }
+      ]
+
+      const result = selectByDitheringAware(candidates, 2, [1])
+
+      expect(result.selectedIndices).toHaveLength(2)
+      expect(result.selectedIndices[0]).toBe(1)
+    })
+
+    it('should return early when preselected fills target', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByDitheringAware(candidates, 2, [0, 1])
+
+      expect(result.selectedIndices).toHaveLength(2)
+    })
+
+    it('should handle fewer candidates than needed', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByDitheringAware(candidates, 3)
+
+      expect(result.selectedIndices.length).toBeLessThanOrEqual(3)
+    })
+
+    it('should apply through applyPaletteStrategyV2', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        }
+      ]
+
+      const result = applyPaletteStrategyV2('dithering-aware', candidates, 2)
+
+      expect(result.selectedIndices).toHaveLength(2)
+    })
+
+    it('should work with CPC Classic palette size', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByDitheringAware(candidates, 2, [], {
+        basePaletteSize: 27
+      })
+
+      expect(result.selectedIndices).toHaveLength(2)
+    })
+
+    it('should work with CPC Plus palette size', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByDitheringAware(candidates, 2, [], {
+        basePaletteSize: 4096
+      })
+
+      expect(result.selectedIndices).toHaveLength(2)
+    })
+
+    it('should filter candidates with hue diversity when too many', () => {
+      // Create many candidates to trigger filtering
+      const candidates: ColorCandidate[] = Array.from(
+        { length: 20 },
+        (_, i) => ({
+          index: i,
+          frequency: 100 - i * 5,
+          color: [(i * 13) % 256, (i * 17) % 256, (i * 19) % 256] as Vector,
+          converted: [(i * 13) % 256, (i * 17) % 256, (i * 19) % 256] as Vector
+        })
+      )
+
+      const result = selectByDitheringAware(candidates, 4, [], {
+        basePaletteSize: 4096
+      })
+
+      expect(result.selectedIndices).toHaveLength(4)
     })
   })
 
@@ -1422,6 +1706,469 @@ describe('palette-strategies-v2', () => {
       expect(result.selectedIndices).toContain(0)
       // Ne devrait pas avoir besoin d'ajouter un autre noir
       expect(result.selectedIndices).not.toContain(4)
+    })
+  })
+
+  describe('selectByMode0HueDiversity', () => {
+    it('should select colors from different hue buckets', () => {
+      const candidates: ColorCandidate[] = [
+        // Red hue bucket (0-45°)
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        // Yellow hue bucket (45-90°)
+        {
+          index: 1,
+          frequency: 80,
+          color: [255, 255, 0] as Vector,
+          converted: [255, 255, 0] as Vector
+        },
+        // Green hue bucket (90-135°)
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        // Cyan hue bucket (135-180°)
+        {
+          index: 3,
+          frequency: 40,
+          color: [0, 255, 255] as Vector,
+          converted: [0, 255, 255] as Vector
+        },
+        // Blue hue bucket (180-225°)
+        {
+          index: 4,
+          frequency: 30,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+      // Should select from different hue families
+      expect(result.selectedIndices).toContain(0) // Red (most frequent)
+    })
+
+    it('should handle gray/desaturated colors', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [128, 128, 128] as Vector, // Gray
+          converted: [128, 128, 128] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [64, 64, 64] as Vector, // Dark gray
+          converted: [64, 64, 64] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [192, 192, 192] as Vector, // Light gray
+          converted: [192, 192, 192] as Vector
+        },
+        {
+          index: 3,
+          frequency: 40,
+          color: [255, 0, 0] as Vector, // Red (saturated)
+          converted: [255, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+      // Should include both grays and saturated colors
+      expect(result.selectedIndices).toContain(3) // Red
+    })
+
+    it('should respect preselected indices', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 3, [1])
+
+      expect(result.selectedIndices).toHaveLength(3)
+      expect(result.selectedIndices[0]).toBe(1) // Preselected first
+    })
+
+    it('should return early when preselected fills target', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 2, [0, 1])
+
+      expect(result.selectedIndices).toHaveLength(2)
+      expect(result.selectedIndices).toEqual([0, 1])
+    })
+
+    it('should use MaxMin distance when not enough diverse colors', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [250, 5, 5] as Vector, // Very similar to red
+          converted: [250, 5, 5] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector, // Blue (different)
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 3)
+
+      expect(result.selectedIndices).toHaveLength(3)
+      // Should include blue for diversity
+      expect(result.selectedIndices).toContain(2)
+    })
+
+    it('should handle empty candidates', () => {
+      const result = selectByMode0HueDiversity([], 4)
+      expect(result.selectedIndices).toHaveLength(0)
+    })
+
+    it('should work with many hue buckets', () => {
+      // Create colors spanning all 8 hue buckets
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }, // Red
+        {
+          index: 1,
+          frequency: 90,
+          color: [255, 128, 0] as Vector,
+          converted: [255, 128, 0] as Vector
+        }, // Orange
+        {
+          index: 2,
+          frequency: 80,
+          color: [255, 255, 0] as Vector,
+          converted: [255, 255, 0] as Vector
+        }, // Yellow
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        }, // Green
+        {
+          index: 4,
+          frequency: 60,
+          color: [0, 255, 255] as Vector,
+          converted: [0, 255, 255] as Vector
+        }, // Cyan
+        {
+          index: 5,
+          frequency: 50,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }, // Blue
+        {
+          index: 6,
+          frequency: 40,
+          color: [128, 0, 255] as Vector,
+          converted: [128, 0, 255] as Vector
+        }, // Purple
+        {
+          index: 7,
+          frequency: 30,
+          color: [255, 0, 128] as Vector,
+          converted: [255, 0, 128] as Vector
+        } // Magenta
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 8)
+
+      expect(result.selectedIndices).toHaveLength(8)
+    })
+
+    it('should apply through applyPaletteStrategyV2', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 60,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = applyPaletteStrategyV2(
+        'mode0-hue-diversity',
+        candidates,
+        3
+      )
+
+      expect(result.selectedIndices).toHaveLength(3)
+    })
+
+    it('should filter similar saturated colors by hue distance', () => {
+      // Two very similar red hues (both saturated)
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }, // Red
+        {
+          index: 1,
+          frequency: 90,
+          color: [255, 20, 0] as Vector,
+          converted: [255, 20, 0] as Vector
+        }, // Similar red
+        {
+          index: 2,
+          frequency: 80,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        }, // Green (different)
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        } // Blue (different)
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 3)
+
+      expect(result.selectedIndices).toHaveLength(3)
+      // Should prefer diverse hues over similar ones
+      expect(result.selectedIndices).toContain(0) // First red
+      expect(result.selectedIndices).toContain(2) // Green
+      expect(result.selectedIndices).toContain(3) // Blue
+    })
+
+    it('should check RGB distance when hues are close', () => {
+      // Colors with similar hue but different RGB values
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }, // Bright red
+        {
+          index: 1,
+          frequency: 90,
+          color: [200, 0, 0] as Vector,
+          converted: [200, 0, 0] as Vector
+        }, // Darker red (similar hue)
+        {
+          index: 2,
+          frequency: 80,
+          color: [100, 0, 0] as Vector,
+          converted: [100, 0, 0] as Vector
+        }, // Even darker red
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        } // Blue (different)
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+    })
+
+    it('should use hue bonus in MaxMin distance selection', () => {
+      // Test that saturated colors with different hues get bonus
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }, // Red (saturated)
+        {
+          index: 1,
+          frequency: 50,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        }, // Green (saturated, different hue)
+        {
+          index: 2,
+          frequency: 90,
+          color: [255, 10, 10] as Vector,
+          converted: [255, 10, 10] as Vector
+        }, // Similar red
+        {
+          index: 3,
+          frequency: 80,
+          color: [128, 128, 128] as Vector,
+          converted: [128, 128, 128] as Vector
+        } // Gray (not saturated)
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 3)
+
+      expect(result.selectedIndices).toHaveLength(3)
+      // Should prefer the diverse green over similar red despite lower frequency
+      expect(result.selectedIndices).toContain(1) // Green for diversity
+    })
+
+    it('should handle low saturation colors without hue check', () => {
+      // Low saturation colors shouldn't trigger hue distance checks
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [130, 128, 128] as Vector,
+          converted: [130, 128, 128] as Vector
+        }, // Near gray
+        {
+          index: 1,
+          frequency: 90,
+          color: [128, 130, 128] as Vector,
+          converted: [128, 130, 128] as Vector
+        }, // Near gray
+        {
+          index: 2,
+          frequency: 80,
+          color: [128, 128, 130] as Vector,
+          converted: [128, 128, 130] as Vector
+        }, // Near gray
+        {
+          index: 3,
+          frequency: 70,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        } // Red (saturated)
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+    })
+
+    it('should reject colors too close in RGB distance', () => {
+      // Colors that are very close in RGB even if hues are different
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [100, 100, 100] as Vector,
+          converted: [100, 100, 100] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [105, 100, 100] as Vector,
+          converted: [105, 100, 100] as Vector
+        }, // Very close
+        {
+          index: 2,
+          frequency: 80,
+          color: [100, 105, 100] as Vector,
+          converted: [100, 105, 100] as Vector
+        }, // Very close
+        {
+          index: 3,
+          frequency: 70,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        } // Different
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 4)
+
+      // Should reject similar colors and prefer the diverse one
+      expect(result.selectedIndices).toContain(3) // Red is different
+    })
+
+    it('should handle saturated colors with close hue but different RGB', () => {
+      // Both saturated, close hue, but different RGB distance
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        }, // Bright saturated red
+        {
+          index: 1,
+          frequency: 90,
+          color: [255, 30, 30] as Vector,
+          converted: [255, 30, 30] as Vector
+        }, // Similar hue, close RGB
+        {
+          index: 2,
+          frequency: 80,
+          color: [128, 0, 0] as Vector,
+          converted: [128, 0, 0] as Vector
+        }, // Similar hue, different RGB
+        {
+          index: 3,
+          frequency: 70,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        } // Different hue
+      ]
+
+      const result = selectByMode0HueDiversity(candidates, 3)
+
+      expect(result.selectedIndices).toHaveLength(3)
+      expect(result.selectedIndices).toContain(0) // First red
+      expect(result.selectedIndices).toContain(3) // Green for hue diversity
     })
   })
 })

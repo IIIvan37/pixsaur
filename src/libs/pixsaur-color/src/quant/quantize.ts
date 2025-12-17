@@ -104,7 +104,7 @@ export function createQuantizer({
     const out = idxs.map((i: number) => workingPal[i])
 
     // Utiliser paletteStrategy v2 (prioritaire) ou convertir contrastStrategy legacy
-    const strategy: PaletteStrategyName | undefined =
+    const userStrategy: PaletteStrategyName | undefined =
       quantConfig.paletteStrategy ||
       (quantConfig.contrastStrategy
         ? quantConfig.contrastStrategy === 'balanced'
@@ -112,7 +112,12 @@ export function createQuantizer({
           : 'diversity-first-max'
         : undefined)
 
-    if (strategy && limit <= 16) {
+    // Alignement CPU/GPU : utiliser mode0-hue-diversity pour le mode 0 (>4 couleurs)
+    // et la stratégie utilisateur pour les modes 1-2 (≤4 couleurs)
+    const effectiveStrategy: PaletteStrategyName | undefined =
+      limit > 4 ? 'mode0-hue-diversity' : userStrategy
+
+    if (effectiveStrategy && limit <= 16) {
       // Construire les candidats avec fréquences à partir de l'histogramme
       const candidates: ColorCandidate[] = idxs.map((idx: number) => ({
         index: idx,
@@ -122,7 +127,7 @@ export function createQuantizer({
       }))
 
       const strategyResult = applyPaletteStrategyV2(
-        strategy,
+        effectiveStrategy,
         candidates,
         limit,
         [...preIdx],
