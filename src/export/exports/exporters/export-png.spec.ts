@@ -86,7 +86,8 @@ describe('export-png', () => {
     labels: {
       enabled: false,
       media: 'pixsaur_data',
-      palette: 'pixsaur_palette'
+      palette: 'pixsaur_palette',
+      raster: 'pixsaur_raster'
     }
   }
 

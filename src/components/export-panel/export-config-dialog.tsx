@@ -87,7 +87,7 @@ export default function ExportConfigDialog({
     }))
   }
 
-  const updateLabels = (key: 'media' | 'palette', value: string) => {
+  const updateLabels = (key: 'media' | 'palette' | 'raster', value: string) => {
     setConfig((prev) => ({
       ...prev,
       labels: { ...prev.labels, [key]: value }

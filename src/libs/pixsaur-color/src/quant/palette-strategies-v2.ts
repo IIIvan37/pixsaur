@@ -2321,6 +2321,273 @@ function calculateDitheringScoreOptimizedDirect(
   return totalSampledFrequency > 0 ? totalCovered / totalSampledFrequency : 0
 }
 
+// ============================================================================
+// MODE 0 HUE DIVERSITY STRATEGY
+// Stratégie optimisée pour le mode 0 (16 couleurs) avec diversité de teinte
+// ============================================================================
+
+/**
+ * Constantes pour la stratégie mode 0
+ */
+const MODE0_SATURATION_THRESHOLD = 0.2 // Seuil de saturation pour considérer la teinte
+const MODE0_SATURATION_HIGH = 0.3 // Seuil de saturation élevé pour couleurs vibrantes
+const MODE0_MIN_HUE_DISTANCE = 30 // Distance minimale de teinte pour diversité
+const MODE0_MIN_RGB_DISTANCE = 20 // Distance RGB minimale
+const MODE0_HUE_BUCKET_SIZE = 45 // Taille de bucket de teinte (~8 familles)
+const MODE0_HUE_HALF_RANGE = 180 // Demi-plage de teinte (distance max circulaire)
+const MODE0_HUE_BONUS_WEIGHT = 2 // Poids du bonus de teinte
+const MODE0_HUE_BONUS_NORMALIZATION = 200 // Normalisation du bonus
+
+/**
+ * Helper: Calcule la distance de teinte circulaire (0-180)
+ */
+function calculateHueDistanceLocal(hue1: number, hue2: number): number {
+  const diff = Math.abs(hue1 - hue2)
+  return Math.min(diff, 360 - diff)
+}
+
+/**
+ * Helper: Sélection par fréquence avec diversité de teinte
+ */
+function selectFrequentColorsWithDiversity(
+  colorFrequency: ColorCandidate[],
+  selectedConverted: Vector[],
+  result: number[],
+  frequencyBudget: number,
+  distanceFunc: (a: Vector, b: Vector) => number
+): void {
+  const minDistance = MODE0_MIN_RGB_DISTANCE
+  const minHueDistance = MODE0_MIN_HUE_DISTANCE
+
+  for (
+    let i = 1;
+    i < colorFrequency.length && result.length < frequencyBudget;
+    i++
+  ) {
+    const candidateConverted = colorFrequency[i].converted
+    let isDiverse = true
+
+    // Vérifier diversité de teinte pour couleurs saturées
+    const candidateHue = calculateHue(candidateConverted, 0.01)
+    const candidateSat = calculateSaturation(candidateConverted)
+
+    if (candidateSat > MODE0_SATURATION_HIGH && candidateHue >= 0) {
+      for (const selectedColor of selectedConverted) {
+        const selectedSat = calculateSaturation(selectedColor)
+        if (selectedSat > MODE0_SATURATION_HIGH) {
+          const selectedHue = calculateHue(selectedColor, 0.01)
+          const hueDistance = calculateHueDistanceLocal(
+            candidateHue,
+            selectedHue
+          )
+
+          if (hueDistance < minHueDistance) {
+            const rgbDistance = distanceFunc(candidateConverted, selectedColor)
+            if (rgbDistance < minDistance * 2) {
+              isDiverse = false
+              break
+            }
+          }
+        }
+      }
+    }
+
+    // Vérifier aussi la distance RGB classique
+    if (isDiverse) {
+      for (const selectedColor of selectedConverted) {
+        if (distanceFunc(candidateConverted, selectedColor) < minDistance) {
+          isDiverse = false
+          break
+        }
+      }
+    }
+
+    if (isDiverse) {
+      result.push(colorFrequency[i].index)
+      selectedConverted.push(candidateConverted)
+    }
+  }
+}
+
+/**
+ * Helper: Sélection MaxMin Distance avec bonus de teinte
+ */
+function selectMaxMinDistanceColors(
+  colorFrequency: ColorCandidate[],
+  selectedConverted: Vector[],
+  result: number[],
+  targetColors: number,
+  distanceFunc: (a: Vector, b: Vector) => number
+): void {
+  const remaining = colorFrequency.filter((c) => !result.includes(c.index))
+  const additionalColors = targetColors - result.length
+
+  for (let i = 0; i < additionalColors && remaining.length > 0; i++) {
+    let maxScore = -1
+    let bestIndex = -1
+
+    for (let j = 0; j < remaining.length; j++) {
+      const candidateConverted = remaining[j].converted
+
+      // Distance RGB minimale
+      let minRGBDistance = Infinity
+      for (const selectedColor of selectedConverted) {
+        const distance = distanceFunc(candidateConverted, selectedColor)
+        minRGBDistance = Math.min(minRGBDistance, distance)
+      }
+
+      let score = minRGBDistance
+
+      // Ajouter un bonus pour la diversité de teinte
+      const candidateHue = calculateHue(candidateConverted, 0.01)
+      const candidateSat = calculateSaturation(candidateConverted)
+
+      if (candidateSat > MODE0_SATURATION_THRESHOLD && candidateHue >= 0) {
+        let minHueDistanceVal = 360
+
+        for (const selectedColor of selectedConverted) {
+          const selectedSat = calculateSaturation(selectedColor)
+          if (selectedSat > MODE0_SATURATION_THRESHOLD) {
+            const selectedHue = calculateHue(selectedColor, 0.01)
+            const hueDistance = calculateHueDistanceLocal(
+              candidateHue,
+              selectedHue
+            )
+            minHueDistanceVal = Math.min(minHueDistanceVal, hueDistance)
+          }
+        }
+
+        // Bonus normalisé pour les teintes différentes
+        const hueBonus =
+          (minHueDistanceVal / MODE0_HUE_HALF_RANGE) *
+          MODE0_HUE_BONUS_NORMALIZATION *
+          MODE0_HUE_BONUS_WEIGHT
+        score = minRGBDistance + hueBonus
+      }
+
+      if (score > maxScore) {
+        maxScore = score
+        bestIndex = j
+      }
+    }
+
+    if (bestIndex >= 0) {
+      result.push(remaining[bestIndex].index)
+      selectedConverted.push(remaining[bestIndex].converted)
+      remaining.splice(bestIndex, 1)
+    }
+  }
+}
+
+/**
+ * Stratégie mode 0 avec diversité de teinte par buckets
+ * Garantit une couverture des différentes familles de couleurs (teintes)
+ * avant de compléter par fréquence/distance
+ */
+export const selectByMode0HueDiversity: PaletteStrategyFunction = (
+  candidates,
+  targetColors,
+  preselectedIndices = [],
+  _options
+) => {
+  const result: number[] = [...preselectedIndices]
+  const usedIndices = new Set(preselectedIndices)
+
+  if (result.length >= targetColors) {
+    return { selectedIndices: result.slice(0, targetColors) }
+  }
+
+  // Filtrer les candidats déjà utilisés
+  const availableCandidates = candidates.filter(
+    (c) => !usedIndices.has(c.index)
+  )
+
+  // Fonction de distance
+  const distanceFunc = (a: Vector, b: Vector): number =>
+    weightedRGBDistance(a, b)
+
+  // Grouper par plage de teinte (~8 familles)
+  const hueBuckets = new Map<string | number, ColorCandidate[]>()
+
+  for (const candidate of availableCandidates) {
+    const sat = calculateSaturation(candidate.converted)
+    const hue = calculateHue(candidate.converted, 0.01)
+
+    const bucketKey =
+      sat > MODE0_SATURATION_THRESHOLD && hue >= 0
+        ? Math.floor(hue / MODE0_HUE_BUCKET_SIZE)
+        : 'gray'
+
+    if (!hueBuckets.has(bucketKey)) {
+      hueBuckets.set(bucketKey, [])
+    }
+    hueBuckets.get(bucketKey)!.push(candidate)
+  }
+
+  // Trier les buckets par fréquence totale
+  const sortedBuckets = Array.from(hueBuckets.entries())
+    .map(([bucket, colors]) => ({
+      bucket,
+      colors: colors.sort((a, b) => b.frequency - a.frequency),
+      totalFreq: colors.reduce((sum, c) => sum + c.frequency, 0)
+    }))
+    .sort((a, b) => b.totalFreq - a.totalFreq)
+
+  // Prendre le meilleur représentant de chaque bucket
+  const bucketRepresentatives: ColorCandidate[] = []
+  for (const { colors } of sortedBuckets) {
+    if (bucketRepresentatives.length < targetColors && colors.length > 0) {
+      bucketRepresentatives.push(colors[0])
+    }
+  }
+
+  // Ajouter les représentants au résultat
+  const selectedConverted: Vector[] = result.map((idx) => {
+    const c = candidates.find((cand) => cand.index === idx)
+    return c ? ([...c.converted] as Vector) : ([0, 0, 0] as Vector)
+  })
+
+  for (const rep of bucketRepresentatives) {
+    if (!result.includes(rep.index)) {
+      result.push(rep.index)
+      selectedConverted.push(rep.converted)
+    }
+  }
+
+  if (result.length >= targetColors) {
+    return { selectedIndices: result.slice(0, targetColors) }
+  }
+
+  // Compléter avec diversité de fréquence
+  const usedForBalance = new Set(bucketRepresentatives.map((c) => c.index))
+  const remainingCandidates = availableCandidates.filter(
+    (c) => !usedForBalance.has(c.index)
+  )
+
+  const frequencyBudget = targetColors
+
+  selectFrequentColorsWithDiversity(
+    remainingCandidates,
+    selectedConverted,
+    result,
+    frequencyBudget,
+    distanceFunc
+  )
+
+  // Compléter avec MaxMin Distance si nécessaire
+  if (result.length < targetColors) {
+    selectMaxMinDistanceColors(
+      remainingCandidates,
+      selectedConverted,
+      result,
+      targetColors,
+      distanceFunc
+    )
+  }
+
+  return { selectedIndices: result.slice(0, targetColors) }
+}
+
 /**
  * Type pour les noms de stratégies de palette v2
  */
@@ -2337,6 +2604,7 @@ export type PaletteStrategyName =
   | 'diversity-first-balanced'
   | 'diversity-first-max'
   | 'adaptive'
+  | 'mode0-hue-diversity'
 
 /**
  * Map des stratégies de palette v2
@@ -2357,7 +2625,8 @@ const PALETTE_STRATEGY_MAP: Record<
   'perceptual-max': selectByPerceptualMax,
   'diversity-first-balanced': selectByDiversityFirstBalanced,
   'diversity-first-max': selectByDiversityFirstMax,
-  adaptive: selectByAdaptive
+  adaptive: selectByAdaptive,
+  'mode0-hue-diversity': selectByMode0HueDiversity
 }
 
 /**

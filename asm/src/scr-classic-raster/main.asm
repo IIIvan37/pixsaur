@@ -1,6 +1,7 @@
 BUILDSNA
 BANKSET 0
 
+
     org #8000
     run #8000
     di
@@ -25,7 +26,7 @@ wait_vblank
     rra
     jr nc, .wait
 
-     ld hl, #c000 + 2018
+    ld hl, #c000 + 2018
     ld a, 0
     ld c, 16
     call setPalette

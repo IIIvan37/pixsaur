@@ -27,6 +27,7 @@ export interface ASMLabels {
   enabled: boolean
   media: string // Label for image data (default: "ImageData")
   palette: string // Label for palette data (default: "Palette")
+  raster: string // Label for raster data (default: "RasterData")
 }
 
 /**
@@ -97,7 +98,8 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
   labels: {
     enabled: true,
     media: 'ImageData',
-    palette: 'Palette'
+    palette: 'Palette',
+    raster: 'RasterData'
   },
   filename: 'pixsaur_export'
 }
