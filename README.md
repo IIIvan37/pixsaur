@@ -29,8 +29,8 @@ Transform modern images into authentic Amstrad CPC graphics with advanced palett
 - **Linear**: Raw pixel data
 - **Palette**: Color palette extraction
 - **PNG**: Preview with applied effects
-- **DSK**: Disk image with your graphics (🚧 Coming soon)
-- **SNA**: Snapshot for instant emulator loading (🚧 Coming soon)
+- **DSK**: Disk image with your graphics
+- **SNA**: Snapshot for instant emulator loading
 - And more...
 
 ### Multi-Platform
