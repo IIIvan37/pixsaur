@@ -20,6 +20,7 @@ function quantizeToCPCPlus(
 
 /**
  * Export a debug PNG WITHOUT rasters - just indexBuffer + base palette
+ * This shows what the CPC displays without rasters: slots 0-3 are BLACK
  */
 async function exportDebugPNGWithoutRasters(
   zip: JSZip,
@@ -29,9 +30,15 @@ async function exportDebugPNGWithoutRasters(
   basePalette: Array<[number, number, number]>,
   modeConfig: CpcModeConfig
 ): Promise<void> {
-  // Quantize palette to CPC Plus
+  // Quantize palette to CPC Plus, with slots 0-3 set to BLACK (as on CPC without rasters)
   const palette: Array<[number, number, number]> = basePalette.map(
-    ([r, g, b]) => quantizeToCPCPlus(r, g, b)
+    ([r, g, b], index) => {
+      // Slots 0-3 are raster slots - they are BLACK without rasters
+      if (index < 4) {
+        return [0, 0, 0] as [number, number, number]
+      }
+      return quantizeToCPCPlus(r, g, b)
+    }
   )
 
   // Create output image with CPC aspect ratio correction

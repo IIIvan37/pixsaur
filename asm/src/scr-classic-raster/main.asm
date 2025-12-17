@@ -5,8 +5,7 @@ BANKSET 0
     org #8000
     run #8000
     di
-    ld hl, #c9fb
-    ld (#38), hl
+    ld sp, #c000
 
     ld bc, #7c8c
     out (c), c

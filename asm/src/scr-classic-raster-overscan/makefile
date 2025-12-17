@@ -6,9 +6,9 @@ ASM = rasm
 SRC = main.asm
 DIST = dist
 OUTPUT = $(DIST)/serval
-
+EMU = /Users/ivanduchauffour/iiivan/AceDL.app/Contents/MacOS/AceDL
 # RASM options
-# -oi: output snapshot file
+# -o: common radix for all files
 ASM_FLAGS = -o $(OUTPUT)
 
 .PHONY: all clean
@@ -24,6 +24,6 @@ $(DIST):
 clean:
 	rm -rf $(DIST)/*
 
-# Run the snapshot in an emulator (optional, adjust path as needed)
 run: $(OUTPUT)
-	@echo "Snapshot generated: $(OUTPUT)"
+	$(EMU) $(OUTPUT).sna
+	@echo "Snapshot generated: $(OUTPUT).sna" -alone
