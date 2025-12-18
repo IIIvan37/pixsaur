@@ -51,6 +51,40 @@ describe('SNA Templates', () => {
       expect(template).toContain('no_changes')
       expect(template).toContain('changes_1')
       expect(template).toContain('changes_2')
+      // Mode 1 should use #8D
+      expect(template).toContain('#7c8D')
+    })
+
+    it('should use correct Gate Array mode register for each mode', () => {
+      // Mode 0
+      const mode0 = generateClassicScrSnaTemplate({
+        mode: 0,
+        height: 200,
+        overscan: false,
+        hasRasters: false,
+        hardware: 'classic'
+      })
+      expect(mode0).toContain('#7c8C')
+
+      // Mode 1
+      const mode1 = generateClassicScrSnaTemplate({
+        mode: 1,
+        height: 200,
+        overscan: false,
+        hasRasters: false,
+        hardware: 'classic'
+      })
+      expect(mode1).toContain('#7c8D')
+
+      // Mode 2
+      const mode2 = generateClassicScrSnaTemplate({
+        mode: 2,
+        height: 200,
+        overscan: false,
+        hasRasters: false,
+        hardware: 'classic'
+      })
+      expect(mode2).toContain('#7c8E')
     })
   })
 

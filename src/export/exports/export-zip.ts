@@ -96,6 +96,11 @@ async function exportSnaToZip(
 
   if (snaResult.success && snaResult.snapshot) {
     zip.file(`${config.filename || 'pixsaur'}.sna`, snaResult.snapshot)
+
+    // Also export ASM source for debugging/modification
+    if (snaResult.asmSource) {
+      zip.file(`${config.filename || 'pixsaur'}_sna.asm`, snaResult.asmSource)
+    }
   }
 }
 

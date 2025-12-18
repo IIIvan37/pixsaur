@@ -111,7 +111,7 @@ msgstr "Passt nur die hellen Bereiche des Bildes an"
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Passt nur die dunklen Bereiche des Bildes an"
 
-#: src/components/export-panel/export-config-dialog.tsx:119
+#: src/components/export-panel/export-config-dialog.tsx:131
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
 #: src/components/ui/simple-color-picker/simple-rgb-picker.tsx:66
 msgid "Annuler"
@@ -257,7 +257,7 @@ msgstr "Vertikaler Fehlerkoeffizient"
 msgid "Color {index}: {color}"
 msgstr "Farbe {index}: {color}"
 
-#: src/components/export-panel/export-config-dialog.tsx:112
+#: src/components/export-panel/export-config-dialog.tsx:124
 msgid "Configuration de l'export"
 msgstr "Exportkonfiguration"
 
@@ -265,7 +265,7 @@ msgstr "Exportkonfiguration"
 msgid "Configuration du Dithering"
 msgstr "Dithering-Konfiguration"
 
-#: src/components/export-panel/export-config-dialog.tsx:129
+#: src/components/export-panel/export-config-dialog.tsx:141
 msgid "Contenu du ZIP"
 msgstr "ZIP-Inhalt"
 
@@ -386,8 +386,8 @@ msgstr "Herunterladen..."
 msgid "DSK Workspace"
 msgstr "DSK-Workspace"
 
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:188
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:194
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:217
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:223
 msgid "DSK workspace exported successfully!"
 msgstr "DSK-Workspace erfolgreich exportiert!"
 
@@ -447,7 +447,7 @@ msgstr "Exportoptionen"
 msgid "Export your converted images to various formats compatible with CPC emulators and real hardware."
 msgstr "Exportieren Sie Ihre konvertierten Bilder in verschiedene Formate, die mit CPC-Emulatoren und echter Hardware kompatibel sind."
 
-#: src/components/export-panel/export-config-dialog.tsx:122
+#: src/components/export-panel/export-config-dialog.tsx:134
 #: src/components/export-panel/export-panel-view.tsx:25
 msgid "Exporter"
 msgstr "Exportieren"
@@ -471,7 +471,7 @@ msgstr "Basispaletten-Extraktion"
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "Datei {0} ist zu groß (max. 64 KB). Datei übersprungen."
 
-#: src/components/export-panel/export-panel.tsx:153
+#: src/components/export-panel/export-panel.tsx:174
 msgid "File exported successfully!"
 msgstr "Datei erfolgreich exportiert!"
 
@@ -502,6 +502,10 @@ msgstr "Frequenzpriorität (80%) mit mäßiger Vielfalt"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:159
 msgid "Gamma"
 msgstr "Gamma"
+
+#: src/components/export-panel/export-config-dialog.tsx:175
+msgid "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
+msgstr "Erzeugt eine Snapshot-Datei (.SNA) mit integriertem Anzeigecode"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:196
 msgid "Générer les rasters"
@@ -565,11 +569,11 @@ msgstr "Intensität"
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Farbintensität (0 = Schwarzweiß, 2 = sehr gesättigt)"
 
-#: src/components/export-panel/export-config-dialog.tsx:198
+#: src/components/export-panel/export-config-dialog.tsx:225
 msgid "Label de la palette"
 msgstr "Paletten-Label"
 
-#: src/components/export-panel/export-config-dialog.tsx:190
+#: src/components/export-panel/export-config-dialog.tsx:217
 msgid "Label des données"
 msgstr "Daten-Label"
 
@@ -590,9 +594,13 @@ msgstr "Später"
 #~ msgstr "SCR-Format erfordert Standardabmessungen (160x200, 320x200 oder 640x200)"
 
 #. placeholder {0}: Math.round(scrSizeBytes / 1024)
-#: src/components/export-panel/export-config-dialog.tsx:141
+#: src/components/export-panel/export-config-dialog.tsx:153
 msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
 msgstr "SCR-Format erfordert Größe <= 16 KB (aktuelle Größe: {0} KB)"
+
+#: src/components/export-panel/export-config-dialog.tsx:178
+msgid "Le format SNA n'est disponible que pour les tailles standard ou overscan"
+msgstr "SNA-Format ist nur für Standard- oder Overscan-Größen verfügbar"
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:249
 msgid "Ligne"
@@ -603,7 +611,7 @@ msgstr "Zeile"
 msgid "Ligne {0}"
 msgstr "Zeile {0}"
 
-#: src/components/export-panel/export-config-dialog.tsx:148
+#: src/components/export-panel/export-config-dialog.tsx:160
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (sequenziell)"
 
@@ -713,7 +721,7 @@ msgstr "Kein Bild zum Hinzufügen"
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "Noch keine Bilder im Arbeitsbereich. Fügen Sie konvertierte Bilder hinzu, um Ihre DSK-Datei zu erstellen."
 
-#: src/components/export-panel/export-config-dialog.tsx:208
+#: src/components/export-panel/export-config-dialog.tsx:235
 msgid "Nom du fichier ZIP"
 msgstr "ZIP-Dateiname"
 
@@ -780,7 +788,7 @@ msgstr "Einstellungen öffnen (⌘,)"
 msgid "Palette Selection"
 msgstr "Palettenauswahl"
 
-#: src/components/export-panel/export-config-dialog.tsx:153
+#: src/components/export-panel/export-config-dialog.tsx:165
 msgid "Palettes (firmware/hardware)"
 msgstr "Paletten (Firmware/Hardware)"
 
@@ -830,11 +838,11 @@ msgstr "Höher = Präferenz für ähnliche Farben zu vorherigen Zeilen"
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (Vorschau)"
 
-#: src/components/export-panel/export-config-dialog.tsx:165
+#: src/components/export-panel/export-config-dialog.tsx:192
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (korrektes CPC-Seitenverhältnis)"
 
-#: src/components/export-panel/export-config-dialog.tsx:158
+#: src/components/export-panel/export-config-dialog.tsx:185
 msgid "PNG (pixels carrés)"
 msgstr "PNG (quadratische Pixel)"
 
@@ -896,7 +904,7 @@ msgstr "Raster-Optimierung"
 msgid "Rasters"
 msgstr "Rasters"
 
-#: src/components/export-panel/export-config-dialog.tsx:173
+#: src/components/export-panel/export-config-dialog.tsx:200
 msgid "Rasters (données ASM)"
 msgstr "Rasters (ASM-Daten)"
 
@@ -968,7 +976,7 @@ msgstr "Sättigung"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Intelligente Sättigung, die matte Farben verstärkt ohne zu übersättigen"
 
-#: src/components/export-panel/export-config-dialog.tsx:135
+#: src/components/export-panel/export-config-dialog.tsx:147
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (verschachteltes CPC-Format)"
 
@@ -988,7 +996,7 @@ msgstr "Auswahl"
 msgid "Sélectionnez l'algorithme de dithering et ajustez les paramètres pour optimiser le rendu final."
 msgstr "Wählen Sie den Dithering-Algorithmus und passen Sie die Parameter an, um das endgültige Rendering zu optimieren."
 
-#: src/components/export-panel/export-config-dialog.tsx:114
+#: src/components/export-panel/export-config-dialog.tsx:126
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Wählen Sie die Dateien für das ZIP-Archiv"
 
@@ -1005,6 +1013,10 @@ msgstr "Einstellungen"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:173
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simuliert Blendenstufen (-3 bis +3, ±1 = doppelt/halb Licht)"
+
+#: src/components/export-panel/export-config-dialog.tsx:170
+msgid "SNA (snapshot exécutable)"
+msgstr "SNA (ausführbarer Snapshot)"
 
 #: src/components/settings-panel/settings-panel.tsx:38
 msgid "Source"
@@ -1078,7 +1090,7 @@ msgstr "Dateien hochladen"
 #~ msgid "utilisée"
 #~ msgstr "verwendet"
 
-#: src/components/export-panel/export-config-dialog.tsx:183
+#: src/components/export-panel/export-config-dialog.tsx:210
 msgid "Utiliser des labels personnalisés"
 msgstr "Benutzerdefinierte Labels verwenden"
 

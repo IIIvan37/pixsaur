@@ -407,6 +407,23 @@ endm
 `
 
 // =============================================================================
+// Helper Functions
+// =============================================================================
+
+/**
+ * Get Gate Array mode register value for CPC mode
+ * Mode 0: #8C, Mode 1: #8D, Mode 2: #8E
+ */
+function getModeRegisterValue(mode: 0 | 1 | 2): string {
+  const modeValues = {
+    0: '#8C',
+    1: '#8D',
+    2: '#8E'
+  }
+  return modeValues[mode]
+}
+
+// =============================================================================
 // Template Generators
 // =============================================================================
 
@@ -416,7 +433,8 @@ endm
 export function generateClassicScrSnaTemplate(
   options: SnaTemplateOptions
 ): string {
-  const { hasRasters } = options
+  const { hasRasters, mode } = options
+  const modeReg = getModeRegisterValue(mode)
 
   if (hasRasters) {
     return `BUILDSNA
@@ -427,7 +445,7 @@ BANKSET 0
     di
     ld sp, #c000
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     ld hl, Palette_Hardware
@@ -542,7 +560,7 @@ BANKSET 0
     di
     ld sp, #c000
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     ld hl, Palette_Hardware
@@ -567,7 +585,8 @@ ${CLASSIC_SET_PALETTE}
 export function generateClassicOverscanSnaTemplate(
   options: SnaTemplateOptions
 ): string {
-  const { hasRasters, height } = options
+  const { hasRasters, height, mode } = options
+  const modeReg = getModeRegisterValue(mode)
 
   if (hasRasters) {
     return `BUILDSNA
@@ -586,7 +605,7 @@ ${CLASSIC_RASTER_MACRO}
     call outcrtc
     call affscr
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     ld hl, Palette_Hardware
@@ -638,7 +657,7 @@ BANKSET 0
     call outcrtc
     call affscr
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     ld hl, Palette_Hardware
@@ -664,7 +683,8 @@ ${CLASSIC_SET_PALETTE}
 export function generatePlusScrSnaTemplate(
   options: SnaTemplateOptions
 ): string {
-  const { hasRasters } = options
+  const { hasRasters, mode } = options
+  const modeReg = getModeRegisterValue(mode)
 
   if (hasRasters) {
     return `BUILDSNA
@@ -679,7 +699,7 @@ ${PLUS_RASTER_MACRO}
     ld hl, #c9fb
     ld (#38), hl
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     call Asic_unlock
@@ -729,7 +749,7 @@ SNASET CRTC_TYPE, 3
     ld hl, #c9fb
     ld (#38), hl
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     call Asic_unlock
@@ -761,7 +781,8 @@ ${PLUS_ASIC_ROUTINES}
 export function generatePlusOverscanSnaTemplate(
   options: SnaTemplateOptions
 ): string {
-  const { hasRasters, height } = options
+  const { hasRasters, height, mode } = options
+  const modeReg = getModeRegisterValue(mode)
 
   if (hasRasters) {
     return `BUILDSNA
@@ -782,7 +803,7 @@ ${PLUS_RASTER_MACRO}
     call outcrtc
     call affscr
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     call Asic_unlock
@@ -838,7 +859,7 @@ SNASET CRTC_TYPE, 3
     call outcrtc
     call affscr
 
-    ld bc, #7c8c
+    ld bc, #7c${modeReg.slice(1)}
     out (c), c
 
     call Asic_unlock
