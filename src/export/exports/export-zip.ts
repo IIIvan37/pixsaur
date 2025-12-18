@@ -11,34 +11,110 @@ import {
   exportPalettesClassic,
   exportPNGData,
   exportSCRClassic,
-  exportSCRPlus
+  exportSCRPlus,
+  exportSna
 } from './exporters'
-import { exportDebugPNG } from './exporters/export-debug-png'
 import {
   generateClassicRasterASM,
   generatePlusRasterASM
 } from './raster-format'
 import type { ExportConfig } from './types'
 
-function exportRasterData(
-  zip: JSZip,
+/**
+ * Generated ASM data that can be reused for both ZIP files and SNA export
+ */
+interface GeneratedAsmData {
+  /** Raster ASM content (label: RasterData) */
+  rasterAsm?: string
+  /** Whether rasters are enabled */
+  hasRasters: boolean
+  /** CPC Plus palette values (12-bit format) */
+  palettePlus?: number[]
+}
+
+/**
+ * Generate raster ASM data (reusable for ZIP and SNA)
+ */
+function generateRasterAsmData(
   rasterChanges: RasterChange[],
   imageHeight: number,
   isCPCPlus: boolean,
-  basePalette: number[],
-  config: ExportConfig
-) {
-  if (!config.content.includeRasters || rasterChanges.length === 0) {
+  paletteFirmware: number[],
+  reducedPalette: Array<[number, number, number]> | undefined,
+  label: string
+): string | undefined {
+  if (rasterChanges.length === 0) {
+    return undefined
+  }
+
+  if (isCPCPlus && reducedPalette) {
+    const cpcPlusPalette = paletteToCPCPlusValues(reducedPalette)
+    return generatePlusRasterASM(
+      rasterChanges,
+      imageHeight,
+      cpcPlusPalette,
+      label
+    )
+  } else {
+    return generateClassicRasterASM(
+      rasterChanges,
+      imageHeight,
+      paletteFirmware,
+      label
+    )
+  }
+}
+
+/**
+ * Export SNA snapshot file to ZIP using pre-generated ASM data
+ */
+async function exportSnaToZip(
+  zip: JSZip,
+  indexBuf: Uint8Array,
+  modeConfig: CpcModeConfig,
+  isCPCPlus: boolean,
+  paletteFirmware: number[],
+  asmData: GeneratedAsmData,
+  config: ExportConfig,
+  asmLabel: string
+): Promise<void> {
+  if (!config.content.includeSNA) {
     return
   }
 
-  const label = config.labels.enabled ? config.labels.raster : 'RasterData'
+  // Export SNA using pre-generated data
+  const snaResult = await exportSna({
+    indexBuf,
+    modeConfig,
+    hardware: isCPCPlus ? 'plus' : 'classic',
+    paletteFirmware: isCPCPlus ? undefined : paletteFirmware,
+    palettePlus: asmData.palettePlus,
+    rasterAsm: asmData.rasterAsm,
+    hasRasters: asmData.hasRasters,
+    filename: asmLabel
+  })
 
-  // Generate ASM file (use RASM to assemble if binary is needed)
-  const asmContent = isCPCPlus
-    ? generatePlusRasterASM(rasterChanges, imageHeight, basePalette, label)
-    : generateClassicRasterASM(rasterChanges, imageHeight, basePalette, label)
-  zip.file('rasters.asm', asmContent)
+  if (snaResult.success && snaResult.snapshot) {
+    zip.file(`${config.filename || 'pixsaur'}.sna`, snaResult.snapshot)
+
+    // Also export ASM source for debugging/modification
+    if (snaResult.asmSource) {
+      zip.file(`${config.filename || 'pixsaur'}_sna.asm`, snaResult.asmSource)
+    }
+  }
+}
+
+function exportRasterData(
+  zip: JSZip,
+  rasterAsm: string | undefined,
+  config: ExportConfig
+) {
+  if (!config.content.includeRasters || !rasterAsm) {
+    return
+  }
+
+  // Write pre-generated ASM to ZIP
+  zip.file('rasters.asm', rasterAsm)
 }
 
 async function exportCPCPlusData(
@@ -107,6 +183,9 @@ export async function exportZip(
 
   // Get label from config or use default
   const asmLabel = config.labels.enabled ? config.labels.media : 'pixsaur_data'
+  const rasterLabel = config.labels.enabled
+    ? config.labels.raster
+    : 'RasterData'
 
   const ctx = canvas.getContext('2d')
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
@@ -126,14 +205,35 @@ export async function exportZip(
         modeConfig.width === 640 &&
         modeConfig.height === 200))
 
+  // ===== GENERATE SHARED ASM DATA (used for both ZIP files and SNA) =====
+  const hasRasters = rasterChanges.length > 0
+  const cpcPlusPalette =
+    isCPCPlus && reducedPalette
+      ? paletteToCPCPlusValues(reducedPalette)
+      : undefined
+
+  // Generate raster ASM once (reused for ZIP and SNA)
+  const rasterAsm = generateRasterAsmData(
+    rasterChanges,
+    modeConfig.height,
+    isCPCPlus,
+    paletteFirmware,
+    reducedPalette,
+    rasterLabel
+  )
+
+  // Prepare shared ASM data for SNA export
+  const asmData: GeneratedAsmData = {
+    rasterAsm,
+    hasRasters,
+    palettePlus: cpcPlusPalette
+  }
+
   if (isCPCPlus) {
     // ===== CPC PLUS EXPORT =====
     if (!reducedPalette) {
       throw new Error('Reduced palette is required for CPC Plus export')
     }
-
-    // Raster mode: keep slots 0-3 as black (will be set by rasters each line)
-    // The reducedPalette already has [0,0,0] for slots 0-3 and fixed colors for 4-15
 
     await exportCPCPlusData(
       zip,
@@ -145,29 +245,8 @@ export async function exportZip(
       isStandardMode
     )
 
-    // Export rasters if enabled (for Plus, convert palette to CPC Plus values)
-    const cpcPlusPalette = paletteToCPCPlusValues(reducedPalette)
-    exportRasterData(
-      zip,
-      rasterChanges,
-      modeConfig.height,
-      isCPCPlus,
-      cpcPlusPalette,
-      config
-    )
-
-    // Export debug PNG for raster validation
-    if (rasterChanges.length > 0) {
-      await exportDebugPNG(
-        zip,
-        indexBuf,
-        modeConfig.width,
-        modeConfig.height,
-        reducedPalette,
-        rasterChanges,
-        modeConfig
-      )
-    }
+    // Export rasters (using pre-generated ASM)
+    exportRasterData(zip, rasterAsm, config)
   } else {
     // ===== CPC CLASSIC EXPORT =====
 
@@ -181,15 +260,8 @@ export async function exportZip(
       isStandardMode
     )
 
-    // Export rasters if enabled (for Classic, use firmware palette)
-    exportRasterData(
-      zip,
-      rasterChanges,
-      modeConfig.height,
-      isCPCPlus,
-      paletteFirmware,
-      config
-    )
+    // Export rasters (using pre-generated ASM)
+    exportRasterData(zip, rasterAsm, config)
   }
 
   // Export PNG if enabled
@@ -202,6 +274,18 @@ export async function exportZip(
 
     await exportPNGData(zip, canvas, modeConfig, config, rasterData)
   }
+
+  // Export SNA snapshot if enabled (using pre-generated ASM data)
+  await exportSnaToZip(
+    zip,
+    indexBuf,
+    modeConfig,
+    isCPCPlus,
+    paletteFirmware,
+    asmData,
+    config,
+    asmLabel
+  )
 
   // 5. Finalisation et téléchargement
   const zipBlob = await zip.generateAsync({ type: 'blob' })

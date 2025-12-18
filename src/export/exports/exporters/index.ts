@@ -13,4 +13,10 @@ export {
   exportSCRPlus,
   generateSCRAsmClassic
 } from './export-scr'
+export {
+  exportSna,
+  generateSnaAsmSource,
+  type SnaExportOptions,
+  type SnaExportResult
+} from './export-sna'
 export { getHeader } from './utils'

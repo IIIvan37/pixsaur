@@ -2381,12 +2381,11 @@ function selectFrequentColorsWithDiversity(
             selectedHue
           )
 
+          // Si teintes trop proches, rejeter (même si RGB différent)
+          // Cela garantit que la palette couvre bien l'espace des teintes
           if (hueDistance < minHueDistance) {
-            const rgbDistance = distanceFunc(candidateConverted, selectedColor)
-            if (rgbDistance < minDistance * 2) {
-              isDiverse = false
-              break
-            }
+            isDiverse = false
+            break
           }
         }
       }

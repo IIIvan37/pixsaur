@@ -22,6 +22,21 @@ import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
+import {
+  type ColorFrequencyItem,
+  calculateHue,
+  calculateHueDistance,
+  calculateSaturation,
+  createHueBuckets,
+  DELTA_MIN_FOR_HUE,
+  HUE_BUCKET_SIZE_DEGREES,
+  MIN_HUE_DISTANCE_MODE_0,
+  MIN_RGB_DISTANCE_MODE_0,
+  selectBucketRepresentativesWithLightness,
+  selectFrequentColorsWithDiversity,
+  selectMaxMinDistanceColors,
+  sortBucketsByFrequency
+} from './color-selection-helpers'
 
 /**
  * Constantes pour la configuration GPU
@@ -41,8 +56,16 @@ const CPC_PLUS_SPECIAL_MODE = 512 // Mode spécial CPC Plus (représente 16 coul
  * Constantes pour l'échantillonnage
  */
 const SAMPLE_COUNT_MODE_0_CLASSIC = 256 // Échantillons pour mode 0 CPC Classic
-const SAMPLE_COUNT_MODE_0_PLUS = 2048 // Échantillons augmentés pour mode 0 CPC Plus (teintes rares)
+const SAMPLE_COUNT_MODE_0_PLUS = 4096 // Échantillons augmentés pour mode 0 CPC Plus (teintes rares)
 const SAMPLE_COUNT_MODE_1_2 = 1024 // Échantillons pour modes 1-2 (petites palettes)
+
+/**
+ * Constantes pour les multiplicateurs de candidats
+ */
+const CANDIDATE_MULTIPLIER_SMALL_PALETTE = 4 // Multiplicateur de candidats pour petites palettes (≤4 couleurs)
+const CANDIDATE_MULTIPLIER_LARGE_PALETTE = 1 // Multiplicateur de candidats pour grandes palettes
+const CANDIDATE_POOL_CLASSIC_RATIO = 0.5 // Ratio du pool de candidats pour CPC Classic
+const CANDIDATE_POOL_PLUS_RATIO = 0.01 // Ratio du pool de candidats pour CPC Plus
 
 /**
  * Constantes pour les seuils par défaut
@@ -466,22 +489,28 @@ export class ReGLQuantizer {
   }
 
   /**
-   * Sélection optimisée sans histogramme
-   * Adapté pour CPC Classic (27 couleurs) et CPC Plus (4096 couleurs)
-   * avec échantillonnage intelligent paramétrable
+   * CPC Classic: Sélection optimisée sans histogramme
+   * Adapté pour la palette CPC Classic (27 couleurs) avec échantillonnage intelligent
    */
-  private selectOptimized(
+  private selectCPCClassicOptimized(
     imageData: ImageData,
     basePalette: readonly Vector[],
-    sampleCount: number,
+    _candidatesCount: number,
     config: ReGLQuantizeConfig
   ): number[] {
+    // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
+    // Mode 0 (16 couleurs): échantillons suffisent pour CPC Classic
+    // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
+    const sampleCount =
+      config.targetColors <= CPC_MODE_1_MAX_COLORS
+        ? SAMPLE_COUNT_MODE_1_2
+        : SAMPLE_COUNT_MODE_0_CLASSIC
     const sampledColors = this.sampleImageColors(imageData, sampleCount)
 
     // Récupérer les indices présélectionnés (couleurs lockées)
     const preselectedIndices = config.preselectedIndices || []
 
-    // Use actual targetColors from config
+    // Use actual targetColors from config, not the candidatesCount passed as parameter
     const actualTargetColors =
       config.targetColors === CPC_PLUS_SPECIAL_MODE
         ? CPC_MODE_0_COLORS
@@ -493,7 +522,45 @@ export class ReGLQuantizer {
       basePalette,
       actualTargetColors,
       preselectedIndices,
-      config.paletteStrategy || 'frequency-balanced'
+      config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
+    )
+
+    return selected
+  }
+
+  /**
+   * CPC Plus: Sélection optimisée GPU sans histogramme
+   * Combine échantillonnage intelligent + GPU pour diversité maximale
+   */
+  private selectCPCPlusOptimized(
+    imageData: ImageData,
+    basePalette: readonly Vector[],
+    _candidatesCount: number,
+    config: ReGLQuantizeConfig
+  ): number[] {
+    // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
+    // Mode 0 (16 couleurs): AUGMENTÉ pour capturer les teintes rares
+    // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
+    const sampleCount =
+      config.targetColors <= CPC_MODE_1_MAX_COLORS
+        ? SAMPLE_COUNT_MODE_1_2
+        : SAMPLE_COUNT_MODE_0_PLUS
+    const sampledColors = this.sampleImageColors(imageData, sampleCount)
+
+    // Récupérer les indices présélectionnés (couleurs lockées)
+    const preselectedIndices = config.preselectedIndices || []
+
+    // Use actual targetColors from config, not the candidatesCount passed as parameter
+    const actualTargetColors =
+      config.targetColors === 512 ? 16 : config.targetColors
+
+    // CPU: Calcul rapide des couleurs dominantes avec diversité (incluant les présélectionnées)
+    const selected = this.selectDiverseColorsFast(
+      sampledColors,
+      basePalette,
+      actualTargetColors,
+      preselectedIndices,
+      config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
     )
 
     return selected
@@ -501,6 +568,7 @@ export class ReGLQuantizer {
 
   /**
    * Échantillonnage intelligent de l'image
+   * Combine échantillonnage régulier + capture des couleurs vivides (saturées et claires)
    */
   private sampleImageColors(
     imageData: ImageData,
@@ -509,19 +577,65 @@ export class ReGLQuantizer {
     const { width, height, data } = imageData
     const totalPixels = width * height
 
-    // Calcul du pas d'échantillonnage
-    const step = Math.max(1, Math.floor(Math.sqrt(totalPixels / maxSamples)))
+    // Réserver 10% des échantillons pour les couleurs vivides
+    const vividSampleBudget = Math.floor(maxSamples * 0.1)
+    const regularSampleBudget = maxSamples - vividSampleBudget
+
+    // Phase 1: Échantillonnage régulier
+    const step = Math.max(
+      1,
+      Math.floor(Math.sqrt(totalPixels / regularSampleBudget))
+    )
     const samples: Vector[] = []
+    const vividCandidates: Array<{ color: Vector; score: number }> = []
 
     for (let y = 0; y < height; y += step) {
       for (let x = 0; x < width; x += step) {
         const idx = (y * width + x) * 4
-        samples.push([data[idx], data[idx + 1], data[idx + 2]])
+        const r = data[idx]
+        const g = data[idx + 1]
+        const b = data[idx + 2]
+        const color: Vector = [r, g, b]
 
-        if (samples.length >= maxSamples) break
+        samples.push(color)
+
+        // Calculer un score de "vividité" (saturation * luminosité)
+        const max = Math.max(r, g, b)
+        const min = Math.min(r, g, b)
+        const delta = max - min
+        const saturation = max === 0 ? 0 : delta / max
+        const value = max / 255
+
+        // Score élevé = couleur vive (saturée ET claire)
+        const vividScore = saturation * value
+
+        if (vividScore > 0.4) {
+          vividCandidates.push({ color, score: vividScore })
+        }
+
+        if (samples.length >= regularSampleBudget) break
       }
-      if (samples.length >= maxSamples) break
+      if (samples.length >= regularSampleBudget) break
     }
+
+    // Phase 2: Ajouter les couleurs les plus vivides (si pas déjà dans samples)
+    // Trier par score décroissant et prendre les meilleures
+    vividCandidates.sort((a, b) => b.score - a.score)
+
+    const addedVivid = new Set<string>()
+    for (const { color } of vividCandidates) {
+      if (addedVivid.size >= vividSampleBudget) break
+
+      const key = `${color[0]},${color[1]},${color[2]}`
+      if (!addedVivid.has(key)) {
+        samples.push(color)
+        addedVivid.add(key)
+      }
+    }
+
+    adapterLogger.info(
+      `[Sampling] ${samples.length} samples (${regularSampleBudget} regular + ${addedVivid.size} vivid)`
+    )
 
     return samples
   }
@@ -562,9 +676,13 @@ export class ReGLQuantizer {
       .sort((a, b) => b.frequency - a.frequency)
   }
 
+  // NOTE: selectFrequentColorsWithDiversity et selectMaxMinDistanceColors
+  // sont maintenant dans color-selection-helpers.ts
+
   /**
-   * Sélection rapide avec diversité maximale
-   * Utilise les stratégies centralisées de palette-strategies-v2
+   * Sélection rapide avec diversité maximale + espaces colorimetriques
+   * Complexité réduite en extrayant les helpers
+   * Stratégie adaptative selon paletteStrategy
    */
   private selectDiverseColorsFast(
     sampledColors: Vector[],
@@ -589,49 +707,223 @@ export class ReGLQuantizer {
       usedIndices
     )
 
-    // Déterminer la stratégie à utiliser
-    // Mode 0 (16 couleurs) : utiliser mode0-hue-diversity pour la diversité de teinte
-    // Modes 1-2 (≤4 couleurs) : utiliser la stratégie configurée par l'utilisateur
-    const effectiveStrategy: PaletteStrategyName =
+    // Utiliser la nouvelle stratégie de sélection de palette pour les petites palettes
+    // IMPORTANT: Doit être fait AVANT tout return early
+    if (targetColors <= CPC_MODE_1_MAX_COLORS) {
+      adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
+        strategy: paletteStrategy,
+        targetColors,
+        candidatesCount: colorFrequency.length,
+        basePaletteSize: basePalette.length
+      })
+
+      const candidates: ColorCandidate[] = colorFrequency.map((c) => ({
+        index: c.index,
+        frequency: c.frequency,
+        color: c.color,
+        converted: c.converted
+      }))
+
+      // Récupérer les couleurs présélectionnées depuis basePalette (car elles ne sont pas dans candidates)
+      const preselectedColors = preselectedIndices.map(
+        (idx) => [...basePalette[idx]] as Vector
+      )
+
+      // Utiliser le helper centralisé pour appliquer la stratégie
+      // Passer la taille de la palette de base pour distinguer CPC Classic (27) de CPC Plus (4096)
+      const strategyResult = applyPaletteStrategyV2(
+        paletteStrategy as PaletteStrategyName,
+        candidates,
+        targetColors,
+        [...preselectedIndices],
+        { basePaletteSize: basePalette.length, preselectedColors }
+      )
+
+      adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {
+        strategy: paletteStrategy,
+        selectedIndices: strategyResult.selectedIndices,
+        isCPCPlus: basePalette.length > 27
+      })
+
+      return strategyResult.selectedIndices
+    }
+
+    // Pour les palettes plus grandes (mode 0: 16 couleurs), utiliser un algorithme avec diversité de teinte
+    const remainingSlots = targetColors - result.length
+
+    // Check si on a assez de candidats (seulement pour mode 0)
+    if (
+      colorFrequency.length <= remainingSlots &&
       targetColors > CPC_MODE_1_MAX_COLORS
-        ? 'mode0-hue-diversity'
-        : (paletteStrategy as PaletteStrategyName)
+    ) {
+      adapterLogger.info(
+        '[ReGLQuantizer] Not enough candidates, returning all',
+        {
+          candidates: colorFrequency.length,
+          needed: remainingSlots
+        }
+      )
+      return [...result, ...colorFrequency.map((c) => c.index)]
+    }
 
-    adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
-      strategy: effectiveStrategy,
-      targetColors,
-      candidatesCount: colorFrequency.length,
-      basePaletteSize: basePalette.length
-    })
-
-    const candidates: ColorCandidate[] = colorFrequency.map((c) => ({
-      index: c.index,
-      frequency: c.frequency,
-      color: c.color,
-      converted: c.converted
-    }))
-
-    // Récupérer les couleurs présélectionnées depuis basePalette
-    const preselectedColors = preselectedIndices.map(
+    const selectedConverted: Vector[] = result.map(
       (idx) => [...basePalette[idx]] as Vector
     )
 
-    // Utiliser le helper centralisé pour appliquer la stratégie
-    const strategyResult = applyPaletteStrategyV2(
-      effectiveStrategy,
-      candidates,
-      targetColors,
-      [...preselectedIndices],
-      { basePaletteSize: basePalette.length, preselectedColors }
+    // Utiliser les helpers pour créer et trier les buckets de teinte
+    const hueBuckets = createHueBuckets(colorFrequency as ColorFrequencyItem[])
+
+    // Log détaillé des buckets trouvés
+    for (const [bucket, colors] of hueBuckets.entries()) {
+      const hueRange =
+        bucket === 'gray'
+          ? 'gray/desaturated'
+          : `${(bucket as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+      adapterLogger.info(
+        `[Mode 0] Bucket ${bucket} (${hueRange}): ${colors.length} colors`
+      )
+    }
+    adapterLogger.info(
+      `[Mode 0] Found ${hueBuckets.size} hue families in image`
     )
 
-    adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {
-      strategy: effectiveStrategy,
-      selectedIndices: strategyResult.selectedIndices,
-      isCPCPlus: basePalette.length > 27
-    })
+    // Trier les buckets par fréquence
+    const sortedBuckets = sortBucketsByFrequency(hueBuckets)
 
-    return strategyResult.selectedIndices
+    // Stratégie: prendre le meilleur représentant de chaque bucket
+    // AVEC diversité de luminosité (éviter que tous les représentants soient sombres)
+    const bucketRepresentatives = selectBucketRepresentativesWithLightness(
+      sortedBuckets,
+      targetColors
+    )
+
+    // Log les représentants sélectionnés
+    for (const rep of bucketRepresentatives) {
+      // Trouver le bucket de ce représentant
+      const bucket = sortedBuckets.find((b) =>
+        b.colors.some((c) => c.index === rep.index)
+      )
+      const bucketKey = bucket?.bucket ?? 'unknown'
+      const hueRange =
+        bucketKey === 'gray'
+          ? 'gray'
+          : `${(bucketKey as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucketKey as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+      const [r, g, b] = rep.converted
+      adapterLogger.info(
+        `[Mode 0] Representative for bucket ${bucketKey} (${hueRange}): RGB(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}) freq=${rep.frequency}`
+      )
+    }
+
+    adapterLogger.info(
+      `[Mode 0] Selected ${bucketRepresentatives.length} representatives from hue families`
+    )
+
+    // Compléter avec les couleurs les plus fréquentes globalement
+    // mais en évitant les doublons de bucket dominant
+    const usedIndicesForBalance = new Set(
+      bucketRepresentatives.map((c) => c.index)
+    )
+    const remainingCandidates = colorFrequency.filter(
+      (c) => !usedIndicesForBalance.has(c.index)
+    ) as ColorFrequencyItem[]
+
+    // Ajouter les représentants de bucket au résultat AVEC vérification de distance RGB et teinte
+    // Pour éviter les couleurs très proches (ex: bleu foncé et violet foncé)
+    // Utiliser les constantes centralisées pour cohérence
+    const MIN_RGB_DISTANCE_FOR_REPRESENTATIVES = MIN_RGB_DISTANCE_MODE_0
+    const MIN_HUE_DISTANCE_FOR_REPRESENTATIVES = MIN_HUE_DISTANCE_MODE_0 // 35° pour diversité
+    let addedReps = 0
+    let skippedReps = 0
+
+    for (const rep of bucketRepresentatives) {
+      if (!result.includes(rep.index)) {
+        // Vérifier la distance avec tous les représentants déjà ajoutés
+        let tooClose = false
+        const repHue = calculateHue(rep.converted, DELTA_MIN_FOR_HUE)
+        const repSat = calculateSaturation(rep.converted)
+
+        for (const existing of selectedConverted) {
+          const dist = this.calculateDistance(rep.converted, existing)
+
+          // Vérification distance RGB
+          if (dist < MIN_RGB_DISTANCE_FOR_REPRESENTATIVES) {
+            const [r1, g1, b1] = rep.converted
+            const [r2, g2, b2] = existing
+            adapterLogger.info(
+              `[Mode 0] SKIP representative RGB(${Math.round(r1)}, ${Math.round(g1)}, ${Math.round(b1)}) - RGB too close to RGB(${Math.round(r2)}, ${Math.round(g2)}, ${Math.round(b2)}) dist=${Math.round(dist)}`
+            )
+            tooClose = true
+            skippedReps++
+            break
+          }
+
+          // Vérification distance de teinte (pour couleurs ayant une teinte identifiable)
+          // Utiliser un seuil bas (0.15) pour inclure les jaunes/verts désaturés
+          const MIN_SAT_FOR_HUE_CHECK = 0.15
+          const existingSat = calculateSaturation(existing)
+          if (
+            repSat > MIN_SAT_FOR_HUE_CHECK &&
+            repHue >= 0 &&
+            existingSat > MIN_SAT_FOR_HUE_CHECK
+          ) {
+            const existingHue = calculateHue(existing, DELTA_MIN_FOR_HUE)
+            if (existingHue >= 0) {
+              const hueDist = calculateHueDistance(repHue, existingHue)
+              if (hueDist < MIN_HUE_DISTANCE_FOR_REPRESENTATIVES) {
+                const [r1, g1, b1] = rep.converted
+                const [r2, g2, b2] = existing
+                adapterLogger.info(
+                  `[Mode 0] SKIP representative RGB(${Math.round(r1)}, ${Math.round(g1)}, ${Math.round(b1)}) hue=${repHue.toFixed(0)}° - hue too close to RGB(${Math.round(r2)}, ${Math.round(g2)}, ${Math.round(b2)}) hue=${existingHue.toFixed(0)}° hueDist=${hueDist.toFixed(0)}°`
+                )
+                tooClose = true
+                skippedReps++
+                break
+              }
+            }
+          }
+        }
+        if (!tooClose) {
+          result.push(rep.index)
+          selectedConverted.push(rep.converted)
+          addedReps++
+        }
+      }
+    }
+
+    adapterLogger.info(
+      `[Mode 0] Added ${addedReps} bucket representatives (skipped ${skippedReps} too close)`
+    )
+
+    // Si on a déjà assez de couleurs avec les représentants, on s'arrête là
+    if (result.length >= targetColors) {
+      return result.slice(0, targetColors)
+    }
+
+    // Sinon, compléter avec les couleurs les plus fréquentes (en évitant les doublons)
+    const frequencyBudget = targetColors - result.length
+
+    // Utiliser les helpers extraits
+    selectFrequentColorsWithDiversity(
+      remainingCandidates,
+      selectedConverted,
+      result,
+      frequencyBudget,
+      targetColors,
+      this.calculateDistance
+    )
+
+    // Si encore besoin, compléter avec MaxMin Distance
+    if (result.length < targetColors) {
+      selectMaxMinDistanceColors(
+        remainingCandidates,
+        selectedConverted,
+        result,
+        targetColors,
+        this.calculateDistance
+      )
+    }
+
+    return result
   }
 
   /**
@@ -641,19 +933,6 @@ export class ReGLQuantizer {
    */
   private calculateDistance = (color1: Vector, color2: Vector): number => {
     return weightedRGBDistance(color1, color2)
-  }
-
-  /**
-   * Helper: Détermine le nombre d'échantillons selon le mode et le type de palette
-   */
-  private getSampleCount(targetColors: number, isCPCPlus: boolean): number {
-    // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons
-    if (targetColors <= CPC_MODE_1_MAX_COLORS) {
-      return SAMPLE_COUNT_MODE_1_2
-    }
-    // Pour le mode 0 (16 couleurs), CPC Plus nécessite plus d'échantillons
-    // pour capturer les teintes rares dans sa palette de 4096 couleurs
-    return isCPCPlus ? SAMPLE_COUNT_MODE_0_PLUS : SAMPLE_COUNT_MODE_0_CLASSIC
   }
 
   /**
@@ -679,11 +958,38 @@ export class ReGLQuantizer {
         : config.targetColors
     const useOptimizedSelection = isMode0Based || isMode1Based || isMode2Based
 
-    if (useOptimizedSelection) {
-      // Déterminer le nombre d'échantillons selon le mode et le type de palette
-      const sampleCount = this.getSampleCount(config.targetColors, isCPCPlus)
+    if (isCPCPlus && useOptimizedSelection) {
+      const candidateMultiplier =
+        config.targetColors <= CPC_MODE_1_MAX_COLORS
+          ? CANDIDATE_MULTIPLIER_SMALL_PALETTE
+          : CANDIDATE_MULTIPLIER_LARGE_PALETTE
+      const candidatesCount = Math.min(
+        actualTargetColors * candidateMultiplier,
+        Math.floor(basePalette.length * CANDIDATE_POOL_PLUS_RATIO)
+      )
 
-      return this.selectOptimized(imageData, basePalette, sampleCount, config)
+      return this.selectCPCPlusOptimized(
+        imageData,
+        basePalette,
+        candidatesCount,
+        config
+      )
+    } else if (!isCPCPlus && useOptimizedSelection) {
+      const candidateMultiplier =
+        config.targetColors <= CPC_MODE_1_MAX_COLORS
+          ? CANDIDATE_MULTIPLIER_SMALL_PALETTE
+          : CANDIDATE_MULTIPLIER_LARGE_PALETTE
+      const candidatesCount = Math.min(
+        actualTargetColors * candidateMultiplier,
+        Math.floor(basePalette.length * CANDIDATE_POOL_CLASSIC_RATIO)
+      )
+
+      return this.selectCPCClassicOptimized(
+        imageData,
+        basePalette,
+        candidatesCount,
+        config
+      )
     } else {
       // Utiliser l'histogramme avec diversité par luminance
       return selectTopIndicesCore(

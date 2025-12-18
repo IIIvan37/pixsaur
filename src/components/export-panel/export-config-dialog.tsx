@@ -56,21 +56,33 @@ export default function ExportConfigDialog({
   // Allow SCR export for standard modes OR custom dimensions with size <= 16384 bytes
   const canExportSCR = isStandardMode || scrSizeBytes <= MAX_SCR_SIZE_BYTES
 
-  // Automatically uncheck SCR if export is not allowed
+  // SNA export is only available for standard modes or overscan
+  const isOverscanMode = modeConfig.overscan
+  const canExportSNA = isStandardMode || isOverscanMode
+
+  // Automatically uncheck SCR and SNA if export is not allowed
   useEffect(() => {
-    if (!canExportSCR) {
-      const needsUpdate = config.content.includeSCR
-      if (needsUpdate) {
-        setConfig((prev) => ({
-          ...prev,
-          content: {
-            ...prev.content,
-            includeSCR: false
-          }
-        }))
-      }
+    const updates: Partial<ExportConfig['content']> = {}
+
+    if (!canExportSCR && config.content.includeSCR) {
+      updates.includeSCR = false
     }
-  }, [canExportSCR, config.content.includeSCR])
+    if (!canExportSNA && config.content.includeSNA) {
+      updates.includeSNA = false
+    }
+
+    if (Object.keys(updates).length > 0) {
+      setConfig((prev) => ({
+        ...prev,
+        content: { ...prev.content, ...updates }
+      }))
+    }
+  }, [
+    canExportSCR,
+    canExportSNA,
+    config.content.includeSCR,
+    config.content.includeSNA
+  ])
 
   const handleConfirm = () => {
     onConfirm(config)
@@ -151,6 +163,21 @@ export default function ExportConfigDialog({
             checked={config.content.includePalettes}
             onChange={(e) => updateContent('includePalettes', e.target.checked)}
             label={_(msg`Palettes (firmware/hardware)`)}
+          />
+          <Checkbox
+            checked={config.content.includeSNA}
+            onChange={(e) => updateContent('includeSNA', e.target.checked)}
+            label={_(msg`SNA (snapshot exécutable)`)}
+            disabled={!canExportSNA}
+            title={
+              canExportSNA
+                ? _(
+                    msg`Génère un fichier snapshot (.SNA) avec le code d'affichage intégré`
+                  )
+                : _(
+                    msg`Le format SNA n'est disponible que pour les tailles standard ou overscan`
+                  )
+            }
           />
           <Checkbox
             checked={config.content.includePNG}

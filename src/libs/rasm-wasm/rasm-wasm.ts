@@ -213,7 +213,13 @@ async function loadRasmModule(): Promise<RasmModule> {
           },
           printErr: (text: string) => {
             logger.error(text)
-          }
+          },
+          // Increase initial memory for large assemblies (e.g., overscan with rasters)
+          // Default is 16MB, increase to 64MB
+          wasmMemory: new WebAssembly.Memory({
+            initial: 1024, // 64MB (1024 pages * 64KB)
+            maximum: 2048 // 128MB max
+          })
         })) as RasmModule
 
         logger.debug('Module initialized successfully')
