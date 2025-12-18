@@ -21,12 +21,15 @@ import {
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import {
-  calculateHue,
-  calculateHueDistance,
-  calculateSaturation
-} from '@/libs/pixsaur-color/src/utils/hsv'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
+import {
+  type ColorFrequencyItem,
+  createHueBuckets,
+  HUE_BUCKET_SIZE_DEGREES,
+  selectFrequentColorsWithDiversity,
+  selectMaxMinDistanceColors,
+  sortBucketsByFrequency
+} from './color-selection-helpers'
 
 /**
  * Constantes pour la configuration GPU
@@ -50,31 +53,9 @@ const SAMPLE_COUNT_MODE_0_PLUS = 2048 // Échantillons augmentés pour mode 0 CP
 const SAMPLE_COUNT_MODE_1_2 = 1024 // Échantillons pour modes 1-2 (petites palettes)
 
 /**
- * Constantes pour les seuils de couleur
+ * Constantes locales (non dupliquées des helpers)
  */
 const RGB_NORMALIZATION_FACTOR = 255 // Facteur de normalisation RGB (0-255 → 0-1)
-const SATURATION_THRESHOLD_FOR_HUE = 0.2 // Seuil de saturation pour considérer la teinte
-const SATURATION_THRESHOLD_HIGH = 0.3 // Seuil de saturation élevé pour couleurs vibrantes
-const DELTA_MIN_FOR_HUE = 0.01 // Delta minimum pour calculer la teinte (évite division par zéro)
-
-/**
- * Constantes pour la distance de teinte
- */
-const HUE_HALF_RANGE = 180 // Demi-plage de teinte (distance max circulaire)
-const HUE_BUCKET_SIZE_DEGREES = 45 // Taille de bucket de teinte en degrés (~8 familles)
-const MIN_HUE_DISTANCE_MODE_0 = 30 // Distance minimale de teinte pour diversité en mode 0
-
-/**
- * Constantes pour la distance RGB
- */
-const MIN_RGB_DISTANCE_MODE_0 = 20 // Distance RGB minimale pour mode 0
-const MIN_RGB_DISTANCE_MODE_1_2 = 80 // Distance RGB minimale pour modes 1-2 (contraste élevé)
-
-/**
- * Constantes pour les bonus de diversité
- */
-const HUE_BONUS_WEIGHT = 2 // Poids du bonus de teinte (favorise diversité)
-const HUE_BONUS_NORMALIZATION = 200 // Normalisation du bonus de teinte pour être comparable à RGB
 
 /**
  * Constantes pour les multiplicateurs de candidats
@@ -646,191 +627,8 @@ export class ReGLQuantizer {
       .sort((a, b) => b.frequency - a.frequency)
   }
 
-  /**
-   * Helper: Sélection par fréquence avec diversité de teinte
-   * En mode 0 (16 couleurs), privilégie la diversité des teintes pour éviter
-   * d'avoir trop de nuances d'une même couleur
-   */
-  private selectFrequentColorsWithDiversity(
-    colorFrequency: Array<{
-      index: number
-      frequency: number
-      color: Vector
-      converted: Vector
-    }>,
-    selectedConverted: Vector[],
-    result: number[],
-    frequencyBudget: number,
-    targetColors?: number
-  ): void {
-    // Distance minimale adaptative selon la taille de la palette cible
-    // Modes 1-2 (2-4 couleurs): nécessitent un contraste beaucoup plus élevé
-    // Mode 0 (16 couleurs): distance plus faible acceptable
-    const minDistance =
-      targetColors && targetColors <= CPC_MODE_1_MAX_COLORS
-        ? MIN_RGB_DISTANCE_MODE_1_2
-        : MIN_RGB_DISTANCE_MODE_0
-
-    // Pour le mode 0, également exiger une diversité de teinte
-    const isMode0 = targetColors && targetColors > CPC_MODE_1_MAX_COLORS
-    const minHueDistance = MIN_HUE_DISTANCE_MODE_0 // degrés minimum entre les teintes
-
-    for (
-      let i = 1;
-      i < colorFrequency.length && result.length < frequencyBudget;
-      i++
-    ) {
-      const candidateConverted = colorFrequency[i].converted
-
-      // Vérifier diversité minimale avec distance adaptative
-      let isDiverse = true
-
-      if (isMode0) {
-        // Mode 0: vérifier aussi la diversité de teinte pour couleurs saturées
-        const candidateHue = calculateHue(candidateConverted, DELTA_MIN_FOR_HUE)
-        const candidateSat = calculateSaturation(candidateConverted)
-
-        // Pour les couleurs saturées (pas les gris), vérifier la diversité de teinte
-        if (candidateSat > SATURATION_THRESHOLD_HIGH && candidateHue >= 0) {
-          for (const selectedColor of selectedConverted) {
-            const selectedSat = calculateSaturation(selectedColor)
-
-            // Si la couleur sélectionnée est aussi saturée, vérifier la teinte
-            if (selectedSat > SATURATION_THRESHOLD_HIGH) {
-              const selectedHue = calculateHue(selectedColor, DELTA_MIN_FOR_HUE)
-              const hueDistance = calculateHueDistance(
-                candidateHue,
-                selectedHue
-              )
-
-              // Si teintes trop proches ET distance RGB aussi proche, rejeter
-              if (hueDistance < minHueDistance) {
-                const rgbDistance = this.calculateDistance(
-                  candidateConverted,
-                  selectedColor
-                )
-                if (rgbDistance < minDistance * 2) {
-                  isDiverse = false
-                  break
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Vérifier aussi la distance RGB classique
-      if (isDiverse) {
-        for (const selectedColor of selectedConverted) {
-          if (
-            this.calculateDistance(candidateConverted, selectedColor) <
-            minDistance
-          ) {
-            isDiverse = false
-            break
-          }
-        }
-      }
-
-      if (isDiverse) {
-        result.push(colorFrequency[i].index)
-        selectedConverted.push(candidateConverted)
-      }
-    }
-  }
-
-  /**
-   * Helper: Sélection MaxMin Distance pour compléter la palette
-   * En mode 0, privilégie la diversité de teinte pour maximiser la couverture des couleurs
-   */
-  private selectMaxMinDistanceColors(
-    colorFrequency: Array<{
-      index: number
-      frequency: number
-      color: Vector
-      converted: Vector
-    }>,
-    selectedConverted: Vector[],
-    result: number[],
-    targetColors: number
-  ): void {
-    const remaining = colorFrequency.filter((c) => !result.includes(c.index))
-    const additionalColors = targetColors - result.length
-    const isMode0 = targetColors > CPC_MODE_1_MAX_COLORS
-
-    for (let i = 0; i < additionalColors && remaining.length > 0; i++) {
-      let maxScore = -1
-      let bestIndex = -1
-
-      for (let j = 0; j < remaining.length; j++) {
-        const candidateConverted = remaining[j].converted
-
-        // Distance RGB minimale
-        let minRGBDistance = Infinity
-        for (const selectedColor of selectedConverted) {
-          const distance = this.calculateDistance(
-            candidateConverted,
-            selectedColor
-          )
-          minRGBDistance = Math.min(minRGBDistance, distance)
-        }
-
-        let score = minRGBDistance
-
-        // En mode 0, ajouter un bonus pour la diversité de teinte
-        if (isMode0) {
-          const candidateHue = calculateHue(
-            candidateConverted,
-            DELTA_MIN_FOR_HUE
-          )
-          const candidateSat = calculateSaturation(candidateConverted)
-
-          // Pour les couleurs saturées, calculer la distance de teinte minimale
-          if (
-            candidateSat > SATURATION_THRESHOLD_FOR_HUE &&
-            candidateHue >= 0
-          ) {
-            let minHueDistance = 360
-
-            for (const selectedColor of selectedConverted) {
-              const selectedSat = calculateSaturation(selectedColor)
-
-              if (selectedSat > SATURATION_THRESHOLD_FOR_HUE) {
-                const selectedHue = calculateHue(
-                  selectedColor,
-                  DELTA_MIN_FOR_HUE
-                )
-                const hueDistance = calculateHueDistance(
-                  candidateHue,
-                  selectedHue
-                )
-                minHueDistance = Math.min(minHueDistance, hueDistance)
-              }
-            }
-
-            // Bonus pour les teintes très différentes (pondération pour favoriser la diversité)
-            // Normaliser minHueDistance (0-180) pour être comparable à minRGBDistance
-            const hueBonus =
-              (minHueDistance / HUE_HALF_RANGE) *
-              HUE_BONUS_NORMALIZATION *
-              HUE_BONUS_WEIGHT
-            score = minRGBDistance + hueBonus
-          }
-        }
-
-        if (score > maxScore) {
-          maxScore = score
-          bestIndex = j
-        }
-      }
-
-      if (bestIndex >= 0) {
-        result.push(remaining[bestIndex].index)
-        selectedConverted.push(remaining[bestIndex].converted)
-        remaining.splice(bestIndex, 1)
-      }
-    }
-  }
+  // NOTE: selectFrequentColorsWithDiversity et selectMaxMinDistanceColors
+  // sont maintenant dans color-selection-helpers.ts
 
   /**
    * Sélection rapide avec diversité maximale + espaces colorimetriques
@@ -923,32 +721,15 @@ export class ReGLQuantizer {
       (idx) => [...basePalette[idx]] as Vector
     )
 
-    // En mode 0, garantir la diversité de teinte en sélectionnant d'abord
-    // au moins une couleur de chaque famille de teinte présente
-    const hueBuckets = new Map() // hueBucket -> colors[]
-
-    for (const candidate of colorFrequency) {
-      const sat = calculateSaturation(candidate.converted)
-      const hue = calculateHue(candidate.converted, DELTA_MIN_FOR_HUE)
-
-      // Buckets pour avoir ~8 familles principales
-      const bucketKey =
-        sat > SATURATION_THRESHOLD_FOR_HUE && hue >= 0
-          ? Math.floor(hue / HUE_BUCKET_SIZE_DEGREES)
-          : 'gray'
-
-      if (!hueBuckets.has(bucketKey)) {
-        hueBuckets.set(bucketKey, [])
-      }
-      hueBuckets.get(bucketKey).push(candidate)
-    }
+    // Utiliser les helpers pour créer et trier les buckets de teinte
+    const hueBuckets = createHueBuckets(colorFrequency as ColorFrequencyItem[])
 
     // Log détaillé des buckets trouvés
     for (const [bucket, colors] of hueBuckets.entries()) {
       const hueRange =
         bucket === 'gray'
           ? 'gray/desaturated'
-          : `${bucket * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+          : `${(bucket as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
       adapterLogger.info(
         `[Mode 0] Bucket ${bucket} (${hueRange}): ${colors.length} colors`
       )
@@ -957,16 +738,12 @@ export class ReGLQuantizer {
       `[Mode 0] Found ${hueBuckets.size} hue families in image`
     )
 
+    // Trier les buckets par fréquence
+    const sortedBuckets = sortBucketsByFrequency(hueBuckets)
+
     // Stratégie: d'abord prendre la couleur la plus fréquente de chaque bucket
     // pour garantir la couverture, puis compléter avec les plus fréquentes
-    const bucketRepresentatives = []
-    const sortedBuckets = Array.from(hueBuckets.entries())
-      .map(([bucket, colors]) => ({
-        bucket,
-        colors: colors.sort((a: any, b: any) => b.frequency - a.frequency),
-        totalFreq: colors.reduce((sum: number, c: any) => sum + c.frequency, 0)
-      }))
-      .sort((a, b) => b.totalFreq - a.totalFreq) // Buckets les plus importants en premier
+    const bucketRepresentatives: ColorFrequencyItem[] = []
 
     // Prendre le meilleur représentant de chaque bucket (max ~8 couleurs)
     for (const { bucket, colors } of sortedBuckets) {
@@ -976,7 +753,7 @@ export class ReGLQuantizer {
         const hueRange =
           bucket === 'gray'
             ? 'gray'
-            : `${bucket * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+            : `${(bucket as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
         const [r, g, b] = rep.converted
         adapterLogger.info(
           `[Mode 0] Representative for bucket ${bucket} (${hueRange}): RGB(${Math.round(r * RGB_NORMALIZATION_FACTOR)}, ${Math.round(g * RGB_NORMALIZATION_FACTOR)}, ${Math.round(b * RGB_NORMALIZATION_FACTOR)}) freq=${rep.frequency}`
@@ -991,11 +768,11 @@ export class ReGLQuantizer {
     // Compléter avec les couleurs les plus fréquentes globalement
     // mais en évitant les doublons de bucket dominant
     const usedIndicesForBalance = new Set(
-      bucketRepresentatives.map((c: any) => c.index)
+      bucketRepresentatives.map((c) => c.index)
     )
     const remainingCandidates = colorFrequency.filter(
-      (c: any) => !usedIndicesForBalance.has(c.index)
-    )
+      (c) => !usedIndicesForBalance.has(c.index)
+    ) as ColorFrequencyItem[]
 
     // Ajouter DIRECTEMENT les représentants de bucket au résultat pour garantir la diversité
     // Cela assure qu'on a au moins une couleur de chaque famille de teinte
@@ -1018,21 +795,24 @@ export class ReGLQuantizer {
     // Sinon, compléter avec les couleurs les plus fréquentes (en évitant les doublons)
     const frequencyBudget = targetColors - result.length
 
-    this.selectFrequentColorsWithDiversity(
+    // Utiliser les helpers extraits
+    selectFrequentColorsWithDiversity(
       remainingCandidates,
       selectedConverted,
       result,
       frequencyBudget,
-      targetColors
+      targetColors,
+      this.calculateDistance
     )
 
     // Si encore besoin, compléter avec MaxMin Distance
     if (result.length < targetColors) {
-      this.selectMaxMinDistanceColors(
+      selectMaxMinDistanceColors(
         remainingCandidates,
         selectedConverted,
         result,
-        targetColors
+        targetColors,
+        this.calculateDistance
       )
     }
 
