@@ -8,3 +8,13 @@ export {
   generateUniversalScrLoader,
   type ScrLoaderTemplateOptions
 } from './scr-loader-template'
+export {
+  assembleSnaSource,
+  generateClassicOverscanSnaTemplate,
+  generateClassicScrSnaTemplate,
+  generatePlusOverscanSnaTemplate,
+  generatePlusScrSnaTemplate,
+  generateSnaTemplate,
+  type SnaDataFiles,
+  type SnaTemplateOptions
+} from './sna-templates'

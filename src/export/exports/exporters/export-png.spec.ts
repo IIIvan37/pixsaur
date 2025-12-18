@@ -81,7 +81,8 @@ describe('export-png', () => {
       includeSCR: false,
       includeRasters: false,
       includeLinear: true,
-      includePalettes: true
+      includePalettes: true,
+      includeSNA: false
     },
     labels: {
       enabled: false,

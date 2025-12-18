@@ -153,6 +153,14 @@ export default function ExportConfigDialog({
             label={_(msg`Palettes (firmware/hardware)`)}
           />
           <Checkbox
+            checked={config.content.includeSNA}
+            onChange={(e) => updateContent('includeSNA', e.target.checked)}
+            label={_(msg`SNA (snapshot exécutable)`)}
+            title={_(
+              msg`Génère un fichier snapshot (.SNA) avec le code d'affichage intégré`
+            )}
+          />
+          <Checkbox
             checked={config.content.includePNG}
             onChange={(e) => updateContent('includePNG', e.target.checked)}
             label={_(msg`PNG (pixels carrés)`)}

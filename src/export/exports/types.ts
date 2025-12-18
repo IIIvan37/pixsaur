@@ -11,6 +11,7 @@ export type OutputFormat =
   | 'asm-scr' // ASM file with SCR format data (entrelaced)
   | 'asm-linear' // ASM file with linear data (sequential)
   | 'dsk' // Disk image
+  | 'sna' // Snapshot file (executable)
   | 'png' // PNG preview
 
 /**
@@ -40,6 +41,7 @@ export interface ZipContentConfig {
   includePNG: boolean // Include PNG preview
   includePNGCorrected: boolean // Include PNG with corrected aspect ratio
   includeRasters: boolean // Include raster ASM data (only when rasters enabled)
+  includeSNA: boolean // Include SNA snapshot file (executable with viewer code)
 }
 
 /**
@@ -93,7 +95,8 @@ export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
     includePalettes: true,
     includePNG: true,
     includePNGCorrected: true,
-    includeRasters: true
+    includeRasters: true,
+    includeSNA: false // SNA export is opt-in
   },
   labels: {
     enabled: true,
