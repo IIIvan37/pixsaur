@@ -24,8 +24,15 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 import {
   type ColorFrequencyItem,
+  calculateHue,
+  calculateHueDistance,
+  calculateSaturation,
   createHueBuckets,
+  DELTA_MIN_FOR_HUE,
   HUE_BUCKET_SIZE_DEGREES,
+  MIN_HUE_DISTANCE_MODE_0,
+  MIN_RGB_DISTANCE_MODE_0,
+  selectBucketRepresentativesWithLightness,
   selectFrequentColorsWithDiversity,
   selectMaxMinDistanceColors,
   sortBucketsByFrequency
@@ -49,13 +56,8 @@ const CPC_PLUS_SPECIAL_MODE = 512 // Mode spécial CPC Plus (représente 16 coul
  * Constantes pour l'échantillonnage
  */
 const SAMPLE_COUNT_MODE_0_CLASSIC = 256 // Échantillons pour mode 0 CPC Classic
-const SAMPLE_COUNT_MODE_0_PLUS = 2048 // Échantillons augmentés pour mode 0 CPC Plus (teintes rares)
+const SAMPLE_COUNT_MODE_0_PLUS = 4096 // Échantillons augmentés pour mode 0 CPC Plus (teintes rares)
 const SAMPLE_COUNT_MODE_1_2 = 1024 // Échantillons pour modes 1-2 (petites palettes)
-
-/**
- * Constantes locales (non dupliquées des helpers)
- */
-const RGB_NORMALIZATION_FACTOR = 255 // Facteur de normalisation RGB (0-255 → 0-1)
 
 /**
  * Constantes pour les multiplicateurs de candidats
@@ -566,6 +568,7 @@ export class ReGLQuantizer {
 
   /**
    * Échantillonnage intelligent de l'image
+   * Combine échantillonnage régulier + capture des couleurs vivides (saturées et claires)
    */
   private sampleImageColors(
     imageData: ImageData,
@@ -574,19 +577,65 @@ export class ReGLQuantizer {
     const { width, height, data } = imageData
     const totalPixels = width * height
 
-    // Calcul du pas d'échantillonnage
-    const step = Math.max(1, Math.floor(Math.sqrt(totalPixels / maxSamples)))
+    // Réserver 10% des échantillons pour les couleurs vivides
+    const vividSampleBudget = Math.floor(maxSamples * 0.1)
+    const regularSampleBudget = maxSamples - vividSampleBudget
+
+    // Phase 1: Échantillonnage régulier
+    const step = Math.max(
+      1,
+      Math.floor(Math.sqrt(totalPixels / regularSampleBudget))
+    )
     const samples: Vector[] = []
+    const vividCandidates: Array<{ color: Vector; score: number }> = []
 
     for (let y = 0; y < height; y += step) {
       for (let x = 0; x < width; x += step) {
         const idx = (y * width + x) * 4
-        samples.push([data[idx], data[idx + 1], data[idx + 2]])
+        const r = data[idx]
+        const g = data[idx + 1]
+        const b = data[idx + 2]
+        const color: Vector = [r, g, b]
 
-        if (samples.length >= maxSamples) break
+        samples.push(color)
+
+        // Calculer un score de "vividité" (saturation * luminosité)
+        const max = Math.max(r, g, b)
+        const min = Math.min(r, g, b)
+        const delta = max - min
+        const saturation = max === 0 ? 0 : delta / max
+        const value = max / 255
+
+        // Score élevé = couleur vive (saturée ET claire)
+        const vividScore = saturation * value
+
+        if (vividScore > 0.4) {
+          vividCandidates.push({ color, score: vividScore })
+        }
+
+        if (samples.length >= regularSampleBudget) break
       }
-      if (samples.length >= maxSamples) break
+      if (samples.length >= regularSampleBudget) break
     }
+
+    // Phase 2: Ajouter les couleurs les plus vivides (si pas déjà dans samples)
+    // Trier par score décroissant et prendre les meilleures
+    vividCandidates.sort((a, b) => b.score - a.score)
+
+    const addedVivid = new Set<string>()
+    for (const { color } of vividCandidates) {
+      if (addedVivid.size >= vividSampleBudget) break
+
+      const key = `${color[0]},${color[1]},${color[2]}`
+      if (!addedVivid.has(key)) {
+        samples.push(color)
+        addedVivid.add(key)
+      }
+    }
+
+    adapterLogger.info(
+      `[Sampling] ${samples.length} samples (${regularSampleBudget} regular + ${addedVivid.size} vivid)`
+    )
 
     return samples
   }
@@ -741,24 +790,28 @@ export class ReGLQuantizer {
     // Trier les buckets par fréquence
     const sortedBuckets = sortBucketsByFrequency(hueBuckets)
 
-    // Stratégie: d'abord prendre la couleur la plus fréquente de chaque bucket
-    // pour garantir la couverture, puis compléter avec les plus fréquentes
-    const bucketRepresentatives: ColorFrequencyItem[] = []
+    // Stratégie: prendre le meilleur représentant de chaque bucket
+    // AVEC diversité de luminosité (éviter que tous les représentants soient sombres)
+    const bucketRepresentatives = selectBucketRepresentativesWithLightness(
+      sortedBuckets,
+      targetColors
+    )
 
-    // Prendre le meilleur représentant de chaque bucket (max ~8 couleurs)
-    for (const { bucket, colors } of sortedBuckets) {
-      if (bucketRepresentatives.length < targetColors && colors.length > 0) {
-        const rep = colors[0]
-        bucketRepresentatives.push(rep)
-        const hueRange =
-          bucket === 'gray'
-            ? 'gray'
-            : `${(bucket as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
-        const [r, g, b] = rep.converted
-        adapterLogger.info(
-          `[Mode 0] Representative for bucket ${bucket} (${hueRange}): RGB(${Math.round(r * RGB_NORMALIZATION_FACTOR)}, ${Math.round(g * RGB_NORMALIZATION_FACTOR)}, ${Math.round(b * RGB_NORMALIZATION_FACTOR)}) freq=${rep.frequency}`
-        )
-      }
+    // Log les représentants sélectionnés
+    for (const rep of bucketRepresentatives) {
+      // Trouver le bucket de ce représentant
+      const bucket = sortedBuckets.find((b) =>
+        b.colors.some((c) => c.index === rep.index)
+      )
+      const bucketKey = bucket?.bucket ?? 'unknown'
+      const hueRange =
+        bucketKey === 'gray'
+          ? 'gray'
+          : `${(bucketKey as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucketKey as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+      const [r, g, b] = rep.converted
+      adapterLogger.info(
+        `[Mode 0] Representative for bucket ${bucketKey} (${hueRange}): RGB(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}) freq=${rep.frequency}`
+      )
     }
 
     adapterLogger.info(
@@ -774,17 +827,71 @@ export class ReGLQuantizer {
       (c) => !usedIndicesForBalance.has(c.index)
     ) as ColorFrequencyItem[]
 
-    // Ajouter DIRECTEMENT les représentants de bucket au résultat pour garantir la diversité
-    // Cela assure qu'on a au moins une couleur de chaque famille de teinte
+    // Ajouter les représentants de bucket au résultat AVEC vérification de distance RGB et teinte
+    // Pour éviter les couleurs très proches (ex: bleu foncé et violet foncé)
+    // Utiliser les constantes centralisées pour cohérence
+    const MIN_RGB_DISTANCE_FOR_REPRESENTATIVES = MIN_RGB_DISTANCE_MODE_0
+    const MIN_HUE_DISTANCE_FOR_REPRESENTATIVES = MIN_HUE_DISTANCE_MODE_0 // 35° pour diversité
+    let addedReps = 0
+    let skippedReps = 0
+
     for (const rep of bucketRepresentatives) {
       if (!result.includes(rep.index)) {
-        result.push(rep.index)
-        selectedConverted.push(rep.converted)
+        // Vérifier la distance avec tous les représentants déjà ajoutés
+        let tooClose = false
+        const repHue = calculateHue(rep.converted, DELTA_MIN_FOR_HUE)
+        const repSat = calculateSaturation(rep.converted)
+
+        for (const existing of selectedConverted) {
+          const dist = this.calculateDistance(rep.converted, existing)
+
+          // Vérification distance RGB
+          if (dist < MIN_RGB_DISTANCE_FOR_REPRESENTATIVES) {
+            const [r1, g1, b1] = rep.converted
+            const [r2, g2, b2] = existing
+            adapterLogger.info(
+              `[Mode 0] SKIP representative RGB(${Math.round(r1)}, ${Math.round(g1)}, ${Math.round(b1)}) - RGB too close to RGB(${Math.round(r2)}, ${Math.round(g2)}, ${Math.round(b2)}) dist=${Math.round(dist)}`
+            )
+            tooClose = true
+            skippedReps++
+            break
+          }
+
+          // Vérification distance de teinte (pour couleurs ayant une teinte identifiable)
+          // Utiliser un seuil bas (0.15) pour inclure les jaunes/verts désaturés
+          const MIN_SAT_FOR_HUE_CHECK = 0.15
+          const existingSat = calculateSaturation(existing)
+          if (
+            repSat > MIN_SAT_FOR_HUE_CHECK &&
+            repHue >= 0 &&
+            existingSat > MIN_SAT_FOR_HUE_CHECK
+          ) {
+            const existingHue = calculateHue(existing, DELTA_MIN_FOR_HUE)
+            if (existingHue >= 0) {
+              const hueDist = calculateHueDistance(repHue, existingHue)
+              if (hueDist < MIN_HUE_DISTANCE_FOR_REPRESENTATIVES) {
+                const [r1, g1, b1] = rep.converted
+                const [r2, g2, b2] = existing
+                adapterLogger.info(
+                  `[Mode 0] SKIP representative RGB(${Math.round(r1)}, ${Math.round(g1)}, ${Math.round(b1)}) hue=${repHue.toFixed(0)}° - hue too close to RGB(${Math.round(r2)}, ${Math.round(g2)}, ${Math.round(b2)}) hue=${existingHue.toFixed(0)}° hueDist=${hueDist.toFixed(0)}°`
+                )
+                tooClose = true
+                skippedReps++
+                break
+              }
+            }
+          }
+        }
+        if (!tooClose) {
+          result.push(rep.index)
+          selectedConverted.push(rep.converted)
+          addedReps++
+        }
       }
     }
 
     adapterLogger.info(
-      `[Mode 0] Added ${result.length} bucket representatives directly to result`
+      `[Mode 0] Added ${addedReps} bucket representatives (skipped ${skippedReps} too close)`
     )
 
     // Si on a déjà assez de couleurs avec les représentants, on s'arrête là
