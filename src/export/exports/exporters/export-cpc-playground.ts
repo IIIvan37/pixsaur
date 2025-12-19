@@ -6,6 +6,7 @@
  */
 
 import { createLogger } from '@/core'
+import { isTauri } from '@/tauri'
 import { generateSnaAsmSource, type SnaExportOptions } from './export-sna'
 
 const logger = createLogger({ prefix: '[CPC Playground Export]' })
@@ -67,8 +68,15 @@ export async function exportToCpcPlayground(
 
     logger.info('CPC Playground share created', { shareUrl })
 
-    // Open in new tab
-    window.open(shareUrl, '_blank')
+    // Open in browser (Tauri uses shell plugin, web uses window.open)
+    if (isTauri()) {
+      const { open } = await import('@tauri-apps/plugin-shell')
+      await open(shareUrl)
+      logger.debug('Opened URL via Tauri shell plugin')
+    } else {
+      window.open(shareUrl, '_blank')
+      logger.debug('Opened URL via window.open')
+    }
 
     return {
       success: true,
