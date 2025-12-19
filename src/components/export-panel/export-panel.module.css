@@ -4,7 +4,24 @@
   border-top: 1px solid var(--color-border);
 }
 
+.buttonGroup {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
 .exportButton:hover {
   background-color: var(--color-accent);
   color: var(--color-foreground);
+}
+
+.playgroundButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.buttonIcon {
+  width: 16px;
+  height: 16px;
 }

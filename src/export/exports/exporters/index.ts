@@ -3,6 +3,10 @@
  * Centralized exports for all export functionality
  */
 
+export {
+  type CpcPlaygroundExportResult,
+  exportToCpcPlayground
+} from './export-cpc-playground'
 export { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
 export { exportLinearData } from './export-linear'
 export { exportPalettePlus, exportPalettesClassic } from './export-palette'

@@ -448,7 +448,7 @@ msgid "Export your converted images to various formats compatible with CPC emula
 msgstr "Exportieren Sie Ihre konvertierten Bilder in verschiedene Formate, die mit CPC-Emulatoren und echter Hardware kompatibel sind."
 
 #: src/components/export-panel/export-config-dialog.tsx:134
-#: src/components/export-panel/export-panel-view.tsx:25
+#: src/components/export-panel/export-panel-view.tsx:30
 msgid "Exporter"
 msgstr "Exportieren"
 
@@ -465,6 +465,13 @@ msgstr "Belichtung & Tonalität"
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:255
 msgid "Extraction palette de base"
 msgstr "Basispaletten-Extraktion"
+
+#. placeholder {0}: error instanceof Error ? error.message : "Unknown error"
+#. placeholder {0}: result.error ?? "Unknown error"
+#: src/components/export-panel/export-panel.tsx:227
+#: src/components/export-panel/export-panel.tsx:238
+msgid "Failed to open in CPC Playground: {0}"
+msgstr "Fehler beim Öffnen in CPC Playground: {0}"
 
 #. placeholder {0}: file.name
 #: src/components/export-panel/dsk-files-manager.tsx:39
@@ -746,6 +753,18 @@ msgstr "Nicht genügend Speicherplatz auf DSK"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:192
 msgid "Ombres"
 msgstr "Schatten"
+
+#: src/components/export-panel/export-panel-view.tsx:43
+msgid "Open in CPC Playground"
+msgstr "In CPC Playground öffnen"
+
+#: src/components/export-panel/export-panel.tsx:221
+msgid "Opened in CPC Playground!"
+msgstr "In CPC Playground geöffnet!"
+
+#: src/components/export-panel/export-panel-view.tsx:41
+msgid "Opening..."
+msgstr "Öffnen..."
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:192
 msgid "Optimisation..."
