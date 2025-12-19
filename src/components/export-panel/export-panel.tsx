@@ -222,7 +222,9 @@ export default function ExportPanel() {
         setNotificationType('error')
         setNotificationMessage(
           _(
-            msg`Failed to open in CPC Playground: ${result.error ?? 'Unknown error'}`
+            msg`Failed to open in CPC Playground: ${
+              result.error ?? 'Unknown error'
+            }`
           )
         )
         setShowNotification(true)
@@ -231,7 +233,9 @@ export default function ExportPanel() {
       setNotificationType('error')
       setNotificationMessage(
         _(
-          msg`Failed to open in CPC Playground: ${error instanceof Error ? error.message : 'Unknown error'}`
+          msg`Failed to open in CPC Playground: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`
         )
       )
       setShowNotification(true)
