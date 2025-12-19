@@ -689,6 +689,7 @@ export function generatePlusScrSnaTemplate(
   if (hasRasters) {
     return `BUILDSNA
 BANKSET 0
+SNASET CPC_TYPE, 4 ; CPC 6128 Plus
 SNASET CRTC_TYPE, 3
 
 ${PLUS_RASTER_MACRO}
@@ -741,6 +742,7 @@ ${PLUS_ASIC_ROUTINES}
   // Without rasters - simple Plus display
   return `BUILDSNA
 BANKSET 0
+SNASET CPC_TYPE, 4 ; CPC 6128 Plus
 SNASET CRTC_TYPE, 3
 
     org #8000
@@ -787,6 +789,7 @@ export function generatePlusOverscanSnaTemplate(
   if (hasRasters) {
     return `BUILDSNA
 BANKSET 0
+SNASET CPC_TYPE, 4 ; CPC 6128 Plus
 SNASET CRTC_TYPE, 3
 
 ${PLUS_RASTER_MACRO}
@@ -845,6 +848,7 @@ ${PLUS_ASIC_ROUTINES}
   // Without rasters - simple Plus overscan display
   return `BUILDSNA
 BANKSET 0
+SNASET CPC_TYPE, 4 ; CPC 6128 Plus
 SNASET CRTC_TYPE, 3
 
 ;------------------------------------------------------------------------------

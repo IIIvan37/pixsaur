@@ -140,6 +140,7 @@ describe('SNA Templates', () => {
       const template = generatePlusScrSnaTemplate(options)
 
       expect(template).toContain('BUILDSNA')
+      expect(template).toContain('SNASET CPC_TYPE, 4')
       expect(template).toContain('SNASET CRTC_TYPE, 3')
       expect(template).toContain('Asic_unlock')
       expect(template).toContain('Asic_activate')
@@ -178,6 +179,7 @@ describe('SNA Templates', () => {
       const template = generatePlusOverscanSnaTemplate(options)
 
       expect(template).toContain('BUILDSNA')
+      expect(template).toContain('SNASET CPC_TYPE, 4')
       expect(template).toContain('SNASET CRTC_TYPE, 3')
       expect(template).toContain('org #b000')
       expect(template).toContain('PLUS_RASTER 280')
@@ -218,6 +220,7 @@ describe('SNA Templates', () => {
         hasRasters: false,
         hardware: 'plus'
       })
+      expect(plusScr).toContain('SNASET CPC_TYPE, 4')
       expect(plusScr).toContain('SNASET CRTC_TYPE, 3')
       expect(plusScr).toContain('Asic_unlock')
 
@@ -229,6 +232,7 @@ describe('SNA Templates', () => {
         hasRasters: false,
         hardware: 'plus'
       })
+      expect(plusOverscan).toContain('SNASET CPC_TYPE, 4')
       expect(plusOverscan).toContain('SNASET CRTC_TYPE, 3')
       expect(plusOverscan).toContain('tovercrt')
     })
