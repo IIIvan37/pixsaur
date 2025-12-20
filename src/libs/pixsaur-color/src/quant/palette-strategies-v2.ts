@@ -8,10 +8,10 @@ import type { Vector } from '../type'
 import {
   calculateHue,
   calculateMinHueDistance,
-  calculateMinHueDistanceInSet,
   calculateSaturation,
   isVisuallyColorful
 } from '../utils/hsv'
+import * as combinationHelpers from './combination-scoring-helpers'
 import * as hueDiversityHelpers from './hue-diversity-helpers'
 import {
   luminance as calculateLuminance,
@@ -1243,13 +1243,6 @@ function calculateMinDistanceInSetV2(
 }
 
 /**
- * Compte le nombre de couleurs visuellement colorées
- */
-function countVisuallyColorfulColors(colors: Vector[]): number {
-  return colors.filter((c) => isVisuallyColorful(c)).length
-}
-
-/**
  * Trouve la meilleure combinaison en maximisant la distance minimale
  * Pour CPC Plus, pénalise les combinaisons avec des teintes trop proches
  * ou avec trop de couleurs achromatiques/sombres
@@ -1268,7 +1261,6 @@ function findBestCombinationV2(
   let fallbackScore = -Infinity
 
   // Pour CPC Plus, compter combien de candidats sont visuellement colorés
-  // (saturés ET avec une luminosité suffisante)
   const colorfulCandidatesCount = isCPCClassic
     ? 0
     : remainingCandidates.filter((c) => isVisuallyColorful(c.converted)).length
@@ -1276,40 +1268,6 @@ function findBestCombinationV2(
   // Si on a des couleurs visuellement colorées disponibles, en exiger au moins 2 sur 4
   const minColorfulRequired =
     !isCPCClassic && colorfulCandidatesCount >= 2 ? 2 : 0
-
-  // Fonction pour calculer la vivacité totale d'une combinaison
-  // Calculer la vivacité totale d'un ensemble de couleurs
-  // Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
-  const calculateTotalVividness = (colors: Vector[]): number => {
-    return colors.reduce((sum, color) => {
-      const [r, g, b] = color
-      const max = Math.max(r, g, b)
-      const min = Math.min(r, g, b)
-      const saturation = max === 0 ? 0 : (max - min) / max
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-      // Saturation² pour favoriser fortement les couleurs très saturées
-      // Luminance ne sert qu'à départager
-      const brightnessBonus = luminance > 0.25 && luminance < 0.85 ? 1 : 0.3
-      return sum + saturation * saturation * brightnessBonus
-    }, 0)
-  }
-
-  // Calculer la saturation moyenne d'un ensemble de couleurs (hors noir/blanc)
-  const calculateAverageSaturation = (colors: Vector[]): number => {
-    const saturatedColors = colors.filter(([r, g, b]) => {
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-      return luminance > 0.15 && luminance < 0.85 // Exclure noir et blanc
-    })
-    if (saturatedColors.length === 0) return 0
-    return (
-      saturatedColors.reduce((sum, [r, g, b]) => {
-        const max = Math.max(r, g, b)
-        const min = Math.min(r, g, b)
-        const saturation = max === 0 ? 0 : (max - min) / max
-        return sum + saturation
-      }, 0) / saturatedColors.length
-    )
-  }
 
   for (const combo of combinations) {
     const colors = [
@@ -1325,26 +1283,10 @@ function findBestCombinationV2(
 
     // Calculer le score avec bonus pour CPC Plus
     if (!isCPCClassic) {
-      const minHueDist = calculateMinHueDistanceInSet(colors)
-      const colorfulCount = countVisuallyColorfulColors(colors)
-      const totalVividness = calculateTotalVividness(colors)
-      const avgSaturation = calculateAverageSaturation(colors)
-
-      // Bonus important pour une bonne diversité de teinte (> 60°)
-      if (minHueDist >= 60) {
-        baseScore += minHueDist * 1.5
-      } else if (minHueDist >= 45) {
-        baseScore += minHueDist * 0.5
-      }
-
-      // Bonus significatif pour les couleurs visuellement colorées
-      baseScore += colorfulCount * 30
-
-      // Bonus TRÈS FORT pour la vivacité totale (favorise les couleurs vives)
-      baseScore += totalVividness * 100
-
-      // Bonus TRÈS FORT pour la saturation moyenne élevée
-      baseScore += avgSaturation * 150
+      baseScore = combinationHelpers.calculateEnhancedCombinationScore(
+        baseScore,
+        colors
+      )
     }
 
     // Mettre à jour le fallback (meilleure combinaison sans filtres stricts)
@@ -1355,25 +1297,10 @@ function findBestCombinationV2(
 
     // Pour CPC Plus, appliquer les filtres stricts
     if (!isCPCClassic) {
-      // Vérifier le nombre de couleurs visuellement colorées
-      if (minColorfulRequired > 0) {
-        const colorfulCount = countVisuallyColorfulColors(colors)
-        if (colorfulCount < minColorfulRequired) {
-          continue // Skip cette combinaison
-        }
-      }
-
-      // Vérifier la distance de teinte minimale
-      const minHueDist = calculateMinHueDistanceInSet(colors)
-      // Rejeter les combinaisons avec des teintes trop proches (<= 40°)
-      if (minHueDist <= 40) {
-        continue // Skip cette combinaison
-      }
-
-      // Vérifier la saturation moyenne (exclure les palettes ternes)
-      const avgSaturation = calculateAverageSaturation(colors)
-      if (avgSaturation < 0.4) {
-        continue // Skip les combinaisons avec saturation moyenne < 40% (réduit de 50%)
+      if (
+        !combinationHelpers.passesCPCPlusFilters(colors, minColorfulRequired)
+      ) {
+        continue
       }
     }
 
@@ -1385,194 +1312,11 @@ function findBestCombinationV2(
 
   // Si aucune combinaison ne passe les filtres, utiliser un fallback intelligent
   if (bestCombo.length === 0 && fallbackCombo.length > 0) {
-    // Fallback intelligent : sélectionner des couleurs avec des teintes diverses
-    // au lieu de prendre la combinaison avec le meilleur score de contraste
-    const selectedArrayIndices: number[] = [] // Indices dans remainingCandidates (pas dans la palette de base)
-    const usedHues: number[] = []
-    const MIN_HUE_DISTANCE = 45 // Distance minimale entre teintes (réduit de 60 à 45 pour plus de diversité)
-    const neededColors = fallbackCombo.length // Nombre de couleurs à sélectionner
-
-    // Initialiser usedHues avec les couleurs présélectionnées (lockées)
-    // pour éviter de sélectionner des couleurs trop similaires
-    for (const preColor of preselectedColors) {
-      const preHue = calculateHue(preColor, SATURATION_LOW_THRESHOLD)
-      const preSat = calculateSaturation(preColor)
-      if (preSat > 0.2 && preHue >= 0) {
-        usedHues.push(preHue)
-      }
-    }
-
-    // Vérifier si une couleur sombre est déjà présélectionnée
-    const hasDarkPreselected = preselectedColors.some((c) => {
-      const lum = calculateLuminance(c)
-      return lum < 0.1 // Seuil strict pour "vraiment sombre"
-    })
-
-    // ÉTAPE 1 : Forcer une couleur sombre EN PREMIER si pas déjà présélectionnée
-    // Note: On n'ajoute PAS la teinte de la couleur sombre à usedHues
-    // car les couleurs très sombres n'ont pas vraiment de teinte perceptible
-    if (!hasDarkPreselected) {
-      let darkestIdx = -1
-      let darkestLum = Infinity
-      for (let i = 0; i < remainingCandidates.length; i++) {
-        const lum = calculateLuminance(remainingCandidates[i].converted)
-        if (lum < darkestLum) {
-          darkestLum = lum
-          darkestIdx = i
-        }
-      }
-      if (darkestIdx >= 0 && darkestLum < 0.15) {
-        selectedArrayIndices.push(darkestIdx)
-      }
-    }
-
-    // Créer un tableau avec l'index dans remainingCandidates + le candidat
-    const candidatesWithArrayIndex = remainingCandidates.map(
-      (candidate, arrayIndex) => ({
-        candidate,
-        arrayIndex
-      })
+    return combinationHelpers.selectFallbackColors(
+      remainingCandidates,
+      preselectedColors,
+      fallbackCombo.length
     )
-
-    // Trier par vividness (saturation * luminance) pour favoriser les couleurs saturées
-    candidatesWithArrayIndex.sort((a, b) => {
-      const vividnessA = hueDiversityHelpers.calculateVividnessForColor(
-        a.candidate.converted
-      )
-      const vividnessB = hueDiversityHelpers.calculateVividnessForColor(
-        b.candidate.converted
-      )
-      return vividnessB - vividnessA
-    })
-
-    // ÉTAPE 2 : Sélectionner les couleurs avec diversité de teinte
-    for (const { candidate, arrayIndex } of candidatesWithArrayIndex) {
-      if (selectedArrayIndices.length >= neededColors) break
-      if (selectedArrayIndices.includes(arrayIndex)) continue // Déjà sélectionné (couleur sombre)
-
-      const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
-      const saturation = calculateSaturation(candidate.converted)
-      const luminance = calculateLuminance(candidate.converted)
-
-      // Éviter les couleurs trop sombres (on en a déjà une)
-      if (luminance < 0.15) {
-        continue
-      }
-
-      // Vérifier si cette teinte est assez différente des teintes déjà sélectionnées
-      const isSaturated = saturation > 0.2
-      let isHueDiverse = true
-      let minHueDistFound = 360
-
-      if (isSaturated && hue >= 0) {
-        for (const usedHue of usedHues) {
-          const hueDist = Math.min(
-            Math.abs(hue - usedHue),
-            360 - Math.abs(hue - usedHue)
-          )
-          if (hueDist < minHueDistFound) {
-            minHueDistFound = hueDist
-          }
-          if (hueDist < MIN_HUE_DISTANCE) {
-            isHueDiverse = false
-            break
-          }
-        }
-      }
-
-      if (isHueDiverse) {
-        selectedArrayIndices.push(arrayIndex)
-        if (isSaturated && hue >= 0) {
-          usedHues.push(hue)
-        }
-      }
-    }
-
-    // Si on n'a pas assez de couleurs, compléter avec les restants
-    // mais en respectant quand même une distance de teinte minimale (plus permissive)
-    if (selectedArrayIndices.length < neededColors) {
-      const FALLBACK_MIN_HUE_DISTANCE = 30 // Plus permissif pour le fallback du fallback
-
-      for (const { candidate, arrayIndex } of candidatesWithArrayIndex) {
-        if (selectedArrayIndices.length >= neededColors) break
-        if (selectedArrayIndices.includes(arrayIndex)) continue
-
-        const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
-        const saturation = calculateSaturation(candidate.converted)
-        const isSaturated = saturation > 0.2
-
-        // Vérifier la diversité de teinte même pour le fallback
-        let isHueDiverse = true
-        if (isSaturated && hue >= 0) {
-          for (const usedHue of usedHues) {
-            const hueDist = Math.min(
-              Math.abs(hue - usedHue),
-              360 - Math.abs(hue - usedHue)
-            )
-            if (hueDist < FALLBACK_MIN_HUE_DISTANCE) {
-              isHueDiverse = false
-              break
-            }
-          }
-        }
-
-        if (isHueDiverse) {
-          selectedArrayIndices.push(arrayIndex)
-          if (isSaturated && hue >= 0) {
-            usedHues.push(hue)
-          }
-        }
-      }
-    }
-
-    // Dernier recours : si on n'a toujours pas assez, prendre les couleurs restantes
-    // mais en gardant quand même une distance minimale de teinte (très permissive)
-    if (selectedArrayIndices.length < neededColors) {
-      const LAST_RESORT_MIN_HUE_DISTANCE = 20 // Distance minimale même en dernier recours
-
-      for (const { candidate, arrayIndex } of candidatesWithArrayIndex) {
-        if (selectedArrayIndices.length >= neededColors) break
-        if (selectedArrayIndices.includes(arrayIndex)) continue
-
-        const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
-        const saturation = calculateSaturation(candidate.converted)
-        const isSaturated = saturation > 0.2
-
-        // Vérifier la diversité de teinte même en dernier recours
-        let isHueDiverse = true
-        if (isSaturated && hue >= 0) {
-          for (const usedHue of usedHues) {
-            const hueDist = Math.min(
-              Math.abs(hue - usedHue),
-              360 - Math.abs(hue - usedHue)
-            )
-            if (hueDist < LAST_RESORT_MIN_HUE_DISTANCE) {
-              isHueDiverse = false
-              break
-            }
-          }
-        }
-
-        if (isHueDiverse) {
-          selectedArrayIndices.push(arrayIndex)
-          if (isSaturated && hue >= 0) {
-            usedHues.push(hue)
-          }
-        }
-      }
-    }
-
-    // Ultime recours : si VRAIMENT on n'a pas assez, prendre n'importe quoi
-    if (selectedArrayIndices.length < neededColors) {
-      for (const { arrayIndex } of candidatesWithArrayIndex) {
-        if (selectedArrayIndices.length >= neededColors) break
-        if (!selectedArrayIndices.includes(arrayIndex)) {
-          selectedArrayIndices.push(arrayIndex)
-        }
-      }
-    }
-
-    return selectedArrayIndices
   }
 
   return bestCombo
