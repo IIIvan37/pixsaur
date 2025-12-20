@@ -81,17 +81,17 @@ export default function ExportPanel() {
     const ctx = canvas.getContext('2d')
     ctx?.putImageData(cleanImage, 0, 0)
 
-    const success = await exportZip(
+    const success = await exportZip({
       indexBuf,
       paletteFirmware,
       canvas,
       modeConfig,
       cpcHardware,
-      paletteForExport,
+      reducedPalette: paletteForExport,
       config,
       rasterChanges,
-      previewImageWithRasters ?? undefined
-    )
+      previewImage: previewImageWithRasters ?? undefined
+    })
 
     if (success) {
       setNotificationType('success')

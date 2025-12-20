@@ -704,19 +704,34 @@ function initializeSelection(
   }
 }
 
+interface FindBestCandidateParams {
+  candidates: ColorCandidate[]
+  result: number[]
+  selectedColors: Vector[]
+  selectedLuminances: number[]
+  maxFreq: number
+  weights: { frequency: number; diversity: number; luminance: number }
+  isCPCClassic: boolean
+  minHueDistance: number
+}
+
 /**
  * Trouve le meilleur candidat selon le score équilibré
  */
 function findBestBalancedScoreCandidate(
-  candidates: ColorCandidate[],
-  result: number[],
-  selectedColors: Vector[],
-  selectedLuminances: number[],
-  maxFreq: number,
-  weights: { frequency: number; diversity: number; luminance: number },
-  isCPCClassic: boolean,
-  minHueDistance: number
+  params: FindBestCandidateParams
 ): { candidate: ColorCandidate; score: number } | null {
+  const {
+    candidates,
+    result,
+    selectedColors,
+    selectedLuminances,
+    maxFreq,
+    weights,
+    isCPCClassic,
+    minHueDistance
+  } = params
+
   let bestScore = -Infinity
   let bestCandidate: ColorCandidate | null = null
 
@@ -796,7 +811,7 @@ function selectByBalancedScoreCore(
       (idx) => luminances.find((l) => l.index === idx)!.luminance
     )
 
-    const best = findBestBalancedScoreCandidate(
+    const best = findBestBalancedScoreCandidate({
       candidates,
       result,
       selectedColors,
@@ -805,7 +820,7 @@ function selectByBalancedScoreCore(
       weights,
       isCPCClassic,
       minHueDistance
-    )
+    })
 
     if (best) {
       result.push(best.candidate.index)
