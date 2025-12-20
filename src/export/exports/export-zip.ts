@@ -32,6 +32,29 @@ interface GeneratedAsmData {
   palettePlus?: number[]
 }
 
+interface ExportSnaToZipParams {
+  zip: JSZip
+  indexBuf: Uint8Array
+  modeConfig: CpcModeConfig
+  isCPCPlus: boolean
+  paletteFirmware: number[]
+  asmData: GeneratedAsmData
+  config: ExportConfig
+  asmLabel: string
+}
+
+interface ExportZipParams {
+  indexBuf: Uint8Array
+  paletteFirmware: number[]
+  canvas: HTMLCanvasElement
+  modeConfig: CpcModeConfig
+  cpcHardware: CPCHardware
+  reducedPalette: Array<[number, number, number]> | undefined
+  config: ExportConfig
+  rasterChanges?: RasterChange[]
+  previewImage?: ImageData
+}
+
 /**
  * Generate raster ASM data (reusable for ZIP and SNA)
  */
@@ -68,16 +91,18 @@ function generateRasterAsmData(
 /**
  * Export SNA snapshot file to ZIP using pre-generated ASM data
  */
-async function exportSnaToZip(
-  zip: JSZip,
-  indexBuf: Uint8Array,
-  modeConfig: CpcModeConfig,
-  isCPCPlus: boolean,
-  paletteFirmware: number[],
-  asmData: GeneratedAsmData,
-  config: ExportConfig,
-  asmLabel: string
-): Promise<void> {
+async function exportSnaToZip(params: ExportSnaToZipParams): Promise<void> {
+  const {
+    zip,
+    indexBuf,
+    modeConfig,
+    isCPCPlus,
+    paletteFirmware,
+    asmData,
+    config,
+    asmLabel
+  } = params
+
   if (!config.content.includeSNA) {
     return
   }
@@ -167,17 +192,19 @@ async function exportCPCClassicData(
   exportPalettesClassic(zip, paletteFirmware, config)
 }
 
-export async function exportZip(
-  indexBuf: Uint8Array,
-  paletteFirmware: number[],
-  canvas: HTMLCanvasElement,
-  modeConfig: CpcModeConfig,
-  cpcHardware: CPCHardware,
-  reducedPalette: Array<[number, number, number]> | undefined,
-  config: ExportConfig,
-  rasterChanges: RasterChange[] = [],
-  previewImage?: ImageData
-): Promise<boolean> {
+export async function exportZip(params: ExportZipParams): Promise<boolean> {
+  const {
+    indexBuf,
+    paletteFirmware,
+    canvas,
+    modeConfig,
+    cpcHardware,
+    reducedPalette,
+    config,
+    rasterChanges = [],
+    previewImage
+  } = params
+
   const zip = new JSZip()
   const isCPCPlus = cpcHardware === CPCHardware.PLUS
 
@@ -276,7 +303,7 @@ export async function exportZip(
   }
 
   // Export SNA snapshot if enabled (using pre-generated ASM data)
-  await exportSnaToZip(
+  await exportSnaToZip({
     zip,
     indexBuf,
     modeConfig,
@@ -285,7 +312,7 @@ export async function exportZip(
     asmData,
     config,
     asmLabel
-  )
+  })
 
   // 5. Finalisation et téléchargement
   const zipBlob = await zip.generateAsync({ type: 'blob' })

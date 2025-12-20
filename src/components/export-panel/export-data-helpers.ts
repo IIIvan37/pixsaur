@@ -107,35 +107,27 @@ export function prepareExportData(
 
   if (cpcHardware === 'classic') {
     paletteFirmware = convertPaletteToFirmware(
-      effectivePalette as unknown[],
+      effectivePalette,
       !!useRasterPalette
     )
     indexBuf =
       useRasterPalette && rasterIndexBuffer
         ? rasterIndexBuffer.buffer
-        : generateIndexBuffer(
-            cleanImage.data,
-            effectivePalette as unknown[],
-            false
-          )
+        : generateIndexBuffer(cleanImage.data, effectivePalette, false)
   } else {
     // CPC Plus
-    palettePlus = convertPaletteToCPCPlus(effectivePalette as unknown[])
+    palettePlus = convertPaletteToCPCPlus(effectivePalette)
     indexBuf =
       useRasterPalette && rasterIndexBuffer
         ? rasterIndexBuffer.buffer
-        : generateIndexBuffer(
-            cleanImage.data,
-            effectivePalette as unknown[],
-            true
-          )
+        : generateIndexBuffer(cleanImage.data, effectivePalette, true)
   }
 
   return {
     indexBuf,
     paletteFirmware,
     palettePlus,
-    effectivePalette: effectivePalette as unknown[],
+    effectivePalette,
     cleanImage
   }
 }

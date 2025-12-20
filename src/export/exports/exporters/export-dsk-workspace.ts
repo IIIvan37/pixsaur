@@ -21,6 +21,39 @@ interface ModeConfig {
   scaleY: number
 }
 
+interface AddScrToDskParams {
+  rasmInstance: RasmInstance
+  rasmModule: RasmModule
+  binary: Uint8Array
+  asmLabel: string
+  dskFilename: string
+  dskFilenameOnDisk: string
+  imageIndex: number
+  imageName: string
+}
+
+interface AddChunksToDskParams {
+  rasmInstance: RasmInstance
+  rasmModule: RasmModule
+  chunks: Array<{ index: number; data: Uint8Array }>
+  asmLabel: string
+  dskFilename: string
+  dskFilenames: string[]
+  imageIndex: number
+  imageName: string
+}
+
+interface ProcessImageParams {
+  rasmInstance: RasmInstance
+  rasmModule: RasmModule
+  indexBuf: Uint8Array
+  modeConfig: ModeConfig
+  image: DskImage
+  imageIndex: number
+  asmLabel: string
+  dskFilename: string
+}
+
 /**
  * Check if image uses standard CPC screen dimensions
  */
@@ -88,16 +121,18 @@ async function addUniversalLoader(
 /**
  * Assemble and add a single SCR file to the DSK
  */
-async function addScrToDsk(
-  rasmInstance: RasmInstance,
-  rasmModule: RasmModule,
-  binary: Uint8Array,
-  asmLabel: string,
-  dskFilename: string,
-  dskFilenameOnDisk: string,
-  imageIndex: number,
-  imageName: string
-): Promise<boolean> {
+async function addScrToDsk(params: AddScrToDskParams): Promise<boolean> {
+  const {
+    rasmInstance,
+    rasmModule,
+    binary,
+    asmLabel,
+    dskFilename,
+    dskFilenameOnDisk,
+    imageIndex,
+    imageName
+  } = params
+
   const scrBinFilename = `${asmLabel}.bin`
 
   rasmModule.FS.writeFile(`/${scrBinFilename}`, binary)
@@ -128,16 +163,18 @@ async function addScrToDsk(
 /**
  * Write chunks and add them to the DSK
  */
-async function addChunksToDsk(
-  rasmInstance: RasmInstance,
-  rasmModule: RasmModule,
-  chunks: Array<{ index: number; data: Uint8Array }>,
-  asmLabel: string,
-  dskFilename: string,
-  dskFilenames: string[],
-  imageIndex: number,
-  imageName: string
-): Promise<void> {
+async function addChunksToDsk(params: AddChunksToDskParams): Promise<void> {
+  const {
+    rasmInstance,
+    rasmModule,
+    chunks,
+    asmLabel,
+    dskFilename,
+    dskFilenames,
+    imageIndex,
+    imageName
+  } = params
+
   for (const chunk of chunks) {
     const chunkBinFilename = `${asmLabel}_${chunk.index}.bin`
     const chunkDskFilename = dskFilenames[chunk.index - 1]
@@ -158,14 +195,14 @@ async function addChunksToDsk(
       dskFile: dskFilename
     })
 
-    if (!result.success) {
+    if (result.success) {
+      dskLogger.info(`Added ${chunkDskFilename} to DSK`)
+    } else {
       dskLogger.error(
         `Chunk ${chunk.index} assembly failed for ${imageName}:`,
         result.output || '(no error message)'
       )
       dskLogger.error('DSK Template Code:', dskTemplateCode)
-    } else {
-      dskLogger.info(`Added ${chunkDskFilename} to DSK`)
     }
   }
 }
@@ -198,16 +235,18 @@ async function generateStandardScr(
 /**
  * Process custom dimensions image with linear format
  */
-async function processCustomImage(
-  rasmInstance: RasmInstance,
-  rasmModule: RasmModule,
-  indexBuf: Uint8Array,
-  modeConfig: ModeConfig,
-  image: DskImage,
-  imageIndex: number,
-  asmLabel: string,
-  dskFilename: string
-): Promise<void> {
+async function processCustomImage(params: ProcessImageParams): Promise<void> {
+  const {
+    rasmInstance,
+    rasmModule,
+    indexBuf,
+    modeConfig,
+    image,
+    imageIndex,
+    asmLabel,
+    dskFilename
+  } = params
+
   const { exportLinearAsm, splitLinearIntoChunks } = await import(
     '@/export/exports/export-linear-asm/export-linear.asm'
   )
@@ -226,7 +265,7 @@ async function processCustomImage(
     image.overscan
   )
 
-  await addChunksToDsk(
+  await addChunksToDsk({
     rasmInstance,
     rasmModule,
     chunks,
@@ -234,23 +273,25 @@ async function processCustomImage(
     dskFilename,
     dskFilenames,
     imageIndex,
-    image.name
-  )
+    imageName: image.name
+  })
 }
 
 /**
  * Process standard format image
  */
-async function processStandardImage(
-  rasmInstance: RasmInstance,
-  rasmModule: RasmModule,
-  indexBuf: Uint8Array,
-  modeConfig: ModeConfig,
-  image: DskImage,
-  imageIndex: number,
-  asmLabel: string,
-  dskFilename: string
-): Promise<void> {
+async function processStandardImage(params: ProcessImageParams): Promise<void> {
+  const {
+    rasmInstance,
+    rasmModule,
+    indexBuf,
+    modeConfig,
+    image,
+    imageIndex,
+    asmLabel,
+    dskFilename
+  } = params
+
   const binaryData = await generateStandardScr(indexBuf, modeConfig, image)
 
   const filenames = generateDskFilenames(
@@ -268,16 +309,16 @@ async function processStandardImage(
   rasmModule.FS.writeFile(`/${scrBinFilename}`, binaryData)
   dskLogger.info(`Created ${scrBinFilename} (${binaryData.length} bytes)`)
 
-  await addScrToDsk(
+  await addScrToDsk({
     rasmInstance,
     rasmModule,
-    binaryData,
+    binary: binaryData,
     asmLabel,
     dskFilename,
     dskFilenameOnDisk,
     imageIndex,
-    image.name
-  )
+    imageName: image.name
+  })
 }
 
 /**
@@ -306,7 +347,7 @@ async function processImage(
   }
 
   if (isStandardMode(modeConfig)) {
-    await processStandardImage(
+    await processStandardImage({
       rasmInstance,
       rasmModule,
       indexBuf,
@@ -315,9 +356,9 @@ async function processImage(
       imageIndex,
       asmLabel,
       dskFilename
-    )
+    })
   } else {
-    await processCustomImage(
+    await processCustomImage({
       rasmInstance,
       rasmModule,
       indexBuf,
@@ -326,7 +367,7 @@ async function processImage(
       imageIndex,
       asmLabel,
       dskFilename
-    )
+    })
   }
 }
 

@@ -77,12 +77,12 @@ export interface ExportConfig {
   // ASM-specific options
   labels: ASMLabels
 
-  // Code generation options (for future phases)
-  // includeCode: boolean        // TODO: Phase 2 - Include display routine
-  // compression: string         // TODO: Phase 2 - Compression method
-
   // Export metadata
   filename: string // Base filename for ZIP (without extension)
+
+  // Future features (Phase 2):
+  // - Display routine generation (includeCode)
+  // - Compression methods (compression)
 }
 
 /**

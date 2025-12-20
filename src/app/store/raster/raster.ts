@@ -478,7 +478,7 @@ export const autoOptimizeRasterAtom = atom(
       // Indices 0-3 are raster slots that will be filled dynamically per line
       globalPalette = exportPalette
         .filter((c) => c[0] !== -1)
-        .slice(0, MODE_0_FIXED_COLORS) as Vector<'RGB'>[]
+        .slice(0, MODE_0_FIXED_COLORS)
 
       // Pad to 12 colors if needed
       while (globalPalette.length < MODE_0_FIXED_COLORS) {
@@ -495,7 +495,7 @@ export const autoOptimizeRasterAtom = atom(
       // Standard modes (Mode 1, Mode 2, Mode 0 Classic): use export palette directly
       globalPalette = exportPalette
         .filter((c) => c[0] !== -1)
-        .slice(0, modeConfig.nColors) as Vector<'RGB'>[]
+        .slice(0, modeConfig.nColors)
 
       // Pad to nColors if needed
       while (globalPalette.length < modeConfig.nColors) {

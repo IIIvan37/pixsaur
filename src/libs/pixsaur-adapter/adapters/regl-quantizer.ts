@@ -773,7 +773,7 @@ export class ReGLQuantizer {
       const hueRange =
         bucket === 'gray'
           ? 'gray/desaturated'
-          : `${(bucket as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucket as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+          : `${bucket * HUE_BUCKET_SIZE_DEGREES}-${(bucket + 1) * HUE_BUCKET_SIZE_DEGREES}°`
       adapterLogger.info(
         `[Mode 0] Bucket ${bucket} (${hueRange}): ${colors.length} colors`
       )
@@ -856,7 +856,10 @@ export class ReGLQuantizer {
    * Utilise weightedRGBDistance (ITU-R BT.601) directement sans racine carrée
    * Note: Utilisé uniquement pour comparaisons, donc √ inutile (ordre préservé)
    */
-  private calculateDistance = (color1: Vector, color2: Vector): number => {
+  private readonly calculateDistance = (
+    color1: Vector,
+    color2: Vector
+  ): number => {
     return weightedRGBDistance(color1, color2)
   }
 
