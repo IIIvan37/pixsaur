@@ -8,6 +8,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
+  addBucketRepresentativesWithDistanceCheck,
   type ColorFrequencyItem,
   CPC_MODE_1_MAX_COLORS,
   calculateHue,
@@ -650,6 +651,174 @@ describe('color-selection-helpers', () => {
 
       // No duplicates
       expect(new Set(result).size).toBe(result.length)
+    })
+  })
+
+  // ============================================================================
+  // addBucketRepresentativesWithDistanceCheck
+  // ============================================================================
+  describe('addBucketRepresentativesWithDistanceCheck', () => {
+    const simpleDistance = (a: Vector, b: Vector): number => {
+      return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2
+    }
+
+    it('should add representatives that are far enough from existing colors', () => {
+      const representatives: ColorFrequencyItem[] = [
+        {
+          index: 0,
+          frequency: 0.5,
+          color: [255, 0, 0],
+          converted: [255, 0, 0] // Red
+        },
+        {
+          index: 1,
+          frequency: 0.3,
+          color: [0, 255, 0],
+          converted: [0, 255, 0] // Green
+        }
+      ]
+
+      const sortedBuckets: HueBucket[] = [
+        { bucket: 0, colors: [representatives[0]], totalFreq: 0.5 },
+        { bucket: 2, colors: [representatives[1]], totalFreq: 0.3 }
+      ]
+
+      const result: number[] = []
+      const selectedConverted: Vector[] = []
+
+      const stats = addBucketRepresentativesWithDistanceCheck(
+        representatives,
+        sortedBuckets,
+        result,
+        selectedConverted,
+        simpleDistance
+      )
+
+      expect(stats.added).toBe(2)
+      expect(stats.skipped).toBe(0)
+      expect(result).toContain(0)
+      expect(result).toContain(1)
+    })
+
+    it('should skip representatives that are too close in RGB', () => {
+      const representatives: ColorFrequencyItem[] = [
+        {
+          index: 0,
+          frequency: 0.5,
+          color: [100, 100, 100],
+          converted: [100, 100, 100]
+        },
+        {
+          index: 1,
+          frequency: 0.3,
+          color: [105, 105, 105], // Very close to first
+          converted: [105, 105, 105]
+        }
+      ]
+
+      const sortedBuckets: HueBucket[] = [
+        { bucket: 'gray', colors: representatives, totalFreq: 0.8 }
+      ]
+
+      const result: number[] = []
+      const selectedConverted: Vector[] = []
+
+      const stats = addBucketRepresentativesWithDistanceCheck(
+        representatives,
+        sortedBuckets,
+        result,
+        selectedConverted,
+        simpleDistance
+      )
+
+      // First one added, second one skipped (too close)
+      expect(stats.added).toBe(1)
+      expect(stats.skipped).toBe(1)
+      expect(result).toContain(0)
+      expect(result).not.toContain(1)
+    })
+
+    it('should skip representatives that are too close in hue', () => {
+      // Two saturated colors with similar hue
+      const representatives: ColorFrequencyItem[] = [
+        {
+          index: 0,
+          frequency: 0.5,
+          color: [255, 0, 0],
+          converted: [255, 0, 0] // Red, hue ~ 0°
+        },
+        {
+          index: 1,
+          frequency: 0.3,
+          color: [255, 50, 0],
+          converted: [255, 50, 0] // Orange-red, hue ~ 12°
+        }
+      ]
+
+      const sortedBuckets: HueBucket[] = [
+        { bucket: 0, colors: representatives, totalFreq: 0.8 }
+      ]
+
+      const result: number[] = []
+      const selectedConverted: Vector[] = []
+
+      const stats = addBucketRepresentativesWithDistanceCheck(
+        representatives,
+        sortedBuckets,
+        result,
+        selectedConverted,
+        simpleDistance
+      )
+
+      // First one added, second skipped due to close hue
+      expect(stats.added).toBe(1)
+      expect(stats.skipped).toBe(1)
+    })
+
+    it('should not add already selected indices', () => {
+      const representatives: ColorFrequencyItem[] = [
+        {
+          index: 0,
+          frequency: 0.5,
+          color: [255, 0, 0],
+          converted: [255, 0, 0]
+        }
+      ]
+
+      const sortedBuckets: HueBucket[] = [
+        { bucket: 0, colors: representatives, totalFreq: 0.5 }
+      ]
+
+      const result: number[] = [0] // Already selected
+      const selectedConverted: Vector[] = [[255, 0, 0]]
+
+      const stats = addBucketRepresentativesWithDistanceCheck(
+        representatives,
+        sortedBuckets,
+        result,
+        selectedConverted,
+        simpleDistance
+      )
+
+      expect(stats.added).toBe(0)
+      expect(stats.skipped).toBe(0) // Not counted as skipped, just ignored
+    })
+
+    it('should handle empty representatives list', () => {
+      const result: number[] = []
+      const selectedConverted: Vector[] = []
+
+      const stats = addBucketRepresentativesWithDistanceCheck(
+        [],
+        [],
+        result,
+        selectedConverted,
+        simpleDistance
+      )
+
+      expect(stats.added).toBe(0)
+      expect(stats.skipped).toBe(0)
+      expect(result).toHaveLength(0)
     })
   })
 })
