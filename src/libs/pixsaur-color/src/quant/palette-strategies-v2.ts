@@ -423,6 +423,43 @@ function calculateDiversityScore(params: DiversityScoreParams): number | null {
 }
 
 /**
+ * Filtre les candidats pour CPC Classic en favorisant le contraste luminance
+ * Cette fonction est utilisée pour réduire le nombre de candidats avant une recherche exhaustive
+ */
+function filterCandidatesForCPCClassic(
+  candidates: ColorCandidate[],
+  maxCandidates: number,
+  darkCount: number = DARK_COUNT_CLASSIC,
+  brightCount: number = BRIGHT_COUNT_CLASSIC
+): ColorCandidate[] {
+  const sorted = [...candidates].sort((a, b) => b.frequency - a.frequency)
+
+  // Séparer en couleurs sombres et claires
+  const dark = sorted.filter((c) => isDark(c.converted))
+  const bright = sorted.filter((c) => isBright(c.converted))
+
+  // S'assurer d'avoir assez de couleurs de chaque catégorie si disponibles
+  const selectedCandidates: ColorCandidate[] = []
+  const addUnique = (c: ColorCandidate) => {
+    if (!selectedCandidates.some((s) => s.index === c.index)) {
+      selectedCandidates.push(c)
+    }
+  }
+
+  // Ajouter les couleurs sombres les plus fréquentes
+  dark.slice(0, darkCount).forEach(addUnique)
+  // Ajouter les couleurs claires les plus fréquentes
+  bright.slice(0, brightCount).forEach(addUnique)
+  // Compléter avec les couleurs les plus fréquentes (toutes catégories)
+  for (const c of sorted) {
+    if (selectedCandidates.length >= maxCandidates) break
+    addUnique(c)
+  }
+
+  return selectedCandidates
+}
+
+/**
  * Vérifie si un candidat satisfait les critères de distance minimale
  */
 function meetsDistanceCriteria(
@@ -1420,33 +1457,12 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   if (remainingCandidates.length > maxCandidates) {
     if (isCPCClassic) {
       // Pour CPC Classic : garder les plus fréquents avec contraste luminance
-      const sorted = [...remainingCandidates].sort(
-        (a, b) => b.frequency - a.frequency
+      remainingCandidates = filterCandidatesForCPCClassic(
+        remainingCandidates,
+        maxCandidates,
+        darkCount,
+        brightCount
       )
-
-      // Séparer en couleurs sombres et claires
-      const dark = sorted.filter((c) => isDark(c.converted))
-      const bright = sorted.filter((c) => isBright(c.converted))
-
-      // S'assurer d'avoir assez de couleurs de chaque catégorie si disponibles
-      const selectedCandidates: ColorCandidate[] = []
-      const addUnique = (c: ColorCandidate) => {
-        if (!selectedCandidates.some((s) => s.index === c.index)) {
-          selectedCandidates.push(c)
-        }
-      }
-
-      // Ajouter les couleurs sombres les plus fréquentes
-      dark.slice(0, darkCount).forEach(addUnique)
-      // Ajouter les couleurs claires les plus fréquentes
-      bright.slice(0, brightCount).forEach(addUnique)
-      // Compléter avec les couleurs les plus fréquentes (toutes catégories)
-      for (const c of sorted) {
-        if (selectedCandidates.length >= maxCandidates) break
-        addUnique(c)
-      }
-
-      remainingCandidates = selectedCandidates
     } else {
       // Pour CPC Plus : utiliser la diversité des teintes
       // Passer les couleurs présélectionnées pour éviter de sélectionner des couleurs trop proches
@@ -1624,27 +1640,12 @@ export const selectByCoverageAware: PaletteStrategyFunction = (
   if (remainingCandidates.length > MAX_CANDIDATES) {
     if (isCPCClassic) {
       // Pour CPC Classic : utiliser la logique de contraste luminance
-      const sorted = [...remainingCandidates].sort(
-        (a, b) => b.frequency - a.frequency
+      remainingCandidates = filterCandidatesForCPCClassic(
+        remainingCandidates,
+        MAX_CANDIDATES,
+        3, // darkCount
+        3 // brightCount
       )
-      const dark = sorted.filter((c) => isDark(c.converted))
-      const bright = sorted.filter((c) => isBright(c.converted))
-
-      const selectedCandidates: ColorCandidate[] = []
-      const addUnique = (c: ColorCandidate) => {
-        if (!selectedCandidates.some((s) => s.index === c.index)) {
-          selectedCandidates.push(c)
-        }
-      }
-
-      dark.slice(0, 3).forEach(addUnique)
-      bright.slice(0, 3).forEach(addUnique)
-      for (const c of sorted) {
-        if (selectedCandidates.length >= MAX_CANDIDATES) break
-        addUnique(c)
-      }
-
-      remainingCandidates = selectedCandidates
     } else {
       // Pour CPC Plus : utiliser la diversité des teintes
       // Passer les couleurs présélectionnées pour éviter de sélectionner des couleurs trop proches

@@ -418,6 +418,20 @@ export function posterizeImage(
 }
 
 /**
+ * Helper to create a quantization function based on hardware mode
+ */
+function createQuantizeFunction(
+  cpcClassicPalette?: Vector<'RGB'>[],
+  cpcClassicLUT?: Uint8Array | null
+): (color: Vector<'RGB'>) => Vector<'RGB'> {
+  if (cpcClassicPalette && cpcClassicLUT) {
+    return (color: Vector<'RGB'>) =>
+      quantizeToCPCClassicWithLUT(color, cpcClassicPalette, cpcClassicLUT)
+  }
+  return quantizeToCPCPlus
+}
+
+/**
  * Extract the best global palette from the source image.
  * This analyzes the ENTIRE image and selects the 4 most representative colors.
  *
@@ -444,16 +458,7 @@ export function extractGlobalPaletteFromImage(
   }
 
   // Helper to quantize based on hardware mode (with LUT for CPC Classic)
-  const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette && cpcClassicLUT) {
-      return quantizeToCPCClassicWithLUT(
-        color,
-        cpcClassicPalette,
-        cpcClassicLUT
-      )
-    }
-    return quantizeToCPCPlus(color)
-  }
+  const quantize = createQuantizeFunction(cpcClassicPalette, cpcClassicLUT)
 
   // Build histogram of all colors in the image
   const colorFrequency = new Map<
@@ -529,16 +534,7 @@ function extractGlobalColorsForMode0Plus(
   }
 
   // Helper to quantize based on hardware mode
-  const quantize = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette && cpcClassicLUT) {
-      return quantizeToCPCClassicWithLUT(
-        color,
-        cpcClassicPalette,
-        cpcClassicLUT
-      )
-    }
-    return quantizeToCPCPlus(color)
-  }
+  const quantize = createQuantizeFunction(cpcClassicPalette, cpcClassicLUT)
 
   // Track color statistics: pixelCount AND lineCount
   const colorStats = new Map<
