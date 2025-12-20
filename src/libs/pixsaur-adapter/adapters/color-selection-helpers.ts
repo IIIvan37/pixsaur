@@ -631,7 +631,7 @@ export function addBucketRepresentativesWithDistanceCheck(
         const hueRange =
           bucketKey === 'gray'
             ? 'gray'
-            : `${(bucketKey as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucketKey as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+            : `${bucketKey * HUE_BUCKET_SIZE_DEGREES}-${(bucketKey + 1) * HUE_BUCKET_SIZE_DEGREES}°`
         adapterLogger.info(
           `[Mode 0] Representative for bucket ${bucketKey} (${hueRange}): ${formatRGB(rep.converted)} freq=${rep.frequency}`
         )

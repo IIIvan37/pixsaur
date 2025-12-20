@@ -2140,7 +2140,7 @@ export const selectByMode0HueDiversity: PaletteStrategyFunction = (
   const sortedBuckets = Array.from(hueBuckets.entries())
     .map(([bucket, colors]) => ({
       bucket,
-      colors: colors.sort((a, b) => b.frequency - a.frequency),
+      colors: colors.slice().sort((a, b) => b.frequency - a.frequency),
       totalFreq: colors.reduce((sum, c) => sum + c.frequency, 0)
     }))
     .sort((a, b) => b.totalFreq - a.totalFreq)

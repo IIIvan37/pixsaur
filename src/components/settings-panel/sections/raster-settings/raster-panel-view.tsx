@@ -164,7 +164,7 @@ export function InkColorTrigger({
             <SimpleColorGrid
               palette={cpcPalette}
               onColorSelect={(c) => {
-                onColorChange(c.vector as Vector<'RGB'>)
+                onColorChange(c.vector)
                 setIsOpen(false)
               }}
             />
@@ -172,7 +172,7 @@ export function InkColorTrigger({
             <SimpleRgbPicker
               initialColor={color}
               onColorConfirm={(c) => {
-                onColorChange(c as Vector<'RGB'>)
+                onColorChange(c)
               }}
               onClose={() => setIsOpen(false)}
             />

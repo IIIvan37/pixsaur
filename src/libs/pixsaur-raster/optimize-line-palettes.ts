@@ -1115,13 +1115,11 @@ export function optimizeLinePalettesWithIndexBuffer(
       let inkIndex = colorToInk.get(key)
 
       // If color not in palette (was not frequent enough), find closest color
-      if (inkIndex === undefined) {
-        inkIndex = findClosestColorIndex(
-          quantizedPixel,
-          newPalette,
-          weightedRGBDistance
-        )
-      }
+      inkIndex ??= findClosestColorIndex(
+        quantizedPixel,
+        newPalette,
+        weightedRGBDistance
+      )
 
       indexBuffer[lineStart + x] = inkIndex
     }
@@ -1141,8 +1139,9 @@ export function optimizeLinePalettesWithIndexBuffer(
   }
 
   // Sort by line
+  const sortedChanges = allChanges.slice().sort((a, b) => a.line - b.line)
   return {
-    changes: allChanges.sort((a, b) => a.line - b.line),
+    changes: sortedChanges,
     indexBuffer,
     quantizedGlobalPalette: quantizedGlobal
   }

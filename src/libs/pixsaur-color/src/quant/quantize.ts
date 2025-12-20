@@ -104,13 +104,14 @@ export function createQuantizer({
     const out = idxs.map((i: number) => workingPal[i])
 
     // Utiliser paletteStrategy v2 (prioritaire) ou convertir contrastStrategy legacy
-    const userStrategy: PaletteStrategyName | undefined =
-      quantConfig.paletteStrategy ||
-      (quantConfig.contrastStrategy
-        ? quantConfig.contrastStrategy === 'balanced'
+    let userStrategy: PaletteStrategyName | undefined =
+      quantConfig.paletteStrategy
+    if (!userStrategy && quantConfig.contrastStrategy) {
+      userStrategy =
+        quantConfig.contrastStrategy === 'balanced'
           ? 'balanced-score-balanced'
           : 'diversity-first-max'
-        : undefined)
+    }
 
     // Alignement CPU/GPU : utiliser mode0-hue-diversity pour le mode 0 (>4 couleurs)
     // et la stratégie utilisateur pour les modes 1-2 (≤4 couleurs)

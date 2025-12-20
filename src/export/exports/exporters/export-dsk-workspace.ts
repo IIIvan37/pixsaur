@@ -158,14 +158,14 @@ async function addChunksToDsk(
       dskFile: dskFilename
     })
 
-    if (!result.success) {
+    if (result.success) {
+      dskLogger.info(`Added ${chunkDskFilename} to DSK`)
+    } else {
       dskLogger.error(
         `Chunk ${chunk.index} assembly failed for ${imageName}:`,
         result.output || '(no error message)'
       )
       dskLogger.error('DSK Template Code:', dskTemplateCode)
-    } else {
-      dskLogger.info(`Added ${chunkDskFilename} to DSK`)
     }
   }
 }
