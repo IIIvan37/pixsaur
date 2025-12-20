@@ -277,7 +277,7 @@ function filterCandidatesWithHueDiversity(
         if (round < group.length) {
           const c = group[round]
           if (
-            !selectedCandidates.find((s) => s.index === c.index) &&
+            !selectedCandidates.some((s) => s.index === c.index) &&
             !isTooCloseToAvoidedColors(c)
           ) {
             selectedCandidates.push(c)
@@ -304,7 +304,7 @@ function filterCandidatesWithHueDiversity(
     for (const c of darkColors) {
       if (selectedCandidates.length >= maxCandidates) break
       if (
-        !selectedCandidates.find((s) => s.index === c.index) &&
+        !selectedCandidates.some((s) => s.index === c.index) &&
         !isTooCloseToAvoidedColors(c)
       ) {
         selectedCandidates.push(c)
@@ -314,7 +314,7 @@ function filterCandidatesWithHueDiversity(
     for (const c of grays) {
       if (selectedCandidates.length >= maxCandidates) break
       if (
-        !selectedCandidates.find((s) => s.index === c.index) &&
+        !selectedCandidates.some((s) => s.index === c.index) &&
         !isTooCloseToAvoidedColors(c)
       ) {
         selectedCandidates.push(c)
@@ -326,7 +326,7 @@ function filterCandidatesWithHueDiversity(
   for (const c of sorted) {
     if (selectedCandidates.length >= maxCandidates) break
     if (
-      !selectedCandidates.find((s) => s.index === c.index) &&
+      !selectedCandidates.some((s) => s.index === c.index) &&
       !isTooCloseToAvoidedColors(c)
     ) {
       selectedCandidates.push(c)
@@ -1803,7 +1803,7 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
       // S'assurer d'avoir assez de couleurs de chaque catégorie si disponibles
       const selectedCandidates: ColorCandidate[] = []
       const addUnique = (c: ColorCandidate) => {
-        if (!selectedCandidates.find((s) => s.index === c.index)) {
+        if (!selectedCandidates.some((s) => s.index === c.index)) {
           selectedCandidates.push(c)
         }
       }
@@ -2004,7 +2004,7 @@ export const selectByCoverageAware: PaletteStrategyFunction = (
 
       const selectedCandidates: ColorCandidate[] = []
       const addUnique = (c: ColorCandidate) => {
-        if (!selectedCandidates.find((s) => s.index === c.index)) {
+        if (!selectedCandidates.some((s) => s.index === c.index)) {
           selectedCandidates.push(c)
         }
       }

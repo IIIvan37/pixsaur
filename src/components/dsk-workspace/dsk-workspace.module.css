@@ -203,7 +203,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-family: system-ui, -apple-system, sans-serif;
-  background: rgba(255, 165, 0, 0.2);
-  color: #ff9500;
+  background: rgba(255, 165, 0, 0.25);
+  color: #b36b00;
   border: 1px solid rgba(255, 165, 0, 0.4);
 }
