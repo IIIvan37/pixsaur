@@ -12,6 +12,7 @@ import {
   calculateSaturation,
   isVisuallyColorful
 } from '../utils/hsv'
+import * as hueDiversityHelpers from './hue-diversity-helpers'
 import {
   luminance as calculateLuminance,
   isBright,
@@ -24,7 +25,6 @@ import {
 
 // Luminance thresholds
 const LUMINANCE_DARK_THRESHOLD = 0.25
-const LUMINANCE_BRIGHT_THRESHOLD = 0.85
 const LUMINANCE_MID_MIN = 0.4
 const LUMINANCE_MID_MAX = 0.6
 const LUMINANCE_VERY_DARK_THRESHOLD = 0.1
@@ -34,12 +34,6 @@ const LUMINANCE_BRIGHT_LOWER = 0.7
 // Saturation thresholds
 const SATURATION_MIN_THRESHOLD = 0.15
 const SATURATION_LOW_THRESHOLD = 0.01
-
-// Weights and coefficients
-const BRIGHTNESS_BONUS_HIGH = 1
-const BRIGHTNESS_BONUS_LOW = 0.3
-const SATURATION_SCORE_BASE = 0.7
-const SATURATION_SCORE_LUMINANCE = 0.3
 
 // Distance thresholds
 const MIN_DISTANCE_FROM_PRESELECTED = 50
@@ -144,32 +138,6 @@ function isCPCClassicPalette(
 }
 
 /**
- * Calcule la "vivacité" d'une couleur
- * Priorité FORTE à la saturation pour obtenir des couleurs vibrantes
- */
-function calculateVividnessForColor(color: Vector): number {
-  const max = Math.max(...color)
-  const min = Math.min(...color)
-  const saturation = max === 0 ? 0 : (max - min) / max
-  const lum = calculateLuminance(color)
-
-  // Saturation est le facteur principal (puissance 2 pour accentuer)
-  // Pénaliser les couleurs trop sombres ou trop claires
-  const brightnessBonus =
-    lum > LUMINANCE_DARK_THRESHOLD && lum < LUMINANCE_BRIGHT_THRESHOLD
-      ? BRIGHTNESS_BONUS_HIGH
-      : BRIGHTNESS_BONUS_LOW
-
-  // Score = saturation² * (base + luminance_weight * luminance) * brightnessBonus
-  return (
-    saturation *
-    saturation *
-    (SATURATION_SCORE_BASE + SATURATION_SCORE_LUMINANCE * lum) *
-    brightnessBonus
-  )
-}
-
-/**
  * Filtre les candidats pour garantir une diversité de teinte
  * Pour CPC Plus, assure que les candidats sélectionnés couvrent différentes teintes
  * et ne sont pas tous des couleurs achromatiques
@@ -183,15 +151,6 @@ function filterCandidatesWithHueDiversity(
 ): ColorCandidate[] {
   if (candidates.length <= maxCandidates) return candidates
 
-  // Fonction pour vérifier si un candidat est trop proche d'une couleur à éviter
-  const isTooCloseToAvoidedColors = (candidate: ColorCandidate): boolean => {
-    for (const avoidColor of colorsToAvoid) {
-      const dist = calculatePerceptualDistance(candidate.converted, avoidColor)
-      if (dist < MIN_DISTANCE_FROM_PRESELECTED) return true
-    }
-    return false
-  }
-
   const sorted = [...candidates].sort((a, b) => b.frequency - a.frequency)
 
   if (isCPCClassic) {
@@ -200,140 +159,46 @@ function filterCandidatesWithHueDiversity(
   }
 
   // Pour CPC Plus, assurer une diversité de teinte
-  const selectedCandidates: ColorCandidate[] = []
-
-  // Grouper par plage de teinte (0-60, 60-120, 120-180, 180-240, 240-300, 300-360)
-  // Ne garder que les couleurs visuellement colorées dans les groupes de teinte
-  const hueGroups: ColorCandidate[][] = [[], [], [], [], [], []]
-  const grays: ColorCandidate[] = []
-  const darkColors: ColorCandidate[] = [] // Couleurs saturées mais trop sombres
-
-  for (const c of sorted) {
-    if (isVisuallyColorful(c.converted)) {
-      // Couleur visuellement colorée (saturée ET lumineuse)
-      const hue = calculateHue(c.converted, SATURATION_LOW_THRESHOLD)
-      if (hue >= 0) {
-        const groupIndex = Math.floor(hue / 60) % 6
-        hueGroups[groupIndex].push(c)
-      } else {
-        grays.push(c)
-      }
-    } else {
-      const sat = calculateSaturation(c.converted)
-      if (sat >= SATURATION_MIN_THRESHOLD) {
-        // Couleur saturée mais trop sombre pour le groupe hue
-        darkColors.push(c)
-      } else {
-        // Vraiment gris/désaturé
-        grays.push(c)
-      }
-    }
-  }
-
-  for (const group of hueGroups) {
-    group.sort(
-      (a, b) =>
-        calculateVividnessForColor(b.converted) -
-        calculateVividnessForColor(a.converted)
-    )
-  }
-
-  // Compter le nombre de groupes de teintes non vides (couleurs visuellement colorées)
-  const nonEmptyGroups = hueGroups.filter((g) => g.length > 0)
+  const categories = hueDiversityHelpers.categorizeByHue(sorted)
+  const nonEmptyGroups = categories.hueGroups.filter((g) => g.length > 0)
   const hasColorDiversity = nonEmptyGroups.length >= 2
 
-  if (hasColorDiversity) {
-    // Trouver la couleur la plus sombre parmi TOUS les candidats (pas seulement les gris)
-    // pour garantir un bon contraste dans la palette finale tout en restant fidèle à l'image
-    // MAIS exclure les couleurs trop proches des couleurs à éviter (présélectionnées/lockées)
-    const eligibleDarkCandidates = candidates.filter(
-      (c) => !isTooCloseToAvoidedColors(c)
-    )
-    const darkestCandidate = eligibleDarkCandidates.reduce(
-      (darkest, current) => {
-        const currentLum = calculateLuminance(current.converted)
-        const darkestLum = darkest ? calculateLuminance(darkest.converted) : 1
-        return currentLum < darkestLum ? current : darkest
-      },
-      null as ColorCandidate | null
-    )
+  let selectedCandidates: ColorCandidate[] = []
 
-    // Ajouter la couleur la plus sombre en premier si elle est suffisamment sombre
-    if (
-      darkestCandidate &&
-      calculateLuminance(darkestCandidate.converted) < 0.2
-    ) {
+  if (hasColorDiversity) {
+    // Trouver et ajouter la couleur la plus sombre en premier
+    const darkestCandidate = hueDiversityHelpers.findDarkestCandidate(
+      candidates,
+      colorsToAvoid,
+      0.2
+    )
+    if (darkestCandidate) {
       selectedCandidates.push(darkestCandidate)
     }
 
     // Ajouter des couleurs de chaque groupe de teinte en round-robin
-    // Les plus vives de chaque groupe seront sélectionnées en premier
-    let added = true
-    let round = 0
-    while (added && selectedCandidates.length < maxCandidates) {
-      added = false
-      for (const group of hueGroups) {
-        if (selectedCandidates.length >= maxCandidates) break
-        if (round < group.length) {
-          const c = group[round]
-          if (
-            !selectedCandidates.some((s) => s.index === c.index) &&
-            !isTooCloseToAvoidedColors(c)
-          ) {
-            selectedCandidates.push(c)
-            added = true
-          }
-        }
-      }
-      round++
-    }
+    selectedCandidates = hueDiversityHelpers.selectByRoundRobin(
+      categories.hueGroups,
+      maxCandidates,
+      colorsToAvoid,
+      selectedCandidates
+    )
   } else {
-    // Image majoritairement achromatique - garder le comportement basé sur la fréquence
-    // mais s'assurer d'inclure toutes les couleurs saturées disponibles
-    for (const group of hueGroups) {
-      for (const c of group) {
-        if (
-          selectedCandidates.length < maxCandidates &&
-          !isTooCloseToAvoidedColors(c)
-        ) {
-          selectedCandidates.push(c)
-        }
-      }
-    }
-    // Puis compléter avec les couleurs sombres saturées
-    for (const c of darkColors) {
-      if (selectedCandidates.length >= maxCandidates) break
-      if (
-        !selectedCandidates.some((s) => s.index === c.index) &&
-        !isTooCloseToAvoidedColors(c)
-      ) {
-        selectedCandidates.push(c)
-      }
-    }
-    // Puis compléter avec les gris
-    for (const c of grays) {
-      if (selectedCandidates.length >= maxCandidates) break
-      if (
-        !selectedCandidates.some((s) => s.index === c.index) &&
-        !isTooCloseToAvoidedColors(c)
-      ) {
-        selectedCandidates.push(c)
-      }
-    }
+    // Image majoritairement achromatique
+    selectedCandidates = hueDiversityHelpers.selectFromGroupsSequentially(
+      categories,
+      maxCandidates,
+      colorsToAvoid
+    )
   }
 
   // Compléter avec les plus fréquents si on n'a pas assez
-  for (const c of sorted) {
-    if (selectedCandidates.length >= maxCandidates) break
-    if (
-      !selectedCandidates.some((s) => s.index === c.index) &&
-      !isTooCloseToAvoidedColors(c)
-    ) {
-      selectedCandidates.push(c)
-    }
-  }
-
-  return selectedCandidates
+  return hueDiversityHelpers.fillWithMostFrequent(
+    sorted,
+    maxCandidates,
+    colorsToAvoid,
+    selectedCandidates
+  )
 }
 
 /**
@@ -1571,8 +1436,12 @@ function findBestCombinationV2(
 
     // Trier par vividness (saturation * luminance) pour favoriser les couleurs saturées
     candidatesWithArrayIndex.sort((a, b) => {
-      const vividnessA = calculateVividnessForColor(a.candidate.converted)
-      const vividnessB = calculateVividnessForColor(b.candidate.converted)
+      const vividnessA = hueDiversityHelpers.calculateVividnessForColor(
+        a.candidate.converted
+      )
+      const vividnessB = hueDiversityHelpers.calculateVividnessForColor(
+        b.candidate.converted
+      )
       return vividnessB - vividnessA
     })
 
