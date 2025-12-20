@@ -920,30 +920,23 @@ export function assembleSnaSource(
   // Add palette data - always include separate palette
   // Both Classic and Plus use separate palette labels
   if (dataFiles.paletteAsm) {
-    lines.push('')
-    lines.push('; === PALETTE DATA ===')
-    lines.push(dataFiles.paletteAsm)
+    lines.push('', '; === PALETTE DATA ===', dataFiles.paletteAsm)
   }
 
   // Add raster data if present
   if (options.hasRasters && dataFiles.rasterAsm) {
-    lines.push('')
-    lines.push('; === RASTER DATA ===')
-    lines.push(dataFiles.rasterAsm)
+    lines.push('', '; === RASTER DATA ===', dataFiles.rasterAsm)
   }
 
   // Add image data at appropriate address
-  lines.push('')
-  lines.push('; === IMAGE DATA ===')
+  lines.push('', '; === IMAGE DATA ===')
   if (options.overscan) {
-    lines.push('    org #4268')
-    lines.push(dataFiles.imageAsm)
+    lines.push('    org #4268', dataFiles.imageAsm)
     if (dataFiles.imageAsm2) {
       lines.push(dataFiles.imageAsm2)
     }
   } else {
-    lines.push('    org #c000')
-    lines.push(dataFiles.imageAsm)
+    lines.push('    org #c000', dataFiles.imageAsm)
   }
 
   return lines.join('\n')

@@ -107,9 +107,12 @@ export function generateDskReadme(
       image.palettePlus &&
       image.palettePlus.length > 0
     ) {
+      const formattedPalette = image.palettePlus
+        .map((v) => `#${v.toString(16).toUpperCase().padStart(3, '0')}`)
+        .join(', ')
       readme += 'Hardware values (GRB format):\n'
       readme += '```\n'
-      readme += `[${image.palettePlus.map((v) => `#${v.toString(16).toUpperCase().padStart(3, '0')}`).join(', ')}]\n`
+      readme += `[${formattedPalette}]\n`
       readme += '```\n\n'
     }
   }

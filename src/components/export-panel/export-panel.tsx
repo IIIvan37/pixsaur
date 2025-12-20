@@ -8,7 +8,6 @@ import {
 } from '@/app/store/config/config'
 import {
   exportPaletteWithSlotsAtom,
-  IGNORED_SLOT,
   previewImageAtom
 } from '@/app/store/preview/preview'
 import {
@@ -24,12 +23,10 @@ import {
   exportToCpcPlayground,
   exportZip,
   generateClassicRasterASM,
-  generatePlusRasterASM,
-  rgbToCPCPlus,
-  rgbToFirmwareIndex,
-  rgbToIndexBufferExact
+  generatePlusRasterASM
 } from '@/export'
 import ExportConfigDialog from './export-config-dialog'
+import { prepareExportData } from './export-data-helpers'
 import ExportPanelView from './export-panel-view'
 
 export default function ExportPanel() {
@@ -55,87 +52,16 @@ export default function ExportPanel() {
   )
   const [playgroundLoading, setPlaygroundLoading] = useState(false)
 
-  // Helper to check if a slot is ignored
-  const isIgnoredSlot = (color: number[]) =>
-    color[0] === IGNORED_SLOT[0] &&
-    color[1] === IGNORED_SLOT[1] &&
-    color[2] === IGNORED_SLOT[2]
-
   // Get effective palette and index buffer for export
   const getExportData = () => {
-    if (!image?.data) return null
-
-    const cleanImage = image
-
-    // Use raster base palette when raster mode is enabled
-    const effectivePalette =
-      rasterEnabled && rasterBasePalette ? rasterBasePalette : exportPalette
-
-    let indexBuf: Uint8Array
-    let paletteFirmware: number[] = []
-    let palettePlus: number[] = []
-
-    if (cpcHardware === 'classic') {
-      const useRasterPalette = rasterEnabled && rasterBasePalette
-
-      if (useRasterPalette) {
-        paletteFirmware = effectivePalette.map((colorData: any) => {
-          const color = Array.isArray(colorData)
-            ? colorData
-            : Array.from(colorData)
-          return rgbToFirmwareIndex(color[0], color[1], color[2])
-        })
-      } else {
-        paletteFirmware = effectivePalette.map((colorData: any) => {
-          const color = Array.isArray(colorData)
-            ? colorData
-            : Array.from(colorData)
-          if (isIgnoredSlot(color)) return 0
-          return rgbToFirmwareIndex(color[0], color[1], color[2])
-        })
-      }
-
-      if (useRasterPalette && rasterIndexBuffer) {
-        indexBuf = rasterIndexBuffer.buffer
-      } else {
-        indexBuf = rgbToIndexBufferExact(
-          cleanImage.data,
-          effectivePalette,
-          false
-        )
-      }
-    } else {
-      // CPC Plus
-      const useRasterPalette = rasterEnabled && rasterBasePalette
-
-      // Generate Plus palette (12-bit 0GRB format)
-      palettePlus = effectivePalette.map((colorData: any) => {
-        const color = Array.isArray(colorData)
-          ? colorData
-          : Array.from(colorData)
-        if (isIgnoredSlot(color)) return 0
-        return rgbToCPCPlus(color[0], color[1], color[2])
-      })
-
-      if (useRasterPalette && rasterIndexBuffer) {
-        indexBuf = rasterIndexBuffer.buffer
-      } else {
-        indexBuf = rgbToIndexBufferExact(
-          cleanImage.data,
-          effectivePalette,
-          false,
-          true
-        )
-      }
-    }
-
-    return {
-      indexBuf,
-      paletteFirmware,
-      palettePlus,
-      effectivePalette,
-      cleanImage
-    }
+    return prepareExportData({
+      image,
+      exportPalette,
+      rasterEnabled,
+      rasterBasePalette,
+      rasterIndexBuffer,
+      cpcHardware
+    })
   }
 
   const handleExport = async (config: ExportConfig) => {

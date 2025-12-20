@@ -114,10 +114,8 @@ export function RasterSettings() {
   }, [triggerAutoOptimize])
 
   const handleAddChange = useCallback(() => {
-    const defaultLine =
-      changes.length > 0
-        ? Math.min(changes[changes.length - 1].line + 1, maxLine)
-        : 0
+    const lastChange = changes.at(-1)
+    const defaultLine = lastChange ? Math.min(lastChange.line + 1, maxLine) : 0
     const defaultInkIndex = 0
     const defaultColor =
       palette[defaultInkIndex] || ([0, 0, 0] as Vector<'RGB'>)

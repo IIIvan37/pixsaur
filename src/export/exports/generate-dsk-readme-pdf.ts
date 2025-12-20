@@ -197,7 +197,6 @@ export function generateDskReadmePdf(
     'The loader automatically detects CPC Classic or CPC Plus format and applies the appropriate palette. This only works for standard .SCR files.'
   const splitText = doc.splitTextToSize(loaderText, 170)
   doc.text(splitText, 20, yPosition)
-  yPosition += 6 * splitText.length + 8
 
   // Footer
   const totalPages = doc.getNumberOfPages()

@@ -9,14 +9,14 @@ import type { CPCHardware } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 
-type HardwareSettingsViewProps = {
+type HardwareSettingsViewProps = Readonly<{
   cpcHardware: CPCHardware
   onCpcHardwareChange: (value: CPCHardware) => void
   pixelMode: PixelMode
   onPixelModeChange: (value: PixelMode) => void
   dimensionPreset: DimensionPreset
   onDimensionPresetChange: (value: DimensionPreset) => void
-}
+}>
 
 export function HardwareSettingsView({
   cpcHardware,

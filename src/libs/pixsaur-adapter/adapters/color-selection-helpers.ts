@@ -534,3 +534,110 @@ export function getMinRGBDistance(targetColors: number): number {
     ? MIN_RGB_DISTANCE_MODE_1_2
     : MIN_RGB_DISTANCE_MODE_0
 }
+
+/**
+ * Result type for addBucketRepresentativesWithDistanceCheck
+ */
+export interface AddRepresentativesResult {
+  /** Number of representatives added */
+  added: number
+  /** Number of representatives skipped due to being too close */
+  skipped: number
+}
+
+/**
+ * Add bucket representatives to result while checking distance constraints
+ *
+ * Checks both RGB distance and hue distance to ensure diversity
+ *
+ * @param bucketRepresentatives - Representatives from bucket selection
+ * @param sortedBuckets - Sorted buckets for logging context
+ * @param result - Current result indices (modified in-place)
+ * @param selectedConverted - Currently selected colors (modified in-place)
+ * @param calculateDistance - Distance function
+ * @returns Statistics about added/skipped representatives
+ */
+export function addBucketRepresentativesWithDistanceCheck(
+  bucketRepresentatives: ColorFrequencyItem[],
+  sortedBuckets: HueBucket[],
+  result: number[],
+  selectedConverted: Vector[],
+  calculateDistance: DistanceFunction
+): AddRepresentativesResult {
+  let added = 0
+  let skipped = 0
+
+  // Constants for distance checks
+  const MIN_SAT_FOR_HUE_CHECK = 0.15
+
+  for (const rep of bucketRepresentatives) {
+    if (result.includes(rep.index)) continue
+
+    // Check distance with all already selected colors
+    let tooClose = false
+    const repHue = calculateHue(rep.converted, DELTA_MIN_FOR_HUE)
+    const repSat = calculateSaturation(rep.converted)
+
+    for (const existing of selectedConverted) {
+      const dist = calculateDistance(rep.converted, existing)
+
+      // RGB distance check
+      if (dist < MIN_RGB_DISTANCE_MODE_0) {
+        adapterLogger.info(
+          `[Mode 0] SKIP representative ${formatRGB(rep.converted)} - RGB too close to ${formatRGB(existing)} dist=${Math.round(dist)}`
+        )
+        tooClose = true
+        skipped++
+        break
+      }
+
+      // Hue distance check (for colors with identifiable hue)
+      const existingSat = calculateSaturation(existing)
+      if (
+        repSat > MIN_SAT_FOR_HUE_CHECK &&
+        repHue >= 0 &&
+        existingSat > MIN_SAT_FOR_HUE_CHECK
+      ) {
+        const existingHue = calculateHue(existing, DELTA_MIN_FOR_HUE)
+        if (existingHue >= 0) {
+          const hueDist = calculateHueDistance(repHue, existingHue)
+          if (hueDist < MIN_HUE_DISTANCE_MODE_0) {
+            adapterLogger.info(
+              `[Mode 0] SKIP representative ${formatRGB(rep.converted)} hue=${repHue.toFixed(0)}° - hue too close to ${formatRGB(existing)} hue=${existingHue.toFixed(0)}° hueDist=${hueDist.toFixed(0)}°`
+            )
+            tooClose = true
+            skipped++
+            break
+          }
+        }
+      }
+    }
+
+    if (!tooClose) {
+      result.push(rep.index)
+      selectedConverted.push(rep.converted)
+      added++
+    }
+  }
+
+  // Log bucket info for added representatives
+  for (const rep of bucketRepresentatives) {
+    if (result.includes(rep.index)) {
+      const bucket = sortedBuckets.find((b) =>
+        b.colors.some((c) => c.index === rep.index)
+      )
+      if (bucket) {
+        const bucketKey = bucket.bucket
+        const hueRange =
+          bucketKey === 'gray'
+            ? 'gray'
+            : `${(bucketKey as number) * HUE_BUCKET_SIZE_DEGREES}-${((bucketKey as number) + 1) * HUE_BUCKET_SIZE_DEGREES}°`
+        adapterLogger.info(
+          `[Mode 0] Representative for bucket ${bucketKey} (${hueRange}): ${formatRGB(rep.converted)} freq=${rep.frequency}`
+        )
+      }
+    }
+  }
+
+  return { added, skipped }
+}

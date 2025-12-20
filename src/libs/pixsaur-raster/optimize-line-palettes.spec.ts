@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   extractGlobalPaletteFromImage,
+  optimizeLinePalettesWithIndexBuffer,
   posterizeImage,
+  preprocessImageForRaster,
   quantizeToCPCPlus,
   rasterTuningOverrides
 } from './optimize-line-palettes'
@@ -360,5 +362,426 @@ describe('extractGlobalPaletteFromImage with tuning params', () => {
 
     rasterTuningOverrides.preprocessFrequencyExponent = 1.0
     expect(rasterTuningOverrides.preprocessFrequencyExponent).toBe(1.0)
+  })
+})
+
+describe('preprocessImageForRaster', () => {
+  it('should reduce colors per line to max nColors', () => {
+    // Create image with many colors on each line
+    const width = 8
+    const height = 4
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Fill with gradient to create many unique colors
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4
+        data[idx] = x * 32 // R varies 0-224
+        data[idx + 1] = y * 64 // G varies 0-192
+        data[idx + 2] = (x + y) * 20 // B varies
+        data[idx + 3] = 255
+      }
+    }
+    const image = new ImageData(data, width, height)
+
+    const result = preprocessImageForRaster(image, [], { nColors: 4 })
+
+    // Check output dimensions match input
+    expect(result.width).toBe(width)
+    expect(result.height).toBe(height)
+
+    // Verify each line has at most 4 unique colors
+    for (let y = 0; y < height; y++) {
+      const lineColors = new Set<string>()
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4
+        const key = `${result.data[idx]},${result.data[idx + 1]},${result.data[idx + 2]}`
+        lineColors.add(key)
+      }
+      expect(lineColors.size).toBeLessThanOrEqual(4)
+    }
+  })
+
+  it('should preserve image when already has ≤nColors per line and dithering disabled', () => {
+    // Create image with exactly 2 colors per line
+    const width = 4
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Line 0: alternating black and white (CPC Plus quantized values)
+    const black: Vector<'RGB'> = [0, 0, 0]
+    const white: Vector<'RGB'> = [255, 255, 255]
+
+    for (let x = 0; x < width; x++) {
+      const idx = x * 4
+      const color = x % 2 === 0 ? black : white
+      data[idx] = color[0]
+      data[idx + 1] = color[1]
+      data[idx + 2] = color[2]
+      data[idx + 3] = 255
+    }
+
+    // Line 1: same pattern
+    for (let x = 0; x < width; x++) {
+      const idx = (width + x) * 4
+      const color = x % 2 === 0 ? black : white
+      data[idx] = color[0]
+      data[idx + 1] = color[1]
+      data[idx + 2] = color[2]
+      data[idx + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const result = preprocessImageForRaster(image, [], {
+      nColors: 4,
+      ditheringIntensity: 0
+    })
+
+    // Colors should be preserved (only black and white)
+    for (let x = 0; x < width; x++) {
+      const idx = x * 4
+      const isBlack =
+        result.data[idx] === 0 &&
+        result.data[idx + 1] === 0 &&
+        result.data[idx + 2] === 0
+      const isWhite =
+        result.data[idx] === 255 &&
+        result.data[idx + 1] === 255 &&
+        result.data[idx + 2] === 255
+      expect(isBlack || isWhite).toBe(true)
+    }
+  })
+
+  it('should apply dithering when ditheringIntensity > 0', () => {
+    // Create gradient image
+    const width = 8
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    for (let x = 0; x < width; x++) {
+      const idx = x * 4
+      data[idx] = x * 32 // R: 0, 32, 64, 96, 128, 160, 192, 224
+      data[idx + 1] = x * 32
+      data[idx + 2] = x * 32
+      data[idx + 3] = 255
+    }
+    for (let x = 0; x < width; x++) {
+      const idx = (width + x) * 4
+      data[idx] = x * 32
+      data[idx + 1] = x * 32
+      data[idx + 2] = x * 32
+      data[idx + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const result = preprocessImageForRaster(image, [], {
+      nColors: 4,
+      ditheringIntensity: 0.75
+    })
+
+    // Output should have valid CPC Plus colors (multiples of 17)
+    for (let i = 0; i < result.data.length; i += 4) {
+      const r = result.data[i]
+      const g = result.data[i + 1]
+      const b = result.data[i + 2]
+      expect(r % 17).toBe(0)
+      expect(g % 17).toBe(0)
+      expect(b % 17).toBe(0)
+    }
+  })
+
+  it('should handle CPC Classic palette constraint', () => {
+    const cpcClassicPalette: Vector<'RGB'>[] = [
+      [0, 0, 0], // Black
+      [0, 0, 128], // Blue
+      [128, 0, 0], // Red
+      [128, 0, 128], // Magenta
+      [0, 128, 0], // Green
+      [0, 128, 128], // Cyan
+      [128, 128, 0], // Yellow
+      [128, 128, 128], // White
+      [0, 0, 255], // Bright blue
+      [255, 0, 0], // Bright red
+      [255, 0, 255], // Bright magenta
+      [0, 255, 0], // Bright green
+      [0, 255, 255], // Bright cyan
+      [255, 255, 0], // Bright yellow
+      [255, 255, 255] // Bright white
+    ]
+
+    const width = 4
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Fill with a color not in the palette
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 100
+      data[i + 1] = 50
+      data[i + 2] = 150
+      data[i + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const result = preprocessImageForRaster(image, [], {
+      nColors: 4,
+      cpcClassicPalette
+    })
+
+    // Output colors should be from the CPC Classic palette
+    for (let i = 0; i < result.data.length; i += 4) {
+      const color: Vector<'RGB'> = [
+        result.data[i],
+        result.data[i + 1],
+        result.data[i + 2]
+      ]
+      const isInPalette = cpcClassicPalette.some(
+        (pc) => pc[0] === color[0] && pc[1] === color[1] && pc[2] === color[2]
+      )
+      expect(isInPalette).toBe(true)
+    }
+  })
+
+  it('should handle Mode 2 with 2 colors', () => {
+    const width = 4
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Create gradient
+    for (let i = 0; i < data.length; i += 4) {
+      const x = (i / 4) % width
+      data[i] = x * 80
+      data[i + 1] = x * 80
+      data[i + 2] = x * 80
+      data[i + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const result = preprocessImageForRaster(image, [], { nColors: 2 })
+
+    // Each line should have at most 2 colors
+    for (let y = 0; y < height; y++) {
+      const lineColors = new Set<string>()
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4
+        const key = `${result.data[idx]},${result.data[idx + 1]},${result.data[idx + 2]}`
+        lineColors.add(key)
+      }
+      expect(lineColors.size).toBeLessThanOrEqual(2)
+    }
+  })
+})
+
+describe('optimizeLinePalettesWithIndexBuffer', () => {
+  it('should return changes and index buffer', () => {
+    // Create simple 4-color image
+    const width = 4
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Line 0: 4 different CPC Plus colors
+    const colors: Vector<'RGB'>[] = [
+      [0, 0, 0],
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255]
+    ]
+    for (let x = 0; x < width; x++) {
+      const idx = x * 4
+      data[idx] = colors[x][0]
+      data[idx + 1] = colors[x][1]
+      data[idx + 2] = colors[x][2]
+      data[idx + 3] = 255
+    }
+
+    // Line 1: same colors
+    for (let x = 0; x < width; x++) {
+      const idx = (width + x) * 4
+      data[idx] = colors[x][0]
+      data[idx + 1] = colors[x][1]
+      data[idx + 2] = colors[x][2]
+      data[idx + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const globalPalette: Vector<'RGB'>[] = [...colors]
+
+    const result = optimizeLinePalettesWithIndexBuffer(image, globalPalette)
+
+    expect(result).toHaveProperty('changes')
+    expect(result).toHaveProperty('indexBuffer')
+    expect(result).toHaveProperty('quantizedGlobalPalette')
+    expect(result.indexBuffer.length).toBe(width * height)
+  })
+
+  it('should generate correct index buffer for single-color image', () => {
+    const width = 4
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Fill with single color (CPC Plus quantized)
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 255 // R
+      data[i + 1] = 0 // G
+      data[i + 2] = 0 // B
+      data[i + 3] = 255 // A
+    }
+
+    const image = new ImageData(data, width, height)
+    const globalPalette: Vector<'RGB'>[] = [[255, 0, 0]]
+
+    const result = optimizeLinePalettesWithIndexBuffer(image, globalPalette)
+
+    // All pixels should map to the same ink index
+    const firstIndex = result.indexBuffer[0]
+    for (let i = 1; i < result.indexBuffer.length; i++) {
+      expect(result.indexBuffer[i]).toBe(firstIndex)
+    }
+  })
+
+  it('should respect maxChangesPerLine option', () => {
+    // Create preprocessed image with exactly 4 colors per line (CPC Plus quantized)
+    const width = 8
+    const height = 4
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Each line uses the same 4 CPC Plus colors
+    const lineColors: Vector<'RGB'>[] = [
+      [0, 0, 0], // Black
+      [255, 0, 0], // Red
+      [0, 255, 0], // Green
+      [0, 0, 255] // Blue
+    ]
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4
+        const color = lineColors[x % 4]
+        data[idx] = color[0]
+        data[idx + 1] = color[1]
+        data[idx + 2] = color[2]
+        data[idx + 3] = 255
+      }
+    }
+
+    const image = new ImageData(data, width, height)
+    const globalPalette: Vector<'RGB'>[] = [...lineColors]
+
+    // Test with maxChangesPerLine = 1
+    const result = optimizeLinePalettesWithIndexBuffer(
+      image,
+      globalPalette,
+      [],
+      {
+        maxChangesPerLine: 1
+      }
+    )
+
+    // Count changes per line
+    const changesPerLine = new Map<number, number>()
+    for (const change of result.changes) {
+      const count = changesPerLine.get(change.line) || 0
+      changesPerLine.set(change.line, count + 1)
+    }
+
+    // Each line should have at most 1 change
+    for (const count of changesPerLine.values()) {
+      expect(count).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('should handle existing changes', () => {
+    const width = 4
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 128
+      data[i + 1] = 128
+      data[i + 2] = 128
+      data[i + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const globalPalette: Vector<'RGB'>[] = [[128, 128, 128]]
+
+    const existingChanges = [
+      { line: 0, inkIndex: 0, color: [255, 0, 0] as Vector<'RGB'> }
+    ]
+
+    const result = optimizeLinePalettesWithIndexBuffer(
+      image,
+      globalPalette,
+      existingChanges
+    )
+
+    // Existing change should be preserved
+    expect(result.changes).toContainEqual(existingChanges[0])
+  })
+
+  it('should use provided palette when useProvidedPalette is true', () => {
+    const width = 4
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 100
+      data[i + 1] = 100
+      data[i + 2] = 100
+      data[i + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const providedPalette: Vector<'RGB'>[] = [
+      [0, 0, 0],
+      [85, 85, 85],
+      [170, 170, 170],
+      [255, 255, 255]
+    ]
+
+    const result = optimizeLinePalettesWithIndexBuffer(
+      image,
+      providedPalette,
+      [],
+      { useProvidedPalette: true }
+    )
+
+    // The quantized global palette should be based on provided palette (quantized to CPC Plus)
+    expect(result.quantizedGlobalPalette.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('should handle Mode 0 CPC Plus (16 colors)', () => {
+    const width = 8
+    const height = 2
+    const data = new Uint8ClampedArray(width * height * 4)
+
+    // Create image with multiple colors
+    for (let i = 0; i < data.length; i += 4) {
+      const x = (i / 4) % width
+      data[i] = x * 30
+      data[i + 1] = x * 20
+      data[i + 2] = x * 25
+      data[i + 3] = 255
+    }
+
+    const image = new ImageData(data, width, height)
+    const globalPalette: Vector<'RGB'>[] = Array(16)
+      .fill(null)
+      .map((_, i) => [i * 16, i * 16, i * 16] as Vector<'RGB'>)
+
+    const result = optimizeLinePalettesWithIndexBuffer(
+      image,
+      globalPalette,
+      [],
+      {
+        nColors: 16,
+        maxChangesPerLine: 4
+      }
+    )
+
+    // Index buffer should use indices 0-15
+    for (const idx of result.indexBuffer) {
+      expect(idx).toBeGreaterThanOrEqual(0)
+      expect(idx).toBeLessThan(16)
+    }
   })
 })

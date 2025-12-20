@@ -84,12 +84,10 @@ export function injectPaletteDataIntoSCR(
   scr[2017] = borderHw
 
   // Offset 2018-2033: 16 palette hardware colors (use min of palette length and 16)
-  const hardwarePalette: number[] = []
   for (let i = 0; i < Math.min(16, palette.length); i++) {
     const fw = palette[i]
     const hw = firmwareToHardware[fw]
     scr[2018 + i] = hw
-    hardwarePalette.push(hw)
   }
 
   // Offset 2034: graphics mode (0, 1, or 2)

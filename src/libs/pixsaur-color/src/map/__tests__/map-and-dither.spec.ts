@@ -7,7 +7,8 @@ import {
   applyNoDither,
   applyYliluoma1Dither,
   applyYliluoma2Dither,
-  mapAndDither
+  mapAndDither,
+  mapAndDitherWithDynamicPalette
 } from '../map-and-dither'
 
 // Mock logger to avoid console output in tests
@@ -444,6 +445,265 @@ describe('Map and Dither', () => {
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
       expect(result.length).toBe(100 * 100 * 4)
+    })
+  })
+
+  describe('Additional dithering modes', () => {
+    it('should process image with Atkinson dithering', () => {
+      const result = mapAndDither(
+        testImageData,
+        2,
+        2,
+        testPalette,
+        { mode: 'atkinson', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should process image with Halftone 4x4 dithering', () => {
+      const result = mapAndDither(
+        testImageData,
+        2,
+        2,
+        testPalette,
+        { mode: 'halftone4x4', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should apply halftone pattern correctly', () => {
+      // Create grayscale gradient for better halftone visualization
+      const gradientImage = new Uint8ClampedArray(4 * 4 * 4)
+      for (let i = 0; i < 16; i++) {
+        const v = (i * 16) % 256
+        const idx = i * 4
+        gradientImage[idx] = v
+        gradientImage[idx + 1] = v
+        gradientImage[idx + 2] = v
+        gradientImage[idx + 3] = 255
+      }
+
+      const result = mapAndDither(
+        gradientImage,
+        4,
+        4,
+        testPalette,
+        { mode: 'halftone4x4', intensity: 0.8 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(64)
+    })
+  })
+
+  describe('mapAndDitherWithDynamicPalette', () => {
+    it('should apply no dithering with dynamic palette', () => {
+      const getPaletteForLine = (_y: number): Vector[] => {
+        return [
+          [0, 0, 0],
+          [255, 255, 255]
+        ]
+      }
+
+      const result = mapAndDitherWithDynamicPalette(
+        testImageData,
+        2,
+        2,
+        getPaletteForLine,
+        { mode: 'none', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should apply Bayer 2x2 with dynamic palette', () => {
+      const getPaletteForLine = (_y: number): Vector[] => {
+        return [
+          [0, 0, 0],
+          [255, 255, 255]
+        ]
+      }
+
+      const result = mapAndDitherWithDynamicPalette(
+        testImageData,
+        2,
+        2,
+        getPaletteForLine,
+        { mode: 'bayer2x2', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should apply Bayer 4x4 with dynamic palette', () => {
+      const getPaletteForLine = (_y: number): Vector[] => {
+        return [
+          [0, 0, 0],
+          [255, 0, 0],
+          [0, 255, 0],
+          [0, 0, 255]
+        ]
+      }
+
+      const result = mapAndDitherWithDynamicPalette(
+        testImageData,
+        2,
+        2,
+        getPaletteForLine,
+        { mode: 'bayer4x4', intensity: 0.7 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should apply Bayer 8x8 with dynamic palette', () => {
+      const getPaletteForLine = (y: number): Vector[] => {
+        // Different palette per line
+        if (y === 0) {
+          return [
+            [0, 0, 0],
+            [255, 0, 0]
+          ]
+        }
+        return [
+          [0, 0, 0],
+          [0, 255, 0]
+        ]
+      }
+
+      const result = mapAndDitherWithDynamicPalette(
+        testImageData,
+        2,
+        2,
+        getPaletteForLine,
+        { mode: 'bayer8x8', intensity: 0.6 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should apply halftone with dynamic palette', () => {
+      const getPaletteForLine = (_y: number): Vector[] => testPalette
+
+      const result = mapAndDitherWithDynamicPalette(
+        testImageData,
+        2,
+        2,
+        getPaletteForLine,
+        { mode: 'halftone4x4', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should fallback to no dithering for unsupported modes', () => {
+      const getPaletteForLine = (_y: number): Vector[] => testPalette
+
+      // floydSteinberg is not supported with dynamic palettes
+      const result = mapAndDitherWithDynamicPalette(
+        testImageData,
+        2,
+        2,
+        getPaletteForLine,
+        { mode: 'floydSteinberg', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+    })
+
+    it('should handle different palettes per line', () => {
+      // 4x2 image - each line gets different palette
+      const imageData = new Uint8ClampedArray(4 * 2 * 4)
+      for (let i = 0; i < imageData.length; i += 4) {
+        imageData[i] = 128
+        imageData[i + 1] = 128
+        imageData[i + 2] = 128
+        imageData[i + 3] = 255
+      }
+
+      const getPaletteForLine = (y: number): Vector[] => {
+        if (y === 0) {
+          return [
+            [0, 0, 0],
+            [255, 0, 0]
+          ] // Line 0: black/red
+        }
+        return [
+          [0, 0, 0],
+          [0, 0, 255]
+        ] // Line 1: black/blue
+      }
+
+      const result = mapAndDitherWithDynamicPalette(
+        imageData,
+        4,
+        2,
+        getPaletteForLine,
+        { mode: 'none', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(32)
+
+      // Line 0 pixels should be mapped to either black or red
+      for (let x = 0; x < 4; x++) {
+        const idx = x * 4
+        const isBlack =
+          result[idx] === 0 && result[idx + 1] === 0 && result[idx + 2] === 0
+        const isRed =
+          result[idx] === 255 && result[idx + 1] === 0 && result[idx + 2] === 0
+        expect(isBlack || isRed).toBe(true)
+      }
+
+      // Line 1 pixels should be mapped to either black or blue
+      for (let x = 0; x < 4; x++) {
+        const idx = (4 + x) * 4
+        const isBlack =
+          result[idx] === 0 && result[idx + 1] === 0 && result[idx + 2] === 0
+        const isBlue =
+          result[idx] === 0 && result[idx + 1] === 0 && result[idx + 2] === 255
+        expect(isBlack || isBlue).toBe(true)
+      }
+    })
+
+    it('should handle empty palette gracefully', () => {
+      const getPaletteForLine = (_y: number): Vector[] => []
+
+      const result = mapAndDitherWithDynamicPalette(
+        testImageData,
+        2,
+        2,
+        getPaletteForLine,
+        { mode: 'none', intensity: 0.5 },
+        'RGB'
+      )
+
+      expect(result).toBeInstanceOf(Uint8ClampedArray)
+      expect(result.length).toBe(16)
+      // Should fallback to black
+      expect(result[0]).toBe(0)
+      expect(result[1]).toBe(0)
+      expect(result[2]).toBe(0)
     })
   })
 })

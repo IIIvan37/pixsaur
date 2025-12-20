@@ -10,12 +10,12 @@ import styles from '../../tabs/tab.module.css'
 import { DitheringControls } from './dithering-controls'
 import { PaletteStrategySelector } from './palette-strategy-selector/palette-strategy-selector'
 
-type DitheringSettingsViewProps = {
+type DitheringSettingsViewProps = Readonly<{
   horizontalSmoothing: boolean
   onHorizontalSmoothingChange: (value: boolean) => void
   rasterEnabled: boolean
   isPaletteStrategyDisabled: boolean
-}
+}>
 
 export function DitheringSettingsView({
   horizontalSmoothing,
