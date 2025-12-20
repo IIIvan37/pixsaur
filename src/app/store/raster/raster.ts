@@ -356,8 +356,11 @@ export const rasterPreviewImageAtom = atom(async (get) => {
           preview.width,
           preview.height
         )
-      } catch (_e) {
+      } catch (error_) {
         // Fallback CPU if GPU path fails
+        logger.warn('[RASTER] GPU preview failed, falling back to CPU', {
+          error: error_
+        })
       }
     }
     const preview = createRasterPreviewImageData(
@@ -396,8 +399,11 @@ export const rasterPreviewImageAtom = atom(async (get) => {
         palette,
         changes
       )
-    } catch (_e) {
+    } catch (error_) {
       // Fallback CPU if GPU path fails
+      logger.warn('[RASTER] GPU render failed, falling back to CPU', {
+        error: error_
+      })
     }
   }
   return createRasterPreviewImageData(buffer, width, height, palette, changes)

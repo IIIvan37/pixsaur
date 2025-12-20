@@ -12,13 +12,13 @@ import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import styles from '../../tabs/tab.module.css'
 import localStyles from './resize-settings.module.css'
 
-type ResizeSettingsViewProps = {
+type ResizeSettingsViewProps = Readonly<{
   resizeMode: ResizeMode
   onResizeModeChange: (mode: ResizeMode) => void
   selection: Selection | null
   centerImage: boolean
   onCenterImageChange: (checked: boolean) => void
-}
+}>
 
 export function ResizeSettingsView({
   resizeMode,

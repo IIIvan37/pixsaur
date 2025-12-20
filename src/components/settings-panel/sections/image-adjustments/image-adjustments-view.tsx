@@ -209,12 +209,12 @@ export const labels: AdjustmentLabel[] = [
   }
 ]
 
-type ImageAdjustmentsViewProps = {
+type ImageAdjustmentsViewProps = Readonly<{
   disabled: boolean
   values: Record<AdjustementKey, number>
   onValueChange: (key: AdjustementKey, value: number) => void
   onReset: () => void
-}
+}>
 
 export function ImageAdjustmentsView({
   disabled,

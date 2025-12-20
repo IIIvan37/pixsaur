@@ -24,7 +24,7 @@ import type { CPCColor } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
 import { RasterPanelView } from './raster-panel-view'
 
-type RasterSettingsViewProps = {
+type RasterSettingsViewProps = Readonly<{
   // Raster mode
   rasterEnabled: boolean
   onRasterEnabledChange: (value: boolean) => void
@@ -75,7 +75,7 @@ type RasterSettingsViewProps = {
   ) => void
   onRemoveChange: (id: string) => void
   onClearAll: () => void
-}
+}>
 
 export function RasterSettingsView({
   rasterEnabled,
@@ -180,23 +180,25 @@ export function RasterSettingsView({
               resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
             />
 
-            {hasImage && (
-              <Button
-                variant='secondary'
-                onClick={onAutoOptimize}
-                disabled={isOptimizing || hasGeneratedRasters}
-                style={{ marginTop: 'var(--spacing-md)', width: '100%' }}
-              >
-                <Icon name='GearIcon' />
-                {isOptimizing ? (
-                  <Trans>Optimisation...</Trans>
-                ) : hasGeneratedRasters ? (
-                  <Trans>Rasters générés</Trans>
-                ) : (
-                  <Trans>Générer les rasters</Trans>
-                )}
-              </Button>
-            )}
+            {hasImage &&
+              (() => {
+                const getButtonLabel = () => {
+                  if (isOptimizing) return <Trans>Optimisation...</Trans>
+                  if (hasGeneratedRasters) return <Trans>Rasters générés</Trans>
+                  return <Trans>Générer les rasters</Trans>
+                }
+                return (
+                  <Button
+                    variant='secondary'
+                    onClick={onAutoOptimize}
+                    disabled={isOptimizing || hasGeneratedRasters}
+                    style={{ marginTop: 'var(--spacing-md)', width: '100%' }}
+                  >
+                    <Icon name='GearIcon' />
+                    {getButtonLabel()}
+                  </Button>
+                )
+              })()}
 
             {hasGeneratedRasters && changes.length === 0 && (
               <p className={styles.warning}>

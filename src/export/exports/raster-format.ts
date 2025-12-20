@@ -71,18 +71,18 @@ export function groupChangesByLine(
 export function generateClassicRasterASM(
   changes: RasterChange[],
   imageHeight: number,
-  basePalette: number[],
+  _basePalette: number[],
   labelName = 'RasterData'
 ): string {
   const grouped = groupChangesByLine(changes)
 
-  const lines: string[] = [`${labelName}:`]
-  lines.push(`    ; Format: For each of the ${imageHeight} lines:`)
-  lines.push('    ; DB #00 = no change on this line')
-  lines.push(
-    '    ; DB count, ink0, color0, [ink1, color1, ...] = count pairs of (ink, color)'
-  )
-  lines.push('    ; Colors are CPC Classic hardware values')
+  const lines: string[] = [
+    `${labelName}:`,
+    `    ; Format: For each of the ${imageHeight} lines:`,
+    '    ; DB #00 = no change on this line',
+    '    ; DB count, ink0, color0, [ink1, color1, ...] = count pairs of (ink, color)',
+    '    ; Colors are CPC Classic hardware values'
+  ]
 
   for (let lineNum = 0; lineNum < imageHeight; lineNum++) {
     const lineChanges = grouped.get(lineNum)
@@ -105,9 +105,6 @@ export function generateClassicRasterASM(
       )
     }
   }
-
-  // Mark basePalette as intentionally unused
-  void basePalette
 
   return lines.join('\n')
 }
@@ -139,14 +136,12 @@ export function generatePlusRasterASM(
   // Initialize with base palette values
   const currentPalette = basePalette.slice(0, numRasterSlots)
 
-  const lines: string[] = [`${labelName}:`]
-  lines.push(
-    `    ; CPC Plus Raster Data (${imageHeight} lines, ${numRasterSlots} raster slots)`
-  )
-  lines.push(
-    `    ; Each line: DW color0, color1, ..., color${numRasterSlots - 1}`
-  )
-  lines.push('    ; Colors are 12-bit CPC Plus format (0GRB)')
+  const lines: string[] = [
+    `${labelName}:`,
+    `    ; CPC Plus Raster Data (${imageHeight} lines, ${numRasterSlots} raster slots)`,
+    `    ; Each line: DW color0, color1, ..., color${numRasterSlots - 1}`,
+    '    ; Colors are 12-bit CPC Plus format (0GRB)'
+  ]
 
   for (let lineNum = 0; lineNum < imageHeight; lineNum++) {
     const lineChanges = grouped.get(lineNum)
