@@ -26,7 +26,13 @@ function rgbToHex(color: Vector<'RGB'>): string {
  */
 export function PixelInfoView({ pixelInfo }: PixelInfoViewProps) {
   if (!pixelInfo) {
-    return null
+    return (
+      <div className={styles.container}>
+        <div className={styles.empty}>
+          <Trans>Survolez un pixel</Trans>
+        </div>
+      </div>
+    )
   }
 
   const { x, y, inkIndex, color } = pixelInfo

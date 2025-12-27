@@ -21,8 +21,8 @@ export function PixelInfo() {
   const dimensions = useAtomValue(editorDimensionsAtom)
   const getLinePalette = useAtomValue(getLinePaletteAtom)
 
-  // Get current pixel (prefer cursor for keyboard nav, fallback to hovered)
-  const currentPixel = cursor ?? hoveredPixel
+  // Get current pixel (prefer hovered, fallback to cursor)
+  const currentPixel = hoveredPixel ?? cursor
 
   // Get pixel info
   const pixelInfo = useMemo(() => {

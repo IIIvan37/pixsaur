@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   canRedoAtom,
   canUndoAtom,
@@ -8,14 +8,14 @@ import {
   editorGridVisibleAtom,
   editorHoveredPixelAtom,
   editorIndexBufferAtom,
-  editorPixelAspectAtom,
+  editorToolAtom,
+  editorViewportAtom,
   editorZoomAtom,
+  eyedropperAtom,
   getLinePaletteAtom,
   moveCursorAtom,
-  nextInkAtom,
   paintAtCursorAtom,
   paintPixelAtom,
-  prevInkAtom,
   redoEditAtom,
   toggleGridAtom,
   undoEditAtom,
@@ -24,39 +24,32 @@ import {
 } from '@/app/store/editor'
 import { EditorCanvasView } from './editor-canvas-view'
 
-type EditorCanvasProps = Readonly<{
-  containerRef: React.RefObject<HTMLDivElement | null>
-  onEscape?: () => void
-  onSave?: () => void
-}>
-
 /**
  * Smart component for the editor canvas.
  * Handles all interactions, keyboard shortcuts, and state management.
  */
-export function EditorCanvas({
-  containerRef,
-  onEscape,
-  onSave
-}: EditorCanvasProps) {
+export function EditorCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // State
   const indexBuffer = useAtomValue(editorIndexBufferAtom)
   const dimensions = useAtomValue(editorDimensionsAtom)
   const zoom = useAtomValue(editorZoomAtom)
-  const pixelAspect = useAtomValue(editorPixelAspectAtom)
+  const viewport = useAtomValue(editorViewportAtom)
   const gridVisible = useAtomValue(editorGridVisibleAtom)
   const cursor = useAtomValue(editorCursorAtom)
   const hoveredPixel = useAtomValue(editorHoveredPixelAtom)
+  const tool = useAtomValue(editorToolAtom)
   const getLinePalette = useAtomValue(getLinePaletteAtom)
   const canUndo = useAtomValue(canUndoAtom)
   const canRedo = useAtomValue(canRedoAtom)
 
   // Actions
+  const setViewport = useSetAtom(editorViewportAtom)
   const setHoveredPixel = useSetAtom(editorHoveredPixelAtom)
-  const setCursor = useSetAtom(editorCursorAtom)
   const paintPixel = useSetAtom(paintPixelAtom)
+  const eyedropper = useSetAtom(eyedropperAtom)
   const moveCursor = useSetAtom(moveCursorAtom)
   const paintAtCursor = useSetAtom(paintAtCursorAtom)
   const undo = useSetAtom(undoEditAtom)
@@ -64,60 +57,14 @@ export function EditorCanvas({
   const zoomIn = useSetAtom(zoomInAtom)
   const zoomOut = useSetAtom(zoomOutAtom)
   const toggleGrid = useSetAtom(toggleGridAtom)
-  const nextInk = useSetAtom(nextInkAtom)
-  const prevInk = useSetAtom(prevInkAtom)
-
-  // Calculate pixel dimensions with aspect ratio
-  const pixelWidth = zoom * pixelAspect.widthMultiplier
-  const pixelHeight = zoom * pixelAspect.heightMultiplier
-
-  // Track previous zoom and pixel dimensions for scroll adjustment
-  const prevZoomRef = useRef(zoom)
-  const prevPixelWidthRef = useRef(pixelWidth)
-  const prevPixelHeightRef = useRef(pixelHeight)
-
-  // Adjust scroll position to maintain center when zoom changes
-  useLayoutEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const prevPixelWidth = prevPixelWidthRef.current
-    const prevPixelHeight = prevPixelHeightRef.current
-
-    // Only adjust if zoom actually changed
-    if (prevPixelWidth !== pixelWidth || prevPixelHeight !== pixelHeight) {
-      // Calculate the center point in the old coordinate system
-      const oldCenterX = container.scrollLeft + container.clientWidth / 2
-      const oldCenterY = container.scrollTop + container.clientHeight / 2
-
-      // Convert to image coordinates (which pixel was at center)
-      const imageCenterX = oldCenterX / prevPixelWidth
-      const imageCenterY = oldCenterY / prevPixelHeight
-
-      // Calculate new scroll position to keep the same image point at center
-      const newScrollX = imageCenterX * pixelWidth - container.clientWidth / 2
-      const newScrollY = imageCenterY * pixelHeight - container.clientHeight / 2
-
-      container.scrollLeft = Math.max(0, newScrollX)
-      container.scrollTop = Math.max(0, newScrollY)
-    }
-
-    // Update refs for next change
-    prevZoomRef.current = zoom
-    prevPixelWidthRef.current = pixelWidth
-    prevPixelHeightRef.current = pixelHeight
-  }, [containerRef, zoom, pixelWidth, pixelHeight])
-
-  // Track if space is held for drawing mode
-  const isSpaceHeld = useRef(false)
 
   // Convert screen coordinates to image coordinates
   const screenToImage = useCallback(
     (screenX: number, screenY: number): { x: number; y: number } | null => {
       if (!dimensions) return null
 
-      const x = Math.floor(screenX / pixelWidth)
-      const y = Math.floor(screenY / pixelHeight)
+      const x = Math.floor((screenX + viewport.x) / zoom)
+      const y = Math.floor((screenY + viewport.y) / zoom)
 
       if (x < 0 || x >= dimensions.width || y < 0 || y >= dimensions.height) {
         return null
@@ -125,7 +72,7 @@ export function EditorCanvas({
 
       return { x, y }
     },
-    [dimensions, pixelWidth, pixelHeight]
+    [dimensions, viewport, zoom]
   )
 
   // Handle mouse move
@@ -138,15 +85,15 @@ export function EditorCanvas({
 
       setHoveredPixel(imagePos)
 
-      // Paint only while holding space
-      if (imagePos && isSpaceHeld.current) {
+      // Paint while dragging with pencil tool
+      if (e.buttons === 1 && tool === 'pencil' && imagePos) {
         paintPixel(imagePos)
       }
     },
-    [screenToImage, setHoveredPixel, paintPixel]
+    [screenToImage, setHoveredPixel, tool, paintPixel]
   )
 
-  // Handle mouse down - set cursor position
+  // Handle mouse down
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       const rect = e.currentTarget.getBoundingClientRect()
@@ -156,21 +103,40 @@ export function EditorCanvas({
 
       if (!imagePos) return
 
-      // Set cursor position on click
-      setCursor(imagePos)
+      if (tool === 'pencil') {
+        paintPixel(imagePos)
+      } else if (tool === 'eyedropper') {
+        eyedropper(imagePos)
+      }
     },
-    [screenToImage, setCursor]
+    [screenToImage, tool, paintPixel, eyedropper]
   )
-
-  // Handle mouse up
-  const handleMouseUp = useCallback(() => {
-    // Nothing to do - cursor is set on mouse down
-  }, [])
 
   // Handle mouse leave
   const handleMouseLeave = useCallback(() => {
     setHoveredPixel(null)
   }, [setHoveredPixel])
+
+  // Handle wheel for zoom
+  const handleWheel = useCallback(
+    (e: React.WheelEvent<HTMLCanvasElement>) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        if (e.deltaY < 0) {
+          zoomIn()
+        } else {
+          zoomOut()
+        }
+      } else {
+        // Pan
+        setViewport((prev) => ({
+          x: Math.max(0, prev.x + e.deltaX),
+          y: Math.max(0, prev.y + e.deltaY)
+        }))
+      }
+    },
+    [zoomIn, zoomOut, setViewport]
+  )
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -220,102 +186,37 @@ export function EditorCanvas({
         return
       }
 
-      // Ink navigation with [ and ]
-      if (e.key === '[' || e.key === 'Dead') {
-        e.preventDefault()
-        prevInk()
-        return
-      }
-      if (e.key === ']' || e.key === '$') {
-        e.preventDefault()
-        nextInk()
-        return
-      }
-
-      // Save (Ctrl/Cmd + S)
-      if (isCtrlOrCmd && e.key === 's') {
-        e.preventDefault()
-        onSave?.()
-        return
-      }
-
-      // Escape to cancel
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        onEscape?.()
-        return
-      }
-
-      // Space key - track for draw mode
-      if (e.key === ' ' || e.code === 'Space') {
-        e.preventDefault()
-        e.stopPropagation()
-        isSpaceHeld.current = true
-        // Paint at current cursor position
-        if (cursor) {
-          paintAtCursor()
-        }
-        return
-      }
-
-      // Arrow keys for cursor navigation (paint if space is held)
+      // Arrow keys for cursor navigation
       const largeStep = e.shiftKey
       switch (e.key) {
         case 'ArrowUp':
           e.preventDefault()
-          e.stopPropagation()
           moveCursor('up', largeStep)
-          if (isSpaceHeld.current) {
-            // Paint after cursor moved (use setTimeout to ensure cursor is updated)
-            setTimeout(() => paintAtCursor(), 0)
-          }
-          return
+          break
         case 'ArrowDown':
           e.preventDefault()
-          e.stopPropagation()
           moveCursor('down', largeStep)
-          if (isSpaceHeld.current) {
-            setTimeout(() => paintAtCursor(), 0)
-          }
-          return
+          break
         case 'ArrowLeft':
           e.preventDefault()
-          e.stopPropagation()
           moveCursor('left', largeStep)
-          if (isSpaceHeld.current) {
-            setTimeout(() => paintAtCursor(), 0)
-          }
-          return
+          break
         case 'ArrowRight':
           e.preventDefault()
-          e.stopPropagation()
           moveCursor('right', largeStep)
-          if (isSpaceHeld.current) {
-            setTimeout(() => paintAtCursor(), 0)
-          }
-          return
+          break
         case 'Enter':
+        case ' ':
           if (cursor) {
             e.preventDefault()
-            e.stopPropagation()
             paintAtCursor()
           }
-          return
-      }
-    }
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === ' ' || e.code === 'Space') {
-        isSpaceHeld.current = false
+          break
       }
     }
 
     globalThis.addEventListener('keydown', handleKeyDown)
-    globalThis.addEventListener('keyup', handleKeyUp)
-    return () => {
-      globalThis.removeEventListener('keydown', handleKeyDown)
-      globalThis.removeEventListener('keyup', handleKeyUp)
-    }
+    return () => globalThis.removeEventListener('keydown', handleKeyDown)
   }, [
     canUndo,
     canRedo,
@@ -324,14 +225,19 @@ export function EditorCanvas({
     zoomIn,
     zoomOut,
     toggleGrid,
-    nextInk,
-    prevInk,
-    onSave,
-    onEscape,
     moveCursor,
     paintAtCursor,
     cursor
   ])
+
+  // Calculate canvas display size
+  const canvasSize = useMemo(() => {
+    if (!dimensions) return { width: 0, height: 0 }
+    return {
+      width: dimensions.width * zoom,
+      height: dimensions.height * zoom
+    }
+  }, [dimensions, zoom])
 
   if (!indexBuffer || !dimensions) {
     return null
@@ -344,16 +250,18 @@ export function EditorCanvas({
       indexBuffer={indexBuffer}
       width={dimensions.width}
       height={dimensions.height}
-      pixelWidth={pixelWidth}
-      pixelHeight={pixelHeight}
+      zoom={zoom}
+      viewport={viewport}
       gridVisible={gridVisible}
       cursor={cursor}
       hoveredPixel={hoveredPixel}
+      canvasWidth={canvasSize.width}
+      canvasHeight={canvasSize.height}
       getLinePalette={getLinePalette}
       onMouseMove={handleMouseMove}
       onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
+      onWheel={handleWheel}
     />
   )
 }

@@ -22,11 +22,10 @@ export function LinePalette() {
   // Actions
   const setSelectedInk = useSetAtom(editorSelectedInkAtom)
 
-  // Determine the current pixel (prefer cursor, fallback to hovered)
-  const currentPixel = cursor ?? hoveredPixel
+  // Determine the current line (prefer cursor, fallback to hovered, then 0)
+  const currentLine = cursor?.y ?? hoveredPixel?.y ?? 0
 
   // Get the effective palette for the current line
-  const currentLine = currentPixel?.y ?? 0
   const palette = useMemo(
     () => getLinePalette(currentLine),
     [getLinePalette, currentLine]

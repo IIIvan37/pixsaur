@@ -1,4 +1,3 @@
-import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   applyEditModeAtom,
@@ -7,13 +6,11 @@ import {
   hasUnsavedChangesAtom,
   historyCountAtom
 } from '@/app/store/editor'
-import DraggableDialog from '@/components/ui/draggable-dialog'
-import Icon from '@/components/ui/icon'
 import { PreviewEditorView } from './preview-editor-view'
 
 /**
  * Smart component for the preview editor.
- * Displays as a draggable modal dialog.
+ * Main container that orchestrates all editor sub-components.
  */
 export function PreviewEditor() {
   // State
@@ -34,36 +31,16 @@ export function PreviewEditor() {
     cancelEdit()
   }
 
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      handleCancel()
-    }
+  if (!isEditorMode) {
+    return null
   }
 
   return (
-    <DraggableDialog
-      open={isEditorMode}
-      onOpenChange={handleOpenChange}
-      title={
-        <>
-          <Icon name='Pencil2Icon' /> <Trans>Éditeur de Preview</Trans>
-          {editCount > 0 && (
-            <span
-              style={{ opacity: 0.7, marginLeft: '8px', fontSize: '0.85em' }}
-            >
-              ({editCount})
-            </span>
-          )}
-        </>
-      }
-      defaultPosition={{ x: 50, y: 50 }}
-    >
-      <PreviewEditorView
-        hasChanges={hasChanges}
-        editCount={editCount}
-        onApply={handleApply}
-        onCancel={handleCancel}
-      />
-    </DraggableDialog>
+    <PreviewEditorView
+      hasChanges={hasChanges}
+      editCount={editCount}
+      onApply={handleApply}
+      onCancel={handleCancel}
+    />
   )
 }

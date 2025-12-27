@@ -1,16 +1,17 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
-import type { ZoomLevel } from '@/app/store/editor'
-import Icon from '@/components/ui/icon'
-import { HelpButton } from '../help-button'
+import type { EditorTool, ZoomLevel } from '@/app/store/editor'
+import Icon, { type IconName } from '@/components/ui/icon'
 import styles from './editor-toolbar.module.css'
 
 export type EditorToolbarViewProps = Readonly<{
+  tool: EditorTool
   zoom: ZoomLevel
   gridVisible: boolean
   selectedInk: number
   canUndo: boolean
   canRedo: boolean
+  onToolChange: (tool: EditorTool) => void
   onZoomChange: (zoom: ZoomLevel) => void
   onToggleGrid: () => void
   onUndo: () => void
@@ -19,15 +20,24 @@ export type EditorToolbarViewProps = Readonly<{
 
 const ZOOM_LEVELS: ZoomLevel[] = [1, 2, 4, 8, 16]
 
+const TOOLS: Array<{ id: EditorTool; icon: IconName; labelKey: string }> = [
+  { id: 'pencil', icon: 'BlendingModeIcon', labelKey: 'Crayon' },
+  { id: 'eyedropper', icon: 'ComponentInstanceIcon', labelKey: 'Pipette' },
+  { id: 'fill', icon: 'ImageIcon', labelKey: 'Remplir' },
+  { id: 'select', icon: 'AspectRatioIcon', labelKey: 'Sélection' }
+]
+
 /**
  * Dumb component for the editor toolbar.
- * Renders zoom controls and action buttons.
+ * Renders tools, zoom controls, and action buttons.
  */
 export function EditorToolbarView({
+  tool,
   zoom,
   gridVisible,
   canUndo,
   canRedo,
+  onToolChange,
   onZoomChange,
   onToggleGrid,
   onUndo,
@@ -37,6 +47,24 @@ export function EditorToolbarView({
 
   return (
     <div className={styles.toolbar}>
+      {/* Tools */}
+      <div className={styles.toolGroup}>
+        {TOOLS.map((t) => (
+          <button
+            key={t.id}
+            type='button'
+            className={`${styles.toolButton} ${tool === t.id ? styles.active : ''}`}
+            onClick={() => onToolChange(t.id)}
+            title={_(msg`${t.labelKey}`)}
+            aria-pressed={tool === t.id}
+          >
+            <Icon name={t.icon} size={18} />
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.separator} />
+
       {/* Undo/Redo */}
       <div className={styles.toolGroup}>
         <button
@@ -45,7 +73,6 @@ export function EditorToolbarView({
           onClick={onUndo}
           disabled={!canUndo}
           title={_(msg`Annuler (Ctrl+Z)`)}
-          style={{ transform: 'scaleX(-1)' }}
         >
           <Icon name='ReloadIcon' size={18} />
         </button>
@@ -92,11 +119,6 @@ export function EditorToolbarView({
           <Icon name='AspectRatioIcon' size={18} />
         </button>
       </div>
-
-      <div className={styles.spacer} />
-
-      {/* Help */}
-      <HelpButton />
     </div>
   )
 }

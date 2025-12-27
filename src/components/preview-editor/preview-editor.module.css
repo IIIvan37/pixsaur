@@ -2,44 +2,38 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  width: 900px;
-  max-width: calc(100vw - 100px);
-  height: 80vh;
-  max-height: calc(100vh - 100px);
+  height: 100%;
   padding: var(--spacing-md);
+  background-color: var(--color-background);
 }
 
-.content {
+.header {
   display: flex;
-  gap: var(--spacing-md);
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.canvasArea {
-  flex: 1;
+.headerTitle {
   display: flex;
-  min-width: 0;
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-  width: 14rem;
-  flex-shrink: 0;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.footer {
-  display: flex;
-  justify-content: flex-end;
   align-items: center;
   gap: var(--spacing-sm);
-  padding-top: var(--spacing-md);
-  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.editCount {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  color: var(--color-foreground-muted);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 .cancelButton {
@@ -79,4 +73,25 @@
 .applyButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.content {
+  display: flex;
+  gap: var(--spacing-md);
+  flex: 1;
+  min-height: 0;
+}
+
+.canvasArea {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  width: 14rem;
+  flex-shrink: 0;
 }
