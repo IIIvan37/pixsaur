@@ -1,6 +1,4 @@
 import { atom } from 'jotai'
-import type { PixelMode } from '@/app/store/config/types'
-import { getAspectRatioMultipliers } from '@/export/cpc-calculations'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 
@@ -40,27 +38,6 @@ export const editorDimensionsAtom = atom<{
   width: number
   height: number
 } | null>(null)
-
-/**
- * Buffer original avant édition (pour comparaison lors de l'application)
- */
-export const editorOriginalBufferAtom = atom<Uint8Array | null>(null)
-
-/**
- * Mode pixel actuel (0, 1, 2) pour calculer l'aspect ratio
- */
-export const editorPixelModeAtom = atom<PixelMode>(1)
-
-/**
- * Aspect ratio des pixels basé sur le mode
- * Mode 0: pixels 2x plus larges (widthMultiplier = 2)
- * Mode 1: pixels carrés (1:1)
- * Mode 2: pixels 2x plus hauts (heightMultiplier = 2)
- */
-export const editorPixelAspectAtom = atom((get) => {
-  const mode = get(editorPixelModeAtom)
-  return getAspectRatioMultipliers(mode)
-})
 
 /**
  * Palette de base (avant application des rasters)
