@@ -8,14 +8,14 @@ import {
 } from '@/app/store/config/config'
 import {
   exportPaletteWithSlotsAtom,
-  previewImageAtom
+  finalPreviewIndexBufferAtom
 } from '@/app/store/preview/preview'
 import {
   effectivePreviewImageAtom,
+  finalRasterIndexBufferAtom,
   rasterBasePaletteAtom,
   rasterChangesAtom,
-  rasterEnabledAtom,
-  rasterIndexBufferAtom
+  rasterEnabledAtom
 } from '@/app/store/raster/raster'
 import { Notification } from '@/components/ui/notification/notification'
 import type { ExportConfig } from '@/export'
@@ -31,16 +31,17 @@ import ExportPanelView from './export-panel-view'
 
 export default function ExportPanel() {
   const { _ } = useLingui()
-  const image = useAtomValue(previewImageAtom)
-  // Get preview image with rasters already applied (for corrected PNG export)
+  // Get final index buffer with manual edits applied (non-raster mode)
+  const finalPreviewIndexBuffer = useAtomValue(finalPreviewIndexBufferAtom)
+  // Get preview image with rasters and manual edits applied (for corrected PNG export)
   const previewImageWithRasters = useAtomValue(effectivePreviewImageAtom)
   // Utiliser la palette avec slots pour l'export (conserve les positions des slots vides lockés)
   const exportPalette = useAtomValue(exportPaletteWithSlotsAtom)
   // Get raster-specific palette when raster mode is enabled
   const rasterBasePalette = useAtomValue(rasterBasePaletteAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
-  // Get raster index buffer (already optimized with correct ink assignments)
-  const rasterIndexBuffer = useAtomValue(rasterIndexBufferAtom)
+  // Get raster index buffer with manual edits applied
+  const finalRasterIndexBuffer = useAtomValue(finalRasterIndexBufferAtom)
   const cpcHardware = useAtomValue(cpcHardwareAtom)
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const rasterChanges = useAtomValue(rasterChangesAtom)
@@ -55,11 +56,11 @@ export default function ExportPanel() {
   // Get effective palette and index buffer for export
   const getExportData = () => {
     return prepareExportData({
-      image,
+      finalPreviewIndexBuffer,
       exportPalette,
       rasterEnabled,
       rasterBasePalette,
-      rasterIndexBuffer,
+      finalRasterIndexBuffer,
       cpcHardware
     })
   }
@@ -175,7 +176,7 @@ export default function ExportPanel() {
       <ExportPanelView
         onExport={() => setIsDialogOpen(true)}
         onOpenInPlayground={handleOpenInPlayground}
-        disabled={isDialogOpen || !image?.data}
+        disabled={isDialogOpen || !finalPreviewIndexBuffer}
         playgroundLoading={playgroundLoading}
       />
       <ExportConfigDialog
