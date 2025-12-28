@@ -801,9 +801,21 @@ export function applyManualEditsToBuffer(
 }
 
 /**
+ * Version de la preview (avant edits manuels).
+ * S'incrémente à chaque changement de paramètres affectant la preview.
+ * Utilisé pour détecter quand les edits manuels doivent être effacés.
+ */
+export const previewVersionAtom = atom(async (get) => {
+  // Dépend de tous les atomes qui affectent la preview
+  await get(previewIndexBufferAtom)
+  // Retourne un timestamp pour avoir une valeur unique à chaque recalcul
+  return Date.now()
+})
+
+/**
  * Stocke les modifications manuelles de pixels (de l'éditeur de preview).
  * Map: "x,y" -> inkIndex
- * Réinitialisé quand l'image source change.
+ * Réinitialisé quand l'image source ou la preview change.
  */
 export const manualPixelEditsAtom = atom<Map<string, number>>(new Map())
 
