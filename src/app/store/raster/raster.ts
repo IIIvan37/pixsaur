@@ -21,6 +21,7 @@ import {
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
 import {
+  applyManualEditsToBuffer,
   exportPaletteWithSlotsAtom,
   finalPreviewImageAtom,
   finalPreviewIndexBufferAtom,
@@ -129,23 +130,7 @@ export const finalRasterIndexBufferAtom = atom((get) => {
   if (!rasterBuffer) return null
 
   const edits = get(manualPixelEditsAtom)
-  if (edits.size === 0) return rasterBuffer
-
-  // Create a copy with manual edits applied
-  const modifiedBuffer = new Uint8Array(rasterBuffer.buffer)
-
-  for (const [key, inkIndex] of edits) {
-    const [x, y] = key.split(',').map(Number)
-    const idx = y * rasterBuffer.width + x
-    if (idx >= 0 && idx < modifiedBuffer.length) {
-      modifiedBuffer[idx] = inkIndex
-    }
-  }
-
-  return {
-    ...rasterBuffer,
-    buffer: modifiedBuffer
-  }
+  return applyManualEditsToBuffer(rasterBuffer, edits)
 })
 
 /**
