@@ -10,7 +10,6 @@ import {
   editorHoveredPixelAtom,
   editorModeAtom,
   editorSelectedInkAtom,
-  editorToolAtom,
   editorViewportAtom,
   editorZoomAtom,
   type ZoomLevel
@@ -77,7 +76,6 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
   set(editorHistoryIndexAtom, -1)
 
   // Réinitialiser les contrôles
-  set(editorToolAtom, 'pencil')
   set(editorSelectedInkAtom, 0)
   set(editorCursorAtom, null)
   set(editorViewportAtom, { x: 0, y: 0 })
@@ -368,30 +366,6 @@ export const paintAtCursorAtom = atom(null, (get, set) => {
 
   set(paintPixelAtom, cursor)
 })
-
-/**
- * Pipette : sélectionner la couleur du pixel sous le curseur
- */
-export const eyedropperAtom = atom(
-  null,
-  (get, set, { x, y }: { x: number; y: number }) => {
-    const buffer = get(editorIndexBufferAtom)
-    const dimensions = get(editorDimensionsAtom)
-
-    if (!buffer || !dimensions) return
-
-    // Vérifier les limites
-    if (x < 0 || x >= dimensions.width || y < 0 || y >= dimensions.height) {
-      return
-    }
-
-    const offset = y * dimensions.width + x
-    const inkIndex = buffer[offset]
-
-    set(editorSelectedInkAtom, inkIndex)
-    logger.debug('[Editor] Eyedropper selected ink', { inkIndex, x, y })
-  }
-)
 
 /**
  * Changer le niveau de zoom
