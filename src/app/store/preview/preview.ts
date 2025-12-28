@@ -763,6 +763,44 @@ export const previewIndexBufferAtom = atom(async (get) => {
 // ============================================================================
 
 /**
+ * Type représentant un index buffer avec ses métadonnées.
+ */
+export type IndexBufferData = {
+  buffer: Uint8Array
+  width: number
+  height: number
+  palette: Vector[]
+}
+
+/**
+ * Applique les modifications manuelles à un index buffer.
+ * @param baseBuffer - Le buffer de base (non modifié)
+ * @param edits - Map des modifications "x,y" -> inkIndex
+ * @returns Une copie du buffer avec les modifications appliquées, ou le buffer original si pas d'edits
+ */
+export function applyManualEditsToBuffer(
+  baseBuffer: IndexBufferData,
+  edits: Map<string, number>
+): IndexBufferData {
+  if (edits.size === 0) return baseBuffer
+
+  const modifiedBuffer = new Uint8Array(baseBuffer.buffer)
+
+  for (const [key, inkIndex] of edits) {
+    const [x, y] = key.split(',').map(Number)
+    const idx = y * baseBuffer.width + x
+    if (idx >= 0 && idx < modifiedBuffer.length) {
+      modifiedBuffer[idx] = inkIndex
+    }
+  }
+
+  return {
+    ...baseBuffer,
+    buffer: modifiedBuffer
+  }
+}
+
+/**
  * Stocke les modifications manuelles de pixels (de l'éditeur de preview).
  * Map: "x,y" -> inkIndex
  * Réinitialisé quand l'image source change.
@@ -835,23 +873,7 @@ export const finalPreviewIndexBufferAtom = atom(async (get) => {
   if (!baseData) return null
 
   const edits = get(manualPixelEditsAtom)
-  if (edits.size === 0) return baseData
-
-  // Créer une copie du buffer avec les modifications
-  const modifiedBuffer = new Uint8Array(baseData.buffer)
-
-  for (const [key, inkIndex] of edits) {
-    const [x, y] = key.split(',').map(Number)
-    const idx = y * baseData.width + x
-    if (idx >= 0 && idx < modifiedBuffer.length) {
-      modifiedBuffer[idx] = inkIndex
-    }
-  }
-
-  return {
-    ...baseData,
-    buffer: modifiedBuffer
-  }
+  return applyManualEditsToBuffer(baseData, edits)
 })
 
 /**
