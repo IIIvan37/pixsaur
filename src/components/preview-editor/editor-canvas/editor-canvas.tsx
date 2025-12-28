@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import {
   canRedoAtom,
   canUndoAtom,
@@ -76,6 +76,43 @@ export function EditorCanvas({
   // Calculate pixel dimensions with aspect ratio
   const pixelWidth = zoom * pixelAspect.widthMultiplier
   const pixelHeight = zoom * pixelAspect.heightMultiplier
+
+  // Track previous zoom and pixel dimensions for scroll adjustment
+  const prevZoomRef = useRef(zoom)
+  const prevPixelWidthRef = useRef(pixelWidth)
+  const prevPixelHeightRef = useRef(pixelHeight)
+
+  // Adjust scroll position to maintain center when zoom changes
+  useLayoutEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const prevPixelWidth = prevPixelWidthRef.current
+    const prevPixelHeight = prevPixelHeightRef.current
+
+    // Only adjust if zoom actually changed
+    if (prevPixelWidth !== pixelWidth || prevPixelHeight !== pixelHeight) {
+      // Calculate the center point in the old coordinate system
+      const oldCenterX = container.scrollLeft + container.clientWidth / 2
+      const oldCenterY = container.scrollTop + container.clientHeight / 2
+
+      // Convert to image coordinates (which pixel was at center)
+      const imageCenterX = oldCenterX / prevPixelWidth
+      const imageCenterY = oldCenterY / prevPixelHeight
+
+      // Calculate new scroll position to keep the same image point at center
+      const newScrollX = imageCenterX * pixelWidth - container.clientWidth / 2
+      const newScrollY = imageCenterY * pixelHeight - container.clientHeight / 2
+
+      container.scrollLeft = Math.max(0, newScrollX)
+      container.scrollTop = Math.max(0, newScrollY)
+    }
+
+    // Update refs for next change
+    prevZoomRef.current = zoom
+    prevPixelWidthRef.current = pixelWidth
+    prevPixelHeightRef.current = pixelHeight
+  }, [containerRef, zoom, pixelWidth, pixelHeight])
 
   // Track if space is held for drawing mode
   const isSpaceHeld = useRef(false)
