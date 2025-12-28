@@ -1,11 +1,9 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useEffect, useRef } from 'react'
 import {
   clearManualEditsAtom,
   hasManualEditsAtom,
-  manualEditsCountAtom,
-  previewVersionAtom
+  manualEditsCountAtom
 } from '@/app/store/preview/preview'
 import Icon from '@/components/ui/icon'
 import styles from './manual-edits-warning.module.css'
@@ -13,26 +11,11 @@ import styles from './manual-edits-warning.module.css'
 /**
  * Warning banner that appears when there are manual pixel edits.
  * Warns the user that changing settings will affect their edits.
- * Automatically clears edits when the preview is regenerated.
  */
 export function ManualEditsWarning() {
   const hasEdits = useAtomValue(hasManualEditsAtom)
   const editCount = useAtomValue(manualEditsCountAtom)
   const clearEdits = useSetAtom(clearManualEditsAtom)
-  const previewVersion = useAtomValue(previewVersionAtom)
-  const previousVersionRef = useRef<number | null>(null)
-
-  // Clear edits when preview version changes (settings modified, new image, etc.)
-  useEffect(() => {
-    if (
-      previousVersionRef.current !== null &&
-      previewVersion !== previousVersionRef.current
-    ) {
-      // Preview has been regenerated, clear manual edits
-      clearEdits()
-    }
-    previousVersionRef.current = previewVersion
-  }, [previewVersion, clearEdits])
 
   if (!hasEdits) return null
 

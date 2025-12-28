@@ -17,18 +17,14 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
-  modeREnabledAtom,
   paletteStrategyAtom
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
-import { modeRPreviewImageAtom } from '../preview/mode-r-preview'
 import {
-  applyManualEditsToBuffer,
   exportPaletteWithSlotsAtom,
   finalPreviewImageAtom,
   finalPreviewIndexBufferAtom,
   hasManualEditsAtom,
-  manualPixelEditsAtom,
   positionedNormalizedImageAtom,
   previewImageAtom
 } from '../preview/preview'
@@ -121,38 +117,6 @@ export const rasterIndexBufferAtom = atom((get) => {
     height,
     palette: quantizedGlobalPalette
   }
-})
-
-/**
- * Final raster index buffer with manual pixel edits applied.
- * Applies manual edits on top of the raster-optimized buffer.
- */
-export const finalRasterIndexBufferAtom = atom((get) => {
-  const rasterBuffer = get(rasterIndexBufferAtom)
-  if (!rasterBuffer) return null
-
-  const edits = get(manualPixelEditsAtom)
-  return applyManualEditsToBuffer(rasterBuffer, edits)
-})
-
-/**
- * Effective index buffer for editing: returns the raster-optimized buffer when
- * raster mode is enabled, otherwise returns the standard preview buffer.
- * This is the buffer that should be used when entering the editor.
- */
-export const effectiveIndexBufferAtom = atom(async (get) => {
-  const rasterEnabled = get(rasterEnabledAtom)
-
-  if (rasterEnabled) {
-    // Use raster-optimized buffer with manual edits if available
-    const rasterBuffer = get(finalRasterIndexBufferAtom)
-    if (rasterBuffer) {
-      return rasterBuffer
-    }
-  }
-
-  // Fall back to standard preview buffer (with manual edits)
-  return await get(finalPreviewIndexBufferAtom)
 })
 
 /**
@@ -362,8 +326,8 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   // Get current mode config to validate dimensions
   const modeConfig = get(effectiveModeConfigAtom)
 
-  // Check if we have an optimized raster index buffer (with manual edits applied)
-  const rasterIndexBuffer = get(finalRasterIndexBufferAtom)
+  // Check if we have an optimized raster index buffer
+  const rasterIndexBuffer = get(rasterIndexBufferAtom)
 
   if (rasterIndexBuffer) {
     // Validate that buffer dimensions match current mode config
@@ -448,20 +412,10 @@ export const rasterPreviewImageAtom = atom(async (get) => {
 })
 
 /**
- * Effective preview image atom: returns the appropriate preview based on mode.
- * Priority: Mode R > Raster > Manual Edits > Standard
- * Note: Mode R and Raster are mutually exclusive
+ * Effective preview image atom: returns raster preview when enabled,
+ * otherwise returns preview with manual edits applied
  */
 export const effectivePreviewImageAtom = atom(async (get) => {
-  // Mode R takes priority and is incompatible with rasters
-  const modeREnabled = get(modeREnabledAtom)
-  if (modeREnabled) {
-    const modeRPreview = await get(modeRPreviewImageAtom)
-    if (modeRPreview) {
-      return modeRPreview
-    }
-  }
-
   // Force re-evaluation when raster version changes
   get(rasterVersionAtom)
 

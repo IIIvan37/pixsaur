@@ -20,11 +20,26 @@ export type EditorToolbarViewProps = Readonly<{
 
 const ZOOM_LEVELS: ZoomLevel[] = [1, 2, 4, 8, 16]
 
-const TOOLS: Array<{ id: EditorTool; icon: IconName; labelKey: string }> = [
-  { id: 'pencil', icon: 'BlendingModeIcon', labelKey: 'Crayon' },
-  { id: 'eyedropper', icon: 'ComponentInstanceIcon', labelKey: 'Pipette' },
-  { id: 'fill', icon: 'ImageIcon', labelKey: 'Remplir' },
-  { id: 'select', icon: 'AspectRatioIcon', labelKey: 'Sélection' }
+const TOOLS: Array<{
+  id: EditorTool
+  icon: IconName
+  labelKey: string
+  shortcut: string
+}> = [
+  { id: 'pencil', icon: 'BlendingModeIcon', labelKey: 'Crayon', shortcut: 'P' },
+  {
+    id: 'eyedropper',
+    icon: 'ComponentInstanceIcon',
+    labelKey: 'Pipette',
+    shortcut: 'I'
+  },
+  { id: 'fill', icon: 'ImageIcon', labelKey: 'Remplir', shortcut: 'G' },
+  {
+    id: 'select',
+    icon: 'AspectRatioIcon',
+    labelKey: 'Sélection',
+    shortcut: 'S'
+  }
 ]
 
 /**
@@ -55,7 +70,7 @@ export function EditorToolbarView({
             type='button'
             className={`${styles.toolButton} ${tool === t.id ? styles.active : ''}`}
             onClick={() => onToolChange(t.id)}
-            title={_(msg`${t.labelKey}`)}
+            title={`${_(msg`${t.labelKey}`)} (${t.shortcut})`}
             aria-pressed={tool === t.id}
           >
             <Icon name={t.icon} size={18} />

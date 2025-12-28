@@ -1,4 +1,4 @@
-import { forwardRef, useEffect } from 'react'
+import { forwardRef, useImperativeHandle, useLayoutEffect, useRef } from 'react'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import styles from './editor-canvas.module.css'
 
@@ -7,56 +7,37 @@ export type EditorCanvasViewProps = Readonly<{
   indexBuffer: Uint8Array
   width: number
   height: number
-  zoom: number
-  viewport: { x: number; y: number }
+  pixelWidth: number
+  pixelHeight: number
   gridVisible: boolean
   cursor: { x: number; y: number } | null
   hoveredPixel: { x: number; y: number } | null
-  canvasWidth: number
-  canvasHeight: number
   getLinePalette: (line: number) => Vector<'RGB'>[]
   onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void
   onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void
+  onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void
   onMouseLeave: () => void
-  onWheel: (e: React.WheelEvent<HTMLCanvasElement>) => void
 }>
 
-type RenderContext = {
-  ctx: CanvasRenderingContext2D
-  zoom: number
-  viewport: { x: number; y: number }
-  canvasWidth: number
-  canvasHeight: number
-}
-
 /**
- * Render pixels to canvas
+ * Render all pixels to canvas (full image with aspect ratio)
  */
 function renderPixels(
-  rc: RenderContext,
+  ctx: CanvasRenderingContext2D,
   indexBuffer: Uint8Array,
   width: number,
   height: number,
+  pixelWidth: number,
+  pixelHeight: number,
   getLinePalette: (line: number) => Vector<'RGB'>[]
 ) {
-  const { ctx, zoom, viewport, canvasWidth, canvasHeight } = rc
-  const startX = Math.floor(viewport.x / zoom)
-  const startY = Math.floor(viewport.y / zoom)
-  const visibleWidth = Math.ceil(canvasWidth / zoom) + 1
-  const visibleHeight = Math.ceil(canvasHeight / zoom) + 1
-
-  for (let y = startY; y < Math.min(startY + visibleHeight, height); y++) {
+  for (let y = 0; y < height; y++) {
     const palette = getLinePalette(y)
-    for (let x = startX; x < Math.min(startX + visibleWidth, width); x++) {
+    for (let x = 0; x < width; x++) {
       const inkIndex = indexBuffer[y * width + x]
       const color = palette[inkIndex] ?? [0, 0, 0]
       ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`
-      ctx.fillRect(
-        (x - startX) * zoom - (viewport.x % zoom),
-        (y - startY) * zoom - (viewport.y % zoom),
-        zoom,
-        zoom
-      )
+      ctx.fillRect(x * pixelWidth, y * pixelHeight, pixelWidth, pixelHeight)
     }
   }
 }
@@ -64,88 +45,71 @@ function renderPixels(
 /**
  * Draw grid overlay
  */
-function renderGrid(rc: RenderContext) {
-  const { ctx, zoom, viewport, canvasWidth, canvasHeight } = rc
+function renderGrid(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  pixelWidth: number,
+  pixelHeight: number
+) {
+  const canvasWidth = width * pixelWidth
+  const canvasHeight = height * pixelHeight
+
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
   ctx.lineWidth = 1
 
-  const offsetX = -(viewport.x % zoom)
-  const offsetY = -(viewport.y % zoom)
-
   ctx.beginPath()
-  for (let x = offsetX; x <= canvasWidth; x += zoom) {
-    ctx.moveTo(x + 0.5, 0)
-    ctx.lineTo(x + 0.5, canvasHeight)
+  for (let x = 0; x <= width; x++) {
+    const screenX = x * pixelWidth
+    ctx.moveTo(screenX + 0.5, 0)
+    ctx.lineTo(screenX + 0.5, canvasHeight)
   }
-  ctx.stroke()
-
-  ctx.beginPath()
-  for (let y = offsetY; y <= canvasHeight; y += zoom) {
-    ctx.moveTo(0, y + 0.5)
-    ctx.lineTo(canvasWidth, y + 0.5)
+  for (let y = 0; y <= height; y++) {
+    const screenY = y * pixelHeight
+    ctx.moveTo(0, screenY + 0.5)
+    ctx.lineTo(canvasWidth, screenY + 0.5)
   }
   ctx.stroke()
 }
 
 /**
- * Draw cursor highlight
+ * Draw cursor highlight (keyboard navigation)
  */
 function renderCursor(
-  rc: RenderContext,
-  cursorPos: { x: number; y: number },
-  startX: number,
-  startY: number
+  ctx: CanvasRenderingContext2D,
+  cursor: { x: number; y: number },
+  pixelWidth: number,
+  pixelHeight: number
 ) {
-  const { ctx, zoom, viewport, canvasWidth, canvasHeight } = rc
-  const screenX = (cursorPos.x - startX) * zoom - (viewport.x % zoom)
-  const screenY = (cursorPos.y - startY) * zoom - (viewport.y % zoom)
+  const screenX = cursor.x * pixelWidth
+  const screenY = cursor.y * pixelHeight
 
-  const isVisible =
-    screenX >= -zoom &&
-    screenX < canvasWidth + zoom &&
-    screenY >= -zoom &&
-    screenY < canvasHeight + zoom
-
-  if (!isVisible) return
-
-  ctx.strokeStyle = '#ffffff'
+  ctx.strokeStyle = '#ffcc00'
   ctx.lineWidth = 2
-  ctx.strokeRect(screenX + 1, screenY + 1, zoom - 2, zoom - 2)
-
-  ctx.strokeStyle = '#000000'
-  ctx.lineWidth = 1
-  ctx.strokeRect(screenX + 2, screenY + 2, zoom - 4, zoom - 4)
+  ctx.strokeRect(screenX + 1, screenY + 1, pixelWidth - 2, pixelHeight - 2)
 }
 
 /**
  * Draw hover highlight
  */
 function renderHover(
-  rc: RenderContext,
-  hoverPos: { x: number; y: number },
-  startX: number,
-  startY: number
+  ctx: CanvasRenderingContext2D,
+  pixel: { x: number; y: number },
+  pixelWidth: number,
+  pixelHeight: number
 ) {
-  const { ctx, zoom, viewport, canvasWidth, canvasHeight } = rc
-  const screenX = (hoverPos.x - startX) * zoom - (viewport.x % zoom)
-  const screenY = (hoverPos.y - startY) * zoom - (viewport.y % zoom)
-
-  const isVisible =
-    screenX >= -zoom &&
-    screenX < canvasWidth + zoom &&
-    screenY >= -zoom &&
-    screenY < canvasHeight + zoom
-
-  if (!isVisible) return
+  const screenX = pixel.x * pixelWidth
+  const screenY = pixel.y * pixelHeight
 
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
   ctx.lineWidth = 1
-  ctx.strokeRect(screenX + 0.5, screenY + 0.5, zoom - 1, zoom - 1)
+  ctx.strokeRect(screenX + 0.5, screenY + 0.5, pixelWidth - 1, pixelHeight - 1)
 }
 
 /**
- * Dumb component for rendering the editor canvas.
- * Handles only rendering logic, no state management.
+ * Dumb component for the editor canvas.
+ * Renders the pixel grid with aspect ratio, grid, cursor, and hover highlights.
+ * Uses native scrolling for navigation.
  */
 export const EditorCanvasView = forwardRef<
   HTMLCanvasElement,
@@ -156,51 +120,62 @@ export const EditorCanvasView = forwardRef<
     indexBuffer,
     width,
     height,
-    zoom,
-    viewport,
+    pixelWidth,
+    pixelHeight,
     gridVisible,
     cursor,
     hoveredPixel,
-    canvasWidth,
-    canvasHeight,
     getLinePalette,
     onMouseMove,
     onMouseDown,
-    onMouseLeave,
-    onWheel
+    onMouseUp,
+    onMouseLeave
   },
   ref
 ) {
+  // Local ref for canvas access in useEffect
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Expose canvas ref to parent via forwardRef
+  useImperativeHandle(ref, () => canvasRef.current!, [])
+
+  const canvasWidth = width * pixelWidth
+  const canvasHeight = height * pixelHeight
+
+  // Minimum pixel size for grid visibility (4px in smallest dimension)
+  const minPixelSize = Math.min(pixelWidth, pixelHeight)
+
   // Render the canvas whenever dependencies change
-  useEffect(() => {
-    const canvas = typeof ref === 'function' ? null : ref?.current
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Create render context
-    const rc: RenderContext = { ctx, zoom, viewport, canvasWidth, canvasHeight }
-
     // Clear canvas
     ctx.fillStyle = '#1a1a1a'
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-    // Calculate visible region start
-    const startX = Math.floor(viewport.x / zoom)
-    const startY = Math.floor(viewport.y / zoom)
+    // Render all pixels
+    renderPixels(
+      ctx,
+      indexBuffer,
+      width,
+      height,
+      pixelWidth,
+      pixelHeight,
+      getLinePalette
+    )
 
-    // Render pixels
-    renderPixels(rc, indexBuffer, width, height, getLinePalette)
-
-    // Draw grid if zoom >= 4
-    if (gridVisible && zoom >= 4) {
-      renderGrid(rc)
+    // Draw grid if pixel size >= 4
+    if (gridVisible && minPixelSize >= 4) {
+      renderGrid(ctx, width, height, pixelWidth, pixelHeight)
     }
 
     // Draw cursor (keyboard navigation)
     if (cursor) {
-      renderCursor(rc, cursor, startX, startY)
+      renderCursor(ctx, cursor, pixelWidth, pixelHeight)
     }
 
     // Draw hover highlight (if different from cursor)
@@ -209,34 +184,34 @@ export const EditorCanvasView = forwardRef<
       (!cursor || hoveredPixel.x !== cursor.x || hoveredPixel.y !== cursor.y)
 
     if (shouldShowHover) {
-      renderHover(rc, hoveredPixel, startX, startY)
+      renderHover(ctx, hoveredPixel, pixelWidth, pixelHeight)
     }
   }, [
-    ref,
     indexBuffer,
     width,
     height,
-    zoom,
-    viewport,
+    pixelWidth,
+    pixelHeight,
     gridVisible,
     cursor,
     hoveredPixel,
     canvasWidth,
     canvasHeight,
+    minPixelSize,
     getLinePalette
   ])
 
   return (
     <div ref={containerRef} className={styles.container}>
       <canvas
-        ref={ref}
+        ref={canvasRef}
         width={canvasWidth}
         height={canvasHeight}
         className={styles.canvas}
         onMouseMove={onMouseMove}
         onMouseDown={onMouseDown}
+        onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
-        onWheel={onWheel}
       />
     </div>
   )
