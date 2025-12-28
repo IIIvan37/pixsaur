@@ -58,6 +58,18 @@
   opacity: 1;
 }
 
+.playgroundLink {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.playgroundLink:hover {
+  opacity: 1;
+}
+
 .footer {
   margin-top: var(--spacing-lg);
   text-align: center;
