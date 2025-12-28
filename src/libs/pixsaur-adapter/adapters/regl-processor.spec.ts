@@ -236,7 +236,7 @@ describe('ReGLProcessor', () => {
         preselected,
         quantConfig: expect.objectContaining({
           distanceMetric: 'euclidean',
-          contrastStrategy: undefined // Obsolete parameter
+          paletteStrategy: 'frequency-balanced'
         })
       })
       expect(mockQuantizer.quantize).toHaveBeenCalledWith(2)

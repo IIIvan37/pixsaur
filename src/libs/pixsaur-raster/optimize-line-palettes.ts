@@ -1270,7 +1270,7 @@ function selectPaletteFarthestPoint(
 /**
  * Options for raster preprocessing
  */
-export interface RasterPreprocessOptions {
+interface RasterPreprocessOptions {
   /**
    * Dithering intensity from 0 (no dithering) to 1 (full dithering)
    *

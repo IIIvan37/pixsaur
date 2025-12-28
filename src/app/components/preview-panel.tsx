@@ -1,6 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { editorModeAtom, enterEditModeAtom } from '@/app/store/editor'
+import { imageAtom } from '@/app/store/image/image'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import { ColorPalette } from '@/components/color-palette/color-palette'
 import { RasterBasePalette } from '@/components/color-palette/raster-base-palette'
@@ -13,6 +14,7 @@ const PreviewPanel = () => {
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const editorMode = useAtomValue(editorModeAtom)
   const enterEditMode = useSetAtom(enterEditModeAtom)
+  const image = useAtomValue(imageAtom)
 
   const handleEditClick = () => {
     enterEditMode()
@@ -22,7 +24,7 @@ const PreviewPanel = () => {
     <Panel>
       <Header
         title={<Trans>Aperçu</Trans>}
-        action={editorMode ? undefined : handleEditClick}
+        action={editorMode || !image ? undefined : handleEditClick}
         actionLabel={<Trans>Éditer</Trans>}
         icon='Pencil2Icon'
       />
