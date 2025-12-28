@@ -2,6 +2,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import type { ZoomLevel } from '@/app/store/editor'
 import Icon from '@/components/ui/icon'
+import { HelpButton } from '../help-button'
 import styles from './editor-toolbar.module.css'
 
 export type EditorToolbarViewProps = Readonly<{
@@ -91,6 +92,11 @@ export function EditorToolbarView({
           <Icon name='AspectRatioIcon' size={18} />
         </button>
       </div>
+
+      <div className={styles.spacer} />
+
+      {/* Help */}
+      <HelpButton />
     </div>
   )
 }

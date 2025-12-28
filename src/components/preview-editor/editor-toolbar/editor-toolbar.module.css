@@ -21,6 +21,10 @@
   margin: 0 var(--spacing-xs);
 }
 
+.spacer {
+  flex: 1;
+}
+
 .label {
   font-size: var(--font-size-xs);
   color: var(--color-foreground-muted);
