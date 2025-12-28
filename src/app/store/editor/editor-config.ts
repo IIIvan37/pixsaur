@@ -10,12 +10,6 @@ import { atom } from 'jotai'
 export const editorModeAtom = atom<boolean>(false)
 
 /**
- * Outil sélectionné dans l'éditeur
- */
-export type EditorTool = 'pencil' | 'eyedropper' | 'fill' | 'select'
-export const editorToolAtom = atom<EditorTool>('pencil')
-
-/**
  * Niveau de zoom (1, 2, 4, 8, 16)
  */
 export type ZoomLevel = 1 | 2 | 4 | 8 | 16

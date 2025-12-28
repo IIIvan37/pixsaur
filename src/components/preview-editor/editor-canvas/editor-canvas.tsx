@@ -3,16 +3,13 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import {
   canRedoAtom,
   canUndoAtom,
-  type EditorTool,
   editorCursorAtom,
   editorDimensionsAtom,
   editorGridVisibleAtom,
   editorHoveredPixelAtom,
   editorIndexBufferAtom,
   editorPixelAspectAtom,
-  editorToolAtom,
   editorZoomAtom,
-  eyedropperAtom,
   getLinePaletteAtom,
   moveCursorAtom,
   nextInkAtom,
@@ -52,7 +49,6 @@ export function EditorCanvas({
   const gridVisible = useAtomValue(editorGridVisibleAtom)
   const cursor = useAtomValue(editorCursorAtom)
   const hoveredPixel = useAtomValue(editorHoveredPixelAtom)
-  const tool = useAtomValue(editorToolAtom)
   const getLinePalette = useAtomValue(getLinePaletteAtom)
   const canUndo = useAtomValue(canUndoAtom)
   const canRedo = useAtomValue(canRedoAtom)
@@ -60,9 +56,7 @@ export function EditorCanvas({
   // Actions
   const setHoveredPixel = useSetAtom(editorHoveredPixelAtom)
   const setCursor = useSetAtom(editorCursorAtom)
-  const setTool = useSetAtom(editorToolAtom)
   const paintPixel = useSetAtom(paintPixelAtom)
-  const eyedropper = useSetAtom(eyedropperAtom)
   const moveCursor = useSetAtom(moveCursorAtom)
   const paintAtCursor = useSetAtom(paintAtCursorAtom)
   const undo = useSetAtom(undoEditAtom)
@@ -147,15 +141,15 @@ export function EditorCanvas({
 
       setHoveredPixel(imagePos)
 
-      // Paint while dragging with pencil tool OR while holding space
-      if (imagePos && tool === 'pencil') {
+      // Paint while dragging OR while holding space
+      if (imagePos) {
         if (e.buttons === 1 || isSpaceHeld.current) {
           isDragging.current = true
           paintPixel(imagePos)
         }
       }
     },
-    [screenToImage, setHoveredPixel, tool, paintPixel]
+    [screenToImage, setHoveredPixel, paintPixel]
   )
 
   // Handle mouse down - start potential drag
@@ -170,12 +164,10 @@ export function EditorCanvas({
 
       if (!imagePos) return
 
-      // Eyedropper works on click
-      if (tool === 'eyedropper') {
-        eyedropper(imagePos)
-      }
+      // Start painting on mouse down
+      paintPixel(imagePos)
     },
-    [screenToImage, tool, eyedropper]
+    [screenToImage, paintPixel]
   )
 
   // Handle mouse up - set cursor position if it was a click (not drag)
@@ -263,23 +255,6 @@ export function EditorCanvas({
         return
       }
 
-      // Tool shortcuts (when not holding Ctrl/Cmd)
-      if (!isCtrlOrCmd) {
-        const toolShortcuts: Record<string, EditorTool> = {
-          p: 'pencil',
-          b: 'pencil', // Brush alias
-          i: 'eyedropper',
-          g: 'fill', // Paint bucket (fill)
-          s: 'select'
-        }
-        const lowKey = e.key.toLowerCase()
-        if (lowKey in toolShortcuts) {
-          e.preventDefault()
-          setTool(toolShortcuts[lowKey])
-          return
-        }
-      }
-
       // Save (Ctrl/Cmd + S)
       if (isCtrlOrCmd && e.key === 's') {
         e.preventDefault()
@@ -300,7 +275,7 @@ export function EditorCanvas({
         e.stopPropagation()
         isSpaceHeld.current = true
         // Paint at current cursor position
-        if (cursor && tool === 'pencil') {
+        if (cursor) {
           paintAtCursor()
         }
         return
@@ -313,7 +288,7 @@ export function EditorCanvas({
           e.preventDefault()
           e.stopPropagation()
           moveCursor('up', largeStep)
-          if (isSpaceHeld.current && tool === 'pencil') {
+          if (isSpaceHeld.current) {
             // Paint after cursor moved (use setTimeout to ensure cursor is updated)
             setTimeout(() => paintAtCursor(), 0)
           }
@@ -322,7 +297,7 @@ export function EditorCanvas({
           e.preventDefault()
           e.stopPropagation()
           moveCursor('down', largeStep)
-          if (isSpaceHeld.current && tool === 'pencil') {
+          if (isSpaceHeld.current) {
             setTimeout(() => paintAtCursor(), 0)
           }
           return
@@ -330,7 +305,7 @@ export function EditorCanvas({
           e.preventDefault()
           e.stopPropagation()
           moveCursor('left', largeStep)
-          if (isSpaceHeld.current && tool === 'pencil') {
+          if (isSpaceHeld.current) {
             setTimeout(() => paintAtCursor(), 0)
           }
           return
@@ -338,7 +313,7 @@ export function EditorCanvas({
           e.preventDefault()
           e.stopPropagation()
           moveCursor('right', largeStep)
-          if (isSpaceHeld.current && tool === 'pencil') {
+          if (isSpaceHeld.current) {
             setTimeout(() => paintAtCursor(), 0)
           }
           return
@@ -374,10 +349,8 @@ export function EditorCanvas({
     toggleGrid,
     nextInk,
     prevInk,
-    setTool,
     onSave,
     onEscape,
-    tool,
     moveCursor,
     paintAtCursor,
     cursor

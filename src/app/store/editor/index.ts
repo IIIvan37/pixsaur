@@ -5,7 +5,6 @@ export {
   applyEditModeAtom,
   cancelEditModeAtom,
   enterEditModeAtom,
-  eyedropperAtom,
   inkCountAtom,
   moveCursorAtom,
   nextInkAtom,
@@ -23,13 +22,11 @@ export {
 } from './editor-actions'
 // Configuration
 export {
-  type EditorTool,
   editorCursorAtom,
   editorGridVisibleAtom,
   editorHoveredPixelAtom,
   editorModeAtom,
   editorSelectedInkAtom,
-  editorToolAtom,
   editorViewportAtom,
   editorZoomAtom,
   type ZoomLevel
