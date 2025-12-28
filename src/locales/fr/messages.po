@@ -26,6 +26,10 @@ msgstr "{0} image(s) prête(s) à exporter"
 #~ msgid "{0} remaining"
 #~ msgstr "{0} restant"
 
+#: src/components/manual-edits-warning/manual-edits-warning.tsx:27
+msgid "{editCount} pixel(s) modifié(s) manuellement. Modifier les paramètres peut affecter ces modifications."
+msgstr "{editCount} pixel(s) modifié(s) manuellement. Modifier les paramètres peut affecter ces modifications."
+
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:173
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} restant"
@@ -34,7 +38,7 @@ msgstr "{remainingSpace} restant"
 msgid "{uniqueColorsCount} couleur(s) unique(s)"
 msgstr "{uniqueColorsCount} couleur(s) unique(s)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:302
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:304
 msgid "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
 msgstr "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
 
@@ -83,6 +87,14 @@ msgstr "Fichiers DSK supplémentaires"
 #~ msgid "Adjustments, Source & Preview"
 #~ msgstr "Ajustements, Source & Aperçu"
 
+#: src/components/preview-editor/help-button/help-button.tsx:30
+msgid "Afficher/masquer la grille"
+msgstr "Afficher/masquer la grille"
+
+#: src/components/preview-editor/help-button/help-button.tsx:73
+msgid "Aide et raccourcis"
+msgstr "Aide et raccourcis"
+
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:397
 msgid "Ajouter un changement"
 msgstr "Ajouter un changement"
@@ -112,16 +124,26 @@ msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
 #: src/components/export-panel/export-config-dialog.tsx:131
+#: src/components/preview-editor/help-button/help-button.tsx:23
+#: src/components/preview-editor/preview-editor-view.tsx:61
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
 #: src/components/ui/simple-color-picker/simple-rgb-picker.tsx:66
 msgid "Annuler"
 msgstr "Annuler"
 
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:47
+msgid "Annuler (Ctrl+Z)"
+msgstr "Annuler (Ctrl+Z)"
+
+#: src/components/preview-editor/help-button/help-button.tsx:59
+msgid "Annuler et fermer"
+msgstr "Annuler et fermer"
+
 #: src/components/image-controls/image-controls-view.tsx:119
 #~ msgid "Anti-Aliasing"
 #~ msgstr "Anti-Crénelage"
 
-#: src/app/components/preview-panel.tsx:16
+#: src/app/components/preview-panel.tsx:24
 msgid "Aperçu"
 msgstr "Aperçu"
 
@@ -129,11 +151,19 @@ msgstr "Aperçu"
 msgid "Applique un lissage horizontal pour réduire les artefacts de pixels. Désactivé en mode raster."
 msgstr "Applique un lissage horizontal pour réduire les artefacts de pixels. Désactivé en mode raster."
 
+#: src/components/preview-editor/preview-editor-view.tsx:70
+msgid "Appliquer"
+msgstr "Appliquer"
+
+#: src/components/preview-editor/help-button/help-button.tsx:57
+msgid "Appliquer les modifications"
+msgstr "Appliquer les modifications"
+
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:369
 msgid "Aucun changement raster défini."
 msgstr "Aucun changement raster défini."
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:203
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:205
 msgid "Aucun changement raster généré. L'image utilise déjà des couleurs optimales pour la palette actuelle."
 msgstr "Aucun changement raster généré. L'image utilise déjà des couleurs optimales pour la palette actuelle."
 
@@ -184,7 +214,7 @@ msgstr "Score Équilibré"
 msgid "Bleu"
 msgstr "Bleu"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:280
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:282
 msgid "Bonus de continuité"
 msgstr "Bonus de continuité"
 
@@ -209,7 +239,7 @@ msgstr "Centrer l'image"
 msgid "Changements par ligne"
 msgstr "Changements par ligne"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:314
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:316
 msgid "Changements Raster"
 msgstr "Changements Raster"
 
@@ -229,7 +259,7 @@ msgstr "Choisissez la stratégie de génération de palette pour optimiser la qu
 #~ msgid "Clear all images from workspace"
 #~ msgstr "Supprimer toutes les images du workspace"
 
-#: src/components/image-preview/image-preview.tsx:169
+#: src/components/image-preview/image-preview.tsx:171
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
 msgstr "Cliquer pour ouvrir dans un nouvel onglet"
 
@@ -242,11 +272,11 @@ msgstr "Cliquer pour ouvrir dans un nouvel onglet"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:233
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:235
 msgid "Coefficient d'erreur horizontale"
 msgstr "Coefficient d'erreur horizontale"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:219
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:221
 msgid "Coefficient d'erreur verticale"
 msgstr "Coefficient d'erreur verticale"
 
@@ -284,6 +314,7 @@ msgstr "Convertisseur d'images Amstrad CPC"
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 
+#: src/components/preview-editor/pixel-info/pixel-info-view.tsx:55
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:161
 msgid "Couleur"
 msgstr "Couleur"
@@ -318,6 +349,14 @@ msgstr "CPC Pixel Mode"
 #~ msgid "Début"
 #~ msgstr "Début"
 
+#: src/components/preview-editor/help-button/help-button.tsx:42
+msgid "Déplacement rapide (×8)"
+msgstr "Déplacement rapide (×8)"
+
+#: src/components/preview-editor/help-button/help-button.tsx:37
+msgid "Déplacer le curseur"
+msgstr "Déplacer le curseur"
+
 #: src/components/color-palette/color-grid/color-grid-view.tsx:74
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
@@ -336,7 +375,7 @@ msgstr "Dimensions"
 #~ msgid "Disquette DSK (image écran)"
 #~ msgstr "Disquette DSK (image écran)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:265
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:267
 msgid "Distance de continuité"
 msgstr "Distance de continuité"
 
@@ -397,6 +436,14 @@ msgstr "Workspace DSK exporté avec succès !"
 msgid "palette.strategy.adaptive.desc"
 msgstr "Stratégie dynamique selon l'image"
 
+#: src/app/components/preview-panel.tsx:26
+msgid "Éditer"
+msgstr "Éditer"
+
+#: src/components/preview-editor/preview-editor.tsx:49
+msgid "Éditeur de Preview"
+msgstr "Éditeur de Preview"
+
 #: src/app/components/adjustements/adjustement.view.tsx:48
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:53
 msgid "Effets"
@@ -410,6 +457,8 @@ msgstr "Effets Raster"
 #~ msgid "En Mode 0 CPC Plus, 12 couleurs sont fixes (indices 4-15) et 4 slots raster (indices 0-3) peuvent changer par ligne."
 #~ msgstr "En Mode 0 CPC Plus, 12 couleurs sont fixes (indices 4-15) et 4 slots raster (indices 0-3) peuvent changer par ligne."
 
+#: src/components/preview-editor/line-palette/line-palette-view.tsx:76
+#: src/components/preview-editor/pixel-info/pixel-info-view.tsx:48
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:148
 msgid "Encre"
 msgstr "Encre"
@@ -417,6 +466,14 @@ msgstr "Encre"
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:134
 msgid "Encre {inkIndex}"
 msgstr "Encre {inkIndex}"
+
+#: src/components/preview-editor/help-button/help-button.tsx:32
+msgid "Encre précédente"
+msgstr "Encre précédente"
+
+#: src/components/preview-editor/help-button/help-button.tsx:33
+msgid "Encre suivante"
+msgstr "Encre suivante"
 
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #: src/components/export-panel/dsk-files-manager.tsx:65
@@ -463,14 +520,14 @@ msgstr "Exposition"
 msgid "Exposition & Tonalité"
 msgstr "Exposition & Tonalité"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:255
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:257
 msgid "Extraction palette de base"
 msgstr "Extraction palette de base"
 
-#. placeholder {0}: error instanceof Error ? error.message : "Unknown error"
-#. placeholder {0}: result.error ?? "Unknown error"
-#: src/components/export-panel/export-panel.tsx:227
-#: src/components/export-panel/export-panel.tsx:238
+#. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
+#. placeholder {0}: result.error ?? 'Unknown error'
+#: src/components/export-panel/export-panel.tsx:151
+#: src/components/export-panel/export-panel.tsx:162
 msgid "Failed to open in CPC Playground: {0}"
 msgstr "Échec de l'ouverture dans CPC Playground : {0}"
 
@@ -479,7 +536,7 @@ msgstr "Échec de l'ouverture dans CPC Playground : {0}"
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 
-#: src/components/export-panel/export-panel.tsx:174
+#: src/components/export-panel/export-panel.tsx:98
 msgid "File exported successfully!"
 msgstr "Fichier exporté avec succès !"
 
@@ -515,17 +572,21 @@ msgstr "Gamma"
 msgid "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
 msgstr "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:196
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:188
 msgid "Générer les rasters"
 msgstr "Générer les rasters"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:317
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:319
 msgid "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
 msgstr "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
 
 #: src/components/image-upload/image-upload-view.tsx:198
 msgid "Glissez & déposez une image ici"
 msgstr "Glissez & déposez une image ici"
+
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:89
+msgid "Grille (H)"
+msgstr "Grille (H)"
 
 #: src/components/settings-panel/settings-panel.tsx:50
 msgid "Hardware"
@@ -618,6 +679,10 @@ msgstr "Ligne"
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:241
 msgid "Ligne {0}"
 msgstr "Ligne {0}"
+
+#: src/components/preview-editor/line-palette/line-palette-view.tsx:39
+msgid "Ligne {currentLine}"
+msgstr "Ligne {currentLine}"
 
 #: src/components/export-panel/export-config-dialog.tsx:160
 msgid "Linear ASM (séquentiel)"
@@ -717,6 +782,10 @@ msgstr "Multiplie le canal rouge (0-2x)"
 msgid "Multiplie le canal vert (0-2x)"
 msgstr "Multiplie le canal vert (0-2x)"
 
+#: src/components/preview-editor/editor-minimap/editor-minimap-view.tsx:162
+msgid "Navigation"
+msgstr "Navigation"
+
 #: src/components/export-panel/dsk-files-manager.tsx:134
 msgid "No additional files. Upload or add files to include them in the DSK."
 msgstr "Aucun fichier supplémentaire. Téléchargez ou ajoutez des fichiers pour les inclure dans le DSK."
@@ -759,7 +828,7 @@ msgstr "Ombres"
 msgid "Open in CPC Playground"
 msgstr "Ouvrir dans CPC Playground"
 
-#: src/components/export-panel/export-panel.tsx:221
+#: src/components/export-panel/export-panel.tsx:145
 msgid "Opened in CPC Playground!"
 msgstr "Ouvert dans CPC Playground !"
 
@@ -767,7 +836,7 @@ msgstr "Ouvert dans CPC Playground !"
 msgid "Opening..."
 msgstr "Ouverture..."
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:192
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:186
 msgid "Optimisation..."
 msgstr "Optimisation..."
 
@@ -804,6 +873,10 @@ msgstr "Ouvrir le panneau des paramètres"
 msgid "Ouvrir les paramètres (⌘,)"
 msgstr "Ouvrir les paramètres (⌘,)"
 
+#: src/components/preview-editor/line-palette/line-palette-view.tsx:36
+msgid "Palette"
+msgstr "Palette"
+
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:93
 msgid "Palette Selection"
 msgstr "Palette Selection"
@@ -816,13 +889,18 @@ msgstr "Palettes (firmware/hardware)"
 msgid "Paramètres"
 msgstr "Paramètres"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:258
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:260
 msgid "Paramètres pour l'extraction de la palette initiale depuis l'image source."
 msgstr "Paramètres pour l'extraction de la palette initiale depuis l'image source."
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:150
 msgid "Paramètres Raster"
 msgstr "Paramètres Raster"
+
+#: src/components/preview-editor/help-button/help-button.tsx:47
+#: src/components/preview-editor/help-button/help-button.tsx:52
+msgid "Peindre au curseur"
+msgstr "Peindre au curseur"
 
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:129
@@ -842,7 +920,7 @@ msgstr "Mode pixel"
 #~ msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
 #~ msgstr "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:274
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:276
 msgid "Plus bas = plus de variété, plus haut = plus de cohérence entre lignes"
 msgstr "Plus bas = plus de variété, plus haut = plus de cohérence entre lignes"
 
@@ -850,7 +928,7 @@ msgstr "Plus bas = plus de variété, plus haut = plus de cohérence entre ligne
 #~ msgid "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
 #~ msgstr "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:288
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:290
 msgid "Plus haut = préférence pour les couleurs similaires aux lignes précédentes"
 msgstr "Plus haut = préférence pour les couleurs similaires aux lignes précédentes"
 
@@ -870,13 +948,17 @@ msgstr "PNG (pixels carrés)"
 #~ msgid "Poids couverture lignes"
 #~ msgstr "Poids couverture lignes"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:294
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:296
 msgid "Poids de fréquence"
 msgstr "Poids de fréquence"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:330
 #~ msgid "Poids fréquence pixels"
 #~ msgstr "Poids fréquence pixels"
+
+#: src/components/preview-editor/pixel-info/pixel-info-view.tsx:39
+msgid "Position"
+msgstr "Position"
 
 #: src/app/components/adjustements/adjustement.view.tsx:152
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:200
@@ -891,15 +973,15 @@ msgstr "Pré-traitement dithering 1D appliqué à l'image avant extraction des p
 msgid "Processeur"
 msgstr "Processeur"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:215
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:217
 msgid "Propagation d'erreur de dithering"
 msgstr "Propagation d'erreur de dithering"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:241
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:243
 msgid "Propagation horizontale des erreurs de quantification entre pixels"
 msgstr "Propagation horizontale des erreurs de quantification entre pixels"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:227
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:229
 msgid "Propagation verticale des erreurs de quantification (lower = moins de banding)"
 msgstr "Propagation verticale des erreurs de quantification (lower = moins de banding)"
 
@@ -907,6 +989,10 @@ msgstr "Propagation verticale des erreurs de quantification (lower = moins de ba
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:174
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Diversité Pure"
+
+#: src/components/preview-editor/help-button/help-button.tsx:81
+msgid "Raccourcis clavier"
+msgstr "Raccourcis clavier"
 
 #: src/components/settings-panel/settings-panel.tsx:62
 msgid "Raster"
@@ -928,7 +1014,7 @@ msgstr "Rasters"
 msgid "Rasters (données ASM)"
 msgstr "Rasters (données ASM)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:194
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:187
 msgid "Rasters générés"
 msgstr "Rasters générés"
 
@@ -948,6 +1034,14 @@ msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche"
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 
+#: src/components/preview-editor/help-button/help-button.tsx:24
+msgid "Refaire"
+msgstr "Refaire"
+
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:57
+msgid "Refaire (Ctrl+Y)"
+msgstr "Refaire (Ctrl+Y)"
+
 #: src/app/components/adjustements/adjustement.view.tsx:206
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:248
 msgid "Réinitialiser"
@@ -955,11 +1049,11 @@ msgstr "Réinitialiser"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:165
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:180
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:229
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:243
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:276
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:290
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:304
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:231
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:245
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:278
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:292
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:306
 msgid "Réinitialiser à la valeur par défaut"
 msgstr "Réinitialiser à la valeur par défaut"
 
@@ -1154,3 +1248,15 @@ msgstr "Zone de sélection"
 #: src/components/source-selector/source-selector-view.tsx:56
 msgid "Zone de sélection interactive"
 msgstr "Zone de sélection interactive"
+
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:67
+msgid "Zoom"
+msgstr "Zoom"
+
+#: src/components/preview-editor/help-button/help-button.tsx:26
+msgid "Zoom arrière"
+msgstr "Zoom arrière"
+
+#: src/components/preview-editor/help-button/help-button.tsx:25
+msgid "Zoom avant"
+msgstr "Zoom avant"
