@@ -13,6 +13,8 @@ import {
   previewCanvasWidthAtom
 } from '@/app/store/preview/preview'
 import { effectivePreviewImageAtom } from '@/app/store/raster/raster'
+import { ManualEditsWarning } from '@/components/manual-edits-warning'
+import { PreviewEditor } from '@/components/preview-editor'
 import { createCorrectedAspectCanvas } from '@/export'
 import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 import { isTauri } from '@/tauri'
@@ -169,15 +171,20 @@ const ImagePreview = () => {
   const tooltip = _(msg`Cliquer pour ouvrir dans un nouvel onglet`)
 
   return (
-    <ImagePreviewView
-      containerRefCallback={containerRef}
-      ref={ref}
-      image={previewImage}
-      width={width}
-      height={height}
-      onClick={IS_TAURI ? undefined : handleCanvasClick}
-      tooltip={IS_TAURI ? undefined : tooltip}
-    />
+    <>
+      <ManualEditsWarning />
+      <ImagePreviewView
+        containerRefCallback={containerRef}
+        ref={ref}
+        image={previewImage}
+        width={width}
+        height={height}
+        onClick={IS_TAURI ? undefined : handleCanvasClick}
+        tooltip={IS_TAURI ? undefined : tooltip}
+      />
+      {/* Editor modal - renders when editorMode is true */}
+      <PreviewEditor />
+    </>
   )
 }
 

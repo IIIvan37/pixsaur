@@ -1,7 +1,12 @@
 import { atom } from 'jotai'
+import { pixelModeAtom } from '@/app/store/config/config'
 import { logger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { rasterChangesAtom, rasterIndexBufferAtom } from '../raster/raster'
+import {
+  applyManualEditsAtom,
+  finalPreviewIndexBufferAtom
+} from '../preview/preview'
+import { rasterChangesAtom } from '../raster/raster'
 import {
   editorCursorAtom,
   editorGridVisibleAtom,
@@ -20,6 +25,7 @@ import {
   editorHistoryAtom,
   editorHistoryIndexAtom,
   editorIndexBufferAtom,
+  editorPixelModeAtom,
   editorRasterChangesAtom,
   MAX_HISTORY_SIZE,
   type PixelEdit
@@ -31,26 +37,29 @@ import {
 
 /**
  * Entrer en mode édition
- * - Copie l'index buffer courant (raster ou normal)
+ * - Copie l'index buffer courant (avec modifications manuelles si présentes)
  * - Copie la palette et les changements raster
  * - Initialise l'historique
  */
 export const enterEditModeAtom = atom(null, async (get, set) => {
-  // Récupérer l'index buffer actuel (raster a priorité)
-  const rasterBuffer = get(rasterIndexBufferAtom)
+  // Always use the final preview buffer (with manual edits already applied)
+  const indexBufferData = await get(finalPreviewIndexBufferAtom)
 
-  if (!rasterBuffer) {
+  if (!indexBufferData) {
     logger.warn('[Editor] No index buffer available to edit')
     return false
   }
 
-  const { buffer, width, height, palette } = rasterBuffer
+  const { buffer, width, height, palette } = indexBufferData
 
   // Copier l'index buffer pour l'édition (nouvelle instance)
   const editBuffer = new Uint8Array(buffer)
 
   set(editorIndexBufferAtom, editBuffer)
   set(editorDimensionsAtom, { width, height })
+
+  // Capturer le mode pixel pour l'aspect ratio
+  set(editorPixelModeAtom, get(pixelModeAtom))
 
   // Copier la palette de base
   set(
@@ -97,9 +106,8 @@ export const cancelEditModeAtom = atom(null, (_get, set) => {
 
 /**
  * Appliquer les modifications et quitter le mode édition
- * TODO: Intégrer avec rasterOptimizationResultAtom pour persister les changements
  */
-export const applyEditModeAtom = atom(null, (get, set) => {
+export const applyEditModeAtom = atom(null, async (get, set) => {
   const editBuffer = get(editorIndexBufferAtom)
   const dimensions = get(editorDimensionsAtom)
 
@@ -108,9 +116,13 @@ export const applyEditModeAtom = atom(null, (get, set) => {
     return
   }
 
-  // TODO: Mettre à jour l'index buffer principal
-  // Cela nécessite de modifier rasterOptimizationResultAtom ou de créer
-  // un nouvel atome pour stocker les modifications manuelles
+  // Appliquer les modifications manuelles au buffer de preview
+  await set(
+    applyManualEditsAtom,
+    editBuffer,
+    dimensions.width,
+    dimensions.height
+  )
 
   logger.info('[Editor] Applied changes', {
     width: dimensions.width,
@@ -306,16 +318,18 @@ export const moveCursorAtom = atom(
   ) => {
     const dimensions = get(editorDimensionsAtom)
     const cursor = get(editorCursorAtom)
+    const hoveredPixel = get(editorHoveredPixelAtom)
 
     if (!dimensions) return
 
     const step = largeStep ? 8 : 1
 
-    // Initialiser le curseur au centre si pas encore défini
-    const currentPos = cursor ?? {
-      x: Math.floor(dimensions.width / 2),
-      y: Math.floor(dimensions.height / 2)
-    }
+    // Initialiser le curseur : position actuelle, sinon hovered, sinon centre
+    const currentPos = cursor ??
+      hoveredPixel ?? {
+        x: Math.floor(dimensions.width / 2),
+        y: Math.floor(dimensions.height / 2)
+      }
 
     let newX = currentPos.x
     let newY = currentPos.y
@@ -409,4 +423,43 @@ export const zoomOutAtom = atom(null, (get, set) => {
  */
 export const toggleGridAtom = atom(null, (get, set) => {
   set(editorGridVisibleAtom, !get(editorGridVisibleAtom))
+})
+
+/**
+ * Nombre d'encres disponibles (basé sur le mode CPC)
+ * Mode 0: 16 encres, Mode 1: 4 encres, Mode 2: 2 encres
+ */
+export const inkCountAtom = atom((get) => {
+  const basePalette = get(editorBasePaletteAtom)
+  return basePalette.length || 16
+})
+
+/**
+ * Sélectionner l'encre suivante
+ */
+export const nextInkAtom = atom(null, (get, set) => {
+  const currentInk = get(editorSelectedInkAtom)
+  const inkCount = get(inkCountAtom)
+  const nextInk = (currentInk + 1) % inkCount
+  set(editorSelectedInkAtom, nextInk)
+})
+
+/**
+ * Sélectionner l'encre précédente
+ */
+export const prevInkAtom = atom(null, (get, set) => {
+  const currentInk = get(editorSelectedInkAtom)
+  const inkCount = get(inkCountAtom)
+  const prevInk = (currentInk - 1 + inkCount) % inkCount
+  set(editorSelectedInkAtom, prevInk)
+})
+
+/**
+ * Sélectionner une encre par son numéro (0-15)
+ */
+export const selectInkAtom = atom(null, (get, set, inkIndex: number) => {
+  const inkCount = get(inkCountAtom)
+  if (inkIndex >= 0 && inkIndex < inkCount) {
+    set(editorSelectedInkAtom, inkIndex)
+  }
 })

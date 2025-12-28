@@ -757,3 +757,118 @@ export const previewIndexBufferAtom = atom(async (get) => {
     palette: ditheringPalette
   }
 })
+
+// ============================================================================
+// Modifications manuelles de pixels
+// ============================================================================
+
+/**
+ * Stocke les modifications manuelles de pixels (de l'éditeur de preview).
+ * Map: "x,y" -> inkIndex
+ * Réinitialisé quand l'image source change.
+ */
+export const manualPixelEditsAtom = atom<Map<string, number>>(new Map())
+
+/**
+ * Indique s'il y a des modifications manuelles non sauvegardées.
+ */
+export const hasManualEditsAtom = atom(
+  (get) => get(manualPixelEditsAtom).size > 0
+)
+
+/**
+ * Nombre de modifications manuelles.
+ */
+export const manualEditsCountAtom = atom(
+  (get) => get(manualPixelEditsAtom).size
+)
+
+/**
+ * Action pour effacer toutes les modifications manuelles.
+ */
+export const clearManualEditsAtom = atom(null, (_get, set) => {
+  set(manualPixelEditsAtom, new Map())
+  logger.info('[Preview] Manual edits cleared')
+})
+
+/**
+ * Action pour appliquer un buffer modifié complet.
+ * Compare avec le buffer original et stocke les différences.
+ */
+export const applyManualEditsAtom = atom(
+  null,
+  async (get, set, editedBuffer: Uint8Array, width: number, height: number) => {
+    const originalData = await get(previewIndexBufferAtom)
+    if (!originalData) return
+
+    const edits = new Map<string, number>()
+
+    // Trouver les pixels modifiés
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x
+        if (editedBuffer[idx] !== originalData.buffer[idx]) {
+          edits.set(`${x},${y}`, editedBuffer[idx])
+        }
+      }
+    }
+
+    set(manualPixelEditsAtom, edits)
+    logger.info('[Preview] Manual edits applied', { editCount: edits.size })
+  }
+)
+
+/**
+ * Index buffer final avec les modifications manuelles appliquées.
+ * C'est cet atome qui doit être utilisé pour le rendu de la preview.
+ */
+export const finalPreviewIndexBufferAtom = atom(async (get) => {
+  const baseData = await get(previewIndexBufferAtom)
+  if (!baseData) return null
+
+  const edits = get(manualPixelEditsAtom)
+  if (edits.size === 0) return baseData
+
+  // Créer une copie du buffer avec les modifications
+  const modifiedBuffer = new Uint8Array(baseData.buffer)
+
+  for (const [key, inkIndex] of edits) {
+    const [x, y] = key.split(',').map(Number)
+    const idx = y * baseData.width + x
+    if (idx >= 0 && idx < modifiedBuffer.length) {
+      modifiedBuffer[idx] = inkIndex
+    }
+  }
+
+  return {
+    ...baseData,
+    buffer: modifiedBuffer
+  }
+})
+
+/**
+ * Image preview finale avec les modifications manuelles appliquées.
+ * Convertit le finalPreviewIndexBufferAtom en ImageData pour l'affichage.
+ */
+export const finalPreviewImageAtom = atom(async (get) => {
+  const bufferData = await get(finalPreviewIndexBufferAtom)
+  if (!bufferData) return null
+
+  const { buffer, width, height, palette } = bufferData
+
+  // Créer l'ImageData à partir de l'index buffer et de la palette
+  const imageData = new ImageData(width, height)
+  const data = imageData.data
+
+  for (let i = 0; i < buffer.length; i++) {
+    const inkIndex = buffer[i]
+    const color = palette[inkIndex] ?? [0, 0, 0]
+    const pixelIndex = i * 4
+    data[pixelIndex] = color[0] // R
+    data[pixelIndex + 1] = color[1] // G
+    data[pixelIndex + 2] = color[2] // B
+    data[pixelIndex + 3] = 255 // A
+  }
+
+  return imageData
+})

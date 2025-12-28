@@ -22,9 +22,11 @@ import {
 import { imageAtom, selectionAtom } from '../image/image'
 import {
   exportPaletteWithSlotsAtom,
+  finalPreviewImageAtom,
+  finalPreviewIndexBufferAtom,
+  hasManualEditsAtom,
   positionedNormalizedImageAtom,
-  previewImageAtom,
-  previewIndexBufferAtom
+  previewImageAtom
 } from '../preview/preview'
 import {
   rasterChangesAtom,
@@ -374,7 +376,7 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   }
 
   // Fallback to standard preview index buffer for manual raster changes
-  const indexBufferData = await get(previewIndexBufferAtom)
+  const indexBufferData = await get(finalPreviewIndexBufferAtom)
   if (!indexBufferData) {
     return null
   }
@@ -410,7 +412,8 @@ export const rasterPreviewImageAtom = atom(async (get) => {
 })
 
 /**
- * Effective preview image atom: returns raster preview when enabled, otherwise normal preview
+ * Effective preview image atom: returns raster preview when enabled,
+ * otherwise returns preview with manual edits applied
  */
 export const effectivePreviewImageAtom = atom(async (get) => {
   // Force re-evaluation when raster version changes
@@ -419,6 +422,12 @@ export const effectivePreviewImageAtom = atom(async (get) => {
   const rasterPreview = await get(rasterPreviewImageAtom)
   if (rasterPreview) {
     return rasterPreview
+  }
+
+  // Check if there are manual edits - if so, use final preview image
+  const hasEdits = get(hasManualEditsAtom)
+  if (hasEdits) {
+    return await get(finalPreviewImageAtom)
   }
 
   return await get(previewImageAtom)

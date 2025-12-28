@@ -1,0 +1,43 @@
+import { Trans } from '@lingui/react/macro'
+import { useAtomValue, useSetAtom } from 'jotai'
+import {
+  clearManualEditsAtom,
+  hasManualEditsAtom,
+  manualEditsCountAtom
+} from '@/app/store/preview/preview'
+import Icon from '@/components/ui/icon'
+import styles from './manual-edits-warning.module.css'
+
+/**
+ * Warning banner that appears when there are manual pixel edits.
+ * Warns the user that changing settings will affect their edits.
+ */
+export function ManualEditsWarning() {
+  const hasEdits = useAtomValue(hasManualEditsAtom)
+  const editCount = useAtomValue(manualEditsCountAtom)
+  const clearEdits = useSetAtom(clearManualEditsAtom)
+
+  if (!hasEdits) return null
+
+  return (
+    <div className={styles.warning}>
+      <div className={styles.content}>
+        <Icon name='ExclamationTriangleIcon' size={16} />
+        <span className={styles.text}>
+          <Trans>
+            {editCount} pixel(s) modifié(s) manuellement. Modifier les
+            paramètres peut affecter ces modifications.
+          </Trans>
+        </span>
+      </div>
+      <button
+        type='button'
+        className={styles.clearButton}
+        onClick={() => clearEdits()}
+        title='Effacer les modifications manuelles'
+      >
+        <Icon name='Cross2Icon' size={14} />
+      </button>
+    </div>
+  )
+}
