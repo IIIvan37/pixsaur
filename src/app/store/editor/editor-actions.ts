@@ -2,11 +2,8 @@ import { atom } from 'jotai'
 import { pixelModeAtom } from '@/app/store/config/config'
 import { logger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import {
-  applyManualEditsAtom,
-  finalPreviewIndexBufferAtom
-} from '../preview/preview'
-import { rasterChangesAtom } from '../raster/raster'
+import { applyManualEditsAtom } from '../preview/preview'
+import { effectiveIndexBufferAtom, rasterChangesAtom } from '../raster/raster'
 import {
   editorCursorAtom,
   editorGridVisibleAtom,
@@ -25,6 +22,7 @@ import {
   editorHistoryAtom,
   editorHistoryIndexAtom,
   editorIndexBufferAtom,
+  editorOriginalBufferAtom,
   editorPixelModeAtom,
   editorRasterChangesAtom,
   MAX_HISTORY_SIZE,
@@ -42,8 +40,8 @@ import {
  * - Initialise l'historique
  */
 export const enterEditModeAtom = atom(null, async (get, set) => {
-  // Always use the final preview buffer (with manual edits already applied)
-  const indexBufferData = await get(finalPreviewIndexBufferAtom)
+  // Use the effective buffer (raster-optimized when enabled, otherwise standard)
+  const indexBufferData = await get(effectiveIndexBufferAtom)
 
   if (!indexBufferData) {
     logger.warn('[Editor] No index buffer available to edit')
@@ -51,6 +49,9 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
   }
 
   const { buffer, width, height, palette } = indexBufferData
+
+  // Sauvegarder le buffer original pour la comparaison lors de l'application
+  set(editorOriginalBufferAtom, new Uint8Array(buffer))
 
   // Copier l'index buffer pour l'édition (nouvelle instance)
   const editBuffer = new Uint8Array(buffer)
@@ -68,7 +69,8 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
   )
 
   // Copier les changements raster
-  set(editorRasterChangesAtom, [...get(rasterChangesAtom)])
+  const rasterChanges = get(rasterChangesAtom)
+  set(editorRasterChangesAtom, [...rasterChanges])
 
   // Initialiser l'historique
   set(editorHistoryAtom, [])
@@ -95,6 +97,7 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
 export const cancelEditModeAtom = atom(null, (_get, set) => {
   set(editorModeAtom, false)
   set(editorIndexBufferAtom, null)
+  set(editorOriginalBufferAtom, null)
   set(editorDimensionsAtom, null)
   set(editorHistoryAtom, [])
   set(editorHistoryIndexAtom, -1)
@@ -107,19 +110,21 @@ export const cancelEditModeAtom = atom(null, (_get, set) => {
 /**
  * Appliquer les modifications et quitter le mode édition
  */
-export const applyEditModeAtom = atom(null, async (get, set) => {
+export const applyEditModeAtom = atom(null, (get, set) => {
   const editBuffer = get(editorIndexBufferAtom)
+  const originalBuffer = get(editorOriginalBufferAtom)
   const dimensions = get(editorDimensionsAtom)
 
-  if (!editBuffer || !dimensions) {
+  if (!editBuffer || !originalBuffer || !dimensions) {
     logger.warn('[Editor] No changes to apply')
     return
   }
 
   // Appliquer les modifications manuelles au buffer de preview
-  await set(
+  set(
     applyManualEditsAtom,
     editBuffer,
+    originalBuffer,
     dimensions.width,
     dimensions.height
   )
@@ -132,6 +137,7 @@ export const applyEditModeAtom = atom(null, async (get, set) => {
   // Quitter le mode édition
   set(editorModeAtom, false)
   set(editorIndexBufferAtom, null)
+  set(editorOriginalBufferAtom, null)
   set(editorDimensionsAtom, null)
   set(editorHistoryAtom, [])
   set(editorHistoryIndexAtom, -1)
