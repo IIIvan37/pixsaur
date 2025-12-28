@@ -24,7 +24,7 @@ export {
   calculateHueDistance,
   calculateSaturation,
   calculateValue
-}
+} from '../../pixsaur-color/src/utils/hsv'
 
 /** Helper pour formater une couleur RGB */
 function formatRGB(color: Vector): string {
@@ -413,7 +413,7 @@ export function selectBucketRepresentativesWithLightness(
   // Bucket 6-7 (270-360°) = violet/magenta/rouge
   const getMegaFamily = (bucket: number | 'gray'): number => {
     if (bucket === 'gray') return -1 // Gray est sa propre famille
-    return Math.floor((bucket as number) / 2) // 0-1→0, 2-3→1, 4-5→2, 6-7→3
+    return Math.floor(bucket / 2) // 0-1→0, 2-3→1, 4-5→2, 6-7→3
   }
 
   // Phase 1: Sélectionner le plus fréquent de chaque bucket, mais limiter les méga-familles

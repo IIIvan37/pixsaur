@@ -87,7 +87,7 @@ export function HelpButton() {
                 {shortcut.keys.map((key) => (
                   <span key={`${shortcut.id}-${key}`}>
                     <kbd className={styles.key}>{key}</kbd>
-                    {key !== shortcut.keys[shortcut.keys.length - 1] && (
+                    {key !== shortcut.keys.at(-1) && (
                       <span className={styles.keySeparator}>+</span>
                     )}
                   </span>

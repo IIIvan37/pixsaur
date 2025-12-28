@@ -34,8 +34,6 @@ export type PaletteStrategy = PaletteStrategyName
 
 export type QuantizeConfig = {
   distanceMetric: DistanceMetric
-  /** @deprecated Use paletteStrategy instead. Legacy contrastStrategy is automatically converted to v2 strategies. */
-  contrastStrategy?: 'max' | 'balanced'
   paletteStrategy?: PaletteStrategy
 }
 
@@ -71,7 +69,7 @@ export function createQuantizer({
   preselected,
   quantConfig
 }: CreateQuantizerInput) {
-  const { distanceMetric } = quantConfig
+  const { distanceMetric, paletteStrategy } = quantConfig
   const distFn: DistanceFn = getDistanceFn('RGB', distanceMetric)
 
   const vecs = bufferToVectors(buf)
@@ -103,20 +101,10 @@ export function createQuantizer({
 
     const out = idxs.map((i: number) => workingPal[i])
 
-    // Utiliser paletteStrategy v2 (prioritaire) ou convertir contrastStrategy legacy
-    let userStrategy: PaletteStrategyName | undefined =
-      quantConfig.paletteStrategy
-    if (!userStrategy && quantConfig.contrastStrategy) {
-      userStrategy =
-        quantConfig.contrastStrategy === 'balanced'
-          ? 'balanced-score-balanced'
-          : 'diversity-first-max'
-    }
-
     // Alignement CPU/GPU : utiliser mode0-hue-diversity pour le mode 0 (>4 couleurs)
     // et la stratégie utilisateur pour les modes 1-2 (≤4 couleurs)
     const effectiveStrategy: PaletteStrategyName | undefined =
-      limit > 4 ? 'mode0-hue-diversity' : userStrategy
+      limit > 4 ? 'mode0-hue-diversity' : paletteStrategy
 
     if (effectiveStrategy && limit <= 16) {
       // Construire les candidats avec fréquences à partir de l'histogramme

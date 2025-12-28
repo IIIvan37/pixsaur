@@ -781,16 +781,8 @@ export function optimizeLinePalettesWithIndexBuffer(
   // Helper function to quantize a color based on hardware mode
   // CPC Classic: use pre-computed LUT (ultra-fast array lookup)
   // CPC Plus: quantize to 4096 colors (4 bits per channel)
-  const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette && cpcClassicLUT) {
-      return quantizeToCPCClassicWithLUT(
-        color,
-        cpcClassicPalette,
-        cpcClassicLUT
-      )
-    }
-    return quantizeToCPCPlus(color)
-  }
+  // Use shared quantize function for hardware mode
+  const quantizeColor = createQuantizeFunction(cpcClassicPalette, cpcClassicLUT)
 
   // Create a set of existing changes for fast lookup
   const existingChangeSet = new Set(
@@ -1324,11 +1316,9 @@ export function preprocessImageForRaster(
 ): ImageData {
   let { ditheringIntensity = 0.75, nColors = 4, cpcClassicPalette } = options
   // Clamp dithering intensity to a maximum of 1.0 (full effect allowed)
-  ditheringIntensity = Math.min(ditheringIntensity, 1.0)
+  ditheringIntensity = Math.min(ditheringIntensity, 1)
   const { width, height, data } = sourceImage
   const outputData = new Uint8ClampedArray(data.length)
-
-  // Build LUT for CPC Classic if needed (done once, cached globally)
   if (cpcClassicPalette) {
     if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
       cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
