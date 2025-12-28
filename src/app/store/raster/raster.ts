@@ -25,6 +25,7 @@ import {
   finalPreviewImageAtom,
   finalPreviewIndexBufferAtom,
   hasManualEditsAtom,
+  manualPixelEditsAtom,
   positionedNormalizedImageAtom,
   previewImageAtom
 } from '../preview/preview'
@@ -117,6 +118,54 @@ export const rasterIndexBufferAtom = atom((get) => {
     height,
     palette: quantizedGlobalPalette
   }
+})
+
+/**
+ * Final raster index buffer with manual pixel edits applied.
+ * Applies manual edits on top of the raster-optimized buffer.
+ */
+export const finalRasterIndexBufferAtom = atom((get) => {
+  const rasterBuffer = get(rasterIndexBufferAtom)
+  if (!rasterBuffer) return null
+
+  const edits = get(manualPixelEditsAtom)
+  if (edits.size === 0) return rasterBuffer
+
+  // Create a copy with manual edits applied
+  const modifiedBuffer = new Uint8Array(rasterBuffer.buffer)
+
+  for (const [key, inkIndex] of edits) {
+    const [x, y] = key.split(',').map(Number)
+    const idx = y * rasterBuffer.width + x
+    if (idx >= 0 && idx < modifiedBuffer.length) {
+      modifiedBuffer[idx] = inkIndex
+    }
+  }
+
+  return {
+    ...rasterBuffer,
+    buffer: modifiedBuffer
+  }
+})
+
+/**
+ * Effective index buffer for editing: returns the raster-optimized buffer when
+ * raster mode is enabled, otherwise returns the standard preview buffer.
+ * This is the buffer that should be used when entering the editor.
+ */
+export const effectiveIndexBufferAtom = atom(async (get) => {
+  const rasterEnabled = get(rasterEnabledAtom)
+
+  if (rasterEnabled) {
+    // Use raster-optimized buffer with manual edits if available
+    const rasterBuffer = get(finalRasterIndexBufferAtom)
+    if (rasterBuffer) {
+      return rasterBuffer
+    }
+  }
+
+  // Fall back to standard preview buffer (with manual edits)
+  return await get(finalPreviewIndexBufferAtom)
 })
 
 /**
@@ -326,8 +375,8 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   // Get current mode config to validate dimensions
   const modeConfig = get(effectiveModeConfigAtom)
 
-  // Check if we have an optimized raster index buffer
-  const rasterIndexBuffer = get(rasterIndexBufferAtom)
+  // Check if we have an optimized raster index buffer (with manual edits applied)
+  const rasterIndexBuffer = get(finalRasterIndexBufferAtom)
 
   if (rasterIndexBuffer) {
     // Validate that buffer dimensions match current mode config

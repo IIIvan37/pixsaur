@@ -44,6 +44,7 @@ export {
   editorHistoryAtom,
   editorHistoryIndexAtom,
   editorIndexBufferAtom,
+  editorOriginalBufferAtom,
   editorPixelAspectAtom,
   editorPixelModeAtom,
   editorRasterChangesAtom,

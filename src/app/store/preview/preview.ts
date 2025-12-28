@@ -793,21 +793,29 @@ export const clearManualEditsAtom = atom(null, (_get, set) => {
 
 /**
  * Action pour appliquer un buffer modifié complet.
- * Compare avec le buffer original et stocke les différences.
+ * Compare avec le buffer original fourni et stocke les différences.
+ * @param editedBuffer - Le buffer modifié de l'éditeur
+ * @param originalBuffer - Le buffer original (avant édition)
+ * @param width - Largeur de l'image
+ * @param height - Hauteur de l'image
  */
 export const applyManualEditsAtom = atom(
   null,
-  async (get, set, editedBuffer: Uint8Array, width: number, height: number) => {
-    const originalData = await get(previewIndexBufferAtom)
-    if (!originalData) return
-
+  (
+    _get,
+    set,
+    editedBuffer: Uint8Array,
+    originalBuffer: Uint8Array,
+    width: number,
+    height: number
+  ) => {
     const edits = new Map<string, number>()
 
     // Trouver les pixels modifiés
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = y * width + x
-        if (editedBuffer[idx] !== originalData.buffer[idx]) {
+        if (editedBuffer[idx] !== originalBuffer[idx]) {
           edits.set(`${x},${y}`, editedBuffer[idx])
         }
       }

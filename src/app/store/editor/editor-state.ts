@@ -42,6 +42,11 @@ export const editorDimensionsAtom = atom<{
 } | null>(null)
 
 /**
+ * Buffer original avant édition (pour comparaison lors de l'application)
+ */
+export const editorOriginalBufferAtom = atom<Uint8Array | null>(null)
+
+/**
  * Mode pixel actuel (0, 1, 2) pour calculer l'aspect ratio
  */
 export const editorPixelModeAtom = atom<PixelMode>(1)
