@@ -128,9 +128,6 @@ export function EditorCanvas({
     [dimensions, pixelWidth, pixelHeight]
   )
 
-  // Track if mouse is being dragged (for paint vs click distinction)
-  const isDragging = useRef(false)
-
   // Handle mouse move
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -141,22 +138,17 @@ export function EditorCanvas({
 
       setHoveredPixel(imagePos)
 
-      // Paint while dragging OR while holding space
-      if (imagePos) {
-        if (e.buttons === 1 || isSpaceHeld.current) {
-          isDragging.current = true
-          paintPixel(imagePos)
-        }
+      // Paint only while holding space
+      if (imagePos && isSpaceHeld.current) {
+        paintPixel(imagePos)
       }
     },
     [screenToImage, setHoveredPixel, paintPixel]
   )
 
-  // Handle mouse down - start potential drag
+  // Handle mouse down - set cursor position
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
-      isDragging.current = false
-
       const rect = e.currentTarget.getBoundingClientRect()
       const screenX = e.clientX - rect.left
       const screenY = e.clientY - rect.top
@@ -164,31 +156,16 @@ export function EditorCanvas({
 
       if (!imagePos) return
 
-      // Start painting on mouse down
-      paintPixel(imagePos)
-    },
-    [screenToImage, paintPixel]
-  )
-
-  // Handle mouse up - set cursor position if it was a click (not drag)
-  const handleMouseUp = useCallback(
-    (e: React.MouseEvent<HTMLCanvasElement>) => {
-      const rect = e.currentTarget.getBoundingClientRect()
-      const screenX = e.clientX - rect.left
-      const screenY = e.clientY - rect.top
-      const imagePos = screenToImage(screenX, screenY)
-
-      if (!imagePos) return
-
-      // If it was a simple click (not drag), set cursor position
-      if (!isDragging.current) {
-        setCursor(imagePos)
-      }
-
-      isDragging.current = false
+      // Set cursor position on click
+      setCursor(imagePos)
     },
     [screenToImage, setCursor]
   )
+
+  // Handle mouse up
+  const handleMouseUp = useCallback(() => {
+    // Nothing to do - cursor is set on mouse down
+  }, [])
 
   // Handle mouse leave
   const handleMouseLeave = useCallback(() => {

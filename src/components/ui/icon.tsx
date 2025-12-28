@@ -19,6 +19,7 @@ import {
   LockClosedIcon,
   Pencil2Icon,
   PlusIcon,
+  QuestionMarkCircledIcon,
   ReloadIcon,
   TrashIcon,
   UploadIcon
@@ -47,6 +48,7 @@ const ICON_MAP = {
   LockClosedIcon,
   Pencil2Icon,
   PlusIcon,
+  QuestionMarkCircledIcon,
   ReloadIcon,
   TrashIcon,
   UploadIcon
