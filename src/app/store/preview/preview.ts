@@ -8,7 +8,7 @@ import {
 } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
-import { CPCHardware } from '@/libs/types'
+import type { CPCHardware } from '@/libs/types'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import {
   applyHorizontalSmoothing,
@@ -580,14 +580,11 @@ function processSlot(
   darkestColor: Vector,
   cpcHardware: CPCHardware
 ): Vector {
-  // Mode R uses the underlying hardware (plus by default)
-  const baseHardware = cpcHardware === CPCHardware.MODE_R ? 'plus' : cpcHardware
-
   if (slot?.locked && slot.color === null) {
     return IGNORED_SLOT
   }
   if (slot?.locked && slot.color) {
-    return quantifyColorForHardware(slot.color, baseHardware)
+    return quantifyColorForHardware(slot.color, cpcHardware)
   }
   if (reducedIndex.value < filteredReduced.length) {
     return filteredReduced[reducedIndex.value++]

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { CPCHardware } from '@/libs/types'
 import {
   assembleModeRSnaSource,
   assembleSnaSource,
@@ -23,7 +22,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       }
 
       const template = generateClassicScrSnaTemplate(options)
@@ -45,7 +44,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: true,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       }
 
       const template = generateClassicScrSnaTemplate(options)
@@ -67,7 +66,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       })
       expect(mode0).toContain('#7c8C')
 
@@ -77,7 +76,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       })
       expect(mode1).toContain('#7c8D')
 
@@ -87,7 +86,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       })
       expect(mode2).toContain('#7c8E')
     })
@@ -100,7 +99,7 @@ describe('SNA Templates', () => {
         height: 280,
         overscan: true,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       }
 
       const template = generateClassicOverscanSnaTemplate(options)
@@ -119,7 +118,7 @@ describe('SNA Templates', () => {
         height: 280,
         overscan: true,
         hasRasters: true,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       }
 
       const template = generateClassicOverscanSnaTemplate(options)
@@ -139,7 +138,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.PLUS
+        hardware: 'plus'
       }
 
       const template = generatePlusScrSnaTemplate(options)
@@ -160,7 +159,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: true,
-        hardware: CPCHardware.PLUS
+        hardware: 'plus'
       }
 
       const template = generatePlusScrSnaTemplate(options)
@@ -178,7 +177,7 @@ describe('SNA Templates', () => {
         height: 280,
         overscan: true,
         hasRasters: true,
-        hardware: CPCHardware.PLUS
+        hardware: 'plus'
       }
 
       const template = generatePlusOverscanSnaTemplate(options)
@@ -201,7 +200,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       })
       expect(classicScr).toContain('org #8000')
       expect(classicScr).not.toContain('SNASET CRTC_TYPE')
@@ -212,7 +211,7 @@ describe('SNA Templates', () => {
         height: 280,
         overscan: true,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       })
       expect(classicOverscan).toContain('org #b000')
       expect(classicOverscan).toContain('tovercrt')
@@ -223,7 +222,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.PLUS
+        hardware: 'plus'
       })
       expect(plusScr).toContain('SNASET CPC_TYPE, 4')
       expect(plusScr).toContain('SNASET CRTC_TYPE, 3')
@@ -235,7 +234,7 @@ describe('SNA Templates', () => {
         height: 280,
         overscan: true,
         hasRasters: false,
-        hardware: CPCHardware.PLUS
+        hardware: 'plus'
       })
       expect(plusOverscan).toContain('SNASET CPC_TYPE, 4')
       expect(plusOverscan).toContain('SNASET CRTC_TYPE, 3')
@@ -250,7 +249,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       }
 
       const template = generateSnaTemplate(options)
@@ -277,7 +276,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: false,
-        hardware: CPCHardware.PLUS
+        hardware: 'plus'
       }
 
       const template = generateSnaTemplate(options)
@@ -299,7 +298,7 @@ describe('SNA Templates', () => {
         height: 200,
         overscan: false,
         hasRasters: true,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       }
 
       const template = generateSnaTemplate(options)
@@ -322,7 +321,7 @@ describe('SNA Templates', () => {
         height: 280,
         overscan: true,
         hasRasters: false,
-        hardware: CPCHardware.CLASSIC
+        hardware: 'classic'
       }
 
       const template = generateSnaTemplate(options)

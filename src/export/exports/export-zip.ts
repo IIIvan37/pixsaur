@@ -111,7 +111,7 @@ async function exportSnaToZip(params: ExportSnaToZipParams): Promise<void> {
   const snaResult = await exportSna({
     indexBuf,
     modeConfig,
-    hardware: isCPCPlus ? CPCHardware.PLUS : CPCHardware.CLASSIC,
+    hardware: isCPCPlus ? 'plus' : 'classic',
     paletteFirmware: isCPCPlus ? undefined : paletteFirmware,
     palettePlus: asmData.palettePlus,
     rasterAsm: asmData.rasterAsm,
