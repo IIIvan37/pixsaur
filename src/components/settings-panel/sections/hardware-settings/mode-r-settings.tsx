@@ -6,24 +6,29 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtom } from 'jotai'
+import { useId } from 'react'
 import {
   modeRAntiFlickerAtom,
+  modeRDualPaletteAtom,
   modeRMaxLuminanceDeltaAtom,
   modeRPreviewModeAtom
 } from '@/app/store/config/config'
 import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
+import Checkbox from '@/components/ui/checkbox/checkbox'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 import styles from '../../tabs/tab.module.css'
 
 type ModeRPreviewMode = 'blended' | 'frameA' | 'frameB' | 'flicker'
 
 export function ModeRSettings() {
+  const dualPaletteId = useId()
   const { _ } = useLingui()
   const [antiFlicker, setAntiFlicker] = useAtom(modeRAntiFlickerAtom)
   const [maxLuminanceDelta, setMaxLuminanceDelta] = useAtom(
     modeRMaxLuminanceDeltaAtom
   )
   const [previewMode, setPreviewMode] = useAtom(modeRPreviewModeAtom)
+  const [dualPalette, setDualPalette] = useAtom(modeRDualPaletteAtom)
 
   const previewModeOptions: Array<{ value: ModeRPreviewMode; label: string }> =
     [
@@ -38,6 +43,20 @@ export function ModeRSettings() {
       <h4 className={styles.sectionTitle}>
         <Trans>Mode R Settings</Trans>
       </h4>
+
+      <div className={styles.tuningRow}>
+        <Checkbox
+          id={dualPaletteId}
+          checked={dualPalette}
+          onChange={(e) => setDualPalette(e.target.checked)}
+          label={_(msg`Double palette`)}
+        />
+        <span className={styles.description}>
+          {_(
+            msg`Utilise une palette différente pour chaque frame (plus de couleurs, plus de scintillement)`
+          )}
+        </span>
+      </div>
 
       <TuningSlider
         label={_(msg`Anti-flicker`)}

@@ -433,13 +433,23 @@ export function optimizeModeRPalettes(
         : selectDiverseColors(targetColors, availableColors, 16)
   }
 
-  // Select palette B based on hardware
+  // Select palette B based on dual palette option
   let paletteB: Vector<'RGB'>[]
-  if (config.targetHardware === 'plus') {
-    paletteB = selectPaletteBForPlus(paletteA, targetColors, availableColors)
+  if (config.useDualPalette) {
+    // Dual palette mode: optimize B independently for more color coverage
+    if (config.targetHardware === 'plus') {
+      paletteB = selectPaletteBForPlus(paletteA, targetColors, availableColors)
+    } else {
+      const neededBColors = calculateNeededBColors(targetColors, paletteA)
+      paletteB = selectDiverseColors(neededBColors, availableColors, 16)
+    }
+    logger.info('[Mode R] Using dual palette mode (independent palettes)')
   } else {
-    const neededBColors = calculateNeededBColors(targetColors, paletteA)
-    paletteB = selectDiverseColors(neededBColors, availableColors, 16)
+    // Single palette mode: use same palette for both frames (no flicker from palette)
+    paletteB = [...paletteA]
+    logger.info(
+      '[Mode R] Using single palette mode (same palette for both frames)'
+    )
   }
 
   // Pad palettes to 16 if needed

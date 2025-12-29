@@ -102,6 +102,13 @@ export interface ModeRConfig {
    * 0 = no dithering effect, 100 = full dithering
    */
   ditheringIntensity: number
+
+  /**
+   * Use dual palettes (different palette for each frame)
+   * - false: Same palette for both frames (less flicker, simpler)
+   * - true: Independent palettes for each frame (more colors, more flicker)
+   */
+  useDualPalette: boolean
 }
 
 /**
@@ -112,7 +119,8 @@ export const DEFAULT_MODE_R_CONFIG: ModeRConfig = {
   maxLuminanceDelta: 80, // Allow moderate luminance differences
   targetHardware: 'plus', // Mode R works best on CPC Plus
   ditheringMode: 'floydSteinberg',
-  ditheringIntensity: 100
+  ditheringIntensity: 100,
+  useDualPalette: false // Default: same palette for both frames (less flicker)
 }
 
 /**

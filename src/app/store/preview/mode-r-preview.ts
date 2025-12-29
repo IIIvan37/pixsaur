@@ -27,6 +27,7 @@ import {
   ditheringAtom,
   effectiveModeConfigAtom,
   modeRAntiFlickerAtom,
+  modeRDualPaletteAtom,
   modeREnabledAtom,
   modeRMaxLuminanceDeltaAtom,
   modeRPreviewModeAtom,
@@ -50,6 +51,7 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
   const maxLuminanceDelta = get(modeRMaxLuminanceDeltaAtom)
   const hardware = get(cpcHardwareAtom)
   const dithering = get(ditheringAtom)
+  const useDualPalette = get(modeRDualPaletteAtom)
 
   // Use the same dithering intensity as standard mode (0-1 range → 0-100)
   const ditheringEnabled = dithering.mode !== 'none'
@@ -63,7 +65,8 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
     targetHardware: hardware,
     // Pass the actual dithering mode from settings
     ditheringMode: ditheringEnabled ? dithering.mode : 'none',
-    ditheringIntensity
+    ditheringIntensity,
+    useDualPalette
   }
 })
 

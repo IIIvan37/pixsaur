@@ -335,6 +335,16 @@ export const modeRPreviewModeAtom = atom<
   'blended' | 'frameA' | 'frameB' | 'flicker'
 >('blended')
 
+/**
+ * Mode R dual palette option
+ * - false: Same palette for both frames (default, less flicker)
+ * - true: Independent palettes for each frame (more colors, more flicker)
+ */
+export const modeRDualPaletteAtom = atomWithStorage<boolean>(
+  'pixsaur-mode-r-dual-palette',
+  false
+)
+
 // Setters for Mode R configuration
 export const setModeRAntiFlickerAtom = atom(
   null,
