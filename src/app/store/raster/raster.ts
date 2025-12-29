@@ -17,9 +17,11 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
+  modeREnabledAtom,
   paletteStrategyAtom
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
+import { modeRPreviewImageAtom } from '../preview/mode-r-preview'
 import {
   applyManualEditsToBuffer,
   exportPaletteWithSlotsAtom,
@@ -446,10 +448,20 @@ export const rasterPreviewImageAtom = atom(async (get) => {
 })
 
 /**
- * Effective preview image atom: returns raster preview when enabled,
- * otherwise returns preview with manual edits applied
+ * Effective preview image atom: returns the appropriate preview based on mode.
+ * Priority: Mode R > Raster > Manual Edits > Standard
+ * Note: Mode R and Raster are mutually exclusive
  */
 export const effectivePreviewImageAtom = atom(async (get) => {
+  // Mode R takes priority and is incompatible with rasters
+  const modeREnabled = get(modeREnabledAtom)
+  if (modeREnabled) {
+    const modeRPreview = await get(modeRPreviewImageAtom)
+    if (modeRPreview) {
+      return modeRPreview
+    }
+  }
+
   // Force re-evaluation when raster version changes
   get(rasterVersionAtom)
 
