@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { CPCHardware } from '@/libs/types'
 import { renderWithI18n } from '@/test-utils'
 import { DskWorkspaceView } from './dsk-workspace-view'
 
@@ -153,7 +154,7 @@ describe('DskWorkspaceView', () => {
       nColors: 16,
       scaleX: 1,
       scaleY: 1,
-      cpcHardware: 'classic',
+      cpcHardware: CPCHardware.CLASSIC,
       paletteFirmware: [0, 1, 2],
       thumbnailDataUrl: 'data:image/png;base64,test',
       paletteColors: ['#000000', '#ff0000', '#00ff00']
@@ -195,7 +196,7 @@ describe('DskWorkspaceView', () => {
     })
 
     it('should render Plus hardware badge', () => {
-      const plusImage = { ...mockImage, cpcHardware: 'plus' as const }
+      const plusImage = { ...mockImage, cpcHardware: CPCHardware.PLUS as const }
       renderWithI18n(
         <DskWorkspaceView
           {...defaultProps}
@@ -321,7 +322,7 @@ describe('DskWorkspaceView', () => {
       nColors: 16,
       scaleX: 1,
       scaleY: 1,
-      cpcHardware: 'classic',
+      cpcHardware: CPCHardware.CLASSIC,
       paletteFirmware: [0, 1, 2],
       thumbnailDataUrl: 'data:image/png;base64,test'
     }
@@ -384,7 +385,7 @@ describe('DskWorkspaceView', () => {
         nColors: 16,
         scaleX: 1,
         scaleY: 1,
-        cpcHardware: 'classic',
+        cpcHardware: CPCHardware.CLASSIC,
         paletteFirmware: [0, 1, 2],
         thumbnailDataUrl: 'data:image/png;base64,test'
       }
@@ -410,7 +411,7 @@ describe('DskWorkspaceView', () => {
         nColors: 16,
         scaleX: 1,
         scaleY: 1,
-        cpcHardware: 'classic',
+        cpcHardware: CPCHardware.CLASSIC,
         paletteFirmware: [0, 1, 2],
         thumbnailDataUrl: 'data:image/png;base64,test'
       }

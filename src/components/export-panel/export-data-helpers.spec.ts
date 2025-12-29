@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { IGNORED_SLOT, type IndexBufferData } from '@/app/store/preview/preview'
+import { CPCHardware } from '@/libs/types'
 import {
   convertPaletteToCPCPlus,
   convertPaletteToFirmware,
@@ -126,7 +127,7 @@ describe('prepareExportData', () => {
       rasterEnabled: false,
       rasterBasePalette: null,
       finalRasterIndexBuffer: null,
-      cpcHardware: 'classic'
+      cpcHardware: CPCHardware.CLASSIC
     }
     expect(prepareExportData(params)).toBeNull()
   })
@@ -138,7 +139,7 @@ describe('prepareExportData', () => {
       rasterEnabled: false,
       rasterBasePalette: null,
       finalRasterIndexBuffer: null,
-      cpcHardware: 'classic'
+      cpcHardware: CPCHardware.CLASSIC
     }
     expect(prepareExportData(params)).toBeNull()
   })
@@ -151,7 +152,7 @@ describe('prepareExportData', () => {
       rasterEnabled: false,
       rasterBasePalette: null,
       finalRasterIndexBuffer: null,
-      cpcHardware: 'classic'
+      cpcHardware: CPCHardware.CLASSIC
     }
 
     const result = prepareExportData(params)
@@ -172,7 +173,7 @@ describe('prepareExportData', () => {
       rasterEnabled: false,
       rasterBasePalette: null,
       finalRasterIndexBuffer: null,
-      cpcHardware: 'plus'
+      cpcHardware: CPCHardware.PLUS
     }
 
     const result = prepareExportData(params)
@@ -195,7 +196,7 @@ describe('prepareExportData', () => {
       rasterEnabled: true,
       rasterBasePalette: rasterPalette,
       finalRasterIndexBuffer: null,
-      cpcHardware: 'classic'
+      cpcHardware: CPCHardware.CLASSIC
     }
 
     const result = prepareExportData(params)
@@ -220,7 +221,7 @@ describe('prepareExportData', () => {
       rasterEnabled: true,
       rasterBasePalette: rasterPalette,
       finalRasterIndexBuffer: rasterBuffer,
-      cpcHardware: 'classic'
+      cpcHardware: CPCHardware.CLASSIC
     }
 
     const result = prepareExportData(params)
@@ -244,7 +245,7 @@ describe('prepareExportData', () => {
       rasterEnabled: false,
       rasterBasePalette: rasterPalette,
       finalRasterIndexBuffer: rasterBuffer,
-      cpcHardware: 'classic'
+      cpcHardware: CPCHardware.CLASSIC
     }
 
     const result = prepareExportData(params)
@@ -269,7 +270,7 @@ describe('prepareExportData', () => {
       rasterEnabled: false,
       rasterBasePalette: null,
       finalRasterIndexBuffer: null,
-      cpcHardware: 'classic'
+      cpcHardware: CPCHardware.CLASSIC
     }
 
     const result = prepareExportData(params)
@@ -311,7 +312,7 @@ describe('prepareExportData', () => {
         rasterEnabled: false,
         rasterBasePalette: null,
         finalRasterIndexBuffer: null,
-        cpcHardware: 'classic'
+        cpcHardware: CPCHardware.CLASSIC
       }
 
       const result = prepareExportData(params)
@@ -343,7 +344,7 @@ describe('prepareExportData', () => {
         rasterEnabled: true,
         rasterBasePalette: rasterPalette,
         finalRasterIndexBuffer: editedRasterBuffer,
-        cpcHardware: 'classic'
+        cpcHardware: CPCHardware.CLASSIC
       }
 
       const result = prepareExportData(params)
@@ -372,7 +373,7 @@ describe('prepareExportData', () => {
         rasterEnabled: false,
         rasterBasePalette: null,
         finalRasterIndexBuffer: null,
-        cpcHardware: 'classic'
+        cpcHardware: CPCHardware.CLASSIC
       }
 
       const result = prepareExportData(params)
@@ -404,7 +405,7 @@ describe('prepareExportData', () => {
         rasterEnabled: false,
         rasterBasePalette: null,
         finalRasterIndexBuffer: null,
-        cpcHardware: 'plus'
+        cpcHardware: CPCHardware.PLUS
       }
 
       const result = prepareExportData(params)

@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import { describe, expect, it, vi } from 'vitest'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { CPCHardware } from '@/libs/types'
 import { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
 
 vi.mock('./export-dsk-workspace', () => ({
@@ -29,7 +30,7 @@ describe('exportDskWorkspaceZip', () => {
     nColors: mode === 0 ? 16 : mode === 1 ? 4 : 2,
     scaleX: mode === 0 ? 2 : mode === 1 ? 1 : 0.5,
     scaleY: 1.2,
-    cpcHardware: 'classic',
+    cpcHardware: CPCHardware.CLASSIC,
     paletteFirmware: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     thumbnailDataUrl: 'data:image/png;base64,test',
     paletteColors: [
@@ -136,7 +137,7 @@ describe('exportDskWorkspaceZip', () => {
       nColors: 4,
       scaleX: 1,
       scaleY: 1.2,
-      cpcHardware: 'classic',
+      cpcHardware: CPCHardware.CLASSIC,
       paletteFirmware: [0, 1, 2, 3],
       thumbnailDataUrl: 'data:image/png;base64,test',
       paletteColors: ['#000000', '#0000ff', '#ff0000', '#ff00ff']
@@ -240,7 +241,7 @@ describe('exportDskWorkspaceZip', () => {
 
     const plusImage = {
       ...createMockImage(1),
-      cpcHardware: 'plus',
+      cpcHardware: CPCHardware.PLUS,
       palettePlus: Array.from({ length: 16 }, (_, i) => i)
     }
 
@@ -301,7 +302,7 @@ describe('exportDskWorkspaceZip', () => {
       nColors: 4,
       scaleX: 1,
       scaleY: 1,
-      cpcHardware: 'classic',
+      cpcHardware: CPCHardware.CLASSIC,
       paletteFirmware: [0, 1, 2, 3],
       thumbnailDataUrl: 'data:image/png;base64,test',
       paletteColors: ['#000000', '#0000ff', '#ff0000', '#ff00ff']
@@ -364,7 +365,7 @@ describe('exportDskWorkspaceZip', () => {
       nColors: 4,
       scaleX: 1,
       scaleY: 1,
-      cpcHardware: 'classic',
+      cpcHardware: CPCHardware.CLASSIC,
       paletteFirmware: [0, 1, 2, 3],
       thumbnailDataUrl: 'data:image/png;base64,test',
       paletteColors: ['#000000', '#0000ff', '#ff0000', '#ff00ff']
@@ -429,7 +430,7 @@ describe('exportDskWorkspaceZip', () => {
       nColors: 4,
       scaleX: 1,
       scaleY: 1,
-      cpcHardware: 'classic',
+      cpcHardware: CPCHardware.CLASSIC,
       paletteFirmware: [0, 1, 2, 3],
       thumbnailDataUrl: 'data:image/png;base64,test',
       paletteColors: ['#000000', '#0000ff', '#ff0000', '#ff00ff']
