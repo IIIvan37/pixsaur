@@ -1,5 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
+import { modeREnabledAtom } from '@/app/store/config/config'
 import { editorModeAtom, enterEditModeAtom } from '@/app/store/editor'
 import { imageAtom } from '@/app/store/image/image'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
@@ -12,6 +13,7 @@ import { ImagePreview } from '@/preview'
 
 const PreviewPanel = () => {
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const modeREnabled = useAtomValue(modeREnabledAtom)
   const editorMode = useAtomValue(editorModeAtom)
   const enterEditMode = useSetAtom(enterEditModeAtom)
   const image = useAtomValue(imageAtom)
@@ -20,11 +22,15 @@ const PreviewPanel = () => {
     enterEditMode()
   }
 
+  // Disable edit button when in editor mode, no image loaded, or Mode R is active
+  // Mode R generates 2 images + 2 palettes which the current editor cannot handle
+  const canEdit = !editorMode && image && !modeREnabled
+
   return (
     <Panel>
       <Header
         title={<Trans>Aperçu</Trans>}
-        action={editorMode || !image ? undefined : handleEditClick}
+        action={canEdit ? handleEditClick : undefined}
         actionLabel={<Trans>Éditer</Trans>}
         icon='Pencil2Icon'
       />

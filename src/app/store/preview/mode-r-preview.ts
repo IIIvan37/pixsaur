@@ -323,6 +323,7 @@ export const modeRPreviewImageAtom = atom(
         )
         break
 
+      case 'blended':
       default:
         previewData = generateBlendedPreview(
           indexBufferA,
@@ -335,8 +336,9 @@ export const modeRPreviewImageAtom = atom(
     }
 
     // For blended preview, output is at doubled resolution
-    const outputWidth =
-      previewMode === 'blended' ? actualWidth * 2 : actualWidth
+    // frameA, frameB, and flicker show Mode 0 resolution (160×200)
+    const isBlendedMode = previewMode === 'blended' || previewMode === undefined
+    const outputWidth = isBlendedMode ? actualWidth * 2 : actualWidth
 
     logger.info('[Mode R] Preview generated', {
       outputWidth,
