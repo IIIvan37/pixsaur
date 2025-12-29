@@ -53,7 +53,7 @@ interface DitheringMatrix {
 const DITHERING_MATRICES: Record<string, DitheringMatrix> = {
   bayer2x2: {
     size: 2,
-    maxValue: 4,
+    maxValue: 4, // size * size
     matrix: [
       [0, 2],
       [3, 1]
@@ -61,7 +61,7 @@ const DITHERING_MATRICES: Record<string, DitheringMatrix> = {
   },
   bayer4x4: {
     size: 4,
-    maxValue: 16,
+    maxValue: 16, // size * size
     matrix: [
       [0, 8, 2, 10],
       [12, 4, 14, 6],
@@ -71,7 +71,7 @@ const DITHERING_MATRICES: Record<string, DitheringMatrix> = {
   },
   bayer8x8: {
     size: 8,
-    maxValue: 64,
+    maxValue: 64, // size * size
     matrix: [
       [0, 32, 8, 40, 2, 34, 10, 42],
       [48, 16, 56, 24, 50, 18, 58, 26],
@@ -85,7 +85,7 @@ const DITHERING_MATRICES: Record<string, DitheringMatrix> = {
   },
   halftone4x4: {
     size: 4,
-    maxValue: 17,
+    maxValue: 16, // size * size for consistency
     matrix: [
       [7, 13, 11, 4],
       [12, 16, 14, 8],
@@ -117,6 +117,8 @@ function isOrderedDitheringMode(mode: DitheringMode | 'none'): boolean {
 
 /**
  * Get ordered dithering threshold for a pixel position
+ * Uses the same formula as applyBayerDither in pixsaur-color:
+ * threshold = (bayerVal / (size * size) - 0.5) * intensity * 255
  */
 function getOrderedThreshold(
   x: number,
@@ -126,9 +128,9 @@ function getOrderedThreshold(
 ): number {
   const mx = x % matrix.size
   const my = y % matrix.size
-  const threshold = matrix.matrix[my][mx]
-  // Normalize to -0.5 to 0.5 range, then scale by intensity
-  return (threshold / matrix.maxValue - 0.5) * intensity * 255
+  const bayerVal = matrix.matrix[my][mx]
+  // Normalize to -0.5 to 0.5 range, then scale by intensity and 255
+  return (bayerVal / matrix.maxValue - 0.5) * intensity * 255
 }
 
 /**
@@ -285,21 +287,28 @@ export function quantizeModeR(
 
       if (useOrderedDithering && ditherMatrix) {
         // Ordered dithering: apply threshold-based color adjustment
-        colorA = getSourceColorWithOrderedDither(
-          imageData,
-          width,
-          srcXA,
+        // Use OUTPUT coordinates (x, y) for the dithering pattern, not source coordinates
+        // This ensures the pattern is consistent at CPC resolution
+        const threshold = getOrderedThreshold(
+          x,
           y,
           ditherMatrix,
           ditherIntensity
         )
-        colorB = getSourceColorWithOrderedDither(
+
+        colorA = getSourceColorWithThreshold(
+          imageData,
+          width,
+          srcXA,
+          y,
+          threshold
+        )
+        colorB = getSourceColorWithThreshold(
           imageData,
           width,
           srcXB,
           y,
-          ditherMatrix,
-          ditherIntensity
+          threshold
         )
       } else {
         // Error diffusion or no dithering: use error buffer
@@ -417,22 +426,19 @@ function getSourceColorWithError(
 
 /**
  * Get source pixel color with ordered dithering applied
+ * Uses pre-calculated threshold for consistent pattern
  */
-function getSourceColorWithOrderedDither(
+function getSourceColorWithThreshold(
   imageData: Uint8ClampedArray,
   width: number,
   x: number,
   y: number,
-  matrix: DitheringMatrix,
-  intensity: number
+  threshold: number
 ): Vector<'RGB'> {
   const pixelIdx = (y * width + x) * 4
   const r = imageData[pixelIdx]
   const g = imageData[pixelIdx + 1]
   const b = imageData[pixelIdx + 2]
-
-  // Get threshold for this position
-  const threshold = getOrderedThreshold(x, y, matrix, intensity)
 
   return [
     Math.max(0, Math.min(255, r + threshold)),

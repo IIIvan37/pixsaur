@@ -956,7 +956,7 @@ const MODE_R_WAIT_CYCLES_MACRO = `
 ; WAIT_CYCLES Macro - Precise timing for Mode R
 ;------------------------------------------------------------------------------
 MACRO WAIT_CYCLES _cycles
-@loops    equ ({_cycles}-1)/4
+@loops    equ floor(({_cycles}-1)/4)
 @loopsx4  equ @loops*4
 @nops     equ {_cycles}-@loopsx4-1
     ld b, @loops

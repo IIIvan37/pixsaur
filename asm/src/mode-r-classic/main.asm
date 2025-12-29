@@ -1,13 +1,11 @@
-
-BULD SNA
+BUILDSNA
 BANKSET 0
-SNASET CRTC_TYPE, 0
 
 MACRO	WAIT_CYCLES _cycles
-
-@loops		equ	({_cycles}-1)/4           
+@loops		equ	floor(({_cycles}-1)/4)           
 @loopsx4	equ	@loops*4
           
+print "WAIT_CYCLES ", {_cycles}, @loops, @loopsx4
 @nops		equ	{_cycles}-@loopsx4-1
 
 	ld	b,@loops
@@ -19,15 +17,15 @@ MACRO	WAIT_CYCLES _cycles
 MEND
 
 	ORG	#8000
-    RUN #8000
+	RUN #8000
 start
 	di
 
 	ld	bc,#7f8c + 0		;; set scr mode 0
 	out	(c),c
 
-	ld	hl,ModeR_PaletteA_Hardware		;; set scr palette
-	call setPalette
+	ld	hl, ModeR_PaletteA_Hardware		;; set scr palette
+	call	setPalette
 
 mainLoop
 	call	wVb
@@ -133,48 +131,19 @@ waitScanlines_loop
 
 topScanlines	db	51
 CRTCReg12	db	#30
-; ========== HARDWARE CODES (Gate Array) ==========
+include 'data/palettes.asm'
 
-ModeR_PaletteA_Hardware:
-    db #54  ; Ink 0
-    db #4E  ; Ink 1
-    db #5C  ; Ink 2
-    db #40  ; Ink 3
-    db #58  ; Ink 4
-    db #43  ; Ink 5
-    db #4B  ; Ink 6
-    db #47  ; Ink 7
-    db #44  ; Ink 8
-    db #5F  ; Ink 9
-    db #4A  ; Ink 10
-    db #4C  ; Ink 11
-    db #5B  ; Ink 12
-    db #5E  ; Ink 13
-    db #55  ; Ink 14
-    db #5D  ; Ink 15
-
-ModeR_PaletteB_Hardware:
-    db #54  ; Ink 0
-    db #4B  ; Ink 1
-    db #52  ; Ink 2
-    db #4D  ; Ink 3
-    db #57  ; Ink 4
-    db #4E  ; Ink 5
-    db #40  ; Ink 6
-    db #55  ; Ink 7
-    db #58  ; Ink 8
-    db #4C  ; Ink 9
-    db #56  ; Ink 10
-    db #53  ; Ink 11
-    db #59  ; Ink 12
-    db #4F  ; Ink 13
-    db #4A  ; Ink 14
-    db #44  ; Ink 15
-
+	;; Border color
 border		db	#54
 
+	;; Screen
 
-org #4000
-include 'data/frame-1.asm'
-org #c000
-include 'data/frame-2.asm'
+print "HERE", {hex}$
+	ORG	#4000
+
+	include "data/frame-1.asm"		;; even screen fram
+
+print "HERE", {hex}$
+	ORG	#c000
+
+	include "data/frame-2.asm"		;; odd screen frame
