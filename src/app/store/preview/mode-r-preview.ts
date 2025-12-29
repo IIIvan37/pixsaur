@@ -29,7 +29,10 @@ import {
   modeRMaxLuminanceDeltaAtom,
   modeRPreviewModeAtom
 } from '../config/config'
-import { croppedImageAtom, exportPaletteWithSlotsAtom } from './preview'
+import {
+  exportPaletteWithSlotsAtom,
+  positionedNormalizedImageAtom
+} from './preview'
 
 // ============================================================================
 // Mode R Configuration Atom
@@ -61,79 +64,73 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
  * Source image for Mode R at doubled horizontal resolution.
  * Mode R requires input at 2× horizontal resolution to extract interlaced pixels.
  *
- * IMPORTANT: We resize the ORIGINAL source image to 320×200 (2× Mode 0 width)
- * This preserves the high-resolution detail from the source image.
- * We do NOT simply duplicate pixels from a 160×200 image.
+ * We use the positionedNormalizedImageAtom (which includes proper margins and
+ * positioning like standard modes) and double each pixel horizontally.
+ * This ensures Mode R preview has the same aspect ratio and margins as standard modes.
  */
 
 /**
- * Resize source image to Mode R resolution (2× horizontal resolution)
- * This preserves high-resolution detail from the original image.
+ * Double the horizontal resolution of an image by duplicating each pixel.
+ * This preserves the exact colors and margins from the source image.
  */
-function resizeToModeRResolution(
-  sourceImage: ImageData,
-  targetWidth: number,
-  targetHeight: number
-): ImageData {
-  const canvas = document.createElement('canvas')
-  canvas.width = targetWidth
-  canvas.height = targetHeight
-  const ctx = canvas.getContext('2d')
+function doubleHorizontalResolution(sourceImage: ImageData): ImageData {
+  const srcWidth = sourceImage.width
+  const srcHeight = sourceImage.height
+  const dstWidth = srcWidth * 2
+  const dstHeight = srcHeight
 
-  if (!ctx) return sourceImage
+  const result = new Uint8ClampedArray(dstWidth * dstHeight * 4)
 
-  // Create temp canvas with source image
-  const srcCanvas = document.createElement('canvas')
-  srcCanvas.width = sourceImage.width
-  srcCanvas.height = sourceImage.height
-  const srcCtx = srcCanvas.getContext('2d')
-  if (!srcCtx) return sourceImage
-  srcCtx.putImageData(sourceImage, 0, 0)
+  for (let y = 0; y < srcHeight; y++) {
+    for (let x = 0; x < srcWidth; x++) {
+      const srcIdx = (y * srcWidth + x) * 4
+      const dstIdx = (y * dstWidth + x * 2) * 4
 
-  // Use high-quality scaling to preserve details
-  ctx.imageSmoothingEnabled = true
-  ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(srcCanvas, 0, 0, targetWidth, targetHeight)
+      // Copy pixel to position x*2
+      result[dstIdx] = sourceImage.data[srcIdx]
+      result[dstIdx + 1] = sourceImage.data[srcIdx + 1]
+      result[dstIdx + 2] = sourceImage.data[srcIdx + 2]
+      result[dstIdx + 3] = sourceImage.data[srcIdx + 3]
 
-  return ctx.getImageData(0, 0, targetWidth, targetHeight)
+      // Copy pixel to position x*2+1
+      result[dstIdx + 4] = sourceImage.data[srcIdx]
+      result[dstIdx + 5] = sourceImage.data[srcIdx + 1]
+      result[dstIdx + 6] = sourceImage.data[srcIdx + 2]
+      result[dstIdx + 7] = sourceImage.data[srcIdx + 3]
+    }
+  }
+
+  return new ImageData(result, dstWidth, dstHeight)
 }
 
 /**
  * Mode R Source Image Atom
  *
- * Creates a high-resolution source image for Mode R by resizing the ORIGINAL
- * cropped image to 2× the Mode 0 horizontal resolution.
+ * Creates the source image for Mode R by using the positioned normalized image
+ * (which includes proper margins and positioning) and doubling its horizontal
+ * resolution by duplicating each pixel.
  *
- * This preserves the detail from the source image rather than just duplicating
- * pixels from an already-reduced image.
+ * This ensures Mode R has the same visual layout as standard modes.
  */
 export const modeRSourceImageAtom = atom(async (get) => {
   const modeREnabled = get(modeREnabledAtom)
   if (!modeREnabled) return null
 
-  // Use the cropped image (before CPC resize) as source
-  const sourceImage = await get(croppedImageAtom)
+  // Use the positioned normalized image (same as standard preview pipeline)
+  // This includes proper margins, centering, and aspect ratio correction
+  const sourceImage = await get(positionedNormalizedImageAtom)
   const modeConfig = get(effectiveModeConfigAtom)
 
   if (!sourceImage) return null
 
-  // Target dimensions: 2× horizontal resolution of Mode 0
-  // Standard Mode 0: 160×200 → Mode R source: 320×200
-  // Overscan Mode 0: 192×272 → Mode R source: 384×272
-  const targetWidth = modeConfig.width * 2
-  const targetHeight = modeConfig.height
+  // Double the horizontal resolution for Mode R processing
+  // Source: 160×200 → Mode R source: 320×200
+  const modeRImage = doubleHorizontalResolution(sourceImage)
 
-  // Resize the original high-resolution image to Mode R dimensions
-  const modeRImage = resizeToModeRResolution(
-    sourceImage,
-    targetWidth,
-    targetHeight
-  )
-
-  logger.info('[Mode R] Source image created from original', {
+  logger.info('[Mode R] Source image created from positioned normalized', {
     sourceSize: `${sourceImage.width}×${sourceImage.height}`,
     modeRSize: `${modeRImage.width}×${modeRImage.height}`,
-    targetDimensions: `${targetWidth}×${targetHeight}`
+    expectedDimensions: `${modeConfig.width * 2}×${modeConfig.height}`
   })
 
   return modeRImage

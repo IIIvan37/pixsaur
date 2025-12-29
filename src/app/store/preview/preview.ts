@@ -24,6 +24,8 @@ import {
   ditheringAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
+  modeREnabledAtom,
+  modeRPreviewModeAtom,
   paletteStrategyAtom,
   pixelModeAtom,
   resizeModeAtom
@@ -93,10 +95,25 @@ export const previewCanvasSizeAtom = atom((get) => {
   // Obtenir la configuration du mode CPC pour le pixel aspect ratio
   const modeConfig = get(effectiveModeConfigAtom)
 
+  // Check if Mode R is enabled and using blended preview
+  // In blended mode, the image is already at doubled resolution (like Mode 1)
+  // so we don't need to apply the scaleX factor
+  const modeREnabled = get(modeREnabledAtom)
+  const modeRPreviewMode = get(modeRPreviewModeAtom)
+  const isModeRBlended = modeREnabled && modeRPreviewMode === 'blended'
+
+  // For Mode R blended, the image is already at visual resolution (320×200)
+  // so we use scale factors of 1
+  const effectiveScaleX = isModeRBlended ? 1 : modeConfig.scaleX
+  const effectiveScaleY = isModeRBlended ? 1 : modeConfig.scaleY
+
   // Dimensions visuelles = dimensions canvas × pixel aspect ratio
-  // Toujours 320×200 pour tous les modes
-  const visualWidth = modeConfig.width * modeConfig.scaleX
-  const visualHeight = modeConfig.height * modeConfig.scaleY
+  // For Mode R blended: use image dimensions directly (already correct)
+  // For standard modes: apply scale factors
+  const visualWidth = isModeRBlended
+    ? modeConfig.width * 2 // Mode R blended outputs doubled width
+    : modeConfig.width * effectiveScaleX
+  const visualHeight = modeConfig.height * effectiveScaleY
 
   // Calculer le scale pour fit dans le container (sans dépasser la largeur disponible)
   const scale = Math.min(containerWidth / visualWidth, 1) // Ne pas upscaler
