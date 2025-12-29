@@ -169,10 +169,16 @@ export const modeRQuantizationAtom = atom(
 export const modeRPreviewImageAtom = atom(
   async (get): Promise<ImageData | null> => {
     const modeREnabled = get(modeREnabledAtom)
-    if (!modeREnabled) return null
+    if (!modeREnabled) {
+      logger.info('[Mode R] Preview skipped - Mode R not enabled')
+      return null
+    }
 
     const quantResult = await get(modeRQuantizationAtom)
-    if (!quantResult) return null
+    if (!quantResult) {
+      logger.warn('[Mode R] Preview skipped - No quantization result')
+      return null
+    }
 
     const previewMode = get(modeRPreviewModeAtom)
     const { indexBufferA, indexBufferB, palettes } = quantResult
@@ -182,7 +188,16 @@ export const modeRPreviewImageAtom = atom(
     // We infer it from the source image dimensions
     const normalizedImage = await get(normalizedImageAtom)
     const height = normalizedImage?.height ?? 200
-    const actualWidth = quantResult.indexBufferA.length / height
+    const actualWidth = Math.floor(quantResult.indexBufferA.length / height)
+
+    logger.info('[Mode R] Generating preview', {
+      previewMode,
+      height,
+      actualWidth,
+      bufferLength: quantResult.indexBufferA.length,
+      paletteALength: palettes.paletteA.length,
+      paletteBLength: palettes.paletteB.length
+    })
 
     let previewData: Uint8ClampedArray
 
@@ -215,7 +230,6 @@ export const modeRPreviewImageAtom = atom(
         )
         break
 
-      case 'blended':
       default:
         previewData = generateBlendedPreview(
           indexBufferA,
@@ -230,6 +244,12 @@ export const modeRPreviewImageAtom = atom(
     // For blended preview, output is at doubled resolution
     const outputWidth =
       previewMode === 'blended' ? actualWidth * 2 : actualWidth
+
+    logger.info('[Mode R] Preview generated', {
+      outputWidth,
+      height,
+      dataLength: previewData.length
+    })
 
     return new ImageData(
       new Uint8ClampedArray(previewData),
