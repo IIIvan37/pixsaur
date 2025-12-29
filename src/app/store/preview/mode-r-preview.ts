@@ -36,7 +36,7 @@ import {
 import {
   croppedImageAtom,
   exportPaletteWithSlotsAtom,
-  smoothedImageAtom
+  resizedImageAtom
 } from './preview'
 
 // ============================================================================
@@ -219,11 +219,12 @@ export const modeRSourceImageAtom = atom(async (get) => {
   // In 'origin' mode, use the cropped image BEFORE the standard resize pipeline
   // because the standard pipeline compresses to Mode 0 dimensions (160×200)
   // but Mode R needs the full 320×200 resolution
-  // In 'auto' mode, use smoothedImageAtom which already has the correct processing
+  // In 'auto' mode, use resizedImageAtom (NOT smoothedImageAtom) to skip horizontal smoothing
+  // Mode R has its own sub-pixel resolution, horizontal smoothing would blur it
   const sourceImage =
     resizeMode === 'origin'
       ? await get(croppedImageAtom)
-      : await get(smoothedImageAtom)
+      : await get(resizedImageAtom)
 
   if (!sourceImage) return null
 
