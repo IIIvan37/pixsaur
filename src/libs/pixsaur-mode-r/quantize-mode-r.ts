@@ -168,28 +168,25 @@ function findBestBlendPair(
  * @param imageData - Source image RGBA data at doubled horizontal resolution (e.g., 320×200)
  * @param width - Source image width (doubled Mode 0 width, e.g., 320)
  * @param height - Source image height (e.g., 200)
- * @param targetPalette - Pre-quantized 16-color palette (used as hint, not directly)
  * @param config - Mode R configuration
+ * @param existingPalette - Optional pre-optimized palette from standard mode (preserves important colors)
  * @returns Mode R quantization result with two index buffers
  */
 export function quantizeModeR(
   imageData: Uint8ClampedArray,
   width: number,
   height: number,
-  config: ModeRConfig = DEFAULT_MODE_R_CONFIG
+  config: ModeRConfig = DEFAULT_MODE_R_CONFIG,
+  existingPalette?: Vector<'RGB'>[]
 ): ModeRQuantizationResult {
-  // Step 1: Extract MORE colors from the image than just 16
-  // Mode R can represent up to 256 blended colors, so we need more target colors
-  // to optimize palettes properly. Extract 64 colors for better coverage.
-  const imageColors = extractImageColors(
-    imageData,
-    width,
-    height,
-    64 // Extract 64 colors instead of just 16
+  // Use palette optimization for Mode R - creates 2 independent palettes
+  // for 256 possible blends (16×16). If existingPalette is provided,
+  // it will be used as palette A (preserves colors like bright yellow).
+  const palettes = optimizeModeRPalettes(
+    extractImageColors(imageData, width, height, 64),
+    config,
+    existingPalette
   )
-
-  // Step 2: Optimize dual palettes to cover as many of these colors as possible
-  const palettes = optimizeModeRPalettes(imageColors, config)
 
   // Output dimensions (half the horizontal resolution)
   const outWidth = Math.floor(width / 2)
@@ -206,80 +203,30 @@ export function quantizeModeR(
   const indexBufferB = new Uint8Array(outWidth * outHeight)
   let totalError = 0
 
+  const processContext: PixelProcessContext = {
+    width,
+    height,
+    outWidth,
+    imageData,
+    errorBuffer,
+    palettes,
+    indexBufferA,
+    indexBufferB,
+    ditherIntensity
+  }
+
   for (let y = 0; y < outHeight; y++) {
     const isEvenLine = y % 2 === 0
 
     for (let x = 0; x < outWidth; x++) {
-      // Interlaced pixel extraction based on line parity
-      const srcXA = isEvenLine ? x * 2 : x * 2 + 1
-      const srcXB = isEvenLine ? x * 2 + 1 : x * 2
-
-      // Get source colors with accumulated dithering error
-      const colorA = getPixelColorWithError(
-        imageData,
-        errorBuffer,
-        (y * width + srcXA) * 4,
-        (y * width + srcXA) * 3
-      )
-      const colorB = getPixelColorWithError(
-        imageData,
-        errorBuffer,
-        (y * width + srcXB) * 4,
-        (y * width + srcXB) * 3
-      )
-
-      // For Mode R, we want the PERCEIVED color to match the target
-      // The perceived color is the average of colorA and colorB sources
-      // So we find the best pair that blends to this average
-      const targetBlend: Vector<'RGB'> = [
-        (colorA[0] + colorB[0]) / 2,
-        (colorA[1] + colorB[1]) / 2,
-        (colorA[2] + colorB[2]) / 2
-      ]
-
-      // Find the best pair (idxA, idxB) whose blend matches targetBlend
-      const bestPair = findBestBlendPair(
-        targetBlend,
-        palettes.paletteA,
-        palettes.paletteB
-      )
-
-      const outIdx = y * outWidth + x
-      indexBufferA[outIdx] = bestPair.indexA
-      indexBufferB[outIdx] = bestPair.indexB
-      totalError += bestPair.error
-
-      // Propagate dithering error based on the blended result
-      if (errorBuffer) {
-        const chosenBlend: Vector<'RGB'> = [
-          (palettes.paletteA[bestPair.indexA][0] +
-            palettes.paletteB[bestPair.indexB][0]) /
-            2,
-          (palettes.paletteA[bestPair.indexA][1] +
-            palettes.paletteB[bestPair.indexB][1]) /
-            2,
-          (palettes.paletteA[bestPair.indexA][2] +
-            palettes.paletteB[bestPair.indexB][2]) /
-            2
-        ]
-        // Distribute error to both source positions
-        const errorHalf: Vector<'RGB'> = [
-          ((targetBlend[0] - chosenBlend[0]) * ditherIntensity) / 2,
-          ((targetBlend[1] - chosenBlend[1]) * ditherIntensity) / 2,
-          ((targetBlend[2] - chosenBlend[2]) * ditherIntensity) / 2
-        ]
-        propagateError(errorBuffer, width, height, srcXA, y, errorHalf)
-        propagateError(errorBuffer, width, height, srcXB, y, errorHalf)
-      }
+      totalError += processPixelPair(x, y, isEvenLine, processContext)
     }
   }
 
   // Count unique blends actually used in the image
   const usedBlends = new Set<string>()
   for (let i = 0; i < indexBufferA.length; i++) {
-    const idxA = indexBufferA[i]
-    const idxB = indexBufferB[i]
-    usedBlends.add(`${idxA},${idxB}`)
+    usedBlends.add(`${indexBufferA[i]},${indexBufferB[i]}`)
   }
 
   logger.info('[Mode R] Quantization complete:', {
@@ -291,6 +238,103 @@ export function quantizeModeR(
   })
 
   return { indexBufferA, indexBufferB, palettes, totalError }
+}
+
+/**
+ * Context for pixel pair processing
+ */
+interface PixelProcessContext {
+  width: number
+  height: number
+  outWidth: number
+  imageData: Uint8ClampedArray
+  errorBuffer: Float32Array | null
+  palettes: ModeRPalettes
+  indexBufferA: Uint8Array
+  indexBufferB: Uint8Array
+  ditherIntensity: number
+}
+
+/**
+ * Process a single pixel pair in Mode R quantization
+ */
+function processPixelPair(
+  x: number,
+  y: number,
+  isEvenLine: boolean,
+  ctx: PixelProcessContext
+): number {
+  const {
+    width,
+    height,
+    outWidth,
+    imageData,
+    errorBuffer,
+    palettes,
+    indexBufferA,
+    indexBufferB,
+    ditherIntensity
+  } = ctx
+
+  // Interlaced pixel extraction based on line parity
+  const srcXA = isEvenLine ? x * 2 : x * 2 + 1
+  const srcXB = isEvenLine ? x * 2 + 1 : x * 2
+
+  // Get source colors with accumulated dithering error
+  const colorA = getPixelColorWithError(
+    imageData,
+    errorBuffer,
+    (y * width + srcXA) * 4,
+    (y * width + srcXA) * 3
+  )
+  const colorB = getPixelColorWithError(
+    imageData,
+    errorBuffer,
+    (y * width + srcXB) * 4,
+    (y * width + srcXB) * 3
+  )
+
+  // For Mode R, we want the PERCEIVED color to match the target
+  const targetBlend: Vector<'RGB'> = [
+    (colorA[0] + colorB[0]) / 2,
+    (colorA[1] + colorB[1]) / 2,
+    (colorA[2] + colorB[2]) / 2
+  ]
+
+  // Find the best pair (idxA, idxB) whose blend matches targetBlend
+  const bestPair = findBestBlendPair(
+    targetBlend,
+    palettes.paletteA,
+    palettes.paletteB
+  )
+
+  const outIdx = y * outWidth + x
+  indexBufferA[outIdx] = bestPair.indexA
+  indexBufferB[outIdx] = bestPair.indexB
+
+  // Propagate dithering error based on the blended result
+  if (errorBuffer) {
+    const chosenBlend: Vector<'RGB'> = [
+      (palettes.paletteA[bestPair.indexA][0] +
+        palettes.paletteB[bestPair.indexB][0]) /
+        2,
+      (palettes.paletteA[bestPair.indexA][1] +
+        palettes.paletteB[bestPair.indexB][1]) /
+        2,
+      (palettes.paletteA[bestPair.indexA][2] +
+        palettes.paletteB[bestPair.indexB][2]) /
+        2
+    ]
+    const errorHalf: Vector<'RGB'> = [
+      ((targetBlend[0] - chosenBlend[0]) * ditherIntensity) / 2,
+      ((targetBlend[1] - chosenBlend[1]) * ditherIntensity) / 2,
+      ((targetBlend[2] - chosenBlend[2]) * ditherIntensity) / 2
+    ]
+    propagateError(errorBuffer, width, height, srcXA, y, errorHalf)
+    propagateError(errorBuffer, width, height, srcXB, y, errorHalf)
+  }
+
+  return bestPair.error
 }
 
 /**

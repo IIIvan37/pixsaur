@@ -70,6 +70,110 @@ function findNearestColor(
 }
 
 /**
+ * Check if a color is sufficiently different from all colors in a set
+ */
+function isColorDiverse(
+  color: Vector<'RGB'>,
+  existingColors: Vector<'RGB'>[],
+  minDistance: number
+): boolean {
+  for (const existing of existingColors) {
+    if (colorDistance(color, existing) < minDistance) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * Check if a color is similar to any color in a list
+ */
+function isColorInList(
+  color: Vector<'RGB'>,
+  list: Vector<'RGB'>[],
+  maxDistance: number
+): boolean {
+  for (const c of list) {
+    if (colorDistance(color, c) < maxDistance) {
+      return true
+    }
+  }
+  return false
+}
+
+/**
+ * Add diverse colors from available palette to fill remaining slots
+ */
+function fillWithDiverseColors(
+  selected: Vector<'RGB'>[],
+  usedKeys: Set<string>,
+  available: Vector<'RGB'>[],
+  count: number,
+  minDistance: number
+): void {
+  for (const color of available) {
+    if (selected.length >= count) break
+
+    const key = `${color[0]},${color[1]},${color[2]}`
+    if (usedKeys.has(key)) continue
+
+    if (isColorDiverse(color, selected, minDistance)) {
+      selected.push(color)
+      usedKeys.add(key)
+    }
+  }
+}
+
+/**
+ * Select best matching colors from available palette for CPC Plus.
+ * Since CPC Plus has 4096 colors, we can find near-exact matches.
+ * This ensures we use the full color range instead of a sparse selection.
+ */
+function selectBestMatchingColors(
+  targetColors: Vector<'RGB'>[],
+  available: Vector<'RGB'>[],
+  count: number
+): Vector<'RGB'>[] {
+  // Handle empty inputs
+  if (available.length === 0 || targetColors.length === 0) {
+    return []
+  }
+
+  // For each target, find the best matching available color
+  const matchedColors: Array<{ color: Vector<'RGB'>; score: number }> = []
+
+  for (const target of targetColors) {
+    const nearest = findNearestColor(target, available)
+    const distance = colorDistance(target, nearest)
+    matchedColors.push({ color: nearest, score: distance })
+  }
+
+  // Sort by match quality (lower distance = better match)
+  matchedColors.sort((a, b) => a.score - b.score)
+
+  // Take unique colors, prioritizing best matches
+  const selected: Vector<'RGB'>[] = []
+  const usedKeys = new Set<string>()
+
+  for (const match of matchedColors) {
+    if (selected.length >= count) break
+
+    const key = `${match.color[0]},${match.color[1]},${match.color[2]}`
+    if (!usedKeys.has(key)) {
+      selected.push(match.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // If we still need more colors, add diverse colors from available
+  if (selected.length < count) {
+    fillWithDiverseColors(selected, usedKeys, available, count, 1000)
+  }
+
+  return selected
+}
+
+/**
  * Calculate how many new targets a candidate color helps cover
  */
 function countNewCoverage(
@@ -232,6 +336,57 @@ function selectDiverseColors(
 }
 
 /**
+ * Calculate ideal B colors needed to blend with paletteA to reach target colors
+ */
+function calculateNeededBColors(
+  targetColors: Vector<'RGB'>[],
+  paletteA: Vector<'RGB'>[]
+): Vector<'RGB'>[] {
+  const neededBColors: Vector<'RGB'>[] = []
+  for (const target of targetColors) {
+    for (const colorA of paletteA) {
+      // blend(A, B) = target → B = 2*target - A
+      const idealB: Vector<'RGB'> = [
+        Math.max(0, Math.min(255, 2 * target[0] - colorA[0])),
+        Math.max(0, Math.min(255, 2 * target[1] - colorA[1])),
+        Math.max(0, Math.min(255, 2 * target[2] - colorA[2]))
+      ]
+      neededBColors.push(idealB)
+    }
+  }
+  return neededBColors
+}
+
+/**
+ * Select palette B for CPC Plus using hybrid approach
+ */
+function selectPaletteBForPlus(
+  paletteA: Vector<'RGB'>[],
+  targetColors: Vector<'RGB'>[],
+  availableColors: Vector<'RGB'>[]
+): Vector<'RGB'>[] {
+  // Take the 8 most important colors from paletteA (shared = pure colors)
+  const sharedColors = paletteA.slice(0, 8)
+
+  // Find colors that create useful blends
+  const neededBColors = calculateNeededBColors(targetColors, paletteA)
+
+  // Filter out colors too similar to shared ones
+  const filteredAvailable = availableColors.filter(
+    (c) => !isColorInList(c, sharedColors, 500)
+  )
+
+  // Select 8 complementary colors (fallback to full palette if filter is too aggressive)
+  const complementaryColors = selectBestMatchingColors(
+    neededBColors,
+    filteredAvailable.length > 0 ? filteredAvailable : availableColors,
+    8
+  )
+
+  return [...sharedColors, ...complementaryColors]
+}
+
+/**
  * Create two independent palettes of 16 colors each that maximize
  * the coverage of target colors through their blends.
  *
@@ -244,7 +399,8 @@ function selectDiverseColors(
  */
 export function optimizeModeRPalettes(
   targetColors: Vector<'RGB'>[],
-  config: ModeRConfig = DEFAULT_MODE_R_CONFIG
+  config: ModeRConfig = DEFAULT_MODE_R_CONFIG,
+  existingPalette?: Vector<'RGB'>[]
 ): ModeRPalettes {
   // Get available hardware colors
   const availableColors =
@@ -252,27 +408,39 @@ export function optimizeModeRPalettes(
       ? generateCPCPlusPalette()
       : generateCPCClassicPalette()
 
-  // For palette A, select colors that are close to target colors
-  // and also span the color space well
-  const paletteA = selectDiverseColors(targetColors, availableColors, 16)
+  logger.info('[Mode R] Starting palette optimization', {
+    hardware: config.targetHardware,
+    availableColors: availableColors.length,
+    targetColors: targetColors.length,
+    usingExistingPalette: !!existingPalette
+  })
 
-  // For palette B, we want colors that complement palette A
-  // Calculate what B colors we'd need to blend to each target
-  const neededBColors: Vector<'RGB'>[] = []
-  for (const target of targetColors) {
-    // For each A color, calculate ideal B: blend(A, B) = target → B = 2*target - A
-    for (const colorA of paletteA) {
-      const idealB: Vector<'RGB'> = [
-        Math.max(0, Math.min(255, 2 * target[0] - colorA[0])),
-        Math.max(0, Math.min(255, 2 * target[1] - colorA[1])),
-        Math.max(0, Math.min(255, 2 * target[2] - colorA[2]))
-      ]
-      neededBColors.push(idealB)
-    }
+  // Select palette A:
+  // - If existing palette provided, use it (preserves standard mode colors like bright yellow)
+  // - Otherwise, compute from scratch
+  let paletteA: Vector<'RGB'>[]
+  if (existingPalette && existingPalette.length > 0) {
+    // Use existing palette as-is (already optimized for the image)
+    paletteA = existingPalette.slice(0, 16)
+    while (paletteA.length < 16) paletteA.push([0, 0, 0])
+    logger.info('[Mode R] Using existing palette for palette A', {
+      colors: paletteA.length
+    })
+  } else {
+    paletteA =
+      config.targetHardware === 'plus'
+        ? selectBestMatchingColors(targetColors, availableColors, 16)
+        : selectDiverseColors(targetColors, availableColors, 16)
   }
 
-  // Select palette B to cover the needed complementary colors
-  const paletteB = selectDiverseColors(neededBColors, availableColors, 16)
+  // Select palette B based on hardware
+  let paletteB: Vector<'RGB'>[]
+  if (config.targetHardware === 'plus') {
+    paletteB = selectPaletteBForPlus(paletteA, targetColors, availableColors)
+  } else {
+    const neededBColors = calculateNeededBColors(targetColors, paletteA)
+    paletteB = selectDiverseColors(neededBColors, availableColors, 16)
+  }
 
   // Pad palettes to 16 if needed
   while (paletteA.length < 16) paletteA.push([0, 0, 0])

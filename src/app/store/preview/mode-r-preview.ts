@@ -167,11 +167,14 @@ export const modeRQuantizationAtom = atom(
       config
     })
 
+    // Pass the existing palette from standard mode as palette A base
+    // This preserves important colors like bright yellow that standard mode captured
     const result = quantizeModeR(
       sourceImage.data,
       sourceImage.width,
       sourceImage.height,
-      config
+      config,
+      validPalette
     )
 
     logger.info('[Mode R] Quantization complete', {
