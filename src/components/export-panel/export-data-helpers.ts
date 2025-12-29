@@ -7,6 +7,7 @@
 
 import { IGNORED_SLOT, type IndexBufferData } from '@/app/store/preview/preview'
 import { rgbToCPCPlus, rgbToFirmwareIndex } from '@/export'
+import type { CPCHardware } from '@/libs/types'
 
 /** Check if a color slot should be ignored (empty locked slot) */
 export function isIgnoredSlot(color: number[]): boolean {
@@ -63,7 +64,7 @@ export interface GetExportDataParams {
   rasterBasePalette: unknown[] | null
   /** Final raster index buffer with manual edits applied */
   finalRasterIndexBuffer: IndexBufferData | null
-  cpcHardware: 'classic' | 'plus'
+  cpcHardware: CPCHardware
 }
 
 /**

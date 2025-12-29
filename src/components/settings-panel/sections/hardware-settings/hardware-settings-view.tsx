@@ -5,9 +5,10 @@
 import { Trans } from '@lingui/react/macro'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
-import type { CPCHardware } from '@/libs/types'
+import { CPCHardware } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
+import { ModeRSettings } from './mode-r-settings'
 
 type HardwareSettingsViewProps = Readonly<{
   cpcHardware: CPCHardware
@@ -27,8 +28,9 @@ export function HardwareSettingsView({
   onDimensionPresetChange
 }: HardwareSettingsViewProps) {
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
-    { value: 'classic' as CPCHardware, label: 'CPC Classic (27 colors)' },
-    { value: 'plus' as CPCHardware, label: 'CPC Plus (4096 colors)' }
+    { value: CPCHardware.CLASSIC, label: 'CPC Classic (27 colors)' },
+    { value: CPCHardware.PLUS, label: 'CPC Plus (4096 colors)' },
+    { value: CPCHardware.MODE_R, label: 'Mode R (240 colors)' }
   ]
 
   const pixelModeOptions: Array<{ value: PixelMode; label: string }> = [
@@ -72,6 +74,8 @@ export function HardwareSettingsView({
             ariaLabelPrefix='Hardware'
           />
         </div>
+
+        {cpcHardware === CPCHardware.MODE_R && <ModeRSettings />}
       </div>
 
       <div className={styles.separator} />

@@ -294,6 +294,61 @@ export const setCpcHardwareAtom = atom(
 )
 
 // ============================================================================
+// MODE R CONFIGURATION
+// ============================================================================
+
+/**
+ * Mode R anti-flicker weight (0-100)
+ * Higher values prioritize flicker reduction over color accuracy
+ */
+export const modeRAntiFlickerAtom = atomWithStorage<number>(
+  'pixsaur-mode-r-anti-flicker',
+  70
+)
+
+/**
+ * Mode R maximum luminance delta for color pairs
+ * Pairs with higher luminance difference will be penalized
+ */
+export const modeRMaxLuminanceDeltaAtom = atomWithStorage<number>(
+  'pixsaur-mode-r-max-luminance-delta',
+  80
+)
+
+/**
+ * Mode R preview mode
+ * - 'blended': Show perceived colors (default)
+ * - 'frameA': Show frame A only
+ * - 'frameB': Show frame B only
+ * - 'flicker': Show flicker heatmap
+ */
+export const modeRPreviewModeAtom = atom<
+  'blended' | 'frameA' | 'frameB' | 'flicker'
+>('blended')
+
+// Setters for Mode R configuration
+export const setModeRAntiFlickerAtom = atom(
+  null,
+  (_get, set, payload: number) => {
+    set(modeRAntiFlickerAtom, Math.max(0, Math.min(100, payload)))
+  }
+)
+
+export const setModeRMaxLuminanceDeltaAtom = atom(
+  null,
+  (_get, set, payload: number) => {
+    set(modeRMaxLuminanceDeltaAtom, Math.max(0, Math.min(255, payload)))
+  }
+)
+
+export const setModeRPreviewModeAtom = atom(
+  null,
+  (_get, set, payload: 'blended' | 'frameA' | 'frameB' | 'flicker') => {
+    set(modeRPreviewModeAtom, payload)
+  }
+)
+
+// ============================================================================
 // RESIZE CONFIGURATION
 // ============================================================================
 

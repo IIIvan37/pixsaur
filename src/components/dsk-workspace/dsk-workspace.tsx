@@ -7,6 +7,7 @@ import {
   hasDskImagesAtom,
   removeImageFromDskAtom
 } from '@/app/store/dsk-workspace/dsk-workspace'
+import type { CPCHardware } from '@/libs/types'
 import {
   calculateDskRemainingSpace,
   canAddImageToDsk,
@@ -26,7 +27,7 @@ interface DskWorkspaceProps {
     nColors: number
     scaleX: number
     scaleY: number
-    cpcHardware: 'classic' | 'plus'
+    cpcHardware: CPCHardware
     paletteFirmware: number[]
     palettePlus?: number[]
     thumbnailDataUrl?: string

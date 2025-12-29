@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { CPCHardware } from '@/libs/types'
 import type { SnaExportOptions } from './export-sna'
 
 // Mock @/core logger
@@ -49,7 +50,7 @@ describe('export-cpc-playground', () => {
       scaleX: 2,
       scaleY: 1
     },
-    hardware: 'classic',
+    hardware: CPCHardware.CLASSIC,
     paletteFirmware: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     hasRasters: false
   }
@@ -211,7 +212,7 @@ describe('export-cpc-playground', () => {
     it('should pass classic hardware options to ASM generator', async () => {
       const classicOptions: SnaExportOptions = {
         ...defaultOptions,
-        hardware: 'classic',
+        hardware: CPCHardware.CLASSIC,
         paletteFirmware: [0, 1, 2, 3]
       }
 
@@ -224,7 +225,7 @@ describe('export-cpc-playground', () => {
     it('should pass plus hardware options to ASM generator', async () => {
       const plusOptions: SnaExportOptions = {
         ...defaultOptions,
-        hardware: 'plus',
+        hardware: CPCHardware.PLUS,
         palettePlus: [0x000, 0xfff, 0x00f, 0x0f0]
       }
 

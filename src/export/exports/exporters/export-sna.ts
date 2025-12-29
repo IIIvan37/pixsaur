@@ -8,6 +8,7 @@
 
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { createLogger } from '@/core'
+import type { CPCHardware } from '@/libs/types'
 import { firmwareToHardware } from '../cpc-format'
 import {
   exportLinearAsm,
@@ -33,8 +34,8 @@ export interface SnaExportOptions {
   indexBuf: Uint8Array
   /** CPC mode configuration */
   modeConfig: CpcModeConfig
-  /** Hardware type ('classic' or 'plus') */
-  hardware: 'classic' | 'plus'
+  /** Hardware type */
+  hardware: CPCHardware
   /** CPC firmware palette indices (for Classic) */
   paletteFirmware?: number[]
   /** CPC Plus palette values (12-bit 0GRB format) */

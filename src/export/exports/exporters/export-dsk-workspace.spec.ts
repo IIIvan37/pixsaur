@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import { CPCHardware } from '@/libs/types'
 
 // Mock RASM WASM
 let mockRasmInstance: any
@@ -73,7 +74,7 @@ describe('exportDskWorkspace', () => {
     index: number,
     mode: 0 | 1 | 2 = 0,
     overscan = false,
-    cpcHardware: 'classic' | 'plus' = 'classic'
+    cpcHardware: CPCHardware = CPCHardware.CLASSIC
   ): DskImage => ({
     id: `image-${index}`,
     name: `Image${index}`,
@@ -88,7 +89,7 @@ describe('exportDskWorkspace', () => {
     cpcHardware,
     paletteFirmware: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
     palettePlus:
-      cpcHardware === 'plus'
+      cpcHardware === CPCHardware.PLUS
         ? [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         : undefined,
     thumbnailDataUrl: 'data:image/png;base64,test',
@@ -227,14 +228,14 @@ describe('exportDskWorkspace', () => {
     })
 
     it('should inject CPC Plus palette when hardware is plus', async () => {
-      const images = [createMockImage(1, 0, false, 'plus')]
+      const images = [createMockImage(1, 0, false, CPCHardware.PLUS)]
       await exportDskWorkspace(images)
 
       expect(mockInjectCPCPlusPaletteIntoSCR).toHaveBeenCalled()
     })
 
     it('should inject firmware palette when hardware is classic', async () => {
-      const images = [createMockImage(1, 0, false, 'classic')]
+      const images = [createMockImage(1, 0, false, CPCHardware.CLASSIC)]
       await exportDskWorkspace(images)
 
       expect(mockInjectPaletteDataIntoSCR).toHaveBeenCalled()

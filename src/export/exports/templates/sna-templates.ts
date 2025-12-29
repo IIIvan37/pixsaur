@@ -11,6 +11,8 @@
  * - CPC Plus (4096 colors) - Overscan (280 lines) with/without rasters
  */
 
+import type { CPCHardware } from '@/libs/types'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -25,7 +27,7 @@ export interface SnaTemplateOptions {
   /** Whether raster effects are enabled */
   hasRasters: boolean
   /** Hardware type */
-  hardware: 'classic' | 'plus'
+  hardware: CPCHardware
 }
 
 export interface SnaDataFiles {
