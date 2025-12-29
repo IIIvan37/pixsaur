@@ -1,11 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
+  assembleModeRSnaSource,
   assembleSnaSource,
   generateClassicOverscanSnaTemplate,
   generateClassicScrSnaTemplate,
+  generateModeRClassicSnaTemplate,
+  generateModeRPlusSnaTemplate,
   generatePlusOverscanSnaTemplate,
   generatePlusScrSnaTemplate,
   generateSnaTemplate,
+  type ModeRDataFiles,
   type SnaDataFiles,
   type SnaTemplateOptions
 } from './sna-templates'
@@ -333,6 +337,177 @@ describe('SNA Templates', () => {
       expect(source).toContain('org #4268')
       expect(source).toContain('ImageData_linear_chunk_0:')
       expect(source).toContain('ImageData_linear_chunk_1:')
+    })
+  })
+
+  describe('Mode R Templates', () => {
+    describe('generateModeRClassicSnaTemplate', () => {
+      it('should generate Mode R template for CPC Classic', () => {
+        const template = generateModeRClassicSnaTemplate()
+
+        expect(template).toContain('BUILDSNA')
+        expect(template).toContain('BANKSET 0')
+        expect(template).toContain('SNASET CRTC_TYPE, 0')
+        expect(template).toContain('org #8000')
+        expect(template).toContain('run #8000')
+        // Mode R specific
+        expect(template).toContain('ModeR_PaletteA_Hardware')
+        expect(template).toContain('ModeR_PaletteB_Hardware')
+        expect(template).toContain('topScanlines')
+        expect(template).toContain('CRTCReg12')
+        expect(template).toContain('WAIT_CYCLES')
+        // Page switching
+        expect(template).toContain('#bc0c')
+        expect(template).toContain('xor #20')
+        // Palette switching
+        expect(template).toContain('ex hl, de')
+        expect(template).toContain('setPalette')
+      })
+
+      it('should include VBlank wait routine', () => {
+        const template = generateModeRClassicSnaTemplate()
+
+        expect(template).toContain('wVb:')
+        expect(template).toContain('#f5')
+        expect(template).toContain('rra')
+      })
+
+      it('should include waitScanlines routine', () => {
+        const template = generateModeRClassicSnaTemplate()
+
+        expect(template).toContain('waitScanlines:')
+        expect(template).toContain('WAIT_CYCLES 40')
+        expect(template).toContain('WAIT_CYCLES 50')
+      })
+
+      it('should include raster loop for Mode R effect', () => {
+        const template = generateModeRClassicSnaTemplate()
+
+        expect(template).toContain('rasterLoop:')
+        expect(template).toContain('#bd2d')
+        expect(template).toContain('#bd2f')
+        expect(template).toContain('222/2')
+      })
+    })
+
+    describe('generateModeRPlusSnaTemplate', () => {
+      it('should generate Mode R template for CPC Plus', () => {
+        const template = generateModeRPlusSnaTemplate()
+
+        expect(template).toContain('BUILDSNA')
+        expect(template).toContain('BANKSET 0')
+        expect(template).toContain('SNASET CRTC_TYPE, 3')
+        expect(template).toContain('SNASET CPC_TYPE, 4')
+        expect(template).toContain('org #8000')
+        expect(template).toContain('run #8000')
+        // Mode R specific
+        expect(template).toContain('ModeR_PaletteA')
+        expect(template).toContain('ModeR_PaletteB')
+        // ASIC routines
+        expect(template).toContain('Asic_unlock')
+        expect(template).toContain('Asic_activate')
+        expect(template).toContain('Asic_deactivate')
+        expect(template).toContain('asic_unlock_seq')
+        // ASIC palette address
+        expect(template).toContain('#6400')
+        expect(template).toContain('ldir')
+      })
+
+      it('should include ASIC unlock sequence', () => {
+        const template = generateModeRPlusSnaTemplate()
+
+        expect(template).toContain('defb 255, 0, 255, 119, 179')
+        expect(template).toContain('defb 81, 168, 212, 98, 57, 156')
+        expect(template).toContain('defb 70, 43, 21, 138, 205, 238')
+      })
+
+      it('should include WAIT_CYCLES macro', () => {
+        const template = generateModeRPlusSnaTemplate()
+
+        expect(template).toContain('MACRO WAIT_CYCLES _cycles')
+        expect(template).toContain('@loops')
+        expect(template).toContain('djnz')
+        expect(template).toContain('MEND')
+      })
+
+      it('should include page switching for dual frame', () => {
+        const template = generateModeRPlusSnaTemplate()
+
+        expect(template).toContain('#bc0c')
+        expect(template).toContain('CRTCReg12')
+        expect(template).toContain('xor #20')
+      })
+    })
+
+    describe('assembleModeRSnaSource', () => {
+      it('should combine template with data files for Classic', () => {
+        const template = generateModeRClassicSnaTemplate()
+
+        const dataFiles: ModeRDataFiles = {
+          paletteAAsm:
+            'ModeR_PaletteA_Hardware:\n    DB #54,#54,#54,#54,#54,#54,#54,#54,#54,#54,#54,#54,#54,#54,#54,#54',
+          paletteBAsm:
+            'ModeR_PaletteB_Hardware:\n    DB #44,#44,#44,#44,#44,#44,#44,#44,#44,#44,#44,#44,#44,#44,#44,#44',
+          frameAAsm: 'FrameA:\n    DB #00,#00,#00',
+          frameBAsm: 'FrameB:\n    DB #FF,#FF,#FF'
+        }
+
+        const source = assembleModeRSnaSource(template, dataFiles)
+
+        expect(source).toContain('=== PALETTE DATA ===')
+        expect(source).toContain('ModeR_PaletteA_Hardware:')
+        expect(source).toContain('ModeR_PaletteB_Hardware:')
+        expect(source).toContain('=== FRAME A DATA ===')
+        expect(source).toContain('org #4000')
+        expect(source).toContain('FrameA:')
+        expect(source).toContain('=== FRAME B DATA ===')
+        expect(source).toContain('org #c000')
+        expect(source).toContain('FrameB:')
+      })
+
+      it('should combine template with data files for Plus', () => {
+        const template = generateModeRPlusSnaTemplate()
+
+        const dataFiles: ModeRDataFiles = {
+          paletteAAsm: 'ModeR_PaletteA:\n    DEFW #000, #111, #222, #333',
+          paletteBAsm: 'ModeR_PaletteB:\n    DEFW #FFF, #EEE, #DDD, #CCC',
+          frameAAsm: 'FrameA:\n    DB #00,#00,#00',
+          frameBAsm: 'FrameB:\n    DB #FF,#FF,#FF'
+        }
+
+        const source = assembleModeRSnaSource(template, dataFiles)
+
+        expect(source).toContain('=== PALETTE DATA ===')
+        expect(source).toContain('ModeR_PaletteA:')
+        expect(source).toContain('ModeR_PaletteB:')
+        expect(source).toContain('org #4000')
+        expect(source).toContain('org #c000')
+        expect(source).toContain('Asic_unlock')
+      })
+
+      it('should place Frame A at #4000 and Frame B at #C000', () => {
+        const template = generateModeRClassicSnaTemplate()
+
+        const dataFiles: ModeRDataFiles = {
+          paletteAAsm: 'ModeR_PaletteA_Hardware:\n    DB #54',
+          paletteBAsm: 'ModeR_PaletteB_Hardware:\n    DB #44',
+          frameAAsm: '; Frame A image data',
+          frameBAsm: '; Frame B image data'
+        }
+
+        const source = assembleModeRSnaSource(template, dataFiles)
+
+        // Check that org statements are in correct order
+        const org4000Index = source.indexOf('org #4000')
+        const orgC000Index = source.indexOf('org #c000')
+        const frameAIndex = source.indexOf('; Frame A image data')
+        const frameBIndex = source.indexOf('; Frame B image data')
+
+        expect(org4000Index).toBeLessThan(orgC000Index)
+        expect(org4000Index).toBeLessThan(frameAIndex)
+        expect(frameAIndex).toBeLessThan(orgC000Index)
+        expect(orgC000Index).toBeLessThan(frameBIndex)
+      })
     })
   })
 })

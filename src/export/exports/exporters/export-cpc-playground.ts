@@ -7,7 +7,12 @@
 
 import { createLogger } from '@/core'
 import { isTauri } from '@/tauri'
-import { generateSnaAsmSource, type SnaExportOptions } from './export-sna'
+import {
+  generateModeRSnaAsmSource,
+  generateSnaAsmSource,
+  type ModeRSnaExportOptions,
+  type SnaExportOptions
+} from './export-sna'
 
 const logger = createLogger({ prefix: '[CPC Playground Export]' })
 
@@ -85,6 +90,78 @@ export async function exportToCpcPlayground(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error('CPC Playground export error', { error: errorMessage })
+    return {
+      success: false,
+      error: errorMessage
+    }
+  }
+}
+
+/**
+ * Share Mode R ASM code to CPC Playground and open in new tab
+ * Mode R uses two frames alternating at 50Hz with different palettes
+ */
+export async function exportModeRToCpcPlayground(
+  options: ModeRSnaExportOptions
+): Promise<CpcPlaygroundExportResult> {
+  logger.info('Starting Mode R CPC Playground export', {
+    hardware: options.hardware
+  })
+
+  try {
+    // Generate Mode R ASM source
+    const asmSource = generateModeRSnaAsmSource(options)
+
+    if (!asmSource) {
+      return {
+        success: false,
+        error: 'Failed to generate Mode R ASM source code'
+      }
+    }
+
+    logger.debug('Generated Mode R ASM source', { length: asmSource.length })
+
+    // Send to CPC Playground share API
+    const response = await fetch(SHARE_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ code: asmSource })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.error || `HTTP ${response.status}`)
+    }
+
+    const { id } = await response.json()
+
+    if (!id) {
+      throw new Error('No share ID returned')
+    }
+
+    const shareUrl = `${CPC_PLAYGROUND_URL}?share=${id}`
+
+    logger.info('Mode R CPC Playground share created', { shareUrl })
+
+    // Open in browser (Tauri uses shell plugin, web uses window.open)
+    if (isTauri()) {
+      const { open } = await import('@tauri-apps/plugin-shell')
+      await open(shareUrl)
+      logger.debug('Opened URL via Tauri shell plugin')
+    } else {
+      window.open(shareUrl, '_blank')
+      logger.debug('Opened URL via window.open')
+    }
+
+    return {
+      success: true,
+      shareUrl
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    logger.error('Mode R CPC Playground export error', { error: errorMessage })
     return {
       success: false,
       error: errorMessage

@@ -5,6 +5,7 @@
 
 export {
   type CpcPlaygroundExportResult,
+  exportModeRToCpcPlayground,
   exportToCpcPlayground
 } from './export-cpc-playground'
 export { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
@@ -18,8 +19,11 @@ export {
   generateSCRAsmClassic
 } from './export-scr'
 export {
+  exportModeRSna,
   exportSna,
+  generateModeRSnaAsmSource,
   generateSnaAsmSource,
+  type ModeRSnaExportOptions,
   type SnaExportOptions,
   type SnaExportResult
 } from './export-sna'

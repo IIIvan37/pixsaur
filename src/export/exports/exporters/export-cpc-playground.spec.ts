@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { SnaExportOptions } from './export-sna'
+import type { ModeRSnaExportOptions, SnaExportOptions } from './export-sna'
 
 // Mock @/core logger
 vi.mock('@/core', () => ({
@@ -22,11 +22,14 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
   open: (url: string) => mockTauriOpen(url)
 }))
 
-// Mock generateSnaAsmSource
+// Mock generateSnaAsmSource and generateModeRSnaAsmSource
 const mockGenerateSnaAsmSource = vi.fn()
+const mockGenerateModeRSnaAsmSource = vi.fn()
 vi.mock('./export-sna', () => ({
   generateSnaAsmSource: (options: SnaExportOptions) =>
-    mockGenerateSnaAsmSource(options)
+    mockGenerateSnaAsmSource(options),
+  generateModeRSnaAsmSource: (options: ModeRSnaExportOptions) =>
+    mockGenerateModeRSnaAsmSource(options)
 }))
 
 // Mock window.open
@@ -59,6 +62,7 @@ describe('export-cpc-playground', () => {
     vi.resetModules()
     mockIsTauri.mockReturnValue(false)
     mockGenerateSnaAsmSource.mockReturnValue('; Test ASM source')
+    mockGenerateModeRSnaAsmSource.mockReturnValue('; Test Mode R ASM source')
     mockFetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ id: 'test-share-id' })
@@ -245,6 +249,163 @@ describe('export-cpc-playground', () => {
       await exportToCpcPlayground(rasterOptions)
 
       expect(mockGenerateSnaAsmSource).toHaveBeenCalledWith(rasterOptions)
+    })
+  })
+
+  describe('exportModeRToCpcPlayground', () => {
+    const defaultModeROptions: ModeRSnaExportOptions = {
+      indexBufA: new Uint8Array([0, 1, 2, 3]),
+      indexBufB: new Uint8Array([4, 5, 6, 7]),
+      modeConfig: {
+        mode: 0,
+        width: 160,
+        height: 200,
+        overscan: false,
+        nColors: 16,
+        scaleX: 2,
+        scaleY: 1
+      },
+      hardware: 'classic',
+      paletteAFirmware: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+      paletteBFirmware: [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+    }
+
+    it('should return error when Mode R ASM source generation fails', async () => {
+      mockGenerateModeRSnaAsmSource.mockReturnValue(null)
+
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      const result = await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(result).toEqual({
+        success: false,
+        error: 'Failed to generate Mode R ASM source code'
+      })
+      expect(mockFetch).not.toHaveBeenCalled()
+    })
+
+    it('should call share API with generated Mode R ASM source', async () => {
+      const asmSource = '; Mode R Generated ASM code'
+      mockGenerateModeRSnaAsmSource.mockReturnValue(asmSource)
+
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://cpc-playground.iiivan.org/api/share',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ code: asmSource })
+        }
+      )
+    })
+
+    it('should return success with share URL for Mode R', async () => {
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      const result = await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(result).toEqual({
+        success: true,
+        shareUrl: 'https://cpc-playground.iiivan.org?share=test-share-id'
+      })
+    })
+
+    it('should return error when API returns non-ok response for Mode R', async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ error: 'Server error' })
+      })
+
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      const result = await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(result).toEqual({
+        success: false,
+        error: 'Server error'
+      })
+    })
+
+    it('should handle network errors gracefully for Mode R', async () => {
+      mockFetch.mockRejectedValue(new Error('Network error'))
+
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      const result = await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(result).toEqual({
+        success: false,
+        error: 'Network error'
+      })
+    })
+
+    it('should pass classic hardware options to Mode R ASM generator', async () => {
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(mockGenerateModeRSnaAsmSource).toHaveBeenCalledWith(
+        defaultModeROptions
+      )
+    })
+
+    it('should pass plus hardware options to Mode R ASM generator', async () => {
+      const plusOptions: ModeRSnaExportOptions = {
+        ...defaultModeROptions,
+        hardware: 'plus',
+        paletteAFirmware: undefined,
+        paletteBFirmware: undefined,
+        paletteAPlus: [0x000, 0xfff, 0x00f, 0x0f0],
+        paletteBPlus: [0xf00, 0x0ff, 0xff0, 0xf0f]
+      }
+
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      await exportModeRToCpcPlayground(plusOptions)
+
+      expect(mockGenerateModeRSnaAsmSource).toHaveBeenCalledWith(plusOptions)
+    })
+
+    it('should use window.open in web environment for Mode R', async () => {
+      mockIsTauri.mockReturnValue(false)
+
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(mockWindowOpen).toHaveBeenCalledWith(
+        'https://cpc-playground.iiivan.org?share=test-share-id',
+        '_blank'
+      )
+      expect(mockTauriOpen).not.toHaveBeenCalled()
+    })
+
+    it('should use Tauri shell open in Tauri environment for Mode R', async () => {
+      mockIsTauri.mockReturnValue(true)
+
+      const { exportModeRToCpcPlayground } = await import(
+        './export-cpc-playground'
+      )
+      await exportModeRToCpcPlayground(defaultModeROptions)
+
+      expect(mockTauriOpen).toHaveBeenCalledWith(
+        'https://cpc-playground.iiivan.org?share=test-share-id'
+      )
+      expect(mockWindowOpen).not.toHaveBeenCalled()
     })
   })
 })

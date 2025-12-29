@@ -31,14 +31,23 @@ describe('PreviewPanel', () => {
   })
 
   it("cache le bouton Éditer si aucune image n'est chargée", () => {
-    mockValues = [false, false, null] // rasterEnabledAtom, editorModeAtom, imageAtom
+    // Order: rasterEnabledAtom, modeREnabledAtom, editorModeAtom, imageAtom
+    mockValues = [false, false, false, null]
     const { queryByText } = render(<PreviewPanel />)
     expect(queryByText('Éditer')).toBeNull()
   })
 
   it('affiche le bouton Éditer si une image est chargée', () => {
-    mockValues = [false, false, {}] // rasterEnabledAtom, editorModeAtom, imageAtom
+    // Order: rasterEnabledAtom, modeREnabledAtom, editorModeAtom, imageAtom
+    mockValues = [false, false, false, {}]
     const { getByText } = render(<PreviewPanel />)
     expect(getByText('Éditer')).toBeInTheDocument()
+  })
+
+  it('cache le bouton Éditer si Mode R est activé', () => {
+    // Order: rasterEnabledAtom, modeREnabledAtom, editorModeAtom, imageAtom
+    mockValues = [false, true, false, {}]
+    const { queryByText } = render(<PreviewPanel />)
+    expect(queryByText('Éditer')).toBeNull()
   })
 })
