@@ -5,7 +5,7 @@
 import { Trans } from '@lingui/react/macro'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
-import { CPCHardware } from '@/libs/types'
+import type { CPCHardware } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
 import { ModeRSettings } from './mode-r-settings'
@@ -17,6 +17,8 @@ type HardwareSettingsViewProps = Readonly<{
   onPixelModeChange: (value: PixelMode) => void
   dimensionPreset: DimensionPreset
   onDimensionPresetChange: (value: DimensionPreset) => void
+  modeREnabled: boolean
+  onModeREnabledChange: (value: boolean) => void
 }>
 
 export function HardwareSettingsView({
@@ -25,12 +27,13 @@ export function HardwareSettingsView({
   pixelMode,
   onPixelModeChange,
   dimensionPreset,
-  onDimensionPresetChange
+  onDimensionPresetChange,
+  modeREnabled,
+  onModeREnabledChange
 }: HardwareSettingsViewProps) {
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
-    { value: CPCHardware.CLASSIC, label: 'CPC Classic (27 colors)' },
-    { value: CPCHardware.PLUS, label: 'CPC Plus (4096 colors)' },
-    { value: CPCHardware.MODE_R, label: 'Mode R (240 colors)' }
+    { value: 'classic', label: 'CPC Classic (27 colors)' },
+    { value: 'plus', label: 'CPC Plus (4096 colors)' }
   ]
 
   const pixelModeOptions: Array<{ value: PixelMode; label: string }> = [
@@ -75,7 +78,25 @@ export function HardwareSettingsView({
           />
         </div>
 
-        {cpcHardware === CPCHardware.MODE_R && <ModeRSettings />}
+        <div className={styles.tuningRow}>
+          <div className={styles.tuningHeader}>
+            <span className={styles.tuningLabel}>
+              <Trans>Mode R</Trans>
+            </span>
+          </div>
+          <label className={styles.checkboxLabel}>
+            <input
+              type='checkbox'
+              checked={modeREnabled}
+              onChange={(e) => onModeREnabledChange(e.target.checked)}
+            />
+            <Trans>
+              Enable Mode R (doubled horizontal resolution, Mode 0 only)
+            </Trans>
+          </label>
+        </div>
+
+        {modeREnabled && <ModeRSettings />}
       </div>
 
       <div className={styles.separator} />

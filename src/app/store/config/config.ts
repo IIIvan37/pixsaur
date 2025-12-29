@@ -3,7 +3,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { getWidthStepForMode } from '@/export'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import { CPCHardware } from '@/libs/types'
+import type { CPCHardware } from '@/libs/types'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
 import type { ResizeMode } from './resize-types'
@@ -269,7 +269,7 @@ export const setPaletteStrategyAtom = atom(
 // This ensures consistency between locked colors and hardware selection
 export const cpcHardwareAtom = atomWithStorage<CPCHardware>(
   'pixsaur-cpc-hardware',
-  CPCHardware.CLASSIC
+  'classic'
 )
 
 // Setter for CPC Hardware
@@ -296,6 +296,15 @@ export const setCpcHardwareAtom = atom(
 // ============================================================================
 // MODE R CONFIGURATION
 // ============================================================================
+
+/**
+ * Mode R enabled state
+ * When enabled, forces Mode 0 and uses dual-palette interlacing
+ */
+export const modeREnabledAtom = atomWithStorage<boolean>(
+  'pixsaur-mode-r-enabled',
+  false
+)
 
 /**
  * Mode R anti-flicker weight (0-100)

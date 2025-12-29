@@ -1,7 +1,7 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
-import { CPCHardware } from '@/libs/types'
+import type { CPCHardware } from '@/libs/types'
 import { isTauri, saveZipFileTauri } from '@/tauri'
 import { paletteToCPCPlusValues } from './cpc-plus-format'
 import type { PNGExportData } from './exporters'
@@ -111,7 +111,7 @@ async function exportSnaToZip(params: ExportSnaToZipParams): Promise<void> {
   const snaResult = await exportSna({
     indexBuf,
     modeConfig,
-    hardware: isCPCPlus ? CPCHardware.PLUS : CPCHardware.CLASSIC,
+    hardware: isCPCPlus ? 'plus' : 'classic',
     paletteFirmware: isCPCPlus ? undefined : paletteFirmware,
     palettePlus: asmData.palettePlus,
     rasterAsm: asmData.rasterAsm,
@@ -206,7 +206,7 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
   } = params
 
   const zip = new JSZip()
-  const isCPCPlus = cpcHardware === CPCHardware.PLUS
+  const isCPCPlus = cpcHardware === 'plus'
 
   // Get label from config or use default
   const asmLabel = config.labels.enabled ? config.labels.media : 'pixsaur_data'

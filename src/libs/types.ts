@@ -4,11 +4,7 @@ import type { Vector } from './pixsaur-color/src/type'
 export type CPCMode = 'mode0' | 'mode1' | 'mode2'
 
 // CPC Hardware Types
-export enum CPCHardware {
-  CLASSIC = 'classic',
-  PLUS = 'plus',
-  MODE_R = 'mode-r' // Mode R: interlaced palettes for doubled resolution
-}
+export type CPCHardware = 'classic' | 'plus'
 
 // Mode R specific types
 export interface ModeRPair {

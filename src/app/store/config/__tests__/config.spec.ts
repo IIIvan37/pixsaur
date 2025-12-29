@@ -1,6 +1,5 @@
 import { createStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { CPCHardware } from '@/libs/types'
 import { userPaletteAtom } from '../../palette/palette'
 import {
   centerImageAtom,
@@ -276,12 +275,12 @@ describe('Config Store', () => {
   describe('CPC Hardware Atoms', () => {
     it('should initialize cpcHardwareAtom with default value', () => {
       const hardware = store.get(cpcHardwareAtom)
-      expect(hardware).toBe(CPCHardware.CLASSIC)
+      expect(hardware).toBe('classic')
     })
 
     it('should set CPC hardware with setCpcHardwareAtom', () => {
-      store.set(setCpcHardwareAtom, CPCHardware.PLUS)
-      expect(store.get(cpcHardwareAtom)).toBe(CPCHardware.PLUS)
+      store.set(setCpcHardwareAtom, 'plus')
+      expect(store.get(cpcHardwareAtom)).toBe('plus')
     })
 
     it('should unlock all palette colors when switching CPC hardware', () => {
@@ -294,7 +293,7 @@ describe('Config Store', () => {
       store.set(userPaletteAtom, initialPalette)
 
       // Switch hardware
-      store.set(setCpcHardwareAtom, CPCHardware.PLUS)
+      store.set(setCpcHardwareAtom, 'plus')
 
       // All colors should be unlocked
       const updatedPalette = store.get(userPaletteAtom)
@@ -303,11 +302,11 @@ describe('Config Store', () => {
 
     it('should persist CPC hardware selection in localStorage', () => {
       // Set hardware to PLUS
-      store.set(setCpcHardwareAtom, CPCHardware.PLUS)
+      store.set(setCpcHardwareAtom, 'plus')
 
       // Verify it's stored in localStorage
       const stored = localStorage.getItem('pixsaur-cpc-hardware')
-      expect(stored).toBe(JSON.stringify(CPCHardware.PLUS))
+      expect(stored).toBe(JSON.stringify('plus'))
     })
 
     it('should use atomWithStorage for persistence (integration test)', () => {
@@ -318,14 +317,14 @@ describe('Config Store', () => {
       localStorage.removeItem('pixsaur-cpc-hardware')
 
       // Set the value
-      store.set(cpcHardwareAtom, CPCHardware.PLUS)
+      store.set(cpcHardwareAtom, 'plus')
 
       // Verify localStorage was updated
       const stored = localStorage.getItem('pixsaur-cpc-hardware')
-      expect(stored).toBe(JSON.stringify(CPCHardware.PLUS))
+      expect(stored).toBe(JSON.stringify('plus'))
 
       // Verify we can read it back
-      expect(store.get(cpcHardwareAtom)).toBe(CPCHardware.PLUS)
+      expect(store.get(cpcHardwareAtom)).toBe('plus')
     })
 
     it('should default to CLASSIC when localStorage is empty', () => {
@@ -336,7 +335,7 @@ describe('Config Store', () => {
       const freshStore = createStore()
 
       // Should default to CLASSIC
-      expect(freshStore.get(cpcHardwareAtom)).toBe(CPCHardware.CLASSIC)
+      expect(freshStore.get(cpcHardwareAtom)).toBe('classic')
     })
   })
 
