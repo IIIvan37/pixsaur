@@ -20,6 +20,7 @@ import {
   generateFrameBPreview,
   quantizeModeR
 } from '@/libs/pixsaur-mode-r'
+import { applyResize, type Selection } from '@/source'
 import {
   centerImageAtom,
   cpcHardwareAtom,
@@ -31,7 +32,11 @@ import {
   modeRPreviewModeAtom,
   resizeModeAtom
 } from '../config/config'
-import { exportPaletteWithSlotsAtom, smoothedImageAtom } from './preview'
+import {
+  croppedImageAtom,
+  exportPaletteWithSlotsAtom,
+  smoothedImageAtom
+} from './preview'
 
 // ============================================================================
 // Mode R Configuration Atom
@@ -67,7 +72,7 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
 // ============================================================================
 
 /**
- * Resize image to Mode R target dimensions (2× horizontal resolution)
+ * Resize image to Mode R target dimensions for AUTO mode (2× horizontal resolution)
  *
  * Unlike standard modes which resize to modeConfig dimensions (e.g., 160×200 for Mode 0),
  * Mode R needs the source at doubled horizontal resolution (e.g., 320×200) to have
@@ -76,11 +81,10 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
  * IMPORTANT: Mode R perceives 320×200 with SQUARE pixels (not 2:1 like Mode 0).
  * So we resize with 1:1 aspect ratio, not the Mode 0 pixel aspect ratio.
  */
-function resizeForModeR(
+export function resizeForModeRAuto(
   src: ImageData,
   targetWidth: number,
   targetHeight: number,
-  _mode: number,
   center: boolean
 ): ImageData {
   // Mode R target (320×200) has SQUARE perceived pixels
@@ -138,6 +142,55 @@ function resizeForModeR(
 }
 
 /**
+ * Resize image to Mode R target dimensions for ORIGIN mode
+ *
+ * In origin mode, Mode R behaves like Mode 1: pixel-perfect 1:1 mapping.
+ * Reuses the standard applyResize with a Mode 1-like config (pixelRatio = 1).
+ */
+export function resizeForModeROrigin(
+  src: ImageData,
+  targetWidth: number,
+  targetHeight: number,
+  center: boolean
+): ImageData {
+  // Create canvas from ImageData
+  const srcCanvas = document.createElement('canvas')
+  srcCanvas.width = src.width
+  srcCanvas.height = src.height
+  const srcCtx = srcCanvas.getContext('2d')!
+  srcCtx.putImageData(src, 0, 0)
+
+  // Create a Mode 1-like config for Mode R (320×200 with 1:1 pixel ratio)
+  // This makes applyResize behave exactly like Mode 1 origin
+  const modeRConfig = {
+    mode: 'origin' as const,
+    modeConfig: {
+      width: targetWidth, // 320
+      height: targetHeight, // 200
+      scaleX: 1, // Square pixels (like Mode 1)
+      scaleY: 1,
+      mode: 1 as const,
+      nColors: 16,
+      overscan: false
+    }
+  }
+
+  // Use full source as selection
+  const selection: Selection = {
+    sx: 0,
+    sy: 0,
+    width: src.width,
+    height: src.height
+  }
+
+  // Reuse standard resize logic
+  const resultCanvas = applyResize(srcCanvas, selection, modeRConfig, center)
+  const resultCtx = resultCanvas.getContext('2d')!
+
+  return resultCtx.getImageData(0, 0, resultCanvas.width, resultCanvas.height)
+}
+
+/**
  * Mode R Source Image Atom
  *
  * Creates the source image for Mode R at TRUE doubled horizontal resolution.
@@ -156,12 +209,18 @@ export const modeRSourceImageAtom = atom(async (get) => {
   const modeREnabled = get(modeREnabledAtom)
   if (!modeREnabled) return null
 
-  // Get the source image BEFORE the Mode 0 resize
-  // smoothedImageAtom contains the processed image before CPC dimension normalization
-  const sourceImage = await get(smoothedImageAtom)
   const modeConfig = get(effectiveModeConfigAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom)
+
+  // In 'origin' mode, use the cropped image BEFORE the standard resize pipeline
+  // because the standard pipeline compresses to Mode 0 dimensions (160×200)
+  // but Mode R needs the full 320×200 resolution
+  // In 'auto' mode, use smoothedImageAtom which already has the correct processing
+  const sourceImage =
+    resizeMode === 'origin'
+      ? await get(croppedImageAtom)
+      : await get(smoothedImageAtom)
 
   if (!sourceImage) return null
 
@@ -185,13 +244,18 @@ export const modeRSourceImageAtom = atom(async (get) => {
   }
 
   // Resize to Mode R target dimensions
-  const modeRImage = resizeForModeR(
-    sourceImage,
-    targetWidth,
-    targetHeight,
-    modeConfig.mode,
-    centerImage
-  )
+  // Use different resize strategy based on resize mode:
+  // - origin: pixel-perfect 1:1 mapping (like Mode 1)
+  // - auto: fit with aspect ratio preservation
+  const modeRImage =
+    resizeMode === 'origin'
+      ? resizeForModeROrigin(
+          sourceImage,
+          targetWidth,
+          targetHeight,
+          centerImage
+        )
+      : resizeForModeRAuto(sourceImage, targetWidth, targetHeight, centerImage)
 
   logger.info('[Mode R] Source image resized to true high resolution', {
     sourceSize: `${sourceImage.width}×${sourceImage.height}`,
