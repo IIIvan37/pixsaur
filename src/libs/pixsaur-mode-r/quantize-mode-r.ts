@@ -155,15 +155,23 @@ function findBestColorIndex(
 }
 
 /**
+ * Result of color extraction with frequency weights
+ */
+interface ExtractedColors {
+  colors: Vector<'RGB'>[]
+  weights: number[]
+}
+
+/**
  * Extract representative colors from an image using k-means-like sampling
- * Returns colors that represent the actual image content, not pre-quantized CPC colors
+ * Returns colors that represent the actual image content with their frequency weights
  */
 function extractImageColors(
   imageData: Uint8ClampedArray,
   width: number,
   height: number,
   maxColors: number
-): Vector<'RGB'>[] {
+): ExtractedColors {
   // Sample colors from the image
   const colorCounts = new Map<string, { color: Vector<'RGB'>; count: number }>()
   const totalPixels = width * height
@@ -197,14 +205,19 @@ function extractImageColors(
 
   // Sort by frequency and take top colors
   const sorted = [...colorCounts.values()].sort((a, b) => b.count - a.count)
+  const topColors = sorted.slice(0, maxColors)
 
-  return sorted
-    .slice(0, maxColors)
-    .map((entry) => [
+  // Normalize weights (sum to 1)
+  const totalCount = topColors.reduce((sum, entry) => sum + entry.count, 0)
+
+  return {
+    colors: topColors.map((entry) => [
       Math.round(entry.color[0]),
       Math.round(entry.color[1]),
       Math.round(entry.color[2])
-    ])
+    ]),
+    weights: topColors.map((entry) => entry.count / totalCount)
+  }
 }
 
 /**
@@ -229,9 +242,18 @@ export function quantizeModeR(
   config: ModeRConfig = DEFAULT_MODE_R_CONFIG,
   existingPalette?: Vector<'RGB'>[]
 ): ModeRQuantizationResult {
+  // Extract image colors with frequency weights
+  const { colors: targetColors, weights: targetWeights } = extractImageColors(
+    imageData,
+    width,
+    height,
+    64
+  )
+
   // Use palette optimization for Mode R - creates 2 independent palettes
   const palettes = optimizeModeRPalettes(
-    extractImageColors(imageData, width, height, 64),
+    targetColors,
+    targetWeights,
     config,
     existingPalette
   )
@@ -845,7 +867,20 @@ export function quantizeModeRWithDithering(
   config: ModeRConfig = DEFAULT_MODE_R_CONFIG,
   ditheringStrength = 1
 ): ModeRQuantizationResult {
-  const palettes = optimizeModeRPalettes(targetPalette, config)
+  // Extract colors from image for palette B optimization
+  const { colors: imageColors, weights: imageWeights } = extractImageColors(
+    imageData,
+    width,
+    height,
+    64
+  )
+
+  const palettes = optimizeModeRPalettes(
+    imageColors,
+    imageWeights,
+    config,
+    targetPalette
+  )
 
   const outWidth = Math.floor(width / 2)
   const outHeight = height

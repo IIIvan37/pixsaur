@@ -86,22 +86,6 @@ function isColorDiverse(
 }
 
 /**
- * Check if a color is similar to any color in a list
- */
-function isColorInList(
-  color: Vector<'RGB'>,
-  list: Vector<'RGB'>[],
-  maxDistance: number
-): boolean {
-  for (const c of list) {
-    if (colorDistance(color, c) < maxDistance) {
-      return true
-    }
-  }
-  return false
-}
-
-/**
  * Add diverse colors from available palette to fill remaining slots
  */
 function fillWithDiverseColors(
@@ -336,14 +320,41 @@ function selectDiverseColors(
 }
 
 /**
- * Calculate ideal B colors needed to blend with paletteA to reach target colors
+ * Select palette B optimized for blending with palette A to cover target colors
+ * Fast approach: calculate ideal B colors for each target, then pick best matches
  */
-function calculateNeededBColors(
+function selectOptimizedPaletteB(
+  paletteA: Vector<'RGB'>[],
   targetColors: Vector<'RGB'>[],
-  paletteA: Vector<'RGB'>[]
+  targetWeights: number[],
+  availableColors: Vector<'RGB'>[],
+  _config: ModeRConfig
 ): Vector<'RGB'>[] {
-  const neededBColors: Vector<'RGB'>[] = []
-  for (const target of targetColors) {
+  const selected: Vector<'RGB'>[] = []
+  const usedKeys = new Set<string>()
+
+  // Start with top 4 colors from palette A (ensures some pure/no-flicker options)
+  const NUM_SHARED_COLORS = 4
+  for (let i = 0; i < Math.min(NUM_SHARED_COLORS, paletteA.length); i++) {
+    const color = paletteA[i]
+    const key = `${color[0]},${color[1]},${color[2]}`
+    if (!usedKeys.has(key)) {
+      selected.push(color)
+      usedKeys.add(key)
+    }
+  }
+
+  // For each target color, calculate the ideal B color for each A color
+  // Then find the best available match and accumulate votes
+  const candidateVotes = new Map<
+    string,
+    { color: Vector<'RGB'>; score: number }
+  >()
+
+  for (let t = 0; t < targetColors.length; t++) {
+    const target = targetColors[t]
+    const weight = targetWeights[t]
+
     for (const colorA of paletteA) {
       // blend(A, B) = target → B = 2*target - A
       const idealB: Vector<'RGB'> = [
@@ -351,39 +362,74 @@ function calculateNeededBColors(
         Math.max(0, Math.min(255, 2 * target[1] - colorA[1])),
         Math.max(0, Math.min(255, 2 * target[2] - colorA[2]))
       ]
-      neededBColors.push(idealB)
+
+      // Find best available match for this ideal B
+      const nearest = findNearestColor(idealB, availableColors)
+      const key = `${nearest[0]},${nearest[1]},${nearest[2]}`
+
+      // Skip if already selected or in shared colors
+      if (usedKeys.has(key)) continue
+
+      // Score: how close is the nearest to the ideal? weighted by target importance
+      const idealDistance = colorDistance(idealB, nearest)
+      const score = weight * Math.max(0, 1 - idealDistance / 10000)
+
+      const existing = candidateVotes.get(key)
+      if (existing) {
+        existing.score += score
+      } else {
+        candidateVotes.set(key, { color: nearest, score })
+      }
     }
   }
-  return neededBColors
-}
 
-/**
- * Select palette B for CPC Plus using hybrid approach
- */
-function selectPaletteBForPlus(
-  paletteA: Vector<'RGB'>[],
-  targetColors: Vector<'RGB'>[],
-  availableColors: Vector<'RGB'>[]
-): Vector<'RGB'>[] {
-  // Take the 8 most important colors from paletteA (shared = pure colors)
-  const sharedColors = paletteA.slice(0, 8)
-
-  // Find colors that create useful blends
-  const neededBColors = calculateNeededBColors(targetColors, paletteA)
-
-  // Filter out colors too similar to shared ones
-  const filteredAvailable = availableColors.filter(
-    (c) => !isColorInList(c, sharedColors, 500)
+  // Sort candidates by total votes
+  const sortedCandidates = [...candidateVotes.values()].sort(
+    (a, b) => b.score - a.score
   )
 
-  // Select 8 complementary colors (fallback to full palette if filter is too aggressive)
-  const complementaryColors = selectBestMatchingColors(
-    neededBColors,
-    filteredAvailable.length > 0 ? filteredAvailable : availableColors,
-    8
-  )
+  logger.info('[Mode R] Palette B: top candidates', {
+    total: sortedCandidates.length,
+    topScores: sortedCandidates.slice(0, 5).map((c) => c.score.toFixed(3))
+  })
 
-  return [...sharedColors, ...complementaryColors]
+  // Select top candidates, ensuring some diversity
+  const MIN_DIVERSITY = 1000
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= 16) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (usedKeys.has(key)) continue
+
+    // Check diversity from already selected
+    if (isColorDiverse(candidate.color, selected, MIN_DIVERSITY)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // If still not enough, relax diversity constraint
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= 16) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (!usedKeys.has(key)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // Fill remaining with diverse colors if needed
+  if (selected.length < 16) {
+    fillWithDiverseColors(selected, usedKeys, availableColors, 16, 500)
+  }
+
+  logger.info('[Mode R] Palette B: final selection', {
+    numSelected: selected.length,
+    colors: selected.map((c) => `rgb(${c[0]},${c[1]},${c[2]})`)
+  })
+
+  return selected
 }
 
 /**
@@ -399,9 +445,16 @@ function selectPaletteBForPlus(
  */
 export function optimizeModeRPalettes(
   targetColors: Vector<'RGB'>[],
+  targetWeights: number[] | undefined,
   config: ModeRConfig = DEFAULT_MODE_R_CONFIG,
   existingPalette?: Vector<'RGB'>[]
 ): ModeRPalettes {
+  // Generate uniform weights if not provided
+  const weights =
+    targetWeights && targetWeights.length === targetColors.length
+      ? targetWeights
+      : targetColors.map(() => 1 / targetColors.length)
+
   // Get available hardware colors
   const availableColors =
     config.targetHardware === 'plus'
@@ -436,14 +489,15 @@ export function optimizeModeRPalettes(
   // Select palette B based on dual palette option
   let paletteB: Vector<'RGB'>[]
   if (config.useDualPalette) {
-    // Dual palette mode: optimize B independently for more color coverage
-    if (config.targetHardware === 'plus') {
-      paletteB = selectPaletteBForPlus(paletteA, targetColors, availableColors)
-    } else {
-      const neededBColors = calculateNeededBColors(targetColors, paletteA)
-      paletteB = selectDiverseColors(neededBColors, availableColors, 16)
-    }
-    logger.info('[Mode R] Using dual palette mode (independent palettes)')
+    // Dual palette mode: optimize B to maximize blend coverage of target colors
+    paletteB = selectOptimizedPaletteB(
+      paletteA,
+      targetColors,
+      weights,
+      availableColors,
+      config
+    )
+    logger.info('[Mode R] Using dual palette mode (optimized palette B)')
   } else {
     // Single palette mode: use same palette for both frames (no flicker from palette)
     paletteB = [...paletteA]

@@ -5,20 +5,89 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useAtom } from 'jotai'
-import { useId } from 'react'
+import { useAtom, useAtomValue } from 'jotai'
+import { Suspense, useId } from 'react'
 import {
   modeRAntiFlickerAtom,
   modeRDualPaletteAtom,
   modeRMaxLuminanceDeltaAtom,
   modeRPreviewModeAtom
 } from '@/app/store/config/config'
+import { modeRPalettesAtom } from '@/app/store/preview/mode-r-preview'
 import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import styles from '../../tabs/tab.module.css'
 
 type ModeRPreviewMode = 'blended' | 'frameA' | 'frameB' | 'flicker'
+
+/**
+ * Component to display a 16-color palette as a row of color swatches
+ */
+function PaletteDisplay({
+  palette,
+  label
+}: Readonly<{
+  palette: Array<Vector<'RGB'>>
+  label: string
+}>) {
+  return (
+    <div style={{ marginBottom: '8px' }}>
+      <span
+        style={{
+          fontSize: '11px',
+          color: 'var(--gray-11)',
+          marginRight: '8px'
+        }}
+      >
+        {label}
+      </span>
+      <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
+        {palette.map((color, i) => (
+          <div
+            key={`${i}-${color[0]}-${color[1]}-${color[2]}`}
+            title={`#${i}: RGB(${color[0]}, ${color[1]}, ${color[2]})`}
+            style={{
+              width: '16px',
+              height: '16px',
+              backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
+              border: '1px solid var(--gray-6)',
+              borderRadius: '2px'
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Component that loads and displays Mode R palettes
+ */
+function ModeRPalettesDisplay() {
+  const palettes = useAtomValue(modeRPalettesAtom)
+
+  if (!palettes) {
+    return (
+      <div style={{ fontSize: '11px', color: 'var(--gray-9)' }}>
+        <Trans>Chargez une image pour voir les palettes</Trans>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <PaletteDisplay palette={palettes.paletteA} label='Frame A:' />
+      <PaletteDisplay palette={palettes.paletteB} label='Frame B:' />
+      <div
+        style={{ fontSize: '10px', color: 'var(--gray-10)', marginTop: '4px' }}
+      >
+        <Trans>Paires uniques</Trans>: {palettes.uniquePairsUsed}
+      </div>
+    </div>
+  )
+}
 
 export function ModeRSettings() {
   const dualPaletteId = useId()
@@ -100,6 +169,23 @@ export function ModeRSettings() {
           options={previewModeOptions}
           ariaLabelPrefix='Preview'
         />
+      </div>
+
+      <div className={styles.tuningRow}>
+        <div className={styles.tuningHeader}>
+          <span className={styles.tuningLabel}>
+            <Trans>Palettes</Trans>
+          </span>
+        </div>
+        <Suspense
+          fallback={
+            <div style={{ fontSize: '11px', color: 'var(--gray-9)' }}>
+              <Trans>Chargement...</Trans>
+            </div>
+          }
+        >
+          <ModeRPalettesDisplay />
+        </Suspense>
       </div>
     </div>
   )

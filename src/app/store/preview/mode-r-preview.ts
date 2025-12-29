@@ -59,8 +59,14 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
     ? Math.round(dithering.intensity * 100)
     : 0
 
+  // When using dual palette, reduce anti-flicker weight to allow more color diversity
+  // Otherwise the quantizer picks similar colors to minimize flicker, defeating the purpose
+  const effectiveAntiFlicker = useDualPalette
+    ? Math.min(antiFlickerWeight, 30) // Cap at 30% for dual palette mode
+    : antiFlickerWeight
+
   return {
-    antiFlickerWeight,
+    antiFlickerWeight: effectiveAntiFlicker,
     maxLuminanceDelta,
     targetHardware: hardware,
     // Pass the actual dithering mode from settings
@@ -321,6 +327,33 @@ export const modeRQuantizationAtom = atom(
     return result
   }
 )
+
+// ============================================================================
+// Mode R Palettes Atom (for UI display)
+// ============================================================================
+
+/**
+ * Derived atom exposing just the palettes for UI display
+ */
+export const modeRPalettesAtom = atom(async (get) => {
+  const quantResult = await get(modeRQuantizationAtom)
+  if (!quantResult) return null
+
+  // Count unique pairs (A index, B index) actually used in the image
+  const usedPairs = new Set<string>()
+  for (let i = 0; i < quantResult.indexBufferA.length; i++) {
+    const idxA = quantResult.indexBufferA[i]
+    const idxB = quantResult.indexBufferB[i]
+    usedPairs.add(`${idxA},${idxB}`)
+  }
+
+  return {
+    paletteA: quantResult.palettes.paletteA,
+    paletteB: quantResult.palettes.paletteB,
+    stats: quantResult.palettes.stats,
+    uniquePairsUsed: usedPairs.size
+  }
+})
 
 // ============================================================================
 // Mode R Preview Images
