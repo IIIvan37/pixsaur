@@ -1,24 +1,34 @@
 /**
  * Mode R Quantization
  *
- * Full image quantization for Mode R with line-by-line interlaced extraction:
+ * Mode R creates doubled horizontal resolution by:
+ * 1. Extracting alternate source pixels into two images A and B
+ * 2. Displaying A and B at 50Hz with horizontal sub-pixel shifts
+ * 3. The eye perceives the blend of overlapping pixels
  *
- * Input: High-resolution image (2× horizontal resolution)
- *        e.g., 320×200 for standard Mode 0
- *
+ * Input: High-resolution image (2× horizontal resolution, e.g., 320×200)
  * Output: Two index buffers at Mode 0 resolution (160×200)
  *
  * Extraction pattern (alternates line by line):
- *   Even lines: Image A gets even pixels (0,2,4...), Image B gets odd pixels (1,3,5...)
- *   Odd lines:  Image A gets odd pixels (1,3,5...), Image B gets even pixels (0,2,4...)
+ *   Even lines: A gets even pixels (0,2,4...), B gets odd pixels (1,3,5...)
+ *   Odd lines:  A gets odd pixels (1,3,5...), B gets even pixels (0,2,4...)
  *
- * This pattern, combined with the CRTC horizontal shift that also alternates
- * per line and inverts between frames, creates doubled horizontal resolution.
+ * Display with CRTC shifts:
+ *   Even lines: A at offset 0, B at offset +1 sub-pixel
+ *   Odd lines:  A at offset +1 sub-pixel, B at offset 0
+ *
+ * Perceived result (for line 0, source pixels 0,1,2,3):
+ *   A = [0, 2], B = [1, 3]
+ *   Position 0: A[0] only (border)
+ *   Position 1: blend(A[0], B[0]) = blend(src0, src1)
+ *   Position 2: blend(B[0], A[1]) = blend(src1, src2)
+ *   Position 3: blend(A[1], B[1]) = blend(src2, src3)
+ *   Position 4: B[1] only (border)
  */
 
 import { logger } from '@/core/logger'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { calculatePairCost, colorDistance } from './blend'
+import { colorDistance } from './blend'
 import { optimizeModeRPalettes } from './pair-optimizer'
 import type {
   ModeRConfig,
@@ -102,84 +112,12 @@ function extractImageColors(
 }
 
 /**
- * Get pixel color from image data with optional dithering error applied
- */
-function getPixelColorWithError(
-  imageData: Uint8ClampedArray,
-  errorBuffer: Float32Array | null,
-  pixelIdx: number,
-  errorIdx: number
-): Vector<'RGB'> {
-  const baseColor: Vector<'RGB'> = [
-    imageData[pixelIdx],
-    imageData[pixelIdx + 1],
-    imageData[pixelIdx + 2]
-  ]
-
-  if (!errorBuffer) return baseColor
-
-  return [
-    Math.max(0, Math.min(255, baseColor[0] + errorBuffer[errorIdx])),
-    Math.max(0, Math.min(255, baseColor[1] + errorBuffer[errorIdx + 1])),
-    Math.max(0, Math.min(255, baseColor[2] + errorBuffer[errorIdx + 2]))
-  ]
-}
-
-/**
- * Find the best pair of indices (idxA, idxB) such that blend(paletteA[idxA], paletteB[idxB])
- * is closest to the target color while minimizing flicker.
+ * Quantize an image to Mode R format
  *
- * @param targetColor - The desired perceived color
- * @param paletteA - First palette (16 colors)
- * @param paletteB - Second palette (16 colors)
- * @param antiFlickerWeight - Weight for flicker penalty (0-100)
- * @param maxLuminanceDelta - Maximum luminance difference allowed (pairs exceeding this are penalized)
- */
-function findBestBlendPair(
-  targetColor: Vector<'RGB'>,
-  paletteA: Vector<'RGB'>[],
-  paletteB: Vector<'RGB'>[],
-  antiFlickerWeight: number,
-  maxLuminanceDelta: number
-): { indexA: number; indexB: number; error: number } {
-  let bestIndexA = 0
-  let bestIndexB = 0
-  let bestCost = Number.POSITIVE_INFINITY
-
-  for (let a = 0; a < paletteA.length; a++) {
-    for (let b = 0; b < paletteB.length; b++) {
-      // Calculate combined cost (color error + flicker penalty)
-      const cost = calculatePairCost(
-        targetColor,
-        paletteA[a],
-        paletteB[b],
-        antiFlickerWeight
-      )
-
-      // Add extra penalty for pairs exceeding maxLuminanceDelta
-      const lumA =
-        0.299 * paletteA[a][0] + 0.587 * paletteA[a][1] + 0.114 * paletteA[a][2]
-      const lumB =
-        0.299 * paletteB[b][0] + 0.587 * paletteB[b][1] + 0.114 * paletteB[b][2]
-      const lumDelta = Math.abs(lumA - lumB)
-      const deltaPenalty =
-        lumDelta > maxLuminanceDelta ? (lumDelta - maxLuminanceDelta) * 10 : 0
-
-      const totalCost = cost + deltaPenalty
-
-      if (totalCost < bestCost) {
-        bestCost = totalCost
-        bestIndexA = a
-        bestIndexB = b
-      }
-    }
-  }
-
-  return { indexA: bestIndexA, indexB: bestIndexB, error: bestCost }
-}
-
-/**
- * Quantize an image to Mode R format using line-by-line interlaced extraction
+ * For each output position x, we:
+ * 1. Extract two adjacent source pixels (based on line parity)
+ * 2. Quantize each to its respective palette (A or B)
+ * 3. Use anti-flicker weighting to prefer low-contrast pairs when possible
  *
  * @param imageData - Source image RGBA data at doubled horizontal resolution (e.g., 320×200)
  * @param width - Source image width (doubled Mode 0 width, e.g., 320)
@@ -196,8 +134,6 @@ export function quantizeModeR(
   existingPalette?: Vector<'RGB'>[]
 ): ModeRQuantizationResult {
   // Use palette optimization for Mode R - creates 2 independent palettes
-  // for 256 possible blends (16×16). If existingPalette is provided,
-  // it will be used as palette A (preserves colors like bright yellow).
   const palettes = optimizeModeRPalettes(
     extractImageColors(imageData, width, height, 64),
     config,
@@ -208,40 +144,81 @@ export function quantizeModeR(
   const outWidth = Math.floor(width / 2)
   const outHeight = height
 
-  // Setup dithering
+  // Setup dithering - error buffer at source resolution for better quality
   const useDithering =
     config.ditheringMode === 'floyd-steinberg' && config.ditheringIntensity > 0
   const errorBuffer = useDithering ? new Float32Array(width * height * 3) : null
   const ditherIntensity = config.ditheringIntensity / 100
 
-  // Step 3: Create two index buffers with interlaced line-by-line extraction
+  // Create two index buffers
   const indexBufferA = new Uint8Array(outWidth * outHeight)
   const indexBufferB = new Uint8Array(outWidth * outHeight)
   let totalError = 0
 
-  const processContext: PixelProcessContext = {
-    width,
-    height,
-    outWidth,
-    imageData,
-    errorBuffer,
-    palettes,
-    indexBufferA,
-    indexBufferB,
-    ditherIntensity,
-    antiFlickerWeight: config.antiFlickerWeight,
-    maxLuminanceDelta: config.maxLuminanceDelta
-  }
-
+  // Process each output pixel
   for (let y = 0; y < outHeight; y++) {
     const isEvenLine = y % 2 === 0
 
     for (let x = 0; x < outWidth; x++) {
-      totalError += processPixelPair(x, y, isEvenLine, processContext)
+      // Determine which source pixels go to A and B based on line parity
+      // Even lines: A gets even pixels (2x), B gets odd pixels (2x+1)
+      // Odd lines: A gets odd pixels (2x+1), B gets even pixels (2x)
+      const srcXA = isEvenLine ? x * 2 : x * 2 + 1
+      const srcXB = isEvenLine ? x * 2 + 1 : x * 2
+
+      // Get source colors with dithering error applied
+      const colorA = getSourceColorWithError(
+        imageData,
+        errorBuffer,
+        width,
+        srcXA,
+        y
+      )
+      const colorB = getSourceColorWithError(
+        imageData,
+        errorBuffer,
+        width,
+        srcXB,
+        y
+      )
+
+      // Find best indices considering anti-flicker
+      const result = findBestIndicesWithAntiFlicker(
+        colorA,
+        colorB,
+        palettes,
+        config.antiFlickerWeight,
+        config.maxLuminanceDelta
+      )
+
+      const outIdx = y * outWidth + x
+      indexBufferA[outIdx] = result.indexA
+      indexBufferB[outIdx] = result.indexB
+      totalError += result.error
+
+      // Propagate dithering errors
+      if (errorBuffer) {
+        const chosenA = palettes.paletteA[result.indexA]
+        const chosenB = palettes.paletteB[result.indexB]
+
+        const errorA: Vector<'RGB'> = [
+          (colorA[0] - chosenA[0]) * ditherIntensity,
+          (colorA[1] - chosenA[1]) * ditherIntensity,
+          (colorA[2] - chosenA[2]) * ditherIntensity
+        ]
+        const errorB: Vector<'RGB'> = [
+          (colorB[0] - chosenB[0]) * ditherIntensity,
+          (colorB[1] - chosenB[1]) * ditherIntensity,
+          (colorB[2] - chosenB[2]) * ditherIntensity
+        ]
+
+        propagateError(errorBuffer, width, height, srcXA, y, errorA)
+        propagateError(errorBuffer, width, height, srcXB, y, errorB)
+      }
     }
   }
 
-  // Count unique blends actually used in the image
+  // Count unique blends actually used
   const usedBlends = new Set<string>()
   for (let i = 0; i < indexBufferA.length; i++) {
     usedBlends.add(`${indexBufferA[i]},${indexBufferB[i]}`)
@@ -259,107 +236,84 @@ export function quantizeModeR(
 }
 
 /**
- * Context for pixel pair processing
+ * Get source pixel color with accumulated dithering error
  */
-interface PixelProcessContext {
-  width: number
-  height: number
-  outWidth: number
-  imageData: Uint8ClampedArray
-  errorBuffer: Float32Array | null
-  palettes: ModeRPalettes
-  indexBufferA: Uint8Array
-  indexBufferB: Uint8Array
-  ditherIntensity: number
-  antiFlickerWeight: number
-  maxLuminanceDelta: number
+function getSourceColorWithError(
+  imageData: Uint8ClampedArray,
+  errorBuffer: Float32Array | null,
+  width: number,
+  x: number,
+  y: number
+): Vector<'RGB'> {
+  const pixelIdx = (y * width + x) * 4
+  const r = imageData[pixelIdx]
+  const g = imageData[pixelIdx + 1]
+  const b = imageData[pixelIdx + 2]
+
+  if (!errorBuffer) return [r, g, b]
+
+  const errorIdx = (y * width + x) * 3
+  return [
+    Math.max(0, Math.min(255, r + errorBuffer[errorIdx])),
+    Math.max(0, Math.min(255, g + errorBuffer[errorIdx + 1])),
+    Math.max(0, Math.min(255, b + errorBuffer[errorIdx + 2]))
+  ]
 }
 
 /**
- * Process a single pixel pair in Mode R quantization
+ * Find best palette indices for two colors, considering anti-flicker
+ *
+ * This searches all combinations to find the pair that:
+ * 1. Best matches the source colors
+ * 2. Has acceptable flicker (luminance difference)
  */
-function processPixelPair(
-  x: number,
-  y: number,
-  isEvenLine: boolean,
-  ctx: PixelProcessContext
-): number {
-  const {
-    width,
-    height,
-    outWidth,
-    imageData,
-    errorBuffer,
-    palettes,
-    indexBufferA,
-    indexBufferB,
-    ditherIntensity,
-    antiFlickerWeight,
-    maxLuminanceDelta
-  } = ctx
+function findBestIndicesWithAntiFlicker(
+  colorA: Vector<'RGB'>,
+  colorB: Vector<'RGB'>,
+  palettes: ModeRPalettes,
+  antiFlickerWeight: number,
+  maxLuminanceDelta: number
+): { indexA: number; indexB: number; error: number } {
+  let bestIndexA = 0
+  let bestIndexB = 0
+  let bestCost = Number.POSITIVE_INFINITY
 
-  // Interlaced pixel extraction based on line parity
-  const srcXA = isEvenLine ? x * 2 : x * 2 + 1
-  const srcXB = isEvenLine ? x * 2 + 1 : x * 2
+  // Weight for anti-flicker (0-1)
+  const flickerWeight = antiFlickerWeight / 100
 
-  // Get source colors with accumulated dithering error
-  const colorA = getPixelColorWithError(
-    imageData,
-    errorBuffer,
-    (y * width + srcXA) * 4,
-    (y * width + srcXA) * 3
-  )
-  const colorB = getPixelColorWithError(
-    imageData,
-    errorBuffer,
-    (y * width + srcXB) * 4,
-    (y * width + srcXB) * 3
-  )
+  for (let a = 0; a < palettes.paletteA.length; a++) {
+    const palA = palettes.paletteA[a]
+    const errorA = colorDistance(colorA, palA)
 
-  // For Mode R, we want the PERCEIVED color to match the target
-  const targetBlend: Vector<'RGB'> = [
-    (colorA[0] + colorB[0]) / 2,
-    (colorA[1] + colorB[1]) / 2,
-    (colorA[2] + colorB[2]) / 2
-  ]
+    for (let b = 0; b < palettes.paletteB.length; b++) {
+      const palB = palettes.paletteB[b]
+      const errorB = colorDistance(colorB, palB)
 
-  // Find the best pair (idxA, idxB) whose blend matches targetBlend
-  // Uses antiFlickerWeight and maxLuminanceDelta to minimize flicker
-  const bestPair = findBestBlendPair(
-    targetBlend,
-    palettes.paletteA,
-    palettes.paletteB,
-    antiFlickerWeight,
-    maxLuminanceDelta
-  )
+      // Color matching error
+      const colorError = errorA + errorB
 
-  const outIdx = y * outWidth + x
-  indexBufferA[outIdx] = bestPair.indexA
-  indexBufferB[outIdx] = bestPair.indexB
+      // Flicker penalty based on luminance difference between chosen colors
+      const lumA = 0.299 * palA[0] + 0.587 * palA[1] + 0.114 * palA[2]
+      const lumB = 0.299 * palB[0] + 0.587 * palB[1] + 0.114 * palB[2]
+      const lumDelta = Math.abs(lumA - lumB)
 
-  // Propagate dithering error based on the blended result
-  if (errorBuffer) {
-    const chosenBlend: Vector<'RGB'> = [
-      (palettes.paletteA[bestPair.indexA][0] +
-        palettes.paletteB[bestPair.indexB][0]) /
-        2,
-      (palettes.paletteA[bestPair.indexA][1] +
-        palettes.paletteB[bestPair.indexB][1]) /
-        2,
-      (palettes.paletteA[bestPair.indexA][2] +
-        palettes.paletteB[bestPair.indexB][2]) /
-        2
-    ]
-    const errorHalf: Vector<'RGB'> = [
-      ((targetBlend[0] - chosenBlend[0]) * ditherIntensity) / 2,
-      ((targetBlend[1] - chosenBlend[1]) * ditherIntensity) / 2,
-      ((targetBlend[2] - chosenBlend[2]) * ditherIntensity) / 2
-    ]
-    propagateError(errorBuffer, width, height, srcXA, y, errorHalf)
-    propagateError(errorBuffer, width, height, srcXB, y, errorHalf)
+      // Penalty for exceeding max luminance delta
+      const deltaPenalty =
+        lumDelta > maxLuminanceDelta ? (lumDelta - maxLuminanceDelta) * 5 : 0
+
+      // Combined cost
+      const flickerCost = lumDelta * flickerWeight
+      const totalCost = colorError + flickerCost + deltaPenalty
+
+      if (totalCost < bestCost) {
+        bestCost = totalCost
+        bestIndexA = a
+        bestIndexB = b
+      }
+    }
   }
 
-  return bestPair.error
+  return { indexA: bestIndexA, indexB: bestIndexB, error: bestCost }
 }
 
 /**
@@ -455,27 +409,20 @@ export function generateModeRPreview(
  *
  * Mode R interlacing works as follows:
  * - Frame A and Frame B alternate at 50Hz
- * - On even lines: position 0 shows A, position 1 shows B, position 2 shows A...
- * - On odd lines: position 0 shows B, position 1 shows A, position 2 shows B...
+ * - Each frame displays at Mode 0 resolution (160px wide)
+ * - Frame A and Frame B have alternating horizontal shifts per line:
+ *   - Even lines: Frame A at position 0, Frame B at position +0.5 (half pixel)
+ *   - Odd lines: Frame A at position +0.5, Frame B at position 0
  *
- * The perceived color at each sub-pixel is the temporal blend of what's shown there
- * across the two frames. Due to the interlacing pattern:
- * - Even line sub-pixels: even positions see (A+B)/2, odd positions see (B+A)/2
- * - But wait - that's the same! The key is the SPATIAL information.
+ * The perceived result at doubled resolution (320px) is:
+ * - Even lines:
+ *   - Sub-pixel 2x: blend of A[x] (centered) and B[x-1] (shifted right, so its right half)
+ *   - Sub-pixel 2x+1: blend of A[x] (right half) and B[x] (centered)
+ * - Odd lines:
+ *   - Sub-pixel 2x: blend of A[x-1] (shifted right) and B[x] (centered)
+ *   - Sub-pixel 2x+1: blend of A[x] (centered) and B[x] (right half)
  *
- * Actually, the key insight is that adjacent MODE 0 pixels can show different
- * blended colors because they come from different source sub-pixels.
- *
- * Let's trace through for clarity:
- * - Source pixel at (2x, y) on even line → goes to Frame A index buffer
- * - Source pixel at (2x+1, y) on even line → goes to Frame B index buffer
- * - The OUTPUT at position x shows blend(paletteA[idxA], paletteB[idxB])
- *
- * So the output IS at Mode 0 resolution, but each pixel represents a UNIQUE blend
- * from two different source sub-pixels. The "resolution improvement" comes from
- * having more color variety, not more spatial pixels.
- *
- * For visualization, we show at 2× width with each blend pixel doubled.
+ * Simplified model: each output position blends the Mode 0 pixels that "cover" it.
  */
 export function generateBlendedPreview(
   indexBufferA: Uint8Array,
@@ -489,32 +436,61 @@ export function generateBlendedPreview(
   const imageData = new Uint8ClampedArray(outWidth * height * 4)
 
   for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const srcIdx = y * width + x
+    const isEvenLine = y % 2 === 0
 
-      const colorA = palettes.paletteA[indexBufferA[srcIdx]]
-      const colorB = palettes.paletteB[indexBufferB[srcIdx]]
+    for (let outX = 0; outX < outWidth; outX++) {
+      // Determine which Mode 0 pixel from each frame contributes to this output position
+      // Each Mode 0 pixel spans 2 output pixels, but with different offsets per frame
 
-      // The perceived color is the temporal average of A and B
-      // This is what the eye sees due to persistence of vision at 50Hz
+      let colorA: Vector<'RGB'>
+      let colorB: Vector<'RGB'>
+
+      if (isEvenLine) {
+        // Even lines: Frame A at position 0, Frame B shifted by +1 output pixel
+        // Frame A pixel x covers output positions [2x, 2x+1]
+        // Frame B pixel x covers output positions [2x+1, 2x+2]
+        const idxA = Math.floor(outX / 2)
+        const idxB = Math.floor((outX - 1) / 2)
+
+        colorA =
+          palettes.paletteA[
+            indexBufferA[y * width + Math.max(0, Math.min(width - 1, idxA))]
+          ]
+        colorB =
+          outX === 0
+            ? [0, 0, 0] // Border: no B pixel covers position 0 on even lines
+            : palettes.paletteB[
+                indexBufferB[y * width + Math.max(0, Math.min(width - 1, idxB))]
+              ]
+      } else {
+        // Odd lines: Frame A shifted by +1 output pixel, Frame B at position 0
+        // Frame A pixel x covers output positions [2x+1, 2x+2]
+        // Frame B pixel x covers output positions [2x, 2x+1]
+        const idxA = Math.floor((outX - 1) / 2)
+        const idxB = Math.floor(outX / 2)
+
+        colorA =
+          outX === 0
+            ? [0, 0, 0] // Border: no A pixel covers position 0 on odd lines
+            : palettes.paletteA[
+                indexBufferA[y * width + Math.max(0, Math.min(width - 1, idxA))]
+              ]
+        colorB =
+          palettes.paletteB[
+            indexBufferB[y * width + Math.max(0, Math.min(width - 1, idxB))]
+          ]
+      }
+
+      // Blend the two colors (temporal averaging at 50Hz)
       const blendedR = Math.round((colorA[0] + colorB[0]) / 2)
       const blendedG = Math.round((colorA[1] + colorB[1]) / 2)
       const blendedB = Math.round((colorA[2] + colorB[2]) / 2)
 
-      // Fill both sub-pixels with the blended color
-      // (Each Mode 0 pixel becomes 2 display pixels)
-      const dstIdx1 = (y * outWidth + x * 2) * 4
-      const dstIdx2 = (y * outWidth + x * 2 + 1) * 4
-
-      imageData[dstIdx1] = blendedR
-      imageData[dstIdx1 + 1] = blendedG
-      imageData[dstIdx1 + 2] = blendedB
-      imageData[dstIdx1 + 3] = 255
-
-      imageData[dstIdx2] = blendedR
-      imageData[dstIdx2 + 1] = blendedG
-      imageData[dstIdx2 + 2] = blendedB
-      imageData[dstIdx2 + 3] = 255
+      const dstIdx = (y * outWidth + outX) * 4
+      imageData[dstIdx] = blendedR
+      imageData[dstIdx + 1] = blendedG
+      imageData[dstIdx + 2] = blendedB
+      imageData[dstIdx + 3] = 255
     }
   }
 
