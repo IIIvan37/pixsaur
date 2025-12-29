@@ -27,6 +27,7 @@
  */
 
 import { logger } from '@/core/logger'
+import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { colorDistance } from './blend'
 import { optimizeModeRPalettes } from './pair-optimizer'
@@ -36,6 +37,99 @@ import type {
   ModeRQuantizationResult
 } from './types'
 import { DEFAULT_MODE_R_CONFIG } from './types'
+
+// ============================================================================
+// Dithering Matrices and Types
+// ============================================================================
+
+/** Ordered dithering matrix definition */
+interface DitheringMatrix {
+  size: number
+  matrix: number[][]
+  maxValue: number
+}
+
+/** Dithering matrices for ordered dithering methods */
+const DITHERING_MATRICES: Record<string, DitheringMatrix> = {
+  bayer2x2: {
+    size: 2,
+    maxValue: 4,
+    matrix: [
+      [0, 2],
+      [3, 1]
+    ]
+  },
+  bayer4x4: {
+    size: 4,
+    maxValue: 16,
+    matrix: [
+      [0, 8, 2, 10],
+      [12, 4, 14, 6],
+      [3, 11, 1, 9],
+      [15, 7, 13, 5]
+    ]
+  },
+  bayer8x8: {
+    size: 8,
+    maxValue: 64,
+    matrix: [
+      [0, 32, 8, 40, 2, 34, 10, 42],
+      [48, 16, 56, 24, 50, 18, 58, 26],
+      [12, 44, 4, 36, 14, 46, 6, 38],
+      [60, 28, 52, 20, 62, 30, 54, 22],
+      [3, 35, 11, 43, 1, 33, 9, 41],
+      [51, 19, 59, 27, 49, 17, 57, 25],
+      [15, 47, 7, 39, 13, 45, 5, 37],
+      [63, 31, 55, 23, 61, 29, 53, 21]
+    ]
+  },
+  halftone4x4: {
+    size: 4,
+    maxValue: 17,
+    matrix: [
+      [7, 13, 11, 4],
+      [12, 16, 14, 8],
+      [10, 15, 6, 2],
+      [5, 9, 3, 1]
+    ]
+  }
+}
+
+/** Error diffusion modes */
+const ERROR_DIFFUSION_MODES: DitheringMode[] = [
+  'floydSteinberg',
+  'atkinson',
+  'ylioluma1',
+  'ylioluma2'
+]
+
+/** Check if a dithering mode uses error diffusion */
+function isErrorDiffusionMode(mode: DitheringMode | 'none'): boolean {
+  return (
+    mode !== 'none' && ERROR_DIFFUSION_MODES.includes(mode as DitheringMode)
+  )
+}
+
+/** Check if a dithering mode uses ordered dithering */
+function isOrderedDitheringMode(mode: DitheringMode | 'none'): boolean {
+  return mode !== 'none' && mode in DITHERING_MATRICES
+}
+
+/**
+ * Get ordered dithering threshold for a pixel position
+ */
+function getOrderedThreshold(
+  x: number,
+  y: number,
+  matrix: DitheringMatrix,
+  intensity: number
+): number {
+  const mx = x % matrix.size
+  const my = y % matrix.size
+  const threshold = matrix.matrix[my][mx]
+  // Normalize to -0.5 to 0.5 range, then scale by intensity
+  return (threshold / matrix.maxValue - 0.5) * intensity * 255
+}
 
 /**
  * Find the best color index in a palette for a target color
@@ -144,11 +238,30 @@ export function quantizeModeR(
   const outWidth = Math.floor(width / 2)
   const outHeight = height
 
-  // Setup dithering - error buffer at source resolution for better quality
-  const useDithering =
-    config.ditheringMode === 'floyd-steinberg' && config.ditheringIntensity > 0
-  const errorBuffer = useDithering ? new Float32Array(width * height * 3) : null
+  // Setup dithering based on mode
+  const ditheringMode = config.ditheringMode
   const ditherIntensity = config.ditheringIntensity / 100
+  const useErrorDiffusion =
+    isErrorDiffusionMode(ditheringMode) && ditherIntensity > 0
+  const useOrderedDithering =
+    isOrderedDitheringMode(ditheringMode) && ditherIntensity > 0
+
+  // Error buffer for error diffusion modes
+  const errorBuffer = useErrorDiffusion
+    ? new Float32Array(width * height * 3)
+    : null
+
+  // Get dithering matrix for ordered modes
+  const ditherMatrix = useOrderedDithering
+    ? DITHERING_MATRICES[ditheringMode as string]
+    : null
+
+  logger.info('[Mode R] Starting quantization with dithering', {
+    mode: ditheringMode,
+    intensity: config.ditheringIntensity,
+    useErrorDiffusion,
+    useOrderedDithering
+  })
 
   // Create two index buffers
   const indexBufferA = new Uint8Array(outWidth * outHeight)
@@ -166,21 +279,45 @@ export function quantizeModeR(
       const srcXA = isEvenLine ? x * 2 : x * 2 + 1
       const srcXB = isEvenLine ? x * 2 + 1 : x * 2
 
-      // Get source colors with dithering error applied
-      const colorA = getSourceColorWithError(
-        imageData,
-        errorBuffer,
-        width,
-        srcXA,
-        y
-      )
-      const colorB = getSourceColorWithError(
-        imageData,
-        errorBuffer,
-        width,
-        srcXB,
-        y
-      )
+      // Get source colors with dithering applied
+      let colorA: Vector<'RGB'>
+      let colorB: Vector<'RGB'>
+
+      if (useOrderedDithering && ditherMatrix) {
+        // Ordered dithering: apply threshold-based color adjustment
+        colorA = getSourceColorWithOrderedDither(
+          imageData,
+          width,
+          srcXA,
+          y,
+          ditherMatrix,
+          ditherIntensity
+        )
+        colorB = getSourceColorWithOrderedDither(
+          imageData,
+          width,
+          srcXB,
+          y,
+          ditherMatrix,
+          ditherIntensity
+        )
+      } else {
+        // Error diffusion or no dithering: use error buffer
+        colorA = getSourceColorWithError(
+          imageData,
+          errorBuffer,
+          width,
+          srcXA,
+          y
+        )
+        colorB = getSourceColorWithError(
+          imageData,
+          errorBuffer,
+          width,
+          srcXB,
+          y
+        )
+      }
 
       // Find best indices considering anti-flicker
       const result = findBestIndicesWithAntiFlicker(
@@ -196,8 +333,8 @@ export function quantizeModeR(
       indexBufferB[outIdx] = result.indexB
       totalError += result.error
 
-      // Propagate dithering errors
-      if (errorBuffer) {
+      // Propagate dithering errors for error diffusion modes
+      if (errorBuffer && useErrorDiffusion) {
         const chosenA = palettes.paletteA[result.indexA]
         const chosenB = palettes.paletteB[result.indexB]
 
@@ -212,8 +349,25 @@ export function quantizeModeR(
           (colorB[2] - chosenB[2]) * ditherIntensity
         ]
 
-        propagateError(errorBuffer, width, height, srcXA, y, errorA)
-        propagateError(errorBuffer, width, height, srcXB, y, errorB)
+        // Use appropriate error diffusion based on mode
+        propagateError(
+          errorBuffer,
+          width,
+          height,
+          srcXA,
+          y,
+          errorA,
+          ditheringMode
+        )
+        propagateError(
+          errorBuffer,
+          width,
+          height,
+          srcXB,
+          y,
+          errorB,
+          ditheringMode
+        )
       }
     }
   }
@@ -227,6 +381,7 @@ export function quantizeModeR(
   logger.info('[Mode R] Quantization complete:', {
     imageSize: `${width}×${height}`,
     outputSize: `${outWidth}×${outHeight}`,
+    ditheringMode: ditheringMode,
     possibleBlends: palettes.stats.uniquePerceivedColors,
     actualBlendsUsed: usedBlends.size,
     totalError: Math.round(totalError)
@@ -236,7 +391,7 @@ export function quantizeModeR(
 }
 
 /**
- * Get source pixel color with accumulated dithering error
+ * Get source pixel color with accumulated dithering error (for error diffusion)
  */
 function getSourceColorWithError(
   imageData: Uint8ClampedArray,
@@ -257,6 +412,32 @@ function getSourceColorWithError(
     Math.max(0, Math.min(255, r + errorBuffer[errorIdx])),
     Math.max(0, Math.min(255, g + errorBuffer[errorIdx + 1])),
     Math.max(0, Math.min(255, b + errorBuffer[errorIdx + 2]))
+  ]
+}
+
+/**
+ * Get source pixel color with ordered dithering applied
+ */
+function getSourceColorWithOrderedDither(
+  imageData: Uint8ClampedArray,
+  width: number,
+  x: number,
+  y: number,
+  matrix: DitheringMatrix,
+  intensity: number
+): Vector<'RGB'> {
+  const pixelIdx = (y * width + x) * 4
+  const r = imageData[pixelIdx]
+  const g = imageData[pixelIdx + 1]
+  const b = imageData[pixelIdx + 2]
+
+  // Get threshold for this position
+  const threshold = getOrderedThreshold(x, y, matrix, intensity)
+
+  return [
+    Math.max(0, Math.min(255, r + threshold)),
+    Math.max(0, Math.min(255, g + threshold)),
+    Math.max(0, Math.min(255, b + threshold))
   ]
 }
 
@@ -317,7 +498,61 @@ function findBestIndicesWithAntiFlicker(
 }
 
 /**
- * Propagate quantization error to neighboring pixels (Floyd-Steinberg)
+ * Error diffusion distributions for different algorithms
+ */
+const ERROR_DIFFUSION_KERNELS: Record<
+  string,
+  Array<{ dx: number; dy: number; factor: number }>
+> = {
+  floydSteinberg: [
+    // Floyd-Steinberg:    * 7/16
+    //                 3/16 5/16 1/16
+    { dx: 1, dy: 0, factor: 7 / 16 },
+    { dx: -1, dy: 1, factor: 3 / 16 },
+    { dx: 0, dy: 1, factor: 5 / 16 },
+    { dx: 1, dy: 1, factor: 1 / 16 }
+  ],
+  atkinson: [
+    // Atkinson:       * 1/8 1/8
+    //             1/8 1/8 1/8
+    //                 1/8
+    { dx: 1, dy: 0, factor: 1 / 8 },
+    { dx: 2, dy: 0, factor: 1 / 8 },
+    { dx: -1, dy: 1, factor: 1 / 8 },
+    { dx: 0, dy: 1, factor: 1 / 8 },
+    { dx: 1, dy: 1, factor: 1 / 8 },
+    { dx: 0, dy: 2, factor: 1 / 8 }
+  ],
+  ylioluma1: [
+    // Yliluoma 1 (similar to Sierra Lite)
+    //           * 2/4
+    //         1/4 1/4
+    { dx: 1, dy: 0, factor: 2 / 4 },
+    { dx: -1, dy: 1, factor: 1 / 4 },
+    { dx: 0, dy: 1, factor: 1 / 4 }
+  ],
+  ylioluma2: [
+    // Yliluoma 2 (similar to Jarvis-Judice-Ninke simplified)
+    //               * 7/48 5/48
+    //         3/48 5/48 7/48 5/48 3/48
+    //         1/48 3/48 5/48 3/48 1/48
+    { dx: 1, dy: 0, factor: 7 / 48 },
+    { dx: 2, dy: 0, factor: 5 / 48 },
+    { dx: -2, dy: 1, factor: 3 / 48 },
+    { dx: -1, dy: 1, factor: 5 / 48 },
+    { dx: 0, dy: 1, factor: 7 / 48 },
+    { dx: 1, dy: 1, factor: 5 / 48 },
+    { dx: 2, dy: 1, factor: 3 / 48 },
+    { dx: -2, dy: 2, factor: 1 / 48 },
+    { dx: -1, dy: 2, factor: 3 / 48 },
+    { dx: 0, dy: 2, factor: 5 / 48 },
+    { dx: 1, dy: 2, factor: 3 / 48 },
+    { dx: 2, dy: 2, factor: 1 / 48 }
+  ]
+}
+
+/**
+ * Propagate quantization error to neighboring pixels using the specified algorithm
  */
 function propagateError(
   errorBuffer: Float32Array,
@@ -325,13 +560,14 @@ function propagateError(
   height: number,
   x: number,
   y: number,
-  error: Vector<'RGB'>
+  error: Vector<'RGB'>,
+  mode: DitheringMode | 'none'
 ): void {
-  // Floyd-Steinberg distribution:
-  //       * 7/16
-  // 3/16 5/16 1/16
+  const kernel =
+    ERROR_DIFFUSION_KERNELS[mode as string] ??
+    ERROR_DIFFUSION_KERNELS.floydSteinberg
 
-  const distribute = (dx: number, dy: number, factor: number): void => {
+  for (const { dx, dy, factor } of kernel) {
     const nx = x + dx
     const ny = y + dy
     if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
@@ -341,11 +577,6 @@ function propagateError(
       errorBuffer[idx + 2] += error[2] * factor
     }
   }
-
-  distribute(1, 0, 7 / 16) // right
-  distribute(-1, 1, 3 / 16) // bottom-left
-  distribute(0, 1, 5 / 16) // bottom
-  distribute(1, 1, 1 / 16) // bottom-right
 }
 
 /**

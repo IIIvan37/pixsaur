@@ -56,7 +56,8 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
     antiFlickerWeight,
     maxLuminanceDelta,
     targetHardware: hardware,
-    ditheringMode: ditheringEnabled ? 'floyd-steinberg' : 'none',
+    // Pass the actual dithering mode from settings
+    ditheringMode: ditheringEnabled ? dithering.mode : 'none',
     ditheringIntensity
   }
 })

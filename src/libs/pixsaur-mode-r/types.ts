@@ -12,6 +12,7 @@
  * between frames, this creates a perceived doubled horizontal resolution.
  */
 
+import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 /**
@@ -86,11 +87,15 @@ export interface ModeRConfig {
   targetHardware: 'classic' | 'plus'
 
   /**
-   * Dithering mode
+   * Dithering mode - supports all standard dithering algorithms
    * - 'none': No dithering
-   * - 'floyd-steinberg': Floyd-Steinberg error diffusion
+   * - 'floydSteinberg': Floyd-Steinberg error diffusion
+   * - 'atkinson': Atkinson error diffusion (sharper)
+   * - 'bayer2x2', 'bayer4x4', 'bayer8x8': Ordered Bayer dithering
+   * - 'halftone4x4': Halftone pattern dithering
+   * - 'ylioluma1', 'ylioluma2': Yliluoma's ordered dithering
    */
-  ditheringMode: 'none' | 'floyd-steinberg'
+  ditheringMode: 'none' | DitheringMode
 
   /**
    * Dithering intensity (0-100)
@@ -106,7 +111,7 @@ export const DEFAULT_MODE_R_CONFIG: ModeRConfig = {
   antiFlickerWeight: 70, // Prioritize flicker reduction
   maxLuminanceDelta: 80, // Allow moderate luminance differences
   targetHardware: 'plus', // Mode R works best on CPC Plus
-  ditheringMode: 'floyd-steinberg',
+  ditheringMode: 'floydSteinberg',
   ditheringIntensity: 100
 }
 
