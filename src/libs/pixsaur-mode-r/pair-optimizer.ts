@@ -1,21 +1,15 @@
 /**
- * Mode R Pair Optimizer
+ * Mode R Palette Optimizer
  *
- * Finds optimal color pairs (colorA, colorB) for each target color
- * such that:
- * 1. blend(colorA, colorB) ≈ target
- * 2. |luminance(colorA) - luminance(colorB)| is minimized (anti-flicker)
+ * Creates two independent 16-color palettes (A and B) that maximize
+ * the diversity of blended colors. With 16×16 = 256 possible blends,
+ * Mode R can represent far more colors than standard Mode 0.
  */
 
+import { logger } from '@/core/logger'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import {
-  blendColors,
-  calculateFlickerScore,
-  calculatePairCost,
-  colorDistance
-} from './blend'
+import { blendColors, calculateFlickerScore, colorDistance } from './blend'
 import type {
-  CandidatePair,
   ModeRColorPair,
   ModeRConfig,
   ModeRPaletteStats,
@@ -55,115 +49,7 @@ function generateCPCClassicPalette(): Vector<'RGB'>[] {
 }
 
 /**
- * Evaluate a color pair and return a candidate if valid
- */
-function evaluatePair(
-  targetColor: Vector<'RGB'>,
-  colorA: Vector<'RGB'>,
-  colorB: Vector<'RGB'>,
-  config: ModeRConfig
-): CandidatePair | null {
-  const flicker = calculateFlickerScore(colorA, colorB)
-
-  // Skip pairs with too much luminance difference
-  if (flicker > config.maxLuminanceDelta) {
-    return null
-  }
-
-  const blended = blendColors(colorA, colorB)
-  const cost = calculatePairCost(
-    targetColor,
-    colorA,
-    colorB,
-    config.antiFlickerWeight
-  )
-
-  return {
-    colorA,
-    colorB,
-    blendedColor: blended,
-    flickerScore: flicker,
-    cost
-  }
-}
-
-/**
- * Search for best pair among a set of colors
- */
-function searchBestPair(
-  targetColor: Vector<'RGB'>,
-  colors: Vector<'RGB'>[],
-  config: ModeRConfig
-): CandidatePair | null {
-  let bestPair: CandidatePair | null = null
-  let bestCost = Number.POSITIVE_INFINITY
-
-  for (const colorA of colors) {
-    for (const colorB of colors) {
-      const pair = evaluatePair(targetColor, colorA, colorB, config)
-      if (pair && pair.cost < bestCost) {
-        bestCost = pair.cost
-        bestPair = pair
-      }
-    }
-  }
-
-  return bestPair
-}
-
-/**
- * Find the best pair for a single target color
- *
- * @param targetColor - The color to match
- * @param availableColors - Available hardware colors
- * @param config - Mode R configuration
- * @returns Best candidate pair
- */
-export function findBestPairForColor(
-  targetColor: Vector<'RGB'>,
-  availableColors: Vector<'RGB'>[],
-  config: ModeRConfig = DEFAULT_MODE_R_CONFIG
-): CandidatePair {
-  // For CPC Plus, search among nearby colors only (4096 total is too many)
-  const searchColors =
-    config.targetHardware === 'plus'
-      ? findNearbyColors(targetColor, availableColors, 64)
-      : availableColors
-
-  const bestPair = searchBestPair(targetColor, searchColors, config)
-
-  // Fallback: if no valid pair found, use the same color for both
-  if (!bestPair) {
-    const nearestColor = findNearestColor(targetColor, availableColors)
-    return {
-      colorA: nearestColor,
-      colorB: nearestColor,
-      blendedColor: nearestColor,
-      flickerScore: 0,
-      cost: colorDistance(targetColor, nearestColor)
-    }
-  }
-
-  return bestPair
-}
-
-/**
- * Find colors near a target within the available palette
- */
-function findNearbyColors(
-  target: Vector<'RGB'>,
-  available: Vector<'RGB'>[],
-  maxCount: number
-): Vector<'RGB'>[] {
-  // Sort by distance and take top N
-  const sorted = [...available].sort((a, b) => {
-    return colorDistance(target, a) - colorDistance(target, b)
-  })
-  return sorted.slice(0, maxCount)
-}
-
-/**
- * Find the nearest color in the palette
+ * Find the nearest available color to a target
  */
 function findNearestColor(
   target: Vector<'RGB'>,
@@ -184,123 +70,285 @@ function findNearestColor(
 }
 
 /**
- * Optimize 16 color pairs for a set of target colors
+ * Calculate how many new targets a candidate color helps cover
+ */
+function countNewCoverage(
+  candidate: Vector<'RGB'>,
+  targetColors: Vector<'RGB'>[],
+  coveredTargets: Set<number>,
+  threshold: number
+): number {
+  let count = 0
+  for (let t = 0; t < targetColors.length; t++) {
+    if (coveredTargets.has(t)) continue
+    if (colorDistance(candidate, targetColors[t]) < threshold) {
+      count++
+    }
+  }
+  return count
+}
+
+/**
+ * Calculate minimum distance from a color to any in a list
+ */
+function minDistanceToSet(
+  color: Vector<'RGB'>,
+  colorSet: Vector<'RGB'>[]
+): number {
+  let minDist = Infinity
+  for (const c of colorSet) {
+    const dist = colorDistance(color, c)
+    if (dist < minDist) minDist = dist
+  }
+  return minDist
+}
+
+/**
+ * Mark targets as covered by a color
+ */
+function markCoveredTargets(
+  color: Vector<'RGB'>,
+  targetColors: Vector<'RGB'>[],
+  coveredTargets: Set<number>,
+  threshold: number
+): void {
+  for (let t = 0; t < targetColors.length; t++) {
+    if (
+      !coveredTargets.has(t) &&
+      colorDistance(color, targetColors[t]) < threshold
+    ) {
+      coveredTargets.add(t)
+    }
+  }
+}
+
+/**
+ * Find the best candidate for selection based on coverage and diversity
+ */
+function findBestCandidate(
+  available: Vector<'RGB'>[],
+  usedIndices: Set<number>,
+  targetColors: Vector<'RGB'>[],
+  coveredTargets: Set<number>,
+  selected: Vector<'RGB'>[]
+): number {
+  const COVERAGE_THRESHOLD = 5000 // ~70 per channel
+  let bestIdx = -1
+  let bestScore = -Infinity
+
+  for (let i = 0; i < available.length; i++) {
+    if (usedIndices.has(i)) continue
+
+    const newCoverage = countNewCoverage(
+      available[i],
+      targetColors,
+      coveredTargets,
+      COVERAGE_THRESHOLD
+    )
+    const diversityBonus =
+      selected.length > 0
+        ? Math.sqrt(minDistanceToSet(available[i], selected)) / 50
+        : 0
+    const score = newCoverage + diversityBonus
+
+    if (score > bestScore) {
+      bestScore = score
+      bestIdx = i
+    }
+  }
+
+  return bestIdx
+}
+
+/**
+ * Fallback: find the color furthest from all selected
+ */
+function findMostDiverseCandidate(
+  available: Vector<'RGB'>[],
+  usedIndices: Set<number>,
+  selected: Vector<'RGB'>[]
+): number {
+  let bestIdx = -1
+  let maxMinDist = -1
+
+  for (let i = 0; i < available.length; i++) {
+    if (usedIndices.has(i)) continue
+    const minDist = minDistanceToSet(available[i], selected)
+    if (minDist > maxMinDist) {
+      maxMinDist = minDist
+      bestIdx = i
+    }
+  }
+
+  return bestIdx
+}
+
+/**
+ * Select colors from available palette that best cover the target colors
+ * while maintaining diversity. Uses a greedy approach that balances
+ * coverage and spread.
+ */
+function selectDiverseColors(
+  targetColors: Vector<'RGB'>[],
+  available: Vector<'RGB'>[],
+  count: number
+): Vector<'RGB'>[] {
+  if (available.length <= count) {
+    return [...available]
+  }
+
+  const COVERAGE_THRESHOLD = 5000
+  const selected: Vector<'RGB'>[] = []
+  const usedIndices = new Set<number>()
+  const coveredTargets = new Set<number>()
+
+  while (selected.length < count) {
+    let bestIdx = findBestCandidate(
+      available,
+      usedIndices,
+      targetColors,
+      coveredTargets,
+      selected
+    )
+
+    if (bestIdx === -1) {
+      bestIdx = findMostDiverseCandidate(available, usedIndices, selected)
+    }
+
+    if (bestIdx === -1) break
+
+    const newColor = available[bestIdx]
+    selected.push(newColor)
+    usedIndices.add(bestIdx)
+    markCoveredTargets(
+      newColor,
+      targetColors,
+      coveredTargets,
+      COVERAGE_THRESHOLD
+    )
+  }
+
+  return selected
+}
+
+/**
+ * Create two independent palettes of 16 colors each that maximize
+ * the coverage of target colors through their blends.
  *
- * @param targetColors - The 16 colors to represent (from image quantization)
- * @param config - Mode R configuration
- * @returns Optimized Mode R palettes
+ * Strategy:
+ * 1. Palette A: Select 16 colors that cover the target colors well
+ * 2. Palette B: Select 16 colors that, combined with A, produce useful blends
+ *
+ * With 16×16 = 256 possible blend combinations, Mode R can represent
+ * far more perceived colors than standard Mode 0's 16 colors.
  */
 export function optimizeModeRPalettes(
   targetColors: Vector<'RGB'>[],
   config: ModeRConfig = DEFAULT_MODE_R_CONFIG
 ): ModeRPalettes {
-  if (targetColors.length > 16) {
-    throw new Error('Mode R supports maximum 16 color pairs')
-  }
-
   // Get available hardware colors
   const availableColors =
     config.targetHardware === 'plus'
       ? generateCPCPlusPalette()
       : generateCPCClassicPalette()
 
-  // Find best pair for each target color
+  // For palette A, select colors that are close to target colors
+  // and also span the color space well
+  const paletteA = selectDiverseColors(targetColors, availableColors, 16)
+
+  // For palette B, we want colors that complement palette A
+  // Calculate what B colors we'd need to blend to each target
+  const neededBColors: Vector<'RGB'>[] = []
+  for (const target of targetColors) {
+    // For each A color, calculate ideal B: blend(A, B) = target → B = 2*target - A
+    for (const colorA of paletteA) {
+      const idealB: Vector<'RGB'> = [
+        Math.max(0, Math.min(255, 2 * target[0] - colorA[0])),
+        Math.max(0, Math.min(255, 2 * target[1] - colorA[1])),
+        Math.max(0, Math.min(255, 2 * target[2] - colorA[2]))
+      ]
+      neededBColors.push(idealB)
+    }
+  }
+
+  // Select palette B to cover the needed complementary colors
+  const paletteB = selectDiverseColors(neededBColors, availableColors, 16)
+
+  // Pad palettes to 16 if needed
+  while (paletteA.length < 16) paletteA.push([0, 0, 0])
+  while (paletteB.length < 16) paletteB.push([0, 0, 0])
+
+  // Build pairs info (for compatibility)
   const pairs: ModeRColorPair[] = []
-  const paletteA: Vector<'RGB'>[] = []
-  const paletteB: Vector<'RGB'>[] = []
-
-  for (let i = 0; i < targetColors.length; i++) {
-    const target = targetColors[i]
-    const bestPair = findBestPairForColor(target, availableColors, config)
-
+  for (let i = 0; i < 16; i++) {
     pairs.push({
       index: i,
-      colorA: bestPair.colorA,
-      colorB: bestPair.colorB,
-      blendedColor: bestPair.blendedColor,
-      flickerScore: bestPair.flickerScore
+      colorA: paletteA[i],
+      colorB: paletteB[i],
+      blendedColor: blendColors(paletteA[i], paletteB[i]),
+      flickerScore: calculateFlickerScore(paletteA[i], paletteB[i])
     })
-
-    paletteA.push(bestPair.colorA)
-    paletteB.push(bestPair.colorB)
   }
 
-  // Pad to 16 colors if needed (use black for unused slots)
-  while (pairs.length < 16) {
-    const black: Vector<'RGB'> = [0, 0, 0]
-    pairs.push({
-      index: pairs.length,
-      colorA: black,
-      colorB: black,
-      blendedColor: black,
-      flickerScore: 0
-    })
-    paletteA.push(black)
-    paletteB.push(black)
-  }
+  // Calculate statistics for ALL possible blends (16×16 = 256)
+  const stats = calculateFullPaletteStats(paletteA, paletteB, config)
 
-  // Calculate statistics
-  const stats = calculatePaletteStats(pairs)
+  logger.info('[Mode R] Dual palette optimization:', {
+    targetColors: targetColors.length,
+    paletteAUnique: new Set(paletteA.map((c) => `${c[0]},${c[1]},${c[2]}`))
+      .size,
+    paletteBUnique: new Set(paletteB.map((c) => `${c[0]},${c[1]},${c[2]}`))
+      .size,
+    possibleBlends: stats.uniquePerceivedColors,
+    hardware: config.targetHardware
+  })
 
   return { paletteA, paletteB, pairs, stats }
 }
 
 /**
- * Calculate statistics for a Mode R palette
+ * Calculate statistics for two full palettes (16×16 blends)
  */
-function calculatePaletteStats(pairs: ModeRColorPair[]): ModeRPaletteStats {
-  const flickerScores = pairs.map((p) => p.flickerScore)
-  const averageFlicker = flickerScores.reduce((a, b) => a + b, 0) / pairs.length
-  const maxFlicker = Math.max(...flickerScores)
-  const noFlickerPairs = flickerScores.filter((f) => f === 0).length
+function calculateFullPaletteStats(
+  paletteA: Vector<'RGB'>[],
+  paletteB: Vector<'RGB'>[],
+  config: ModeRConfig
+): ModeRPaletteStats {
+  const uniqueBlends = new Set<string>()
+  let totalFlicker = 0
+  let maxFlicker = 0
+  let noFlickerCount = 0
+  let validPairCount = 0
 
-  // Count unique perceived colors
-  const uniqueColors = new Set(
-    pairs.map(
-      (p) => `${p.blendedColor[0]},${p.blendedColor[1]},${p.blendedColor[2]}`
-    )
-  )
+  for (const colorA of paletteA) {
+    for (const colorB of paletteB) {
+      const blended = blendColors(colorA, colorB)
+      const flicker = calculateFlickerScore(colorA, colorB)
+
+      // Count all pairs, but track those within flicker tolerance
+      uniqueBlends.add(
+        `${Math.round(blended[0])},${Math.round(blended[1])},${Math.round(blended[2])}`
+      )
+
+      if (flicker <= config.maxLuminanceDelta) {
+        totalFlicker += flicker
+        validPairCount++
+        if (flicker === 0) noFlickerCount++
+      }
+
+      if (flicker > maxFlicker) maxFlicker = flicker
+    }
+  }
 
   return {
-    averageFlicker,
+    averageFlicker: validPairCount > 0 ? totalFlicker / validPairCount : 0,
     maxFlicker,
-    noFlickerPairs,
-    uniquePerceivedColors: uniqueColors.size
+    noFlickerPairs: noFlickerCount,
+    uniquePerceivedColors: uniqueBlends.size
   }
 }
 
 /**
- * Pre-compute all valid pairs for CPC Classic (729 pairs)
- * This can be cached for faster repeated use
+ * Export for testing
  */
-export function precomputeClassicPairs(
-  maxLuminanceDelta: number
-): Map<string, CandidatePair[]> {
-  const palette = generateCPCClassicPalette()
-  const pairsByBlend = new Map<string, CandidatePair[]>()
-
-  for (const colorA of palette) {
-    for (const colorB of palette) {
-      const blended = blendColors(colorA, colorB)
-      const flicker = calculateFlickerScore(colorA, colorB)
-
-      if (flicker > maxLuminanceDelta) continue
-
-      const key = `${blended[0]},${blended[1]},${blended[2]}`
-      const pair: CandidatePair = {
-        colorA,
-        colorB,
-        blendedColor: blended,
-        flickerScore: flicker,
-        cost: 0 // Will be calculated per target
-      }
-
-      if (!pairsByBlend.has(key)) {
-        pairsByBlend.set(key, [])
-      }
-      pairsByBlend.get(key)!.push(pair)
-    }
-  }
-
-  return pairsByBlend
-}
+export { generateCPCClassicPalette, generateCPCPlusPalette, findNearestColor }

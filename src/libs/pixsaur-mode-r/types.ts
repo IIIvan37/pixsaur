@@ -84,6 +84,19 @@ export interface ModeRConfig {
    * - 'plus': 4096 CPC Plus colors available
    */
   targetHardware: 'classic' | 'plus'
+
+  /**
+   * Dithering mode
+   * - 'none': No dithering
+   * - 'floyd-steinberg': Floyd-Steinberg error diffusion
+   */
+  ditheringMode: 'none' | 'floyd-steinberg'
+
+  /**
+   * Dithering intensity (0-100)
+   * 0 = no dithering effect, 100 = full dithering
+   */
+  ditheringIntensity: number
 }
 
 /**
@@ -92,31 +105,9 @@ export interface ModeRConfig {
 export const DEFAULT_MODE_R_CONFIG: ModeRConfig = {
   antiFlickerWeight: 70, // Prioritize flicker reduction
   maxLuminanceDelta: 80, // Allow moderate luminance differences
-  targetHardware: 'plus' // Mode R works best on CPC Plus
-}
-
-/**
- * Candidate pair for optimization
- */
-export interface CandidatePair {
-  colorA: Vector<'RGB'>
-  colorB: Vector<'RGB'>
-  blendedColor: Vector<'RGB'>
-  flickerScore: number
-  /** Total cost including color error and flicker penalty */
-  cost: number
-}
-
-/**
- * Result of Mode R quantization for a single pixel
- */
-export interface ModeRPixelResult {
-  /** Index of the palette pair (0-15) */
-  paletteIndex: number
-  /** The pair that was selected */
-  pair: ModeRColorPair
-  /** Color distance from target */
-  colorError: number
+  targetHardware: 'plus', // Mode R works best on CPC Plus
+  ditheringMode: 'floyd-steinberg',
+  ditheringIntensity: 100
 }
 
 /**

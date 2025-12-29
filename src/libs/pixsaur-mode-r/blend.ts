@@ -89,10 +89,10 @@ export function calculatePairCost(
   // Normalize anti-flicker weight to 0-1 range
   const flickerWeight = antiFlickerWeight / 100
 
-  // Color error is always important, flicker penalty scales with weight
-  // flicker is 0-255 (luminance range), colorError can be larger
-  // Scale flicker to similar range as color error for balanced weighting
-  const flickerPenalty = flicker * flickerWeight * 3
+  // Color error is the primary factor
+  // Flicker penalty only applies when antiFlickerWeight > 0
+  // Scale flicker penalty more gently to not overwhelm color accuracy
+  const flickerPenalty = flicker * flickerWeight
 
   return colorError + flickerPenalty
 }

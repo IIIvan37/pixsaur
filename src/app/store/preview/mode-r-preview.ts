@@ -22,12 +22,14 @@ import {
 } from '@/libs/pixsaur-mode-r'
 import {
   cpcHardwareAtom,
+  ditheringAtom,
+  effectiveModeConfigAtom,
   modeRAntiFlickerAtom,
   modeREnabledAtom,
   modeRMaxLuminanceDeltaAtom,
   modeRPreviewModeAtom
 } from '../config/config'
-import { exportPaletteWithSlotsAtom, normalizedImageAtom } from './preview'
+import { croppedImageAtom, exportPaletteWithSlotsAtom } from './preview'
 
 // ============================================================================
 // Mode R Configuration Atom
@@ -40,11 +42,14 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
   const antiFlickerWeight = get(modeRAntiFlickerAtom)
   const maxLuminanceDelta = get(modeRMaxLuminanceDeltaAtom)
   const hardware = get(cpcHardwareAtom)
+  const dithering = get(ditheringAtom)
 
   return {
     antiFlickerWeight,
     maxLuminanceDelta,
-    targetHardware: hardware
+    targetHardware: hardware,
+    ditheringMode: dithering ? 'floyd-steinberg' : 'none',
+    ditheringIntensity: 100
   }
 })
 
@@ -56,57 +61,82 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
  * Source image for Mode R at doubled horizontal resolution.
  * Mode R requires input at 2× horizontal resolution to extract interlaced pixels.
  *
- * For standard Mode 0 (160×200), input should be 320×200.
- * For overscan Mode 0 (192×272), input should be 384×272.
+ * IMPORTANT: We resize the ORIGINAL source image to 320×200 (2× Mode 0 width)
+ * This preserves the high-resolution detail from the source image.
+ * We do NOT simply duplicate pixels from a 160×200 image.
+ */
+
+/**
+ * Resize source image to Mode R resolution (2× horizontal resolution)
+ * This preserves high-resolution detail from the original image.
+ */
+function resizeToModeRResolution(
+  sourceImage: ImageData,
+  targetWidth: number,
+  targetHeight: number
+): ImageData {
+  const canvas = document.createElement('canvas')
+  canvas.width = targetWidth
+  canvas.height = targetHeight
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) return sourceImage
+
+  // Create temp canvas with source image
+  const srcCanvas = document.createElement('canvas')
+  srcCanvas.width = sourceImage.width
+  srcCanvas.height = sourceImage.height
+  const srcCtx = srcCanvas.getContext('2d')
+  if (!srcCtx) return sourceImage
+  srcCtx.putImageData(sourceImage, 0, 0)
+
+  // Use high-quality scaling to preserve details
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(srcCanvas, 0, 0, targetWidth, targetHeight)
+
+  return ctx.getImageData(0, 0, targetWidth, targetHeight)
+}
+
+/**
+ * Mode R Source Image Atom
+ *
+ * Creates a high-resolution source image for Mode R by resizing the ORIGINAL
+ * cropped image to 2× the Mode 0 horizontal resolution.
+ *
+ * This preserves the detail from the source image rather than just duplicating
+ * pixels from an already-reduced image.
  */
 export const modeRSourceImageAtom = atom(async (get) => {
   const modeREnabled = get(modeREnabledAtom)
   if (!modeREnabled) return null
 
-  // Use the normalized image which is at CPC resolution
-  // For Mode R, we need the image BEFORE it's scaled down to Mode 0
-  // This means we need a version at 2× horizontal resolution
-  const normalizedImage = await get(normalizedImageAtom)
+  // Use the cropped image (before CPC resize) as source
+  const sourceImage = await get(croppedImageAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
 
-  if (!normalizedImage) return null
+  if (!sourceImage) return null
 
-  // The normalized image is already at CPC Mode 0 dimensions (160×200)
-  // For Mode R, we ideally want 320×200 to extract interlaced pixels
-  // For now, we'll use the normalized image and let quantizeModeR handle it
-  // by treating each pixel as providing 2 sub-pixels (same color repeated)
-  //
-  // Future enhancement: Create a separate resize pipeline that outputs
-  // at 2× horizontal resolution, or accept higher resolution source
+  // Target dimensions: 2× horizontal resolution of Mode 0
+  // Standard Mode 0: 160×200 → Mode R source: 320×200
+  // Overscan Mode 0: 192×272 → Mode R source: 384×272
+  const targetWidth = modeConfig.width * 2
+  const targetHeight = modeConfig.height
 
-  // Create a doubled-resolution version by duplicating pixels horizontally
-  const width = normalizedImage.width
-  const height = normalizedImage.height
-  const doubledWidth = width * 2
+  // Resize the original high-resolution image to Mode R dimensions
+  const modeRImage = resizeToModeRResolution(
+    sourceImage,
+    targetWidth,
+    targetHeight
+  )
 
-  const doubledImage = new ImageData(doubledWidth, height)
-  const srcData = normalizedImage.data
-  const dstData = doubledImage.data
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const srcIdx = (y * width + x) * 4
-      const dstIdx1 = (y * doubledWidth + x * 2) * 4
-      const dstIdx2 = (y * doubledWidth + x * 2 + 1) * 4
-
-      // Duplicate pixel to both positions
-      for (let c = 0; c < 4; c++) {
-        dstData[dstIdx1 + c] = srcData[srcIdx + c]
-        dstData[dstIdx2 + c] = srcData[srcIdx + c]
-      }
-    }
-  }
-
-  logger.info('[Mode R] Source image created', {
-    originalSize: `${width}×${height}`,
-    doubledSize: `${doubledWidth}×${height}`
+  logger.info('[Mode R] Source image created from original', {
+    sourceSize: `${sourceImage.width}×${sourceImage.height}`,
+    modeRSize: `${modeRImage.width}×${modeRImage.height}`,
+    targetDimensions: `${targetWidth}×${targetHeight}`
   })
 
-  return doubledImage
+  return modeRImage
 })
 
 // ============================================================================
@@ -144,7 +174,6 @@ export const modeRQuantizationAtom = atom(
       sourceImage.data,
       sourceImage.width,
       sourceImage.height,
-      validPalette,
       config
     )
 
@@ -184,11 +213,10 @@ export const modeRPreviewImageAtom = atom(
     const { indexBufferA, indexBufferB, palettes } = quantResult
 
     // Output dimensions (Mode 0 resolution)
-    // Height is typically 200 (standard) or 272 (overscan)
-    // We infer it from the source image dimensions
-    const normalizedImage = await get(normalizedImageAtom)
-    const height = normalizedImage?.height ?? 200
-    const actualWidth = Math.floor(quantResult.indexBufferA.length / height)
+    // Get dimensions from mode config
+    const modeConfig = get(effectiveModeConfigAtom)
+    const height = modeConfig.height
+    const actualWidth = modeConfig.width
 
     logger.info('[Mode R] Generating preview', {
       previewMode,
