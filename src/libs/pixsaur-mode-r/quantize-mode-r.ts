@@ -18,7 +18,7 @@
 
 import { logger } from '@/core/logger'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { colorDistance } from './blend'
+import { calculatePairCost, colorDistance } from './blend'
 import { optimizeModeRPalettes } from './pair-optimizer'
 import type {
   ModeRConfig,
@@ -127,39 +127,55 @@ function getPixelColorWithError(
 
 /**
  * Find the best pair of indices (idxA, idxB) such that blend(paletteA[idxA], paletteB[idxB])
- * is closest to the target color. This maximizes the color variety in Mode R.
+ * is closest to the target color while minimizing flicker.
+ *
+ * @param targetColor - The desired perceived color
+ * @param paletteA - First palette (16 colors)
+ * @param paletteB - Second palette (16 colors)
+ * @param antiFlickerWeight - Weight for flicker penalty (0-100)
+ * @param maxLuminanceDelta - Maximum luminance difference allowed (pairs exceeding this are penalized)
  */
 function findBestBlendPair(
   targetColor: Vector<'RGB'>,
   paletteA: Vector<'RGB'>[],
-  paletteB: Vector<'RGB'>[]
+  paletteB: Vector<'RGB'>[],
+  antiFlickerWeight: number,
+  maxLuminanceDelta: number
 ): { indexA: number; indexB: number; error: number } {
   let bestIndexA = 0
   let bestIndexB = 0
-  let bestError = Number.POSITIVE_INFINITY
+  let bestCost = Number.POSITIVE_INFINITY
 
   for (let a = 0; a < paletteA.length; a++) {
     for (let b = 0; b < paletteB.length; b++) {
-      // Calculate the blended color (what the eye perceives)
-      const blendedR = (paletteA[a][0] + paletteB[b][0]) / 2
-      const blendedG = (paletteA[a][1] + paletteB[b][1]) / 2
-      const blendedB = (paletteA[a][2] + paletteB[b][2]) / 2
+      // Calculate combined cost (color error + flicker penalty)
+      const cost = calculatePairCost(
+        targetColor,
+        paletteA[a],
+        paletteB[b],
+        antiFlickerWeight
+      )
 
-      // Calculate error to target
-      const dr = targetColor[0] - blendedR
-      const dg = targetColor[1] - blendedG
-      const db = targetColor[2] - blendedB
-      const error = dr * dr + dg * dg + db * db
+      // Add extra penalty for pairs exceeding maxLuminanceDelta
+      const lumA =
+        0.299 * paletteA[a][0] + 0.587 * paletteA[a][1] + 0.114 * paletteA[a][2]
+      const lumB =
+        0.299 * paletteB[b][0] + 0.587 * paletteB[b][1] + 0.114 * paletteB[b][2]
+      const lumDelta = Math.abs(lumA - lumB)
+      const deltaPenalty =
+        lumDelta > maxLuminanceDelta ? (lumDelta - maxLuminanceDelta) * 10 : 0
 
-      if (error < bestError) {
-        bestError = error
+      const totalCost = cost + deltaPenalty
+
+      if (totalCost < bestCost) {
+        bestCost = totalCost
         bestIndexA = a
         bestIndexB = b
       }
     }
   }
 
-  return { indexA: bestIndexA, indexB: bestIndexB, error: bestError }
+  return { indexA: bestIndexA, indexB: bestIndexB, error: bestCost }
 }
 
 /**
@@ -212,7 +228,9 @@ export function quantizeModeR(
     palettes,
     indexBufferA,
     indexBufferB,
-    ditherIntensity
+    ditherIntensity,
+    antiFlickerWeight: config.antiFlickerWeight,
+    maxLuminanceDelta: config.maxLuminanceDelta
   }
 
   for (let y = 0; y < outHeight; y++) {
@@ -253,6 +271,8 @@ interface PixelProcessContext {
   indexBufferA: Uint8Array
   indexBufferB: Uint8Array
   ditherIntensity: number
+  antiFlickerWeight: number
+  maxLuminanceDelta: number
 }
 
 /**
@@ -273,7 +293,9 @@ function processPixelPair(
     palettes,
     indexBufferA,
     indexBufferB,
-    ditherIntensity
+    ditherIntensity,
+    antiFlickerWeight,
+    maxLuminanceDelta
   } = ctx
 
   // Interlaced pixel extraction based on line parity
@@ -302,10 +324,13 @@ function processPixelPair(
   ]
 
   // Find the best pair (idxA, idxB) whose blend matches targetBlend
+  // Uses antiFlickerWeight and maxLuminanceDelta to minimize flicker
   const bestPair = findBestBlendPair(
     targetBlend,
     palettes.paletteA,
-    palettes.paletteB
+    palettes.paletteB,
+    antiFlickerWeight,
+    maxLuminanceDelta
   )
 
   const outIdx = y * outWidth + x
