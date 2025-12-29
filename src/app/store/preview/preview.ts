@@ -100,7 +100,9 @@ export const previewCanvasSizeAtom = atom((get) => {
   // so we don't need to apply the scaleX factor
   const modeREnabled = get(modeREnabledAtom)
   const modeRPreviewMode = get(modeRPreviewModeAtom)
-  const isModeRBlended = modeREnabled && modeRPreviewMode === 'blended'
+  // Consider blended mode as default when Mode R is enabled
+  const isModeRBlended =
+    modeREnabled && (modeRPreviewMode === 'blended' || !modeRPreviewMode)
 
   // For Mode R blended, the image is already at visual resolution (320×200)
   // so we use scale factors of 1

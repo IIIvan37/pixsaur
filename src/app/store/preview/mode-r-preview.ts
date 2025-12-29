@@ -425,6 +425,7 @@ export const modeRPreviewImageAtom = atom(
         )
         break
 
+      case 'blended':
       default:
         previewData = generateBlendedPreview(
           indexBufferA,
