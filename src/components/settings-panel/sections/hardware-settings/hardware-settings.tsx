@@ -12,6 +12,7 @@ import {
   setDimensionPresetAtom,
   setPixelModeAtom
 } from '@/app/store/config/config'
+import { rasterEnabledAtom } from '@/app/store/raster/raster-config'
 import { HardwareSettingsView } from './hardware-settings-view'
 
 export function HardwareSettings() {
@@ -23,12 +24,17 @@ export function HardwareSettings() {
   const setDimensionPreset = useSetAtom(setDimensionPresetAtom)
   const modeREnabled = useAtomValue(modeREnabledAtom)
   const setModeREnabled = useSetAtom(modeREnabledAtom)
+  const setRasterEnabled = useSetAtom(rasterEnabledAtom)
 
-  // When Mode R is enabled, force Mode 0
+  // When Mode R is enabled, force Mode 0 and disable Raster (mutually exclusive)
   const handleModeRChange = (enabled: boolean) => {
     setModeREnabled(enabled)
-    if (enabled && pixelMode !== 0) {
-      setPixelMode(0)
+    if (enabled) {
+      if (pixelMode !== 0) {
+        setPixelMode(0)
+      }
+      // Mode R and Raster are mutually exclusive
+      setRasterEnabled(false)
     }
   }
 
