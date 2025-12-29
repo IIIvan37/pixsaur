@@ -38,12 +38,21 @@ export function HardwareSettings() {
     }
   }
 
+  // When pixel mode changes, disable Mode R if not Mode 0
+  const handlePixelModeChange = (mode: 0 | 1 | 2) => {
+    setPixelMode(mode)
+    // Mode R only works with Mode 0
+    if (mode !== 0 && modeREnabled) {
+      setModeREnabled(false)
+    }
+  }
+
   return (
     <HardwareSettingsView
       cpcHardware={cpcHardware}
       onCpcHardwareChange={setCpcHardware}
       pixelMode={pixelMode}
-      onPixelModeChange={setPixelMode}
+      onPixelModeChange={handlePixelModeChange}
       dimensionPreset={dimensionPreset}
       onDimensionPresetChange={setDimensionPreset}
       modeREnabled={modeREnabled}
