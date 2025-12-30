@@ -46,7 +46,6 @@ export type EGXPreviewMode =
   | 'combined' // Final combined view with all modes
   | 'highLines' // Only high-resolution lines (Mode 1 or Mode 2)
   | 'lowLines' // Only low-resolution lines (Mode 0 or Mode 1)
-  | 'modeMap' // Color-coded mode map (debug view)
 
 /**
  * CPC video mode (0, 1, or 2)
