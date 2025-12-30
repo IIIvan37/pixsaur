@@ -114,8 +114,7 @@ export function EGXSettings() {
   const previewModeOptions: Array<{ value: EGXPreviewMode; label: string }> = [
     { value: 'combined', label: _(msg`Combined`) },
     { value: 'lowLines', label: _(msg`Low Res Lines`) },
-    { value: 'highLines', label: _(msg`High Res Lines`) },
-    { value: 'modeMap', label: _(msg`Mode Map`) }
+    { value: 'highLines', label: _(msg`High Res Lines`) }
   ]
 
   return (

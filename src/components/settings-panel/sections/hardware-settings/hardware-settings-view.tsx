@@ -136,32 +136,37 @@ export function HardwareSettingsView({
         {egxEnabled && <EGXSettings />}
       </div>
 
-      <div className={styles.separator} />
+      {!modeREnabled && !egxEnabled && (
+        <>
+          <div className={styles.separator} />
 
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>
-          <Trans>Pixel Mode</Trans>
-        </h3>
-        <p className={styles.description}>
-          <Trans>
-            Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels
-          </Trans>
-        </p>
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Pixel Mode</Trans>
+            </h3>
+            <p className={styles.description}>
+              <Trans>
+                Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640
+                pixels
+              </Trans>
+            </p>
 
-        <div className={styles.tuningRow}>
-          <div className={styles.tuningHeader}>
-            <span className={styles.tuningLabel}>
-              <Trans>CPC Pixel Mode</Trans>
-            </span>
+            <div className={styles.tuningRow}>
+              <div className={styles.tuningHeader}>
+                <span className={styles.tuningLabel}>
+                  <Trans>CPC Pixel Mode</Trans>
+                </span>
+              </div>
+              <ToggleButtonGroup
+                options={pixelModeOptions}
+                value={pixelMode}
+                onChange={onPixelModeChange}
+                ariaLabelPrefix='Pixel Mode'
+              />
+            </div>
           </div>
-          <ToggleButtonGroup
-            options={pixelModeOptions}
-            value={pixelMode}
-            onChange={onPixelModeChange}
-            ariaLabelPrefix='Pixel Mode'
-          />
-        </div>
-      </div>
+        </>
+      )}
 
       <div className={styles.separator} />
 

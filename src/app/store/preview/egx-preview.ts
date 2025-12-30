@@ -345,27 +345,10 @@ export const egxPaletteAtom = atom(async (get) => {
 // EGX Preview Image Helpers
 // ============================================================================
 
-function renderModeMapPixel(
-  output: Uint8ClampedArray,
-  dstIdx: number,
-  isLowResLine: boolean
-): void {
-  if (isLowResLine) {
-    output[dstIdx] = 200
-    output[dstIdx + 1] = 120
-    output[dstIdx + 2] = 50
-  } else {
-    output[dstIdx] = 50
-    output[dstIdx + 1] = 100
-    output[dstIdx + 2] = 200
-  }
-  output[dstIdx + 3] = 255
-}
-
-function renderGrayPixel(output: Uint8ClampedArray, dstIdx: number): void {
-  output[dstIdx] = 128
-  output[dstIdx + 1] = 128
-  output[dstIdx + 2] = 128
+function renderBlackPixel(output: Uint8ClampedArray, dstIdx: number): void {
+  output[dstIdx] = 0
+  output[dstIdx + 1] = 0
+  output[dstIdx + 2] = 0
   output[dstIdx + 3] = 255
 }
 
@@ -455,10 +438,8 @@ export const egxPreviewImageAtom = atom(
           ditheredBuffer[srcIdx + 2]
         ]
 
-        if (previewMode === 'modeMap') {
-          renderModeMapPixel(output, dstIdx, isLowResLine)
-        } else if (shouldGrayOut(previewMode, isLowResLine)) {
-          renderGrayPixel(output, dstIdx)
+        if (shouldGrayOut(previewMode, isLowResLine)) {
+          renderBlackPixel(output, dstIdx)
         } else {
           const { color } = findClosestInSubset(
             ditheredColor,
