@@ -368,6 +368,95 @@ export const setModeRPreviewModeAtom = atom(
 )
 
 // ============================================================================
+// EGX MODE CONFIGURATION
+// ============================================================================
+
+import type {
+  EGXFirstLineMode,
+  EGXPreviewMode,
+  EGXType
+} from '@/libs/pixsaur-egx'
+
+/**
+ * EGX mode enabled state
+ * When enabled, uses line-by-line mode alternation (EGX1 or EGX2)
+ * Mutually exclusive with Mode R
+ */
+export const egxEnabledAtom = atomWithStorage<boolean>(
+  'pixsaur-egx-enabled',
+  false
+)
+
+/**
+ * EGX type selection
+ * - egx1: Mode 0/1 alternation (320×200, up to 16 colors)
+ * - egx2: Mode 1/2 alternation (640×200, up to 4 colors)
+ */
+export const egxTypeAtom = atomWithStorage<EGXType>('pixsaur-egx-type', 'egx1')
+
+/**
+ * EGX first line mode
+ * - 'low': First line uses lower resolution mode (more colors)
+ * - 'high': First line uses higher resolution mode (fewer colors)
+ */
+export const egxFirstLineModeAtom = atomWithStorage<EGXFirstLineMode>(
+  'pixsaur-egx-first-line-mode',
+  'low'
+)
+
+/**
+ * EGX vertical dithering attenuation (0-100)
+ * Reduces error propagation between lines with different mode constraints
+ */
+export const egxVerticalDitherAttenuationAtom = atomWithStorage<number>(
+  'pixsaur-egx-vertical-dither-attenuation',
+  50
+)
+
+/**
+ * EGX preview mode
+ * - 'combined': Show final combined view
+ * - 'highLines': Show only high-resolution lines
+ * - 'lowLines': Show only low-resolution lines
+ * - 'modeMap': Show color-coded mode map
+ */
+export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
+
+// Setters for EGX configuration
+export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
+  // Mutually exclusive with Mode R
+  if (payload && get(modeREnabledAtom)) {
+    set(modeREnabledAtom, false)
+  }
+  set(egxEnabledAtom, payload)
+})
+
+export const setEgxTypeAtom = atom(null, (_get, set, payload: EGXType) => {
+  set(egxTypeAtom, payload)
+})
+
+export const setEgxFirstLineModeAtom = atom(
+  null,
+  (_get, set, payload: EGXFirstLineMode) => {
+    set(egxFirstLineModeAtom, payload)
+  }
+)
+
+export const setEgxVerticalDitherAttenuationAtom = atom(
+  null,
+  (_get, set, payload: number) => {
+    set(egxVerticalDitherAttenuationAtom, Math.max(0, Math.min(100, payload)))
+  }
+)
+
+export const setEgxPreviewModeAtom = atom(
+  null,
+  (_get, set, payload: EGXPreviewMode) => {
+    set(egxPreviewModeAtom, payload)
+  }
+)
+
+// ============================================================================
 // RESIZE CONFIGURATION
 // ============================================================================
 
