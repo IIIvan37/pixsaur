@@ -257,6 +257,97 @@ export const egxNormalizedImageAtom = atom(async (get) => {
 })
 
 // ============================================================================
+// EGX Palette Optimization
+// ============================================================================
+
+/**
+ * Analyze color usage on high-resolution lines to determine
+ * which colors should be in the shared slots (INK 0-3 for EGX1, INK 0-1 for EGX2)
+ */
+function analyzeHighResLineColors(
+  imageData: ImageData,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig
+): Map<number, number> {
+  const colorUsage = new Map<number, number>()
+  const { width, height } = imageData
+  const data = imageData.data
+
+  // Initialize usage counts
+  for (let i = 0; i < palette.length; i++) {
+    colorUsage.set(i, 0)
+  }
+
+  // Analyze only high-resolution lines
+  for (let y = 0; y < height; y++) {
+    const isHighResLine =
+      (config.firstLineMode === 'low' && y % 2 !== 0) ||
+      (config.firstLineMode === 'high' && y % 2 === 0)
+
+    if (!isHighResLine) continue
+
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      const pixel: Vector<'RGB'> = [data[idx], data[idx + 1], data[idx + 2]]
+
+      // Find closest color in palette
+      let bestIndex = 0
+      let bestDist = Infinity
+      for (let i = 0; i < palette.length; i++) {
+        const dist = colorDistanceSquared(pixel, palette[i])
+        if (dist < bestDist) {
+          bestDist = dist
+          bestIndex = i
+        }
+      }
+
+      colorUsage.set(bestIndex, (colorUsage.get(bestIndex) ?? 0) + 1)
+    }
+  }
+
+  return colorUsage
+}
+
+/**
+ * Reorder palette so that the most used colors on high-res lines
+ * are in the shared slots (first N positions)
+ */
+function optimizePaletteForEGX(
+  palette: Vector<'RGB'>[],
+  colorUsage: Map<number, number>,
+  sharedCount: number
+): Vector<'RGB'>[] {
+  // Sort color indices by usage (descending)
+  const sortedIndices = [...colorUsage.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([idx]) => idx)
+
+  // Take the top N most used colors for shared slots
+  const topIndices = sortedIndices.slice(0, sharedCount)
+  const remainingIndices = sortedIndices.slice(sharedCount)
+
+  // Build optimized palette
+  const optimized: Vector<'RGB'>[] = []
+
+  // First: shared colors (most used on high-res lines)
+  for (const idx of topIndices) {
+    optimized.push(palette[idx])
+  }
+
+  // Then: remaining colors
+  for (const idx of remainingIndices) {
+    optimized.push(palette[idx])
+  }
+
+  // Pad with black if needed
+  while (optimized.length < palette.length) {
+    optimized.push([0, 0, 0])
+  }
+
+  return optimized
+}
+
+// ============================================================================
 // Color Distance Utilities
 // ============================================================================
 
@@ -293,6 +384,9 @@ function findClosestInSubset(
 
 /**
  * Use the standard quantizer's palette for EGX.
+ * Optimizes the palette so that the most used colors on high-res lines
+ * are in the shared slots (INK 0-3 for EGX1, INK 0-1 for EGX2).
+ *
  * EGX1 needs 16 colors, EGX2 needs 4 colors.
  */
 export const egxPaletteAtom = atom(async (get) => {
@@ -301,6 +395,7 @@ export const egxPaletteAtom = atom(async (get) => {
 
   const config = get(egxConfigAtom)
   const standardPalette = await get(exportPaletteWithSlotsAtom)
+  const normalizedImage = await get(egxNormalizedImageAtom)
 
   if (!standardPalette || standardPalette.length === 0) {
     logger.warn('[EGX] No standard palette available')
@@ -315,11 +410,21 @@ export const egxPaletteAtom = atom(async (get) => {
   const neededColors = config.type === 'egx1' ? 16 : 4
   const sharedCount = getSharedColorCount(config.type)
 
-  // If we have enough colors, use them
-  // If not, pad with black
-  const colors: Vector<'RGB'>[] = []
+  // Build initial palette (pad with black if needed)
+  let colors: Vector<'RGB'>[] = []
   for (let i = 0; i < neededColors; i++) {
     colors.push(validColors[i] ?? [0, 0, 0])
+  }
+
+  // Optimize palette for high-res lines if we have the normalized image
+  if (normalizedImage && colors.length > sharedCount) {
+    const colorUsage = analyzeHighResLineColors(normalizedImage, colors, config)
+    colors = optimizePaletteForEGX(colors, colorUsage, sharedCount)
+
+    logger.info('[EGX] Palette optimized for high-res lines', {
+      sharedCount,
+      topColors: colors.slice(0, sharedCount).map((c) => `rgb(${c.join(',')})`)
+    })
   }
 
   logger.info('[EGX] Palette from standard quantizer', {
