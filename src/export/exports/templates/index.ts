@@ -3,6 +3,12 @@ export {
   type ScrDskTemplateOptions
 } from './dsk-templates'
 export {
+  assembleEgxSnaSource,
+  type EgxDataFiles,
+  type EgxSnaTemplateOptions,
+  generateEgxSnaTemplate
+} from './egx-templates'
+export {
   generateScrLoaderClassic,
   generateScrLoaderPlus,
   generateUniversalScrLoader,

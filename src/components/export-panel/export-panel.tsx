@@ -5,8 +5,10 @@ import { useState } from 'react'
 import {
   cpcHardwareAtom,
   effectiveModeConfigAtom,
+  egxEnabledAtom,
   modeREnabledAtom
 } from '@/app/store/config/config'
+import { egxExportDataAtom } from '@/app/store/preview/egx-preview'
 import { modeRExportDataAtom } from '@/app/store/preview/mode-r-preview'
 import {
   exportPaletteWithSlotsAtom,
@@ -22,6 +24,7 @@ import {
 import { Notification } from '@/components/ui/notification/notification'
 import type { ExportConfig } from '@/export'
 import {
+  exportEgxToCpcPlayground,
   exportModeRToCpcPlayground,
   exportToCpcPlayground,
   exportZip,
@@ -53,6 +56,9 @@ export default function ExportPanel() {
   // Mode R
   const modeREnabled = useAtomValue(modeREnabledAtom)
   const modeRExportData = useAtomValue(modeRExportDataAtom)
+  // EGX
+  const egxEnabled = useAtomValue(egxEnabledAtom)
+  const egxExportData = useAtomValue(egxExportDataAtom)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
@@ -74,6 +80,65 @@ export default function ExportPanel() {
   }
 
   const handleExport = async (config: ExportConfig) => {
+    // EGX export path
+    if (egxEnabled && egxExportData) {
+      const {
+        indexBuffer,
+        palette,
+        width,
+        height,
+        config: egxConfig
+      } = egxExportData
+
+      // Convert palette to firmware indices
+      const paletteFirmware = palette.map((c) =>
+        rgbToFirmwareIndex(c[0], c[1], c[2])
+      )
+
+      // Convert palette to export format
+      const paletteForExport = palette.map(
+        (c) => [c[0], c[1], c[2]] as [number, number, number]
+      )
+
+      // Create canvas for PNG export
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        const imageData = new ImageData(width, height)
+        for (let i = 0; i < indexBuffer.length; i++) {
+          const color = palette[indexBuffer[i]] ?? [0, 0, 0]
+          imageData.data[i * 4] = color[0]
+          imageData.data[i * 4 + 1] = color[1]
+          imageData.data[i * 4 + 2] = color[2]
+          imageData.data[i * 4 + 3] = 255
+        }
+        ctx.putImageData(imageData, 0, 0)
+      }
+
+      const success = await exportZip({
+        indexBuf: indexBuffer,
+        paletteFirmware,
+        canvas,
+        modeConfig,
+        cpcHardware,
+        reducedPalette: paletteForExport,
+        config,
+        egxConfig,
+        egxWidth: width,
+        egxHeight: height
+      })
+
+      if (success) {
+        setNotificationType('success')
+        setNotificationMessage(_(msg`File exported successfully!`))
+        setShowNotification(true)
+      }
+      return
+    }
+
+    // Standard export path
     const data = getExportData()
     if (!data) return
 
@@ -165,6 +230,48 @@ export default function ExportPanel() {
         return
       }
 
+      // EGX export path
+      if (egxEnabled && egxExportData) {
+        const {
+          indexBuffer,
+          palette,
+          width,
+          height,
+          config: egxConfig
+        } = egxExportData
+
+        // Convert palette to firmware indices
+        const paletteFirmware = palette.map((c) =>
+          rgbToFirmwareIndex(c[0], c[1], c[2])
+        )
+
+        const result = await exportEgxToCpcPlayground({
+          indexBuf: indexBuffer,
+          width,
+          height,
+          egxConfig,
+          paletteFirmware,
+          filename: 'pixsaur_egx'
+        })
+
+        if (result.success) {
+          setNotificationType('success')
+          setNotificationMessage(_(msg`EGX opened in CPC Playground!`))
+          setShowNotification(true)
+        } else {
+          setNotificationType('error')
+          setNotificationMessage(
+            _(
+              msg`Failed to open EGX in CPC Playground: ${
+                result.error ?? 'Unknown error'
+              }`
+            )
+          )
+          setShowNotification(true)
+        }
+        return
+      }
+
       // Standard export path
       const data = getExportData()
       if (!data) return
@@ -233,7 +340,12 @@ export default function ExportPanel() {
   }
 
   // Determine if export is available
-  const canExport = modeREnabled ? !!modeRExportData : !!finalPreviewIndexBuffer
+  const getCanExport = () => {
+    if (modeREnabled) return !!modeRExportData
+    if (egxEnabled) return !!egxExportData
+    return !!finalPreviewIndexBuffer
+  }
+  const canExport = getCanExport()
 
   return (
     <>
