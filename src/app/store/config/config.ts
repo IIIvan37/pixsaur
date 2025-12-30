@@ -6,6 +6,7 @@ import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import type { CPCHardware } from '@/libs/types'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
+import { rasterEnabledAtom } from '../raster/raster-config'
 import type { ResizeMode } from './resize-types'
 import type {
   AdjustementKey,
@@ -367,6 +368,23 @@ export const setModeRPreviewModeAtom = atom(
   }
 )
 
+/**
+ * Setter for Mode R enabled state with mutual exclusion
+ * Disables EGX and Raster when enabling Mode R
+ */
+export const setModeREnabledAtom = atom(null, (get, set, payload: boolean) => {
+  if (payload) {
+    // Disable EGX and Raster when enabling Mode R
+    if (get(egxEnabledAtom)) {
+      set(egxEnabledAtom, false)
+    }
+    if (get(rasterEnabledAtom)) {
+      set(rasterEnabledAtom, false)
+    }
+  }
+  set(modeREnabledAtom, payload)
+})
+
 // ============================================================================
 // EGX MODE CONFIGURATION
 // ============================================================================
@@ -413,12 +431,38 @@ export const egxFirstLineModeAtom = atomWithStorage<EGXFirstLineMode>(
 export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
 
 // Setters for EGX configuration
+/**
+ * Setter for EGX enabled state with mutual exclusion
+ * Disables Mode R and Raster when enabling EGX
+ */
 export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
-  // Mutually exclusive with Mode R
-  if (payload && get(modeREnabledAtom)) {
-    set(modeREnabledAtom, false)
+  if (payload) {
+    // Disable Mode R and Raster when enabling EGX
+    if (get(modeREnabledAtom)) {
+      set(modeREnabledAtom, false)
+    }
+    if (get(rasterEnabledAtom)) {
+      set(rasterEnabledAtom, false)
+    }
   }
   set(egxEnabledAtom, payload)
+})
+
+/**
+ * Setter for Raster enabled state with mutual exclusion
+ * Disables Mode R and EGX when enabling Raster
+ */
+export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
+  if (payload) {
+    // Disable Mode R and EGX when enabling Raster
+    if (get(modeREnabledAtom)) {
+      set(modeREnabledAtom, false)
+    }
+    if (get(egxEnabledAtom)) {
+      set(egxEnabledAtom, false)
+    }
+  }
+  set(rasterEnabledAtom, payload)
 })
 
 export const setEgxTypeAtom = atom(null, (_get, set, payload: EGXType) => {
