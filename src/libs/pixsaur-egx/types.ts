@@ -96,13 +96,6 @@ export interface EGXConfig {
    * 0 = no dithering effect, 100 = full dithering
    */
   ditheringIntensity: number
-
-  /**
-   * Vertical dithering attenuation (0-100)
-   * Reduces error propagation to adjacent lines (different mode constraints)
-   * Higher values = less vertical dithering artifacts
-   */
-  verticalDitherAttenuation: number
 }
 
 /**
@@ -113,8 +106,7 @@ export const DEFAULT_EGX_CONFIG: EGXConfig = {
   firstLineMode: 'low', // Start with Mode 0 (more colors)
   targetHardware: 'plus',
   ditheringMode: 'floydSteinberg',
-  ditheringIntensity: 100,
-  verticalDitherAttenuation: 50 // 50% attenuation for vertical error diffusion
+  ditheringIntensity: 100
 }
 
 // ============================================================================

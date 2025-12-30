@@ -13,6 +13,7 @@ export type EditorCanvasViewProps = Readonly<{
   cursor: { x: number; y: number } | null
   hoveredPixel: { x: number; y: number } | null
   getLinePalette: (line: number) => Vector<'RGB'>[]
+  getLineCpcPixelWidth: (line: number) => number
   onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void
   onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void
   onMouseUp: (e: React.MouseEvent<HTMLCanvasElement>) => void
@@ -43,67 +44,91 @@ function renderPixels(
 }
 
 /**
- * Draw grid overlay
+ * Draw grid overlay with per-line CPC pixel widths for EGX mode
  */
 function renderGrid(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
   pixelWidth: number,
-  pixelHeight: number
+  pixelHeight: number,
+  getLineCpcPixelWidth: (line: number) => number
 ) {
   const canvasWidth = width * pixelWidth
-  const canvasHeight = height * pixelHeight
 
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'
   ctx.lineWidth = 1
 
   ctx.beginPath()
-  for (let x = 0; x <= width; x++) {
-    const screenX = x * pixelWidth
-    ctx.moveTo(screenX + 0.5, 0)
-    ctx.lineTo(screenX + 0.5, canvasHeight)
-  }
+
+  // Horizontal lines (same for all modes)
   for (let y = 0; y <= height; y++) {
     const screenY = y * pixelHeight
     ctx.moveTo(0, screenY + 0.5)
     ctx.lineTo(canvasWidth, screenY + 0.5)
   }
+
+  // Vertical lines - adapt to CPC pixel width per line
+  for (let y = 0; y < height; y++) {
+    const cpcPixelWidth = getLineCpcPixelWidth(y)
+    const screenY = y * pixelHeight
+    const nextScreenY = (y + 1) * pixelHeight
+
+    // Draw vertical grid lines for this line's CPC pixel boundaries
+    for (let x = 0; x <= width; x += cpcPixelWidth) {
+      const screenX = x * pixelWidth
+      ctx.moveTo(screenX + 0.5, screenY)
+      ctx.lineTo(screenX + 0.5, nextScreenY)
+    }
+  }
+
   ctx.stroke()
 }
 
 /**
  * Draw cursor highlight (keyboard navigation)
+ * Adapts to CPC pixel width for the cursor's line
  */
 function renderCursor(
   ctx: CanvasRenderingContext2D,
   cursor: { x: number; y: number },
   pixelWidth: number,
-  pixelHeight: number
+  pixelHeight: number,
+  getLineCpcPixelWidth: (line: number) => number
 ) {
-  const screenX = cursor.x * pixelWidth
+  const cpcPixelWidth = getLineCpcPixelWidth(cursor.y)
+  // Align cursor to CPC pixel boundary
+  const alignedX = Math.floor(cursor.x / cpcPixelWidth) * cpcPixelWidth
+  const screenX = alignedX * pixelWidth
   const screenY = cursor.y * pixelHeight
+  const cursorWidth = pixelWidth * cpcPixelWidth
 
   ctx.strokeStyle = '#ffcc00'
   ctx.lineWidth = 2
-  ctx.strokeRect(screenX + 1, screenY + 1, pixelWidth - 2, pixelHeight - 2)
+  ctx.strokeRect(screenX + 1, screenY + 1, cursorWidth - 2, pixelHeight - 2)
 }
 
 /**
  * Draw hover highlight
+ * Adapts to CPC pixel width for the hovered line
  */
 function renderHover(
   ctx: CanvasRenderingContext2D,
   pixel: { x: number; y: number },
   pixelWidth: number,
-  pixelHeight: number
+  pixelHeight: number,
+  getLineCpcPixelWidth: (line: number) => number
 ) {
-  const screenX = pixel.x * pixelWidth
+  const cpcPixelWidth = getLineCpcPixelWidth(pixel.y)
+  // Align hover to CPC pixel boundary
+  const alignedX = Math.floor(pixel.x / cpcPixelWidth) * cpcPixelWidth
+  const screenX = alignedX * pixelWidth
   const screenY = pixel.y * pixelHeight
+  const hoverWidth = pixelWidth * cpcPixelWidth
 
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'
   ctx.lineWidth = 1
-  ctx.strokeRect(screenX + 0.5, screenY + 0.5, pixelWidth - 1, pixelHeight - 1)
+  ctx.strokeRect(screenX + 0.5, screenY + 0.5, hoverWidth - 1, pixelHeight - 1)
 }
 
 /**
@@ -126,6 +151,7 @@ export const EditorCanvasView = forwardRef<
     cursor,
     hoveredPixel,
     getLinePalette,
+    getLineCpcPixelWidth,
     onMouseMove,
     onMouseDown,
     onMouseUp,
@@ -170,12 +196,19 @@ export const EditorCanvasView = forwardRef<
 
     // Draw grid if pixel size >= 4
     if (gridVisible && minPixelSize >= 4) {
-      renderGrid(ctx, width, height, pixelWidth, pixelHeight)
+      renderGrid(
+        ctx,
+        width,
+        height,
+        pixelWidth,
+        pixelHeight,
+        getLineCpcPixelWidth
+      )
     }
 
     // Draw cursor (keyboard navigation)
     if (cursor) {
-      renderCursor(ctx, cursor, pixelWidth, pixelHeight)
+      renderCursor(ctx, cursor, pixelWidth, pixelHeight, getLineCpcPixelWidth)
     }
 
     // Draw hover highlight (if different from cursor)
@@ -184,7 +217,13 @@ export const EditorCanvasView = forwardRef<
       (!cursor || hoveredPixel.x !== cursor.x || hoveredPixel.y !== cursor.y)
 
     if (shouldShowHover) {
-      renderHover(ctx, hoveredPixel, pixelWidth, pixelHeight)
+      renderHover(
+        ctx,
+        hoveredPixel,
+        pixelWidth,
+        pixelHeight,
+        getLineCpcPixelWidth
+      )
     }
   }, [
     indexBuffer,
@@ -198,7 +237,8 @@ export const EditorCanvasView = forwardRef<
     canvasWidth,
     canvasHeight,
     minPixelSize,
-    getLinePalette
+    getLinePalette,
+    getLineCpcPixelWidth
   ])
 
   return (

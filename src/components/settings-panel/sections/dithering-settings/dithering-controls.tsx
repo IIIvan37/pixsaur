@@ -7,12 +7,14 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue } from 'jotai'
 import { useEffect } from 'react'
-import { ditheringAtom } from '@/app/store/config/config'
+import { ditheringAtom, egxEnabledAtom } from '@/app/store/config/config'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
 import {
   ALL_DITHERING_MODES,
   getDefaultDitheringIntensity,
+  getEGXCompatibleModes,
   getRasterCompatibleModes,
+  isEGXCompatibleMode,
   isRasterCompatibleMode
 } from '@/components/settings-panel/shared/dithering-modes'
 import Flex from '@/components/ui/flex'
@@ -23,6 +25,7 @@ import type { DitheringMode } from '@/libs/pixsaur-color/src'
 export function DitheringControls() {
   const [cfg, setCfg] = useAtom(ditheringAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const egxEnabled = useAtomValue(egxEnabledAtom)
 
   // When raster is enabled, switch to a compatible dithering mode if current mode is incompatible
   useEffect(() => {
@@ -39,10 +42,23 @@ export function DitheringControls() {
     }
   }, [rasterEnabled, cfg.mode, setCfg])
 
-  // Filter modes for raster (exclude error diffusion algorithms)
+  // When EGX is enabled, switch to a compatible mode if current mode is not supported
+  useEffect(() => {
+    if (egxEnabled && cfg.mode !== 'none' && !isEGXCompatibleMode(cfg.mode)) {
+      // Switch to floydSteinberg as default EGX mode
+      setCfg({
+        mode: 'floydSteinberg',
+        intensity: getDefaultDitheringIntensity('floydSteinberg')
+      })
+    }
+  }, [egxEnabled, cfg.mode, setCfg])
+
+  // Filter modes based on active features
   const availableModes = rasterEnabled
     ? getRasterCompatibleModes()
-    : ALL_DITHERING_MODES
+    : egxEnabled
+      ? getEGXCompatibleModes()
+      : ALL_DITHERING_MODES
 
   return (
     <>

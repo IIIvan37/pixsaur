@@ -405,20 +405,10 @@ export const egxFirstLineModeAtom = atomWithStorage<EGXFirstLineMode>(
 )
 
 /**
- * EGX vertical dithering attenuation (0-100)
- * Reduces error propagation between lines with different mode constraints
- */
-export const egxVerticalDitherAttenuationAtom = atomWithStorage<number>(
-  'pixsaur-egx-vertical-dither-attenuation',
-  50
-)
-
-/**
  * EGX preview mode
  * - 'combined': Show final combined view
  * - 'highLines': Show only high-resolution lines
  * - 'lowLines': Show only low-resolution lines
- * - 'modeMap': Show color-coded mode map
  */
 export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
 
@@ -439,13 +429,6 @@ export const setEgxFirstLineModeAtom = atom(
   null,
   (_get, set, payload: EGXFirstLineMode) => {
     set(egxFirstLineModeAtom, payload)
-  }
-)
-
-export const setEgxVerticalDitherAttenuationAtom = atom(
-  null,
-  (_get, set, payload: number) => {
-    set(egxVerticalDitherAttenuationAtom, Math.max(0, Math.min(100, payload)))
   }
 )
 

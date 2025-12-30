@@ -22,7 +22,7 @@ import {
   paletteStrategyAtom
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
-import { egxPreviewImageAtom } from '../preview/egx-preview'
+import { egxIndexBufferAtom, egxPreviewImageAtom } from '../preview/egx-preview'
 import { modeRPreviewImageAtom } from '../preview/mode-r-preview'
 import {
   applyManualEditsToBuffer,
@@ -138,12 +138,25 @@ export const finalRasterIndexBufferAtom = atom((get) => {
 })
 
 /**
- * Effective index buffer for editing: returns the raster-optimized buffer when
- * raster mode is enabled, otherwise returns the standard preview buffer.
+ * Effective index buffer for editing: returns the appropriate buffer based on
+ * the active mode:
+ * - EGX mode: returns the EGX index buffer
+ * - Raster mode: returns the raster-optimized buffer
+ * - Standard: returns the standard preview buffer
  * This is the buffer that should be used when entering the editor.
  */
 export const effectiveIndexBufferAtom = atom(async (get) => {
+  const egxEnabled = get(egxEnabledAtom)
   const rasterEnabled = get(rasterEnabledAtom)
+
+  // Priority: EGX > Raster > Standard
+  if (egxEnabled) {
+    // Use EGX index buffer
+    const egxBuffer = await get(egxIndexBufferAtom)
+    if (egxBuffer) {
+      return egxBuffer
+    }
+  }
 
   if (rasterEnabled) {
     // Use raster-optimized buffer with manual edits if available

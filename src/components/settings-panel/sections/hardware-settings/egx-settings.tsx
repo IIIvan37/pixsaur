@@ -10,11 +10,9 @@ import { Suspense } from 'react'
 import {
   egxFirstLineModeAtom,
   egxPreviewModeAtom,
-  egxTypeAtom,
-  egxVerticalDitherAttenuationAtom
+  egxTypeAtom
 } from '@/app/store/config/config'
 import { egxPaletteAtom } from '@/app/store/preview/egx-preview'
-import { TuningSlider } from '@/components/settings-panel/shared/tuning-slider'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type {
@@ -94,9 +92,6 @@ export function EGXSettings() {
   const [egxType, setEgxType] = useAtom(egxTypeAtom)
   const [firstLineMode, setFirstLineMode] = useAtom(egxFirstLineModeAtom)
   const [previewMode, setPreviewMode] = useAtom(egxPreviewModeAtom)
-  const [verticalAttenuation, setVerticalAttenuation] = useAtom(
-    egxVerticalDitherAttenuationAtom
-  )
 
   const egxTypeOptions: Array<{ value: EGXType; label: string }> = [
     { value: 'egx1', label: 'EGX1 (Mode 0/1)' },
@@ -164,21 +159,6 @@ export function EGXSettings() {
             : _(msg`Ligne 0 en mode haute résolution (plus de détails)`)}
         </span>
       </div>
-
-      <TuningSlider
-        label={_(msg`Atténuation dithering vertical`)}
-        value={verticalAttenuation}
-        onChange={setVerticalAttenuation}
-        min={0}
-        max={100}
-        step={1}
-        defaultValue={50}
-        format={(v) => `${v}%`}
-        description={_(
-          msg`Réduit la propagation d'erreur vers les lignes adjacentes (modes différents)`
-        )}
-        resetTitle={_(msg`Réinitialiser à la valeur par défaut`)}
-      />
 
       <div className={styles.tuningRow}>
         <div className={styles.tuningHeader}>

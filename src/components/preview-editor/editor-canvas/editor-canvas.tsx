@@ -10,6 +10,7 @@ import {
   editorIndexBufferAtom,
   editorPixelAspectAtom,
   editorZoomAtom,
+  getLineCpcPixelWidthAtom,
   getLinePaletteAtom,
   moveCursorAtom,
   nextInkAtom,
@@ -50,6 +51,7 @@ export function EditorCanvas({
   const cursor = useAtomValue(editorCursorAtom)
   const hoveredPixel = useAtomValue(editorHoveredPixelAtom)
   const getLinePalette = useAtomValue(getLinePaletteAtom)
+  const getLineCpcPixelWidth = useAtomValue(getLineCpcPixelWidthAtom)
   const canUndo = useAtomValue(canUndoAtom)
   const canRedo = useAtomValue(canRedoAtom)
 
@@ -350,6 +352,7 @@ export function EditorCanvas({
       cursor={cursor}
       hoveredPixel={hoveredPixel}
       getLinePalette={getLinePalette}
+      getLineCpcPixelWidth={getLineCpcPixelWidth}
       onMouseMove={handleMouseMove}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
