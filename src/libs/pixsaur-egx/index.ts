@@ -14,9 +14,9 @@
  * - Screen encoding for mixed-mode output
  */
 
+export * from './palette-optimizer'
+export * from './quantize-egx'
 export * from './types'
 
 // Future exports:
-// export * from './palette-optimizer'
-// export * from './quantize-egx'
 // export * from './line-encoder'
