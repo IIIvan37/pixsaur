@@ -9,6 +9,7 @@ describe('HardwareSettingsView', () => {
   const mockOnPixelModeChange = vi.fn()
   const mockOnDimensionPresetChange = vi.fn()
   const mockOnModeREnabledChange = vi.fn()
+  const mockOnEgxEnabledChange = vi.fn()
 
   const defaultProps = {
     cpcHardware: 'classic' as CPCHardware,
@@ -18,7 +19,9 @@ describe('HardwareSettingsView', () => {
     dimensionPreset: 'standard' as const,
     onDimensionPresetChange: mockOnDimensionPresetChange,
     modeREnabled: false,
-    onModeREnabledChange: mockOnModeREnabledChange
+    onModeREnabledChange: mockOnModeREnabledChange,
+    egxEnabled: false,
+    onEgxEnabledChange: mockOnEgxEnabledChange
   }
 
   beforeEach(() => {

@@ -6,10 +6,12 @@ import { useAtomValue, useSetAtom } from 'jotai'
 import {
   cpcHardwareAtom,
   dimensionPresetAtom,
+  egxEnabledAtom,
   modeREnabledAtom,
   pixelModeAtom,
   setCpcHardwareAtom,
   setDimensionPresetAtom,
+  setEgxEnabledAtom,
   setPixelModeAtom
 } from '@/app/store/config/config'
 import { rasterEnabledAtom } from '@/app/store/raster/raster-config'
@@ -24,16 +26,29 @@ export function HardwareSettings() {
   const setDimensionPreset = useSetAtom(setDimensionPresetAtom)
   const modeREnabled = useAtomValue(modeREnabledAtom)
   const setModeREnabled = useSetAtom(modeREnabledAtom)
+  const egxEnabled = useAtomValue(egxEnabledAtom)
+  const setEgxEnabled = useSetAtom(setEgxEnabledAtom)
   const setRasterEnabled = useSetAtom(rasterEnabledAtom)
 
-  // When Mode R is enabled, force Mode 0 and disable Raster (mutually exclusive)
+  // When Mode R is enabled, force Mode 0 and disable Raster/EGX (mutually exclusive)
   const handleModeRChange = (enabled: boolean) => {
     setModeREnabled(enabled)
     if (enabled) {
       if (pixelMode !== 0) {
         setPixelMode(0)
       }
-      // Mode R and Raster are mutually exclusive
+      // Mode R, Raster, and EGX are mutually exclusive
+      setRasterEnabled(false)
+      setEgxEnabled(false)
+    }
+  }
+
+  // When EGX is enabled, disable Mode R and Raster (mutually exclusive)
+  const handleEgxChange = (enabled: boolean) => {
+    setEgxEnabled(enabled)
+    if (enabled) {
+      // EGX, Mode R, and Raster are mutually exclusive
+      setModeREnabled(false)
       setRasterEnabled(false)
     }
   }
@@ -57,6 +72,8 @@ export function HardwareSettings() {
       onDimensionPresetChange={setDimensionPreset}
       modeREnabled={modeREnabled}
       onModeREnabledChange={handleModeRChange}
+      egxEnabled={egxEnabled}
+      onEgxEnabledChange={handleEgxChange}
     />
   )
 }

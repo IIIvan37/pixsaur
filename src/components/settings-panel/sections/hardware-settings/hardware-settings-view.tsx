@@ -11,6 +11,7 @@ import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 import type { CPCHardware } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
+import { EGXSettings } from './egx-settings'
 import { ModeRSettings } from './mode-r-settings'
 
 type HardwareSettingsViewProps = Readonly<{
@@ -22,6 +23,8 @@ type HardwareSettingsViewProps = Readonly<{
   onDimensionPresetChange: (value: DimensionPreset) => void
   modeREnabled: boolean
   onModeREnabledChange: (value: boolean) => void
+  egxEnabled: boolean
+  onEgxEnabledChange: (value: boolean) => void
 }>
 
 export function HardwareSettingsView({
@@ -32,9 +35,12 @@ export function HardwareSettingsView({
   dimensionPreset,
   onDimensionPresetChange,
   modeREnabled,
-  onModeREnabledChange
+  onModeREnabledChange,
+  egxEnabled,
+  onEgxEnabledChange
 }: HardwareSettingsViewProps) {
   const modeRSwitchId = useId()
+  const egxSwitchId = useId()
 
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
     { value: 'classic', label: 'CPC Classic (27 colors)' },
@@ -103,6 +109,31 @@ export function HardwareSettingsView({
         </Flex>
 
         {modeREnabled && <ModeRSettings />}
+
+        <Flex
+          align='center'
+          justify='space-between'
+          style={{ width: '100%', marginTop: '16px' }}
+        >
+          <div>
+            <h4 className={styles.sectionTitle}>
+              <Trans>EGX Mode</Trans>
+            </h4>
+            <p className={styles.description}>
+              <Trans>
+                Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs.
+                EGX2: 640×200 4 couleurs.
+              </Trans>
+            </p>
+          </div>
+          <Switch
+            checked={egxEnabled}
+            onCheckedChange={onEgxEnabledChange}
+            id={egxSwitchId}
+          />
+        </Flex>
+
+        {egxEnabled && <EGXSettings />}
       </div>
 
       <div className={styles.separator} />
