@@ -3,15 +3,20 @@
  *
  * Handles the line-by-line mode alternation preview pipeline for EGX.
  * EGX alternates video modes per line (spatial interlacing, no flicker).
+ *
+ * IMPORTANT: This implementation reuses the standard quantizer's palette
+ * and dithering infrastructure, applying EGX constraints only at render time.
  */
 
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import type { EGXConfig, EGXQuantizationResult } from '@/libs/pixsaur-egx'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { EGXConfig } from '@/libs/pixsaur-egx'
 import {
-  generateEGXPreview,
   getEGXOutputDimensions,
-  quantizeEGX
+  getMaxColorIndex,
+  getModeForLine,
+  getSharedColorCount
 } from '@/libs/pixsaur-egx'
 import {
   cpcHardwareAtom,
@@ -22,7 +27,11 @@ import {
   egxTypeAtom,
   egxVerticalDitherAttenuationAtom
 } from '../config/config'
-import { resizedImageAtom } from './preview'
+import {
+  exportPaletteWithSlotsAtom,
+  normalizedImageAtom,
+  quantizerAtom
+} from './preview'
 
 // ============================================================================
 // EGX Configuration Atom
@@ -54,188 +63,216 @@ export const egxConfigAtom = atom((get): EGXConfig => {
 })
 
 // ============================================================================
-// EGX Source Image
+// Color Distance Utilities
+// ============================================================================
+
+function colorDistanceSquared(a: Vector<'RGB'>, b: Vector<'RGB'>): number {
+  const dr = a[0] - b[0]
+  const dg = a[1] - b[1]
+  const db = a[2] - b[2]
+  return dr * dr + dg * dg + db * db
+}
+
+function findClosestInSubset(
+  target: Vector<'RGB'>,
+  palette: Vector<'RGB'>[],
+  maxIndex: number
+): { index: number; color: Vector<'RGB'> } {
+  let bestIndex = 0
+  let bestDist = Infinity
+
+  const limit = Math.min(maxIndex + 1, palette.length)
+  for (let i = 0; i < limit; i++) {
+    const dist = colorDistanceSquared(target, palette[i])
+    if (dist < bestDist) {
+      bestDist = dist
+      bestIndex = i
+    }
+  }
+
+  return { index: bestIndex, color: palette[bestIndex] }
+}
+
+// ============================================================================
+// EGX Palette from Standard Quantizer
 // ============================================================================
 
 /**
- * EGX Source Image Atom
- *
- * Resizes the source image to EGX target dimensions:
- * - EGX1: 320×200 (Mode 1 resolution)
- * - EGX2: 640×200 (Mode 2 resolution)
+ * Use the standard quantizer's palette for EGX.
+ * EGX1 needs 16 colors, EGX2 needs 4 colors.
  */
-export const egxSourceImageAtom = atom(async (get) => {
+export const egxPaletteAtom = atom(async (get) => {
   const egxEnabled = get(egxEnabledAtom)
   if (!egxEnabled) return null
 
   const config = get(egxConfigAtom)
-  const sourceImage = await get(resizedImageAtom)
+  const standardPalette = await get(exportPaletteWithSlotsAtom)
 
-  if (!sourceImage) return null
-
-  const targetDims = getEGXOutputDimensions(config.type)
-
-  // If source already matches target, use directly
-  if (
-    sourceImage.width === targetDims.width &&
-    sourceImage.height === targetDims.height
-  ) {
-    logger.info('[EGX] Using source image directly (correct size)', {
-      size: `${sourceImage.width}×${sourceImage.height}`
-    })
-    return sourceImage
+  if (!standardPalette || standardPalette.length === 0) {
+    logger.warn('[EGX] No standard palette available')
+    return null
   }
 
-  // Simple resize using canvas
-  const resizedImage = resizeToEGXDimensions(
-    sourceImage,
-    targetDims.width,
-    targetDims.height
+  // Filter out invalid colors ([-1,-1,-1] slots)
+  const validColors = standardPalette.filter(
+    (c): c is Vector<'RGB'> => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
   )
 
-  logger.info('[EGX] Source image resized', {
-    sourceSize: `${sourceImage.width}×${sourceImage.height}`,
-    egxSize: `${resizedImage.width}×${resizedImage.height}`
+  const neededColors = config.type === 'egx1' ? 16 : 4
+  const sharedCount = getSharedColorCount(config.type)
+
+  // If we have enough colors, use them
+  // If not, pad with black
+  const colors: Vector<'RGB'>[] = []
+  for (let i = 0; i < neededColors; i++) {
+    colors.push(validColors[i] ?? [0, 0, 0])
+  }
+
+  logger.info('[EGX] Palette from standard quantizer', {
+    validColorsCount: validColors.length,
+    neededColors,
+    sharedCount
   })
 
-  return resizedImage
+  return {
+    colors,
+    sharedColorCount: sharedCount,
+    stats: {
+      colorsUsedLowMode: neededColors,
+      colorsUsedHighMode: sharedCount,
+      avgErrorLowMode: 0,
+      avgErrorHighMode: 0,
+      totalError: 0
+    }
+  }
 })
 
-/**
- * Resize image to EGX target dimensions
- */
-function resizeToEGXDimensions(
-  src: ImageData,
-  targetWidth: number,
-  targetHeight: number
-): ImageData {
-  // Create canvas from source
-  const srcCanvas = document.createElement('canvas')
-  srcCanvas.width = src.width
-  srcCanvas.height = src.height
-  const srcCtx = srcCanvas.getContext('2d')!
-  srcCtx.putImageData(src, 0, 0)
+// ============================================================================
+// EGX Preview Image Helpers
+// ============================================================================
 
-  // Create output canvas
-  const outCanvas = document.createElement('canvas')
-  outCanvas.width = targetWidth
-  outCanvas.height = targetHeight
-  const outCtx = outCanvas.getContext('2d')!
-  outCtx.imageSmoothingEnabled = true
-  outCtx.imageSmoothingQuality = 'high'
-
-  // Calculate scale to fit
-  const scale = Math.min(targetWidth / src.width, targetHeight / src.height)
-  const scaledW = Math.round(src.width * scale)
-  const scaledH = Math.round(src.height * scale)
-
-  // Center in output
-  const offsetX = Math.floor((targetWidth - scaledW) / 2)
-  const offsetY = Math.floor((targetHeight - scaledH) / 2)
-
-  // Fill with black
-  outCtx.fillStyle = 'black'
-  outCtx.fillRect(0, 0, targetWidth, targetHeight)
-
-  // Draw scaled
-  outCtx.drawImage(srcCanvas, offsetX, offsetY, scaledW, scaledH)
-
-  return outCtx.getImageData(0, 0, targetWidth, targetHeight)
+function renderModeMapPixel(
+  output: Uint8ClampedArray,
+  dstIdx: number,
+  isLowResLine: boolean
+): void {
+  if (isLowResLine) {
+    output[dstIdx] = 200
+    output[dstIdx + 1] = 120
+    output[dstIdx + 2] = 50
+  } else {
+    output[dstIdx] = 50
+    output[dstIdx + 1] = 100
+    output[dstIdx + 2] = 200
+  }
+  output[dstIdx + 3] = 255
 }
 
-// ============================================================================
-// EGX Quantization Result
-// ============================================================================
+function renderGrayPixel(output: Uint8ClampedArray, dstIdx: number): void {
+  output[dstIdx] = 128
+  output[dstIdx + 1] = 128
+  output[dstIdx + 2] = 128
+  output[dstIdx + 3] = 255
+}
 
-/**
- * EGX quantization result atom
- */
-export const egxQuantizationAtom = atom(
-  async (get): Promise<EGXQuantizationResult | null> => {
-    const egxEnabled = get(egxEnabledAtom)
-    if (!egxEnabled) return null
+function renderColorPixel(
+  output: Uint8ClampedArray,
+  dstIdx: number,
+  color: Vector<'RGB'>
+): void {
+  output[dstIdx] = color[0]
+  output[dstIdx + 1] = color[1]
+  output[dstIdx + 2] = color[2]
+  output[dstIdx + 3] = 255
+}
 
-    const sourceImage = await get(egxSourceImageAtom)
-    const config = get(egxConfigAtom)
-
-    if (!sourceImage) return null
-
-    logger.info('[EGX] Starting quantization', {
-      imageSize: `${sourceImage.width}×${sourceImage.height}`,
-      type: config.type,
-      firstLineMode: config.firstLineMode
-    })
-
-    const result = quantizeEGX(
-      sourceImage.data,
-      sourceImage.width,
-      sourceImage.height,
-      config
-    )
-
-    logger.info('[EGX] Quantization complete', {
-      outputSize: `${result.width}×${result.height}`,
-      paletteSize: result.palette.colors.length,
-      sharedColors: result.palette.sharedColorCount,
-      totalError: Math.round(result.totalError)
-    })
-
-    return result
-  }
-)
-
-// ============================================================================
-// EGX Palette Atom (for UI display)
-// ============================================================================
-
-/**
- * Derived atom exposing just the palette for UI display
- */
-export const egxPaletteAtom = atom(async (get) => {
-  const quantResult = await get(egxQuantizationAtom)
-  if (!quantResult) return null
-
-  return {
-    colors: quantResult.palette.colors,
-    sharedColorCount: quantResult.palette.sharedColorCount,
-    stats: quantResult.palette.stats
-  }
-})
+function shouldGrayOut(previewMode: string, isLowResLine: boolean): boolean {
+  return (
+    (previewMode === 'lowLines' && !isLowResLine) ||
+    (previewMode === 'highLines' && isLowResLine)
+  )
+}
 
 // ============================================================================
 // EGX Preview Image
 // ============================================================================
 
 /**
- * EGX preview image based on selected preview mode
+ * Generate EGX preview by applying line-by-line constraints
+ * to the dithered image from the standard pipeline.
  */
 export const egxPreviewImageAtom = atom(
   async (get): Promise<ImageData | null> => {
     const egxEnabled = get(egxEnabledAtom)
-    if (!egxEnabled) {
-      return null
-    }
+    if (!egxEnabled) return null
 
-    const quantResult = await get(egxQuantizationAtom)
-    if (!quantResult) {
-      logger.warn('[EGX] Preview skipped - No quantization result')
+    const config = get(egxConfigAtom)
+    const paletteInfo = await get(egxPaletteAtom)
+    const quantizer = await get(quantizerAtom)
+    const normalized = await get(normalizedImageAtom)
+    const dithering = get(ditheringAtom)
+
+    if (!paletteInfo || !quantizer || !normalized) {
+      logger.warn('[EGX] Missing dependencies for preview')
       return null
     }
 
     const previewMode = get(egxPreviewModeAtom)
+    const { colors: palette } = paletteInfo
+
+    // Get EGX output dimensions
+    const dims = getEGXOutputDimensions(config.type)
+    const { width, height } = dims
 
     logger.info('[EGX] Generating preview', {
       mode: previewMode,
-      size: `${quantResult.width}×${quantResult.height}`
+      type: config.type,
+      dimensions: `${width}x${height}`,
+      paletteSize: palette.length
     })
 
-    // Generate preview based on mode
-    const previewData = generateEGXPreview(quantResult, previewMode)
+    // Dither the normalized image with the full palette
+    const ditheredBuffer = quantizer.dither(normalized, palette, {
+      mode: dithering.mode,
+      intensity: dithering.intensity
+    })
 
-    return new ImageData(
-      new Uint8ClampedArray(previewData),
-      quantResult.width,
-      quantResult.height
-    )
+    // Create output with EGX line constraints
+    const output = new Uint8ClampedArray(width * height * 4)
+
+    // Process each line according to its mode constraints
+    for (let y = 0; y < height; y++) {
+      const lineMode = getModeForLine(y, config)
+      const maxColorIndex = getMaxColorIndex(lineMode, config.type)
+      const isLowResLine =
+        (config.firstLineMode === 'low' && y % 2 === 0) ||
+        (config.firstLineMode === 'high' && y % 2 !== 0)
+
+      for (let x = 0; x < width; x++) {
+        const srcIdx = (y * width + x) * 4
+        const dstIdx = srcIdx
+
+        const ditheredColor: Vector<'RGB'> = [
+          ditheredBuffer[srcIdx],
+          ditheredBuffer[srcIdx + 1],
+          ditheredBuffer[srcIdx + 2]
+        ]
+
+        if (previewMode === 'modeMap') {
+          renderModeMapPixel(output, dstIdx, isLowResLine)
+        } else if (shouldGrayOut(previewMode, isLowResLine)) {
+          renderGrayPixel(output, dstIdx)
+        } else {
+          const { color } = findClosestInSubset(
+            ditheredColor,
+            palette,
+            maxColorIndex
+          )
+          renderColorPixel(output, dstIdx, color)
+        }
+      }
+    }
+
+    return new ImageData(output, width, height)
   }
 )

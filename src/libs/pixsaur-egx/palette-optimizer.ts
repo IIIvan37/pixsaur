@@ -8,32 +8,17 @@
  * - EGX2: INK 0-1 shared between Mode 1 (4 colors) and Mode 2 (2 colors)
  *
  * Strategy:
- * 1. Analyze colors needed by each line type separately
- * 2. Find shared colors that work well for both
+ * 1. Use weighted histogram (same as GPU quantizer) for color importance
+ * 2. Select shared colors that work well for both line types
  * 3. Fill remaining slots with colors for low-res mode only
  */
 
+import { buildWeightedHistogram } from '@/libs/pixsaur-color/src/histogram'
+import { getDistanceFn } from '@/libs/pixsaur-color/src/metric/distance'
+import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig, EGXPalette, EGXPaletteStats } from './types'
 import { getSharedColorCount, getTotalPaletteSize } from './types'
-
-// ============================================================================
-// Color Analysis Types
-// ============================================================================
-
-interface ColorFrequency {
-  color: Vector<'RGB'>
-  count: number
-  /** Palette index in hardware palette */
-  paletteIndex: number
-}
-
-interface LineAnalysis {
-  /** Colors found in even lines (first line type) */
-  evenLineColors: ColorFrequency[]
-  /** Colors found in odd lines (second line type) */
-  oddLineColors: ColorFrequency[]
-}
 
 // ============================================================================
 // Hardware Palettes
@@ -82,8 +67,10 @@ export function getHardwarePalette(
 }
 
 // ============================================================================
-// Color Distance
+// Color Distance Utilities
 // ============================================================================
+
+const distFn = getDistanceFn('RGB', 'euclidean')
 
 /**
  * Simple RGB color distance (squared euclidean)
@@ -121,24 +108,24 @@ function findClosestColor(
 }
 
 // ============================================================================
-// Line Analysis
+// Line-based Color Extraction
 // ============================================================================
 
 /**
- * Analyze colors in image, separating by line parity
+ * Extract colors from image as vectors, separated by line type
  */
-function analyzeImageByLines(
+function extractColorsByLineType(
   imageData: Uint8ClampedArray,
   width: number,
   height: number,
-  hardwarePalette: Vector<'RGB'>[]
-): LineAnalysis {
-  const evenCounts = new Map<number, number>()
-  const oddCounts = new Map<number, number>()
+  _config: EGXConfig
+): { evenLineColors: Vector<'RGB'>[]; oddLineColors: Vector<'RGB'>[] } {
+  const evenLineColors: Vector<'RGB'>[] = []
+  const oddLineColors: Vector<'RGB'>[] = []
 
   for (let y = 0; y < height; y++) {
     const isEvenLine = y % 2 === 0
-    const counts = isEvenLine ? evenCounts : oddCounts
+    const targetArray = isEvenLine ? evenLineColors : oddLineColors
 
     for (let x = 0; x < width; x++) {
       const pixelIdx = (y * width + x) * 4
@@ -147,123 +134,111 @@ function analyzeImageByLines(
         imageData[pixelIdx + 1],
         imageData[pixelIdx + 2]
       ]
-
-      const { index } = findClosestColor(color, hardwarePalette)
-      counts.set(index, (counts.get(index) || 0) + 1)
+      targetArray.push(color)
     }
   }
 
-  // Convert to sorted arrays
-  const toColorFrequency = (counts: Map<number, number>): ColorFrequency[] => {
-    return Array.from(counts.entries())
-      .map(([index, count]) => ({
-        color: hardwarePalette[index],
-        count,
-        paletteIndex: index
-      }))
-      .sort((a, b) => b.count - a.count)
-  }
-
-  return {
-    evenLineColors: toColorFrequency(evenCounts),
-    oddLineColors: toColorFrequency(oddCounts)
-  }
+  return { evenLineColors, oddLineColors }
 }
 
 // ============================================================================
-// Palette Optimization
+// Histogram-based Palette Selection
 // ============================================================================
 
 /**
- * Select shared colors that work well for both line types
- *
- * These colors will be used by BOTH modes, so they need to
- * represent important colors from both line types.
+ * Build weighted histogram for a set of colors against hardware palette
  */
-function selectSharedColors(
-  evenColors: ColorFrequency[],
-  oddColors: ColorFrequency[],
-  count: number,
+function buildHistogramForColors(
+  colors: Vector<'RGB'>[],
   hardwarePalette: Vector<'RGB'>[]
-): Vector<'RGB'>[] {
-  // Score each palette color based on usage in both line types
-  const scores = new Map<number, number>()
-
-  // Weight for high-res lines (they're more constrained)
-  const HIGH_RES_WEIGHT = 2
-
-  for (const { paletteIndex, count } of evenColors) {
-    scores.set(paletteIndex, (scores.get(paletteIndex) || 0) + count)
+): Float64Array {
+  if (colors.length === 0) {
+    return new Float64Array(hardwarePalette.length)
   }
 
-  for (const { paletteIndex, count } of oddColors) {
-    scores.set(
-      paletteIndex,
-      (scores.get(paletteIndex) || 0) + count * HIGH_RES_WEIGHT
-    )
+  const histogram = buildWeightedHistogram(colors, hardwarePalette, distFn)
+  return new Float64Array(histogram)
+}
+
+/**
+ * Select best shared colors using combined histogram from both line types
+ *
+ * The shared colors must work for BOTH line types, so we use a weighted
+ * combination of their histograms, with higher weight for the high-res
+ * lines (they're more constrained).
+ */
+function selectSharedColorsWithHistogram(
+  lowResHistogram: Float64Array,
+  highResHistogram: Float64Array,
+  sharedCount: number,
+  hardwarePalette: Vector<'RGB'>[]
+): { indices: number[]; colors: Vector<'RGB'>[] } {
+  // Combine histograms with higher weight for high-res lines
+  const HIGH_RES_WEIGHT = 2.0
+  const combinedHistogram = new Uint32Array(hardwarePalette.length)
+
+  for (let i = 0; i < hardwarePalette.length; i++) {
+    // Scale and combine: high-res contributes more since it has fewer colors
+    const combined = lowResHistogram[i] + highResHistogram[i] * HIGH_RES_WEIGHT
+    // Scale to integer for selectTopIndicesCore (it expects Uint32Array)
+    combinedHistogram[i] = Math.round(combined * 10000)
   }
 
-  // Sort by combined score
-  const sorted = Array.from(scores.entries())
-    .sort((a, b) => b[1] - a[1])
-    .map(([index]) => hardwarePalette[index])
+  // Calculate relative threshold (0.1% of total)
+  const totalWeight = combinedHistogram.reduce((sum, v) => sum + v, 0)
+  const relativeThreshold = Math.max(1, Math.floor(totalWeight * 0.001))
 
-  // Take top colors, ensuring diversity
-  const selected: Vector<'RGB'>[] = []
-  const MIN_DISTANCE = 1000 // Minimum distance between selected colors
+  // Use diversityMode for better color spread
+  const indices = selectTopIndicesCore(combinedHistogram, [], sharedCount, {
+    threshold: relativeThreshold,
+    diversityMode: true,
+    basePalette: hardwarePalette
+  })
 
-  for (const color of sorted) {
-    if (selected.length >= count) break
+  const colors = indices.map((i) => hardwarePalette[i])
 
-    // Check diversity
-    const isDiverse = selected.every(
-      (existing) => colorDistance(color, existing) >= MIN_DISTANCE
-    )
-
-    if (isDiverse || selected.length < 2) {
-      selected.push(color)
-    }
-  }
-
-  // Fill remaining if needed (relaxed diversity)
-  for (const color of sorted) {
-    if (selected.length >= count) break
-    if (!selected.some((c) => colorDistance(c, color) < 100)) {
-      selected.push(color)
-    }
-  }
-
-  return selected.slice(0, count)
+  return { indices, colors }
 }
 
 /**
  * Select exclusive colors for low-res mode only
+ *
+ * These colors are only available on low-res lines (Mode 0 for EGX1),
+ * so we use the low-res histogram and exclude already-selected shared colors.
  */
-function selectExclusiveColors(
-  lowResColors: ColorFrequency[],
-  sharedColors: Vector<'RGB'>[],
-  count: number,
+function selectExclusiveColorsWithHistogram(
+  lowResHistogram: Float64Array,
+  sharedIndices: Set<number>,
+  exclusiveCount: number,
   hardwarePalette: Vector<'RGB'>[]
-): Vector<'RGB'>[] {
-  const selected: Vector<'RGB'>[] = []
-  const usedIndices = new Set<number>()
-
-  // Mark shared colors as used
-  for (const shared of sharedColors) {
-    const { index } = findClosestColor(shared, hardwarePalette)
-    usedIndices.add(index)
-  }
-
-  // Add most frequent colors not already used
-  for (const { paletteIndex } of lowResColors) {
-    if (selected.length >= count) break
-    if (!usedIndices.has(paletteIndex)) {
-      selected.push(hardwarePalette[paletteIndex])
-      usedIndices.add(paletteIndex)
+): { indices: number[]; colors: Vector<'RGB'>[] } {
+  // Convert to Uint32Array and zero out shared colors
+  const histogram = new Uint32Array(hardwarePalette.length)
+  for (let i = 0; i < hardwarePalette.length; i++) {
+    if (!sharedIndices.has(i)) {
+      histogram[i] = Math.round(lowResHistogram[i] * 10000)
     }
   }
 
-  return selected
+  // Calculate relative threshold
+  const totalWeight = histogram.reduce((sum, v) => sum + v, 0)
+  const relativeThreshold = Math.max(1, Math.floor(totalWeight * 0.001))
+
+  // Use diversityMode for better color spread
+  const indices = selectTopIndicesCore(
+    histogram,
+    Array.from(sharedIndices),
+    exclusiveCount,
+    {
+      threshold: relativeThreshold,
+      diversityMode: true,
+      basePalette: hardwarePalette
+    }
+  )
+
+  const colors = indices.map((i) => hardwarePalette[i])
+
+  return { indices, colors }
 }
 
 // ============================================================================
@@ -271,7 +246,7 @@ function selectExclusiveColors(
 // ============================================================================
 
 /**
- * Optimize palette for EGX mode
+ * Optimize palette for EGX mode using histogram-based selection
  *
  * @param imageData - Source image RGBA data
  * @param width - Image width
@@ -289,39 +264,41 @@ export function optimizeEGXPalette(
   const sharedCount = getSharedColorCount(config.type)
   const totalCount = getTotalPaletteSize(config.type)
 
-  // Analyze image by line parity
-  const analysis = analyzeImageByLines(
+  // Extract colors by line type
+  const { evenLineColors, oddLineColors } = extractColorsByLineType(
     imageData,
     width,
     height,
-    hardwarePalette
+    config
   )
 
   // Determine which lines use which mode based on firstLineMode
-  // 'low' = even lines use low-res mode (Mode 0 for EGX1)
-  // 'high' = even lines use high-res mode (Mode 1 for EGX1)
   const lowResColors =
-    config.firstLineMode === 'low'
-      ? analysis.evenLineColors
-      : analysis.oddLineColors
+    config.firstLineMode === 'low' ? evenLineColors : oddLineColors
   const highResColors =
-    config.firstLineMode === 'low'
-      ? analysis.oddLineColors
-      : analysis.evenLineColors
+    config.firstLineMode === 'low' ? oddLineColors : evenLineColors
 
-  // Select shared colors (must work for both modes)
-  const sharedColors = selectSharedColors(
-    lowResColors,
+  // Build histograms using same method as GPU quantizer
+  const lowResHistogram = buildHistogramForColors(lowResColors, hardwarePalette)
+  const highResHistogram = buildHistogramForColors(
     highResColors,
-    sharedCount,
     hardwarePalette
   )
 
+  // Select shared colors (used by both modes)
+  const { indices: sharedIndices, colors: sharedColors } =
+    selectSharedColorsWithHistogram(
+      lowResHistogram,
+      highResHistogram,
+      sharedCount,
+      hardwarePalette
+    )
+
   // Select exclusive colors (only for low-res mode)
   const exclusiveCount = totalCount - sharedCount
-  const exclusiveColors = selectExclusiveColors(
-    lowResColors,
-    sharedColors,
+  const { colors: exclusiveColors } = selectExclusiveColorsWithHistogram(
+    lowResHistogram,
+    new Set(sharedIndices),
     exclusiveCount,
     hardwarePalette
   )
