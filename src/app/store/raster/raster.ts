@@ -22,7 +22,10 @@ import {
   paletteStrategyAtom
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
-import { egxIndexBufferAtom, egxPreviewImageAtom } from '../preview/egx-preview'
+import {
+  finalEgxIndexBufferAtom,
+  finalEgxPreviewImageAtom
+} from '../preview/egx-preview'
 import { modeRPreviewImageAtom } from '../preview/mode-r-preview'
 import {
   applyManualEditsToBuffer,
@@ -151,8 +154,8 @@ export const effectiveIndexBufferAtom = atom(async (get) => {
 
   // Priority: EGX > Raster > Standard
   if (egxEnabled) {
-    // Use EGX index buffer
-    const egxBuffer = await get(egxIndexBufferAtom)
+    // Use EGX index buffer with manual edits applied
+    const egxBuffer = await get(finalEgxIndexBufferAtom)
     if (egxBuffer) {
       return egxBuffer
     }
@@ -478,11 +481,12 @@ export const effectivePreviewImageAtom = atom(async (get) => {
   }
 
   // EGX mode (line-by-line mode alternation)
+  // Always use finalEgxPreviewImageAtom to include manual edits
   const egxEnabled = get(egxEnabledAtom)
   if (egxEnabled) {
-    const egxPreview = await get(egxPreviewImageAtom)
-    if (egxPreview) {
-      return egxPreview
+    const finalEgxPreview = await get(finalEgxPreviewImageAtom)
+    if (finalEgxPreview) {
+      return finalEgxPreview
     }
   }
 

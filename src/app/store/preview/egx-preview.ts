@@ -37,7 +37,12 @@ import {
   resizeModeAtom
 } from '../config/config'
 import { selectionAtom, workingImageAtom } from '../image/image'
-import { exportPaletteWithSlotsAtom, positionImageForAutoMode } from './preview'
+import {
+  applyManualEditsToBuffer,
+  exportPaletteWithSlotsAtom,
+  manualPixelEditsAtom,
+  positionImageForAutoMode
+} from './preview'
 
 // ============================================================================
 // EGX Configuration Atom
@@ -1048,3 +1053,52 @@ export const egxIndexBufferAtom = atom(
     }
   }
 )
+
+// ============================================================================
+// Final EGX Atoms (with manual edits applied)
+// ============================================================================
+
+/**
+ * Final EGX index buffer with manual edits applied.
+ * This is the buffer that should be used for export in EGX mode.
+ */
+export const finalEgxIndexBufferAtom = atom(async (get) => {
+  const egxEnabled = get(egxEnabledAtom)
+  if (!egxEnabled) return null
+
+  const baseData = await get(egxIndexBufferAtom)
+  if (!baseData) return null
+
+  const edits = get(manualPixelEditsAtom)
+  return applyManualEditsToBuffer(baseData, edits)
+})
+
+/**
+ * Final EGX preview ImageData with manual edits applied.
+ * Converts the finalEgxIndexBufferAtom to ImageData for display.
+ */
+export const finalEgxPreviewImageAtom = atom(async (get) => {
+  const egxEnabled = get(egxEnabledAtom)
+  if (!egxEnabled) return null
+
+  const bufferData = await get(finalEgxIndexBufferAtom)
+  if (!bufferData) return null
+
+  const { buffer, width, height, palette } = bufferData
+
+  // Create ImageData from index buffer and palette
+  const imageData = new ImageData(width, height)
+  const data = imageData.data
+
+  for (let i = 0; i < buffer.length; i++) {
+    const inkIndex = buffer[i]
+    const color = palette[inkIndex] ?? [0, 0, 0]
+    const pixelIndex = i * 4
+    data[pixelIndex] = color[0] // R
+    data[pixelIndex + 1] = color[1] // G
+    data[pixelIndex + 2] = color[2] // B
+    data[pixelIndex + 3] = 255 // A
+  }
+
+  return imageData
+})
