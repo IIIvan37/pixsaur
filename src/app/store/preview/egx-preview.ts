@@ -33,16 +33,11 @@ import {
   egxFirstLineModeAtom,
   egxPreviewModeAtom,
   egxTypeAtom,
-  egxVerticalDitherAttenuationAtom,
   horizontalSmoothingAtom,
   resizeModeAtom
 } from '../config/config'
 import { selectionAtom, workingImageAtom } from '../image/image'
-import {
-  exportPaletteWithSlotsAtom,
-  positionImageForAutoMode,
-  quantizerAtom
-} from './preview'
+import { exportPaletteWithSlotsAtom, positionImageForAutoMode } from './preview'
 
 // ============================================================================
 // EGX Configuration Atom
@@ -56,7 +51,6 @@ export const egxConfigAtom = atom((get): EGXConfig => {
   const firstLineMode = get(egxFirstLineModeAtom)
   const hardware = get(cpcHardwareAtom)
   const dithering = get(ditheringAtom)
-  const verticalAttenuation = get(egxVerticalDitherAttenuationAtom)
 
   const ditheringEnabled = dithering.mode !== 'none'
   const ditheringIntensity = ditheringEnabled
@@ -68,8 +62,7 @@ export const egxConfigAtom = atom((get): EGXConfig => {
     firstLineMode,
     targetHardware: hardware,
     ditheringMode: ditheringEnabled ? dithering.mode : 'none',
-    ditheringIntensity,
-    verticalDitherAttenuation: verticalAttenuation
+    ditheringIntensity
   }
 })
 
@@ -379,6 +372,340 @@ function findClosestInSubset(
 }
 
 // ============================================================================
+// EGX Pixel Grouping
+// ============================================================================
+
+/**
+ * Post-process a dithered buffer to ensure pixels are grouped correctly on low-res lines.
+ * On low-res lines (Mode 0 for EGX1, Mode 1 for EGX2), each CPC pixel spans 2 buffer pixels.
+ * This function ensures both pixels in a pair have the same color by averaging and re-quantizing.
+ */
+function enforcePixelGrouping(
+  buffer: Uint8ClampedArray,
+  width: number,
+  height: number,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig
+): Uint8ClampedArray {
+  const output = new Uint8ClampedArray(buffer)
+  const highResMode = config.type === 'egx1' ? 1 : 2
+
+  for (let y = 0; y < height; y++) {
+    const lineMode = getModeForLine(y, config)
+    const isLowResLine = lineMode !== highResMode
+
+    if (!isLowResLine) continue
+
+    const maxColorIndex = getMaxColorIndex(lineMode, config.type)
+
+    // Process pixels in pairs
+    for (let x = 0; x < width - 1; x += 2) {
+      const idx1 = (y * width + x) * 4
+      const idx2 = (y * width + x + 1) * 4
+
+      // Average the two pixels
+      const avgR = Math.round((buffer[idx1] + buffer[idx2]) / 2)
+      const avgG = Math.round((buffer[idx1 + 1] + buffer[idx2 + 1]) / 2)
+      const avgB = Math.round((buffer[idx1 + 2] + buffer[idx2 + 2]) / 2)
+
+      // Find closest color in sub-palette
+      const { color } = findClosestInSubset(
+        [avgR, avgG, avgB],
+        palette,
+        maxColorIndex
+      )
+
+      // Assign same color to both pixels
+      output[idx1] = color[0]
+      output[idx1 + 1] = color[1]
+      output[idx1 + 2] = color[2]
+      output[idx2] = color[0]
+      output[idx2 + 1] = color[1]
+      output[idx2 + 2] = color[2]
+    }
+  }
+
+  return output
+}
+
+// ============================================================================
+// EGX-Aware Dithering
+// ============================================================================
+
+/**
+ * Floyd-Steinberg dithering adapted for EGX mode.
+ * Each line uses its own sub-palette based on EGX constraints.
+ *
+ * The key difference from standard dithering:
+ * - Standard: dither with full palette, then re-quantize to sub-palette (double quantization)
+ * - EGX-aware: dither directly with the sub-palette for each line (single quantization)
+ *
+ * This produces better results because the error diffusion is computed
+ * with the actual colors available for each line.
+ */
+function applyEGXDithering(
+  imageData: ImageData,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig,
+  intensity: number
+): Uint8ClampedArray {
+  const { width, height, data } = imageData
+  const output = new Uint8ClampedArray(width * height * 4)
+
+  // Working buffer with floating point for error accumulation
+  const errorBuffer = new Float32Array(width * height * 3)
+
+  // Initialize from source image
+  for (let i = 0; i < width * height; i++) {
+    errorBuffer[i * 3] = data[i * 4]
+    errorBuffer[i * 3 + 1] = data[i * 4 + 1]
+    errorBuffer[i * 3 + 2] = data[i * 4 + 2]
+  }
+
+  // Floyd-Steinberg weights
+  const FS_RIGHT = (7 / 16) * intensity
+  const FS_BOTTOM_LEFT = (3 / 16) * intensity
+  const FS_BOTTOM = (5 / 16) * intensity
+  const FS_BOTTOM_RIGHT = (1 / 16) * intensity
+
+  for (let y = 0; y < height; y++) {
+    // Get the sub-palette limit for this line
+    const lineMode = getModeForLine(y, config)
+    const maxColorIndex = getMaxColorIndex(lineMode, config.type)
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const idx3 = idx * 3
+      const idx4 = idx * 4
+
+      // Get current pixel with accumulated error
+      const r = Math.max(0, Math.min(255, errorBuffer[idx3]))
+      const g = Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
+      const b = Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
+
+      // Find closest color in the sub-palette for this line
+      const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
+
+      // Output the quantized color
+      output[idx4] = color[0]
+      output[idx4 + 1] = color[1]
+      output[idx4 + 2] = color[2]
+      output[idx4 + 3] = 255
+
+      // Calculate quantization error
+      const errR = r - color[0]
+      const errG = g - color[1]
+      const errB = b - color[2]
+
+      // Distribute error to neighbors (Floyd-Steinberg pattern)
+      // Right pixel (x+1, y)
+      if (x + 1 < width) {
+        const rightIdx = idx3 + 3
+        errorBuffer[rightIdx] += errR * FS_RIGHT
+        errorBuffer[rightIdx + 1] += errG * FS_RIGHT
+        errorBuffer[rightIdx + 2] += errB * FS_RIGHT
+      }
+
+      // Bottom-left pixel (x-1, y+1)
+      if (x > 0 && y + 1 < height) {
+        const blIdx = (idx + width - 1) * 3
+        errorBuffer[blIdx] += errR * FS_BOTTOM_LEFT
+        errorBuffer[blIdx + 1] += errG * FS_BOTTOM_LEFT
+        errorBuffer[blIdx + 2] += errB * FS_BOTTOM_LEFT
+      }
+
+      // Bottom pixel (x, y+1)
+      if (y + 1 < height) {
+        const bIdx = (idx + width) * 3
+        errorBuffer[bIdx] += errR * FS_BOTTOM
+        errorBuffer[bIdx + 1] += errG * FS_BOTTOM
+        errorBuffer[bIdx + 2] += errB * FS_BOTTOM
+      }
+
+      // Bottom-right pixel (x+1, y+1)
+      if (x + 1 < width && y + 1 < height) {
+        const brIdx = (idx + width + 1) * 3
+        errorBuffer[brIdx] += errR * FS_BOTTOM_RIGHT
+        errorBuffer[brIdx + 1] += errG * FS_BOTTOM_RIGHT
+        errorBuffer[brIdx + 2] += errB * FS_BOTTOM_RIGHT
+      }
+    }
+  }
+
+  return output
+}
+
+/**
+ * No dithering - direct quantization per line
+ */
+function applyEGXNoDithering(
+  imageData: ImageData,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig
+): Uint8ClampedArray {
+  const { width, height, data } = imageData
+  const output = new Uint8ClampedArray(width * height * 4)
+
+  for (let y = 0; y < height; y++) {
+    const lineMode = getModeForLine(y, config)
+    const maxColorIndex = getMaxColorIndex(lineMode, config.type)
+
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      const pixel: Vector<'RGB'> = [data[idx], data[idx + 1], data[idx + 2]]
+      const { color } = findClosestInSubset(pixel, palette, maxColorIndex)
+
+      output[idx] = color[0]
+      output[idx + 1] = color[1]
+      output[idx + 2] = color[2]
+      output[idx + 3] = 255
+    }
+  }
+
+  return output
+}
+
+/**
+ * Ordered dithering (Bayer) adapted for EGX mode
+ */
+function applyEGXOrderedDithering(
+  imageData: ImageData,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig,
+  intensity: number,
+  matrixSize: 2 | 4 | 8
+): Uint8ClampedArray {
+  const { width, height, data } = imageData
+  const output = new Uint8ClampedArray(width * height * 4)
+
+  // Bayer matrices
+  const BAYER_2X2 = [
+    [0, 2],
+    [3, 1]
+  ]
+  const BAYER_4X4 = [
+    [0, 8, 2, 10],
+    [12, 4, 14, 6],
+    [3, 11, 1, 9],
+    [15, 7, 13, 5]
+  ]
+  const BAYER_8X8 = [
+    [0, 32, 8, 40, 2, 34, 10, 42],
+    [48, 16, 56, 24, 50, 18, 58, 26],
+    [12, 44, 4, 36, 14, 46, 6, 38],
+    [60, 28, 52, 20, 62, 30, 54, 22],
+    [3, 35, 11, 43, 1, 33, 9, 41],
+    [51, 19, 59, 27, 49, 17, 57, 25],
+    [15, 47, 7, 39, 13, 45, 5, 37],
+    [63, 31, 55, 23, 61, 29, 53, 21]
+  ]
+
+  const matrix =
+    matrixSize === 2 ? BAYER_2X2 : matrixSize === 4 ? BAYER_4X4 : BAYER_8X8
+  // Divisor is size * size (same as original algorithm)
+  const divisor = matrixSize * matrixSize
+
+  for (let y = 0; y < height; y++) {
+    const lineMode = getModeForLine(y, config)
+    const maxColorIndex = getMaxColorIndex(lineMode, config.type)
+
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      // Match original algorithm: (bayerVal / divisor - 0.5) * intensity * 255
+      const bayerVal = matrix[y % matrixSize][x % matrixSize]
+      const threshold = (bayerVal / divisor - 0.5) * intensity * 255
+
+      const r = Math.max(0, Math.min(255, data[idx] + threshold))
+      const g = Math.max(0, Math.min(255, data[idx + 1] + threshold))
+      const b = Math.max(0, Math.min(255, data[idx + 2] + threshold))
+
+      const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
+
+      output[idx] = color[0]
+      output[idx + 1] = color[1]
+      output[idx + 2] = color[2]
+      output[idx + 3] = 255
+    }
+  }
+
+  return output
+}
+
+/**
+ * Atkinson dithering adapted for EGX mode
+ */
+function applyEGXAtkinsonDithering(
+  imageData: ImageData,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig,
+  intensity: number
+): Uint8ClampedArray {
+  const { width, height, data } = imageData
+  const output = new Uint8ClampedArray(width * height * 4)
+  const errorBuffer = new Float32Array(width * height * 3)
+
+  // Initialize from source
+  for (let i = 0; i < width * height; i++) {
+    errorBuffer[i * 3] = data[i * 4]
+    errorBuffer[i * 3 + 1] = data[i * 4 + 1]
+    errorBuffer[i * 3 + 2] = data[i * 4 + 2]
+  }
+
+  // Atkinson distributes 1/8 of error to 6 neighbors (total 6/8 = 3/4)
+  const weight = (1 / 8) * intensity
+
+  // Atkinson offsets: (1,0), (2,0), (-1,1), (0,1), (1,1), (0,2)
+  const offsets = [
+    [1, 0],
+    [2, 0],
+    [-1, 1],
+    [0, 1],
+    [1, 1],
+    [0, 2]
+  ]
+
+  for (let y = 0; y < height; y++) {
+    const lineMode = getModeForLine(y, config)
+    const maxColorIndex = getMaxColorIndex(lineMode, config.type)
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const idx3 = idx * 3
+      const idx4 = idx * 4
+
+      const r = Math.max(0, Math.min(255, errorBuffer[idx3]))
+      const g = Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
+      const b = Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
+
+      const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
+
+      output[idx4] = color[0]
+      output[idx4 + 1] = color[1]
+      output[idx4 + 2] = color[2]
+      output[idx4 + 3] = 255
+
+      const errR = r - color[0]
+      const errG = g - color[1]
+      const errB = b - color[2]
+
+      // Distribute to 6 neighbors
+      for (const [dx, dy] of offsets) {
+        const nx = x + dx
+        const ny = y + dy
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+          const nIdx = (ny * width + nx) * 3
+          errorBuffer[nIdx] += errR * weight
+          errorBuffer[nIdx + 1] += errG * weight
+          errorBuffer[nIdx + 2] += errB * weight
+        }
+      }
+    }
+  }
+
+  return output
+}
+
+// ============================================================================
 // EGX Palette from Standard Quantizer
 // ============================================================================
 
@@ -450,24 +777,6 @@ export const egxPaletteAtom = atom(async (get) => {
 // EGX Preview Image Helpers
 // ============================================================================
 
-function renderBlackPixel(output: Uint8ClampedArray, dstIdx: number): void {
-  output[dstIdx] = 0
-  output[dstIdx + 1] = 0
-  output[dstIdx + 2] = 0
-  output[dstIdx + 3] = 255
-}
-
-function renderColorPixel(
-  output: Uint8ClampedArray,
-  dstIdx: number,
-  color: Vector<'RGB'>
-): void {
-  output[dstIdx] = color[0]
-  output[dstIdx + 1] = color[1]
-  output[dstIdx + 2] = color[2]
-  output[dstIdx + 3] = 255
-}
-
 function shouldGrayOut(previewMode: string, isLowResLine: boolean): boolean {
   return (
     (previewMode === 'lowLines' && !isLowResLine) ||
@@ -480,8 +789,82 @@ function shouldGrayOut(previewMode: string, isLowResLine: boolean): boolean {
 // ============================================================================
 
 /**
- * Generate EGX preview by applying line-by-line constraints
- * to the dithered image from the standard pipeline.
+ * Apply EGX-aware dithering based on the dithering mode.
+ * Routes to the appropriate EGX dithering function.
+ * Also enforces pixel grouping on low-res lines.
+ */
+function applyEGXDitheringByMode(
+  imageData: ImageData,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig,
+  mode: string,
+  intensity: number
+): Uint8ClampedArray {
+  let result: Uint8ClampedArray
+
+  switch (mode) {
+    case 'none':
+      result = applyEGXNoDithering(imageData, palette, config)
+      break
+    case 'floydSteinberg':
+      result = applyEGXDithering(imageData, palette, config, intensity)
+      break
+    case 'atkinson':
+      result = applyEGXAtkinsonDithering(imageData, palette, config, intensity)
+      break
+    case 'bayer2x2':
+      result = applyEGXOrderedDithering(
+        imageData,
+        palette,
+        config,
+        intensity,
+        2
+      )
+      break
+    case 'bayer4x4':
+      result = applyEGXOrderedDithering(
+        imageData,
+        palette,
+        config,
+        intensity,
+        4
+      )
+      break
+    case 'bayer8x8':
+      result = applyEGXOrderedDithering(
+        imageData,
+        palette,
+        config,
+        intensity,
+        8
+      )
+      break
+    default:
+      // For unsupported modes (ylioluma1, ylioluma2, halftone4x4),
+      // fall back to Floyd-Steinberg
+      logger.warn(
+        `[EGX] Dithering mode '${mode}' not yet EGX-optimized, using Floyd-Steinberg`
+      )
+      result = applyEGXDithering(imageData, palette, config, intensity)
+  }
+
+  // Enforce pixel grouping on low-res lines
+  // This ensures that paired pixels have the same color (required for CPC hardware)
+  return enforcePixelGrouping(
+    result,
+    imageData.width,
+    imageData.height,
+    palette,
+    config
+  )
+}
+
+/**
+ * Generate EGX preview using EGX-aware dithering.
+ *
+ * Key improvement: The dithering is done with line-by-line palette constraints,
+ * so error diffusion is computed with the actual colors available for each line.
+ * This avoids the "double quantization" problem of the previous approach.
  *
  * Uses egxNormalizedImageAtom for correct EGX dimensions:
  * - EGX1: 320×200 (or overscan/custom equivalent)
@@ -494,11 +877,10 @@ export const egxPreviewImageAtom = atom(
 
     const config = get(egxConfigAtom)
     const paletteInfo = await get(egxPaletteAtom)
-    const quantizer = await get(quantizerAtom)
     const normalized = await get(egxNormalizedImageAtom)
     const dithering = get(ditheringAtom)
 
-    if (!paletteInfo || !quantizer || !normalized) {
+    if (!paletteInfo || !normalized) {
       logger.warn('[EGX] Missing dependencies for preview')
       return null
     }
@@ -509,53 +891,160 @@ export const egxPreviewImageAtom = atom(
     const width = normalized.width
     const height = normalized.height
 
-    logger.info('[EGX] Generating preview', {
+    logger.info('[EGX] Generating preview with EGX-aware dithering', {
       mode: previewMode,
+      ditheringMode: dithering.mode,
       type: config.type,
       dimensions: `${width}x${height}`,
       paletteSize: palette.length
     })
 
-    // Dither the normalized image with the full palette
-    const ditheredBuffer = quantizer.dither(normalized, palette, {
-      mode: dithering.mode,
-      intensity: dithering.intensity
-    })
+    // Apply EGX-aware dithering (respects line palette constraints during dithering)
+    const ditheredBuffer = applyEGXDitheringByMode(
+      normalized,
+      palette,
+      config,
+      dithering.mode,
+      dithering.intensity
+    )
 
-    // Create output with EGX line constraints
-    const output = new Uint8ClampedArray(width * height * 4)
+    // If preview mode requires masking lines, apply it
+    if (previewMode === 'lowLines' || previewMode === 'highLines') {
+      const output = new Uint8ClampedArray(ditheredBuffer)
 
-    // Process each line according to its mode constraints
+      for (let y = 0; y < height; y++) {
+        const isLowResLine =
+          (config.firstLineMode === 'low' && y % 2 === 0) ||
+          (config.firstLineMode === 'high' && y % 2 !== 0)
+
+        if (shouldGrayOut(previewMode, isLowResLine)) {
+          for (let x = 0; x < width; x++) {
+            const idx = (y * width + x) * 4
+            output[idx] = 0
+            output[idx + 1] = 0
+            output[idx + 2] = 0
+          }
+        }
+      }
+
+      return new ImageData(output, width, height)
+    }
+
+    return new ImageData(ditheredBuffer, width, height)
+  }
+)
+
+// ============================================================================
+// EGX Index Buffer for Editor
+// ============================================================================
+
+/**
+ * Generate EGX index buffer for the preview editor.
+ * Maps each pixel to its palette index, respecting EGX line constraints.
+ */
+export const egxIndexBufferAtom = atom(
+  async (
+    get
+  ): Promise<{
+    buffer: Uint8Array
+    width: number
+    height: number
+    palette: Vector<'RGB'>[]
+  } | null> => {
+    const egxEnabled = get(egxEnabledAtom)
+    if (!egxEnabled) return null
+
+    const config = get(egxConfigAtom)
+    const paletteInfo = await get(egxPaletteAtom)
+    const normalized = await get(egxNormalizedImageAtom)
+    const dithering = get(ditheringAtom)
+
+    if (!paletteInfo || !normalized) {
+      return null
+    }
+
+    const { colors: palette } = paletteInfo
+    const width = normalized.width
+    const height = normalized.height
+
+    // Apply EGX-aware dithering to get the RGBA buffer
+    const ditheredBuffer = applyEGXDitheringByMode(
+      normalized,
+      palette,
+      config,
+      dithering.mode,
+      dithering.intensity
+    )
+
+    // Convert RGBA to index buffer
+    // On low-res lines, pixels are grouped by 2 and must have the same color
+    const indexBuffer = new Uint8Array(width * height)
+
+    // High-res mode for this EGX type (Mode 1 for EGX1, Mode 2 for EGX2)
+    const highResMode = config.type === 'egx1' ? 1 : 2
+
     for (let y = 0; y < height; y++) {
       const lineMode = getModeForLine(y, config)
       const maxColorIndex = getMaxColorIndex(lineMode, config.type)
-      const isLowResLine =
-        (config.firstLineMode === 'low' && y % 2 === 0) ||
-        (config.firstLineMode === 'high' && y % 2 !== 0)
+      const isLowResLine = lineMode !== highResMode
 
-      for (let x = 0; x < width; x++) {
-        const srcIdx = (y * width + x) * 4
-        const dstIdx = srcIdx
+      // On low-res lines, process pixels in pairs
+      const step = isLowResLine ? 2 : 1
 
-        const ditheredColor: Vector<'RGB'> = [
-          ditheredBuffer[srcIdx],
-          ditheredBuffer[srcIdx + 1],
-          ditheredBuffer[srcIdx + 2]
-        ]
+      for (let x = 0; x < width; x += step) {
+        if (isLowResLine && x + 1 < width) {
+          // Low-res line: average the two pixels and use same color for both
+          const pixelIdx1 = y * width + x
+          const pixelIdx2 = y * width + x + 1
+          const rgbaIdx1 = pixelIdx1 * 4
+          const rgbaIdx2 = pixelIdx2 * 4
 
-        if (shouldGrayOut(previewMode, isLowResLine)) {
-          renderBlackPixel(output, dstIdx)
-        } else {
-          const { color } = findClosestInSubset(
-            ditheredColor,
+          // Average the two pixels
+          const avgPixel: Vector<'RGB'> = [
+            Math.round(
+              (ditheredBuffer[rgbaIdx1] + ditheredBuffer[rgbaIdx2]) / 2
+            ),
+            Math.round(
+              (ditheredBuffer[rgbaIdx1 + 1] + ditheredBuffer[rgbaIdx2 + 1]) / 2
+            ),
+            Math.round(
+              (ditheredBuffer[rgbaIdx1 + 2] + ditheredBuffer[rgbaIdx2 + 2]) / 2
+            )
+          ]
+
+          // Find index in sub-palette
+          const { index } = findClosestInSubset(
+            avgPixel,
             palette,
             maxColorIndex
           )
-          renderColorPixel(output, dstIdx, color)
+
+          // Assign same index to both pixels
+          indexBuffer[pixelIdx1] = index
+          indexBuffer[pixelIdx2] = index
+        } else {
+          // High-res line or last pixel on odd-width low-res line
+          const pixelIdx = y * width + x
+          const rgbaIdx = pixelIdx * 4
+
+          const pixel: Vector<'RGB'> = [
+            ditheredBuffer[rgbaIdx],
+            ditheredBuffer[rgbaIdx + 1],
+            ditheredBuffer[rgbaIdx + 2]
+          ]
+
+          // Find index in sub-palette
+          const { index } = findClosestInSubset(pixel, palette, maxColorIndex)
+          indexBuffer[pixelIdx] = index
         }
       }
     }
 
-    return new ImageData(output, width, height)
+    return {
+      buffer: indexBuffer,
+      width,
+      height,
+      palette
+    }
   }
 )

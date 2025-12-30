@@ -34,10 +34,26 @@ const ERROR_DIFFUSION_MODES: readonly DitheringMode[] = [
 ] as const
 
 /**
+ * Modes NOT implemented for EGX (fall back to Floyd-Steinberg)
+ */
+const EGX_UNSUPPORTED_MODES: readonly DitheringMode[] = [
+  'ylioluma1',
+  'ylioluma2',
+  'halftone4x4'
+] as const
+
+/**
  * Check if a dithering mode is compatible with raster mode
  */
 export function isRasterCompatibleMode(mode: DitheringMode): boolean {
   return !ERROR_DIFFUSION_MODES.includes(mode)
+}
+
+/**
+ * Check if a dithering mode is implemented for EGX
+ */
+export function isEGXCompatibleMode(mode: DitheringMode): boolean {
+  return !EGX_UNSUPPORTED_MODES.includes(mode)
 }
 
 /**
@@ -47,6 +63,15 @@ export function isRasterCompatibleMode(mode: DitheringMode): boolean {
 export function getRasterCompatibleModes(): readonly DitheringModeOption[] {
   return ALL_DITHERING_MODES.filter(
     (mode) => !ERROR_DIFFUSION_MODES.includes(mode.value)
+  )
+}
+
+/**
+ * Returns dithering modes implemented for EGX mode
+ */
+export function getEGXCompatibleModes(): readonly DitheringModeOption[] {
+  return ALL_DITHERING_MODES.filter(
+    (mode) => !EGX_UNSUPPORTED_MODES.includes(mode.value)
   )
 }
 

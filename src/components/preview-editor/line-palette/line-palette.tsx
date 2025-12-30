@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
   editorCursorAtom,
   editorHoveredPixelAtom,
@@ -32,14 +32,27 @@ export function LinePalette() {
     [getLinePalette, currentLine]
   )
 
+  // Auto-adjust selected ink if it exceeds available palette colors (EGX)
+  useEffect(() => {
+    if (selectedInk >= palette.length && palette.length > 0) {
+      setSelectedInk(palette.length - 1)
+    }
+  }, [palette.length, selectedInk, setSelectedInk])
+
   const handleSelectInk = (index: number) => {
     setSelectedInk(index)
   }
 
+  // Ensure displayed selectedInk is within bounds
+  const effectiveSelectedInk = Math.min(
+    selectedInk,
+    Math.max(0, palette.length - 1)
+  )
+
   return (
     <LinePaletteView
       palette={palette}
-      selectedInk={selectedInk}
+      selectedInk={effectiveSelectedInk}
       currentLine={currentLine}
       onSelectInk={handleSelectInk}
     />
