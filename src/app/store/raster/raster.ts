@@ -687,7 +687,13 @@ export const autoOptimizeRasterAtom = atom(
     const currentVersion = get(rasterVersionAtom)
     set(rasterVersionAtom, currentVersion + 1)
 
-    // Enable raster mode
+    // Enable raster mode (mutually exclusive with Mode R and EGX)
+    if (get(modeREnabledAtom)) {
+      set(modeREnabledAtom, false)
+    }
+    if (get(egxEnabledAtom)) {
+      set(egxEnabledAtom, false)
+    }
     set(rasterEnabledAtom, true)
 
     logger.timeEnd('[RASTER] autoOptimizeRasterAtom - Total')
