@@ -506,9 +506,29 @@ export function optimizeModeRPalettes(
     )
   }
 
-  // Pad palettes to 16 if needed
+  // Pad palettes to 16 if needed (with black for potential margins)
   while (paletteA.length < 16) paletteA.push([0, 0, 0])
   while (paletteB.length < 16) paletteB.push([0, 0, 0])
+
+  // Ensure black is present in both palettes for margin handling
+  // Margins are typically filled with black and need a uniform pair to avoid flicker
+  const hasBlackInA = paletteA.some(
+    (c) => c[0] <= 17 && c[1] <= 17 && c[2] <= 17
+  )
+  const hasBlackInB = paletteB.some(
+    (c) => c[0] <= 17 && c[1] <= 17 && c[2] <= 17
+  )
+
+  if (!hasBlackInA) {
+    // Replace the last color with black
+    paletteA[15] = [0, 0, 0]
+    logger.info('[Mode R] Added black to palette A for margin handling')
+  }
+  if (!hasBlackInB) {
+    // Replace the last color with black
+    paletteB[15] = [0, 0, 0]
+    logger.info('[Mode R] Added black to palette B for margin handling')
+  }
 
   // Build pairs info (for compatibility)
   const pairs: ModeRColorPair[] = []

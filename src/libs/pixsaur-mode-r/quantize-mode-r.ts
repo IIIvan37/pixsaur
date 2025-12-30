@@ -96,18 +96,16 @@ const DITHERING_MATRICES: Record<string, DitheringMatrix> = {
 }
 
 /** Error diffusion modes */
-const ERROR_DIFFUSION_MODES: DitheringMode[] = [
+const ERROR_DIFFUSION_MODES = new Set<DitheringMode>([
   'floydSteinberg',
   'atkinson',
   'ylioluma1',
   'ylioluma2'
-]
+])
 
 /** Check if a dithering mode uses error diffusion */
 function isErrorDiffusionMode(mode: DitheringMode | 'none'): boolean {
-  return (
-    mode !== 'none' && ERROR_DIFFUSION_MODES.includes(mode as DitheringMode)
-  )
+  return mode !== 'none' && ERROR_DIFFUSION_MODES.has(mode)
 }
 
 /** Check if a dithering mode uses ordered dithering */
@@ -470,11 +468,31 @@ function getSourceColorWithThreshold(
 }
 
 /**
+ * Check if two colors are very similar (used to detect margin areas)
+ * Margin areas should use uniform pairs to avoid flicker
+ */
+function areColorsSimilar(
+  colorA: Vector<'RGB'>,
+  colorB: Vector<'RGB'>,
+  threshold = 10
+): boolean {
+  return (
+    Math.abs(colorA[0] - colorB[0]) <= threshold &&
+    Math.abs(colorA[1] - colorB[1]) <= threshold &&
+    Math.abs(colorA[2] - colorB[2]) <= threshold
+  )
+}
+
+/**
  * Find best palette indices for two colors, considering anti-flicker
  *
  * This searches all combinations to find the pair that:
  * 1. Best matches the source colors
  * 2. Has acceptable flicker (luminance difference)
+ *
+ * Special case: When source colors are very similar (margins/uniform areas),
+ * we force using a uniform pair (same or very similar colors in A and B)
+ * to avoid any visible flicker in these areas.
  */
 function findBestIndicesWithAntiFlicker(
   colorA: Vector<'RGB'>,
@@ -490,6 +508,57 @@ function findBestIndicesWithAntiFlicker(
   // Weight for anti-flicker (0-1)
   const flickerWeight = antiFlickerWeight / 100
 
+  // Detect if this is a margin/uniform area (both source pixels are very similar)
+  // In this case, we MUST use a uniform pair to avoid flicker on margins
+  const isUniformArea = areColorsSimilar(colorA, colorB)
+
+  // For uniform areas, find the best uniform pair (same color in both palettes)
+  if (isUniformArea) {
+    // Average the colors for the target
+    const targetColor: Vector<'RGB'> = [
+      Math.round((colorA[0] + colorB[0]) / 2),
+      Math.round((colorA[1] + colorB[1]) / 2),
+      Math.round((colorA[2] + colorB[2]) / 2)
+    ]
+
+    // Search for the best uniform pair (where A[i] and B[j] are very similar)
+    for (let a = 0; a < palettes.paletteA.length; a++) {
+      const palA = palettes.paletteA[a]
+
+      for (let b = 0; b < palettes.paletteB.length; b++) {
+        const palB = palettes.paletteB[b]
+
+        // Check if this is a uniform pair (very similar colors)
+        const pairDistance = colorDistance(palA, palB)
+        if (pairDistance > 50) continue // Skip non-uniform pairs (threshold ~7 per channel)
+
+        // Color matching error to target
+        const blendedColor: Vector<'RGB'> = [
+          Math.round((palA[0] + palB[0]) / 2),
+          Math.round((palA[1] + palB[1]) / 2),
+          Math.round((palA[2] + palB[2]) / 2)
+        ]
+        const colorError = colorDistance(targetColor, blendedColor)
+
+        if (colorError < bestCost) {
+          bestCost = colorError
+          bestIndexA = a
+          bestIndexB = b
+        }
+      }
+    }
+
+    // If we found a valid uniform pair, return it
+    if (bestCost < Number.POSITIVE_INFINITY) {
+      return { indexA: bestIndexA, indexB: bestIndexB, error: bestCost }
+    }
+
+    // Fallback: if no uniform pair found, find the pair with minimum flicker
+    // This shouldn't happen if palettes are well constructed
+    bestCost = Number.POSITIVE_INFINITY
+  }
+
+  // Standard search for non-uniform areas
   for (let a = 0; a < palettes.paletteA.length; a++) {
     const palA = palettes.paletteA[a]
     const errorA = colorDistance(colorA, palA)
