@@ -17,10 +17,12 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
+  egxEnabledAtom,
   modeREnabledAtom,
   paletteStrategyAtom
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
+import { egxPreviewImageAtom } from '../preview/egx-preview'
 import { modeRPreviewImageAtom } from '../preview/mode-r-preview'
 import {
   applyManualEditsToBuffer,
@@ -449,16 +451,25 @@ export const rasterPreviewImageAtom = atom(async (get) => {
 
 /**
  * Effective preview image atom: returns the appropriate preview based on mode.
- * Priority: Mode R > Raster > Manual Edits > Standard
- * Note: Mode R and Raster are mutually exclusive
+ * Priority: Mode R > EGX > Raster > Manual Edits > Standard
+ * Note: Mode R, EGX and Raster are mutually exclusive
  */
 export const effectivePreviewImageAtom = atom(async (get) => {
-  // Mode R takes priority and is incompatible with rasters
+  // Mode R takes priority and is incompatible with rasters/EGX
   const modeREnabled = get(modeREnabledAtom)
   if (modeREnabled) {
     const modeRPreview = await get(modeRPreviewImageAtom)
     if (modeRPreview) {
       return modeRPreview
+    }
+  }
+
+  // EGX mode (line-by-line mode alternation)
+  const egxEnabled = get(egxEnabledAtom)
+  if (egxEnabled) {
+    const egxPreview = await get(egxPreviewImageAtom)
+    if (egxPreview) {
+      return egxPreview
     }
   }
 
