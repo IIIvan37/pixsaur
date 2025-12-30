@@ -26,7 +26,7 @@ msgstr "{0} image(s) ready to export"
 #~ msgid "{0} remaining"
 #~ msgstr "{0} remaining"
 
-#: src/components/manual-edits-warning/manual-edits-warning.tsx:27
+#: src/components/manual-edits-warning/manual-edits-warning.tsx:44
 msgid "{editCount} pixel(s) modifié(s) manuellement. Modifier les paramètres peut affecter ces modifications."
 msgstr "{editCount} pixel(s) manually edited. Changing settings may affect these modifications."
 
@@ -67,7 +67,7 @@ msgstr "Enable horizontal smoothing"
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptive"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:72
+#: src/components/dsk-workspace/dsk-workspace.tsx:73
 msgid "Add current converted image to DSK workspace"
 msgstr "Add current converted image to DSK workspace"
 
@@ -143,7 +143,11 @@ msgstr "Cancel and close"
 #~ msgid "Anti-Aliasing"
 #~ msgstr "Anti-Aliasing"
 
-#: src/app/components/preview-panel.tsx:24
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:131
+msgid "Anti-flicker"
+msgstr "Anti-flicker"
+
+#: src/app/components/preview-panel.tsx:32
 msgid "Aperçu"
 msgstr "Preview"
 
@@ -247,6 +251,14 @@ msgstr "Raster Changes"
 msgid "Changer d'image"
 msgstr "Change image"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:183
+msgid "Chargement..."
+msgstr "Loading..."
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:74
+msgid "Chargez une image pour voir les palettes"
+msgstr "Load an image to see the palettes"
+
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:41
 msgid "Choisissez la stratégie de génération de palette pour optimiser la qualité visuelle."
 msgstr "Choose the palette generation strategy to optimize visual quality."
@@ -283,7 +295,7 @@ msgstr "Vertical Error Coefficient"
 #~ msgid "Color {i}: {color}"
 #~ msgstr "Color {i}: {color}"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:82
+#: src/components/dsk-workspace/dsk-workspace.tsx:83
 msgid "Color {index}: {color}"
 msgstr "Color {index}: {color}"
 
@@ -332,21 +344,25 @@ msgstr "Colors"
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Coverage Aware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:56
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:66
 msgid "CPC Classic: palette de 27 couleurs fixes. CPC Plus: palette de 4096 couleurs."
 msgstr "CPC Classic: fixed 27-color palette. CPC Plus: 4096-color palette."
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:65
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:75
 msgid "CPC Hardware"
 msgstr "CPC Hardware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:92
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:123
 msgid "CPC Pixel Mode"
 msgstr "CPC Pixel Mode"
 
 #: src/components/raster-panel/raster-panel-view.tsx:315
 #~ msgid "Début"
 #~ msgstr "Start"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:146
+msgid "Delta luminance max"
+msgstr "Max luminance delta"
 
 #: src/components/preview-editor/help-button/help-button.tsx:42
 msgid "Déplacement rapide (×8)"
@@ -361,12 +377,16 @@ msgstr "Move cursor"
 msgid "Déverrouiller"
 msgstr "Unlock"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:120
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:155
+msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
+msgstr "Maximum luminance difference allowed between alternating colors"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:151
 msgid "Dimension Preset"
 msgstr "Dimension Preset"
 
 #: src/components/info-bar/info-bar.tsx:68
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:108
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:139
 msgid "Dimensions"
 msgstr "Dimensions"
 
@@ -413,6 +433,10 @@ msgstr "Diversity Balanced"
 msgid "palette.strategy.diversity-first-balanced.desc"
 msgstr "Dominant diversity (90%) with slight frequency (10%)"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:121
+msgid "Double palette"
+msgstr "Dual palette"
+
 #: src/components/updater/updater-view.tsx:116
 msgid "Downloading..."
 msgstr "Downloading..."
@@ -425,8 +449,8 @@ msgstr "Downloading..."
 msgid "DSK Workspace"
 msgstr "DSK Workspace"
 
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:217
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:223
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:221
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:227
 msgid "DSK workspace exported successfully!"
 msgstr "DSK workspace exported successfully!"
 
@@ -435,7 +459,7 @@ msgstr "DSK workspace exported successfully!"
 msgid "palette.strategy.adaptive.desc"
 msgstr "Dynamic strategy based on image"
 
-#: src/app/components/preview-panel.tsx:26
+#: src/app/components/preview-panel.tsx:34
 msgid "Éditer"
 msgstr "Edit"
 
@@ -525,17 +549,22 @@ msgstr "Base palette extraction"
 
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #. placeholder {0}: result.error ?? 'Unknown error'
-#: src/components/export-panel/export-panel.tsx:151
-#: src/components/export-panel/export-panel.tsx:162
+#: src/components/export-panel/export-panel.tsx:213
+#: src/components/export-panel/export-panel.tsx:224
 msgid "Failed to open in CPC Playground: {0}"
 msgstr "Failed to open in CPC Playground: {0}"
+
+#. placeholder {0}: result.error ?? 'Unknown error'
+#: src/components/export-panel/export-panel.tsx:158
+msgid "Failed to open Mode R in CPC Playground: {0}"
+msgstr "Failed to open Mode R in CPC Playground: {0}"
 
 #. placeholder {0}: file.name
 #: src/components/export-panel/dsk-files-manager.tsx:39
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "File {0} is too large (max 64KB). File skipped."
 
-#: src/components/export-panel/export-panel.tsx:98
+#: src/components/export-panel/export-panel.tsx:107
 msgid "File exported successfully!"
 msgstr "File exported successfully!"
 
@@ -591,7 +620,7 @@ msgstr "Grid (H)"
 msgid "Hardware"
 msgstr "Hardware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:53
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:63
 msgid "Hardware CPC"
 msgstr "CPC Hardware"
 
@@ -740,7 +769,7 @@ msgstr "Mode"
 #~ msgid "Mode 0 CPC Plus (12+4)"
 #~ msgstr "Mode 0 CPC Plus (12+4)"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:84
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:115
 msgid "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
 msgstr "Mode 0: 160 pixels wide, Mode 1: 320 pixels, Mode 2: 640 pixels"
 
@@ -751,6 +780,18 @@ msgstr "Mode 0: 160 pixels wide, Mode 1: 320 pixels, Mode 2: 640 pixels"
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:37
 msgid "Mode de redimensionnement"
 msgstr "Resize mode"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:89
+msgid "Mode R"
+msgstr "Mode R"
+
+#: src/components/export-panel/export-panel.tsx:152
+msgid "Mode R opened in CPC Playground!"
+msgstr "Mode R opened in CPC Playground!"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:113
+msgid "Mode R Settings"
+msgstr "Mode R Settings"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:127
 msgid "Mode Raster"
@@ -789,7 +830,7 @@ msgstr "Navigation"
 msgid "No additional files. Upload or add files to include them in the DSK."
 msgstr "No additional files. Upload or add files to include them in the DSK."
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:74
+#: src/components/dsk-workspace/dsk-workspace.tsx:75
 msgid "No image to add"
 msgstr "No image to add"
 
@@ -814,7 +855,7 @@ msgstr "No"
 msgid "palette.strategy.disabled.raster"
 msgstr "Disabled (raster mode)"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:76
+#: src/components/dsk-workspace/dsk-workspace.tsx:77
 msgid "Not enough space on DSK"
 msgstr "Not enough space on DSK"
 
@@ -827,7 +868,7 @@ msgstr "Shadows"
 msgid "Open in CPC Playground"
 msgstr "Open in CPC Playground"
 
-#: src/components/export-panel/export-panel.tsx:145
+#: src/components/export-panel/export-panel.tsx:207
 msgid "Opened in CPC Playground!"
 msgstr "Opened in CPC Playground!"
 
@@ -872,6 +913,10 @@ msgstr "Open settings panel"
 msgid "Ouvrir les paramètres (⌘,)"
 msgstr "Open settings (⌘,)"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:86
+msgid "Paires uniques"
+msgstr "Unique pairs"
+
 #: src/components/preview-editor/line-palette/line-palette-view.tsx:36
 msgid "Palette"
 msgstr "Palette"
@@ -879,6 +924,10 @@ msgstr "Palette"
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:93
 msgid "Palette Selection"
 msgstr "Palette Selection"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:177
+msgid "Palettes"
+msgstr "Palettes"
 
 #: src/components/export-panel/export-config-dialog.tsx:165
 msgid "Palettes (firmware/hardware)"
@@ -911,7 +960,7 @@ msgstr "Perceptual Balanced"
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptual Contrast"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:81
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:112
 msgid "Pixel Mode"
 msgstr "Pixel Mode"
 
@@ -967,6 +1016,10 @@ msgstr "Posterization"
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:178
 msgid "Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
 msgstr "1D dithering preprocessing applied to the image before palette extraction"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:163
+msgid "Preview mode"
+msgstr "Preview mode"
 
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
@@ -1033,6 +1086,10 @@ msgstr "Reduces the number of color levels for a poster effect"
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:140
+msgid "Réduit le scintillement en favorisant les couleurs similaires entre les frames"
+msgstr "Reduces flicker by favoring similar colors between frames"
+
 #: src/components/preview-editor/help-button/help-button.tsx:24
 msgid "Refaire"
 msgstr "Redo"
@@ -1046,6 +1103,8 @@ msgstr "Redo (Ctrl+Y)"
 msgid "Réinitialiser"
 msgstr "Reset"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:142
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:157
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:165
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:180
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:231
@@ -1060,13 +1119,17 @@ msgstr "Reset to default value"
 msgid "Remove file"
 msgstr "Remove file"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:84
+#: src/components/dsk-workspace/dsk-workspace.tsx:85
 msgid "Remove image from workspace"
 msgstr "Remove image from workspace"
 
 #: src/components/settings-panel/settings-panel.tsx:44
 msgid "Resize"
 msgstr "Resize"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:92
+msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
+msgstr "Doubled horizontal resolution (Mode 0 only). Uses 2 alternating images at 50Hz."
 
 #: src/app/components/adjustements/adjustement.view.tsx:93
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:115
@@ -1135,7 +1198,7 @@ msgstr "SNA (executable snapshot)"
 msgid "Source"
 msgstr "Source"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:111
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:142
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: standard CPC dimensions. Overscan: uses full displayable area. Custom: custom dimensions."
 
@@ -1198,6 +1261,10 @@ msgstr "Update available: version {updateVersion}"
 #: src/components/export-panel/dsk-files-manager.tsx:109
 msgid "Upload Files"
 msgstr "Upload Files"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:125
+msgid "Utilise une palette différente pour chaque frame (plus de couleurs, plus de scintillement)"
+msgstr "Uses a different palette for each frame (more colors, more flicker)"
 
 #: src/components/color-palette/color-grid/color-grid-view.tsx:65
 #~ msgid "utilisée"
