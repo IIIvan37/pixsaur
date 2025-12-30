@@ -240,9 +240,14 @@ export default function ExportPanel() {
           config: egxConfig
         } = egxExportData
 
-        // Convert palette to firmware indices
+        // Convert palette to firmware indices (for Classic)
         const paletteFirmware = palette.map((c) =>
           rgbToFirmwareIndex(c[0], c[1], c[2])
+        )
+
+        // Convert palette to RGB format (for Plus)
+        const paletteRgb = palette.map(
+          (c) => [c[0], c[1], c[2]] as [number, number, number]
         )
 
         const result = await exportEgxToCpcPlayground({
@@ -251,6 +256,8 @@ export default function ExportPanel() {
           height,
           egxConfig,
           paletteFirmware,
+          paletteRgb,
+          hardware: cpcHardware,
           filename: 'pixsaur_egx'
         })
 

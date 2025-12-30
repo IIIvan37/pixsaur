@@ -37,6 +37,8 @@ import {
   resizeModeAtom
 } from '../config/config'
 import { selectionAtom, workingImageAtom } from '../image/image'
+import { userPaletteAtom } from '../palette/palette'
+import type { PaletteSlot } from '../palette/types'
 import {
   applyManualEditsToBuffer,
   exportPaletteWithSlotsAtom,
@@ -308,7 +310,10 @@ function analyzeHighResLineColors(
 
 /**
  * Reorder palette so that the most used colors on high-res lines
- * are in the shared slots (first N positions)
+ * are in the shared slots (first N positions).
+ *
+ * Also ensures color diversity: if two selected colors are too similar,
+ * the second one is replaced by the next most-used distinct color.
  */
 function optimizePaletteForEGX(
   palette: Vector<'RGB'>[],
@@ -320,15 +325,46 @@ function optimizePaletteForEGX(
     .sort((a, b) => b[1] - a[1])
     .map(([idx]) => idx)
 
-  // Take the top N most used colors for shared slots
-  const topIndices = sortedIndices.slice(0, sharedCount)
-  const remainingIndices = sortedIndices.slice(sharedCount)
+  // Minimum distance threshold for diversity (squared)
+  // This prevents selecting two very similar colors (e.g., two near-blacks)
+  const MIN_DISTANCE_SQ = 50 * 50 // ~50 RGB units difference
+
+  // Select shared colors with diversity constraint
+  const selectedIndices: number[] = []
+  for (const idx of sortedIndices) {
+    if (selectedIndices.length >= sharedCount) break
+
+    const candidate = palette[idx]
+
+    // Check if candidate is sufficiently different from already selected colors
+    const isTooSimilar = selectedIndices.some((selectedIdx) => {
+      const selected = palette[selectedIdx]
+      return colorDistanceSquared(candidate, selected) < MIN_DISTANCE_SQ
+    })
+
+    if (!isTooSimilar) {
+      selectedIndices.push(idx)
+    }
+  }
+
+  // If we couldn't find enough diverse colors, fill with most-used remaining
+  for (const idx of sortedIndices) {
+    if (selectedIndices.length >= sharedCount) break
+    if (!selectedIndices.includes(idx)) {
+      selectedIndices.push(idx)
+    }
+  }
+
+  // Build remaining indices (colors not selected for shared slots)
+  const remainingIndices = sortedIndices.filter(
+    (idx) => !selectedIndices.includes(idx)
+  )
 
   // Build optimized palette
   const optimized: Vector<'RGB'>[] = []
 
-  // First: shared colors (most used on high-res lines)
-  for (const idx of topIndices) {
+  // First: shared colors (most used on high-res lines, with diversity)
+  for (const idx of selectedIndices) {
     optimized.push(palette[idx])
   }
 
@@ -718,6 +754,7 @@ function applyEGXAtkinsonDithering(
  * Use the standard quantizer's palette for EGX.
  * Optimizes the palette so that the most used colors on high-res lines
  * are in the shared slots (INK 0-3 for EGX1, INK 0-1 for EGX2).
+ * Locked colors are preserved at their positions.
  *
  * EGX1 needs 16 colors, EGX2 needs 4 colors.
  */
@@ -728,6 +765,7 @@ export const egxPaletteAtom = atom(async (get) => {
   const config = get(egxConfigAtom)
   const standardPalette = await get(exportPaletteWithSlotsAtom)
   const normalizedImage = await get(egxNormalizedImageAtom)
+  const userPalette = get(userPaletteAtom)
 
   if (!standardPalette || standardPalette.length === 0) {
     logger.warn('[EGX] No standard palette available')
@@ -742,27 +780,85 @@ export const egxPaletteAtom = atom(async (get) => {
   const neededColors = config.type === 'egx1' ? 16 : 4
   const sharedCount = getSharedColorCount(config.type)
 
-  // Build initial palette (pad with black if needed)
-  let colors: Vector<'RGB'>[] = []
+  // Identify locked slot indices (within neededColors range)
+  const lockedIndices = new Set<number>()
   for (let i = 0; i < neededColors; i++) {
-    colors.push(validColors[i] ?? [0, 0, 0])
+    if (userPalette[i]?.locked && userPalette[i]?.color) {
+      lockedIndices.add(i)
+    }
   }
 
-  // Optimize palette for high-res lines if we have the normalized image
-  if (normalizedImage && colors.length > sharedCount) {
+  // Build initial palette with locked colors at their positions
+  const colors: Vector<'RGB'>[] = new Array(neededColors).fill(null)
+
+  // Place locked colors first
+  for (const idx of lockedIndices) {
+    const lockedColor = userPalette[idx]?.color
+    if (lockedColor) {
+      colors[idx] = lockedColor as Vector<'RGB'>
+    }
+  }
+
+  // Fill remaining slots with non-locked colors from validColors
+  let validIdx = 0
+  for (let i = 0; i < neededColors; i++) {
+    if (colors[i] === null) {
+      // Find next valid color that's not a duplicate of a locked color
+      while (validIdx < validColors.length) {
+        const color = validColors[validIdx]
+        validIdx++
+        // Check if this color is too similar to any locked color
+        const isSimilarToLocked = [...lockedIndices].some((lockedIdx) => {
+          const locked = colors[lockedIdx]
+          if (!locked) return false
+          return colorDistanceSquared(color, locked) < 100 // Very similar
+        })
+        if (!isSimilarToLocked) {
+          colors[i] = color
+          break
+        }
+      }
+      // If we ran out of colors, use black
+      if (colors[i] === null) {
+        colors[i] = [0, 0, 0]
+      }
+    }
+  }
+
+  // Optimize palette for high-res lines, but preserve locked positions
+  if (
+    normalizedImage &&
+    colors.length > sharedCount &&
+    lockedIndices.size === 0
+  ) {
+    // Only reorder if no colors are locked (to preserve user's explicit choices)
     const colorUsage = analyzeHighResLineColors(normalizedImage, colors, config)
-    colors = optimizePaletteForEGX(colors, colorUsage, sharedCount)
+    const optimizedColors = optimizePaletteForEGX(
+      colors,
+      colorUsage,
+      sharedCount
+    )
+
+    // Copy optimized colors back
+    for (let i = 0; i < optimizedColors.length; i++) {
+      colors[i] = optimizedColors[i]
+    }
 
     logger.info('[EGX] Palette optimized for high-res lines', {
       sharedCount,
       topColors: colors.slice(0, sharedCount).map((c) => `rgb(${c.join(',')})`)
+    })
+  } else if (lockedIndices.size > 0) {
+    logger.info('[EGX] Palette has locked colors, skipping optimization', {
+      lockedIndices: [...lockedIndices]
     })
   }
 
   logger.info('[EGX] Palette from standard quantizer', {
     validColorsCount: validColors.length,
     neededColors,
-    sharedCount
+    sharedCount,
+    lockedCount: lockedIndices.size
   })
 
   return {
@@ -777,6 +873,69 @@ export const egxPaletteAtom = atom(async (get) => {
     }
   }
 })
+
+/**
+ * Display palette for EGX mode (for ColorPalette component).
+ * Returns the reordered EGX palette as PaletteSlot array.
+ * Preserves locked colors from userPaletteAtom.
+ */
+export const egxDisplayPaletteAtom = atom(
+  async (get): Promise<PaletteSlot[]> => {
+    const egxEnabled = get(egxEnabledAtom)
+    if (!egxEnabled) return []
+
+    const paletteInfo = await get(egxPaletteAtom)
+    const userPalette = get(userPaletteAtom)
+    if (!paletteInfo) return []
+
+    const { colors: egxColors } = paletteInfo
+    const neededColors = egxColors.length
+
+    // Collect locked colors to filter them from EGX colors
+    const lockedColors: Vector<'RGB'>[] = []
+    for (let i = 0; i < 16; i++) {
+      const slot = userPalette[i]
+      if (slot?.locked && slot?.color) {
+        lockedColors.push(slot.color as Vector<'RGB'>)
+      }
+    }
+
+    // Filter EGX colors to exclude those too similar to locked colors
+    const availableEgxColors = egxColors.filter((color) => {
+      return !lockedColors.some(
+        (locked) => colorDistanceSquared(color, locked) < 100
+      )
+    })
+
+    // Build display slots, preserving locked colors from user palette
+    const slots: PaletteSlot[] = []
+    let egxColorIndex = 0
+
+    for (let i = 0; i < 16; i++) {
+      const userSlot = userPalette[i]
+
+      if (userSlot?.locked) {
+        // Slot is locked: keep user's color and locked state
+        slots.push({ ...userSlot })
+      } else if (
+        i < neededColors &&
+        egxColorIndex < availableEgxColors.length
+      ) {
+        // Slot is not locked: use EGX optimized color (filtered)
+        slots.push({
+          color: availableEgxColors[egxColorIndex] as Vector<'RGB'>,
+          locked: false
+        })
+        egxColorIndex++
+      } else {
+        // No more colors available
+        slots.push({ color: null, locked: false })
+      }
+    }
+
+    return slots
+  }
+)
 
 // ============================================================================
 // EGX Preview Image Helpers

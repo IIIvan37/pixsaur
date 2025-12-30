@@ -118,14 +118,23 @@ export const derivedModeAtom = atom(
 
 // Setter for pixel mode only
 // When in custom dimensions mode, adjusts width to maintain same byte count
+// When EGX is enabled, forces the required mode for the EGX type
 export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
   const dimensionPreset = get(dimensionPresetAtom)
   const previousMode = get(pixelModeAtom)
+  const egxEnabled = get(egxEnabledAtom)
 
-  set(pixelModeAtom, payload)
+  // If EGX is enabled, force the required mode
+  let effectivePayload = payload
+  if (egxEnabled) {
+    const egxType = get(egxTypeAtom)
+    effectivePayload = egxType === 'egx1' ? 0 : 1
+  }
+
+  set(pixelModeAtom, effectivePayload)
 
   // If in custom mode and mode changed, adjust width to keep same byte count
-  if (dimensionPreset === 'custom' && previousMode !== payload) {
+  if (dimensionPreset === 'custom' && previousMode !== effectivePayload) {
     const currentDimensions = get(customDimensionsAtom)
     const currentWidth = currentDimensions.width
 
@@ -134,11 +143,11 @@ export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
     const byteWidth = currentWidth / currentPixelsPerByte
 
     // Calculate new pixel width for same byte count
-    const newPixelsPerByte = getWidthStepForMode(payload)
+    const newPixelsPerByte = getWidthStepForMode(effectivePayload)
     const newWidth = byteWidth * newPixelsPerByte
 
     // Round to nearest valid step
-    const widthStep = getWidthStepForMode(payload)
+    const widthStep = getWidthStepForMode(effectivePayload)
     const adjustedWidth = Math.round(newWidth / widthStep) * widthStep
 
     // Clamp to valid range
@@ -434,6 +443,9 @@ export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
 /**
  * Setter for EGX enabled state with mutual exclusion
  * Disables Mode R and Raster when enabling EGX
+ * Also sets the appropriate pixel mode:
+ * - EGX1 requires Mode 0 (16 colors)
+ * - EGX2 requires Mode 1 (4 colors)
  */
 export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
@@ -444,6 +456,10 @@ export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
     if (get(rasterEnabledAtom)) {
       set(rasterEnabledAtom, false)
     }
+    // Set the appropriate pixel mode for the current EGX type
+    const egxType = get(egxTypeAtom)
+    const requiredMode = egxType === 'egx1' ? 0 : 1
+    set(pixelModeAtom, requiredMode)
   }
   set(egxEnabledAtom, payload)
 })
@@ -465,8 +481,18 @@ export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
   set(rasterEnabledAtom, payload)
 })
 
-export const setEgxTypeAtom = atom(null, (_get, set, payload: EGXType) => {
+/**
+ * Setter for EGX type with automatic pixel mode adjustment
+ * - EGX1 requires Mode 0 (16 colors)
+ * - EGX2 requires Mode 1 (4 colors)
+ */
+export const setEgxTypeAtom = atom(null, (get, set, payload: EGXType) => {
   set(egxTypeAtom, payload)
+  // If EGX is enabled, update the pixel mode accordingly
+  if (get(egxEnabledAtom)) {
+    const requiredMode = payload === 'egx1' ? 0 : 1
+    set(pixelModeAtom, requiredMode)
+  }
 })
 
 export const setEgxFirstLineModeAtom = atom(

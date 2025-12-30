@@ -8,6 +8,7 @@
  */
 
 import type { EGXConfig, EGXType } from '@/libs/pixsaur-egx'
+import type { CPCHardware } from '@/libs/types'
 
 // =============================================================================
 // Types
@@ -18,10 +19,12 @@ export interface EgxSnaTemplateOptions {
   egxConfig: EGXConfig
   /** Image height (typically 200) */
   height: number
+  /** CPC hardware type (classic or plus) */
+  hardware?: CPCHardware
 }
 
 export interface EgxDataFiles {
-  /** Palette ASM data (label: Palette_Hardware) - 16 colors for EGX1, 4 for EGX2 */
+  /** Palette ASM data - hardware format for Classic, 12-bit for Plus */
   paletteAsm: string
   /** Image data ASM (label: ImageData) - 16KB SCR format */
   imageAsm: string
@@ -158,6 +161,142 @@ setPalette:
     inc a
     cp c
     jr nz, .loop
+    ret
+`
+}
+
+/**
+ * Generate SNA template for CPC Plus EGX (200 lines)
+ *
+ * Uses ASIC unlock and 12-bit palette registers.
+ */
+export function generateEgxPlusSnaTemplate(
+  options: EgxSnaTemplateOptions
+): string {
+  const { egxConfig, height } = options
+  const { lowMode, highMode } = getEgxModeValues(egxConfig.type)
+
+  // Determine initial mode based on firstLineMode
+  const firstMode = egxConfig.firstLineMode === 'low' ? lowMode : highMode
+  const secondMode = egxConfig.firstLineMode === 'low' ? highMode : lowMode
+
+  const egxTypeLabel = egxConfig.type === 'egx1' ? '1' : '2'
+  const modesDesc =
+    egxConfig.type === 'egx1' ? 'Mode 0/Mode 1' : 'Mode 1/Mode 2'
+  const firstLineDesc =
+    egxConfig.firstLineMode === 'low' ? 'Low-res' : 'High-res'
+  const linePairs = Math.floor(height / 2)
+
+  return `BUILDSNA
+BANKSET 0
+SNASET CRTC_TYPE, 3
+SNASET CPC_TYPE, 4
+
+    org #8000
+    run #8000
+
+;------------------------------------------------------------------------------
+; EGX${egxTypeLabel} Display Routine (CPC Plus)
+; Alternates ${modesDesc} every scanline
+; First line: ${firstLineDesc}
+;------------------------------------------------------------------------------
+
+    di
+    ld hl, #c9fb
+    ld (#38), hl
+    ld sp, #c000
+    ei
+
+    ; Unlock and activate ASIC
+    call Asic_unlock
+    call Asic_activate
+
+    ; Set CPC Plus palette (12-bit colors)
+    ; Border color at #6420-#6421
+    ld hl, (Palette_Plus)
+    ld (#6420), hl
+
+    ; Palette colors at #6400-#641F (16 colors × 2 bytes)
+    ld hl, Palette_Plus
+    ld de, #6400
+    ld bc, 32
+    ldir
+
+    ; Set initial video mode
+    ld bc, #7c${firstMode}
+    out (c), c
+
+;------------------------------------------------------------------------------
+; Main Loop - Wait for VBlank and run EGX line switching
+;------------------------------------------------------------------------------
+wait_vblank:
+    ei
+    halt
+
+    ; Wait for VSync
+    ld b, #f5
+.wait:
+    in a, (c)
+    rra
+    jr nc, .wait
+
+    ; Extra halts for timing
+    halt
+    halt
+
+    di
+
+    ; Timing adjustment to start at first visible line
+    ; 17 CRTC lines x 64 us = top border
+    ds 17 * 64
+
+    ; EGX line switching loop
+    ld b, #7f
+    ld hl, #${firstMode}${secondMode}  ; H=first mode, L=second mode
+    ld e, ${linePairs}  ; Number of line pairs
+
+.egx_loop:
+    out (c), h         ; Switch to first mode (line N)
+    ds 60              ; Wait ~60 NOPs (rest of line)
+    out (c), l         ; Switch to second mode (line N+1)
+    ds 60 - 4          ; Wait (minus loop overhead)
+    dec e
+    jp nz, .egx_loop
+
+    jp wait_vblank
+
+;------------------------------------------------------------------------------
+; ASIC Unlock Routine
+;------------------------------------------------------------------------------
+Asic_unlock:
+    di
+    ld e, 17
+    ld hl, unlock_seq
+    ld bc, #bc00
+.loop:
+    ld a, (hl)
+    out (c), a
+    inc hl
+    dec e
+    jr nz, .loop
+    ret
+
+unlock_seq:
+    defb 255, 0, 255, 119, 179
+    defb 81, 168, 212, 98, 57, 156
+    defb 70, 43, 21, 138, 205, 238
+
+;------------------------------------------------------------------------------
+; ASIC Activate/Deactivate
+;------------------------------------------------------------------------------
+Asic_activate:
+    ld bc, #7fb8
+    out (c), c
+    ret
+
+Asic_deactivate:
+    ld bc, #7fA0
+    out (c), c
     ret
 `
 }

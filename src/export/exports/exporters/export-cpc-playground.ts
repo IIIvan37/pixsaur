@@ -7,10 +7,16 @@
 
 import { createLogger } from '@/core'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
+import type { CPCHardware } from '@/libs/types'
 import { isTauri } from '@/tauri'
 import { firmwareToHardware } from '../cpc-format'
+import { cpcPlusValuesToASM, paletteToCPCPlusValues } from '../cpc-plus-format'
 import { exportEgxSCR } from '../export-scr'
-import { assembleEgxSnaSource, generateEgxSnaTemplate } from '../templates'
+import {
+  assembleEgxSnaSource,
+  generateEgxPlusSnaTemplate,
+  generateEgxSnaTemplate
+} from '../templates'
 import { toASMData } from '../to-asm-data'
 import {
   generateModeRSnaAsmSource,
@@ -38,7 +44,12 @@ export interface EgxCpcPlaygroundExportOptions {
   width: number
   height: number
   egxConfig: EGXConfig
-  paletteFirmware: number[]
+  /** Firmware palette for Classic, RGB palette for Plus */
+  paletteFirmware?: number[]
+  /** RGB palette for Plus mode */
+  paletteRgb?: Array<[number, number, number]>
+  /** CPC hardware type */
+  hardware?: CPCHardware
   filename?: string
 }
 
@@ -159,14 +170,18 @@ export async function exportModeRToCpcPlayground(
 }
 
 /**
- * Generate EGX ASM source code
+ * Generate EGX ASM source code for CPC Classic
  */
-export function generateEgxAsmSource(
+function generateEgxClassicAsmSource(
   options: EgxCpcPlaygroundExportOptions
 ): string | null {
   const { indexBuf, width, height, egxConfig, paletteFirmware } = options
 
-  // Generate EGX template
+  if (!paletteFirmware) {
+    return null
+  }
+
+  // Generate EGX Classic template
   const template = generateEgxSnaTemplate({
     egxConfig,
     height
@@ -193,11 +208,64 @@ export function generateEgxAsmSource(
       ? imageAsmResult
       : (imageAsmResult[0]?.content ?? '')
 
-  // Assemble complete ASM source
   return assembleEgxSnaSource(template, {
     paletteAsm,
     imageAsm
   })
+}
+
+/**
+ * Generate EGX ASM source code for CPC Plus
+ */
+function generateEgxPlusAsmSource(
+  options: EgxCpcPlaygroundExportOptions
+): string | null {
+  const { indexBuf, width, height, egxConfig, paletteRgb } = options
+
+  if (!paletteRgb) {
+    return null
+  }
+
+  // Generate EGX Plus template
+  const template = generateEgxPlusSnaTemplate({
+    egxConfig,
+    height,
+    hardware: 'plus'
+  })
+
+  // Generate palette ASM (12-bit CPC Plus values)
+  const colorCount = egxConfig.type === 'egx1' ? 16 : 4
+  const paletteSlice = paletteRgb.slice(0, colorCount)
+  const cpcPlusValues = paletteToCPCPlusValues(paletteSlice)
+  const paletteAsm = cpcPlusValuesToASM(cpcPlusValues, 'Palette_Plus')
+
+  // Generate image data ASM (EGX SCR format)
+  const egxScrData = exportEgxSCR(indexBuf, width, height, egxConfig)
+  const imageAsmResult = toASMData(egxScrData, 'ImageData')
+  const imageAsm =
+    typeof imageAsmResult === 'string'
+      ? imageAsmResult
+      : (imageAsmResult[0]?.content ?? '')
+
+  return assembleEgxSnaSource(template, {
+    paletteAsm,
+    imageAsm
+  })
+}
+
+/**
+ * Generate EGX ASM source code (dispatches to Classic or Plus)
+ */
+export function generateEgxAsmSource(
+  options: EgxCpcPlaygroundExportOptions
+): string | null {
+  const isPlus = options.hardware === 'plus'
+
+  if (isPlus) {
+    return generateEgxPlusAsmSource(options)
+  } else {
+    return generateEgxClassicAsmSource(options)
+  }
 }
 
 /**
@@ -207,13 +275,14 @@ export function generateEgxAsmSource(
 export async function exportEgxToCpcPlayground(
   options: EgxCpcPlaygroundExportOptions
 ): Promise<CpcPlaygroundExportResult> {
-  const { egxConfig, width, height } = options
+  const { egxConfig, width, height, hardware } = options
 
   logger.info('Starting EGX CPC Playground export', {
     type: egxConfig.type,
     firstLineMode: egxConfig.firstLineMode,
     width,
-    height
+    height,
+    hardware: hardware ?? 'classic'
   })
 
   try {

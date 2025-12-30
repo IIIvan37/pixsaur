@@ -161,26 +161,19 @@ function buildHistogramForColors(
 }
 
 /**
- * Select best shared colors using combined histogram from both line types
- *
- * The shared colors must work for BOTH line types, so we use a weighted
- * combination of their histograms, with higher weight for the high-res
- * lines (they're more constrained).
+ * Select all palette colors using combined histogram from both line types
  */
-function selectSharedColorsWithHistogram(
+function selectAllColorsWithHistogram(
   lowResHistogram: Float64Array,
   highResHistogram: Float64Array,
-  sharedCount: number,
+  totalCount: number,
   hardwarePalette: Vector<'RGB'>[]
 ): { indices: number[]; colors: Vector<'RGB'>[] } {
-  // Combine histograms with higher weight for high-res lines
-  const HIGH_RES_WEIGHT = 2.0
+  // Combine histograms equally for global color selection
   const combinedHistogram = new Uint32Array(hardwarePalette.length)
 
   for (let i = 0; i < hardwarePalette.length; i++) {
-    // Scale and combine: high-res contributes more since it has fewer colors
-    const combined = lowResHistogram[i] + highResHistogram[i] * HIGH_RES_WEIGHT
-    // Scale to integer for selectTopIndicesCore (it expects Uint32Array)
+    const combined = lowResHistogram[i] + highResHistogram[i]
     combinedHistogram[i] = Math.round(combined * 10000)
   }
 
@@ -189,7 +182,7 @@ function selectSharedColorsWithHistogram(
   const relativeThreshold = Math.max(1, Math.floor(totalWeight * 0.001))
 
   // Use diversityMode for better color spread
-  const indices = selectTopIndicesCore(combinedHistogram, [], sharedCount, {
+  const indices = selectTopIndicesCore(combinedHistogram, [], totalCount, {
     threshold: relativeThreshold,
     diversityMode: true,
     basePalette: hardwarePalette
@@ -201,44 +194,42 @@ function selectSharedColorsWithHistogram(
 }
 
 /**
- * Select exclusive colors for low-res mode only
+ * Reorder palette so that the best colors for high-res lines are in INK 0-3
  *
- * These colors are only available on low-res lines (Mode 0 for EGX1),
- * so we use the low-res histogram and exclude already-selected shared colors.
+ * Given the 16 selected colors, find which 4 are most important for high-res
+ * lines and move them to the first 4 positions.
  */
-function selectExclusiveColorsWithHistogram(
-  lowResHistogram: Float64Array,
-  sharedIndices: Set<number>,
-  exclusiveCount: number,
-  hardwarePalette: Vector<'RGB'>[]
-): { indices: number[]; colors: Vector<'RGB'>[] } {
-  // Convert to Uint32Array and zero out shared colors
-  const histogram = new Uint32Array(hardwarePalette.length)
-  for (let i = 0; i < hardwarePalette.length; i++) {
-    if (!sharedIndices.has(i)) {
-      histogram[i] = Math.round(lowResHistogram[i] * 10000)
-    }
+function reorderPaletteForHighRes(
+  allColors: Vector<'RGB'>[],
+  allIndices: number[],
+  highResHistogram: Float64Array,
+  sharedCount: number
+): Vector<'RGB'>[] {
+  if (allColors.length <= sharedCount) {
+    return allColors
   }
 
-  // Calculate relative threshold
-  const totalWeight = histogram.reduce((sum, v) => sum + v, 0)
-  const relativeThreshold = Math.max(1, Math.floor(totalWeight * 0.001))
+  // Score each selected color by its importance in high-res lines
+  const colorScores = allIndices.map((hwIndex, paletteIndex) => ({
+    paletteIndex,
+    hwIndex,
+    color: allColors[paletteIndex],
+    score: highResHistogram[hwIndex]
+  }))
 
-  // Use diversityMode for better color spread
-  const indices = selectTopIndicesCore(
-    histogram,
-    Array.from(sharedIndices),
-    exclusiveCount,
-    {
-      threshold: relativeThreshold,
-      diversityMode: true,
-      basePalette: hardwarePalette
-    }
+  // Sort by high-res score descending
+  colorScores.sort((a, b) => b.score - a.score)
+
+  // Take top sharedCount colors for INK 0-3 (or 0-1 for EGX2)
+  const sharedColors = colorScores.slice(0, sharedCount).map((c) => c.color)
+  const sharedSet = new Set(
+    colorScores.slice(0, sharedCount).map((c) => c.paletteIndex)
   )
 
-  const colors = indices.map((i) => hardwarePalette[i])
+  // Rest of the colors keep their relative order from original selection
+  const exclusiveColors = allColors.filter((_, i) => !sharedSet.has(i))
 
-  return { indices, colors }
+  return [...sharedColors, ...exclusiveColors]
 }
 
 // ============================================================================
@@ -247,6 +238,13 @@ function selectExclusiveColorsWithHistogram(
 
 /**
  * Optimize palette for EGX mode using histogram-based selection
+ *
+ * Strategy:
+ * 1. Select all 16 (EGX1) or 4 (EGX2) best colors globally
+ * 2. Reorder so the most important colors for high-res lines are in INK 0-3 (or 0-1)
+ *
+ * This ensures we get the best overall palette, then optimize the shared slots
+ * for the high-res lines which are more constrained.
  *
  * @param imageData - Source image RGBA data
  * @param width - Image width
@@ -285,26 +283,22 @@ export function optimizeEGXPalette(
     hardwarePalette
   )
 
-  // Select shared colors (used by both modes)
-  const { indices: sharedIndices, colors: sharedColors } =
-    selectSharedColorsWithHistogram(
+  // Step 1: Select all colors globally (best 16 for EGX1, best 4 for EGX2)
+  const { indices: allIndices, colors: allColors } =
+    selectAllColorsWithHistogram(
       lowResHistogram,
       highResHistogram,
-      sharedCount,
+      totalCount,
       hardwarePalette
     )
 
-  // Select exclusive colors (only for low-res mode)
-  const exclusiveCount = totalCount - sharedCount
-  const { colors: exclusiveColors } = selectExclusiveColorsWithHistogram(
-    lowResHistogram,
-    new Set(sharedIndices),
-    exclusiveCount,
-    hardwarePalette
+  // Step 2: Reorder palette so best high-res colors are in INK 0-3 (or 0-1)
+  const colors = reorderPaletteForHighRes(
+    allColors,
+    allIndices,
+    highResHistogram,
+    sharedCount
   )
-
-  // Combine: shared colors first (INK 0-3 or 0-1), then exclusive
-  const colors = [...sharedColors, ...exclusiveColors]
 
   // Compute stats
   const stats = computePaletteStats(

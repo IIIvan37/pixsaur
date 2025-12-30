@@ -133,19 +133,29 @@ function getColorMetrics(colorIndex: number, basePalette: readonly any[]) {
  * Vérifie si deux couleurs sont trop similaires en teinte et luminance
  */
 function areColorsTooSimilar(
-  candidateMetrics: { luminance: number; hue: number },
-  selectedMetrics: { luminance: number; hue: number },
+  candidateMetrics: { luminance: number; hue: number; saturation: number },
+  selectedMetrics: { luminance: number; hue: number; saturation: number },
   minHueDistance: number,
   minLuminanceDistance: number
 ): boolean {
-  // Distance de teinte (circulaire)
-  let hueDiff = Math.abs(candidateMetrics.hue - selectedMetrics.hue)
-  if (hueDiff > 180) hueDiff = 360 - hueDiff
-
   // Distance de luminance
   const lumDiff = Math.abs(
     candidateMetrics.luminance - selectedMetrics.luminance
   )
+
+  // Pour les couleurs à faible saturation (gris/noir/blanc), utiliser seulement la luminance
+  // car la teinte est indéfinie ou non significative pour les couleurs achromatiques
+  const bothLowSaturation =
+    candidateMetrics.saturation < 0.1 && selectedMetrics.saturation < 0.1
+
+  if (bothLowSaturation) {
+    // Pour les gris, seule la luminance compte
+    return lumDiff < minLuminanceDistance
+  }
+
+  // Distance de teinte (circulaire)
+  let hueDiff = Math.abs(candidateMetrics.hue - selectedMetrics.hue)
+  if (hueDiff > 180) hueDiff = 360 - hueDiff
 
   return hueDiff < minHueDistance && lumDiff < minLuminanceDistance
 }
