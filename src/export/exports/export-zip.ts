@@ -5,7 +5,7 @@ import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCHardware } from '@/libs/types'
 import { isTauri, saveZipFileTauri } from '@/tauri'
 import { firmwareToHardware } from './cpc-format'
-import { paletteToCPCPlusValues } from './cpc-plus-format'
+import { cpcPlusValuesToASM, paletteToCPCPlusValues } from './cpc-plus-format'
 import { exportEgxLinear, exportEgxSCR } from './export-scr'
 import type { PNGExportData } from './exporters'
 import {
@@ -21,7 +21,11 @@ import {
   generateClassicRasterASM,
   generatePlusRasterASM
 } from './raster-format'
-import { assembleEgxSnaSource, generateEgxSnaTemplate } from './templates'
+import {
+  assembleEgxSnaSource,
+  generateEgxPlusSnaTemplate,
+  generateEgxSnaTemplate
+} from './templates'
 import { toASMData } from './to-asm-data'
 import type { ExportConfig } from './types'
 
@@ -54,7 +58,12 @@ interface ExportEgxSnaToZipParams {
   egxConfig: EGXConfig
   width: number
   height: number
+  /** Firmware palette for Classic */
   paletteFirmware: number[]
+  /** RGB palette for Plus */
+  reducedPalette?: Array<[number, number, number]>
+  /** CPC hardware type */
+  isCPCPlus: boolean
   config: ExportConfig
 }
 
@@ -155,26 +164,51 @@ async function exportSnaToZip(params: ExportSnaToZipParams): Promise<void> {
 async function exportEgxSnaToZip(
   params: ExportEgxSnaToZipParams
 ): Promise<void> {
-  const { zip, indexBuf, egxConfig, width, height, paletteFirmware, config } =
-    params
-
-  // Generate EGX template
-  const template = generateEgxSnaTemplate({
+  const {
+    zip,
+    indexBuf,
     egxConfig,
-    height
-  })
+    width,
+    height,
+    paletteFirmware,
+    reducedPalette,
+    isCPCPlus,
+    config
+  } = params
 
-  // Generate palette ASM (hardware values)
-  const hardwarePalette = paletteFirmware
-    .slice(0, egxConfig.type === 'egx1' ? 16 : 4)
-    .map((fw) => firmwareToHardware[fw] ?? 0x54)
+  const colorCount = egxConfig.type === 'egx1' ? 16 : 4
+  let template: string
+  let paletteAsm: string
 
-  const paletteBytes = hardwarePalette
-    .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
-    .join(',')
+  if (isCPCPlus && reducedPalette) {
+    // CPC Plus: Use 12-bit palette and Plus template
+    template = generateEgxPlusSnaTemplate({
+      egxConfig,
+      height,
+      hardware: 'plus'
+    })
 
-  const paletteAsm = `Palette_Hardware:
+    const paletteSlice = reducedPalette.slice(0, colorCount)
+    const cpcPlusValues = paletteToCPCPlusValues(paletteSlice)
+    paletteAsm = cpcPlusValuesToASM(cpcPlusValues, 'Palette_Plus')
+  } else {
+    // CPC Classic: Use hardware palette and Classic template
+    template = generateEgxSnaTemplate({
+      egxConfig,
+      height
+    })
+
+    const hardwarePalette = paletteFirmware
+      .slice(0, colorCount)
+      .map((fw) => firmwareToHardware[fw] ?? 0x54)
+
+    const paletteBytes = hardwarePalette
+      .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
+      .join(',')
+
+    paletteAsm = `Palette_Hardware:
     DB      ${paletteBytes}`
+  }
 
   // Generate image data ASM (EGX SCR format)
   const egxScrData = exportEgxSCR(indexBuf, width, height, egxConfig)
@@ -418,6 +452,8 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
         width: effectiveWidth,
         height: effectiveHeight,
         paletteFirmware,
+        reducedPalette,
+        isCPCPlus,
         config
       })
     }
