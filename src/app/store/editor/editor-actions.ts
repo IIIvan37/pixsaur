@@ -8,9 +8,17 @@ import type { PixelMode } from '@/app/store/config/types'
 import { logger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { getMaxColorIndex, getModeForLine } from '@/libs/pixsaur-egx'
-import { egxConfigAtom } from '../preview/egx-preview'
-import { applyManualEditsAtom } from '../preview/preview'
-import { effectiveIndexBufferAtom, rasterChangesAtom } from '../raster/raster'
+import { egxConfigAtom, egxIndexBufferAtom } from '../preview/egx-preview'
+import {
+  applyManualEditsAtom,
+  previewIndexBufferAtom
+} from '../preview/preview'
+import {
+  effectiveIndexBufferAtom,
+  rasterChangesAtom,
+  rasterEnabledAtom,
+  rasterIndexBufferAtom
+} from '../raster/raster'
 import {
   editorCursorAtom,
   editorGridVisibleAtom,
@@ -49,7 +57,7 @@ import {
  * - Initialise l'historique
  */
 export const enterEditModeAtom = atom(null, async (get, set) => {
-  // Use the effective buffer (EGX, raster-optimized, or standard)
+  // Use the effective buffer (with manual edits) for editing
   const indexBufferData = await get(effectiveIndexBufferAtom)
 
   if (!indexBufferData) {
@@ -59,17 +67,39 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
 
   const { buffer, width, height, palette } = indexBufferData
 
-  // Sauvegarder le buffer original pour la comparaison lors de l'application
-  set(editorOriginalBufferAtom, new Uint8Array(buffer))
+  // Get the BASE buffer (without manual edits) for comparison when applying changes
+  // This allows accumulating edits correctly
+  const egxEnabled = get(egxEnabledAtom)
+  const rasterEnabled = get(rasterEnabledAtom)
 
-  // Copier l'index buffer pour l'édition (nouvelle instance)
+  let baseBuffer: Uint8Array
+  if (egxEnabled) {
+    const egxBuffer = await get(egxIndexBufferAtom)
+    baseBuffer = egxBuffer
+      ? new Uint8Array(egxBuffer.buffer)
+      : new Uint8Array(buffer)
+  } else if (rasterEnabled) {
+    const rasterBuffer = get(rasterIndexBufferAtom)
+    baseBuffer = rasterBuffer
+      ? new Uint8Array(rasterBuffer.buffer)
+      : new Uint8Array(buffer)
+  } else {
+    const previewBuffer = await get(previewIndexBufferAtom)
+    baseBuffer = previewBuffer
+      ? new Uint8Array(previewBuffer.buffer)
+      : new Uint8Array(buffer)
+  }
+
+  // Save the BASE buffer (without edits) for comparison when applying changes
+  set(editorOriginalBufferAtom, baseBuffer)
+
+  // Copy the EFFECTIVE buffer (with existing edits) for editing
   const editBuffer = new Uint8Array(buffer)
 
   set(editorIndexBufferAtom, editBuffer)
   set(editorDimensionsAtom, { width, height })
 
-  // Capturer l'état EGX d'abord car il affecte le mode pixel
-  const egxEnabled = get(egxEnabledAtom)
+  // Capturer l'état EGX (déjà récupéré plus haut)
   set(editorEgxEnabledAtom, egxEnabled)
   if (egxEnabled) {
     const egxConfig = get(egxConfigAtom)
@@ -178,6 +208,7 @@ export const applyEditModeAtom = atom(null, (get, set) => {
 
 /**
  * Peindre un pixel avec l'encre sélectionnée
+ * En mode EGX sur les lignes low-res, peint les 2 pixels du groupe CPC
  */
 export const paintPixelAtom = atom(
   null,
@@ -211,21 +242,59 @@ export const paintPixelAtom = atom(
     }
 
     const { width } = dimensions
-    const offset = y * width + x
-    const previousInk = buffer[offset]
 
-    // Ne rien faire si c'est la même couleur
-    if (previousInk === selectedInk) return
+    // Determine if this is a low-res line in EGX mode
+    // Low-res lines have pixels grouped by 2
+    let isLowResLine = false
+    if (egxEnabled && egxConfig) {
+      const lineMode = getModeForLine(y, egxConfig)
+      const highResMode = egxConfig.type === 'egx1' ? 1 : 2
+      isLowResLine = lineMode !== highResMode
+    }
 
-    // Modifier le buffer
-    buffer[offset] = selectedInk
+    // For low-res lines, align x to the pixel group boundary (even x)
+    const alignedX = isLowResLine ? x - (x % 2) : x
+
+    // Collect all pixels to paint (1 for high-res, 2 for low-res)
+    const pixelsToPaint: Array<{ x: number; y: number; offset: number }> = []
+
+    if (isLowResLine) {
+      // Paint both pixels of the CPC pixel group
+      pixelsToPaint.push({ x: alignedX, y, offset: y * width + alignedX })
+      if (alignedX + 1 < width) {
+        pixelsToPaint.push({
+          x: alignedX + 1,
+          y,
+          offset: y * width + alignedX + 1
+        })
+      }
+    } else {
+      // High-res line: paint single pixel
+      pixelsToPaint.push({ x, y, offset: y * width + x })
+    }
+
+    // Check if any pixel actually changes
+    const edits: PixelEdit[] = []
+    for (const pixel of pixelsToPaint) {
+      const previousInk = buffer[pixel.offset]
+      if (previousInk !== selectedInk) {
+        edits.push({
+          x: pixel.x,
+          y: pixel.y,
+          previousInkIndex: previousInk,
+          newInkIndex: selectedInk
+        })
+        buffer[pixel.offset] = selectedInk
+      }
+    }
+
+    // Ne rien faire si aucun pixel n'a changé
+    if (edits.length === 0) return
 
     // Créer l'entrée d'historique
     const entry: EditHistoryEntry = {
       type: 'pixel',
-      edits: [
-        { x, y, previousInkIndex: previousInk, newInkIndex: selectedInk }
-      ],
+      edits,
       timestamp: Date.now()
     }
 
