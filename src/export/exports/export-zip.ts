@@ -1,9 +1,12 @@
 import JSZip from 'jszip'
 import type { CpcModeConfig } from '@/app/store/config/types'
+import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCHardware } from '@/libs/types'
 import { isTauri, saveZipFileTauri } from '@/tauri'
+import { firmwareToHardware } from './cpc-format'
 import { paletteToCPCPlusValues } from './cpc-plus-format'
+import { exportEgxLinear, exportEgxSCR } from './export-scr'
 import type { PNGExportData } from './exporters'
 import {
   exportLinearData,
@@ -18,6 +21,8 @@ import {
   generateClassicRasterASM,
   generatePlusRasterASM
 } from './raster-format'
+import { assembleEgxSnaSource, generateEgxSnaTemplate } from './templates'
+import { toASMData } from './to-asm-data'
 import type { ExportConfig } from './types'
 
 /**
@@ -43,6 +48,16 @@ interface ExportSnaToZipParams {
   asmLabel: string
 }
 
+interface ExportEgxSnaToZipParams {
+  zip: JSZip
+  indexBuf: Uint8Array
+  egxConfig: EGXConfig
+  width: number
+  height: number
+  paletteFirmware: number[]
+  config: ExportConfig
+}
+
 interface ExportZipParams {
   indexBuf: Uint8Array
   paletteFirmware: number[]
@@ -53,6 +68,11 @@ interface ExportZipParams {
   config: ExportConfig
   rasterChanges?: RasterChange[]
   previewImage?: ImageData
+  egxConfig?: EGXConfig
+  /** EGX buffer width (320 for EGX1, 640 for EGX2) */
+  egxWidth?: number
+  /** EGX buffer height (200) */
+  egxHeight?: number
 }
 
 /**
@@ -129,6 +149,66 @@ async function exportSnaToZip(params: ExportSnaToZipParams): Promise<void> {
   }
 }
 
+/**
+ * Export EGX SNA snapshot file to ZIP
+ */
+async function exportEgxSnaToZip(
+  params: ExportEgxSnaToZipParams
+): Promise<void> {
+  const { zip, indexBuf, egxConfig, width, height, paletteFirmware, config } =
+    params
+
+  // Generate EGX template
+  const template = generateEgxSnaTemplate({
+    egxConfig,
+    height
+  })
+
+  // Generate palette ASM (hardware values)
+  const hardwarePalette = paletteFirmware
+    .slice(0, egxConfig.type === 'egx1' ? 16 : 4)
+    .map((fw) => firmwareToHardware[fw] ?? 0x54)
+
+  const paletteBytes = hardwarePalette
+    .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
+    .join(',')
+
+  const paletteAsm = `Palette_Hardware:
+    DB      ${paletteBytes}`
+
+  // Generate image data ASM (EGX SCR format)
+  const egxScrData = exportEgxSCR(indexBuf, width, height, egxConfig)
+  const imageAsmResult = toASMData(egxScrData, 'ImageData')
+  const imageAsm =
+    typeof imageAsmResult === 'string'
+      ? imageAsmResult
+      : (imageAsmResult[0]?.content ?? '')
+
+  // Assemble complete ASM source
+  const asmSource = assembleEgxSnaSource(template, {
+    paletteAsm,
+    imageAsm
+  })
+
+  // Assemble with RASM
+  const { createRasmInstance } = await import('@/libs/rasm-wasm')
+  const rasmInstance = await createRasmInstance()
+
+  const filename = config.filename || 'pixsaur'
+  const result = await rasmInstance.assemble(asmSource, {
+    outputFile: `${filename}.bin`,
+    exportType: 'snapshot',
+    snapshotFile: `${filename}.sna`
+  })
+
+  if (result.success && result.snapshot) {
+    zip.file(`${filename}.sna`, result.snapshot)
+
+    // Also export ASM source for debugging/modification
+    zip.file(`${filename}_sna.asm`, asmSource)
+  }
+}
+
 function exportRasterData(
   zip: JSZip,
   rasterAsm: string | undefined,
@@ -202,11 +282,19 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
     reducedPalette,
     config,
     rasterChanges = [],
-    previewImage
+    previewImage,
+    egxConfig,
+    egxWidth,
+    egxHeight
   } = params
 
   const zip = new JSZip()
   const isCPCPlus = cpcHardware === 'plus'
+  const isEgxMode = !!egxConfig
+
+  // For EGX, use EGX dimensions; otherwise use modeConfig
+  const effectiveWidth = isEgxMode && egxWidth ? egxWidth : modeConfig.width
+  const effectiveHeight = isEgxMode && egxHeight ? egxHeight : modeConfig.height
 
   // Get label from config or use default
   const asmLabel = config.labels.enabled ? config.labels.media : 'pixsaur_data'
@@ -220,17 +308,26 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
 
   // Check if mode is standard (required for SCR format)
   // SCR format requires standard 16KB screen dimensions
-  const isStandardMode =
-    !modeConfig.overscan &&
-    ((modeConfig.mode === 0 &&
-      modeConfig.width === 160 &&
-      modeConfig.height === 200) ||
-      (modeConfig.mode === 1 &&
-        modeConfig.width === 320 &&
+  // For EGX, check dimensions based on EGX type using effective dimensions
+  const isStandardMode = isEgxMode
+    ? // EGX mode: check EGX-specific dimensions
+      (egxConfig.type === 'egx1' &&
+        effectiveWidth === 320 &&
+        effectiveHeight === 200) ||
+      (egxConfig.type === 'egx2' &&
+        effectiveWidth === 640 &&
+        effectiveHeight === 200)
+    : // Standard mode
+      !modeConfig.overscan &&
+      ((modeConfig.mode === 0 &&
+        modeConfig.width === 160 &&
         modeConfig.height === 200) ||
-      (modeConfig.mode === 2 &&
-        modeConfig.width === 640 &&
-        modeConfig.height === 200))
+        (modeConfig.mode === 1 &&
+          modeConfig.width === 320 &&
+          modeConfig.height === 200) ||
+        (modeConfig.mode === 2 &&
+          modeConfig.width === 640 &&
+          modeConfig.height === 200))
 
   // ===== GENERATE SHARED ASM DATA (used for both ZIP files and SNA) =====
   const hasRasters = rasterChanges.length > 0
@@ -256,7 +353,75 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
     palettePlus: cpcPlusPalette
   }
 
-  if (isCPCPlus) {
+  if (isEgxMode) {
+    // ===== EGX MODE EXPORT =====
+    // Generate EGX SCR (line-by-line mode alternation)
+    if (isStandardMode && config.content.includeSCR) {
+      const egxScrData = exportEgxSCR(
+        indexBuf,
+        effectiveWidth,
+        effectiveHeight,
+        egxConfig
+      )
+
+      // Add SCR binary file
+      zip.file(`${config.filename}.scr`, egxScrData)
+
+      // Add SCR ASM file
+      const scrAsmContent = toASMData(egxScrData, asmLabel)
+      if (typeof scrAsmContent === 'string') {
+        zip.file(`${asmLabel}_scr.asm`, scrAsmContent)
+      } else {
+        // Handle chunked output (shouldn't happen for 16KB SCR)
+        for (const chunk of scrAsmContent) {
+          zip.file(chunk.filename, chunk.content)
+        }
+      }
+    }
+
+    // Export linear data
+    if (config.content.includeLinear) {
+      const egxLinearData = exportEgxLinear(
+        indexBuf,
+        effectiveWidth,
+        effectiveHeight,
+        egxConfig
+      )
+
+      // Add linear ASM file
+      const linearAsmContent = toASMData(egxLinearData, `${asmLabel}_linear`)
+      if (typeof linearAsmContent === 'string') {
+        zip.file(`${asmLabel}_linear.asm`, linearAsmContent)
+      } else {
+        for (const chunk of linearAsmContent) {
+          zip.file(chunk.filename, chunk.content)
+        }
+      }
+    }
+
+    // Export palettes
+    if (config.content.includePalettes) {
+      if (isCPCPlus && reducedPalette) {
+        const cpcPlusValues = paletteToCPCPlusValues(reducedPalette)
+        exportPalettePlus(zip, cpcPlusValues, modeConfig, config)
+      } else {
+        exportPalettesClassic(zip, paletteFirmware, config)
+      }
+    }
+
+    // Export EGX SNA
+    if (config.content.includeSNA) {
+      await exportEgxSnaToZip({
+        zip,
+        indexBuf,
+        egxConfig,
+        width: effectiveWidth,
+        height: effectiveHeight,
+        paletteFirmware,
+        config
+      })
+    }
+  } else if (isCPCPlus) {
     // ===== CPC PLUS EXPORT =====
     if (!reducedPalette) {
       throw new Error('Reduced palette is required for CPC Plus export')
@@ -303,16 +468,19 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
   }
 
   // Export SNA snapshot if enabled (using pre-generated ASM data)
-  await exportSnaToZip({
-    zip,
-    indexBuf,
-    modeConfig,
-    isCPCPlus,
-    paletteFirmware,
-    asmData,
-    config,
-    asmLabel
-  })
+  // Skip for EGX mode - it has its own SNA export in the isEgxMode block
+  if (!isEgxMode) {
+    await exportSnaToZip({
+      zip,
+      indexBuf,
+      modeConfig,
+      isCPCPlus,
+      paletteFirmware,
+      asmData,
+      config,
+      asmLabel
+    })
+  }
 
   // 5. Finalisation et téléchargement
   const zipBlob = await zip.generateAsync({ type: 'blob' })

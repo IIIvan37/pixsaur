@@ -5,8 +5,11 @@
 
 export {
   type CpcPlaygroundExportResult,
+  type EgxCpcPlaygroundExportOptions,
+  exportEgxToCpcPlayground,
   exportModeRToCpcPlayground,
-  exportToCpcPlayground
+  exportToCpcPlayground,
+  generateEgxAsmSource
 } from './export-cpc-playground'
 export { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
 export { exportLinearData } from './export-linear'
