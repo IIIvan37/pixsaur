@@ -26,6 +26,10 @@ msgstr "{0} image(s) ready to export"
 #~ msgid "{0} remaining"
 #~ msgstr "{0} remaining"
 
+#: src/components/manual-edits-warning/manual-edits-warning.tsx:44
+msgid "{editCount} pixel(s) modifié(s) manuellement. Modifier les paramètres peut affecter ces modifications."
+msgstr "{editCount} pixel(s) manually edited. Changing settings may affect these modifications."
+
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:173
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} remaining"
@@ -34,7 +38,7 @@ msgstr "{remainingSpace} remaining"
 msgid "{uniqueColorsCount} couleur(s) unique(s)"
 msgstr "{uniqueColorsCount} unique color(s)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:302
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:304
 msgid "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
 msgstr "0 = pure diversity, 0.5 = balanced, 1 = prefer frequent colors"
 
@@ -63,7 +67,7 @@ msgstr "Enable horizontal smoothing"
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptive"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:72
+#: src/components/dsk-workspace/dsk-workspace.tsx:73
 msgid "Add current converted image to DSK workspace"
 msgstr "Add current converted image to DSK workspace"
 
@@ -82,6 +86,14 @@ msgstr "Additional DSK Files"
 #: src/app/components/main-content/main-content.tsx:12
 #~ msgid "Adjustments, Source & Preview"
 #~ msgstr "Adjustments, Source & Preview"
+
+#: src/components/preview-editor/help-button/help-button.tsx:30
+msgid "Afficher/masquer la grille"
+msgstr "Show/hide grid"
+
+#: src/components/preview-editor/help-button/help-button.tsx:73
+msgid "Aide et raccourcis"
+msgstr "Help and shortcuts"
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:397
 msgid "Ajouter un changement"
@@ -112,16 +124,30 @@ msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
 #: src/components/export-panel/export-config-dialog.tsx:131
+#: src/components/preview-editor/help-button/help-button.tsx:23
+#: src/components/preview-editor/preview-editor-view.tsx:61
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
 #: src/components/ui/simple-color-picker/simple-rgb-picker.tsx:66
 msgid "Annuler"
 msgstr "Cancel"
 
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:47
+msgid "Annuler (Ctrl+Z)"
+msgstr "Undo (Ctrl+Z)"
+
+#: src/components/preview-editor/help-button/help-button.tsx:59
+msgid "Annuler et fermer"
+msgstr "Cancel and close"
+
 #: src/components/image-controls/image-controls-view.tsx:119
 #~ msgid "Anti-Aliasing"
 #~ msgstr "Anti-Aliasing"
 
-#: src/app/components/preview-panel.tsx:16
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:131
+msgid "Anti-flicker"
+msgstr "Anti-flicker"
+
+#: src/app/components/preview-panel.tsx:32
 msgid "Aperçu"
 msgstr "Preview"
 
@@ -129,11 +155,19 @@ msgstr "Preview"
 msgid "Applique un lissage horizontal pour réduire les artefacts de pixels. Désactivé en mode raster."
 msgstr "Applies horizontal smoothing to reduce pixel artifacts. Disabled in raster mode."
 
+#: src/components/preview-editor/preview-editor-view.tsx:70
+msgid "Appliquer"
+msgstr "Apply"
+
+#: src/components/preview-editor/help-button/help-button.tsx:57
+msgid "Appliquer les modifications"
+msgstr "Apply changes"
+
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:369
 msgid "Aucun changement raster défini."
 msgstr "No raster changes defined."
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:203
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:205
 msgid "Aucun changement raster généré. L'image utilise déjà des couleurs optimales pour la palette actuelle."
 msgstr "No raster changes generated. The image already uses optimal colors for the current palette."
 
@@ -184,7 +218,7 @@ msgstr "Balanced Score"
 msgid "Bleu"
 msgstr "Blue"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:280
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:282
 msgid "Bonus de continuité"
 msgstr "Continuity Bonus"
 
@@ -209,13 +243,21 @@ msgstr "Center image"
 msgid "Changements par ligne"
 msgstr "Changes per line"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:314
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:316
 msgid "Changements Raster"
 msgstr "Raster Changes"
 
 #: src/app/components/source-section.tsx:32
 msgid "Changer d'image"
 msgstr "Change image"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:183
+msgid "Chargement..."
+msgstr "Loading..."
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:74
+msgid "Chargez une image pour voir les palettes"
+msgstr "Load an image to see the palettes"
 
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:41
 msgid "Choisissez la stratégie de génération de palette pour optimiser la qualité visuelle."
@@ -229,7 +271,7 @@ msgstr "Choose the palette generation strategy to optimize visual quality."
 #~ msgid "Clear all images from workspace"
 #~ msgstr "Clear all images from workspace"
 
-#: src/components/image-preview/image-preview.tsx:169
+#: src/components/image-preview/image-preview.tsx:171
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
 msgstr "Click to open in a new tab"
 
@@ -241,11 +283,11 @@ msgstr "Click to open in a new tab"
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:233
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:235
 msgid "Coefficient d'erreur horizontale"
 msgstr "Horizontal Error Coefficient"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:219
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:221
 msgid "Coefficient d'erreur verticale"
 msgstr "Vertical Error Coefficient"
 
@@ -253,7 +295,7 @@ msgstr "Vertical Error Coefficient"
 #~ msgid "Color {i}: {color}"
 #~ msgstr "Color {i}: {color}"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:82
+#: src/components/dsk-workspace/dsk-workspace.tsx:83
 msgid "Color {index}: {color}"
 msgstr "Color {index}: {color}"
 
@@ -283,6 +325,7 @@ msgstr "Amstrad CPC Image Converter"
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 
+#: src/components/preview-editor/pixel-info/pixel-info-view.tsx:55
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:161
 msgid "Couleur"
 msgstr "Color"
@@ -301,15 +344,15 @@ msgstr "Colors"
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Coverage Aware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:56
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:66
 msgid "CPC Classic: palette de 27 couleurs fixes. CPC Plus: palette de 4096 couleurs."
 msgstr "CPC Classic: fixed 27-color palette. CPC Plus: 4096-color palette."
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:65
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:75
 msgid "CPC Hardware"
 msgstr "CPC Hardware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:92
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:123
 msgid "CPC Pixel Mode"
 msgstr "CPC Pixel Mode"
 
@@ -317,17 +360,33 @@ msgstr "CPC Pixel Mode"
 #~ msgid "Début"
 #~ msgstr "Start"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:146
+msgid "Delta luminance max"
+msgstr "Max luminance delta"
+
+#: src/components/preview-editor/help-button/help-button.tsx:42
+msgid "Déplacement rapide (×8)"
+msgstr "Fast movement (×8)"
+
+#: src/components/preview-editor/help-button/help-button.tsx:37
+msgid "Déplacer le curseur"
+msgstr "Move cursor"
+
 #: src/components/color-palette/color-grid/color-grid-view.tsx:74
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
 msgstr "Unlock"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:120
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:155
+msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
+msgstr "Maximum luminance difference allowed between alternating colors"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:151
 msgid "Dimension Preset"
 msgstr "Dimension Preset"
 
 #: src/components/info-bar/info-bar.tsx:68
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:108
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:139
 msgid "Dimensions"
 msgstr "Dimensions"
 
@@ -335,7 +394,7 @@ msgstr "Dimensions"
 #~ msgid "Disquette DSK (image écran)"
 #~ msgstr "Disquette DSK (image écran)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:265
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:267
 msgid "Distance de continuité"
 msgstr "Continuity Distance"
 
@@ -374,6 +433,10 @@ msgstr "Diversity Balanced"
 msgid "palette.strategy.diversity-first-balanced.desc"
 msgstr "Dominant diversity (90%) with slight frequency (10%)"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:121
+msgid "Double palette"
+msgstr "Dual palette"
+
 #: src/components/updater/updater-view.tsx:116
 msgid "Downloading..."
 msgstr "Downloading..."
@@ -386,8 +449,8 @@ msgstr "Downloading..."
 msgid "DSK Workspace"
 msgstr "DSK Workspace"
 
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:217
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:223
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:221
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:227
 msgid "DSK workspace exported successfully!"
 msgstr "DSK workspace exported successfully!"
 
@@ -395,6 +458,14 @@ msgstr "DSK workspace exported successfully!"
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:192
 msgid "palette.strategy.adaptive.desc"
 msgstr "Dynamic strategy based on image"
+
+#: src/app/components/preview-panel.tsx:34
+msgid "Éditer"
+msgstr "Edit"
+
+#: src/components/preview-editor/preview-editor.tsx:49
+msgid "Éditeur de Preview"
+msgstr "Preview Editor"
 
 #: src/app/components/adjustements/adjustement.view.tsx:48
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:53
@@ -409,6 +480,8 @@ msgstr "Raster Effects"
 #~ msgid "En Mode 0 CPC Plus, 12 couleurs sont fixes (indices 4-15) et 4 slots raster (indices 0-3) peuvent changer par ligne."
 #~ msgstr "In Mode 0 CPC Plus, 12 colors are fixed (indices 4-15) and 4 raster slots (indices 0-3) can change per line."
 
+#: src/components/preview-editor/line-palette/line-palette-view.tsx:76
+#: src/components/preview-editor/pixel-info/pixel-info-view.tsx:48
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:148
 msgid "Encre"
 msgstr "Ink"
@@ -416,6 +489,14 @@ msgstr "Ink"
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:134
 msgid "Encre {inkIndex}"
 msgstr "Ink {inkIndex}"
+
+#: src/components/preview-editor/help-button/help-button.tsx:32
+msgid "Encre précédente"
+msgstr "Previous ink"
+
+#: src/components/preview-editor/help-button/help-button.tsx:33
+msgid "Encre suivante"
+msgstr "Next ink"
 
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #: src/components/export-panel/dsk-files-manager.tsx:65
@@ -462,23 +543,28 @@ msgstr "Exposure"
 msgid "Exposition & Tonalité"
 msgstr "Exposure & Tone"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:255
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:257
 msgid "Extraction palette de base"
 msgstr "Base palette extraction"
 
-#. placeholder {0}: error instanceof Error ? error.message : "Unknown error"
-#. placeholder {0}: result.error ?? "Unknown error"
-#: src/components/export-panel/export-panel.tsx:227
-#: src/components/export-panel/export-panel.tsx:238
+#. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
+#. placeholder {0}: result.error ?? 'Unknown error'
+#: src/components/export-panel/export-panel.tsx:213
+#: src/components/export-panel/export-panel.tsx:224
 msgid "Failed to open in CPC Playground: {0}"
 msgstr "Failed to open in CPC Playground: {0}"
+
+#. placeholder {0}: result.error ?? 'Unknown error'
+#: src/components/export-panel/export-panel.tsx:158
+msgid "Failed to open Mode R in CPC Playground: {0}"
+msgstr "Failed to open Mode R in CPC Playground: {0}"
 
 #. placeholder {0}: file.name
 #: src/components/export-panel/dsk-files-manager.tsx:39
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "File {0} is too large (max 64KB). File skipped."
 
-#: src/components/export-panel/export-panel.tsx:174
+#: src/components/export-panel/export-panel.tsx:107
 msgid "File exported successfully!"
 msgstr "File exported successfully!"
 
@@ -514,11 +600,11 @@ msgstr "Gamma"
 msgid "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
 msgstr "Generates a snapshot file (.SNA) with integrated display code"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:196
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:188
 msgid "Générer les rasters"
 msgstr "Generate rasters"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:317
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:319
 msgid "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
 msgstr "Manage ink changes per line (automatically generated or manual)"
 
@@ -526,11 +612,15 @@ msgstr "Manage ink changes per line (automatically generated or manual)"
 msgid "Glissez & déposez une image ici"
 msgstr "Drag & drop an image here"
 
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:89
+msgid "Grille (H)"
+msgstr "Grid (H)"
+
 #: src/components/settings-panel/settings-panel.tsx:50
 msgid "Hardware"
 msgstr "Hardware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:53
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:63
 msgid "Hardware CPC"
 msgstr "CPC Hardware"
 
@@ -618,6 +708,10 @@ msgstr "Line"
 msgid "Ligne {0}"
 msgstr "Line {0}"
 
+#: src/components/preview-editor/line-palette/line-palette-view.tsx:39
+msgid "Ligne {currentLine}"
+msgstr "Line {currentLine}"
+
 #: src/components/export-panel/export-config-dialog.tsx:160
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (sequential)"
@@ -675,7 +769,7 @@ msgstr "Mode"
 #~ msgid "Mode 0 CPC Plus (12+4)"
 #~ msgstr "Mode 0 CPC Plus (12+4)"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:84
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:115
 msgid "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
 msgstr "Mode 0: 160 pixels wide, Mode 1: 320 pixels, Mode 2: 640 pixels"
 
@@ -686,6 +780,18 @@ msgstr "Mode 0: 160 pixels wide, Mode 1: 320 pixels, Mode 2: 640 pixels"
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:37
 msgid "Mode de redimensionnement"
 msgstr "Resize mode"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:89
+msgid "Mode R"
+msgstr "Mode R"
+
+#: src/components/export-panel/export-panel.tsx:152
+msgid "Mode R opened in CPC Playground!"
+msgstr "Mode R opened in CPC Playground!"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:113
+msgid "Mode R Settings"
+msgstr "Mode R Settings"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:127
 msgid "Mode Raster"
@@ -716,11 +822,15 @@ msgstr "Multiplie le canal rouge (0-2x)"
 msgid "Multiplie le canal vert (0-2x)"
 msgstr "Multiplie le canal vert (0-2x)"
 
+#: src/components/preview-editor/editor-minimap/editor-minimap-view.tsx:162
+msgid "Navigation"
+msgstr "Navigation"
+
 #: src/components/export-panel/dsk-files-manager.tsx:134
 msgid "No additional files. Upload or add files to include them in the DSK."
 msgstr "No additional files. Upload or add files to include them in the DSK."
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:74
+#: src/components/dsk-workspace/dsk-workspace.tsx:75
 msgid "No image to add"
 msgstr "No image to add"
 
@@ -745,7 +855,7 @@ msgstr "No"
 msgid "palette.strategy.disabled.raster"
 msgstr "Disabled (raster mode)"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:76
+#: src/components/dsk-workspace/dsk-workspace.tsx:77
 msgid "Not enough space on DSK"
 msgstr "Not enough space on DSK"
 
@@ -758,7 +868,7 @@ msgstr "Shadows"
 msgid "Open in CPC Playground"
 msgstr "Open in CPC Playground"
 
-#: src/components/export-panel/export-panel.tsx:221
+#: src/components/export-panel/export-panel.tsx:207
 msgid "Opened in CPC Playground!"
 msgstr "Opened in CPC Playground!"
 
@@ -766,7 +876,7 @@ msgstr "Opened in CPC Playground!"
 msgid "Opening..."
 msgstr "Opening..."
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:192
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:186
 msgid "Optimisation..."
 msgstr "Optimizing..."
 
@@ -803,9 +913,21 @@ msgstr "Open settings panel"
 msgid "Ouvrir les paramètres (⌘,)"
 msgstr "Open settings (⌘,)"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:86
+msgid "Paires uniques"
+msgstr "Unique pairs"
+
+#: src/components/preview-editor/line-palette/line-palette-view.tsx:36
+msgid "Palette"
+msgstr "Palette"
+
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:93
 msgid "Palette Selection"
 msgstr "Palette Selection"
+
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:177
+msgid "Palettes"
+msgstr "Palettes"
 
 #: src/components/export-panel/export-config-dialog.tsx:165
 msgid "Palettes (firmware/hardware)"
@@ -815,13 +937,18 @@ msgstr "Palettes (firmware/hardware)"
 msgid "Paramètres"
 msgstr "Settings"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:258
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:260
 msgid "Paramètres pour l'extraction de la palette initiale depuis l'image source."
 msgstr "Parameters for extracting the initial palette from the source image."
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:150
 msgid "Paramètres Raster"
 msgstr "Raster Parameters"
+
+#: src/components/preview-editor/help-button/help-button.tsx:47
+#: src/components/preview-editor/help-button/help-button.tsx:52
+msgid "Peindre au curseur"
+msgstr "Paint at cursor"
 
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:129
@@ -833,7 +960,7 @@ msgstr "Perceptual Balanced"
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptual Contrast"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:81
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:112
 msgid "Pixel Mode"
 msgstr "Pixel Mode"
 
@@ -841,7 +968,7 @@ msgstr "Pixel Mode"
 #~ msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
 #~ msgstr "Lower = more palette changes, higher = more stability"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:274
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:276
 msgid "Plus bas = plus de variété, plus haut = plus de cohérence entre lignes"
 msgstr "Lower = more variety, higher = more coherence between lines"
 
@@ -849,7 +976,7 @@ msgstr "Lower = more variety, higher = more coherence between lines"
 #~ msgid "Plus haut = préférence plus forte pour les couleurs de la palette précédente"
 #~ msgstr "Higher = stronger preference for colors from previous palette"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:288
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:290
 msgid "Plus haut = préférence pour les couleurs similaires aux lignes précédentes"
 msgstr "Higher = preference for colors similar to previous lines"
 
@@ -869,13 +996,17 @@ msgstr "PNG (square pixels)"
 #~ msgid "Poids couverture lignes"
 #~ msgstr "Line Coverage Weight"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:294
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:296
 msgid "Poids de fréquence"
 msgstr "Frequency Weight"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:330
 #~ msgid "Poids fréquence pixels"
 #~ msgstr "Pixel Frequency Weight"
+
+#: src/components/preview-editor/pixel-info/pixel-info-view.tsx:39
+msgid "Position"
+msgstr "Position"
 
 #: src/app/components/adjustements/adjustement.view.tsx:152
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:200
@@ -886,19 +1017,23 @@ msgstr "Posterization"
 msgid "Pré-traitement dithering 1D appliqué à l'image avant extraction des palettes"
 msgstr "1D dithering preprocessing applied to the image before palette extraction"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:163
+msgid "Preview mode"
+msgstr "Preview mode"
+
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
 msgstr "Processor"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:215
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:217
 msgid "Propagation d'erreur de dithering"
 msgstr "Dithering Error Propagation"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:241
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:243
 msgid "Propagation horizontale des erreurs de quantification entre pixels"
 msgstr "Horizontal propagation of quantization errors between pixels"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:227
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:229
 msgid "Propagation verticale des erreurs de quantification (lower = moins de banding)"
 msgstr "Vertical propagation of quantization errors (lower = less banding)"
 
@@ -906,6 +1041,10 @@ msgstr "Vertical propagation of quantization errors (lower = less banding)"
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:174
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Pure Diversity"
+
+#: src/components/preview-editor/help-button/help-button.tsx:81
+msgid "Raccourcis clavier"
+msgstr "Keyboard shortcuts"
 
 #: src/components/settings-panel/settings-panel.tsx:62
 msgid "Raster"
@@ -927,7 +1066,7 @@ msgstr "Rasters"
 msgid "Rasters (données ASM)"
 msgstr "Rasters (ASM data)"
 
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:194
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:187
 msgid "Rasters générés"
 msgstr "Generated Rasters"
 
@@ -947,18 +1086,32 @@ msgstr "Reduces the number of color levels for a poster effect"
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 msgstr "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:140
+msgid "Réduit le scintillement en favorisant les couleurs similaires entre les frames"
+msgstr "Reduces flicker by favoring similar colors between frames"
+
+#: src/components/preview-editor/help-button/help-button.tsx:24
+msgid "Refaire"
+msgstr "Redo"
+
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:57
+msgid "Refaire (Ctrl+Y)"
+msgstr "Redo (Ctrl+Y)"
+
 #: src/app/components/adjustements/adjustement.view.tsx:206
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:248
 msgid "Réinitialiser"
 msgstr "Reset"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:142
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:157
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:165
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:180
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:229
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:243
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:276
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:290
-#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:304
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:231
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:245
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:278
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:292
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:306
 msgid "Réinitialiser à la valeur par défaut"
 msgstr "Reset to default value"
 
@@ -966,13 +1119,17 @@ msgstr "Reset to default value"
 msgid "Remove file"
 msgstr "Remove file"
 
-#: src/components/dsk-workspace/dsk-workspace.tsx:84
+#: src/components/dsk-workspace/dsk-workspace.tsx:85
 msgid "Remove image from workspace"
 msgstr "Remove image from workspace"
 
 #: src/components/settings-panel/settings-panel.tsx:44
 msgid "Resize"
 msgstr "Resize"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:92
+msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
+msgstr "Doubled horizontal resolution (Mode 0 only). Uses 2 alternating images at 50Hz."
 
 #: src/app/components/adjustements/adjustement.view.tsx:93
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:115
@@ -1041,7 +1198,7 @@ msgstr "SNA (executable snapshot)"
 msgid "Source"
 msgstr "Source"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:111
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:142
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: standard CPC dimensions. Overscan: uses full displayable area. Custom: custom dimensions."
 
@@ -1105,6 +1262,10 @@ msgstr "Update available: version {updateVersion}"
 msgid "Upload Files"
 msgstr "Upload Files"
 
+#: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:125
+msgid "Utilise une palette différente pour chaque frame (plus de couleurs, plus de scintillement)"
+msgstr "Uses a different palette for each frame (more colors, more flicker)"
+
 #: src/components/color-palette/color-grid/color-grid-view.tsx:65
 #~ msgid "utilisée"
 #~ msgstr "utilisée"
@@ -1153,3 +1314,15 @@ msgstr "Selection area"
 #: src/components/source-selector/source-selector-view.tsx:56
 msgid "Zone de sélection interactive"
 msgstr "Zone de sélection interactive"
+
+#: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:67
+msgid "Zoom"
+msgstr "Zoom"
+
+#: src/components/preview-editor/help-button/help-button.tsx:26
+msgid "Zoom arrière"
+msgstr "Zoom out"
+
+#: src/components/preview-editor/help-button/help-button.tsx:25
+msgid "Zoom avant"
+msgstr "Zoom in"

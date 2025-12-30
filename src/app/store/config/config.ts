@@ -3,7 +3,7 @@ import { atomWithStorage } from 'jotai/utils'
 import { getWidthStepForMode } from '@/export'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import { CPCHardware } from '@/libs/types'
+import type { CPCHardware } from '@/libs/types'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
 import type { ResizeMode } from './resize-types'
@@ -269,7 +269,7 @@ export const setPaletteStrategyAtom = atom(
 // This ensures consistency between locked colors and hardware selection
 export const cpcHardwareAtom = atomWithStorage<CPCHardware>(
   'pixsaur-cpc-hardware',
-  CPCHardware.CLASSIC
+  'classic'
 )
 
 // Setter for CPC Hardware
@@ -290,6 +290,80 @@ export const setCpcHardwareAtom = atom(
     }
 
     set(cpcHardwareAtom, payload)
+  }
+)
+
+// ============================================================================
+// MODE R CONFIGURATION
+// ============================================================================
+
+/**
+ * Mode R enabled state
+ * When enabled, forces Mode 0 and uses dual-palette interlacing
+ */
+export const modeREnabledAtom = atomWithStorage<boolean>(
+  'pixsaur-mode-r-enabled',
+  false
+)
+
+/**
+ * Mode R anti-flicker weight (0-100)
+ * Higher values prioritize flicker reduction over color accuracy
+ */
+export const modeRAntiFlickerAtom = atomWithStorage<number>(
+  'pixsaur-mode-r-anti-flicker',
+  70
+)
+
+/**
+ * Mode R maximum luminance delta for color pairs
+ * Pairs with higher luminance difference will be penalized
+ */
+export const modeRMaxLuminanceDeltaAtom = atomWithStorage<number>(
+  'pixsaur-mode-r-max-luminance-delta',
+  80
+)
+
+/**
+ * Mode R preview mode
+ * - 'blended': Show perceived colors (default)
+ * - 'frameA': Show frame A only
+ * - 'frameB': Show frame B only
+ * - 'flicker': Show flicker heatmap
+ */
+export const modeRPreviewModeAtom = atom<
+  'blended' | 'frameA' | 'frameB' | 'flicker'
+>('blended')
+
+/**
+ * Mode R dual palette option
+ * - false: Same palette for both frames (default, less flicker)
+ * - true: Independent palettes for each frame (more colors, more flicker)
+ */
+export const modeRDualPaletteAtom = atomWithStorage<boolean>(
+  'pixsaur-mode-r-dual-palette',
+  false
+)
+
+// Setters for Mode R configuration
+export const setModeRAntiFlickerAtom = atom(
+  null,
+  (_get, set, payload: number) => {
+    set(modeRAntiFlickerAtom, Math.max(0, Math.min(100, payload)))
+  }
+)
+
+export const setModeRMaxLuminanceDeltaAtom = atom(
+  null,
+  (_get, set, payload: number) => {
+    set(modeRMaxLuminanceDeltaAtom, Math.max(0, Math.min(255, payload)))
+  }
+)
+
+export const setModeRPreviewModeAtom = atom(
+  null,
+  (_get, set, payload: 'blended' | 'frameA' | 'frameB' | 'flicker') => {
+    set(modeRPreviewModeAtom, payload)
   }
 )
 

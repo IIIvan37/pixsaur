@@ -11,6 +11,8 @@
  * - CPC Plus (4096 colors) - Overscan (280 lines) with/without rasters
  */
 
+import type { CPCHardware } from '@/libs/types'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -25,7 +27,7 @@ export interface SnaTemplateOptions {
   /** Whether raster effects are enabled */
   hasRasters: boolean
   /** Hardware type */
-  hardware: 'classic' | 'plus'
+  hardware: CPCHardware
 }
 
 export interface SnaDataFiles {
@@ -938,6 +940,338 @@ export function assembleSnaSource(
   } else {
     lines.push('    org #c000', dataFiles.imageAsm)
   }
+
+  return lines.join('\n')
+}
+
+// =============================================================================
+// Mode R Templates (Dual Frame 50Hz Alternation)
+// =============================================================================
+
+/**
+ * Mode R constants and macros
+ */
+const MODE_R_WAIT_CYCLES_MACRO = `
+;------------------------------------------------------------------------------
+; WAIT_CYCLES Macro - Precise timing for Mode R
+;------------------------------------------------------------------------------
+MACRO WAIT_CYCLES _cycles
+@loops    equ floor(({_cycles}-1)/4)
+@loopsx4  equ @loops*4
+@nops     equ {_cycles}-@loopsx4-1
+    ld b, @loops
+@change_waitLoop
+    djnz @change_waitLoop
+    defs @nops
+MEND
+`
+
+const MODE_R_COMMON_ROUTINES = `
+;------------------------------------------------------------------------------
+; Wait Vertical Blank
+;------------------------------------------------------------------------------
+wVb:
+    ld b, #f5
+.vbLoop1:
+    in a, (c)
+    rra
+    jr c, .vbLoop1
+.vbLoop2:
+    in a, (c)
+    rra
+    jr nc, .vbLoop2
+    ret
+
+;------------------------------------------------------------------------------
+; Wait BC scanlines
+;------------------------------------------------------------------------------
+waitScanlines:
+    ld a, b
+    or c
+    ret z
+
+    push bc
+    WAIT_CYCLES 40
+    pop bc
+    dec bc
+    ld a, b
+    or c
+    ret z
+
+.waitScanlines_loop:
+    push bc
+    WAIT_CYCLES 50
+    pop bc
+    dec bc
+    ld a, b
+    or c
+    jr nz, .waitScanlines_loop
+    ret
+`
+
+/**
+ * Generate SNA template for Mode R CPC Classic
+ * Two frames at #4000 and #C000, alternating palettes at 50Hz
+ */
+export function generateModeRClassicSnaTemplate(): string {
+  return `BUILDSNA
+BANKSET 0
+SNASET CRTC_TYPE, 0
+
+${MODE_R_WAIT_CYCLES_MACRO}
+
+    org #8000
+    run #8000
+start:
+    di
+
+    ld bc, #7f8c            ;; set mode 0
+    out (c), c
+
+    ld hl, ModeR_PaletteA_Hardware
+    call setPalette
+
+mainLoop:
+    call wVb
+
+    ld bc, #bc0c            ;; video page switch (#c000 / #4000)
+    out (c), c
+    inc b
+    ld a, (CRTCReg12)
+    out (c), a
+    xor #20
+    ld (CRTCReg12), a
+
+    ld a, (topScanlines)    ;; wait scanlines
+    ld c, a
+    xor 1
+    ld (topScanlines), a
+    ld b, 0
+    call waitScanlines
+
+    WAIT_CYCLES 34
+
+    ld bc, #bc02            ;; select CRTC reg 2
+    out (c), c
+
+    ld d, 222/2
+rasterLoop:
+    ld bc, #bd2d
+    out (c), c
+
+    WAIT_CYCLES 64-7
+
+    ld bc, #bd2f
+    out (c), c
+
+    WAIT_CYCLES 64-7-4
+
+    dec d
+    jr nz, rasterLoop
+
+p1: ld hl, ModeR_PaletteB_Hardware
+p2: ld de, ModeR_PaletteA_Hardware
+    ex hl, de
+    ld (p1 + 1), hl
+    ld (p2 + 1), de
+    call setPalette
+    jr mainLoop
+
+;------------------------------------------------------------------------------
+; Set Palette (CPC Classic)
+;------------------------------------------------------------------------------
+setPalette:
+    xor a
+    ld bc, #7f11
+.setPalette_loop:
+    out (c), a
+    inc b
+    outi
+    inc a
+    cp c
+    jr nz, .setPalette_loop
+    ret
+
+${MODE_R_COMMON_ROUTINES}
+
+;------------------------------------------------------------------------------
+; Mode R Data
+;------------------------------------------------------------------------------
+topScanlines:   db 51
+CRTCReg12:      db #30
+
+; === DATA SECTION ===
+; ModeR_PaletteA_Hardware: (16 bytes)
+; ModeR_PaletteB_Hardware: (16 bytes)
+; Frame A at #4000: (16384 bytes)
+; Frame B at #C000: (16384 bytes)
+`
+}
+
+/**
+ * Generate SNA template for Mode R CPC Plus
+ * Two frames at #4000 and #C000, alternating 12-bit palettes at 50Hz
+ */
+export function generateModeRPlusSnaTemplate(): string {
+  return `BUILDSNA
+BANKSET 0
+SNASET CRTC_TYPE, 3
+SNASET CPC_TYPE, 4
+
+${MODE_R_WAIT_CYCLES_MACRO}
+
+    org #8000
+    run #8000
+start:
+    di
+
+    ld bc, #7f8c            ;; set mode 0
+    out (c), c
+
+    call Asic_unlock
+    call Asic_activate
+
+    ;; Load initial palette
+    ld hl, ModeR_PaletteA
+    ld de, #6400
+    ld bc, 32
+    ldir
+
+mainLoop:
+    call Asic_deactivate
+    call wVb
+
+    ld bc, #bc0c            ;; video page switch (#c000 / #4000)
+    out (c), c
+    inc b
+    ld a, (CRTCReg12)
+    out (c), a
+    xor #20
+    ld (CRTCReg12), a
+
+    ld a, (topScanlines)    ;; wait scanlines
+    ld c, a
+    xor 1
+    ld (topScanlines), a
+    ld b, 0
+    call waitScanlines
+
+    WAIT_CYCLES 34
+
+    ld bc, #bc02            ;; select CRTC reg 2
+    out (c), c
+
+    ld d, 222/2
+rasterLoop:
+    ld bc, #bd2d
+    out (c), c
+
+    WAIT_CYCLES 64-7
+
+    ld bc, #bd2f
+    out (c), c
+
+    WAIT_CYCLES 64-7-4
+
+    dec d
+    jr nz, rasterLoop
+
+    call Asic_activate
+p1: ld hl, ModeR_PaletteB
+p2: ld de, ModeR_PaletteA
+    ex hl, de
+    ld (p1 + 1), hl
+    ld (p2 + 1), de
+    ld de, #6400
+    ld bc, 32
+    ldir
+    jr mainLoop
+
+${MODE_R_COMMON_ROUTINES}
+
+;------------------------------------------------------------------------------
+; ASIC Unlock and Activation (CPC Plus)
+;------------------------------------------------------------------------------
+Asic_unlock:
+    di
+    ld e, 17
+    ld hl, asic_unlock_seq
+    ld bc, #bc00
+.loop:
+    ld a, (hl)
+    out (c), a
+    inc hl
+    dec e
+    jr nz, .loop
+    ret
+
+Asic_activate:
+    ld bc, #7fb8
+    out (c), c
+    ret
+
+Asic_deactivate:
+    ld bc, #7fa0
+    out (c), c
+    ret
+
+asic_unlock_seq:
+    defb 255, 0, 255, 119, 179
+    defb 81, 168, 212, 98, 57, 156
+    defb 70, 43, 21, 138, 205, 238
+
+;------------------------------------------------------------------------------
+; Mode R Data
+;------------------------------------------------------------------------------
+topScanlines:   db 51
+CRTCReg12:      db #30
+
+; === DATA SECTION ===
+; ModeR_PaletteA: (32 bytes - 16 colors × 2 bytes)
+; ModeR_PaletteB: (32 bytes - 16 colors × 2 bytes)
+; Frame A at #4000: (16384 bytes)
+; Frame B at #C000: (16384 bytes)
+`
+}
+
+// =============================================================================
+// Mode R Data Assembly
+// =============================================================================
+
+export interface ModeRDataFiles {
+  /** Palette A ASM data (label: ModeR_PaletteA_Hardware for Classic, ModeR_PaletteA for Plus) */
+  paletteAAsm: string
+  /** Palette B ASM data (label: ModeR_PaletteB_Hardware for Classic, ModeR_PaletteB for Plus) */
+  paletteBAsm: string
+  /** Frame A image data ASM */
+  frameAAsm: string
+  /** Frame B image data ASM */
+  frameBAsm: string
+}
+
+/**
+ * Combine Mode R template with data files to create complete ASM source
+ */
+export function assembleModeRSnaSource(
+  template: string,
+  dataFiles: ModeRDataFiles
+): string {
+  const lines: string[] = [template]
+
+  // Add palette data
+  lines.push('', '; === PALETTE DATA ===')
+  lines.push(dataFiles.paletteAAsm)
+  lines.push(dataFiles.paletteBAsm)
+
+  // Add Frame A at #4000
+  lines.push('', '; === FRAME A DATA ===')
+  lines.push('    org #4000')
+  lines.push(dataFiles.frameAAsm)
+
+  // Add Frame B at #C000
+  lines.push('', '; === FRAME B DATA ===')
+  lines.push('    org #c000')
+  lines.push(dataFiles.frameBAsm)
 
   return lines.join('\n')
 }

@@ -8,6 +8,7 @@ import {
 } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
+import type { CPCHardware } from '@/libs/types'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import {
   applyHorizontalSmoothing,
@@ -23,6 +24,8 @@ import {
   ditheringAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
+  modeREnabledAtom,
+  modeRPreviewModeAtom,
   paletteStrategyAtom,
   pixelModeAtom,
   resizeModeAtom
@@ -92,10 +95,27 @@ export const previewCanvasSizeAtom = atom((get) => {
   // Obtenir la configuration du mode CPC pour le pixel aspect ratio
   const modeConfig = get(effectiveModeConfigAtom)
 
+  // Check if Mode R is enabled and using blended preview
+  // In blended mode, the image is already at doubled resolution (like Mode 1)
+  // so we don't need to apply the scaleX factor
+  const modeREnabled = get(modeREnabledAtom)
+  const modeRPreviewMode = get(modeRPreviewModeAtom)
+  // Consider blended mode as default when Mode R is enabled
+  const isModeRBlended =
+    modeREnabled && (modeRPreviewMode === 'blended' || !modeRPreviewMode)
+
+  // For Mode R blended, the image is already at visual resolution (320×200)
+  // so we use scale factors of 1
+  const effectiveScaleX = isModeRBlended ? 1 : modeConfig.scaleX
+  const effectiveScaleY = isModeRBlended ? 1 : modeConfig.scaleY
+
   // Dimensions visuelles = dimensions canvas × pixel aspect ratio
-  // Toujours 320×200 pour tous les modes
-  const visualWidth = modeConfig.width * modeConfig.scaleX
-  const visualHeight = modeConfig.height * modeConfig.scaleY
+  // For Mode R blended: use image dimensions directly (already correct)
+  // For standard modes: apply scale factors
+  const visualWidth = isModeRBlended
+    ? modeConfig.width * 2 // Mode R blended outputs doubled width
+    : modeConfig.width * effectiveScaleX
+  const visualHeight = modeConfig.height * effectiveScaleY
 
   // Calculer le scale pour fit dans le container (sans dépasser la largeur disponible)
   const scale = Math.min(containerWidth / visualWidth, 1) // Ne pas upscaler
@@ -577,7 +597,7 @@ function processSlot(
   filteredReduced: Vector[],
   reducedIndex: { value: number },
   darkestColor: Vector,
-  cpcHardware: 'classic' | 'plus'
+  cpcHardware: CPCHardware
 ): Vector {
   if (slot?.locked && slot.color === null) {
     return IGNORED_SLOT
@@ -756,4 +776,161 @@ export const previewIndexBufferAtom = atom(async (get) => {
     height: previewImage.height,
     palette: ditheringPalette
   }
+})
+
+// ============================================================================
+// Modifications manuelles de pixels
+// ============================================================================
+
+/**
+ * Type représentant un index buffer avec ses métadonnées.
+ */
+export type IndexBufferData = {
+  buffer: Uint8Array
+  width: number
+  height: number
+  palette: Vector[]
+}
+
+/**
+ * Applique les modifications manuelles à un index buffer.
+ * @param baseBuffer - Le buffer de base (non modifié)
+ * @param edits - Map des modifications "x,y" -> inkIndex
+ * @returns Une copie du buffer avec les modifications appliquées, ou le buffer original si pas d'edits
+ */
+export function applyManualEditsToBuffer(
+  baseBuffer: IndexBufferData,
+  edits: Map<string, number>
+): IndexBufferData {
+  if (edits.size === 0) return baseBuffer
+
+  const modifiedBuffer = new Uint8Array(baseBuffer.buffer)
+
+  for (const [key, inkIndex] of edits) {
+    const [x, y] = key.split(',').map(Number)
+    const idx = y * baseBuffer.width + x
+    if (idx >= 0 && idx < modifiedBuffer.length) {
+      modifiedBuffer[idx] = inkIndex
+    }
+  }
+
+  return {
+    ...baseBuffer,
+    buffer: modifiedBuffer
+  }
+}
+
+/**
+ * Version de la preview (avant edits manuels).
+ * S'incrémente à chaque changement de paramètres affectant la preview.
+ * Utilisé pour détecter quand les edits manuels doivent être effacés.
+ */
+export const previewVersionAtom = atom(async (get) => {
+  // Dépend de tous les atomes qui affectent la preview
+  await get(previewIndexBufferAtom)
+  // Retourne un timestamp pour avoir une valeur unique à chaque recalcul
+  return Date.now()
+})
+
+/**
+ * Stocke les modifications manuelles de pixels (de l'éditeur de preview).
+ * Map: "x,y" -> inkIndex
+ * Réinitialisé quand l'image source ou la preview change.
+ */
+export const manualPixelEditsAtom = atom<Map<string, number>>(new Map())
+
+/**
+ * Indique s'il y a des modifications manuelles non sauvegardées.
+ */
+export const hasManualEditsAtom = atom(
+  (get) => get(manualPixelEditsAtom).size > 0
+)
+
+/**
+ * Nombre de modifications manuelles.
+ */
+export const manualEditsCountAtom = atom(
+  (get) => get(manualPixelEditsAtom).size
+)
+
+/**
+ * Action pour effacer toutes les modifications manuelles.
+ */
+export const clearManualEditsAtom = atom(null, (_get, set) => {
+  set(manualPixelEditsAtom, new Map())
+  logger.info('[Preview] Manual edits cleared')
+})
+
+/**
+ * Action pour appliquer un buffer modifié complet.
+ * Compare avec le buffer original fourni et stocke les différences.
+ * @param editedBuffer - Le buffer modifié de l'éditeur
+ * @param originalBuffer - Le buffer original (avant édition)
+ * @param width - Largeur de l'image
+ * @param height - Hauteur de l'image
+ */
+export const applyManualEditsAtom = atom(
+  null,
+  (
+    _get,
+    set,
+    editedBuffer: Uint8Array,
+    originalBuffer: Uint8Array,
+    width: number,
+    height: number
+  ) => {
+    const edits = new Map<string, number>()
+
+    // Trouver les pixels modifiés
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x
+        if (editedBuffer[idx] !== originalBuffer[idx]) {
+          edits.set(`${x},${y}`, editedBuffer[idx])
+        }
+      }
+    }
+
+    set(manualPixelEditsAtom, edits)
+    logger.info('[Preview] Manual edits applied', { editCount: edits.size })
+  }
+)
+
+/**
+ * Index buffer final avec les modifications manuelles appliquées.
+ * C'est cet atome qui doit être utilisé pour le rendu de la preview.
+ */
+export const finalPreviewIndexBufferAtom = atom(async (get) => {
+  const baseData = await get(previewIndexBufferAtom)
+  if (!baseData) return null
+
+  const edits = get(manualPixelEditsAtom)
+  return applyManualEditsToBuffer(baseData, edits)
+})
+
+/**
+ * Image preview finale avec les modifications manuelles appliquées.
+ * Convertit le finalPreviewIndexBufferAtom en ImageData pour l'affichage.
+ */
+export const finalPreviewImageAtom = atom(async (get) => {
+  const bufferData = await get(finalPreviewIndexBufferAtom)
+  if (!bufferData) return null
+
+  const { buffer, width, height, palette } = bufferData
+
+  // Créer l'ImageData à partir de l'index buffer et de la palette
+  const imageData = new ImageData(width, height)
+  const data = imageData.data
+
+  for (let i = 0; i < buffer.length; i++) {
+    const inkIndex = buffer[i]
+    const color = palette[inkIndex] ?? [0, 0, 0]
+    const pixelIndex = i * 4
+    data[pixelIndex] = color[0] // R
+    data[pixelIndex + 1] = color[1] // G
+    data[pixelIndex + 2] = color[2] // B
+    data[pixelIndex + 3] = 255 // A
+  }
+
+  return imageData
 })

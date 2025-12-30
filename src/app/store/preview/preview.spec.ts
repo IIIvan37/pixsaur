@@ -1,5 +1,97 @@
 import { describe, expect, it } from 'vitest'
 import { quantizeCPC } from '@/export'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { applyManualEditsToBuffer, type IndexBufferData } from './preview'
+
+describe('applyManualEditsToBuffer', () => {
+  const createBuffer = (
+    data: number[],
+    width: number,
+    height: number
+  ): IndexBufferData => ({
+    buffer: new Uint8Array(data),
+    width,
+    height,
+    palette: [
+      [0, 0, 0],
+      [255, 255, 255]
+    ] as Vector[]
+  })
+
+  it('should return original buffer when no edits', () => {
+    const buffer = createBuffer([0, 0, 0, 0], 2, 2)
+    const edits = new Map<string, number>()
+
+    const result = applyManualEditsToBuffer(buffer, edits)
+
+    expect(result).toBe(buffer) // Same reference
+  })
+
+  it('should apply single edit', () => {
+    const buffer = createBuffer([0, 0, 0, 0], 2, 2)
+    const edits = new Map<string, number>([['1,0', 5]])
+
+    const result = applyManualEditsToBuffer(buffer, edits)
+
+    expect(result.buffer[1]).toBe(5)
+    expect(result.buffer[0]).toBe(0) // Unchanged
+    expect(result).not.toBe(buffer) // New reference
+  })
+
+  it('should apply multiple edits', () => {
+    const buffer = createBuffer([0, 0, 0, 0], 2, 2)
+    const edits = new Map<string, number>([
+      ['0,0', 1],
+      ['1,1', 2]
+    ])
+
+    const result = applyManualEditsToBuffer(buffer, edits)
+
+    expect(result.buffer[0]).toBe(1)
+    expect(result.buffer[3]).toBe(2) // y=1, x=1 -> offset 3
+  })
+
+  it('should ignore out-of-bounds edits', () => {
+    const buffer = createBuffer([0, 0, 0, 0], 2, 2)
+    const edits = new Map<string, number>([
+      ['10,10', 5], // Out of bounds
+      ['0,0', 1] // Valid
+    ])
+
+    const result = applyManualEditsToBuffer(buffer, edits)
+
+    expect(result.buffer[0]).toBe(1)
+    expect(result.buffer.length).toBe(4)
+  })
+
+  it('should preserve metadata', () => {
+    const buffer: IndexBufferData = {
+      buffer: new Uint8Array([0, 0]),
+      width: 2,
+      height: 1,
+      palette: [
+        [255, 0, 0],
+        [0, 255, 0]
+      ] as Vector[]
+    }
+    const edits = new Map<string, number>([['0,0', 1]])
+
+    const result = applyManualEditsToBuffer(buffer, edits)
+
+    expect(result.width).toBe(2)
+    expect(result.height).toBe(1)
+    expect(result.palette).toEqual(buffer.palette)
+  })
+
+  it('should not modify original buffer', () => {
+    const buffer = createBuffer([0, 0, 0, 0], 2, 2)
+    const edits = new Map<string, number>([['0,0', 5]])
+
+    applyManualEditsToBuffer(buffer, edits)
+
+    expect(buffer.buffer[0]).toBe(0) // Original unchanged
+  })
+})
 
 // Test de la fonction de quantification CPC isolément
 describe('CPC Quantization Logic', () => {

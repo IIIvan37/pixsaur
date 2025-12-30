@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { IGNORED_SLOT } from '@/app/store/preview/preview'
+import { IGNORED_SLOT, type IndexBufferData } from '@/app/store/preview/preview'
 import {
   convertPaletteToCPCPlus,
   convertPaletteToFirmware,
@@ -17,17 +17,7 @@ vi.mock('@/export', () => ({
   rgbToCPCPlus: vi.fn((r: number, g: number, b: number) => {
     // Mock: return a 12-bit value
     return ((g & 0xf0) << 4) | (r & 0xf0) | ((b & 0xf0) >> 4)
-  }),
-  rgbToIndexBufferExact: vi.fn(
-    (
-      _data: Uint8ClampedArray,
-      _palette: unknown[],
-      _flag: boolean,
-      _isCPCPlus?: boolean
-    ) => {
-      return new Uint8Array([0, 1, 2, 3])
-    }
-  )
+  })
 }))
 
 describe('isIgnoredSlot', () => {
@@ -110,15 +100,17 @@ describe('convertPaletteToCPCPlus', () => {
 })
 
 describe('prepareExportData', () => {
-  const createMockImageData = (width = 4, height = 4): ImageData => {
-    const data = new Uint8ClampedArray(width * height * 4)
-    for (let i = 0; i < data.length; i += 4) {
-      data[i] = 255 // R
-      data[i + 1] = 0 // G
-      data[i + 2] = 0 // B
-      data[i + 3] = 255 // A
-    }
-    return { data, width, height, colorSpace: 'srgb' } as ImageData
+  const createMockIndexBufferData = (
+    width = 2,
+    height = 2
+  ): IndexBufferData => {
+    const buffer = new Uint8Array([0, 1, 2, 0])
+    const palette = [
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255]
+    ] as [number, number, number][]
+    return { buffer, width, height, palette }
   }
 
   const basePalette = [
@@ -127,38 +119,38 @@ describe('prepareExportData', () => {
     [0, 0, 255]
   ]
 
-  it('returns null when image is null', () => {
+  it('returns null when finalPreviewIndexBuffer is null', () => {
     const params: GetExportDataParams = {
-      image: null,
+      finalPreviewIndexBuffer: null,
       exportPalette: basePalette,
       rasterEnabled: false,
       rasterBasePalette: null,
-      rasterIndexBuffer: null,
+      finalRasterIndexBuffer: null,
       cpcHardware: 'classic'
     }
     expect(prepareExportData(params)).toBeNull()
   })
 
-  it('returns null when image has no data', () => {
+  it('returns null when finalPreviewIndexBuffer is undefined', () => {
     const params: GetExportDataParams = {
-      image: undefined,
+      finalPreviewIndexBuffer: undefined,
       exportPalette: basePalette,
       rasterEnabled: false,
       rasterBasePalette: null,
-      rasterIndexBuffer: null,
+      finalRasterIndexBuffer: null,
       cpcHardware: 'classic'
     }
     expect(prepareExportData(params)).toBeNull()
   })
 
   it('returns export data for CPC Classic without raster', () => {
-    const image = createMockImageData()
+    const indexBuffer = createMockIndexBufferData()
     const params: GetExportDataParams = {
-      image,
+      finalPreviewIndexBuffer: indexBuffer,
       exportPalette: basePalette,
       rasterEnabled: false,
       rasterBasePalette: null,
-      rasterIndexBuffer: null,
+      finalRasterIndexBuffer: null,
       cpcHardware: 'classic'
     }
 
@@ -167,18 +159,19 @@ describe('prepareExportData', () => {
     expect(result).not.toBeNull()
     expect(result!.paletteFirmware).toHaveLength(3)
     expect(result!.palettePlus).toHaveLength(0)
-    expect(result!.indexBuf).toBeInstanceOf(Uint8Array)
-    expect(result!.cleanImage).toBe(image)
+    expect(result!.indexBuf).toBe(indexBuffer.buffer)
+    expect(result!.cleanImage.width).toBe(2)
+    expect(result!.cleanImage.height).toBe(2)
   })
 
   it('returns export data for CPC Plus without raster', () => {
-    const image = createMockImageData()
+    const indexBuffer = createMockIndexBufferData()
     const params: GetExportDataParams = {
-      image,
+      finalPreviewIndexBuffer: indexBuffer,
       exportPalette: basePalette,
       rasterEnabled: false,
       rasterBasePalette: null,
-      rasterIndexBuffer: null,
+      finalRasterIndexBuffer: null,
       cpcHardware: 'plus'
     }
 
@@ -191,17 +184,17 @@ describe('prepareExportData', () => {
   })
 
   it('uses raster palette when raster is enabled', () => {
-    const image = createMockImageData()
+    const indexBuffer = createMockIndexBufferData()
     const rasterPalette = [
       [128, 128, 128],
       [64, 64, 64]
     ]
     const params: GetExportDataParams = {
-      image,
+      finalPreviewIndexBuffer: indexBuffer,
       exportPalette: basePalette,
       rasterEnabled: true,
       rasterBasePalette: rasterPalette,
-      rasterIndexBuffer: null,
+      finalRasterIndexBuffer: null,
       cpcHardware: 'classic'
     }
 
@@ -213,33 +206,44 @@ describe('prepareExportData', () => {
   })
 
   it('uses raster index buffer when available', () => {
-    const image = createMockImageData()
+    const previewBuffer = createMockIndexBufferData()
     const rasterPalette = [[128, 128, 128]]
-    const rasterBuffer = new Uint8Array([5, 6, 7, 8])
+    const rasterBuffer: IndexBufferData = {
+      buffer: new Uint8Array([5, 6, 7, 8]),
+      width: 2,
+      height: 2,
+      palette: [[128, 128, 128]]
+    }
     const params: GetExportDataParams = {
-      image,
+      finalPreviewIndexBuffer: previewBuffer,
       exportPalette: basePalette,
       rasterEnabled: true,
       rasterBasePalette: rasterPalette,
-      rasterIndexBuffer: { buffer: rasterBuffer },
+      finalRasterIndexBuffer: rasterBuffer,
       cpcHardware: 'classic'
     }
 
     const result = prepareExportData(params)
 
     expect(result).not.toBeNull()
-    expect(result!.indexBuf).toBe(rasterBuffer)
+    expect(result!.indexBuf).toBe(rasterBuffer.buffer)
   })
 
   it('falls back to export palette when raster is disabled', () => {
-    const image = createMockImageData()
+    const indexBuffer = createMockIndexBufferData()
     const rasterPalette = [[128, 128, 128]]
+    const rasterBuffer: IndexBufferData = {
+      buffer: new Uint8Array([5, 6, 7, 8]),
+      width: 2,
+      height: 2,
+      palette: [[128, 128, 128]]
+    }
     const params: GetExportDataParams = {
-      image,
+      finalPreviewIndexBuffer: indexBuffer,
       exportPalette: basePalette,
       rasterEnabled: false,
       rasterBasePalette: rasterPalette,
-      rasterIndexBuffer: { buffer: new Uint8Array([5, 6, 7, 8]) },
+      finalRasterIndexBuffer: rasterBuffer,
       cpcHardware: 'classic'
     }
 
@@ -247,5 +251,170 @@ describe('prepareExportData', () => {
 
     expect(result).not.toBeNull()
     expect(result!.effectivePalette).toBe(basePalette)
+  })
+
+  it('generates correct ImageData from index buffer', () => {
+    const indexBuffer: IndexBufferData = {
+      buffer: new Uint8Array([0, 1, 0, 1]),
+      width: 2,
+      height: 2,
+      palette: [
+        [255, 0, 0],
+        [0, 255, 0]
+      ]
+    }
+    const params: GetExportDataParams = {
+      finalPreviewIndexBuffer: indexBuffer,
+      exportPalette: basePalette,
+      rasterEnabled: false,
+      rasterBasePalette: null,
+      finalRasterIndexBuffer: null,
+      cpcHardware: 'classic'
+    }
+
+    const result = prepareExportData(params)
+
+    expect(result).not.toBeNull()
+    const { cleanImage } = result!
+    expect(cleanImage.width).toBe(2)
+    expect(cleanImage.height).toBe(2)
+    // First pixel: red (index 0)
+    expect(cleanImage.data[0]).toBe(255) // R
+    expect(cleanImage.data[1]).toBe(0) // G
+    expect(cleanImage.data[2]).toBe(0) // B
+    expect(cleanImage.data[3]).toBe(255) // A
+    // Second pixel: green (index 1)
+    expect(cleanImage.data[4]).toBe(0) // R
+    expect(cleanImage.data[5]).toBe(255) // G
+    expect(cleanImage.data[6]).toBe(0) // B
+    expect(cleanImage.data[7]).toBe(255) // A
+  })
+
+  describe('manual edits support', () => {
+    it('uses finalPreviewIndexBuffer which includes manual edits', () => {
+      // This test validates that export uses the FINAL buffer (with edits applied)
+      // not the raw preview buffer
+      const editedBuffer: IndexBufferData = {
+        buffer: new Uint8Array([3, 3, 3, 3]), // Edited values
+        width: 2,
+        height: 2,
+        palette: [
+          [0, 0, 0],
+          [255, 0, 0],
+          [0, 255, 0],
+          [0, 0, 255]
+        ]
+      }
+      const params: GetExportDataParams = {
+        finalPreviewIndexBuffer: editedBuffer,
+        exportPalette: basePalette,
+        rasterEnabled: false,
+        rasterBasePalette: null,
+        finalRasterIndexBuffer: null,
+        cpcHardware: 'classic'
+      }
+
+      const result = prepareExportData(params)
+
+      expect(result).not.toBeNull()
+      // The export should use the edited buffer values
+      expect(result!.indexBuf).toBe(editedBuffer.buffer)
+      expect(Array.from(result!.indexBuf)).toEqual([3, 3, 3, 3])
+    })
+
+    it('uses finalRasterIndexBuffer with manual edits in raster mode', () => {
+      const previewBuffer = createMockIndexBufferData()
+      const rasterPalette = [
+        [128, 0, 0],
+        [0, 128, 0],
+        [0, 0, 128],
+        [128, 128, 0]
+      ]
+      // Raster buffer with edits already applied
+      const editedRasterBuffer: IndexBufferData = {
+        buffer: new Uint8Array([2, 2, 2, 2]), // Edited raster values
+        width: 2,
+        height: 2,
+        palette: rasterPalette as [number, number, number][]
+      }
+      const params: GetExportDataParams = {
+        finalPreviewIndexBuffer: previewBuffer,
+        exportPalette: basePalette,
+        rasterEnabled: true,
+        rasterBasePalette: rasterPalette,
+        finalRasterIndexBuffer: editedRasterBuffer,
+        cpcHardware: 'classic'
+      }
+
+      const result = prepareExportData(params)
+
+      expect(result).not.toBeNull()
+      // Should use the raster buffer with edits, not preview buffer
+      expect(result!.indexBuf).toBe(editedRasterBuffer.buffer)
+      expect(Array.from(result!.indexBuf)).toEqual([2, 2, 2, 2])
+    })
+
+    it('cleanImage reflects manual edits from index buffer', () => {
+      // Buffer where pixel at (0,0) was manually changed to blue (index 2)
+      const editedBuffer: IndexBufferData = {
+        buffer: new Uint8Array([2, 0, 0, 0]), // First pixel edited to index 2
+        width: 2,
+        height: 2,
+        palette: [
+          [255, 0, 0], // ink 0 = red
+          [0, 255, 0], // ink 1 = green
+          [0, 0, 255] // ink 2 = blue
+        ]
+      }
+      const params: GetExportDataParams = {
+        finalPreviewIndexBuffer: editedBuffer,
+        exportPalette: basePalette,
+        rasterEnabled: false,
+        rasterBasePalette: null,
+        finalRasterIndexBuffer: null,
+        cpcHardware: 'classic'
+      }
+
+      const result = prepareExportData(params)
+
+      expect(result).not.toBeNull()
+      const { cleanImage } = result!
+      // First pixel should be blue (the edited value)
+      expect(cleanImage.data[0]).toBe(0) // R
+      expect(cleanImage.data[1]).toBe(0) // G
+      expect(cleanImage.data[2]).toBe(255) // B
+      expect(cleanImage.data[3]).toBe(255) // A
+    })
+
+    it('export for CPC Playground uses correct index buffer with edits', () => {
+      const editedBuffer: IndexBufferData = {
+        buffer: new Uint8Array([1, 2, 3, 0]),
+        width: 2,
+        height: 2,
+        palette: [
+          [0, 0, 0],
+          [255, 0, 0],
+          [0, 255, 0],
+          [0, 0, 255]
+        ]
+      }
+      const params: GetExportDataParams = {
+        finalPreviewIndexBuffer: editedBuffer,
+        exportPalette: basePalette,
+        rasterEnabled: false,
+        rasterBasePalette: null,
+        finalRasterIndexBuffer: null,
+        cpcHardware: 'plus'
+      }
+
+      const result = prepareExportData(params)
+
+      expect(result).not.toBeNull()
+      // CPC Playground needs indexBuf with manual edits
+      expect(result!.indexBuf).toBeInstanceOf(Uint8Array)
+      expect(Array.from(result!.indexBuf)).toEqual([1, 2, 3, 0])
+      // Should have CPC Plus palette
+      expect(result!.palettePlus.length).toBeGreaterThan(0)
+    })
   })
 })

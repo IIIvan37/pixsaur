@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import type { CPCHardware } from '@/libs/types'
 
 // Mock RASM WASM
 let mockRasmInstance: any
@@ -73,7 +74,7 @@ describe('exportDskWorkspace', () => {
     index: number,
     mode: 0 | 1 | 2 = 0,
     overscan = false,
-    cpcHardware: 'classic' | 'plus' = 'classic'
+    cpcHardware: CPCHardware = 'classic'
   ): DskImage => ({
     id: `image-${index}`,
     name: `Image${index}`,

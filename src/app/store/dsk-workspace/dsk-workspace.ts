@@ -1,6 +1,7 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
+import type { CPCHardware } from '@/libs/types'
 
 export interface DskImage {
   id: string
@@ -13,7 +14,7 @@ export interface DskImage {
   nColors: number
   scaleX: number
   scaleY: number
-  cpcHardware: 'classic' | 'plus' // Hardware type for palette format
+  cpcHardware: CPCHardware // Hardware type for palette format
   paletteFirmware: number[] // Firmware palette indices for CPC Classic export
   palettePlus?: number[] // CPC Plus 16-bit palette values (optional, only for CPC Plus)
   thumbnailDataUrl?: string // Base64 data URL for preview
@@ -57,7 +58,7 @@ export const addImageToDskAtom = atom(
       nColors: number
       scaleX: number
       scaleY: number
-      cpcHardware: 'classic' | 'plus'
+      cpcHardware: CPCHardware
       paletteFirmware: number[]
       palettePlus?: number[]
       thumbnailDataUrl?: string
@@ -76,7 +77,7 @@ export const addImageToDskAtom = atom(
           id,
           scrData: Array.from(image.scrData) // Convert Uint8Array to array for storage
         }
-      ]
+      ] as DskImage[]
     })
   }
 )

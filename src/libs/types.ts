@@ -4,9 +4,27 @@ import type { Vector } from './pixsaur-color/src/type'
 export type CPCMode = 'mode0' | 'mode1' | 'mode2'
 
 // CPC Hardware Types
-export enum CPCHardware {
-  CLASSIC = 'classic',
-  PLUS = 'plus'
+export type CPCHardware = 'classic' | 'plus'
+
+// Mode R specific types
+export interface ModeRPair {
+  indexA: number // Palette A color index (0-15)
+  indexB: number // Palette B color index (0-15)
+  colorA: Vector // Color in frame A
+  colorB: Vector // Color in frame B
+  blendedColor: Vector // Perceived blended color
+  flickerScore: number // Lower = less flicker (based on luminance difference)
+}
+
+export interface ModeRPalettes {
+  paletteA: Vector[] // 16 colors for frame A
+  paletteB: Vector[] // 16 colors for frame B
+  pairs: ModeRPair[] // 16 pairs defining the perceived colors
+}
+
+export interface ModeRConfig {
+  antiFlickerWeight: number // 0-100: priority for reducing flicker vs color accuracy
+  maxLuminanceDelta: number // Maximum luminance difference for pairs (anti-flicker)
 }
 
 // CPC Color (Classic 27 colors)

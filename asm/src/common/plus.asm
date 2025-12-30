@@ -19,6 +19,13 @@ activate
     out (c), c
     ret
 
+deactivate
+    ;; Deactivate CPC Plus functions
+    ld bc, #7fA0
+    out (c), c
+    ret
+
+    
 ;; ASIC unlock sequence (17 bytes)
 unlock_seq:
     defb 255, 0, 255, 119, 179

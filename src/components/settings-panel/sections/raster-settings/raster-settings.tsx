@@ -6,7 +6,8 @@ import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useState } from 'react'
 import {
   cpcHardwareAtom,
-  effectiveModeConfigAtom
+  effectiveModeConfigAtom,
+  modeREnabledAtom
 } from '@/app/store/config/config'
 import { imageAtom } from '@/app/store/image/image'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
@@ -41,6 +42,7 @@ import { RasterSettingsView } from './raster-settings-view'
 export function RasterSettings() {
   // Raster mode
   const [rasterEnabled, setRasterEnabled] = useAtom(rasterEnabledAtom)
+  const setModeREnabled = useSetAtom(modeREnabledAtom)
 
   // Raster parameters
   const [maxChangesPerLine, setMaxChangesPerLine] = useAtom(
@@ -149,10 +151,21 @@ export function RasterSettings() {
     clearAll()
   }, [clearAll])
 
+  // When raster is enabled, disable Mode R (mutually exclusive)
+  const handleRasterEnabledChange = useCallback(
+    (enabled: boolean) => {
+      setRasterEnabled(enabled)
+      if (enabled) {
+        setModeREnabled(false)
+      }
+    },
+    [setRasterEnabled, setModeREnabled]
+  )
+
   return (
     <RasterSettingsView
       rasterEnabled={rasterEnabled}
-      onRasterEnabledChange={setRasterEnabled}
+      onRasterEnabledChange={handleRasterEnabledChange}
       maxChangesPerLine={maxChangesPerLine}
       onMaxChangesPerLineChange={setMaxChangesPerLine}
       hardwareLimit={hardwareLimit}

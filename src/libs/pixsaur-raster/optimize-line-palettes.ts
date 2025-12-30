@@ -781,16 +781,8 @@ export function optimizeLinePalettesWithIndexBuffer(
   // Helper function to quantize a color based on hardware mode
   // CPC Classic: use pre-computed LUT (ultra-fast array lookup)
   // CPC Plus: quantize to 4096 colors (4 bits per channel)
-  const quantizeColor = (color: Vector<'RGB'>): Vector<'RGB'> => {
-    if (cpcClassicPalette && cpcClassicLUT) {
-      return quantizeToCPCClassicWithLUT(
-        color,
-        cpcClassicPalette,
-        cpcClassicLUT
-      )
-    }
-    return quantizeToCPCPlus(color)
-  }
+  // Use shared quantize function for hardware mode
+  const quantizeColor = createQuantizeFunction(cpcClassicPalette, cpcClassicLUT)
 
   // Create a set of existing changes for fast lookup
   const existingChangeSet = new Set(
@@ -1278,7 +1270,7 @@ function selectPaletteFarthestPoint(
 /**
  * Options for raster preprocessing
  */
-export interface RasterPreprocessOptions {
+interface RasterPreprocessOptions {
   /**
    * Dithering intensity from 0 (no dithering) to 1 (full dithering)
    *
@@ -1322,11 +1314,11 @@ export function preprocessImageForRaster(
   _globalPalette: Vector<'RGB'>[],
   options: RasterPreprocessOptions = {}
 ): ImageData {
-  const { ditheringIntensity = 0.75, nColors = 4, cpcClassicPalette } = options
+  let { ditheringIntensity = 0.75, nColors = 4, cpcClassicPalette } = options
+  // Clamp dithering intensity to a maximum of 1.0 (full effect allowed)
+  ditheringIntensity = Math.min(ditheringIntensity, 1)
   const { width, height, data } = sourceImage
   const outputData = new Uint8ClampedArray(data.length)
-
-  // Build LUT for CPC Classic if needed (done once, cached globally)
   if (cpcClassicPalette) {
     if (!cpcClassicLUT || cpcClassicLUTPalette !== cpcClassicPalette) {
       cpcClassicLUT = buildCPCClassicLUT(cpcClassicPalette)
@@ -1425,10 +1417,9 @@ export function preprocessImageForRaster(
     const quantizedPalette = linePalette.map((c) => quantizeColor(c))
 
     // Check if this line already satisfies the nColors constraint
-    // If so and dithering is disabled, skip dithering to preserve the original colors
-    // If dithering is enabled (intensity > 0), always apply it for visual consistency
-    const lineAlreadySatisfiesConstraint =
-      colorHistogram.size <= nColors && ditheringIntensity === 0
+    // If so, always skip dithering to preserve the original colors (even if intensity > 0)
+    // This prevents adding noise to already clean lines
+    const lineAlreadySatisfiesConstraint = colorHistogram.size <= nColors
 
     // New vertical error buffer for next line (floating-point)
     const newVerticalError: [number, number, number][] = new Array(width)
@@ -1482,12 +1473,23 @@ export function preprocessImageForRaster(
         const rawTotalError = addErrors(verticalError[x], horizError[x])
 
         // Clamp accumulated error to prevent runaway values
-        // Allow ±128 per channel (half the color range) to preserve dithering quality
-        // while preventing extreme artifacts
+        // Scale the clamp with dithering intensity to prevent dark artifacts
+        // At intensity=1.0: ±64, at intensity=0.5: ±32, etc.
+        // Lower values prevent the dithering from pushing pixels too far from original
+        const maxAccumulatedError = 64 * ditheringIntensity
         const totalError: [number, number, number] = [
-          Math.max(-128, Math.min(128, rawTotalError[0])),
-          Math.max(-128, Math.min(128, rawTotalError[1])),
-          Math.max(-128, Math.min(128, rawTotalError[2]))
+          Math.max(
+            -maxAccumulatedError,
+            Math.min(maxAccumulatedError, rawTotalError[0])
+          ),
+          Math.max(
+            -maxAccumulatedError,
+            Math.min(maxAccumulatedError, rawTotalError[1])
+          ),
+          Math.max(
+            -maxAccumulatedError,
+            Math.min(maxAccumulatedError, rawTotalError[2])
+          )
         ]
 
         // Add error to source color (may go out of [0,255] range temporarily)
@@ -1533,10 +1535,13 @@ export function preprocessImageForRaster(
         // Base coefficients from raster-constants.ts
         // Horizontal: 1/2, Vertical: 1/8 (reduced to minimize vertical banding)
         // At intensity=0: no error propagation
+        // Use configurable error propagation coefficients (defaults: horiz 0.55, vert 0.13)
         const horizCoef =
-          rasterTuningOverrides.horizontalErrorCoefficient * ditheringIntensity
+          (rasterTuningOverrides.horizontalErrorCoefficient ?? 0.55) *
+          ditheringIntensity
         const vertCoef =
-          rasterTuningOverrides.verticalErrorCoefficient * ditheringIntensity
+          (rasterTuningOverrides.verticalErrorCoefficient ?? 0.13) *
+          ditheringIntensity
 
         // Horizontal error propagation
         if (x + 1 < width && horizCoef > 0) {

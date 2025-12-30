@@ -181,7 +181,7 @@ describe('quantize.ts - Integration Tests', () => {
         preselected: [],
         quantConfig: {
           distanceMetric: 'euclidean',
-          contrastStrategy: 'balanced'
+          paletteStrategy: 'balanced-score-balanced'
         }
       })
 
@@ -215,7 +215,7 @@ describe('quantize.ts - Integration Tests', () => {
         preselected: [],
         quantConfig: {
           distanceMetric: 'euclidean',
-          contrastStrategy: 'max'
+          paletteStrategy: 'diversity-first-max'
         }
       })
 

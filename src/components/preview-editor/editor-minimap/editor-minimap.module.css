@@ -1,0 +1,28 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  background-color: var(--color-background-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.header {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-foreground-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.canvas {
+  display: block;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.canvas:hover {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}

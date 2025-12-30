@@ -499,7 +499,6 @@ export class ReGLProcessor implements ImageProcessor {
           {
             distanceMetric,
             targetColors,
-            contrastStrategy: undefined, // Obsolete, ignored
             paletteStrategy:
               paletteStrategy || getDefaultStore().get(paletteStrategyAtom),
             gpuOptions: {
@@ -549,7 +548,6 @@ export class ReGLProcessor implements ImageProcessor {
       preselected,
       quantConfig: {
         distanceMetric,
-        contrastStrategy: undefined, // Obsolete parameter
         paletteStrategy // Passer la stratégie v2 au quantizer CPU
       }
     })

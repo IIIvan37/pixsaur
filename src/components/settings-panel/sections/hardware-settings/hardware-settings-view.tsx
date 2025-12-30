@@ -3,11 +3,15 @@
  */
 
 import { Trans } from '@lingui/react/macro'
+import { useId } from 'react'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
+import Flex from '@/components/ui/flex'
+import { Switch } from '@/components/ui/switch'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 import type { CPCHardware } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
+import { ModeRSettings } from './mode-r-settings'
 
 type HardwareSettingsViewProps = Readonly<{
   cpcHardware: CPCHardware
@@ -16,6 +20,8 @@ type HardwareSettingsViewProps = Readonly<{
   onPixelModeChange: (value: PixelMode) => void
   dimensionPreset: DimensionPreset
   onDimensionPresetChange: (value: DimensionPreset) => void
+  modeREnabled: boolean
+  onModeREnabledChange: (value: boolean) => void
 }>
 
 export function HardwareSettingsView({
@@ -24,11 +30,15 @@ export function HardwareSettingsView({
   pixelMode,
   onPixelModeChange,
   dimensionPreset,
-  onDimensionPresetChange
+  onDimensionPresetChange,
+  modeREnabled,
+  onModeREnabledChange
 }: HardwareSettingsViewProps) {
+  const modeRSwitchId = useId()
+
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
-    { value: 'classic' as CPCHardware, label: 'CPC Classic (27 colors)' },
-    { value: 'plus' as CPCHardware, label: 'CPC Plus (4096 colors)' }
+    { value: 'classic', label: 'CPC Classic (27 colors)' },
+    { value: 'plus', label: 'CPC Plus (4096 colors)' }
   ]
 
   const pixelModeOptions: Array<{ value: PixelMode; label: string }> = [
@@ -72,6 +82,27 @@ export function HardwareSettingsView({
             ariaLabelPrefix='Hardware'
           />
         </div>
+
+        <Flex align='center' justify='space-between' style={{ width: '100%' }}>
+          <div>
+            <h4 className={styles.sectionTitle}>
+              <Trans>Mode R</Trans>
+            </h4>
+            <p className={styles.description}>
+              <Trans>
+                Résolution horizontale doublée (Mode 0 uniquement). Utilise 2
+                images alternées à 50Hz.
+              </Trans>
+            </p>
+          </div>
+          <Switch
+            checked={modeREnabled}
+            onCheckedChange={onModeREnabledChange}
+            id={modeRSwitchId}
+          />
+        </Flex>
+
+        {modeREnabled && <ModeRSettings />}
       </div>
 
       <div className={styles.separator} />

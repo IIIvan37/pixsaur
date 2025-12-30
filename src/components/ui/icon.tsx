@@ -17,7 +17,9 @@ import {
   ImageIcon,
   InfoCircledIcon,
   LockClosedIcon,
+  Pencil2Icon,
   PlusIcon,
+  QuestionMarkCircledIcon,
   ReloadIcon,
   TrashIcon,
   UploadIcon
@@ -44,7 +46,9 @@ const ICON_MAP = {
   ImageIcon,
   InfoCircledIcon,
   LockClosedIcon,
+  Pencil2Icon,
   PlusIcon,
+  QuestionMarkCircledIcon,
   ReloadIcon,
   TrashIcon,
   UploadIcon

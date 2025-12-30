@@ -4,7 +4,6 @@ import { userEvent } from '@testing-library/user-event'
 import { createStore, Provider } from 'jotai'
 import { beforeEach, describe, it, vi } from 'vitest'
 import { cpcHardwareAtom } from '@/app/store/config/config'
-import { CPCHardware } from '@/libs/types'
 import { renderWithJotai } from '@/test-utils'
 import {
   ColorPaletteView,
@@ -234,7 +233,7 @@ describe('ColorPaletteView', () => {
   describe('CPC Plus mode', () => {
     it('renders ColorPickerPopup for CPC Plus mode when slot has color', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, CPCHardware.PLUS)
+      store.set(cpcHardwareAtom, 'plus')
 
       render(
         <Provider store={store}>
@@ -254,7 +253,7 @@ describe('ColorPaletteView', () => {
 
     it('renders ColorPickerPopup for CPC Plus mode when slot is empty', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, CPCHardware.PLUS)
+      store.set(cpcHardwareAtom, 'plus')
 
       render(
         <Provider store={store}>
@@ -276,7 +275,7 @@ describe('ColorPaletteView', () => {
   describe('Classic mode', () => {
     it('renders ColorGridView for Classic mode', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, CPCHardware.CLASSIC)
+      store.set(cpcHardwareAtom, 'classic')
 
       render(
         <Provider store={store}>
@@ -299,7 +298,7 @@ describe('ColorPaletteView', () => {
   describe('Classic mode', () => {
     it('renders ColorGridView for Classic mode', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, CPCHardware.CLASSIC)
+      store.set(cpcHardwareAtom, 'classic')
 
       render(
         <Provider store={store}>

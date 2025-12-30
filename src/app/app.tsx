@@ -143,6 +143,21 @@ export default function App() {
               </p>
               <div className={styles.headerActions}>
                 <a
+                  href='https://cpc-playground.iiivan.org'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className={styles.playgroundLink}
+                  aria-label='CPC Playground - Emulateur en ligne'
+                  title='CPC Playground'
+                >
+                  <img
+                    src='pixsaur_logo_512.png'
+                    width='20'
+                    height='20'
+                    alt='CPC Playground'
+                  />
+                </a>
+                <a
                   href='https://github.com/IIIvan37/pixsaur'
                   target='_blank'
                   rel='noopener noreferrer'

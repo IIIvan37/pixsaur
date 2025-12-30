@@ -9,14 +9,15 @@ import {
 import { dskImagesAtom } from '@/app/store/dsk-workspace/dsk-workspace'
 import {
   exportPaletteWithSlotsAtom,
-  IGNORED_SLOT,
-  previewImageAtom
+  finalPreviewIndexBufferAtom,
+  IGNORED_SLOT
 } from '@/app/store/preview/preview'
 import {
+  effectivePreviewImageAtom,
+  finalRasterIndexBufferAtom,
   rasterBasePaletteAtom,
   rasterChangesAtom,
-  rasterEnabledAtom,
-  rasterIndexBufferAtom
+  rasterEnabledAtom
 } from '@/app/store/raster/raster'
 import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
@@ -26,14 +27,16 @@ import {
   exportDskWorkspaceZip,
   paletteToCPCPlusValues,
   rgbToFirmwareIndex,
-  rgbToIndexBufferExact,
   sanitizeAmsdosFilename
 } from '@/export'
 import { isTauri, saveZipFileTauri } from '@/tauri'
 
 export default function DskWorkspacePanel() {
   const { _ } = useLingui()
-  const image = useAtomValue(previewImageAtom)
+  // Get final index buffer with manual edits applied (non-raster mode)
+  const finalPreviewIndexBuffer = useAtomValue(finalPreviewIndexBufferAtom)
+  // Get preview image with rasters and manual edits applied (for thumbnail)
+  const previewImageWithEdits = useAtomValue(effectivePreviewImageAtom)
   // Utiliser la palette avec slots pour l'export (conserve les positions des slots vides lockés)
   const exportPalette = useAtomValue(exportPaletteWithSlotsAtom)
   // Get raster-specific palette when raster mode is enabled
@@ -43,15 +46,15 @@ export default function DskWorkspacePanel() {
   const dskImages = useAtomValue(dskImagesAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const rasterChanges = useAtomValue(rasterChangesAtom)
-  // Get raster index buffer (already optimized with correct ink assignments)
-  const rasterIndexBuffer = useAtomValue(rasterIndexBufferAtom)
+  // Get raster index buffer with manual edits applied
+  const finalRasterIndexBuffer = useAtomValue(finalRasterIndexBufferAtom)
   const [isExporting, setIsExporting] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
 
   // Check if we can add current image (must have image)
   // We now support all dimensions including overscan and custom
-  const canAddCurrentImage = !!image
+  const canAddCurrentImage = !!finalPreviewIndexBuffer
 
   // Helper pour vérifier si un slot est ignoré
   const isIgnoredSlot = (color: number[]) =>
@@ -126,22 +129,34 @@ export default function DskWorkspacePanel() {
         const timestamp = Date.now().toString().slice(-6) // Use last 6 digits
         const suggestedName = `IMG_${timestamp}.SCR`
 
+        // Use the effective index buffer with manual edits applied
+        const useRaster = rasterEnabled && finalRasterIndexBuffer
+        const indexBufferData = useRaster
+          ? finalRasterIndexBuffer
+          : finalPreviewIndexBuffer
+
+        // This should never be null since canAddCurrentImage checks for it
+        if (!indexBufferData) return undefined
+
+        const { width, height } = indexBufferData
+
         // Generate thumbnail (max 120px height) with correct CPC pixel aspect ratio
+        // Use the preview image with edits applied for accurate thumbnail
         const canvas = document.createElement('canvas')
         const maxHeight = 80
-        const displayWidth = image.width * modeConfig.scaleX
-        const displayHeight = image.height * modeConfig.scaleY
+        const displayWidth = width * modeConfig.scaleX
+        const displayHeight = height * modeConfig.scaleY
         const scale = maxHeight / displayHeight
         canvas.width = Math.floor(displayWidth * scale)
         canvas.height = Math.floor(displayHeight * scale)
         const ctx = canvas.getContext('2d')
-        if (ctx) {
+        if (ctx && previewImageWithEdits) {
           const tempCanvas = document.createElement('canvas')
-          tempCanvas.width = image.width
-          tempCanvas.height = image.height
+          tempCanvas.width = previewImageWithEdits.width
+          tempCanvas.height = previewImageWithEdits.height
           const tempCtx = tempCanvas.getContext('2d')
           if (tempCtx) {
-            tempCtx.putImageData(image, 0, 0)
+            tempCtx.putImageData(previewImageWithEdits, 0, 0)
             ctx.imageSmoothingEnabled = false
             ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height)
           }
@@ -161,26 +176,15 @@ export default function DskWorkspacePanel() {
           return `#${rgb.map((c) => c.toString(16).padStart(2, '0')).join('')}`
         })
 
-        // Convert RGB to palette indices (not SCR encoded yet)
-        // The SCR encoding will be done by generateSCRAsmClassic in export-dsk-workspace
-        // In raster mode, use the optimized index buffer to ensure ink indices match raster changes
-        let indexBuffer: Uint8Array
-        if (useRasterPalette && rasterIndexBuffer) {
-          indexBuffer = rasterIndexBuffer.buffer
-        } else {
-          indexBuffer = rgbToIndexBufferExact(
-            image.data,
-            effectivePalette,
-            false
-          )
-        }
+        // Use the final index buffer with manual edits already applied
+        const indexBuffer = indexBufferData.buffer
 
         return {
           name: sanitizeAmsdosFilename(suggestedName),
           scrData: indexBuffer,
           mode: modeConfig.mode,
-          width: modeConfig.width,
-          height: modeConfig.height,
+          width,
+          height,
           overscan: modeConfig.overscan,
           nColors: modeConfig.nColors,
           scaleX: modeConfig.scaleX,

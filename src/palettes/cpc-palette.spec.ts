@@ -3,7 +3,6 @@ import {
   getHardwarePalette,
   injectPaletteDataIntoSCR
 } from '@/export/exports/cpc-format'
-import { CPCHardware } from '@/libs/types'
 import {
   cpcPalette,
   generateAmstradCPCPalette,
@@ -131,13 +130,13 @@ describe('CPC Palette', () => {
 
   describe('getPaletteForHardware', () => {
     it('should return classic palette for CLASSIC hardware', () => {
-      const palette = getPaletteForHardware(CPCHardware.CLASSIC)
+      const palette = getPaletteForHardware('classic')
       expect(palette).toHaveLength(27)
       expect(palette).toEqual(generateAmstradCPCPalette())
     })
 
     it('should return plus palette for PLUS hardware', () => {
-      const palette = getPaletteForHardware(CPCHardware.PLUS)
+      const palette = getPaletteForHardware('plus')
       expect(palette).toHaveLength(4096)
       expect(palette).toEqual(generateCPCPlusPalette())
     })

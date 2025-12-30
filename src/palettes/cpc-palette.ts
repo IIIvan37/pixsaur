@@ -1,6 +1,5 @@
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { CPCColor } from '@/libs/types'
-import { CPCHardware } from '@/libs/types'
+import type { CPCColor, CPCHardware } from '@/libs/types'
 
 // Full CPC hardware palette
 export const cpcFullPalette: CPCColor[] = [
@@ -78,9 +77,9 @@ export function generateCPCPlusPalette(): Vector[] {
  */
 export function getPaletteForHardware(hardware: CPCHardware): Vector[] {
   switch (hardware) {
-    case CPCHardware.CLASSIC:
+    case 'classic':
       return generateAmstradCPCPalette() // 27 colors
-    case CPCHardware.PLUS:
+    case 'plus':
       return generateCPCPlusPalette() // 4096 colors
     default:
       return generateAmstradCPCPalette() // Fallback to classic
