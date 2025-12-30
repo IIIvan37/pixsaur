@@ -23,6 +23,8 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
+  egxEnabledAtom,
+  egxTypeAtom,
   horizontalSmoothingAtom,
   modeREnabledAtom,
   modeRPreviewModeAtom,
@@ -104,18 +106,36 @@ export const previewCanvasSizeAtom = atom((get) => {
   const isModeRBlended =
     modeREnabled && (modeRPreviewMode === 'blended' || !modeRPreviewMode)
 
-  // For Mode R blended, the image is already at visual resolution (320×200)
-  // so we use scale factors of 1
-  const effectiveScaleX = isModeRBlended ? 1 : modeConfig.scaleX
-  const effectiveScaleY = isModeRBlended ? 1 : modeConfig.scaleY
+  // Check if EGX is enabled
+  const egxEnabled = get(egxEnabledAtom)
+  const egxType = get(egxTypeAtom)
 
-  // Dimensions visuelles = dimensions canvas × pixel aspect ratio
-  // For Mode R blended: use image dimensions directly (already correct)
-  // For standard modes: apply scale factors
-  const visualWidth = isModeRBlended
-    ? modeConfig.width * 2 // Mode R blended outputs doubled width
-    : modeConfig.width * effectiveScaleX
-  const visualHeight = modeConfig.height * effectiveScaleY
+  // Calculate visual dimensions based on mode
+  let visualWidth: number
+  let visualHeight: number
+
+  if (egxEnabled) {
+    // EGX uses high-resolution mode dimensions
+    // EGX1: Mode 1 (320px base), EGX2: Mode 2 (640px base)
+    // Calculate EGX width from base Mode 0 width
+    const widthMultiplier = egxType === 'egx1' ? 2 : 4
+    const baseWidthMode0 =
+      modeConfig.width /
+      (modeConfig.mode === 0 ? 1 : modeConfig.mode === 1 ? 2 : 4)
+    const egxWidth = Math.round(baseWidthMode0 * widthMultiplier)
+    // EGX has no horizontal pixel stretching (scaleX = 1)
+    // EGX2 has vertical pixel stretching (scaleY = 2)
+    visualWidth = egxWidth
+    visualHeight = modeConfig.height * (egxType === 'egx1' ? 1 : 2)
+  } else if (isModeRBlended) {
+    // Mode R blended: outputs doubled width
+    visualWidth = modeConfig.width * 2
+    visualHeight = modeConfig.height
+  } else {
+    // Standard modes: apply scale factors from modeConfig
+    visualWidth = modeConfig.width * modeConfig.scaleX
+    visualHeight = modeConfig.height * modeConfig.scaleY
+  }
 
   // Calculer le scale pour fit dans le container (sans dépasser la largeur disponible)
   const scale = Math.min(containerWidth / visualWidth, 1) // Ne pas upscaler
@@ -662,7 +682,7 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
 })
 
 // Helper functions pour réduire la complexité cognitive
-function positionImageForAutoMode(
+export function positionImageForAutoMode(
   remapped: ImageData,
   modeConfig: any,
   reduced: Vector[],
