@@ -1,7 +1,7 @@
 BUILDSNA
 BANKSET 0
 SNASET CRTC_TYPE, 3
-
+SNASET CPC TYPE, 4
 include '../common/plus.h.asm'
 
     org #8000
