@@ -6,6 +6,8 @@ export {
   assembleEgxSnaSource,
   type EgxDataFiles,
   type EgxSnaTemplateOptions,
+  generateEgxOverscanSnaTemplate,
+  generateEgxPlusOverscanSnaTemplate,
   generateEgxPlusSnaTemplate,
   generateEgxSnaTemplate
 } from './egx-templates'
