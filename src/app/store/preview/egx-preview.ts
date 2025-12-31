@@ -318,53 +318,123 @@ function analyzeHighResLineColors(
 function optimizePaletteForEGX(
   palette: Vector<'RGB'>[],
   colorUsage: Map<number, number>,
-  sharedCount: number
+  sharedCount: number,
+  isPlus: boolean = false
 ): Vector<'RGB'>[] {
   // Sort color indices by usage (descending)
   const sortedIndices = [...colorUsage.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([idx]) => idx)
 
-  // Minimum distance threshold for diversity (squared)
-  // This prevents selecting two very similar colors (e.g., two near-blacks)
-  const MIN_DISTANCE_SQ = 50 * 50 // ~50 RGB units difference
+  // Amélioration : tester toutes les combinaisons des 8 couleurs les plus utilisées pour les slots partagés
+  const topIndices = sortedIndices.slice(0, Math.max(8, sharedCount))
+  let bestScore = -Infinity
+  let bestCombo: number[] = []
 
-  // Select shared colors with diversity constraint
-  const selectedIndices: number[] = []
-  for (const idx of sortedIndices) {
-    if (selectedIndices.length >= sharedCount) break
-
-    const candidate = palette[idx]
-
-    // Check if candidate is sufficiently different from already selected colors
-    const isTooSimilar = selectedIndices.some((selectedIdx) => {
-      const selected = palette[selectedIdx]
-      return colorDistanceSquared(candidate, selected) < MIN_DISTANCE_SQ
-    })
-
-    if (!isTooSimilar) {
-      selectedIndices.push(idx)
+  // Génère toutes les combinaisons possibles de sharedCount parmi topIndices
+  function* combinations(arr: number[], k: number): Generator<number[]> {
+    const n = arr.length
+    if (k > n) return
+    const indices = Array.from({ length: k }, (_, i) => i)
+    while (true) {
+      yield indices.map((i) => arr[i])
+      let i = k - 1
+      while (i >= 0 && indices[i] === n - k + i) i--
+      if (i < 0) break
+      indices[i]++
+      for (let j = i + 1; j < k; j++) indices[j] = indices[j - 1] + 1
     }
   }
 
-  // If we couldn't find enough diverse colors, fill with most-used remaining
-  for (const idx of sortedIndices) {
-    if (selectedIndices.length >= sharedCount) break
-    if (!selectedIndices.includes(idx)) {
-      selectedIndices.push(idx)
+  // Contraintes de distance uniquement pour CPC Plus (palette 12-bit plus fine)
+  const MIN_DISTANCE_SQ = isPlus ? 100 * 100 : 0 // Minimum 100 RGB units pour Plus
+  const MIN_LUMINANCE_DIFF = 40 // Différence de luminance minimale pour deux couleurs sombres
+
+  // Calcule la luminance perçue (formule standard)
+  const getLuminance = (c: Vector<'RGB'>): number =>
+    0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+
+  // Vérifie si deux couleurs sont perceptuellement trop proches (uniquement pour Plus)
+  const areTooClose = (c1: Vector<'RGB'>, c2: Vector<'RGB'>): boolean => {
+    if (!isPlus) return false // Pas de contrainte pour Classic
+
+    const distSq = colorDistanceSquared(c1, c2)
+    if (distSq >= MIN_DISTANCE_SQ) return false
+
+    // Pour les couleurs sombres, exiger aussi une différence de luminance
+    const lum1 = getLuminance(c1)
+    const lum2 = getLuminance(c2)
+    if (lum1 < 80 && lum2 < 80) {
+      // Les deux sont sombres : vérifier la différence de luminance
+      return Math.abs(lum1 - lum2) < MIN_LUMINANCE_DIFF
+    }
+    return true
+  }
+
+  for (const combo of combinations(topIndices, sharedCount)) {
+    // Vérifie la contrainte de distance minimale
+    let valid = true
+    for (let i = 0; i < combo.length; i++) {
+      for (let j = i + 1; j < combo.length; j++) {
+        if (areTooClose(palette[combo[i]], palette[combo[j]])) {
+          valid = false
+          break
+        }
+      }
+      if (!valid) break
+    }
+    if (!valid) continue
+
+    // Score = 0.7*couverture + 0.3*contraste
+    let coverage = 0
+    for (const idx of combo) coverage += colorUsage.get(idx) ?? 0
+    let contrast = 0
+    let pairs = 0
+    for (let i = 0; i < combo.length; i++) {
+      for (let j = i + 1; j < combo.length; j++) {
+        contrast += colorDistanceSquared(palette[combo[i]], palette[combo[j]])
+        pairs++
+      }
+    }
+    contrast = pairs > 0 ? contrast / pairs : 0
+    const score = 0.7 * coverage + 0.3 * contrast
+    if (score > bestScore) {
+      bestScore = score
+      bestCombo = combo
+    }
+  }
+
+  // Si aucune combinaison trouvée, fallback avec contrainte de distance
+  if (bestCombo.length === 0) {
+    // Sélectionne les couleurs les plus utilisées en respectant la distance minimale
+    for (const idx of topIndices) {
+      if (bestCombo.length >= sharedCount) break
+      const candidate = palette[idx]
+      const isTooClose = bestCombo.some((selectedIdx) =>
+        areTooClose(candidate, palette[selectedIdx])
+      )
+      if (!isTooClose) {
+        bestCombo.push(idx)
+      }
+    }
+    // Si toujours pas assez, remplir avec les plus utilisées restantes
+    for (const idx of topIndices) {
+      if (bestCombo.length >= sharedCount) break
+      if (!bestCombo.includes(idx)) {
+        bestCombo.push(idx)
+      }
     }
   }
 
   // Build remaining indices (colors not selected for shared slots)
   const remainingIndices = sortedIndices.filter(
-    (idx) => !selectedIndices.includes(idx)
+    (idx) => !bestCombo.includes(idx)
   )
 
   // Build optimized palette
   const optimized: Vector<'RGB'>[] = []
-
-  // First: shared colors (most used on high-res lines, with diversity)
-  for (const idx of selectedIndices) {
+  // First: shared colors (meilleure combinaison)
+  for (const idx of bestCombo) {
     optimized.push(palette[idx])
   }
 
@@ -763,16 +833,15 @@ export const egxPaletteAtom = atom(async (get) => {
   if (!egxEnabled) return null
 
   const config = get(egxConfigAtom)
-  const standardPalette = await get(exportPaletteWithSlotsAtom)
   const normalizedImage = await get(egxNormalizedImageAtom)
   const userPalette = get(userPaletteAtom)
 
+  // EGX1 et EGX2 utilisent la palette générée par le quantizer standard (qui utilise la palette strategy)
+  const standardPalette = await get(exportPaletteWithSlotsAtom)
   if (!standardPalette || standardPalette.length === 0) {
     logger.warn('[EGX] No standard palette available')
     return null
   }
-
-  // Filter out invalid colors ([-1,-1,-1] slots)
   const validColors = standardPalette.filter(
     (c): c is Vector<'RGB'> => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
   )
@@ -833,10 +902,12 @@ export const egxPaletteAtom = atom(async (get) => {
   ) {
     // Only reorder if no colors are locked (to preserve user's explicit choices)
     const colorUsage = analyzeHighResLineColors(normalizedImage, colors, config)
+    const isPlus = config.targetHardware === 'plus'
     const optimizedColors = optimizePaletteForEGX(
       colors,
       colorUsage,
-      sharedCount
+      sharedCount,
+      isPlus
     )
 
     // Copy optimized colors back
