@@ -4,6 +4,7 @@ import { useAtom, useAtomValue } from 'jotai'
 import { useMemo } from 'react'
 import {
   effectiveModeConfigAtom,
+  egxEnabledAtom,
   paletteStrategyAtom
 } from '@/app/store/config/config'
 import type { PaletteStrategy } from '@/app/store/config/types'
@@ -201,8 +202,9 @@ const getPaletteStrategies = (
 export function usePaletteStrategyDisabled() {
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
-  // Disabled for mode 0 (16 colors) or when raster is enabled
-  return modeConfig.nColors >= 16 || rasterEnabled
+  const egxEnabled = useAtomValue(egxEnabledAtom)
+  // Disabled for mode 0 (16 colors), when raster is enabled, or when EGX is enabled
+  return modeConfig.nColors >= 16 || rasterEnabled || egxEnabled
 }
 
 export function PaletteStrategySelector() {
