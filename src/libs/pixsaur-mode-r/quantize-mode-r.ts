@@ -508,19 +508,20 @@ function findBestIndicesWithAntiFlicker(
   // Weight for anti-flicker (0-1)
   const flickerWeight = antiFlickerWeight / 100
 
+  // The target perceived color is the average of the two source pixels
+  // This is what the eye will see when the two frames alternate
+  const targetPerceivedColor: Vector<'RGB'> = [
+    Math.round((colorA[0] + colorB[0]) / 2),
+    Math.round((colorA[1] + colorB[1]) / 2),
+    Math.round((colorA[2] + colorB[2]) / 2)
+  ]
+
   // Detect if this is a margin/uniform area (both source pixels are very similar)
   // In this case, we MUST use a uniform pair to avoid flicker on margins
   const isUniformArea = areColorsSimilar(colorA, colorB)
 
   // For uniform areas, find the best uniform pair (same color in both palettes)
   if (isUniformArea) {
-    // Average the colors for the target
-    const targetColor: Vector<'RGB'> = [
-      Math.round((colorA[0] + colorB[0]) / 2),
-      Math.round((colorA[1] + colorB[1]) / 2),
-      Math.round((colorA[2] + colorB[2]) / 2)
-    ]
-
     // Search for the best uniform pair (where A[i] and B[j] are very similar)
     for (let a = 0; a < palettes.paletteA.length; a++) {
       const palA = palettes.paletteA[a]
@@ -532,13 +533,13 @@ function findBestIndicesWithAntiFlicker(
         const pairDistance = colorDistance(palA, palB)
         if (pairDistance > 50) continue // Skip non-uniform pairs (threshold ~7 per channel)
 
-        // Color matching error to target
+        // Color matching error to target (use blended color)
         const blendedColor: Vector<'RGB'> = [
           Math.round((palA[0] + palB[0]) / 2),
           Math.round((palA[1] + palB[1]) / 2),
           Math.round((palA[2] + palB[2]) / 2)
         ]
-        const colorError = colorDistance(targetColor, blendedColor)
+        const colorError = colorDistance(targetPerceivedColor, blendedColor)
 
         if (colorError < bestCost) {
           bestCost = colorError
@@ -553,24 +554,30 @@ function findBestIndicesWithAntiFlicker(
       return { indexA: bestIndexA, indexB: bestIndexB, error: bestCost }
     }
 
-    // Fallback: if no uniform pair found, find the pair with minimum flicker
-    // This shouldn't happen if palettes are well constructed
+    // Fallback: if no uniform pair found, continue to standard search
     bestCost = Number.POSITIVE_INFINITY
   }
 
   // Standard search for non-uniform areas
+  // KEY FIX: Compare the BLENDED color to the target perceived color
+  // In Mode R, the perceived color is (palA + palB) / 2
   for (let a = 0; a < palettes.paletteA.length; a++) {
     const palA = palettes.paletteA[a]
-    const errorA = colorDistance(colorA, palA)
 
     for (let b = 0; b < palettes.paletteB.length; b++) {
       const palB = palettes.paletteB[b]
-      const errorB = colorDistance(colorB, palB)
 
-      // Color matching error
-      const colorError = errorA + errorB
+      // Calculate the blended/perceived color
+      const blendedColor: Vector<'RGB'> = [
+        Math.round((palA[0] + palB[0]) / 2),
+        Math.round((palA[1] + palB[1]) / 2),
+        Math.round((palA[2] + palB[2]) / 2)
+      ]
 
-      // Flicker penalty based on luminance difference between chosen colors
+      // Primary metric: how close is the blended color to the target?
+      const blendError = colorDistance(targetPerceivedColor, blendedColor)
+
+      // Flicker penalty based on luminance difference between the two palette colors
       const lumA = 0.299 * palA[0] + 0.587 * palA[1] + 0.114 * palA[2]
       const lumB = 0.299 * palB[0] + 0.587 * palB[1] + 0.114 * palB[2]
       const lumDelta = Math.abs(lumA - lumB)
@@ -579,9 +586,9 @@ function findBestIndicesWithAntiFlicker(
       const deltaPenalty =
         lumDelta > maxLuminanceDelta ? (lumDelta - maxLuminanceDelta) * 5 : 0
 
-      // Combined cost
+      // Combined cost: blend accuracy + flicker penalty
       const flickerCost = lumDelta * flickerWeight
-      const totalCost = colorError + flickerCost + deltaPenalty
+      const totalCost = blendError + flickerCost + deltaPenalty
 
       if (totalCost < bestCost) {
         bestCost = totalCost

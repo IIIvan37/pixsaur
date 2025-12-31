@@ -112,6 +112,10 @@ function fillWithDiverseColors(
  * Select best matching colors from available palette for CPC Plus.
  * Since CPC Plus has 4096 colors, we can find near-exact matches.
  * This ensures we use the full color range instead of a sparse selection.
+ *
+ * IMPORTANT: Unlike CPC Classic (27 colors), CPC Plus (4096 colors) can have
+ * many near-identical matches. We enforce a minimum diversity to ensure
+ * the palette covers a good range of hues and luminances.
  */
 function selectBestMatchingColors(
   targetColors: Vector<'RGB'>[],
@@ -122,6 +126,12 @@ function selectBestMatchingColors(
   if (available.length === 0 || targetColors.length === 0) {
     return []
   }
+
+  // Minimum distance between selected colors to ensure diversity
+  // colorDistance returns squared euclidean distance
+  // 300 = ~17 per channel difference (sqrt(300/3) ≈ 10, but channels vary)
+  // This prevents selecting nearly identical colors while still allowing similar shades
+  const MIN_DIVERSITY_DISTANCE = 300
 
   // For each target, find the best matching available color
   const matchedColors: Array<{ color: Vector<'RGB'>; score: number }> = []
@@ -135,7 +145,7 @@ function selectBestMatchingColors(
   // Sort by match quality (lower distance = better match)
   matchedColors.sort((a, b) => a.score - b.score)
 
-  // Take unique colors, prioritizing best matches
+  // Take unique colors, prioritizing best matches BUT enforcing diversity
   const selected: Vector<'RGB'>[] = []
   const usedKeys = new Set<string>()
 
@@ -143,16 +153,64 @@ function selectBestMatchingColors(
     if (selected.length >= count) break
 
     const key = `${match.color[0]},${match.color[1]},${match.color[2]}`
-    if (!usedKeys.has(key)) {
+    if (usedKeys.has(key)) continue
+
+    // Check diversity: is this color sufficiently different from already selected?
+    if (
+      selected.length > 0 &&
+      !isColorDiverse(match.color, selected, MIN_DIVERSITY_DISTANCE)
+    ) {
+      continue // Skip colors too similar to already selected ones
+    }
+
+    selected.push(match.color)
+    usedKeys.add(key)
+  }
+
+  // Second pass: if we don't have enough colors, relax diversity constraint
+  if (selected.length < count) {
+    const RELAXED_DIVERSITY = 100 // Very close colors only
+    for (const match of matchedColors) {
+      if (selected.length >= count) break
+
+      const key = `${match.color[0]},${match.color[1]},${match.color[2]}`
+      if (usedKeys.has(key)) continue
+
+      if (
+        selected.length > 0 &&
+        !isColorDiverse(match.color, selected, RELAXED_DIVERSITY)
+      ) {
+        continue
+      }
+
       selected.push(match.color)
       usedKeys.add(key)
     }
   }
 
+  // Third pass: accept any remaining unique colors
+  if (selected.length < count) {
+    for (const match of matchedColors) {
+      if (selected.length >= count) break
+
+      const key = `${match.color[0]},${match.color[1]},${match.color[2]}`
+      if (!usedKeys.has(key)) {
+        selected.push(match.color)
+        usedKeys.add(key)
+      }
+    }
+  }
+
   // If we still need more colors, add diverse colors from available
   if (selected.length < count) {
-    fillWithDiverseColors(selected, usedKeys, available, count, 1000)
+    fillWithDiverseColors(selected, usedKeys, available, count, 100)
   }
+
+  logger.info('[Mode R] CPC Plus palette A selection', {
+    targetColors: targetColors.length,
+    selected: selected.length,
+    diversityEnforced: true
+  })
 
   return selected
 }
@@ -321,14 +379,179 @@ function selectDiverseColors(
 
 /**
  * Select palette B optimized for blending with palette A to cover target colors
- * Fast approach: calculate ideal B colors for each target, then pick best matches
+ *
+ * For CPC Plus: Use a complementary color strategy - select colors that are
+ * different from palette A but still match target colors well, maximizing
+ * the range of possible blends.
+ *
+ * For CPC Classic: Use the ideal blend calculation since the palette is limited.
  */
 function selectOptimizedPaletteB(
   paletteA: Vector<'RGB'>[],
   targetColors: Vector<'RGB'>[],
   targetWeights: number[],
   availableColors: Vector<'RGB'>[],
-  _config: ModeRConfig
+  config: ModeRConfig
+): Vector<'RGB'>[] {
+  const isCPCPlus = config.targetHardware === 'plus'
+
+  if (isCPCPlus) {
+    return selectPaletteBForCPCPlus(
+      paletteA,
+      targetColors,
+      targetWeights,
+      availableColors
+    )
+  } else {
+    return selectPaletteBForCPCClassic(
+      paletteA,
+      targetColors,
+      targetWeights,
+      availableColors
+    )
+  }
+}
+
+/**
+ * CPC Plus strategy for palette B:
+ * Select colors that complement palette A by covering different parts of the color space
+ * while still being relevant to the image's target colors.
+ */
+function selectPaletteBForCPCPlus(
+  paletteA: Vector<'RGB'>[],
+  targetColors: Vector<'RGB'>[],
+  _targetWeights: number[],
+  availableColors: Vector<'RGB'>[]
+): Vector<'RGB'>[] {
+  const selected: Vector<'RGB'>[] = []
+  const usedKeys = new Set<string>()
+
+  // Create a set of palette A keys to check for duplicates
+  const paletteAKeys = new Set<string>()
+  for (const color of paletteA) {
+    paletteAKeys.add(`${color[0]},${color[1]},${color[2]}`)
+  }
+
+  // CRITICAL: Some colors MUST be in both palettes to avoid flicker
+  // for pure colors like white, black, and saturated primaries.
+  // These colors can only be represented by identical pairs (A=B).
+  // We copy all "extreme" colors from palette A to palette B first.
+  for (const color of paletteA) {
+    const key = `${color[0]},${color[1]},${color[2]}`
+    if (usedKeys.has(key)) continue
+
+    // Check if this is an "extreme" color that needs to be in both palettes
+    // - Very dark (near black)
+    // - Very bright (near white)
+    // - Saturated (one channel dominant)
+    const [r, g, b] = color
+    const maxC = Math.max(r, g, b)
+    const minC = Math.min(r, g, b)
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b
+
+    const isVeryDark = luminance < 30
+    const isVeryBright = luminance > 225
+    const isHighlySaturated = maxC - minC > 180 && maxC > 200
+
+    if (isVeryDark || isVeryBright || isHighlySaturated) {
+      selected.push(color)
+      usedKeys.add(key)
+    }
+  }
+
+  // For each target color, find the best match
+  // Allow colors from palette A only if they provide a significantly better match
+  const matchedColors: Array<{
+    color: Vector<'RGB'>
+    score: number
+    inPaletteA: boolean
+  }> = []
+
+  for (const target of targetColors) {
+    let bestColor: Vector<'RGB'> | null = null
+    let bestDist = Infinity
+    let bestInA = false
+
+    for (const color of availableColors) {
+      const dist = colorDistance(target, color)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestColor = color
+        bestInA = paletteAKeys.has(`${color[0]},${color[1]},${color[2]}`)
+      }
+    }
+
+    if (bestColor) {
+      matchedColors.push({
+        color: bestColor,
+        score: bestDist,
+        inPaletteA: bestInA
+      })
+    }
+  }
+
+  // Sort by match quality (lower distance = better match)
+  matchedColors.sort((a, b) => a.score - b.score)
+
+  // Select diverse colors from the best matches
+  // Use reasonable thresholds - colorDistance is squared euclidean
+  const MIN_DIVERSITY = 200
+
+  for (const match of matchedColors) {
+    if (selected.length >= 16) break
+
+    const key = `${match.color[0]},${match.color[1]},${match.color[2]}`
+    if (usedKeys.has(key)) continue
+
+    if (isColorDiverse(match.color, selected, MIN_DIVERSITY)) {
+      selected.push(match.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // Second pass with relaxed diversity (just avoid exact duplicates)
+  for (const match of matchedColors) {
+    if (selected.length >= 16) break
+
+    const key = `${match.color[0]},${match.color[1]},${match.color[2]}`
+    if (!usedKeys.has(key)) {
+      selected.push(match.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // Fill remaining slots with any available colors
+  if (selected.length < 16) {
+    for (const color of availableColors) {
+      if (selected.length >= 16) break
+
+      const key = `${color[0]},${color[1]},${color[2]}`
+      if (!usedKeys.has(key)) {
+        selected.push(color)
+        usedKeys.add(key)
+      }
+    }
+  }
+
+  logger.info('[Mode R] CPC Plus Palette B selection', {
+    numSelected: selected.length,
+    sharedWithA: selected.filter((c) =>
+      paletteAKeys.has(`${c[0]},${c[1]},${c[2]}`)
+    ).length
+  })
+
+  return selected
+}
+
+/**
+ * CPC Classic strategy for palette B:
+ * Use ideal blend calculation since the 27-color palette is limited.
+ */
+function selectPaletteBForCPCClassic(
+  paletteA: Vector<'RGB'>[],
+  targetColors: Vector<'RGB'>[],
+  targetWeights: number[],
+  availableColors: Vector<'RGB'>[]
 ): Vector<'RGB'>[] {
   const selected: Vector<'RGB'>[] = []
   const usedKeys = new Set<string>()
@@ -345,7 +568,6 @@ function selectOptimizedPaletteB(
   }
 
   // For each target color, calculate the ideal B color for each A color
-  // Then find the best available match and accumulate votes
   const candidateVotes = new Map<
     string,
     { color: Vector<'RGB'>; score: number }
@@ -363,14 +585,11 @@ function selectOptimizedPaletteB(
         Math.max(0, Math.min(255, 2 * target[2] - colorA[2]))
       ]
 
-      // Find best available match for this ideal B
       const nearest = findNearestColor(idealB, availableColors)
       const key = `${nearest[0]},${nearest[1]},${nearest[2]}`
 
-      // Skip if already selected or in shared colors
       if (usedKeys.has(key)) continue
 
-      // Score: how close is the nearest to the ideal? weighted by target importance
       const idealDistance = colorDistance(idealB, nearest)
       const score = weight * Math.max(0, 1 - idealDistance / 10000)
 
@@ -383,17 +602,11 @@ function selectOptimizedPaletteB(
     }
   }
 
-  // Sort candidates by total votes
   const sortedCandidates = [...candidateVotes.values()].sort(
     (a, b) => b.score - a.score
   )
 
-  logger.info('[Mode R] Palette B: top candidates', {
-    total: sortedCandidates.length,
-    topScores: sortedCandidates.slice(0, 5).map((c) => c.score.toFixed(3))
-  })
-
-  // Select top candidates, ensuring some diversity
+  // Select with diversity constraint
   const MIN_DIVERSITY = 1000
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
@@ -401,14 +614,13 @@ function selectOptimizedPaletteB(
     const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
     if (usedKeys.has(key)) continue
 
-    // Check diversity from already selected
     if (isColorDiverse(candidate.color, selected, MIN_DIVERSITY)) {
       selected.push(candidate.color)
       usedKeys.add(key)
     }
   }
 
-  // If still not enough, relax diversity constraint
+  // Relax and fill
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
 
@@ -419,14 +631,12 @@ function selectOptimizedPaletteB(
     }
   }
 
-  // Fill remaining with diverse colors if needed
   if (selected.length < 16) {
     fillWithDiverseColors(selected, usedKeys, availableColors, 16, 500)
   }
 
-  logger.info('[Mode R] Palette B: final selection', {
-    numSelected: selected.length,
-    colors: selected.map((c) => `rgb(${c[0]},${c[1]},${c[2]})`)
+  logger.info('[Mode R] CPC Classic Palette B selection', {
+    numSelected: selected.length
   })
 
   return selected
@@ -461,18 +671,27 @@ export function optimizeModeRPalettes(
       ? generateCPCPlusPalette()
       : generateCPCClassicPalette()
 
+  const isCPCPlus = config.targetHardware === 'plus'
+
   logger.info('[Mode R] Starting palette optimization', {
     hardware: config.targetHardware,
     availableColors: availableColors.length,
     targetColors: targetColors.length,
-    usingExistingPalette: !!existingPalette
+    usingExistingPalette: !!existingPalette,
+    useDualPalette: config.useDualPalette
   })
 
   // Select palette A:
-  // - If existing palette provided, use it (preserves standard mode colors like bright yellow)
-  // - Otherwise, compute from scratch
+  // For CPC Plus with dual palette: ALWAYS recompute to optimize for blends
+  // For CPC Classic or single palette: use existing palette if provided
   let paletteA: Vector<'RGB'>[]
-  if (existingPalette && existingPalette.length > 0) {
+
+  const shouldUseExistingPalette =
+    existingPalette &&
+    existingPalette.length > 0 &&
+    !(isCPCPlus && config.useDualPalette) // Don't use existing for Plus+dual
+
+  if (shouldUseExistingPalette && existingPalette) {
     // Use existing palette as-is (already optimized for the image)
     paletteA = existingPalette.slice(0, 16)
     while (paletteA.length < 16) paletteA.push([0, 0, 0])
@@ -480,10 +699,17 @@ export function optimizeModeRPalettes(
       colors: paletteA.length
     })
   } else {
-    paletteA =
-      config.targetHardware === 'plus'
-        ? selectBestMatchingColors(targetColors, availableColors, 16)
-        : selectDiverseColors(targetColors, availableColors, 16)
+    // Compute palette A from scratch
+    paletteA = isCPCPlus
+      ? selectBestMatchingColors(targetColors, availableColors, 16)
+      : selectDiverseColors(targetColors, availableColors, 16)
+    logger.info('[Mode R] Computed new palette A', {
+      colors: paletteA.length,
+      reason:
+        isCPCPlus && config.useDualPalette
+          ? 'CPC Plus dual palette mode'
+          : 'no existing palette'
+    })
   }
 
   // Select palette B based on dual palette option
