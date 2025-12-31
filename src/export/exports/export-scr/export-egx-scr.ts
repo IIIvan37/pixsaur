@@ -104,13 +104,13 @@ export function exportEgxSCR(
 
 /**
  * Export EGX to linear format (sequential bytes per line, no CPC entrelacement).
- * Useful for custom display routines.
+ * Useful for custom display routines and overscan.
  *
  * @param indexBuf The index buffer
- * @param width Buffer width
- * @param height Buffer height
+ * @param width Buffer width (320 standard, 384 overscan for EGX1 / 640 standard, 768 overscan for EGX2)
+ * @param height Buffer height (200 standard, 280 overscan)
  * @param config EGX configuration
- * @returns Linear data (80 bytes per line × height)
+ * @returns Linear data (bytesPerLine × height)
  */
 export function exportEgxLinear(
   indexBuf: Uint8Array,
@@ -118,11 +118,16 @@ export function exportEgxLinear(
   height: number,
   config: EGXConfig
 ): Uint8Array {
-  const bytesPerLine = 80 // Standard CPC line width
-  const linear = new Uint8Array(bytesPerLine * height)
-
   // Determine high-res mode for this EGX type
   const highResMode = config.type === 'egx1' ? 1 : 2
+
+  // Calculate bytes per line based on actual width and high-res mode
+  // EGX1: Mode 1 = 4 pixels/byte, so bytesPerLine = width / 4
+  // EGX2: Mode 2 = 8 pixels/byte, so bytesPerLine = width / 8
+  const highResPixelsPerByte = getPixelsPerByteForMode(highResMode)
+  const bytesPerLine = width / highResPixelsPerByte
+
+  const linear = new Uint8Array(bytesPerLine * height)
 
   for (let y = 0; y < height; y++) {
     const lineMode = getModeForLine(y, config)
