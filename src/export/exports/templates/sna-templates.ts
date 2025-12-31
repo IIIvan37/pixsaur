@@ -1258,20 +1258,20 @@ export function assembleModeRSnaSource(
 ): string {
   const lines: string[] = [template]
 
-  // Add palette data
-  lines.push('', '; === PALETTE DATA ===')
-  lines.push(dataFiles.paletteAAsm)
-  lines.push(dataFiles.paletteBAsm)
-
-  // Add Frame A at #4000
-  lines.push('', '; === FRAME A DATA ===')
-  lines.push('    org #4000')
-  lines.push(dataFiles.frameAAsm)
-
-  // Add Frame B at #C000
-  lines.push('', '; === FRAME B DATA ===')
-  lines.push('    org #c000')
-  lines.push(dataFiles.frameBAsm)
-
+  // Add all data in one push per section to avoid multiple push calls
+  lines.push(
+    '',
+    '; === PALETTE DATA ===',
+    dataFiles.paletteAAsm,
+    dataFiles.paletteBAsm,
+    '',
+    '; === FRAME A DATA ===',
+    '    org #4000',
+    dataFiles.frameAAsm,
+    '',
+    '; === FRAME B DATA ===',
+    '    org #c000',
+    dataFiles.frameBAsm
+  )
   return lines.join('\n')
 }

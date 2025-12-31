@@ -1094,7 +1094,8 @@ export const egxPreviewImageAtom = atom(
       return new ImageData(output, width, height)
     }
 
-    return new ImageData(ditheredBuffer, width, height)
+    // Create a new Uint8ClampedArray with a regular ArrayBuffer to satisfy ImageData requirements
+    return new ImageData(new Uint8ClampedArray(ditheredBuffer), width, height)
   }
 )
 
