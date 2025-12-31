@@ -3,7 +3,9 @@ import { useAtomValue } from 'jotai'
 import { useMemo } from 'react'
 import {
   cpcHardwareAtom,
-  effectiveModeConfigAtom
+  effectiveModeConfigAtom,
+  egxEnabledAtom,
+  egxTypeAtom
 } from '@/app/store/config/config'
 import { exportPaletteWithSlotsAtom } from '@/app/store/preview/preview'
 import { rasterChangesAtom, rasterEnabledAtom } from '@/app/store/raster/raster'
@@ -19,6 +21,8 @@ export function InfoBar() {
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const rasterChanges = useAtomValue(rasterChangesAtom)
   const palette = useAtomValue(exportPaletteWithSlotsAtom)
+  const egxEnabled = useAtomValue(egxEnabledAtom)
+  const egxType = useAtomValue(egxTypeAtom)
 
   const hasRasters = rasterEnabled && rasterChanges.length > 0
 
@@ -60,6 +64,17 @@ export function InfoBar() {
         </span>
         <span className={styles.value}>{modeConfig.mode}</span>
       </span>
+
+      {egxEnabled && (
+        <>
+          <span className={styles.separator}>|</span>
+          <span className={styles.item}>
+            <span className={styles.valueActive}>
+              {egxType === 'egx1' ? 'EGX1' : 'EGX2'}
+            </span>
+          </span>
+        </>
+      )}
 
       <span className={styles.separator}>|</span>
 

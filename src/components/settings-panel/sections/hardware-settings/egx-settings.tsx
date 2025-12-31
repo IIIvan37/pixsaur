@@ -5,12 +5,13 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { Suspense } from 'react'
 import {
   egxFirstLineModeAtom,
   egxPreviewModeAtom,
-  egxTypeAtom
+  egxTypeAtom,
+  setEgxTypeAtom
 } from '@/app/store/config/config'
 import { egxPaletteAtom } from '@/app/store/preview/egx-preview'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
@@ -89,7 +90,8 @@ function EGXPaletteDisplay() {
 
 export function EGXSettings() {
   const { _ } = useLingui()
-  const [egxType, setEgxType] = useAtom(egxTypeAtom)
+  const egxType = useAtomValue(egxTypeAtom)
+  const setEgxType = useSetAtom(setEgxTypeAtom)
   const [firstLineMode, setFirstLineMode] = useAtom(egxFirstLineModeAtom)
   const [previewMode, setPreviewMode] = useAtom(egxPreviewModeAtom)
 
