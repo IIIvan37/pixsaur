@@ -34,6 +34,21 @@ export function getExpectedEgxWidth(type: EGXType): number {
 }
 
 /**
+ * Check if the given dimensions correspond to EGX overscan
+ * - EGX1: 320×200 standard, 384×280 overscan
+ * - EGX2: 640×200 standard, 768×280 overscan
+ */
+export function isEgxOverscan(
+  width: number,
+  height: number,
+  type: EGXType
+): boolean {
+  const standardWidth = type === 'egx1' ? 320 : 640
+  const standardHeight = 200
+  return width !== standardWidth || height !== standardHeight
+}
+
+/**
  * Export an EGX image to SCR format.
  *
  * For EGX, the index buffer is always at high-resolution:
