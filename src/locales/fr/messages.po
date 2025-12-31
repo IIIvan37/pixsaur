@@ -42,6 +42,14 @@ msgstr "{uniqueColorsCount} couleur(s) unique(s)"
 msgid "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
 msgstr "0 = diversité pure, 0.5 = équilibré, 1 = préférer les couleurs fréquentes"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:138
+msgid "320×200, jusqu'à 16 couleurs (INK 0-3 partagés entre modes)"
+msgstr "320×200, jusqu'à 16 couleurs (INK 0-3 partagés entre modes)"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:141
+msgid "640×200, jusqu'à 4 couleurs (INK 0-1 partagés entre modes)"
+msgstr "640×200, jusqu'à 4 couleurs (INK 0-1 partagés entre modes)"
+
 #: src/components/updater/updater-view.tsx:70
 msgid "A new version of Pixsaur is available. Click below to download and install it automatically."
 msgstr "Une nouvelle version de Pixsaur est disponible. Cliquez ci-dessous pour la télécharger et l'installer automatiquement."
@@ -63,7 +71,7 @@ msgid "Activer le lissage horizontal"
 msgstr "Activer le lissage horizontal"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:189
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:190
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptatif"
 
@@ -122,6 +130,10 @@ msgstr "Ajuste uniquement les zones claires de l'image"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:193
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:123
+msgid "Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs. EGX2: 640×200 4 couleurs."
+msgstr "Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs. EGX2: 640×200 4 couleurs."
 
 #: src/components/export-panel/export-config-dialog.tsx:131
 #: src/components/preview-editor/help-button/help-button.tsx:23
@@ -198,17 +210,17 @@ msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Balance vert/magenta pour corriger les dominantes de couleur"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:114
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:115
 msgid "palette.strategy.balanced-score-max.label"
 msgstr "Score Contraste Max"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:90
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:91
 msgid "palette.strategy.frequency-max.desc"
 msgstr "Équilibre fréquence (60%) et diversité (40%)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:99
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:100
 msgid "palette.strategy.balanced-score-balanced.label"
 msgstr "Score Équilibré"
 
@@ -251,9 +263,14 @@ msgstr "Changements Raster"
 msgid "Changer d'image"
 msgstr "Changer d'image"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:188
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:183
 msgid "Chargement..."
 msgstr "Chargement..."
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:78
+msgid "Chargez une image pour voir la palette"
+msgstr "Chargez une image pour voir la palette"
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:74
 msgid "Chargez une image pour voir les palettes"
@@ -300,6 +317,10 @@ msgstr "Coefficient d'erreur verticale"
 msgid "Color {index}: {color}"
 msgstr "Couleur {index} : {color}"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:112
+msgid "Combined"
+msgstr "Combined"
+
 #: src/components/export-panel/export-config-dialog.tsx:124
 msgid "Configuration de l'export"
 msgstr "Configuration de l'export"
@@ -336,24 +357,28 @@ msgstr "Couleur"
 msgid "Couleur & Température"
 msgstr "Couleur & Température"
 
-#: src/components/info-bar/info-bar.tsx:93
+#: src/components/info-bar/info-bar.tsx:108
 msgid "Couleurs"
 msgstr "Couleurs"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:61
+msgid "Couleurs partagées"
+msgstr "Couleurs partagées"
+
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:39
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:40
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Couverture Optimale"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:66
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:72
 msgid "CPC Classic: palette de 27 couleurs fixes. CPC Plus: palette de 4096 couleurs."
 msgstr "CPC Classic: palette de 27 couleurs fixes. CPC Plus: palette de 4096 couleurs."
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:75
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:81
 msgid "CPC Hardware"
 msgstr "CPC Hardware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:123
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:157
 msgid "CPC Pixel Mode"
 msgstr "CPC Pixel Mode"
 
@@ -382,12 +407,12 @@ msgstr "Déverrouiller"
 msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
 msgstr "Différence de luminance maximale autorisée entre les couleurs alternées"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:151
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:187
 msgid "Dimension Preset"
 msgstr "Dimension Preset"
 
-#: src/components/info-bar/info-bar.tsx:68
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:139
+#: src/components/info-bar/info-bar.tsx:83
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:175
 msgid "Dimensions"
 msgstr "Dimensions"
 
@@ -404,7 +429,7 @@ msgid "Dithering"
 msgstr "Dithering"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:54
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:55
 msgid "palette.strategy.dithering-aware.label"
 msgstr "Optimisé Tramage"
 
@@ -412,7 +437,7 @@ msgstr "Optimisé Tramage"
 msgid "Dithering Error Propagation"
 msgstr "Dithering Error Propagation"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:64
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:80
 msgid "Dithering final"
 msgstr "Dithering final"
 
@@ -425,12 +450,12 @@ msgid "Dithering raster"
 msgstr "Dithering raster"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:159
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:160
 msgid "palette.strategy.diversity-first-balanced.label"
 msgstr "Diversité Équilibrée"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:165
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:166
 msgid "palette.strategy.diversity-first-balanced.desc"
 msgstr "Diversité dominante (90%) avec légère fréquence (10%)"
 
@@ -456,7 +481,7 @@ msgid "DSK workspace exported successfully!"
 msgstr "Workspace DSK exporté avec succès !"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:192
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:193
 msgid "palette.strategy.adaptive.desc"
 msgstr "Stratégie dynamique selon l'image"
 
@@ -476,6 +501,22 @@ msgstr "Effets"
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:340
 msgid "Effets Raster"
 msgstr "Effets Raster"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:120
+msgid "EGX Mode"
+msgstr "EGX Mode"
+
+#: src/components/export-panel/export-panel.tsx:266
+msgid "EGX opened in CPC Playground!"
+msgstr "EGX opened in CPC Playground!"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:120
+msgid "EGX Settings"
+msgstr "EGX Settings"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:126
+msgid "EGX Type"
+msgstr "EGX Type"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:323
 #~ msgid "En Mode 0 CPC Plus, 12 couleurs sont fixes (indices 4-15) et 4 slots raster (indices 0-3) peuvent changer par ligne."
@@ -509,7 +550,7 @@ msgid "Exec"
 msgstr "Exec"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:24
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:25
 msgid "palette.strategy.exhaustive-contrast.label"
 msgstr "Contraste Exhaustif"
 
@@ -548,15 +589,20 @@ msgstr "Exposition & Tonalité"
 msgid "Extraction palette de base"
 msgstr "Extraction palette de base"
 
+#. placeholder {0}: result.error ?? 'Unknown error'
+#: src/components/export-panel/export-panel.tsx:272
+msgid "Failed to open EGX in CPC Playground: {0}"
+msgstr "Failed to open EGX in CPC Playground: {0}"
+
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #. placeholder {0}: result.error ?? 'Unknown error'
-#: src/components/export-panel/export-panel.tsx:213
-#: src/components/export-panel/export-panel.tsx:224
+#: src/components/export-panel/export-panel.tsx:327
+#: src/components/export-panel/export-panel.tsx:338
 msgid "Failed to open in CPC Playground: {0}"
 msgstr "Échec de l'ouverture dans CPC Playground : {0}"
 
 #. placeholder {0}: result.error ?? 'Unknown error'
-#: src/components/export-panel/export-panel.tsx:158
+#: src/components/export-panel/export-panel.tsx:223
 msgid "Failed to open Mode R in CPC Playground: {0}"
 msgstr "Failed to open Mode R in CPC Playground: {0}"
 
@@ -565,7 +611,8 @@ msgstr "Failed to open Mode R in CPC Playground: {0}"
 msgid "File {0} is too large (max 64KB). File skipped."
 msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 
-#: src/components/export-panel/export-panel.tsx:107
+#: src/components/export-panel/export-panel.tsx:135
+#: src/components/export-panel/export-panel.tsx:172
 msgid "File exported successfully!"
 msgstr "Fichier exporté avec succès !"
 
@@ -573,22 +620,26 @@ msgstr "Fichier exporté avec succès !"
 #~ msgid "Fin"
 #~ msgstr "Fin"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:149
+msgid "First Line Mode"
+msgstr "First Line Mode"
+
 #: src/components/image-upload/image-upload-view.tsx:203
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Formats supportés : PNG, JPEG, GIF, BMP, WEBP, SVG"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:69
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:70
 msgid "palette.strategy.frequency-balanced.label"
 msgstr "Fréquence Équilibrée"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:84
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:85
 msgid "palette.strategy.frequency-max.label"
 msgstr "Fréquence Contraste"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:75
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:76
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Fréquence prioritaire (80%) avec diversité modérée"
 
@@ -621,7 +672,7 @@ msgstr "Grille (H)"
 msgid "Hardware"
 msgstr "Matériel"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:63
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:69
 msgid "Hardware CPC"
 msgstr "Hardware CPC"
 
@@ -633,6 +684,14 @@ msgstr "Hautes lumières"
 #: src/components/settings-panel/sections/hardware-settings/custom-dimensions-input/custom-dimensions-input-view.tsx:57
 msgid "Hauteur"
 msgstr "Hauteur"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:108
+msgid "High Res first"
+msgstr "High Res first"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:114
+msgid "High Res Lines"
+msgstr "High Res Lines"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:77
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
@@ -658,7 +717,7 @@ msgstr "Installer la mise à jour"
 #~ msgid "Installing..."
 #~ msgstr "Installation..."
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:86
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:102
 msgid "Intensité"
 msgstr "Intensité"
 
@@ -713,6 +772,14 @@ msgstr "Ligne {0}"
 msgid "Ligne {currentLine}"
 msgstr "Ligne {currentLine}"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:160
+msgid "Ligne 0 en mode basse résolution (plus de couleurs)"
+msgstr "Ligne 0 en mode basse résolution (plus de couleurs)"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:161
+msgid "Ligne 0 en mode haute résolution (plus de détails)"
+msgstr "Ligne 0 en mode haute résolution (plus de détails)"
+
 #: src/components/export-panel/export-config-dialog.tsx:160
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (séquentiel)"
@@ -729,13 +796,21 @@ msgstr "Lissage horizontal"
 msgid "Load"
 msgstr "Load"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:107
+msgid "Low Res first"
+msgstr "Low Res first"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:113
+msgid "Low Res Lines"
+msgstr "Low Res Lines"
+
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:150
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:151
 msgid "palette.strategy.perceptual-max.desc"
 msgstr "Bins de luminance avec diversité prioritaire"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:135
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:136
 msgid "palette.strategy.perceptual-balanced.desc"
 msgstr "Bins de luminance avec fréquence prioritaire"
 
@@ -749,12 +824,12 @@ msgid "Max {maxChangesPerLine} changement(s) par ligne"
 msgstr "Max {maxChangesPerLine} changement(s) par ligne"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:45
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:46
 msgid "palette.strategy.coverage-aware.desc"
 msgstr "Maximise la couverture des pixels (minimise l'erreur globale)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:180
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:181
 msgid "palette.strategy.diversity-first-max.desc"
 msgstr "Diversité maximale (100%), fréquence ignorée"
 
@@ -762,7 +837,7 @@ msgstr "Diversité maximale (100%), fréquence ignorée"
 msgid "Mémoire"
 msgstr "Mémoire"
 
-#: src/components/info-bar/info-bar.tsx:59
+#: src/components/info-bar/info-bar.tsx:63
 msgid "Mode"
 msgstr "Mode"
 
@@ -770,7 +845,7 @@ msgstr "Mode"
 #~ msgid "Mode 0 CPC Plus (12+4)"
 #~ msgstr "Mode 0 CPC Plus (12+4)"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:115
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:148
 msgid "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
 msgstr "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
 
@@ -782,11 +857,11 @@ msgstr "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
 msgid "Mode de redimensionnement"
 msgstr "Mode de redimensionnement"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:89
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:95
 msgid "Mode R"
 msgstr "Mode R"
 
-#: src/components/export-panel/export-panel.tsx:152
+#: src/components/export-panel/export-panel.tsx:217
 msgid "Mode R opened in CPC Playground!"
 msgstr "Mode R opened in CPC Playground!"
 
@@ -799,12 +874,12 @@ msgid "Mode Raster"
 msgstr "Mode Raster"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:105
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:106
 msgid "palette.strategy.balanced-score-balanced.desc"
 msgstr "Multi-critères équilibrés (50% freq, 25% div, 25% lum)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:120
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:121
 msgid "palette.strategy.balanced-score-max.desc"
 msgstr "Multi-critères avec contraste (30% freq, 35% div, 35% lum)"
 
@@ -847,12 +922,12 @@ msgstr "Nom du fichier ZIP"
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 
-#: src/components/info-bar/info-bar.tsx:83
+#: src/components/info-bar/info-bar.tsx:98
 msgid "Non"
 msgstr "Non"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:242
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:246
 msgid "palette.strategy.disabled.raster"
 msgstr "Non utilisée en mode raster (palette extraite par ligne)"
 
@@ -869,7 +944,7 @@ msgstr "Ombres"
 msgid "Open in CPC Playground"
 msgstr "Ouvrir dans CPC Playground"
 
-#: src/components/export-panel/export-panel.tsx:207
+#: src/components/export-panel/export-panel.tsx:321
 msgid "Opened in CPC Playground!"
 msgstr "Ouvert dans CPC Playground !"
 
@@ -898,7 +973,7 @@ msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
 #. placeholder {0}: rasterChanges.length
-#: src/components/info-bar/info-bar.tsx:81
+#: src/components/info-bar/info-bar.tsx:96
 msgid "Oui ({0})"
 msgstr "Oui ({0})"
 
@@ -919,6 +994,7 @@ msgid "Paires uniques"
 msgstr "Paires uniques"
 
 #: src/components/preview-editor/line-palette/line-palette-view.tsx:36
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:182
 msgid "Palette"
 msgstr "Palette"
 
@@ -952,16 +1028,16 @@ msgid "Peindre au curseur"
 msgstr "Peindre au curseur"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:129
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:130
 msgid "palette.strategy.perceptual-balanced.label"
 msgstr "Perceptuel Équilibré"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:144
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:145
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptuel Contraste"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:112
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:145
 msgid "Pixel Mode"
 msgstr "Mode pixel"
 
@@ -1022,6 +1098,10 @@ msgstr "Pré-traitement dithering 1D appliqué à l'image avant extraction des p
 msgid "Preview mode"
 msgstr "Preview mode"
 
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:168
+msgid "Preview Mode"
+msgstr "Preview Mode"
+
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
 msgstr "Processeur"
@@ -1039,7 +1119,7 @@ msgid "Propagation verticale des erreurs de quantification (lower = moins de ban
 msgstr "Propagation verticale des erreurs de quantification (lower = moins de banding)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:174
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:175
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Diversité Pure"
 
@@ -1059,7 +1139,7 @@ msgstr "Raster Tuning"
 #~ msgid "Raster: changements d'encre par ligne"
 #~ msgstr "Raster: changements d'encre par ligne"
 
-#: src/components/info-bar/info-bar.tsx:77
+#: src/components/info-bar/info-bar.tsx:92
 msgid "Rasters"
 msgstr "Rasters"
 
@@ -1128,7 +1208,7 @@ msgstr "Retirer l'image du workspace"
 msgid "Resize"
 msgstr "Resize"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:92
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:98
 msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 msgstr "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 
@@ -1178,7 +1258,7 @@ msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:60
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:61
 msgid "palette.strategy.dithering-aware.desc"
 msgstr "Sélectionne des couleurs qui se mélangent bien en tramage"
 
@@ -1199,7 +1279,7 @@ msgstr "SNA (snapshot exécutable)"
 msgid "Source"
 msgstr "Source"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:142
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:178
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 
@@ -1239,9 +1319,13 @@ msgid "Température"
 msgstr "Température"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:30
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:31
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Teste toutes les combinaisons, maximise le contraste (meilleure qualité)"
+
+#: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:63
+msgid "Total"
+msgstr "Total"
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:407
 msgid "Tout supprimer"
