@@ -11,6 +11,7 @@ import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 import type { CPCHardware } from '@/libs/types'
 import styles from '../../tabs/tab.module.css'
 import { CustomDimensionsInput } from './custom-dimensions-input/custom-dimensions-input'
+import { EGXSettings } from './egx-settings'
 import { ModeRSettings } from './mode-r-settings'
 
 type HardwareSettingsViewProps = Readonly<{
@@ -22,6 +23,8 @@ type HardwareSettingsViewProps = Readonly<{
   onDimensionPresetChange: (value: DimensionPreset) => void
   modeREnabled: boolean
   onModeREnabledChange: (value: boolean) => void
+  egxEnabled: boolean
+  onEgxEnabledChange: (value: boolean) => void
 }>
 
 export function HardwareSettingsView({
@@ -32,9 +35,12 @@ export function HardwareSettingsView({
   dimensionPreset,
   onDimensionPresetChange,
   modeREnabled,
-  onModeREnabledChange
+  onModeREnabledChange,
+  egxEnabled,
+  onEgxEnabledChange
 }: HardwareSettingsViewProps) {
   const modeRSwitchId = useId()
+  const egxSwitchId = useId()
 
   const hardwareOptions: Array<{ value: CPCHardware; label: string }> = [
     { value: 'classic', label: 'CPC Classic (27 colors)' },
@@ -103,34 +109,64 @@ export function HardwareSettingsView({
         </Flex>
 
         {modeREnabled && <ModeRSettings />}
-      </div>
 
-      <div className={styles.separator} />
-
-      <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>
-          <Trans>Pixel Mode</Trans>
-        </h3>
-        <p className={styles.description}>
-          <Trans>
-            Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels
-          </Trans>
-        </p>
-
-        <div className={styles.tuningRow}>
-          <div className={styles.tuningHeader}>
-            <span className={styles.tuningLabel}>
-              <Trans>CPC Pixel Mode</Trans>
-            </span>
+        <Flex
+          align='center'
+          justify='space-between'
+          style={{ width: '100%', marginTop: '16px' }}
+        >
+          <div>
+            <h4 className={styles.sectionTitle}>
+              <Trans>EGX Mode</Trans>
+            </h4>
+            <p className={styles.description}>
+              <Trans>
+                Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs.
+                EGX2: 640×200 4 couleurs.
+              </Trans>
+            </p>
           </div>
-          <ToggleButtonGroup
-            options={pixelModeOptions}
-            value={pixelMode}
-            onChange={onPixelModeChange}
-            ariaLabelPrefix='Pixel Mode'
+          <Switch
+            checked={egxEnabled}
+            onCheckedChange={onEgxEnabledChange}
+            id={egxSwitchId}
           />
-        </div>
+        </Flex>
+
+        {egxEnabled && <EGXSettings />}
       </div>
+
+      {!modeREnabled && !egxEnabled && (
+        <>
+          <div className={styles.separator} />
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Pixel Mode</Trans>
+            </h3>
+            <p className={styles.description}>
+              <Trans>
+                Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640
+                pixels
+              </Trans>
+            </p>
+
+            <div className={styles.tuningRow}>
+              <div className={styles.tuningHeader}>
+                <span className={styles.tuningLabel}>
+                  <Trans>CPC Pixel Mode</Trans>
+                </span>
+              </div>
+              <ToggleButtonGroup
+                options={pixelModeOptions}
+                value={pixelMode}
+                onChange={onPixelModeChange}
+                ariaLabelPrefix='Pixel Mode'
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       <div className={styles.separator} />
 

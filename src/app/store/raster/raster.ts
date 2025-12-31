@@ -17,10 +17,15 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
+  egxEnabledAtom,
   modeREnabledAtom,
   paletteStrategyAtom
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
+import {
+  finalEgxIndexBufferAtom,
+  finalEgxPreviewImageAtom
+} from '../preview/egx-preview'
 import { modeRPreviewImageAtom } from '../preview/mode-r-preview'
 import {
   applyManualEditsToBuffer,
@@ -136,12 +141,25 @@ export const finalRasterIndexBufferAtom = atom((get) => {
 })
 
 /**
- * Effective index buffer for editing: returns the raster-optimized buffer when
- * raster mode is enabled, otherwise returns the standard preview buffer.
+ * Effective index buffer for editing: returns the appropriate buffer based on
+ * the active mode:
+ * - EGX mode: returns the EGX index buffer
+ * - Raster mode: returns the raster-optimized buffer
+ * - Standard: returns the standard preview buffer
  * This is the buffer that should be used when entering the editor.
  */
 export const effectiveIndexBufferAtom = atom(async (get) => {
+  const egxEnabled = get(egxEnabledAtom)
   const rasterEnabled = get(rasterEnabledAtom)
+
+  // Priority: EGX > Raster > Standard
+  if (egxEnabled) {
+    // Use EGX index buffer with manual edits applied
+    const egxBuffer = await get(finalEgxIndexBufferAtom)
+    if (egxBuffer) {
+      return egxBuffer
+    }
+  }
 
   if (rasterEnabled) {
     // Use raster-optimized buffer with manual edits if available
@@ -449,16 +467,26 @@ export const rasterPreviewImageAtom = atom(async (get) => {
 
 /**
  * Effective preview image atom: returns the appropriate preview based on mode.
- * Priority: Mode R > Raster > Manual Edits > Standard
- * Note: Mode R and Raster are mutually exclusive
+ * Priority: Mode R > EGX > Raster > Manual Edits > Standard
+ * Note: Mode R, EGX and Raster are mutually exclusive
  */
 export const effectivePreviewImageAtom = atom(async (get) => {
-  // Mode R takes priority and is incompatible with rasters
+  // Mode R takes priority and is incompatible with rasters/EGX
   const modeREnabled = get(modeREnabledAtom)
   if (modeREnabled) {
     const modeRPreview = await get(modeRPreviewImageAtom)
     if (modeRPreview) {
       return modeRPreview
+    }
+  }
+
+  // EGX mode (line-by-line mode alternation)
+  // Always use finalEgxPreviewImageAtom to include manual edits
+  const egxEnabled = get(egxEnabledAtom)
+  if (egxEnabled) {
+    const finalEgxPreview = await get(finalEgxPreviewImageAtom)
+    if (finalEgxPreview) {
+      return finalEgxPreview
     }
   }
 
@@ -659,7 +687,13 @@ export const autoOptimizeRasterAtom = atom(
     const currentVersion = get(rasterVersionAtom)
     set(rasterVersionAtom, currentVersion + 1)
 
-    // Enable raster mode
+    // Enable raster mode (mutually exclusive with Mode R and EGX)
+    if (get(modeREnabledAtom)) {
+      set(modeREnabledAtom, false)
+    }
+    if (get(egxEnabledAtom)) {
+      set(egxEnabledAtom, false)
+    }
     set(rasterEnabledAtom, true)
 
     logger.timeEnd('[RASTER] autoOptimizeRasterAtom - Total')

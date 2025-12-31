@@ -2,6 +2,8 @@ import { atom } from 'jotai'
 import type { PixelMode } from '@/app/store/config/types'
 import { getAspectRatioMultipliers } from '@/export/cpc-calculations'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { EGXConfig } from '@/libs/pixsaur-egx'
+import { getMaxColorIndex, getModeForLine } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 
 // ============================================================================
@@ -74,6 +76,42 @@ export const editorBasePaletteAtom = atom<Vector<'RGB'>[]>([])
 export const editorRasterChangesAtom = atom<RasterChange[]>([])
 
 /**
+ * Whether EGX mode is active in the editor
+ */
+export const editorEgxEnabledAtom = atom<boolean>(false)
+
+/**
+ * EGX configuration captured when entering edit mode
+ * Used to determine color constraints per line
+ */
+export const editorEgxConfigAtom = atom<EGXConfig | null>(null)
+
+/**
+ * Get the CPC pixel grouping factor for a line.
+ * In EGX mode, low-res lines (Mode 0 for EGX1, Mode 1 for EGX2) have pixels
+ * that are 2x wider than high-res lines.
+ * Returns 2 for low-res lines, 1 for high-res lines.
+ */
+export const getLineCpcPixelWidthAtom = atom((get) => {
+  const egxEnabled = get(editorEgxEnabledAtom)
+  const egxConfig = get(editorEgxConfigAtom)
+
+  return (line: number): number => {
+    if (!egxEnabled || !egxConfig) {
+      return 1 // No grouping in standard mode
+    }
+
+    const lineMode = getModeForLine(line, egxConfig)
+    // In EGX, the buffer is at high-res resolution
+    // Low-res lines have pixels that span 2 buffer pixels
+    // EGX1: Mode 0 (low-res) vs Mode 1 (high-res) - Mode 0 pixels are 2x wider
+    // EGX2: Mode 1 (low-res) vs Mode 2 (high-res) - Mode 1 pixels are 2x wider
+    const highResMode = egxConfig.type === 'egx1' ? 1 : 2
+    return lineMode === highResMode ? 1 : 2
+  }
+})
+
+/**
  * Historique des modifications
  */
 export const editorHistoryAtom = atom<EditHistoryEntry[]>([])
@@ -94,11 +132,15 @@ export const MAX_HISTORY_SIZE = 100
 
 /**
  * Fonction pour obtenir la palette effective d'une ligne
- * Applique les changements raster jusqu'à cette ligne
+ * - Pour le mode standard: retourne la palette complète
+ * - Pour le mode raster: applique les changements raster jusqu'à cette ligne
+ * - Pour le mode EGX: retourne la sous-palette disponible selon le mode de la ligne
  */
 export const getLinePaletteAtom = atom((get) => {
   const basePalette = get(editorBasePaletteAtom)
   const rasterChanges = get(editorRasterChangesAtom)
+  const egxEnabled = get(editorEgxEnabledAtom)
+  const egxConfig = get(editorEgxConfigAtom)
 
   return (line: number): Vector<'RGB'>[] => {
     // Copie de la palette de base
@@ -109,6 +151,14 @@ export const getLinePaletteAtom = atom((get) => {
       if (change.line <= line) {
         effectivePalette[change.inkIndex] = [...change.color] as Vector<'RGB'>
       }
+    }
+
+    // Pour EGX, limiter la palette selon le mode de la ligne
+    if (egxEnabled && egxConfig) {
+      const lineMode = getModeForLine(line, egxConfig)
+      const maxColorIndex = getMaxColorIndex(lineMode, egxConfig.type)
+      // Return only the colors available for this line
+      return effectivePalette.slice(0, maxColorIndex + 1)
     }
 
     return effectivePalette

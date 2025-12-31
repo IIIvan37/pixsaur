@@ -6,6 +6,7 @@ import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
 import type { CPCHardware } from '@/libs/types'
 import { userPaletteAtom } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
+import { rasterEnabledAtom } from '../raster/raster-config'
 import type { ResizeMode } from './resize-types'
 import type {
   AdjustementKey,
@@ -117,14 +118,23 @@ export const derivedModeAtom = atom(
 
 // Setter for pixel mode only
 // When in custom dimensions mode, adjusts width to maintain same byte count
+// When EGX is enabled, forces the required mode for the EGX type
 export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
   const dimensionPreset = get(dimensionPresetAtom)
   const previousMode = get(pixelModeAtom)
+  const egxEnabled = get(egxEnabledAtom)
 
-  set(pixelModeAtom, payload)
+  // If EGX is enabled, force the required mode
+  let effectivePayload = payload
+  if (egxEnabled) {
+    const egxType = get(egxTypeAtom)
+    effectivePayload = egxType === 'egx1' ? 0 : 1
+  }
+
+  set(pixelModeAtom, effectivePayload)
 
   // If in custom mode and mode changed, adjust width to keep same byte count
-  if (dimensionPreset === 'custom' && previousMode !== payload) {
+  if (dimensionPreset === 'custom' && previousMode !== effectivePayload) {
     const currentDimensions = get(customDimensionsAtom)
     const currentWidth = currentDimensions.width
 
@@ -133,11 +143,11 @@ export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
     const byteWidth = currentWidth / currentPixelsPerByte
 
     // Calculate new pixel width for same byte count
-    const newPixelsPerByte = getWidthStepForMode(payload)
+    const newPixelsPerByte = getWidthStepForMode(effectivePayload)
     const newWidth = byteWidth * newPixelsPerByte
 
     // Round to nearest valid step
-    const widthStep = getWidthStepForMode(payload)
+    const widthStep = getWidthStepForMode(effectivePayload)
     const adjustedWidth = Math.round(newWidth / widthStep) * widthStep
 
     // Clamp to valid range
@@ -364,6 +374,138 @@ export const setModeRPreviewModeAtom = atom(
   null,
   (_get, set, payload: 'blended' | 'frameA' | 'frameB' | 'flicker') => {
     set(modeRPreviewModeAtom, payload)
+  }
+)
+
+/**
+ * Setter for Mode R enabled state with mutual exclusion
+ * Disables EGX and Raster when enabling Mode R
+ */
+export const setModeREnabledAtom = atom(null, (get, set, payload: boolean) => {
+  if (payload) {
+    // Disable EGX and Raster when enabling Mode R
+    if (get(egxEnabledAtom)) {
+      set(egxEnabledAtom, false)
+    }
+    if (get(rasterEnabledAtom)) {
+      set(rasterEnabledAtom, false)
+    }
+  }
+  set(modeREnabledAtom, payload)
+})
+
+// ============================================================================
+// EGX MODE CONFIGURATION
+// ============================================================================
+
+import type {
+  EGXFirstLineMode,
+  EGXPreviewMode,
+  EGXType
+} from '@/libs/pixsaur-egx'
+
+/**
+ * EGX mode enabled state
+ * When enabled, uses line-by-line mode alternation (EGX1 or EGX2)
+ * Mutually exclusive with Mode R
+ */
+export const egxEnabledAtom = atomWithStorage<boolean>(
+  'pixsaur-egx-enabled',
+  false
+)
+
+/**
+ * EGX type selection
+ * - egx1: Mode 0/1 alternation (320×200, up to 16 colors)
+ * - egx2: Mode 1/2 alternation (640×200, up to 4 colors)
+ */
+export const egxTypeAtom = atomWithStorage<EGXType>('pixsaur-egx-type', 'egx1')
+
+/**
+ * EGX first line mode
+ * - 'low': First line uses lower resolution mode (more colors)
+ * - 'high': First line uses higher resolution mode (fewer colors)
+ */
+export const egxFirstLineModeAtom = atomWithStorage<EGXFirstLineMode>(
+  'pixsaur-egx-first-line-mode',
+  'low'
+)
+
+/**
+ * EGX preview mode
+ * - 'combined': Show final combined view
+ * - 'highLines': Show only high-resolution lines
+ * - 'lowLines': Show only low-resolution lines
+ */
+export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
+
+// Setters for EGX configuration
+/**
+ * Setter for EGX enabled state with mutual exclusion
+ * Disables Mode R and Raster when enabling EGX
+ * Also sets the appropriate pixel mode:
+ * - EGX1 requires Mode 0 (16 colors)
+ * - EGX2 requires Mode 1 (4 colors)
+ */
+export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
+  if (payload) {
+    // Disable Mode R and Raster when enabling EGX
+    if (get(modeREnabledAtom)) {
+      set(modeREnabledAtom, false)
+    }
+    if (get(rasterEnabledAtom)) {
+      set(rasterEnabledAtom, false)
+    }
+    // Set the appropriate pixel mode for the current EGX type
+    const egxType = get(egxTypeAtom)
+    const requiredMode = egxType === 'egx1' ? 0 : 1
+    set(pixelModeAtom, requiredMode)
+  }
+  set(egxEnabledAtom, payload)
+})
+
+/**
+ * Setter for Raster enabled state with mutual exclusion
+ * Disables Mode R and EGX when enabling Raster
+ */
+export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
+  if (payload) {
+    // Disable Mode R and EGX when enabling Raster
+    if (get(modeREnabledAtom)) {
+      set(modeREnabledAtom, false)
+    }
+    if (get(egxEnabledAtom)) {
+      set(egxEnabledAtom, false)
+    }
+  }
+  set(rasterEnabledAtom, payload)
+})
+
+/**
+ * Setter for EGX type with automatic pixel mode adjustment
+ * - EGX1 requires Mode 0 (16 colors)
+ * - EGX2 requires Mode 1 (4 colors)
+ */
+export const setEgxTypeAtom = atom(null, (get, set, payload: EGXType) => {
+  set(egxTypeAtom, payload)
+  // If EGX is enabled, update the pixel mode accordingly
+  if (get(egxEnabledAtom)) {
+    const requiredMode = payload === 'egx1' ? 0 : 1
+    set(pixelModeAtom, requiredMode)
+  }
+})
+
+export const setEgxFirstLineModeAtom = atom(
+  null,
+  (_get, set, payload: EGXFirstLineMode) => {
+    set(egxFirstLineModeAtom, payload)
+  }
+)
+
+export const setEgxPreviewModeAtom = atom(
+  null,
+  (_get, set, payload: EGXPreviewMode) => {
+    set(egxPreviewModeAtom, payload)
   }
 )
 

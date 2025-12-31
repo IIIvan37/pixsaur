@@ -7,7 +7,7 @@ import { useCallback, useState } from 'react'
 import {
   cpcHardwareAtom,
   effectiveModeConfigAtom,
-  modeREnabledAtom
+  setRasterEnabledAtom
 } from '@/app/store/config/config'
 import { imageAtom } from '@/app/store/image/image'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
@@ -18,12 +18,12 @@ import {
   hasGeneratedRastersAtom,
   rasterChangesAtom,
   rasterConflictsAtom,
-  rasterEnabledAtom,
   removeRasterChangeAtom,
   updateRasterChangeAtom
 } from '@/app/store/raster/raster'
 import {
   rasterDitheringIntensityAtom,
+  rasterEnabledAtom,
   rasterMaxChangesPerLineAtom
 } from '@/app/store/raster/raster-config'
 import {
@@ -41,8 +41,8 @@ import { RasterSettingsView } from './raster-settings-view'
 
 export function RasterSettings() {
   // Raster mode
-  const [rasterEnabled, setRasterEnabled] = useAtom(rasterEnabledAtom)
-  const setModeREnabled = useSetAtom(modeREnabledAtom)
+  const rasterEnabled = useAtomValue(rasterEnabledAtom)
+  const setRasterEnabled = useSetAtom(setRasterEnabledAtom)
 
   // Raster parameters
   const [maxChangesPerLine, setMaxChangesPerLine] = useAtom(
@@ -151,21 +151,10 @@ export function RasterSettings() {
     clearAll()
   }, [clearAll])
 
-  // When raster is enabled, disable Mode R (mutually exclusive)
-  const handleRasterEnabledChange = useCallback(
-    (enabled: boolean) => {
-      setRasterEnabled(enabled)
-      if (enabled) {
-        setModeREnabled(false)
-      }
-    },
-    [setRasterEnabled, setModeREnabled]
-  )
-
   return (
     <RasterSettingsView
       rasterEnabled={rasterEnabled}
-      onRasterEnabledChange={handleRasterEnabledChange}
+      onRasterEnabledChange={setRasterEnabled}
       maxChangesPerLine={maxChangesPerLine}
       onMaxChangesPerLineChange={setMaxChangesPerLine}
       hardwareLimit={hardwareLimit}

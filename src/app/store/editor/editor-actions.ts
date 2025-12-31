@@ -1,9 +1,24 @@
 import { atom } from 'jotai'
-import { pixelModeAtom } from '@/app/store/config/config'
+import {
+  egxEnabledAtom,
+  egxTypeAtom,
+  pixelModeAtom
+} from '@/app/store/config/config'
+import type { PixelMode } from '@/app/store/config/types'
 import { logger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { applyManualEditsAtom } from '../preview/preview'
-import { effectiveIndexBufferAtom, rasterChangesAtom } from '../raster/raster'
+import { getMaxColorIndex, getModeForLine } from '@/libs/pixsaur-egx'
+import { egxConfigAtom, egxIndexBufferAtom } from '../preview/egx-preview'
+import {
+  applyManualEditsAtom,
+  previewIndexBufferAtom
+} from '../preview/preview'
+import {
+  effectiveIndexBufferAtom,
+  rasterChangesAtom,
+  rasterEnabledAtom,
+  rasterIndexBufferAtom
+} from '../raster/raster'
 import {
   editorCursorAtom,
   editorGridVisibleAtom,
@@ -18,6 +33,8 @@ import {
   type EditHistoryEntry,
   editorBasePaletteAtom,
   editorDimensionsAtom,
+  editorEgxConfigAtom,
+  editorEgxEnabledAtom,
   editorHistoryAtom,
   editorHistoryIndexAtom,
   editorIndexBufferAtom,
@@ -36,10 +53,11 @@ import {
  * Entrer en mode édition
  * - Copie l'index buffer courant (avec modifications manuelles si présentes)
  * - Copie la palette et les changements raster
+ * - Capture l'état EGX si actif
  * - Initialise l'historique
  */
 export const enterEditModeAtom = atom(null, async (get, set) => {
-  // Use the effective buffer (raster-optimized when enabled, otherwise standard)
+  // Use the effective buffer (with manual edits) for editing
   const indexBufferData = await get(effectiveIndexBufferAtom)
 
   if (!indexBufferData) {
@@ -49,17 +67,58 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
 
   const { buffer, width, height, palette } = indexBufferData
 
-  // Sauvegarder le buffer original pour la comparaison lors de l'application
-  set(editorOriginalBufferAtom, new Uint8Array(buffer))
+  // Get the BASE buffer (without manual edits) for comparison when applying changes
+  // This allows accumulating edits correctly
+  const egxEnabled = get(egxEnabledAtom)
+  const rasterEnabled = get(rasterEnabledAtom)
 
-  // Copier l'index buffer pour l'édition (nouvelle instance)
+  let baseBuffer: Uint8Array
+  if (egxEnabled) {
+    const egxBuffer = await get(egxIndexBufferAtom)
+    baseBuffer = egxBuffer
+      ? new Uint8Array(egxBuffer.buffer)
+      : new Uint8Array(buffer)
+  } else if (rasterEnabled) {
+    const rasterBuffer = get(rasterIndexBufferAtom)
+    baseBuffer = rasterBuffer
+      ? new Uint8Array(rasterBuffer.buffer)
+      : new Uint8Array(buffer)
+  } else {
+    const previewBuffer = await get(previewIndexBufferAtom)
+    baseBuffer = previewBuffer
+      ? new Uint8Array(previewBuffer.buffer)
+      : new Uint8Array(buffer)
+  }
+
+  // Save the BASE buffer (without edits) for comparison when applying changes
+  set(editorOriginalBufferAtom, baseBuffer)
+
+  // Copy the EFFECTIVE buffer (with existing edits) for editing
   const editBuffer = new Uint8Array(buffer)
 
   set(editorIndexBufferAtom, editBuffer)
   set(editorDimensionsAtom, { width, height })
 
+  // Capturer l'état EGX (déjà récupéré plus haut)
+  set(editorEgxEnabledAtom, egxEnabled)
+  if (egxEnabled) {
+    const egxConfig = get(egxConfigAtom)
+    set(editorEgxConfigAtom, egxConfig)
+  } else {
+    set(editorEgxConfigAtom, null)
+  }
+
   // Capturer le mode pixel pour l'aspect ratio
-  set(editorPixelModeAtom, get(pixelModeAtom))
+  // En EGX, utiliser le mode haute résolution pour l'aspect ratio
+  if (egxEnabled) {
+    const egxType = get(egxTypeAtom)
+    // EGX1 uses Mode 1 dimensions (square pixels)
+    // EGX2 uses Mode 2 dimensions (tall pixels)
+    const egxPixelMode: PixelMode = egxType === 'egx1' ? 1 : 2
+    set(editorPixelModeAtom, egxPixelMode)
+  } else {
+    set(editorPixelModeAtom, get(pixelModeAtom))
+  }
 
   // Copier la palette de base
   set(
@@ -85,7 +144,7 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
   // Activer le mode édition
   set(editorModeAtom, true)
 
-  logger.info('[Editor] Entered edit mode', { width, height })
+  logger.info('[Editor] Entered edit mode', { width, height, egxEnabled })
   return true
 })
 
@@ -101,6 +160,8 @@ export const cancelEditModeAtom = atom(null, (_get, set) => {
   set(editorHistoryIndexAtom, -1)
   set(editorCursorAtom, null)
   set(editorHoveredPixelAtom, null)
+  set(editorEgxEnabledAtom, false)
+  set(editorEgxConfigAtom, null)
 
   logger.info('[Editor] Cancelled edit mode')
 })
@@ -141,10 +202,13 @@ export const applyEditModeAtom = atom(null, (get, set) => {
   set(editorHistoryIndexAtom, -1)
   set(editorCursorAtom, null)
   set(editorHoveredPixelAtom, null)
+  set(editorEgxEnabledAtom, false)
+  set(editorEgxConfigAtom, null)
 })
 
 /**
  * Peindre un pixel avec l'encre sélectionnée
+ * En mode EGX sur les lignes low-res, peint les 2 pixels du groupe CPC
  */
 export const paintPixelAtom = atom(
   null,
@@ -152,6 +216,8 @@ export const paintPixelAtom = atom(
     const buffer = get(editorIndexBufferAtom)
     const dimensions = get(editorDimensionsAtom)
     const selectedInk = get(editorSelectedInkAtom)
+    const egxEnabled = get(editorEgxEnabledAtom)
+    const egxConfig = get(editorEgxConfigAtom)
 
     if (!buffer || !dimensions) return
 
@@ -160,22 +226,75 @@ export const paintPixelAtom = atom(
       return
     }
 
+    // Vérifier les contraintes EGX
+    if (egxEnabled && egxConfig) {
+      const lineMode = getModeForLine(y, egxConfig)
+      const maxColorIndex = getMaxColorIndex(lineMode, egxConfig.type)
+      if (selectedInk > maxColorIndex) {
+        logger.warn('[Editor] EGX: ink index exceeds line limit', {
+          selectedInk,
+          maxColorIndex,
+          line: y,
+          lineMode
+        })
+        return
+      }
+    }
+
     const { width } = dimensions
-    const offset = y * width + x
-    const previousInk = buffer[offset]
 
-    // Ne rien faire si c'est la même couleur
-    if (previousInk === selectedInk) return
+    // Determine if this is a low-res line in EGX mode
+    // Low-res lines have pixels grouped by 2
+    let isLowResLine = false
+    if (egxEnabled && egxConfig) {
+      const lineMode = getModeForLine(y, egxConfig)
+      const highResMode = egxConfig.type === 'egx1' ? 1 : 2
+      isLowResLine = lineMode !== highResMode
+    }
 
-    // Modifier le buffer
-    buffer[offset] = selectedInk
+    // For low-res lines, align x to the pixel group boundary (even x)
+    const alignedX = isLowResLine ? x - (x % 2) : x
+
+    // Collect all pixels to paint (1 for high-res, 2 for low-res)
+    const pixelsToPaint: Array<{ x: number; y: number; offset: number }> = []
+
+    if (isLowResLine) {
+      // Paint both pixels of the CPC pixel group
+      pixelsToPaint.push({ x: alignedX, y, offset: y * width + alignedX })
+      if (alignedX + 1 < width) {
+        pixelsToPaint.push({
+          x: alignedX + 1,
+          y,
+          offset: y * width + alignedX + 1
+        })
+      }
+    } else {
+      // High-res line: paint single pixel
+      pixelsToPaint.push({ x, y, offset: y * width + x })
+    }
+
+    // Check if any pixel actually changes
+    const edits: PixelEdit[] = []
+    for (const pixel of pixelsToPaint) {
+      const previousInk = buffer[pixel.offset]
+      if (previousInk !== selectedInk) {
+        edits.push({
+          x: pixel.x,
+          y: pixel.y,
+          previousInkIndex: previousInk,
+          newInkIndex: selectedInk
+        })
+        buffer[pixel.offset] = selectedInk
+      }
+    }
+
+    // Ne rien faire si aucun pixel n'a changé
+    if (edits.length === 0) return
 
     // Créer l'entrée d'historique
     const entry: EditHistoryEntry = {
       type: 'pixel',
-      edits: [
-        { x, y, previousInkIndex: previousInk, newInkIndex: selectedInk }
-      ],
+      edits,
       timestamp: Date.now()
     }
 
@@ -208,6 +327,8 @@ export const paintPixelsAtom = atom(
     const buffer = get(editorIndexBufferAtom)
     const dimensions = get(editorDimensionsAtom)
     const selectedInk = get(editorSelectedInkAtom)
+    const egxEnabled = get(editorEgxEnabledAtom)
+    const egxConfig = get(editorEgxConfigAtom)
 
     if (!buffer || !dimensions || pixels.length === 0) return
 
@@ -217,6 +338,15 @@ export const paintPixelsAtom = atom(
     for (const { x, y } of pixels) {
       // Vérifier les limites
       if (x < 0 || x >= width || y < 0 || y >= height) continue
+
+      // Vérifier les contraintes EGX
+      if (egxEnabled && egxConfig) {
+        const lineMode = getModeForLine(y, egxConfig)
+        const maxColorIndex = getMaxColorIndex(lineMode, egxConfig.type)
+        if (selectedInk > maxColorIndex) {
+          continue // Skip pixels where selected ink exceeds line limit
+        }
+      }
 
       const offset = y * width + x
       const previousInk = buffer[offset]
