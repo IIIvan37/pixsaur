@@ -60,10 +60,10 @@ endm
         ld bc, #7c8c
         out (c), c
 
-         ld hl, palette_Hardware
-    ld c, 16
-    xor a
-    call setPalette
+        ld hl, palette_Hardware
+        ld c, 16
+        xor a
+        call setPalette
 
 
     call sync_vbl
@@ -96,7 +96,7 @@ R1              equ 48
 ;------------------------------------------------------------------------------
 
 affscr:
-        ld      b, 0                 ; 256 lines
+        ld      b, 0                   ; 256 lines
         ld      c, R1 * 2               
         ld      de, #0140            ; Screen address (#00E0 + 96)
         ld      hl, #4268            ; Linear data
