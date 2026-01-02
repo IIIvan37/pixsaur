@@ -1,5 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useRef } from 'react'
+import { logger } from '@/core'
 import { isSelectionDraggingAtom, selectionAtom } from '../image/image'
 import {
   autoOptimizeRasterAtom,
@@ -37,8 +38,16 @@ export function useAutoRegenerateRasters() {
   const isRegeneratingRef = useRef(false)
 
   useEffect(() => {
+    logger.info('[RASTER-REGEN] useEffect triggered', {
+      rasterDitheringIntensity,
+      maxChangesPerLine,
+      rasterEnabled,
+      hasGeneratedRasters
+    })
+
     // Skip all checks if we're currently regenerating
     if (isRegeneratingRef.current) {
+      logger.debug('[RASTER-REGEN] Skipping: already regenerating')
       return
     }
 
@@ -49,6 +58,18 @@ export function useAutoRegenerateRasters() {
       previousRasterDitheringRef.current !== rasterDitheringIntensity
     const maxChangesChanged =
       previousMaxChangesRef.current !== maxChangesPerLine
+
+    logger.debug('[RASTER-REGEN] State check:', {
+      rasterEnabled,
+      hasGeneratedRasters,
+      selectionChanged,
+      rasterDitheringChanged,
+      maxChangesChanged,
+      previousDithering: previousRasterDitheringRef.current,
+      currentDithering: rasterDitheringIntensity,
+      previousMaxChanges: previousMaxChangesRef.current,
+      currentMaxChanges: maxChangesPerLine
+    })
 
     // Update refs
     previousSelectionRef.current = selection
@@ -61,22 +82,37 @@ export function useAutoRegenerateRasters() {
       !hasGeneratedRasters ||
       (!selectionChanged && !rasterDitheringChanged && !maxChangesChanged)
     ) {
+      logger.debug('[RASTER-REGEN] Skipping regeneration:', {
+        reason: !rasterEnabled
+          ? 'raster not enabled'
+          : !hasGeneratedRasters
+            ? 'no generated rasters'
+            : 'no changes detected'
+      })
       return
     }
 
     // Skip regeneration while user is actively dragging/resizing the selection
     if (isSelectionDragging) {
+      logger.debug('[RASTER-REGEN] Skipping: selection is dragging')
       return
     }
 
     // Set flag immediately to prevent re-triggering during regeneration
     isRegeneratingRef.current = true
+    logger.info('[RASTER-REGEN] Triggering regeneration...', {
+      selectionChanged,
+      rasterDitheringChanged,
+      maxChangesChanged
+    })
 
     // Debounce the regeneration (800ms - increased from 300ms for better performance)
     const timeoutId = setTimeout(async () => {
       try {
+        logger.info('[RASTER-REGEN] Executing autoOptimize')
         // Always reset changes when regenerating
         await autoOptimize({ resetChanges: true })
+        logger.info('[RASTER-REGEN] autoOptimize completed')
       } finally {
         isRegeneratingRef.current = false
       }

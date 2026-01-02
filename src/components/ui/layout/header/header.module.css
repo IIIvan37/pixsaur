@@ -26,3 +26,13 @@
   width: 1rem;
   height: 1rem;
 }
+
+.headerButton {
+  /* Default styles inherited from Button component */
+}
+
+@media (max-width: 768px) {
+  .headerButton {
+    display: none;
+  }
+}
