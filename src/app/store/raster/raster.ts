@@ -364,10 +364,20 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   const changes = get(rasterChangesAtom)
 
   // Explicitly depend on optimization result AND version to force re-evaluation
-  get(rasterOptimizationResultAtom)
-  get(rasterVersionAtom)
+  const optimizationResult = get(rasterOptimizationResultAtom)
+  const version = get(rasterVersionAtom)
+
+  logger.debug('[RASTER] rasterPreviewImageAtom evaluation', {
+    enabled,
+    changesCount: changes.length,
+    hasOptimizationResult: !!optimizationResult,
+    version
+  })
 
   if (!enabled || changes.length === 0) {
+    logger.debug('[RASTER] rasterPreviewImageAtom returning null', {
+      reason: !enabled ? 'disabled' : 'no changes'
+    })
     return null
   }
 
@@ -384,12 +394,20 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   const rasterIndexBuffer = get(finalRasterIndexBufferAtom)
 
   if (rasterIndexBuffer) {
+    logger.debug('[RASTER] Using optimized raster index buffer', {
+      bufferWidth: rasterIndexBuffer.width,
+      bufferHeight: rasterIndexBuffer.height,
+      modeWidth: modeConfig.width,
+      modeHeight: modeConfig.height
+    })
+
     // Validate that buffer dimensions match current mode config
     if (
       rasterIndexBuffer.width !== modeConfig.width ||
       rasterIndexBuffer.height !== modeConfig.height
     ) {
       // Dimensions changed, buffer is stale - return null
+      logger.debug('[RASTER] Buffer dimensions mismatch, returning null')
       return null
     }
 
@@ -406,6 +424,7 @@ export const rasterPreviewImageAtom = atom(async (get) => {
           palette,
           changes
         )
+        logger.debug('[RASTER] GPU preview rendered successfully')
         // Force creation of new ImageData to avoid GPU cache issues
         return new ImageData(
           new Uint8ClampedArray(preview.data),

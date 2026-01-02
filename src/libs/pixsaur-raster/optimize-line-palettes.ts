@@ -1417,16 +1417,21 @@ export function preprocessImageForRaster(
     const quantizedPalette = linePalette.map((c) => quantizeColor(c))
 
     // Check if this line already satisfies the nColors constraint
-    // If so, always skip dithering to preserve the original colors (even if intensity > 0)
-    // This prevents adding noise to already clean lines
+    // Check if this line already satisfies the nColors constraint
+    // For CPC Classic Mode 0 (16 colors, 27 palette): almost all lines satisfy this
+    // because 27-color quantization rarely produces >16 colors per line
+    // We still apply dithering if the user has set a non-zero intensity
+    // to allow smoothing of color transitions
     const lineAlreadySatisfiesConstraint = colorHistogram.size <= nColors
+    const shouldApplyDithering =
+      !lineAlreadySatisfiesConstraint || ditheringIntensity > 0
 
     // New vertical error buffer for next line (floating-point)
     const newVerticalError: [number, number, number][] = new Array(width)
       .fill(null)
       .map(() => [0, 0, 0])
 
-    if (lineAlreadySatisfiesConstraint) {
+    if (!shouldApplyDithering) {
       // Line already has ≤nColors colors: direct mapping without dithering
       for (let x = 0; x < width; x++) {
         const pixelIdx = lineStart + x * 4
