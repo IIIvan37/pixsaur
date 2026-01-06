@@ -1431,8 +1431,8 @@ export function preprocessImageForRaster(
       .fill(null)
       .map(() => [0, 0, 0])
 
-    if (shouldApplyDithering) {
-      // Line already has ≤nColors colors: direct mapping without dithering
+    if (!shouldApplyDithering) {
+      // Line already has ≤nColors colors AND no dithering requested: direct mapping
       for (let x = 0; x < width; x++) {
         const pixelIdx = lineStart + x * 4
         const sourceColor: Vector<'RGB'> = [
@@ -1460,7 +1460,7 @@ export function preprocessImageForRaster(
       // Reset vertical error for next line (no error to propagate)
       // Keep it at zero
     } else {
-      // Line has >4 colors: apply dithering
+      // Apply dithering (either line has >nColors or user wants dithering)
       // Horizontal error buffer for this line (floating-point)
       const horizError: [number, number, number][] = new Array(width)
         .fill(null)

@@ -28,7 +28,7 @@
 
 import { logger } from '@/core/logger'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
-import { getBlueNoiseThresholdCentered } from '@/libs/pixsaur-color/src/map/blue-noise-texture'
+import { getBlueNoiseThresholdRGB } from '@/libs/pixsaur-color/src/map/blue-noise-texture'
 import { getOstromoukhovCoefficients } from '@/libs/pixsaur-color/src/map/ostromoukhov-coefficients'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { colorDistance } from './blend'
@@ -122,16 +122,17 @@ function isBlueNoiseMode(mode: DitheringMode | 'none'): boolean {
 }
 
 /**
- * Get Blue Noise threshold for a pixel position
- * Uses the same formula as applyBlueNoiseDither in pixsaur-color:
- * threshold = getBlueNoiseThresholdCentered(x, y) * intensity * 255
+ * Get Blue Noise thresholds for a pixel position (decorrelated per RGB channel)
+ * Uses the same formula as applyBlueNoiseDither in pixsaur-color
  */
-function getBlueNoiseThreshold(
+function getBlueNoiseThresholds(
   x: number,
   y: number,
   intensity: number
-): number {
-  return getBlueNoiseThresholdCentered(x, y) * intensity * 255
+): [number, number, number] {
+  const [tR, tG, tB] = getBlueNoiseThresholdRGB(x, y)
+  const scale = intensity * 255
+  return [tR * scale, tG * scale, tB * scale]
 }
 
 /**
@@ -354,23 +355,23 @@ export function quantizeModeR(
           threshold
         )
       } else if (useBlueNoise) {
-        // Blue Noise dithering: apply threshold-based color adjustment
+        // Blue Noise dithering: apply per-channel threshold-based color adjustment
         // Use OUTPUT coordinates (x, y) for the dithering pattern
-        const threshold = getBlueNoiseThreshold(x, y, ditherIntensity)
+        const thresholds = getBlueNoiseThresholds(x, y, ditherIntensity)
 
-        colorA = getSourceColorWithThreshold(
+        colorA = getSourceColorWithRGBThresholds(
           imageData,
           width,
           srcXA,
           y,
-          threshold
+          thresholds
         )
-        colorB = getSourceColorWithThreshold(
+        colorB = getSourceColorWithRGBThresholds(
           imageData,
           width,
           srcXB,
           y,
-          threshold
+          thresholds
         )
       } else {
         // Error diffusion or no dithering: use error buffer
@@ -514,6 +515,29 @@ function getSourceColorWithThreshold(
     Math.max(0, Math.min(255, r + threshold)),
     Math.max(0, Math.min(255, g + threshold)),
     Math.max(0, Math.min(255, b + threshold))
+  ]
+}
+
+/**
+ * Get source pixel color with per-channel RGB thresholds applied
+ * Used for decorrelated blue noise dithering
+ */
+function getSourceColorWithRGBThresholds(
+  imageData: Uint8ClampedArray,
+  width: number,
+  x: number,
+  y: number,
+  thresholds: [number, number, number]
+): Vector<'RGB'> {
+  const pixelIdx = (y * width + x) * 4
+  const r = imageData[pixelIdx]
+  const g = imageData[pixelIdx + 1]
+  const b = imageData[pixelIdx + 2]
+
+  return [
+    Math.max(0, Math.min(255, r + thresholds[0])),
+    Math.max(0, Math.min(255, g + thresholds[1])),
+    Math.max(0, Math.min(255, b + thresholds[2]))
   ]
 }
 

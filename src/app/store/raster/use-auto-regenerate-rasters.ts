@@ -76,19 +76,25 @@ export function useAutoRegenerateRasters() {
     previousRasterDitheringRef.current = rasterDitheringIntensity
     previousMaxChangesRef.current = maxChangesPerLine
 
-    // Skip if nothing changed, raster not enabled, or no auto-generated rasters
-    if (
-      !rasterEnabled ||
-      !hasGeneratedRasters ||
-      (!selectionChanged && !rasterDitheringChanged && !maxChangesChanged)
-    ) {
-      logger.debug('[RASTER-REGEN] Skipping regeneration:', {
-        reason: !rasterEnabled
-          ? 'raster not enabled'
-          : !hasGeneratedRasters
-            ? 'no generated rasters'
-            : 'no changes detected'
-      })
+    // Skip if nothing changed or raster not enabled
+    // Note: We don't check hasGeneratedRasters for dithering/maxChanges changes
+    // because user expects immediate feedback when adjusting these sliders
+    if (!rasterEnabled) {
+      logger.debug('[RASTER-REGEN] Skipping: raster not enabled')
+      return
+    }
+
+    // For selection changes, only regenerate if rasters were already generated
+    if (selectionChanged && !hasGeneratedRasters) {
+      logger.debug(
+        '[RASTER-REGEN] Skipping selection change: no generated rasters'
+      )
+      return
+    }
+
+    // Skip if nothing actually changed
+    if (!selectionChanged && !rasterDitheringChanged && !maxChangesChanged) {
+      logger.debug('[RASTER-REGEN] Skipping: no changes detected')
       return
     }
 
