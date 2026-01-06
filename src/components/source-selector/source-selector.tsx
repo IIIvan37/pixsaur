@@ -1,5 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   isSelectionDraggingAtom,
   selectionAtom,
@@ -47,6 +47,10 @@ export const SourceSelector = ({
   height
 }: Readonly<SourceSelectorProps>) => {
   const [resizeHandle, setResizeHandle] = useState<Handle>(null)
+  const containerRef = useRef<HTMLElement | null>(null)
+  const setContainerRef = useCallback((node: HTMLElement | null) => {
+    containerRef.current = node
+  }, [])
 
   const selection = useAtomValue(selectionAtom)
   const setSelection = useSetAtom(setSelectionAtom)
@@ -117,6 +121,19 @@ export const SourceSelector = ({
 
   const rect = logicalToPercentRect(sel, width, height)
 
+  // Helper to get percent position from mouse event using the container ref
+  const getPercentPosFromEvent = useCallback(
+    (clientX: number, clientY: number) => {
+      const container = containerRef.current
+      if (!container) return { x: 0, y: 0 }
+      const bounds = container.getBoundingClientRect()
+      const px = ((clientX - bounds.left) / bounds.width) * 100
+      const py = ((clientY - bounds.top) / bounds.height) * 100
+      return { x: px, y: py }
+    },
+    []
+  )
+
   const getPercentPos = useCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
       const bounds = e.currentTarget.getBoundingClientRect()
@@ -160,13 +177,31 @@ export const SourceSelector = ({
         const handle = detectHandleHit(e, rect)
         setHoveredHandle(handle)
       }
+      // Le déplacement pendant le drag est géré par les événements window
+    },
+    [dragging, rect, detectHandleHit]
+  )
 
-      if (!dragging || !dragOrigin) return
-      const pos = getPercentPos(e)
+  const onMouseUp = useCallback(() => {
+    if (dragging) {
+      setDragging(false)
+      setIsSelectionDragging(false)
+      setDragOrigin(null)
+      setSelection(sel)
+      setResizeHandle(null)
+      setHoveredHandle(null)
+    }
+  }, [dragging, sel, setSelection, setIsSelectionDragging])
+
+  // Use window events during drag so we can track the mouse even outside the container
+  useEffect(() => {
+    if (!dragging) return
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      if (!dragOrigin) return
+      const pos = getPercentPosFromEvent(e.clientX, e.clientY)
 
       if (resizeHandle) {
-        const current = getPercentPos(e)
-
         // coin opposé (fixe)
         const opposite = {
           x: resizeHandle.includes('left') ? rect.x + rect.width : rect.x,
@@ -174,14 +209,14 @@ export const SourceSelector = ({
         }
 
         let newX = resizeHandle.includes('left')
-          ? Math.min(current.x, opposite.x - 1)
+          ? Math.min(pos.x, opposite.x - 1)
           : rect.x
         let newY = resizeHandle.includes('top')
-          ? Math.min(current.y, opposite.y - 1)
+          ? Math.min(pos.y, opposite.y - 1)
           : rect.y
 
-        let newWidth = Math.abs(opposite.x - current.x)
-        let newHeight = Math.abs(opposite.y - current.y)
+        let newWidth = Math.abs(opposite.x - pos.x)
+        let newHeight = Math.abs(opposite.y - pos.y)
 
         newX = Math.max(0, Math.min(newX, 100))
         newY = Math.max(0, Math.min(newY, 100))
@@ -214,22 +249,9 @@ export const SourceSelector = ({
       )
 
       setSel(logical)
-    },
-    [
-      dragging,
-      dragOrigin,
-      resizeHandle,
-      rect,
-      dragOffset,
-      width,
-      height,
-      getPercentPos,
-      detectHandleHit
-    ]
-  )
+    }
 
-  const onMouseUp = useCallback(() => {
-    if (dragging) {
+    const handleWindowMouseUp = () => {
       setDragging(false)
       setIsSelectionDragging(false)
       setDragOrigin(null)
@@ -237,7 +259,27 @@ export const SourceSelector = ({
       setResizeHandle(null)
       setHoveredHandle(null)
     }
-  }, [dragging, sel, setSelection, setIsSelectionDragging])
+
+    globalThis.addEventListener('mousemove', handleWindowMouseMove)
+    globalThis.addEventListener('mouseup', handleWindowMouseUp)
+
+    return () => {
+      globalThis.removeEventListener('mousemove', handleWindowMouseMove)
+      globalThis.removeEventListener('mouseup', handleWindowMouseUp)
+    }
+  }, [
+    dragging,
+    dragOrigin,
+    resizeHandle,
+    rect,
+    dragOffset,
+    width,
+    height,
+    sel,
+    setSelection,
+    setIsSelectionDragging,
+    getPercentPosFromEvent
+  ])
 
   const onMouseLeave = useCallback(() => {
     // Réinitialiser le hover quand on quitte la zone
@@ -263,6 +305,7 @@ export const SourceSelector = ({
       onDoubleClick={onDoubleClick}
       logicalWidth={width}
       logicalHeight={height}
+      containerRef={setContainerRef}
     />
   )
 }

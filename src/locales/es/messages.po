@@ -259,7 +259,7 @@ msgstr "Cambios por línea"
 msgid "Changements Raster"
 msgstr "Cambios Raster"
 
-#: src/app/components/source-section.tsx:32
+#: src/app/components/source-section.tsx:62
 msgid "Changer d'image"
 msgstr "Cambiar imagen"
 
@@ -357,7 +357,7 @@ msgstr "Color"
 msgid "Couleur & Température"
 msgstr "Color & Temperatura"
 
-#: src/components/info-bar/info-bar.tsx:108
+#: src/components/info-bar/info-bar.tsx:138
 msgid "Couleurs"
 msgstr "Colores"
 
@@ -411,7 +411,7 @@ msgstr "Diferencia de luminancia máxima permitida entre colores alternados"
 msgid "Dimension Preset"
 msgstr "Preset de Dimensiones"
 
-#: src/components/info-bar/info-bar.tsx:83
+#: src/components/info-bar/info-bar.tsx:113
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:175
 msgid "Dimensions"
 msgstr "Dimensiones"
@@ -697,7 +697,7 @@ msgstr "Líneas Alta Res"
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Solo paleta CPC estándar. El soporte de la paleta Plus llegará pronto."
 
-#: src/app/components/source-section.tsx:31
+#: src/app/components/source-section.tsx:61
 msgid "Image source"
 msgstr "Imagen de origen"
 
@@ -837,7 +837,7 @@ msgstr "Diversidad máxima (100%), frecuencia ignorada"
 msgid "Mémoire"
 msgstr "Memoria"
 
-#: src/components/info-bar/info-bar.tsx:63
+#: src/components/info-bar/info-bar.tsx:81
 msgid "Mode"
 msgstr "Modo"
 
@@ -922,7 +922,7 @@ msgstr "Nombre del archivo ZIP"
 msgid "Nombre maximum de changements d'encre par ligne (1 = raster classique)"
 msgstr "Cambios de tinta máximos por línea (1 = raster clásico)"
 
-#: src/components/info-bar/info-bar.tsx:98
+#: src/components/info-bar/info-bar.tsx:128
 msgid "Non"
 msgstr "No"
 
@@ -973,7 +973,7 @@ msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "O arrastre y suelte un archivo (si es compatible)"
 
 #. placeholder {0}: rasterChanges.length
-#: src/components/info-bar/info-bar.tsx:96
+#: src/components/info-bar/info-bar.tsx:126
 msgid "Oui ({0})"
 msgstr "Sí ({0})"
 
@@ -988,6 +988,10 @@ msgstr "Abrir panel de configuración"
 #: src/components/settings-panel/settings-button.tsx:35
 msgid "Ouvrir les paramètres (⌘,)"
 msgstr "Abrir configuración (⌘,)"
+
+#: src/components/info-bar/info-bar.tsx:26
+msgid "paires"
+msgstr ""
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:86
 msgid "Paires uniques"
@@ -1139,7 +1143,7 @@ msgstr "Ajuste Raster"
 #~ msgid "Raster: changements d'encre par ligne"
 #~ msgstr "Raster: cambios de tinta por línea"
 
-#: src/components/info-bar/info-bar.tsx:92
+#: src/components/info-bar/info-bar.tsx:122
 msgid "Rasters"
 msgstr "Rasters"
 

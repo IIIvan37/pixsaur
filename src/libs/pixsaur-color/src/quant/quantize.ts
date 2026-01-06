@@ -23,6 +23,8 @@ export type DitheringMode =
   | 'halftone4x4'
   | 'ylioluma1'
   | 'ylioluma2'
+  | 'blueNoise'
+  | 'ostromoukhov'
 
 export type DitheringConfig = {
   mode: DitheringMode | 'none'

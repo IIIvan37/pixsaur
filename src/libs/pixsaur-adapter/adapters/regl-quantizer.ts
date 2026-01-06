@@ -21,12 +21,12 @@ import {
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { getCPCPlusPaletteIndex } from '@/palettes/cpc-palette'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 import {
   addBucketRepresentativesWithDistanceCheck,
   type ColorFrequencyItem,
   createHueBuckets,
-  HUE_BUCKET_SIZE_DEGREES,
   selectBucketRepresentativesWithLightness,
   selectFrequentColorsWithDiversity,
   selectMaxMinDistanceColors,
@@ -638,6 +638,10 @@ export class ReGLQuantizer {
   /**
    * Helper: Analyse fréquence des couleurs dans les échantillons
    */
+  /**
+   * Analyse les fréquences des couleurs dans l'échantillon
+   * Optimisé pour CPC Plus avec lookup O(1) au lieu de O(4096)
+   */
   private analyzeColorFrequency(
     sampledColors: Vector[],
     basePalette: readonly Vector[],
@@ -650,12 +654,15 @@ export class ReGLQuantizer {
   }> {
     const colorCount = new Map<number, number>()
 
+    // CPC Plus: utiliser la lookup table O(1) au lieu de findClosestColorIndex O(4096)
+    const isCPCPlus = basePalette.length === 4096
+
     for (const sample of sampledColors) {
-      const closestIndex = findClosestColorIndex(
-        sample,
-        basePalette,
-        this.calculateDistance
-      )
+      const sampleArray = Array.isArray(sample) ? sample : Array.from(sample)
+      const closestIndex = isCPCPlus
+        ? getCPCPlusPaletteIndex(sampleArray)
+        : findClosestColorIndex(sample, basePalette, this.calculateDistance)
+
       if (!usedIndices.has(closestIndex)) {
         colorCount.set(closestIndex, (colorCount.get(closestIndex) || 0) + 1)
       }
@@ -686,6 +693,7 @@ export class ReGLQuantizer {
     preselectedIndices: readonly number[] = [],
     paletteStrategy: PaletteStrategy = 'frequency-balanced'
   ): number[] {
+    const startTime = performance.now()
     // Commencer par les couleurs présélectionnées (priorité absolue)
     const result: number[] = [...preselectedIndices]
     const usedIndices = new Set(preselectedIndices)
@@ -768,20 +776,6 @@ export class ReGLQuantizer {
     // Utiliser les helpers pour créer et trier les buckets de teinte
     const hueBuckets = createHueBuckets(colorFrequency as ColorFrequencyItem[])
 
-    // Log détaillé des buckets trouvés
-    for (const [bucket, colors] of hueBuckets.entries()) {
-      const hueRange =
-        bucket === 'gray'
-          ? 'gray/desaturated'
-          : `${bucket * HUE_BUCKET_SIZE_DEGREES}-${(bucket + 1) * HUE_BUCKET_SIZE_DEGREES}°`
-      adapterLogger.info(
-        `[Mode 0] Bucket ${bucket} (${hueRange}): ${colors.length} colors`
-      )
-    }
-    adapterLogger.info(
-      `[Mode 0] Found ${hueBuckets.size} hue families in image`
-    )
-
     // Trier les buckets par fréquence
     const sortedBuckets = sortBucketsByFrequency(hueBuckets)
 
@@ -790,10 +784,6 @@ export class ReGLQuantizer {
     const bucketRepresentatives = selectBucketRepresentativesWithLightness(
       sortedBuckets,
       targetColors
-    )
-
-    adapterLogger.info(
-      `[Mode 0] Selected ${bucketRepresentatives.length} representatives from hue families`
     )
 
     // Compléter avec les couleurs les plus fréquentes globalement
@@ -806,17 +796,12 @@ export class ReGLQuantizer {
     ) as ColorFrequencyItem[]
 
     // Ajouter les représentants de bucket au résultat AVEC vérification de distance RGB et teinte
-    const { added: addedReps, skipped: skippedReps } =
-      addBucketRepresentativesWithDistanceCheck(
-        bucketRepresentatives,
-        sortedBuckets,
-        result,
-        selectedConverted,
-        this.calculateDistance
-      )
-
-    adapterLogger.info(
-      `[Mode 0] Added ${addedReps} bucket representatives (skipped ${skippedReps} too close)`
+    addBucketRepresentativesWithDistanceCheck(
+      bucketRepresentatives,
+      sortedBuckets,
+      result,
+      selectedConverted,
+      this.calculateDistance
     )
 
     // Si on a déjà assez de couleurs avec les représentants, on s'arrête là
@@ -847,6 +832,16 @@ export class ReGLQuantizer {
         this.calculateDistance
       )
     }
+
+    const duration = performance.now() - startTime
+    adapterLogger.info(
+      `[ReGL] Color selection completed in ${duration.toFixed(1)}ms`,
+      {
+        targetColors,
+        selectedCount: result.length,
+        strategy: paletteStrategy
+      }
+    )
 
     return result
   }

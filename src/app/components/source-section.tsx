@@ -1,5 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
+import { useCallback, useState } from 'react'
 import { ImageSelector } from '@/components/image-selector'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -18,12 +19,51 @@ export default function SourceSection() {
   const setImg = useSetAtom(setImgAtom)
   const setSelection = useSetAtom(setSelectionAtom)
   const img = useAtomValue(imageAtom)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
   const setOpenImagePicker = useSetAtom(setOpenImagePickerAtom)
-  const handleImageLoaded = (img: HTMLImageElement) => {
-    setImg(img)
-  }
+  const handleImageLoaded = useCallback(
+    (img: HTMLImageElement) => {
+      resetAdjustments()
+      setSelection(null)
+      setImg(img)
+    },
+    [resetAdjustments, setSelection, setImg]
+  )
+
+  // Handle native drop event - doesn't interfere with ImageSelector's selection drag
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      setIsDragOver(false)
+
+      const file = e.dataTransfer.files[0]
+      if (!file?.type.startsWith('image/')) return
+
+      processImageFile(file)
+        .then(handleImageLoaded)
+        .catch((err) =>
+          logger.error('[SourceSection] Failed to load dropped image:', err)
+        )
+    },
+    [handleImageLoaded]
+  )
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    // Only show drag feedback when dragging files (not internal drag like selection)
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true)
+    }
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only reset if leaving the container (not entering a child)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }, [])
 
   return (
     <Panel>
@@ -69,7 +109,20 @@ export default function SourceSection() {
       />
 
       {img ? (
-        <ImageSelector />
+        // biome-ignore lint/a11y/noStaticElementInteractions: Drop zone wrapper for replacing image
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          style={{
+            position: 'relative',
+            width: '100%',
+            outline: isDragOver ? '2px dashed var(--color-primary)' : 'none',
+            borderRadius: 'var(--radius-sm)'
+          }}
+        >
+          <ImageSelector />
+        </div>
       ) : (
         <ImageUpload onImageLoaded={handleImageLoaded} />
       )}

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useSetAtom } from 'jotai'
 import { useEffect } from 'react'
@@ -24,7 +24,7 @@ vi.mock('@tauri-apps/api/window', () => ({
   }
 }))
 
-function SetupInitialImage() {
+function SetupInitialImage({ onReady }: { onReady?: () => void }) {
   const setImg = useSetAtom(setImgAtom)
   useEffect(() => {
     // mock a data URL image
@@ -32,13 +32,15 @@ function SetupInitialImage() {
     img.src =
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4//8/AwAI/AL+JfHqAAAAAElFTkSuQmCC'
     setImg(img)
-  }, [setImg])
+    onReady?.()
+  }, [setImg, onReady])
   return <SourceSection />
 }
 
 describe('SourceSection', () => {
   beforeEach(() => {
     mockGlobalImage()
+    vi.mocked(processImageFile as any).mockClear()
   })
 
   it("clicking 'Changer d'image' opens the uploader", async () => {
@@ -82,5 +84,77 @@ describe('SourceSection', () => {
 
     // ImageSelector should be mounted after image load
     await findByTestId('image-selector-container')
+  })
+
+  it('dropping an image file processes and loads it', async () => {
+    // Mock processImageFile to return a new image
+    const newImage = new Image()
+    newImage.src =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4//8/AwAI/AL+JfHqAAAAAElFTkSuQmCC'
+    vi.mocked(processImageFile as any).mockResolvedValue(newImage)
+
+    const { findByTestId } = renderWithProviders(<SourceSection />)
+
+    // When there's no image, the upload dropzone is shown
+    const uploadDropzone = await findByTestId('image-upload-dropzone')
+
+    // Create a mock file to drop
+    const file = new File(['dummy content'], 'test-image.png', {
+      type: 'image/png'
+    })
+
+    // Simulate drop event on the upload dropzone
+    const dataTransfer = {
+      files: [file],
+      items: [
+        {
+          kind: 'file',
+          type: file.type,
+          getAsFile: () => file
+        }
+      ],
+      types: ['Files']
+    }
+
+    fireEvent.drop(uploadDropzone, { dataTransfer })
+
+    // processImageFile should have been called with the dropped file
+    await waitFor(() => {
+      expect(processImageFile).toHaveBeenCalledWith(file)
+    })
+
+    // After loading, the ImageSelector should be displayed
+    await findByTestId('image-selector-container', undefined, { timeout: 2000 })
+  })
+
+  it('does not process non-image files when dropped', async () => {
+    const { findByTestId } = renderWithProviders(<SourceSection />)
+
+    // When there's no image, the upload dropzone is shown
+    const uploadDropzone = await findByTestId('image-upload-dropzone')
+
+    // Create a non-image file
+    const file = new File(['dummy content'], 'document.txt', {
+      type: 'text/plain'
+    })
+
+    const dataTransfer = {
+      files: [file],
+      items: [
+        {
+          kind: 'file',
+          type: file.type,
+          getAsFile: () => file
+        }
+      ],
+      types: ['Files']
+    }
+
+    fireEvent.drop(uploadDropzone, { dataTransfer })
+
+    // processImageFile should NOT have been called for non-image files
+    // Small delay to allow any async handlers to complete
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(processImageFile).not.toHaveBeenCalled()
   })
 })

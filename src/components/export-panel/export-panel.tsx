@@ -205,8 +205,8 @@ export default function ExportPanel() {
           indexBufB: modeRExportData.indexBufferB,
           modeConfig,
           hardware: cpcHardware,
-          paletteAFirmware: !isPlus ? paletteAFirmware : undefined,
-          paletteBFirmware: !isPlus ? paletteBFirmware : undefined,
+          paletteAFirmware: isPlus ? undefined : paletteAFirmware,
+          paletteBFirmware: isPlus ? undefined : paletteBFirmware,
           paletteAPlus: isPlus ? paletteAPlus : undefined,
           paletteBPlus: isPlus ? paletteBPlus : undefined,
           filename: 'pixsaur_modeR'

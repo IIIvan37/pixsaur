@@ -235,6 +235,7 @@ export const ImageUploadView = ({
     <button
       type='button'
       {...rootProps}
+      data-testid='image-upload-dropzone'
       className={`${styles.dropzone} ${
         isDragActive ? styles.dropzoneActive : ''
       }`}

@@ -11,6 +11,7 @@
 import { atom } from 'jotai'
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { logger } from '@/core'
+import { getOstromoukhovCoefficients } from '@/libs/pixsaur-color/src/map/ostromoukhov-coefficients'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig, EGXType } from '@/libs/pixsaur-egx'
 import {
@@ -94,9 +95,13 @@ function getEGXModeConfig(
   // Mode 0: 160px, Mode 1: 320px, Mode 2: 640px
   // The ratio is: Mode 1 = 2× Mode 0, Mode 2 = 4× Mode 0
   const widthMultiplier = egxType === 'egx1' ? 2 : 4
-  const baseWidthMode0 =
-    baseModeConfig.width /
-    (baseModeConfig.mode === 0 ? 1 : baseModeConfig.mode === 1 ? 2 : 4)
+  const getModeMultiplier = (mode: number) => {
+    if (mode === 0) return 1
+    if (mode === 1) return 2
+    return 4
+  }
+  const modeMultiplier = getModeMultiplier(baseModeConfig.mode)
+  const baseWidthMode0 = baseModeConfig.width / modeMultiplier
   const egxWidth = Math.round(baseWidthMode0 * widthMultiplier)
 
   return {
@@ -647,6 +652,129 @@ function applyEGXDithering(
 }
 
 /**
+ * EGX-aware Ostromoukhov Error Diffusion
+ *
+ * Uses variable coefficients based on intensity level for improved blue-noise
+ * spectrum and elimination of "worm" artifacts. Applies EGX constraints
+ * with proper sub-palette selection per line.
+ *
+ * Key features:
+ * - Variable diffusion coefficients per intensity (256 precomputed sets)
+ * - Serpentine scanning for better error distribution
+ * - Only 3 neighbor pixels (faster than Floyd-Steinberg's 4)
+ * - Produces high-quality blue-noise patterns
+ */
+function applyEGXOstromoukhovDithering(
+  imageData: ImageData,
+  palette: Vector<'RGB'>[],
+  config: EGXConfig,
+  intensity: number
+): Uint8ClampedArray {
+  const { width, height, data } = imageData
+  const output = new Uint8ClampedArray(width * height * 4)
+
+  // Working buffer with floating point for error accumulation
+  const errorBuffer = new Float32Array(width * height * 3)
+
+  // Initialize from source image
+  for (let i = 0; i < width * height; i++) {
+    errorBuffer[i * 3] = data[i * 4]
+    errorBuffer[i * 3 + 1] = data[i * 4 + 1]
+    errorBuffer[i * 3 + 2] = data[i * 4 + 2]
+  }
+
+  for (let y = 0; y < height; y++) {
+    // Get the sub-palette limit for this line
+    const lineMode = getModeForLine(y, config)
+    const maxColorIndex = getMaxColorIndex(lineMode, config.type)
+
+    // Serpentine scanning: alternate direction each line
+    const leftToRight = y % 2 === 0
+
+    for (let i = 0; i < width; i++) {
+      const x = leftToRight ? i : width - 1 - i
+      const idx = y * width + x
+      const idx3 = idx * 3
+      const idx4 = idx * 4
+
+      // Get current pixel with accumulated error
+      const r = Math.max(0, Math.min(255, errorBuffer[idx3]))
+      const g = Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
+      const b = Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
+
+      // Find closest color in the sub-palette for this line
+      const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
+
+      // Output the quantized color
+      output[idx4] = color[0]
+      output[idx4 + 1] = color[1]
+      output[idx4 + 2] = color[2]
+      output[idx4 + 3] = 255
+
+      // Calculate quantization error
+      const errR = r - color[0]
+      const errG = g - color[1]
+      const errB = b - color[2]
+
+      // Get intensity-dependent coefficients from pixel luminance
+      const pixelIntensity = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
+      const [rightCoef, downLeftCoef, downCoef] =
+        getOstromoukhovCoefficients(pixelIntensity)
+
+      // Apply intensity scaling
+      const right = rightCoef * intensity
+      const downLeft = downLeftCoef * intensity
+      const down = downCoef * intensity
+
+      // Distribute error (direction-aware for serpentine scan)
+      if (leftToRight) {
+        // Right pixel (x+1, y)
+        if (x + 1 < width) {
+          const rightIdx = idx3 + 3
+          errorBuffer[rightIdx] += errR * right
+          errorBuffer[rightIdx + 1] += errG * right
+          errorBuffer[rightIdx + 2] += errB * right
+        }
+
+        // Down-left pixel (x-1, y+1)
+        if (x > 0 && y + 1 < height) {
+          const dlIdx = (idx + width - 1) * 3
+          errorBuffer[dlIdx] += errR * downLeft
+          errorBuffer[dlIdx + 1] += errG * downLeft
+          errorBuffer[dlIdx + 2] += errB * downLeft
+        }
+      } else {
+        // Left pixel (x-1, y) - serpentine reversal
+        if (x > 0) {
+          const leftIdx = idx3 - 3
+          errorBuffer[leftIdx] += errR * right
+          errorBuffer[leftIdx + 1] += errG * right
+          errorBuffer[leftIdx + 2] += errB * right
+        }
+
+        // Down-right pixel (x+1, y+1) - serpentine reversal
+        if (x + 1 < width && y + 1 < height) {
+          const drIdx = (idx + width + 1) * 3
+          errorBuffer[drIdx] += errR * downLeft
+          errorBuffer[drIdx + 1] += errG * downLeft
+          errorBuffer[drIdx + 2] += errB * downLeft
+        }
+      }
+
+      // Down pixel (x, y+1) - same for both directions
+      if (y + 1 < height) {
+        const downIdx = (idx + width) * 3
+        errorBuffer[downIdx] += errR * down
+        errorBuffer[downIdx + 1] += errG * down
+        errorBuffer[downIdx + 2] += errB * down
+      }
+    }
+  }
+
+  return output
+}
+
+/**
  * No dithering - direct quantization per line
  */
 function applyEGXNoDithering(
@@ -711,8 +839,12 @@ function applyEGXOrderedDithering(
     [63, 31, 55, 23, 61, 29, 53, 21]
   ]
 
-  const matrix =
-    matrixSize === 2 ? BAYER_2X2 : matrixSize === 4 ? BAYER_4X4 : BAYER_8X8
+  const getMatrix = (size: 2 | 4 | 8) => {
+    if (size === 2) return BAYER_2X2
+    if (size === 4) return BAYER_4X4
+    return BAYER_8X8
+  }
+  const matrix = getMatrix(matrixSize)
   // Divisor is size * size (same as original algorithm)
   const divisor = matrixSize * matrixSize
 
@@ -864,7 +996,7 @@ export const egxPaletteAtom = atom(async (get) => {
   for (const idx of lockedIndices) {
     const lockedColor = userPalette[idx]?.color
     if (lockedColor) {
-      colors[idx] = lockedColor as Vector<'RGB'>
+      colors[idx] = lockedColor
     }
   }
 
@@ -888,9 +1020,7 @@ export const egxPaletteAtom = atom(async (get) => {
         }
       }
       // If we ran out of colors, use black
-      if (colors[i] === null) {
-        colors[i] = [0, 0, 0]
-      }
+      colors[i] ??= [0, 0, 0]
     }
   }
 
@@ -967,7 +1097,7 @@ export const egxDisplayPaletteAtom = atom(
     for (let i = 0; i < 16; i++) {
       const slot = userPalette[i]
       if (slot?.locked && slot?.color) {
-        lockedColors.push(slot.color as Vector<'RGB'>)
+        lockedColors.push(slot.color)
       }
     }
 
@@ -994,7 +1124,7 @@ export const egxDisplayPaletteAtom = atom(
       ) {
         // Slot is not locked: use EGX optimized color (filtered)
         slots.push({
-          color: availableEgxColors[egxColorIndex] as Vector<'RGB'>,
+          color: availableEgxColors[egxColorIndex],
           locked: false
         })
         egxColorIndex++
@@ -1043,6 +1173,15 @@ function applyEGXDitheringByMode(
       break
     case 'floydSteinberg':
       result = applyEGXDithering(imageData, palette, config, intensity)
+      break
+    case 'ostromoukhov':
+      // Ostromoukhov uses the same pattern as Floyd-Steinberg but with variable coefficients
+      result = applyEGXOstromoukhovDithering(
+        imageData,
+        palette,
+        config,
+        intensity
+      )
       break
     case 'atkinson':
       result = applyEGXAtkinsonDithering(imageData, palette, config, intensity)

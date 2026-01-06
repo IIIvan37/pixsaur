@@ -28,6 +28,8 @@
 
 import { logger } from '@/core/logger'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
+import { getBlueNoiseThresholdCentered } from '@/libs/pixsaur-color/src/map/blue-noise-texture'
+import { getOstromoukhovCoefficients } from '@/libs/pixsaur-color/src/map/ostromoukhov-coefficients'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { colorDistance } from './blend'
 import { optimizeModeRPalettes } from './pair-optimizer'
@@ -100,7 +102,8 @@ const ERROR_DIFFUSION_MODES = new Set<DitheringMode>([
   'floydSteinberg',
   'atkinson',
   'ylioluma1',
-  'ylioluma2'
+  'ylioluma2',
+  'ostromoukhov'
 ])
 
 /** Check if a dithering mode uses error diffusion */
@@ -111,6 +114,24 @@ function isErrorDiffusionMode(mode: DitheringMode | 'none'): boolean {
 /** Check if a dithering mode uses ordered dithering */
 function isOrderedDitheringMode(mode: DitheringMode | 'none'): boolean {
   return mode !== 'none' && mode in DITHERING_MATRICES
+}
+
+/** Check if a dithering mode uses blue noise */
+function isBlueNoiseMode(mode: DitheringMode | 'none'): boolean {
+  return mode === 'blueNoise'
+}
+
+/**
+ * Get Blue Noise threshold for a pixel position
+ * Uses the same formula as applyBlueNoiseDither in pixsaur-color:
+ * threshold = getBlueNoiseThresholdCentered(x, y) * intensity * 255
+ */
+function getBlueNoiseThreshold(
+  x: number,
+  y: number,
+  intensity: number
+): number {
+  return getBlueNoiseThresholdCentered(x, y) * intensity * 255
 }
 
 /**
@@ -267,6 +288,7 @@ export function quantizeModeR(
     isErrorDiffusionMode(ditheringMode) && ditherIntensity > 0
   const useOrderedDithering =
     isOrderedDitheringMode(ditheringMode) && ditherIntensity > 0
+  const useBlueNoise = isBlueNoiseMode(ditheringMode) && ditherIntensity > 0
 
   // Error buffer for error diffusion modes
   const errorBuffer = useErrorDiffusion
@@ -282,7 +304,8 @@ export function quantizeModeR(
     mode: ditheringMode,
     intensity: config.ditheringIntensity,
     useErrorDiffusion,
-    useOrderedDithering
+    useOrderedDithering,
+    useBlueNoise
   })
 
   // Create two index buffers
@@ -315,6 +338,25 @@ export function quantizeModeR(
           ditherMatrix,
           ditherIntensity
         )
+
+        colorA = getSourceColorWithThreshold(
+          imageData,
+          width,
+          srcXA,
+          y,
+          threshold
+        )
+        colorB = getSourceColorWithThreshold(
+          imageData,
+          width,
+          srcXB,
+          y,
+          threshold
+        )
+      } else if (useBlueNoise) {
+        // Blue Noise dithering: apply threshold-based color adjustment
+        // Use OUTPUT coordinates (x, y) for the dithering pattern
+        const threshold = getBlueNoiseThreshold(x, y, ditherIntensity)
 
         colorA = getSourceColorWithThreshold(
           imageData,
@@ -378,25 +420,33 @@ export function quantizeModeR(
           (colorB[2] - chosenB[2]) * ditherIntensity
         ]
 
+        // Calculate intensity (luminance) for Ostromoukhov coefficients
+        const intensityA =
+          0.299 * colorA[0] + 0.587 * colorA[1] + 0.114 * colorA[2]
+        const intensityB =
+          0.299 * colorB[0] + 0.587 * colorB[1] + 0.114 * colorB[2]
+
         // Use appropriate error diffusion based on mode
-        propagateError(
+        propagateError({
           errorBuffer,
           width,
           height,
-          srcXA,
+          x: srcXA,
           y,
-          errorA,
-          ditheringMode
-        )
-        propagateError(
+          error: errorA,
+          mode: ditheringMode,
+          originalIntensity: intensityA
+        })
+        propagateError({
           errorBuffer,
           width,
           height,
-          srcXB,
+          x: srcXB,
           y,
-          errorB,
-          ditheringMode
-        )
+          error: errorB,
+          mode: ditheringMode,
+          originalIntensity: intensityB
+        })
       }
     }
   }
@@ -655,18 +705,47 @@ const ERROR_DIFFUSION_KERNELS: Record<
   ]
 }
 
+/** Options for error propagation */
+interface PropagateErrorOptions {
+  errorBuffer: Float32Array
+  width: number
+  height: number
+  x: number
+  y: number
+  error: Vector<'RGB'>
+  mode: DitheringMode | 'none'
+  originalIntensity?: number
+}
+
 /**
  * Propagate quantization error to neighboring pixels using the specified algorithm
  */
-function propagateError(
-  errorBuffer: Float32Array,
-  width: number,
-  height: number,
-  x: number,
-  y: number,
-  error: Vector<'RGB'>,
-  mode: DitheringMode | 'none'
-): void {
+function propagateError(opts: PropagateErrorOptions): void {
+  const { errorBuffer, width, height, x, y, error, mode, originalIntensity } =
+    opts
+
+  // Ostromoukhov uses variable coefficients based on intensity
+  if (mode === 'ostromoukhov' && originalIntensity !== undefined) {
+    const [right, downLeft, down] =
+      getOstromoukhovCoefficients(originalIntensity)
+    const ostroKernel = [
+      { dx: 1, dy: 0, factor: right },
+      { dx: -1, dy: 1, factor: downLeft },
+      { dx: 0, dy: 1, factor: down }
+    ]
+    for (const { dx, dy, factor } of ostroKernel) {
+      const nx = x + dx
+      const ny = y + dy
+      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+        const idx = (ny * width + nx) * 3
+        errorBuffer[idx] += error[0] * factor
+        errorBuffer[idx + 1] += error[1] * factor
+        errorBuffer[idx + 2] += error[2] * factor
+      }
+    }
+    return
+  }
+
   const kernel =
     ERROR_DIFFUSION_KERNELS[mode as string] ??
     ERROR_DIFFUSION_KERNELS.floydSteinberg
