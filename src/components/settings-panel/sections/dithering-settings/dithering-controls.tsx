@@ -13,6 +13,7 @@ import {
   ALL_DITHERING_MODES,
   getDefaultDitheringIntensity,
   getEGXCompatibleModes,
+  getMaxDitheringIntensity,
   getRasterCompatibleModes,
   isEGXCompatibleMode,
   isRasterCompatibleMode
@@ -101,7 +102,7 @@ export function DitheringControls() {
           <PixsaurSlider
             label={<Trans>Intensité</Trans>}
             min={0}
-            max={100}
+            max={Math.round(getMaxDitheringIntensity(cfg.mode) * 100)}
             value={Math.round(cfg.intensity * 100)}
             onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
             step={1}

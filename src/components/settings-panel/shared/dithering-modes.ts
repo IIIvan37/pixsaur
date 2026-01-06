@@ -14,9 +14,11 @@ export type DitheringModeOption = {
  */
 export const ALL_DITHERING_MODES: readonly DitheringModeOption[] = [
   { value: 'floydSteinberg', label: 'Floyd–Steinberg' },
+  { value: 'ostromoukhov', label: 'Ostromoukhov' },
+  { value: 'blueNoise', label: 'Blue Noise' },
   { value: 'bayer2x2', label: 'Bayer 2x2' },
   { value: 'bayer4x4', label: 'Bayer 4x4' },
-  { value: 'bayer8x8', label: 'bayer 8x8' },
+  { value: 'bayer8x8', label: 'Bayer 8x8' },
   { value: 'ylioluma1', label: 'Ylioluma 1' },
   { value: 'ylioluma2', label: 'Ylioluma 2' },
   { value: 'atkinson', label: 'Atkinson' },
@@ -28,6 +30,7 @@ export const ALL_DITHERING_MODES: readonly DitheringModeOption[] = [
  */
 const ERROR_DIFFUSION_MODES: readonly DitheringMode[] = [
   'floydSteinberg',
+  'ostromoukhov',
   'atkinson',
   'ylioluma1',
   'ylioluma2'
@@ -82,8 +85,12 @@ export function getDefaultDitheringIntensity(mode: DitheringMode): number {
   switch (mode) {
     case 'floydSteinberg':
       return 0.5
+    case 'ostromoukhov':
+      return 0.5
     case 'atkinson':
       return 0.5
+    case 'blueNoise':
+      return 0.15
     case 'bayer2x2':
       return 0.25
     case 'bayer4x4':
@@ -98,5 +105,24 @@ export function getDefaultDitheringIntensity(mode: DitheringMode): number {
       return 1
     default:
       return 0.5
+  }
+}
+
+/**
+ * Returns the maximum intensity for a given dithering mode.
+ * Some modes work better with lower max values.
+ */
+export function getMaxDitheringIntensity(mode: DitheringMode | 'none'): number {
+  switch (mode) {
+    case 'none':
+      return 1
+    case 'blueNoise':
+      return 0.5
+    case 'halftone4x4':
+      return 0.5
+    case 'ylioluma2':
+      return 1
+    default:
+      return 1
   }
 }

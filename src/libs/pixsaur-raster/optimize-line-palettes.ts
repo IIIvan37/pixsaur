@@ -1477,11 +1477,9 @@ export function preprocessImageForRaster(
         // Apply accumulated error (vertical from previous line + horizontal from left)
         const rawTotalError = addErrors(verticalError[x], horizError[x])
 
-        // Clamp accumulated error to prevent runaway values
-        // Scale the clamp with dithering intensity to prevent dark artifacts
-        // At intensity=1.0: ±64, at intensity=0.5: ±32, etc.
-        // Lower values prevent the dithering from pushing pixels too far from original
-        const maxAccumulatedError = 64 * ditheringIntensity
+        // Clamp accumulated error to prevent runaway values and dark artifacts
+        // Use a conservative maximum to prevent dark pixels in light areas
+        const maxAccumulatedError = 32 * ditheringIntensity
         const totalError: [number, number, number] = [
           Math.max(
             -maxAccumulatedError,
@@ -1497,10 +1495,25 @@ export function preprocessImageForRaster(
           )
         ]
 
-        // Add error to source color (may go out of [0,255] range temporarily)
-        const targetR = sourceColor[0] + totalError[0]
-        const targetG = sourceColor[1] + totalError[1]
-        const targetB = sourceColor[2] + totalError[2]
+        // Add error to source color with asymmetric clamping
+        // Allow more brightening than darkening to prevent dark artifacts
+        // Darkening is limited to a fraction of the source color
+        const maxDarken = sourceColor[0] * 0.3 * ditheringIntensity
+        const maxDarkenG = sourceColor[1] * 0.3 * ditheringIntensity
+        const maxDarkenB = sourceColor[2] * 0.3 * ditheringIntensity
+
+        const targetR = Math.max(
+          sourceColor[0] - maxDarken,
+          Math.min(255, sourceColor[0] + totalError[0])
+        )
+        const targetG = Math.max(
+          sourceColor[1] - maxDarkenG,
+          Math.min(255, sourceColor[1] + totalError[1])
+        )
+        const targetB = Math.max(
+          sourceColor[2] - maxDarkenB,
+          Math.min(255, sourceColor[2] + totalError[2])
+        )
 
         // Clamp to valid RGB range for palette lookup
         const correctedColor: Vector<'RGB'> = [
@@ -1517,19 +1530,18 @@ export function preprocessImageForRaster(
         )
         const chosenColor = quantizedPalette[closestIdx]
 
-        // Calculate quantization error based on UNCLAMPED target color
-        // This is key: if we wanted targetR=-100 but clamped to 0, and chose color 0,
-        // the error is 0-(-100)=100, not 0-0=0
+        // Calculate quantization error based on CLAMPED corrected color
+        // Using the clamped value prevents propagating extreme errors
+        // that would cause dark artifacts in neighboring pixels
         const rawError: [number, number, number] = [
-          targetR - chosenColor[0],
-          targetG - chosenColor[1],
-          targetB - chosenColor[2]
+          correctedColor[0] - chosenColor[0],
+          correctedColor[1] - chosenColor[1],
+          correctedColor[2] - chosenColor[2]
         ]
 
         // Clamp the error before propagation to prevent runaway accumulation
-        // Use a dynamic threshold based on dithering intensity
-        // At intensity=1: ±32, at intensity=0.5: ±16, etc.
-        const maxError = 32 * ditheringIntensity
+        // Use a conservative threshold - reduced to prevent dark artifacts
+        const maxError = 24 * ditheringIntensity
         const error: [number, number, number] = [
           Math.max(-maxError, Math.min(maxError, rawError[0])),
           Math.max(-maxError, Math.min(maxError, rawError[1])),

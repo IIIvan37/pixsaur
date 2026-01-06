@@ -1,3 +1,5 @@
+import { getBlueNoiseThresholdCentered } from './blue-noise-texture'
+
 const BAYER_MATRICES: Record<
   'bayer2x2' | 'bayer4x4' | 'bayer8x8' | 'atkinson' | 'halftone4x4',
   { size: number; matrix: number[][] }
@@ -337,9 +339,10 @@ export function applyBayerDither(
       const bayerVal = matrix[y % size][x % size]
       const threshold = (bayerVal / (size * size) - 0.5) * intensity * 255
 
-      pixelCS[0] = bufCS[i3] + threshold
-      pixelCS[1] = bufCS[i3 + 1] + threshold
-      pixelCS[2] = bufCS[i3 + 2] + threshold
+      // Clamp to valid range to avoid dark artifacts
+      pixelCS[0] = Math.max(0, Math.min(255, bufCS[i3] + threshold))
+      pixelCS[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + threshold))
+      pixelCS[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + threshold))
 
       const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
 
@@ -387,6 +390,148 @@ export function applyNoDither(
     out[outIdx + 1] = color[1]
     out[outIdx + 2] = color[2]
     out[outIdx + 3] = 255
+  }
+
+  return out
+}
+
+export function applyBlueNoiseDither(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  paletteCS: Float32Array[],
+  paletteOut: Uint8ClampedArray[],
+  intensity: number,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixelCS = new Float32Array(3)
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const i3 = i * 3
+      const i4 = i * 4
+
+      // Get blue noise threshold (-0.5 to 0.5, centered)
+      const threshold = getBlueNoiseThresholdCentered(x, y) * intensity * 255
+
+      // Clamp to valid range to avoid dark artifacts
+      pixelCS[0] = Math.max(0, Math.min(255, bufCS[i3] + threshold))
+      pixelCS[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + threshold))
+      pixelCS[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + threshold))
+
+      const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
+
+      const rgb = paletteOut[bestIndex]
+      out[i4 + 0] = rgb[0]
+      out[i4 + 1] = rgb[1]
+      out[i4 + 2] = rgb[2]
+      out[i4 + 3] = 255
+    }
+  }
+
+  return out
+}
+
+// ============================================================================
+// Ostromoukhov Error Diffusion
+// ============================================================================
+
+import { getOstromoukhovCoefficients } from './ostromoukhov-coefficients'
+
+/**
+ * Ostromoukhov error diffusion dithering
+ *
+ * Uses intensity-dependent coefficients to produce blue-noise spectra
+ * and eliminate worm artifacts. Only diffuses to 3 neighbors (faster than F-S).
+ *
+ * Pattern (serpentine scan):
+ *   Left-to-right:  X -> right, down-left, down
+ *   Right-to-left:  X -> left, down-right, down
+ */
+export function applyOstromoukhovDither(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  paletteCS: Float32Array[],
+  paletteOut: Uint8ClampedArray[],
+  distFn: DistanceFn,
+  intensity: number
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixelCS = new Float32Array(3)
+  const errorBuf = new Float32Array(bufCS) // working copy
+  const w3 = width * 3
+
+  let leftToRight = true
+
+  for (let y = 0; y < height; y++) {
+    const xStart = leftToRight ? 0 : width - 1
+    const xEnd = leftToRight ? width : -1
+    const xStep = leftToRight ? 1 : -1
+
+    for (let x = xStart; x !== xEnd; x += xStep) {
+      const idx3 = (y * width + x) * 3
+      const idx4 = (y * width + x) * 4
+
+      // Get current pixel value
+      pixelCS[0] = errorBuf[idx3]
+      pixelCS[1] = errorBuf[idx3 + 1]
+      pixelCS[2] = errorBuf[idx3 + 2]
+
+      // Find nearest palette color
+      const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
+
+      // Set output color
+      const color = paletteOut[bestIndex]
+      out[idx4 + 0] = color[0]
+      out[idx4 + 1] = color[1]
+      out[idx4 + 2] = color[2]
+      out[idx4 + 3] = 255
+
+      // Compute quantization error
+      const palColor = paletteCS[bestIndex]
+      const err0 = (pixelCS[0] - palColor[0]) * intensity
+      const err1 = (pixelCS[1] - palColor[1]) * intensity
+      const err2 = (pixelCS[2] - palColor[2]) * intensity
+
+      // Get intensity-dependent coefficients
+      // Use average luminance for coefficient lookup
+      const avgIntensity = (pixelCS[0] + pixelCS[1] + pixelCS[2]) / 3
+      const [rightCoef, downLeftCoef, downCoef] =
+        getOstromoukhovCoefficients(avgIntensity)
+
+      // Distribute error to neighbors (serpentine pattern)
+      // Right (or left if going right-to-left)
+      const rightX = x + xStep
+      if (rightX >= 0 && rightX < width) {
+        const rightIdx = idx3 + xStep * 3
+        errorBuf[rightIdx + 0] += err0 * rightCoef
+        errorBuf[rightIdx + 1] += err1 * rightCoef
+        errorBuf[rightIdx + 2] += err2 * rightCoef
+      }
+
+      // Down-left (or down-right if going right-to-left)
+      const downLeftX = x - xStep
+      if (y + 1 < height && downLeftX >= 0 && downLeftX < width) {
+        const downLeftIdx = idx3 - xStep * 3 + w3
+        errorBuf[downLeftIdx + 0] += err0 * downLeftCoef
+        errorBuf[downLeftIdx + 1] += err1 * downLeftCoef
+        errorBuf[downLeftIdx + 2] += err2 * downLeftCoef
+      }
+
+      // Down
+      if (y + 1 < height) {
+        const downIdx = idx3 + w3
+        errorBuf[downIdx + 0] += err0 * downCoef
+        errorBuf[downIdx + 1] += err1 * downCoef
+        errorBuf[downIdx + 2] += err2 * downCoef
+      }
+    }
+
+    // Serpentine: alternate direction each line
+    leftToRight = !leftToRight
   }
 
   return out
@@ -641,6 +786,26 @@ const DITHER_MODES: Record<string, DitherFn> = {
       paletteOut,
       { config, mode: 'halftone4x4' },
       distFn
+    ),
+  blueNoise: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+    applyBlueNoiseDither(
+      bufCS,
+      width,
+      height,
+      paletteCS,
+      paletteOut,
+      config.intensity,
+      distFn
+    ),
+  ostromoukhov: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+    applyOstromoukhovDither(
+      bufCS,
+      width,
+      height,
+      paletteCS,
+      paletteOut,
+      distFn,
+      config.intensity
     )
 }
 
@@ -728,6 +893,54 @@ function applyNoDitherWithDynamicPalette(
       pixel[0] = bufCS[i3]
       pixel[1] = bufCS[i3 + 1]
       pixel[2] = bufCS[i3 + 2]
+
+      // Find nearest palette color for this line
+      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
+
+      // Set output color
+      const color = paletteOut[bestIndex]
+      out[i4 + 0] = color[0]
+      out[i4 + 1] = color[1]
+      out[i4 + 2] = color[2]
+      out[i4 + 3] = 255
+    }
+  }
+
+  return out
+}
+
+/**
+ * Apply Blue Noise dithering with dynamic per-line palettes
+ */
+function applyBlueNoiseDitherWithDynamicPalette(
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  getPaletteForLine: (y: number) => Vector[],
+  intensity: number,
+  distFn: DistanceFn
+): Uint8ClampedArray {
+  const out = new Uint8ClampedArray(width * height * 4)
+  const pixel = new Float32Array(3)
+
+  for (let y = 0; y < height; y++) {
+    const palette = getPaletteForLine(y)
+    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
+      Array.from(v)
+    )
+
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x
+      const i3 = idx * 3
+      const i4 = idx * 4
+
+      // Get blue noise threshold (-0.5 to 0.5, centered)
+      const noise = getBlueNoiseThresholdCentered(x, y) * intensity * 255
+
+      // Get pixel with blue noise, clamped to valid range
+      pixel[0] = Math.max(0, Math.min(255, bufCS[i3] + noise))
+      pixel[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + noise))
+      pixel[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + noise))
 
       // Find nearest palette color for this line
       const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
@@ -845,7 +1058,7 @@ export function mapAndDitherWithDynamicPalette(
   }
 
   // Use specialized functions for dynamic palette support
-  // Note: Only Bayer-based and 'none' modes are supported with dynamic palettes (raster mode)
+  // Note: Only Bayer-based, Blue Noise and 'none' modes are supported with dynamic palettes (raster mode)
   // Error diffusion modes (floydSteinberg, atkinson, ylioluma1, ylioluma2) are not compatible
   // with raster mode because they require consistent palettes across lines for error propagation
   switch (mode) {
@@ -859,6 +1072,15 @@ export function mapAndDitherWithDynamicPalette(
         height,
         getPaletteForLine,
         mode as BayerMode,
+        config.intensity,
+        distFn
+      )
+    case 'blueNoise':
+      return applyBlueNoiseDitherWithDynamicPalette(
+        bufCS,
+        width,
+        height,
+        getPaletteForLine,
         config.intensity,
         distFn
       )
