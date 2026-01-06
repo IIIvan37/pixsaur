@@ -1,5 +1,7 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
+import { useCallback } from 'react'
+import { useDropzone } from 'react-dropzone'
 import { ImageSelector } from '@/components/image-selector'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -21,9 +23,37 @@ export default function SourceSection() {
 
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
   const setOpenImagePicker = useSetAtom(setOpenImagePickerAtom)
-  const handleImageLoaded = (img: HTMLImageElement) => {
-    setImg(img)
-  }
+  const handleImageLoaded = useCallback(
+    (img: HTMLImageElement) => {
+      resetAdjustments()
+      setSelection(null)
+      setImg(img)
+    },
+    [resetAdjustments, setSelection, setImg]
+  )
+
+  // Handle drop on the image selector area to replace the current image
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const file = acceptedFiles[0]
+      if (!file?.type.startsWith('image/')) return
+
+      processImageFile(file)
+        .then(handleImageLoaded)
+        .catch((err) =>
+          logger.error('[SourceSection] Failed to load dropped image:', err)
+        )
+    },
+    [handleImageLoaded]
+  )
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': [] },
+    multiple: false,
+    noClick: true, // Don't open file dialog on click
+    noKeyboard: true
+  })
 
   return (
     <Panel>
@@ -69,7 +99,18 @@ export default function SourceSection() {
       />
 
       {img ? (
-        <ImageSelector />
+        <div
+          {...getRootProps()}
+          style={{
+            position: 'relative',
+            width: '100%',
+            outline: isDragActive ? '2px dashed var(--color-primary)' : 'none',
+            borderRadius: 'var(--radius-sm)'
+          }}
+        >
+          <input {...getInputProps()} />
+          <ImageSelector />
+        </div>
       ) : (
         <ImageUpload onImageLoaded={handleImageLoaded} />
       )}
