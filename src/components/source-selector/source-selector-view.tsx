@@ -1,5 +1,6 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
+import type { RefCallback } from 'react'
 import { useMemo } from 'react'
 import styles from './source-selector.module.css'
 import type { Handle } from './utils'
@@ -16,6 +17,7 @@ export interface SourceSelectorViewProps {
   readonly onDoubleClick: () => void
   readonly logicalWidth?: number
   readonly logicalHeight?: number
+  readonly containerRef?: RefCallback<HTMLElement>
 }
 export function SourceSelectorView({
   rect,
@@ -28,7 +30,8 @@ export function SourceSelectorView({
   onMouseLeave,
   onDoubleClick,
   logicalWidth,
-  logicalHeight
+  logicalHeight,
+  containerRef
 }: SourceSelectorViewProps) {
   const { _ } = useLingui()
   const handleSize = 6
@@ -53,6 +56,7 @@ export function SourceSelectorView({
   /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
   return (
     <section
+      ref={containerRef}
       aria-label={_(msg`Zone de sélection interactive`)}
       style={{
         position: 'absolute',

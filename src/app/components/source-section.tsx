@@ -1,7 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useCallback } from 'react'
-import { useDropzone } from 'react-dropzone'
+import { useCallback, useState } from 'react'
 import { ImageSelector } from '@/components/image-selector'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -20,6 +19,7 @@ export default function SourceSection() {
   const setImg = useSetAtom(setImgAtom)
   const setSelection = useSetAtom(setSelectionAtom)
   const img = useAtomValue(imageAtom)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
   const setOpenImagePicker = useSetAtom(setOpenImagePickerAtom)
@@ -32,10 +32,13 @@ export default function SourceSection() {
     [resetAdjustments, setSelection, setImg]
   )
 
-  // Handle drop on the image selector area to replace the current image
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const file = acceptedFiles[0]
+  // Handle native drop event - doesn't interfere with ImageSelector's selection drag
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      setIsDragOver(false)
+
+      const file = e.dataTransfer.files[0]
       if (!file?.type.startsWith('image/')) return
 
       processImageFile(file)
@@ -47,13 +50,20 @@ export default function SourceSection() {
     [handleImageLoaded]
   )
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { 'image/*': [] },
-    multiple: false,
-    noClick: true, // Don't open file dialog on click
-    noKeyboard: true
-  })
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    // Only show drag feedback when dragging files (not internal drag like selection)
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true)
+    }
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Only reset if leaving the container (not entering a child)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }, [])
 
   return (
     <Panel>
@@ -99,16 +109,18 @@ export default function SourceSection() {
       />
 
       {img ? (
+        // biome-ignore lint/a11y/noStaticElementInteractions: Drop zone wrapper for replacing image
         <div
-          {...getRootProps()}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
           style={{
             position: 'relative',
             width: '100%',
-            outline: isDragActive ? '2px dashed var(--color-primary)' : 'none',
+            outline: isDragOver ? '2px dashed var(--color-primary)' : 'none',
             borderRadius: 'var(--radius-sm)'
           }}
         >
-          <input {...getInputProps()} />
           <ImageSelector />
         </div>
       ) : (
