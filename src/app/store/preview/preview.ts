@@ -151,7 +151,9 @@ export const croppedImageAtom = atom(async (get) => {
   const workingImageData = await get(workingImageAtom)
   const selection = get(selectionAtom)
 
-  if (!workingImageData || !selection) return null
+  if (!workingImageData || !selection) {
+    return null
+  }
 
   return getVisualRegion(workingImageData, selection)
 })
@@ -199,7 +201,10 @@ export const resizedImageAtom = atom(async (get) => {
 
     // Convertir Canvas → ImageData
     const resizedCtx = resizedCanvas.getContext('2d')
-    if (!resizedCtx) return cropped
+    if (!resizedCtx) {
+      logger.timeEnd('resizedImageAtom')
+      return cropped
+    }
 
     return resizedCtx.getImageData(
       0,
@@ -219,7 +224,9 @@ export const smoothedImageAtom = atom(async (get) => {
   const horizontalSmoothing = get(horizontalSmoothingAtom)
   const pixelMode = get(pixelModeAtom)
 
-  if (!resized) return null
+  if (!resized) {
+    return null
+  }
 
   // Appliquer le lissage horizontal si activé
   if (horizontalSmoothing) {
@@ -235,7 +242,9 @@ export const smoothedImageAtom = atom(async (get) => {
 // 2. Extraction des données RGBA (utilise smoothedImageAtom au lieu de resizedImageAtom)
 export const croppedBufferAtom = atom(async (get) => {
   const processed = await get(smoothedImageAtom)
-  if (!processed) return null
+  if (!processed) {
+    return null
+  }
   return extractBuffer(processed)
 })
 
@@ -246,12 +255,14 @@ export const quantizerAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = 'RGB' // Fixé sur RGB
   const cpcHardware = get(cpcHardwareAtom)
-  if (!buf || !processed) return null
+  if (!buf || !processed) {
+    return null
+  }
 
   const availableMetrics = DISTANCE_METRICS_BY_COLORSPACE[colorSpace]
   const distanceMetric = availableMetrics[0]
 
-  const quantizer = createQuantizer({
+  return createQuantizer({
     buf,
     basePalette: getPaletteForHardware(cpcHardware),
     preselected: lockedVecs,
@@ -259,7 +270,6 @@ export const quantizerAtom = atom(async (get) => {
       distanceMetric
     }
   })
-  return quantizer
 })
 
 // 4. Quantization avec palette adaptateur
@@ -269,7 +279,9 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
 
-  if (!buf || !processed) return []
+  if (!buf || !processed) {
+    return []
+  }
 
   const paletteProcessor = get(paletteProcessorAtom)
   if (!paletteProcessor) {
@@ -331,8 +343,6 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     quantifiedLockedVecs,
     paletteStrategy // Utiliser la stratégie de sélection de palette choisie
   )
-
-  logger.info('[Preview] Palette quantized', { colorsCount: palette.length })
 
   return palette
 })
@@ -403,7 +413,9 @@ export const previewImageAtom = atom(async (get) => {
   const dithering = get(effectiveDitheringAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom) // Get center option
-  if (!quantizer || !normalized) return null
+  if (!quantizer || !normalized) {
+    return null
+  }
 
   // Préparer la palette pour le dithering: remplacer les slots ignorés [-1,-1,-1]
   // par une couleur valide (noir) pour que le dithering fonctionne
@@ -422,10 +434,12 @@ export const previewImageAtom = atom(async (get) => {
     color[0] === -1 ? fallbackColor : color
   )
 
+  logger.time('dithering')
   const previewBuffer = quantizer.dither(normalized, ditheringPalette, {
     mode: dithering.mode,
     intensity: dithering.intensity
   })
+  logger.timeEnd('dithering')
 
   // Le dithering retourne déjà un buffer RGB, pas besoin de remapping!
   // Le remapImageDataToPalette était utilisé avant quand on avait des indices
@@ -439,13 +453,12 @@ export const previewImageAtom = atom(async (get) => {
   // En mode auto, getVisualRegionNormalized retourne une ImageData de taille variable (scaledW × scaledH)
   // qu'il faut placer dans un canvas à la taille cible (160x200 ou 320x200)
   if (resizeMode === 'auto') {
-    const positioned = positionImageForAutoMode(
+    return positionImageForAutoMode(
       remapped,
       modeConfig,
       exportPalette,
       centerImage
     )
-    return positioned
   }
 
   return remapped

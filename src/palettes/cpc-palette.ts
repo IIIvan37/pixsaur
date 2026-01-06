@@ -48,6 +48,30 @@ export function vectorToHex(vector: Vector): string {
 export const cpcPalette = generateAmstradCPCPalette()
 
 /**
+ * CPC Plus: Convert 8-bit RGB value (0-255) to 4-bit CPC Plus level (0-15)
+ * Uses round() to find the nearest level
+ */
+export function quantifyToCPCPlusLevel(value: number): number {
+  // Clamp to 0-255 and convert to 0-15
+  const clamped = Math.max(0, Math.min(255, value))
+  return Math.round((clamped / 255) * 15)
+}
+
+/**
+ * CPC Plus: Get palette index directly from RGB color
+ * This is O(1) instead of O(4096) for findClosestColorIndex
+ *
+ * The palette is organized as: index = r * 256 + g * 16 + b
+ * where r, g, b are 4-bit values (0-15)
+ */
+export function getCPCPlusPaletteIndex(color: readonly number[]): number {
+  const r4 = quantifyToCPCPlusLevel(color[0])
+  const g4 = quantifyToCPCPlusLevel(color[1])
+  const b4 = quantifyToCPCPlusLevel(color[2])
+  return r4 * 256 + g4 * 16 + b4
+}
+
+/**
  * CPC Plus: Generate complete 4096-color palette
  * Each component (R,G,B) uses 4 bits = 16 levels (0-15)
  * RGB values are scaled from 4-bit (0-15) to 8-bit (0-255)

@@ -9,7 +9,6 @@
  * IMPORTANT: Ce module préserve exactement le comportement de production (c244923)
  */
 
-import { adapterLogger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   calculateHue,
@@ -25,11 +24,6 @@ export {
   calculateSaturation,
   calculateValue
 } from '../../pixsaur-color/src/utils/hsv'
-
-/** Helper pour formater une couleur RGB */
-function formatRGB(color: Vector): string {
-  return `RGB(${Math.round(color[0])}, ${Math.round(color[1])}, ${Math.round(color[2])})`
-}
 
 // ============================================================================
 // Constantes de configuration
@@ -140,19 +134,6 @@ export function selectFrequentColorsWithDiversity(
   const isMode0 = targetColors && targetColors > CPC_MODE_1_MAX_COLORS
   const minHueDistance = MIN_HUE_DISTANCE_MODE_0
 
-  adapterLogger.info('[FreqDiversity] Starting selection', {
-    candidates: colorFrequency.length,
-    alreadySelected: selectedConverted.length,
-    budget: frequencyBudget,
-    minRGBDistance: minDistance,
-    minHueDistance,
-    isMode0
-  })
-
-  let accepted = 0
-  let rejectedHue = 0
-  let rejectedRGB = 0
-
   for (
     let i = 1;
     i < colorFrequency.length && result.length < frequencyBudget;
@@ -162,7 +143,6 @@ export function selectFrequentColorsWithDiversity(
     const candidateHue = calculateHue(candidateConverted, DELTA_MIN_FOR_HUE)
     const candidateSat = calculateSaturation(candidateConverted)
     let isDiverse = true
-    let rejectReason = ''
 
     if (isMode0) {
       // Mode 0: vérifier la diversité de teinte pour couleurs ayant une teinte identifiable
@@ -186,8 +166,6 @@ export function selectFrequentColorsWithDiversity(
               // Cela garantit que la palette couvre bien l'espace des teintes
               if (hueDistance < minHueDistance) {
                 isDiverse = false
-                rejectReason = `hue too close: ${formatRGB(candidateConverted)} (hue=${candidateHue.toFixed(0)}°) vs ${formatRGB(selectedColor)} (hue=${selectedHue.toFixed(0)}°), hueDist=${hueDistance.toFixed(0)}° < ${minHueDistance}°`
-                rejectedHue++
                 break
               }
             }
@@ -202,8 +180,6 @@ export function selectFrequentColorsWithDiversity(
         const rgbDist = calculateDistance(candidateConverted, selectedColor)
         if (rgbDist < minDistance) {
           isDiverse = false
-          rejectReason = `RGB too close: ${formatRGB(candidateConverted)} vs ${formatRGB(selectedColor)}, dist=${rgbDist.toFixed(0)} < ${minDistance}`
-          rejectedRGB++
           break
         }
       }
@@ -212,21 +188,8 @@ export function selectFrequentColorsWithDiversity(
     if (isDiverse) {
       result.push(colorFrequency[i].index)
       selectedConverted.push(candidateConverted)
-      accepted++
-      adapterLogger.info(
-        `[FreqDiversity] ACCEPTED #${accepted}: ${formatRGB(candidateConverted)} hue=${candidateHue.toFixed(0)}° sat=${candidateSat.toFixed(2)} freq=${colorFrequency[i].frequency.toFixed(4)}`
-      )
-    } else {
-      adapterLogger.info(`[FreqDiversity] REJECTED: ${rejectReason}`)
     }
   }
-
-  adapterLogger.info('[FreqDiversity] Summary', {
-    accepted,
-    rejectedHue,
-    rejectedRGB,
-    totalSelected: result.length
-  })
 }
 
 /**
@@ -427,9 +390,6 @@ export function selectBucketRepresentativesWithLightness(
     // Gray peut avoir plusieurs représentants (nuances de gris importantes)
     // Les autres méga-familles : max 1 représentant dans les 8 premiers
     if (megaFamily !== -1 && usedMegaFamilies.has(megaFamily)) {
-      adapterLogger.info(
-        `[BucketReps] SKIP bucket ${bucket} - mega-family ${megaFamily} already represented`
-      )
       continue
     }
 
@@ -440,18 +400,10 @@ export function selectBucketRepresentativesWithLightness(
     }
   }
 
-  adapterLogger.info(
-    `[BucketReps] Selected ${representatives.length} representatives from ${usedMegaFamilies.size} mega-families`
-  )
-
   // Compter les couleurs claires parmi les représentants
   const brightCount = representatives.filter(
     (rep) => calculateValue(rep.converted) >= VALUE_THRESHOLD_BRIGHT
   ).length
-
-  adapterLogger.info(
-    `[Mode 0] Lightness check: ${brightCount}/${representatives.length} bright (threshold=${VALUE_THRESHOLD_BRIGHT})`
-  )
 
   // Si on n'a pas assez de couleurs claires, essayer de remplacer des sombres
   if (brightCount < MIN_BRIGHT_BUCKET_REPRESENTATIVES) {
@@ -486,27 +438,9 @@ export function selectBucketRepresentativesWithLightness(
       })
 
       if (brightAlternative) {
-        const oldColor = representatives[repIndex]
-        const [r1, g1, b1] = oldColor.converted
-        const [r2, g2, b2] = brightAlternative.converted
-        const oldValue = calculateValue(oldColor.converted)
-        const newValue = calculateValue(brightAlternative.converted)
-
-        adapterLogger.info(
-          `[Mode 0] Lightness swap in bucket ${bucket.bucket}: ` +
-            `RGB(${Math.round(r1)}, ${Math.round(g1)}, ${Math.round(b1)}) V=${oldValue.toFixed(2)} -> ` +
-            `RGB(${Math.round(r2)}, ${Math.round(g2)}, ${Math.round(b2)}) V=${newValue.toFixed(2)}`
-        )
-
         representatives[repIndex] = brightAlternative
         replacements++
       }
-    }
-
-    if (replacements > 0) {
-      adapterLogger.info(
-        `[Mode 0] Lightness diversity: swapped ${replacements} dark representatives for brighter alternatives`
-      )
     }
   }
 
@@ -559,7 +493,7 @@ export interface AddRepresentativesResult {
  */
 export function addBucketRepresentativesWithDistanceCheck(
   bucketRepresentatives: ColorFrequencyItem[],
-  sortedBuckets: HueBucket[],
+  _sortedBuckets: HueBucket[],
   result: number[],
   selectedConverted: Vector[],
   calculateDistance: DistanceFunction
@@ -583,9 +517,6 @@ export function addBucketRepresentativesWithDistanceCheck(
 
       // RGB distance check
       if (dist < MIN_RGB_DISTANCE_MODE_0) {
-        adapterLogger.info(
-          `[Mode 0] SKIP representative ${formatRGB(rep.converted)} - RGB too close to ${formatRGB(existing)} dist=${Math.round(dist)}`
-        )
         tooClose = true
         skipped++
         break
@@ -602,9 +533,6 @@ export function addBucketRepresentativesWithDistanceCheck(
         if (existingHue >= 0) {
           const hueDist = calculateHueDistance(repHue, existingHue)
           if (hueDist < MIN_HUE_DISTANCE_MODE_0) {
-            adapterLogger.info(
-              `[Mode 0] SKIP representative ${formatRGB(rep.converted)} hue=${repHue.toFixed(0)}° - hue too close to ${formatRGB(existing)} hue=${existingHue.toFixed(0)}° hueDist=${hueDist.toFixed(0)}°`
-            )
             tooClose = true
             skipped++
             break
@@ -617,25 +545,6 @@ export function addBucketRepresentativesWithDistanceCheck(
       result.push(rep.index)
       selectedConverted.push(rep.converted)
       added++
-    }
-  }
-
-  // Log bucket info for added representatives
-  for (const rep of bucketRepresentatives) {
-    if (result.includes(rep.index)) {
-      const bucket = sortedBuckets.find((b) =>
-        b.colors.some((c) => c.index === rep.index)
-      )
-      if (bucket) {
-        const bucketKey = bucket.bucket
-        const hueRange =
-          bucketKey === 'gray'
-            ? 'gray'
-            : `${bucketKey * HUE_BUCKET_SIZE_DEGREES}-${(bucketKey + 1) * HUE_BUCKET_SIZE_DEGREES}°`
-        adapterLogger.info(
-          `[Mode 0] Representative for bucket ${bucketKey} (${hueRange}): ${formatRGB(rep.converted)} freq=${rep.frequency}`
-        )
-      }
     }
   }
 

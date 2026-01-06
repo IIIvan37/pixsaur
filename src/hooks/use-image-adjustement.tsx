@@ -1,15 +1,20 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import debounce from 'lodash/debounce'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { configAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
 import { useImageProcessors } from './use-image-processors'
+
+// Debounce delay for adjustment changes (ms)
+// 50ms provides a good balance between responsiveness and performance
+const ADJUSTMENT_DEBOUNCE_MS = 50
 
 export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
   const downscaled = useAtomValue(downscaledAtom)
   const { imageProcessor, isInitialized } = useImageProcessors()
 
+  const config = useAtomValue(configAtom)
   const {
     red,
     green,
@@ -26,74 +31,90 @@ export const useImageAdjustement = () => {
     highlights,
     shadows,
     posterization
-  } = useAtomValue(configAtom)
+  } = config
+
+  // Use refs to always have latest values without recreating debounced function
+  const configRef = useRef(config)
+  const processorRef = useRef(imageProcessor)
+  const downscaledRef = useRef(downscaled)
+
+  // Update refs on each render
+  configRef.current = config
+  processorRef.current = imageProcessor
+  downscaledRef.current = downscaled
 
   const data = useMemo(
     () => downscaled?.data || new Uint8ClampedArray(),
     [downscaled]
   )
 
+  // Create debounced function only once - it reads from refs
   const debouncedApply = useMemo(
     () =>
-      debounce(async (data: Uint8ClampedArray) => {
-        if (!imageProcessor || !isInitialized) {
+      debounce((data: Uint8ClampedArray) => {
+        const processor = processorRef.current
+        const currentDownscaled = downscaledRef.current
+        const cfg = configRef.current
+
+        if (!processor || !isInitialized || !currentDownscaled) {
           return
         }
 
-        const result = imageProcessor.applyAdjustmentsSync(
+        const result = processor.applyAdjustmentsSync(
           new ImageData(
             new Uint8ClampedArray(data),
-            downscaled!.width,
-            downscaled!.height
+            currentDownscaled.width,
+            currentDownscaled.height
           ),
           {
-            rgb: { r: red, g: green, b: blue },
-            brightness,
-            contrast,
-            saturation,
-            hue,
-            vibrance,
-            temperature,
-            tint,
-            gamma,
-            exposure,
-            highlights,
-            shadows,
-            posterization
+            rgb: { r: cfg.red, g: cfg.green, b: cfg.blue },
+            brightness: cfg.brightness,
+            contrast: cfg.contrast,
+            saturation: cfg.saturation,
+            hue: cfg.hue,
+            vibrance: cfg.vibrance,
+            temperature: cfg.temperature,
+            tint: cfg.tint,
+            gamma: cfg.gamma,
+            exposure: cfg.exposure,
+            highlights: cfg.highlights,
+            shadows: cfg.shadows,
+            posterization: cfg.posterization
           }
         )
         setSrc(result)
-      }, 10),
-    [
-      imageProcessor,
-      isInitialized,
-      downscaled,
-      red,
-      green,
-      blue,
-      brightness,
-      contrast,
-      saturation,
-      hue,
-      vibrance,
-      temperature,
-      tint,
-      gamma,
-      exposure,
-      highlights,
-      shadows,
-      posterization,
-      setSrc
-    ]
+      }, ADJUSTMENT_DEBOUNCE_MS),
+    [isInitialized, setSrc]
   )
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: config values are intentionally included to trigger re-application
   useEffect(() => {
     if (!downscaled) return
 
-    // Simple logic: apply adjustments when data changes or when there's an adjustment change
-    // The debouncedApply already handles the current adjustment values via closure
+    // Apply adjustments when data or config changes
+    // Note: config values trigger via configRef which is updated each render
     debouncedApply(data)
 
     return () => debouncedApply.cancel()
-  }, [data, debouncedApply, downscaled])
+  }, [
+    data,
+    debouncedApply,
+    downscaled,
+    // Config values - trigger re-application when changed
+    red,
+    green,
+    blue,
+    brightness,
+    contrast,
+    saturation,
+    hue,
+    vibrance,
+    temperature,
+    tint,
+    gamma,
+    exposure,
+    highlights,
+    shadows,
+    posterization
+  ])
 }
