@@ -1,15 +1,32 @@
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue } from 'jotai'
-import { useMemo } from 'react'
+import { Suspense, useMemo } from 'react'
 import {
   cpcHardwareAtom,
   effectiveModeConfigAtom,
   egxEnabledAtom,
-  egxTypeAtom
+  egxTypeAtom,
+  modeREnabledAtom
 } from '@/app/store/config/config'
+import { modeRPalettesAtom } from '@/app/store/preview/mode-r-preview'
 import { exportPaletteWithSlotsAtom } from '@/app/store/preview/preview'
 import { rasterChangesAtom, rasterEnabledAtom } from '@/app/store/raster/raster'
 import styles from './info-bar.module.css'
+
+/**
+ * Component to display Mode R unique pairs count (async data)
+ */
+function ModeRPairsCount() {
+  const modeRPalettes = useAtomValue(modeRPalettesAtom)
+
+  if (!modeRPalettes) return null
+
+  return (
+    <span className={styles.value}>
+      ({modeRPalettes.uniquePairsUsed} <Trans>paires</Trans>)
+    </span>
+  )
+}
 
 /**
  * Information bar displaying current image configuration
@@ -23,6 +40,7 @@ export function InfoBar() {
   const palette = useAtomValue(exportPaletteWithSlotsAtom)
   const egxEnabled = useAtomValue(egxEnabledAtom)
   const egxType = useAtomValue(egxTypeAtom)
+  const modeREnabled = useAtomValue(modeREnabledAtom)
 
   const hasRasters = rasterEnabled && rasterChanges.length > 0
 
@@ -72,6 +90,18 @@ export function InfoBar() {
             <span className={styles.valueActive}>
               {egxType === 'egx1' ? 'EGX1' : 'EGX2'}
             </span>
+          </span>
+        </>
+      )}
+
+      {modeREnabled && (
+        <>
+          <span className={styles.separator}>|</span>
+          <span className={styles.item}>
+            <span className={styles.valueActive}>Mode R</span>
+            <Suspense>
+              <ModeRPairsCount />
+            </Suspense>
           </span>
         </>
       )}
