@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import type { CPCHardware } from '@/libs/types'
+import type { CpcMode } from '@/preview/validate-custom-dimensions'
 
 // Mock RASM WASM
 let mockRasmInstance: any
@@ -8,7 +9,7 @@ let mockRasmModule: any
 let mockAssembleResult: { success: boolean; output?: string }
 
 // Mock fetch for template DSK
-global.fetch = vi.fn() as any
+globalThis.fetch = vi.fn() as any
 
 // Mock dependencies - must be hoisted
 const mockDskLogger = {
@@ -70,9 +71,24 @@ vi.mock('@/libs/rasm-wasm', () => ({
 const { exportDskWorkspace } = await import('./export-dsk-workspace')
 
 describe('exportDskWorkspace', () => {
+  const getModeWidth = (mode: CpcMode) => {
+    if (mode === 0) return 160
+    if (mode === 1) return 320
+    return 640
+  }
+  const getModeNColors = (mode: CpcMode) => {
+    if (mode === 0) return 16
+    if (mode === 1) return 4
+    return 2
+  }
+  const getModeScaleX = (mode: CpcMode) => {
+    if (mode === 0) return 2
+    if (mode === 1) return 1
+    return 0.5
+  }
   const createMockImage = (
     index: number,
-    mode: 0 | 1 | 2 = 0,
+    mode: CpcMode = 0,
     overscan = false,
     cpcHardware: CPCHardware = 'classic'
   ): DskImage => ({
@@ -80,11 +96,11 @@ describe('exportDskWorkspace', () => {
     name: `Image${index}`,
     scrData: Array.from({ length: 16384 }, () => 0),
     mode,
-    width: mode === 0 ? 160 : mode === 1 ? 320 : 640,
+    width: getModeWidth(mode),
     height: 200,
     overscan,
-    nColors: mode === 0 ? 16 : mode === 1 ? 4 : 2,
-    scaleX: mode === 0 ? 2 : mode === 1 ? 1 : 0.5,
+    nColors: getModeNColors(mode),
+    scaleX: getModeScaleX(mode),
     scaleY: 1.2,
     cpcHardware,
     paletteFirmware: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
@@ -129,7 +145,7 @@ describe('exportDskWorkspace', () => {
     }
 
     // Mock successful fetch
-    ;(global.fetch as any).mockResolvedValue({
+    ;(globalThis.fetch as any).mockResolvedValue({
       ok: true,
       arrayBuffer: async () => new ArrayBuffer(184320)
     })
@@ -161,7 +177,7 @@ describe('exportDskWorkspace', () => {
 
   describe('Template loading', () => {
     it('should return null when template DSK fails to load', async () => {
-      ;(global.fetch as any).mockResolvedValue({
+      ;(globalThis.fetch as any).mockResolvedValue({
         ok: false
       })
 
@@ -175,7 +191,7 @@ describe('exportDskWorkspace', () => {
       const images = [createMockImage(1)]
       await exportDskWorkspace(images)
 
-      expect(global.fetch).toHaveBeenCalledWith('/pixsaur.dsk')
+      expect(globalThis.fetch).toHaveBeenCalledWith('/pixsaur.dsk')
     })
   })
 
@@ -398,7 +414,7 @@ describe('exportDskWorkspace', () => {
     })
 
     it('should return null on fetch error', async () => {
-      ;(global.fetch as any).mockRejectedValue(new Error('Network error'))
+      ;(globalThis.fetch as any).mockRejectedValue(new Error('Network error'))
 
       const images = [createMockImage(1)]
       const result = await exportDskWorkspace(images)
@@ -440,7 +456,7 @@ describe('exportDskWorkspace', () => {
     })
 
     it('should log errors on failure', async () => {
-      ;(global.fetch as any).mockRejectedValue(new Error('Test error'))
+      ;(globalThis.fetch as any).mockRejectedValue(new Error('Test error'))
 
       const images = [createMockImage(1)]
       await exportDskWorkspace(images)

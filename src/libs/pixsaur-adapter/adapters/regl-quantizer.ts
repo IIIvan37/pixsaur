@@ -658,10 +658,9 @@ export class ReGLQuantizer {
     const isCPCPlus = basePalette.length === 4096
 
     for (const sample of sampledColors) {
+      const sampleArray = Array.isArray(sample) ? sample : Array.from(sample)
       const closestIndex = isCPCPlus
-        ? getCPCPlusPaletteIndex(
-            Array.isArray(sample) ? sample : Array.from(sample)
-          )
+        ? getCPCPlusPaletteIndex(sampleArray)
         : findClosestColorIndex(sample, basePalette, this.calculateDistance)
 
       if (!usedIndices.has(closestIndex)) {

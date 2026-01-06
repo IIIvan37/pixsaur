@@ -1431,7 +1431,7 @@ export function preprocessImageForRaster(
       .fill(null)
       .map(() => [0, 0, 0])
 
-    if (!shouldApplyDithering) {
+    if (shouldApplyDithering) {
       // Line already has ≤nColors colors: direct mapping without dithering
       for (let x = 0; x < width; x++) {
         const pixelIdx = lineStart + x * 4

@@ -55,11 +55,12 @@ export function DitheringControls() {
   }, [egxEnabled, cfg.mode, setCfg])
 
   // Filter modes based on active features
-  const availableModes = rasterEnabled
-    ? getRasterCompatibleModes()
-    : egxEnabled
-      ? getEGXCompatibleModes()
-      : ALL_DITHERING_MODES
+  const getAvailableModes = () => {
+    if (rasterEnabled) return getRasterCompatibleModes()
+    if (egxEnabled) return getEGXCompatibleModes()
+    return ALL_DITHERING_MODES
+  }
+  const availableModes = getAvailableModes()
 
   return (
     <>

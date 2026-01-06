@@ -95,9 +95,13 @@ function getEGXModeConfig(
   // Mode 0: 160px, Mode 1: 320px, Mode 2: 640px
   // The ratio is: Mode 1 = 2× Mode 0, Mode 2 = 4× Mode 0
   const widthMultiplier = egxType === 'egx1' ? 2 : 4
-  const baseWidthMode0 =
-    baseModeConfig.width /
-    (baseModeConfig.mode === 0 ? 1 : baseModeConfig.mode === 1 ? 2 : 4)
+  const getModeMultiplier = (mode: number) => {
+    if (mode === 0) return 1
+    if (mode === 1) return 2
+    return 4
+  }
+  const modeMultiplier = getModeMultiplier(baseModeConfig.mode)
+  const baseWidthMode0 = baseModeConfig.width / modeMultiplier
   const egxWidth = Math.round(baseWidthMode0 * widthMultiplier)
 
   return {
@@ -835,8 +839,12 @@ function applyEGXOrderedDithering(
     [63, 31, 55, 23, 61, 29, 53, 21]
   ]
 
-  const matrix =
-    matrixSize === 2 ? BAYER_2X2 : matrixSize === 4 ? BAYER_4X4 : BAYER_8X8
+  const getMatrix = (size: 2 | 4 | 8) => {
+    if (size === 2) return BAYER_2X2
+    if (size === 4) return BAYER_4X4
+    return BAYER_8X8
+  }
+  const matrix = getMatrix(matrixSize)
   // Divisor is size * size (same as original algorithm)
   const divisor = matrixSize * matrixSize
 
@@ -988,7 +996,7 @@ export const egxPaletteAtom = atom(async (get) => {
   for (const idx of lockedIndices) {
     const lockedColor = userPalette[idx]?.color
     if (lockedColor) {
-      colors[idx] = lockedColor as Vector<'RGB'>
+      colors[idx] = lockedColor
     }
   }
 
@@ -1012,9 +1020,7 @@ export const egxPaletteAtom = atom(async (get) => {
         }
       }
       // If we ran out of colors, use black
-      if (colors[i] === null) {
-        colors[i] = [0, 0, 0]
-      }
+      colors[i] ??= [0, 0, 0]
     }
   }
 
@@ -1091,7 +1097,7 @@ export const egxDisplayPaletteAtom = atom(
     for (let i = 0; i < 16; i++) {
       const slot = userPalette[i]
       if (slot?.locked && slot?.color) {
-        lockedColors.push(slot.color as Vector<'RGB'>)
+        lockedColors.push(slot.color)
       }
     }
 
@@ -1118,7 +1124,7 @@ export const egxDisplayPaletteAtom = atom(
       ) {
         // Slot is not locked: use EGX optimized color (filtered)
         slots.push({
-          color: availableEgxColors[egxColorIndex] as Vector<'RGB'>,
+          color: availableEgxColors[egxColorIndex],
           locked: false
         })
         egxColorIndex++

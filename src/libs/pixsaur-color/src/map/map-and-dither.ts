@@ -471,7 +471,7 @@ export function applyOstromoukhovDither(
     const xEnd = leftToRight ? width : -1
     const xStep = leftToRight ? 1 : -1
 
-    for (let x = xStart; x !== xEnd; x += xStep) {
+    for (let x = xStart; leftToRight ? x < xEnd : x >= xEnd; x += xStep) {
       const idx3 = (y * width + x) * 3
       const idx4 = (y * width + x) * 4
 

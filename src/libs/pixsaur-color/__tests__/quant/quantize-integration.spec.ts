@@ -88,12 +88,10 @@ describe('quantize.ts - Integration Tests', () => {
     it('should use diversity mode for medium palettes (8-16 colors)', () => {
       // Create a buffer with various colors
       const buffer = new Uint8ClampedArray(
-        Array(16)
-          .fill(0)
-          .flatMap((_, i) => [i * 16, i * 16, i * 16, 255])
+        new Array(16).fill(0).flatMap((_, i) => [i * 16, i * 16, i * 16, 255])
       )
 
-      const basePalette: Vector<'RGB'>[] = Array(27)
+      const basePalette: Vector<'RGB'>[] = new Array(27)
         .fill(0)
         .map((_, i) => [i * 9, i * 9, i * 9])
 
@@ -272,7 +270,7 @@ describe('quantize.ts - Integration Tests', () => {
         255 // green
       ])
 
-      const basePalette: Vector<'RGB'>[] = Array(27)
+      const basePalette: Vector<'RGB'>[] = new Array(27)
         .fill(0)
         .map((_, i) => [i * 9, i * 9, i * 9])
 
@@ -294,7 +292,7 @@ describe('quantize.ts - Integration Tests', () => {
     it('should calculate relative threshold based on image size', () => {
       // Large image should use higher threshold
       const largeBuffer = new Uint8ClampedArray(
-        Array(10000)
+        new Array(10000)
           .fill(0)
           .flatMap((i) => [i % 256, i % 128, i % 64, 255]) // Add color variation
       )
@@ -393,7 +391,7 @@ describe('quantize.ts - Integration Tests', () => {
 
       const result = quantizer.dither(imageData, reducedPalette, {
         mode: 'floydSteinberg',
-        intensity: 1.0
+        intensity: 1
       })
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)

@@ -260,12 +260,12 @@ export const SourceSelector = ({
       setHoveredHandle(null)
     }
 
-    window.addEventListener('mousemove', handleWindowMouseMove)
-    window.addEventListener('mouseup', handleWindowMouseUp)
+    globalThis.addEventListener('mousemove', handleWindowMouseMove)
+    globalThis.addEventListener('mouseup', handleWindowMouseUp)
 
     return () => {
-      window.removeEventListener('mousemove', handleWindowMouseMove)
-      window.removeEventListener('mouseup', handleWindowMouseUp)
+      globalThis.removeEventListener('mousemove', handleWindowMouseMove)
+      globalThis.removeEventListener('mouseup', handleWindowMouseUp)
     }
   }, [
     dragging,

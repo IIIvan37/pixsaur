@@ -119,9 +119,12 @@ export const previewCanvasSizeAtom = atom((get) => {
     // EGX1: Mode 1 (320px base), EGX2: Mode 2 (640px base)
     // Calculate EGX width from base Mode 0 width
     const widthMultiplier = egxType === 'egx1' ? 2 : 4
-    const baseWidthMode0 =
-      modeConfig.width /
-      (modeConfig.mode === 0 ? 1 : modeConfig.mode === 1 ? 2 : 4)
+    const getModePixelRatio = (mode: number) => {
+      if (mode === 0) return 1
+      if (mode === 1) return 2
+      return 4
+    }
+    const baseWidthMode0 = modeConfig.width / getModePixelRatio(modeConfig.mode)
     const egxWidth = Math.round(baseWidthMode0 * widthMultiplier)
     // EGX has no horizontal pixel stretching (scaleX = 1)
     // EGX2 has vertical pixel stretching (scaleY = 2)

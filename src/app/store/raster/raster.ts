@@ -376,7 +376,7 @@ export const rasterPreviewImageAtom = atom(async (get) => {
 
   if (!enabled || changes.length === 0) {
     logger.debug('[RASTER] rasterPreviewImageAtom returning null', {
-      reason: !enabled ? 'disabled' : 'no changes'
+      reason: enabled ? 'no changes' : 'disabled'
     })
     return null
   }
