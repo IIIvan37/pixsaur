@@ -1,4 +1,4 @@
-import { getBlueNoiseThresholdCentered } from './blue-noise-texture'
+import { getBlueNoiseThresholdRGB } from './blue-noise-texture'
 
 const BAYER_MATRICES: Record<
   'bayer2x2' | 'bayer4x4' | 'bayer8x8' | 'atkinson' | 'halftone4x4',
@@ -406,6 +406,7 @@ export function applyBlueNoiseDither(
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
+  const scale = intensity * 255
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -413,13 +414,14 @@ export function applyBlueNoiseDither(
       const i3 = i * 3
       const i4 = i * 4
 
-      // Get blue noise threshold (-0.5 to 0.5, centered)
-      const threshold = getBlueNoiseThresholdCentered(x, y) * intensity * 255
+      // Get decorrelated blue noise thresholds for each RGB channel
+      // This prevents pixels from clustering together
+      const [tR, tG, tB] = getBlueNoiseThresholdRGB(x, y)
 
-      // Clamp to valid range to avoid dark artifacts
-      pixelCS[0] = Math.max(0, Math.min(255, bufCS[i3] + threshold))
-      pixelCS[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + threshold))
-      pixelCS[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + threshold))
+      // Apply per-channel dithering
+      pixelCS[0] = Math.max(0, Math.min(255, bufCS[i3] + tR * scale))
+      pixelCS[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + tG * scale))
+      pixelCS[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + tB * scale))
 
       const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
 
@@ -922,6 +924,7 @@ function applyBlueNoiseDitherWithDynamicPalette(
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
+  const scale = intensity * 255
 
   for (let y = 0; y < height; y++) {
     const palette = getPaletteForLine(y)
@@ -934,13 +937,13 @@ function applyBlueNoiseDitherWithDynamicPalette(
       const i3 = idx * 3
       const i4 = idx * 4
 
-      // Get blue noise threshold (-0.5 to 0.5, centered)
-      const noise = getBlueNoiseThresholdCentered(x, y) * intensity * 255
+      // Get decorrelated blue noise thresholds for each RGB channel
+      const [tR, tG, tB] = getBlueNoiseThresholdRGB(x, y)
 
-      // Get pixel with blue noise, clamped to valid range
-      pixel[0] = Math.max(0, Math.min(255, bufCS[i3] + noise))
-      pixel[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + noise))
-      pixel[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + noise))
+      // Apply per-channel dithering
+      pixel[0] = Math.max(0, Math.min(255, bufCS[i3] + tR * scale))
+      pixel[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + tG * scale))
+      pixel[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + tB * scale))
 
       // Find nearest palette color for this line
       const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
