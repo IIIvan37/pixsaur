@@ -467,6 +467,7 @@ export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
 /**
  * Setter for Raster enabled state with mutual exclusion
  * Disables Mode R and EGX when enabling Raster
+ * Also switches to a compatible dithering mode if current mode uses error diffusion
  */
 export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
@@ -476,6 +477,26 @@ export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
     }
     if (get(egxEnabledAtom)) {
       set(egxEnabledAtom, false)
+    }
+
+    // Switch to compatible dithering mode if current mode uses error diffusion
+    // Error diffusion modes are not compatible with raster (per-line palettes)
+    const currentDithering = get(ditheringAtom)
+    const errorDiffusionModes = [
+      'floydSteinberg',
+      'atkinson',
+      'ylioluma1',
+      'ylioluma2'
+    ]
+    if (
+      currentDithering.mode !== 'none' &&
+      errorDiffusionModes.includes(currentDithering.mode)
+    ) {
+      // Switch to bayer2x2 as default compatible mode
+      set(ditheringAtom, {
+        mode: 'bayer2x2',
+        intensity: 0.25 // Default intensity for bayer2x2
+      })
     }
   }
   set(rasterEnabledAtom, payload)
