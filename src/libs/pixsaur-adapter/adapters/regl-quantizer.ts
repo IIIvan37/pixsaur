@@ -13,6 +13,10 @@ import { adapterLogger } from '@/core'
 import { weightedRGBDistance } from '@/libs/pixsaur-color/src/metric/distance'
 import { findClosestColorIndex } from '@/libs/pixsaur-color/src/metric/find-closest'
 import {
+  clearColorMapping,
+  setColorMapping
+} from '@/libs/pixsaur-color/src/quant/color-mapping-cache'
+import {
   applyPaletteStrategyV2,
   type ColorCandidate,
   convertPreselectedToIndices,
@@ -745,19 +749,49 @@ export class ReGLQuantizer {
     // OU pour distinct-mapping en mode 0
     // IMPORTANT: Doit être fait AVANT tout return early
     if (targetColors <= CPC_MODE_1_MAX_COLORS || useStrategyForMode0) {
-      adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
-        strategy: paletteStrategy,
-        targetColors,
-        candidatesCount: colorFrequency.length,
-        basePaletteSize: basePalette.length
-      })
+      // Pour distinct-mapping: créer un candidat par couleur SOURCE unique
+      // (pas par couleur CPC mappée) pour éviter la fusion prématurée
+      let candidates: ColorCandidate[]
 
-      const candidates: ColorCandidate[] = colorFrequency.map((c) => ({
-        index: c.index,
-        frequency: c.frequency,
-        color: c.color,
-        converted: c.converted
-      }))
+      if (useStrategyForMode0) {
+        // Créer un candidat pour chaque couleur source unique
+        // Chaque candidat garde sa couleur originale + son mapping CPC
+        candidates = sampledColors.map((sourceColor) => {
+          const closestCPCIndex = findClosestColorIndex(
+            sourceColor,
+            basePalette,
+            this.calculateDistance
+          )
+          return {
+            index: closestCPCIndex,
+            frequency: 1 / sampledColors.length, // Fréquence uniforme pour low-color
+            color: [...sourceColor] as Vector, // Couleur SOURCE originale
+            converted: [...basePalette[closestCPCIndex]] as Vector // Mapping CPC
+          }
+        })
+
+        adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
+          strategy: paletteStrategy,
+          targetColors,
+          candidatesCount: candidates.length,
+          basePaletteSize: basePalette.length,
+          note: 'Using source colors (not merged CPC)'
+        })
+      } else {
+        candidates = colorFrequency.map((c) => ({
+          index: c.index,
+          frequency: c.frequency,
+          color: c.color,
+          converted: c.converted
+        }))
+
+        adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
+          strategy: paletteStrategy,
+          targetColors,
+          candidatesCount: candidates.length,
+          basePaletteSize: basePalette.length
+        })
+      }
 
       // Récupérer les couleurs présélectionnées depuis basePalette (car elles ne sont pas dans candidates)
       const preselectedColors = preselectedIndices.map(
@@ -780,6 +814,20 @@ export class ReGLQuantizer {
         }
       )
 
+      // Stocker le mapping couleur source → index palette pour le dithering
+      if (
+        paletteStrategy === 'distinct-mapping' &&
+        strategyResult.colorMapping
+      ) {
+        setColorMapping(strategyResult.colorMapping)
+        adapterLogger.info('[ReGLQuantizer] Color mapping stored', {
+          mappingSize: strategyResult.colorMapping.size
+        })
+      } else {
+        // Effacer le mapping si on n'utilise pas distinct-mapping
+        clearColorMapping()
+      }
+
       adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {
         strategy: paletteStrategy,
         selectedIndices: strategyResult.selectedIndices,
@@ -788,6 +836,9 @@ export class ReGLQuantizer {
 
       return strategyResult.selectedIndices
     }
+
+    // Si on n'utilise pas de stratégie spéciale, effacer le mapping
+    clearColorMapping()
 
     // Pour les palettes plus grandes (mode 0: 16 couleurs), utiliser un algorithme avec diversité de teinte
     const remainingSlots = targetColors - result.length
