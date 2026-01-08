@@ -13,6 +13,10 @@ import { PaletteStrategySelector } from './palette-strategy-selector/palette-str
 type DitheringSettingsViewProps = Readonly<{
   horizontalSmoothing: boolean
   onHorizontalSmoothingChange: (value: boolean) => void
+  autoDistinctMapping: boolean
+  onAutoDistinctMappingChange: (value: boolean) => void
+  showDistinctMapping: boolean
+  isDistinctMappingActive: boolean
   rasterEnabled: boolean
   isPaletteStrategyDisabled: boolean
 }>
@@ -20,10 +24,15 @@ type DitheringSettingsViewProps = Readonly<{
 export function DitheringSettingsView({
   horizontalSmoothing,
   onHorizontalSmoothingChange,
+  autoDistinctMapping,
+  onAutoDistinctMappingChange,
+  showDistinctMapping,
+  isDistinctMappingActive,
   rasterEnabled,
   isPaletteStrategyDisabled
 }: DitheringSettingsViewProps) {
   const smoothingId = useId()
+  const distinctMappingId = useId()
 
   return (
     <>
@@ -49,39 +58,93 @@ export function DitheringSettingsView({
 
       <div className={styles.separator} />
 
-      <div className={styles.section}>
+      <div
+        className={styles.section}
+        style={{ opacity: isDistinctMappingActive ? 0.5 : 1 }}
+      >
         <h3 className={styles.sectionTitle}>
           <Trans>Configuration du Dithering</Trans>
         </h3>
         <p className={styles.description}>
-          <Trans>
-            Sélectionnez l'algorithme de dithering et ajustez les paramètres
-            pour optimiser le rendu final.
-          </Trans>
+          {isDistinctMappingActive ? (
+            <Trans>
+              Désactivé quand le mapping distinct est actif pour préserver les
+              couleurs exactes.
+            </Trans>
+          ) : (
+            <Trans>
+              Sélectionnez l'algorithme de dithering et ajustez les paramètres
+              pour optimiser le rendu final.
+            </Trans>
+          )}
         </p>
 
-        <DitheringControls />
+        <DitheringControls disabled={isDistinctMappingActive} />
       </div>
 
       {!rasterEnabled && (
         <>
+          {showDistinctMapping && (
+            <>
+              <div className={styles.separator} />
+
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>
+                  <Trans>Images retro (low-color)</Trans>
+                </h3>
+                <p className={styles.description}>
+                  <Trans>
+                    Détecte automatiquement les images avec peu de couleurs
+                    (C64, ZX Spectrum, etc.) et préserve toutes les couleurs
+                    distinctes.
+                  </Trans>
+                </p>
+
+                <Flex direction='row' gap='0.5rem' align='center'>
+                  <Switch
+                    checked={autoDistinctMapping}
+                    onCheckedChange={onAutoDistinctMappingChange}
+                    id={distinctMappingId}
+                  />
+                  <label
+                    htmlFor={distinctMappingId}
+                    className={styles.switchLabel}
+                  >
+                    <Trans>Mapping distinct automatique</Trans>
+                  </label>
+                </Flex>
+              </div>
+            </>
+          )}
+
           <div className={styles.separator} />
 
-          <div className={styles.section}>
+          <div
+            className={styles.section}
+            style={{ opacity: isDistinctMappingActive ? 0.5 : 1 }}
+          >
             <h3 className={styles.sectionTitle}>
               <Trans>Lissage horizontal</Trans>
             </h3>
             <p className={styles.description}>
-              <Trans>
-                Applique un lissage horizontal pour réduire les artefacts de
-                pixels. Désactivé en mode raster.
-              </Trans>
+              {isDistinctMappingActive ? (
+                <Trans>
+                  Désactivé quand le mapping distinct est actif pour préserver
+                  les couleurs exactes.
+                </Trans>
+              ) : (
+                <Trans>
+                  Applique un lissage horizontal pour réduire les artefacts de
+                  pixels. Désactivé en mode raster.
+                </Trans>
+              )}
             </p>
 
             <Flex direction='row' gap='0.5rem' align='center'>
               <Switch
-                checked={horizontalSmoothing}
+                checked={horizontalSmoothing && !isDistinctMappingActive}
                 onCheckedChange={onHorizontalSmoothingChange}
+                disabled={isDistinctMappingActive}
                 id={smoothingId}
               />
               <label htmlFor={smoothingId} className={styles.switchLabel}>

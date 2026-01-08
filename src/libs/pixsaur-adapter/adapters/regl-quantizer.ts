@@ -105,6 +105,9 @@ export interface ReGLQuantizeConfig extends QuantizeConfig {
   /** Palette selection strategy (default: 'frequency') */
   readonly paletteStrategy?: PaletteStrategy
 
+  /** Auto distinct-mapping for low-color retro images (default: true) */
+  readonly autoDistinctMapping?: boolean
+
   /** GPU performance options */
   readonly gpuOptions?: {
     readonly batchSize?: number
@@ -206,6 +209,9 @@ export class ReGLQuantizer {
     config: ReGLQuantizeConfig
   ): Promise<readonly Vector[]> {
     try {
+      // Effacer le mapping précédent avant de commencer
+      clearColorMapping()
+
       // 1. Upload data vers GPU
       this.updateInputTexture(imageData)
       this.updatePaletteTexture(basePalette)
@@ -510,10 +516,15 @@ export class ReGLQuantizer {
         ? CPC_MODE_0_COLORS
         : config.targetColors
 
-    // Détection image "low-color" (ex: C64, ZX Spectrum) pour CPC Classic
-    // Si l'image source a ≤16 couleurs uniques, utiliser distinct-mapping
-    // pour préserver le maximum de couleurs distinctes
-    const uniqueColorCount = countUniqueColors(imageData.data, 16)
+    // Détection image "low-color" (ex: C64, ZX Spectrum) pour CPC Classic Mode 0 uniquement
+    // Si l'image source a ≤16 couleurs uniques ET autoDistinctMapping est activé,
+    // utiliser distinct-mapping pour préserver le maximum de couleurs distinctes
+    // Note: Cette logique ne s'applique qu'en mode 0 (16 couleurs), pas en modes 1-2
+    const isMode0 = actualTargetColors > CPC_MODE_1_MAX_COLORS
+    const autoDistinctMapping = isMode0 && config.autoDistinctMapping !== false // default: true, mais seulement en mode 0
+    const uniqueColorCount = autoDistinctMapping
+      ? countUniqueColors(imageData.data, 16)
+      : 17 // Skip detection if disabled or not mode 0
     const isLowColorImage = uniqueColorCount <= 16
 
     // Choisir la stratégie appropriée
@@ -523,7 +534,11 @@ export class ReGLQuantizer {
     // Pour les images low-color, extraire TOUTES les couleurs uniques au lieu d'utiliser le sampling
     // Ceci garantit que toutes les couleurs source sont passées à la stratégie distinct-mapping
     let sampledColors: Vector[]
-    if (isLowColorImage && actualTargetColors > CPC_MODE_1_MAX_COLORS) {
+    if (
+      isLowColorImage &&
+      actualTargetColors > CPC_MODE_1_MAX_COLORS &&
+      autoDistinctMapping
+    ) {
       // Image retro avec peu de couleurs: maximiser les couleurs distinctes
       effectiveStrategy = 'distinct-mapping'
       // Extraire TOUTES les couleurs uniques (pas de sampling)
@@ -802,7 +817,7 @@ export class ReGLQuantizer {
       // Passer la taille de la palette de base pour distinguer CPC Classic (27) de CPC Plus (4096)
       // Pour distinct-mapping, passer aussi la palette complète pour trouver des alternatives
       const strategyResult = applyPaletteStrategyV2(
-        paletteStrategy as PaletteStrategyName,
+        paletteStrategy,
         candidates,
         targetColors,
         [...preselectedIndices],

@@ -14,11 +14,20 @@ vi.mock('@/libs/pixsaur-color/src/transform/color-transform/adjust')
 vi.mock('@/libs/pixsaur-color/src/quant/quantize')
 vi.mock('@/core')
 vi.mock('@/app/store/config/config', () => ({
-  paletteStrategyAtom: vi.fn()
+  paletteStrategyAtom: { _type: 'paletteStrategy' },
+  autoDistinctMappingAtom: { _type: 'autoDistinctMapping' }
 }))
 vi.mock('jotai', () => ({
   getDefaultStore: vi.fn(() => ({
-    get: vi.fn(() => 'frequency-balanced')
+    get: vi.fn((atom: { _type?: string }) => {
+      if (atom?._type === 'paletteStrategy') {
+        return 'frequency-balanced'
+      }
+      if (atom?._type === 'autoDistinctMapping') {
+        return true
+      }
+      return undefined
+    })
   }))
 }))
 

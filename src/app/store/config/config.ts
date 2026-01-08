@@ -275,6 +275,11 @@ export const setPaletteStrategyAtom = atom(
   }
 )
 
+// Auto distinct-mapping for low-color retro images (C64, ZX Spectrum, etc.)
+// When enabled, automatically detects images with ≤16 unique colors and uses
+// distinct-mapping strategy to preserve all distinct colors
+export const autoDistinctMappingAtom = atom<boolean>(true)
+
 // CPC Hardware selection atom - persisted to localStorage
 // This ensures consistency between locked colors and hardware selection
 export const cpcHardwareAtom = atomWithStorage<CPCHardware>(

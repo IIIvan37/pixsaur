@@ -2124,11 +2124,12 @@ function selectMaxMinDistanceColors(
 export const selectByMode0HueDiversity: PaletteStrategyFunction = (
   candidates,
   targetColors,
-  preselectedIndices = [],
+  preselectedIndices,
   _options
 ) => {
-  const result: number[] = [...preselectedIndices]
-  const usedIndices = new Set(preselectedIndices)
+  const effectivePreselected = preselectedIndices ?? []
+  const result: number[] = [...effectivePreselected]
+  const usedIndices = new Set(effectivePreselected)
 
   if (result.length >= targetColors) {
     return { selectedIndices: result.slice(0, targetColors) }
@@ -2252,11 +2253,12 @@ export const selectByMode0HueDiversity: PaletteStrategyFunction = (
 export const selectByDistinctMapping: PaletteStrategyFunction = (
   candidates,
   targetColors,
-  preselectedIndices = [],
+  preselectedIndices,
   options
 ) => {
-  const result: number[] = [...preselectedIndices]
-  const usedIndices = new Set(preselectedIndices)
+  const effectivePreselected = preselectedIndices ?? []
+  const result: number[] = [...effectivePreselected]
+  const usedIndices = new Set(effectivePreselected)
 
   // Mapping couleur source → index dans result (pas index CPC)
   // Clé: "r,g,b" de la couleur source originale
@@ -2284,7 +2286,7 @@ export const selectByDistinctMapping: PaletteStrategyFunction = (
   const assignedCPCColors = new Set<string>()
 
   // Marquer les couleurs présélectionnées comme déjà assignées
-  for (const idx of preselectedIndices) {
+  for (const idx of effectivePreselected) {
     const preselected = candidates.find((c) => c.index === idx)
     if (preselected) {
       const key = `${preselected.converted[0]},${preselected.converted[1]},${preselected.converted[2]}`
@@ -2343,7 +2345,7 @@ export const selectByDistinctMapping: PaletteStrategyFunction = (
         const altKey = `${altColor[0]},${altColor[1]},${altColor[2]}`
         if (assignedCPCColors.has(altKey)) continue
 
-        const dist = distanceFunc(candidate.color, altColor as Vector)
+        const dist = distanceFunc(candidate.color, altColor)
         if (dist < bestAlternativeDist) {
           bestAlternativeDist = dist
           bestAlternativeIdx = i
