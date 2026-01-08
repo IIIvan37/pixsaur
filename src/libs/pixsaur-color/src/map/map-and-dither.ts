@@ -1,3 +1,7 @@
+import {
+  isDistinctMappingEnabled,
+  lookupColorIndex
+} from '../quant/color-mapping-cache'
 import { getBlueNoiseThresholdRGB } from './blue-noise-texture'
 
 const BAYER_MATRICES: Record<
@@ -368,6 +372,9 @@ export function applyNoDither(
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
 
+  // Vérifier si le mode distinct-mapping est actif
+  const useDirectMapping = isDistinctMappingEnabled()
+
   for (let i = 0; i < width * height; i++) {
     const i3 = i * 3
     pixelCS[0] = bufCS[i3]
@@ -375,12 +382,35 @@ export function applyNoDither(
     pixelCS[2] = bufCS[i3 + 2]
 
     let bestI = 0
-    let bestD = Infinity
-    for (let p = 0; p < paletteCS.length; p++) {
-      const d = distFn(pixelCS, paletteCS[p])
-      if (d < bestD) {
-        bestD = d
-        bestI = p
+
+    // Si distinct-mapping est actif, utiliser le mapping direct
+    if (useDirectMapping) {
+      const r = Math.round(pixelCS[0])
+      const g = Math.round(pixelCS[1])
+      const b = Math.round(pixelCS[2])
+      const mappedIdx = lookupColorIndex(r, g, b)
+      if (mappedIdx !== undefined) {
+        bestI = mappedIdx
+      } else {
+        // Fallback: chercher la couleur la plus proche
+        let bestD = Infinity
+        for (let p = 0; p < paletteCS.length; p++) {
+          const d = distFn(pixelCS, paletteCS[p])
+          if (d < bestD) {
+            bestD = d
+            bestI = p
+          }
+        }
+      }
+    } else {
+      // Mode standard: chercher la couleur la plus proche
+      let bestD = Infinity
+      for (let p = 0; p < paletteCS.length; p++) {
+        const d = distFn(pixelCS, paletteCS[p])
+        if (d < bestD) {
+          bestD = d
+          bestI = p
+        }
       }
     }
 
@@ -995,7 +1025,7 @@ export function mapAndDither(
   config: DitheringConfig,
   colorSpace: ColorSpace
 ): Uint8ClampedArray {
-  const { mode } = config
+  const { mode, intensity } = config
   const N = width * height
 
   const distFn = getDistanceFn(
@@ -1012,6 +1042,12 @@ export function mapAndDither(
   }
 
   const { paletteOut, paletteCS } = buildPalette(palette, (v) => Array.from(v))
+
+  // Si intensity = 0 et distinct-mapping actif, utiliser applyNoDither
+  // pour bénéficier du mapping 1:1 des couleurs
+  if (intensity === 0 && isDistinctMappingEnabled()) {
+    return applyNoDither(bufCS, width, height, paletteCS, paletteOut, distFn)
+  }
 
   const ditherFn = DITHER_MODES[mode]
   if (ditherFn) {

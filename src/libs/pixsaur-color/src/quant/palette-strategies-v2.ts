@@ -92,6 +92,13 @@ export interface ColorCandidate {
 export interface StrategyResult {
   selectedIndices: number[]
   scores?: Map<number, number>
+  /**
+   * Mapping couleur source → index palette pour les images low-color.
+   * Clé: "r,g,b" de la couleur source originale
+   * Valeur: index dans selectedIndices (pas index CPC)
+   * Utilisé pour garantir un mapping 1:1 au lieu de recalculer le plus proche.
+   */
+  colorMapping?: Map<string, number>
 }
 
 /**
@@ -2251,8 +2258,13 @@ export const selectByDistinctMapping: PaletteStrategyFunction = (
   const result: number[] = [...preselectedIndices]
   const usedIndices = new Set(preselectedIndices)
 
+  // Mapping couleur source → index dans result (pas index CPC)
+  // Clé: "r,g,b" de la couleur source originale
+  // Valeur: position dans result (0, 1, 2, ...)
+  const colorMapping = new Map<string, number>()
+
   if (result.length >= targetColors) {
-    return { selectedIndices: result.slice(0, targetColors) }
+    return { selectedIndices: result.slice(0, targetColors), colorMapping }
   }
 
   // Récupérer la palette complète depuis les options (nécessaire pour trouver des alternatives)
@@ -2288,12 +2300,17 @@ export const selectByDistinctMapping: PaletteStrategyFunction = (
   for (const candidate of sortedByFrequency) {
     if (result.length >= targetColors) break
 
+    // Clé de la couleur SOURCE originale (pour le mapping)
+    const sourceColorKey = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+
     const colorKey = `${candidate.converted[0]},${candidate.converted[1]},${candidate.converted[2]}`
 
     // Si cette couleur CPC n'a pas encore été assignée, l'utiliser directement
     if (!assignedCPCColors.has(colorKey)) {
+      const paletteIndex = result.length // Position dans result
       result.push(candidate.index)
       assignedCPCColors.add(colorKey)
+      colorMapping.set(sourceColorKey, paletteIndex)
       continue
     }
 
@@ -2336,6 +2353,7 @@ export const selectByDistinctMapping: PaletteStrategyFunction = (
 
     // Si on a trouvé une alternative non assignée
     if (bestAlternativeIdx >= 0) {
+      const paletteIndex = result.length // Position dans result
       result.push(bestAlternativeIdx)
       // Récupérer la couleur depuis basePalette ou candidates
       const altColor = basePalette
@@ -2346,6 +2364,8 @@ export const selectByDistinctMapping: PaletteStrategyFunction = (
         const altKey = `${altColor[0]},${altColor[1]},${altColor[2]}`
         assignedCPCColors.add(altKey)
       }
+      // Ajouter le mapping source → palette
+      colorMapping.set(sourceColorKey, paletteIndex)
     }
   }
 
@@ -2380,7 +2400,7 @@ export const selectByDistinctMapping: PaletteStrategyFunction = (
     }
   }
 
-  return { selectedIndices: result.slice(0, targetColors) }
+  return { selectedIndices: result.slice(0, targetColors), colorMapping }
 }
 
 /**
