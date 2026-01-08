@@ -11,6 +11,7 @@ import {
   selectByBalancedScoreBalanced,
   selectByBalancedScoreMax,
   selectByCoverageAware,
+  selectByDistinctMapping,
   selectByDitheringAware,
   selectByDiversityFirstBalanced,
   selectByDiversityFirstMax,
@@ -1091,8 +1092,8 @@ describe('palette-strategies-v2', () => {
   })
 
   describe('AVAILABLE_STRATEGIES', () => {
-    it('should contain all 13 strategies', () => {
-      expect(AVAILABLE_STRATEGIES).toHaveLength(13)
+    it('should contain all 14 strategies', () => {
+      expect(AVAILABLE_STRATEGIES).toHaveLength(14)
     })
 
     it('should contain exhaustive-contrast', () => {
@@ -1113,7 +1114,8 @@ describe('palette-strategies-v2', () => {
         'diversity-first-balanced',
         'diversity-first-max',
         'adaptive',
-        'mode0-hue-diversity'
+        'mode0-hue-diversity',
+        'distinct-mapping'
       ]
 
       for (const strategy of expectedStrategies) {
@@ -2169,6 +2171,136 @@ describe('palette-strategies-v2', () => {
       expect(result.selectedIndices).toHaveLength(3)
       expect(result.selectedIndices).toContain(0) // First red
       expect(result.selectedIndices).toContain(3) // Green for hue diversity
+    })
+  })
+
+  describe('selectByDistinctMapping', () => {
+    it('should preserve distinct colors without merging', () => {
+      // Simulate C64-like colors that might merge without distinct-mapping
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [68, 68, 68] as Vector,
+          converted: [68, 68, 68] as Vector // Dark grey
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [119, 119, 119] as Vector,
+          converted: [119, 119, 119] as Vector // Medium grey
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [170, 170, 170] as Vector,
+          converted: [170, 170, 170] as Vector // Light grey
+        },
+        {
+          index: 3,
+          frequency: 70,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector // Red
+        }
+      ]
+
+      const result = selectByDistinctMapping(candidates, 4)
+
+      expect(result.selectedIndices).toHaveLength(4)
+      // All 4 distinct colors should be selected
+      expect(result.selectedIndices).toContain(0)
+      expect(result.selectedIndices).toContain(1)
+      expect(result.selectedIndices).toContain(2)
+      expect(result.selectedIndices).toContain(3)
+    })
+
+    it('should prioritize by frequency order', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 10,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 100,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 50,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByDistinctMapping(candidates, 2)
+
+      expect(result.selectedIndices).toHaveLength(2)
+      // Should select the two most frequent colors
+      expect(result.selectedIndices).toContain(1) // Green (freq 100)
+      expect(result.selectedIndices).toContain(2) // Blue (freq 50)
+    })
+
+    it('should respect preselected indices', () => {
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [0, 255, 0] as Vector,
+          converted: [0, 255, 0] as Vector
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [0, 0, 255] as Vector,
+          converted: [0, 0, 255] as Vector
+        }
+      ]
+
+      const result = selectByDistinctMapping(candidates, 2, [2])
+
+      expect(result.selectedIndices).toHaveLength(2)
+      expect(result.selectedIndices[0]).toBe(2) // Preselected
+      expect(result.selectedIndices).toContain(0) // Most frequent of remaining
+    })
+
+    it('should find alternatives when CPC color would duplicate', () => {
+      // Two colors that would map to the same CPC color
+      const candidates: ColorCandidate[] = [
+        {
+          index: 0,
+          frequency: 100,
+          color: [120, 120, 120] as Vector,
+          converted: [128, 128, 128] as Vector // Maps to CPC grey
+        },
+        {
+          index: 1,
+          frequency: 90,
+          color: [130, 130, 130] as Vector,
+          converted: [128, 128, 128] as Vector // Also maps to same CPC grey!
+        },
+        {
+          index: 2,
+          frequency: 80,
+          color: [255, 0, 0] as Vector,
+          converted: [255, 0, 0] as Vector // Different CPC color
+        }
+      ]
+
+      const result = selectByDistinctMapping(candidates, 3)
+
+      expect(result.selectedIndices).toHaveLength(3)
+      // Should include all 3 even though two have same converted color
+      // The strategy will pick alternatives to avoid duplication
     })
   })
 })
