@@ -17,6 +17,8 @@ type DitheringSettingsViewProps = Readonly<{
   onAutoDistinctMappingChange: (value: boolean) => void
   showDistinctMapping: boolean
   isDistinctMappingActive: boolean
+  isDistinctMappingDisabled: boolean
+  sourceUniqueColors: number | null
   rasterEnabled: boolean
   isPaletteStrategyDisabled: boolean
 }>
@@ -28,6 +30,8 @@ export function DitheringSettingsView({
   onAutoDistinctMappingChange,
   showDistinctMapping,
   isDistinctMappingActive,
+  isDistinctMappingDisabled,
+  sourceUniqueColors,
   rasterEnabled,
   isPaletteStrategyDisabled
 }: DitheringSettingsViewProps) {
@@ -88,22 +92,33 @@ export function DitheringSettingsView({
             <>
               <div className={styles.separator} />
 
-              <div className={styles.section}>
+              <div
+                className={styles.section}
+                style={{ opacity: isDistinctMappingDisabled ? 0.5 : 1 }}
+              >
                 <h3 className={styles.sectionTitle}>
                   <Trans>Images retro (low-color)</Trans>
                 </h3>
                 <p className={styles.description}>
-                  <Trans>
-                    Détecte automatiquement les images avec peu de couleurs
-                    (C64, ZX Spectrum, etc.) et préserve toutes les couleurs
-                    distinctes.
-                  </Trans>
+                  {isDistinctMappingDisabled ? (
+                    <Trans>
+                      Non disponible : l'image source a plus de 16 couleurs
+                      uniques ({sourceUniqueColors ?? '?'}+).
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Détecte automatiquement les images avec peu de couleurs
+                      (C64, ZX Spectrum, etc.) et préserve toutes les couleurs
+                      distinctes.
+                    </Trans>
+                  )}
                 </p>
 
                 <Flex direction='row' gap='0.5rem' align='center'>
                   <Switch
-                    checked={autoDistinctMapping}
+                    checked={autoDistinctMapping && !isDistinctMappingDisabled}
                     onCheckedChange={onAutoDistinctMappingChange}
+                    disabled={isDistinctMappingDisabled}
                     id={distinctMappingId}
                   />
                   <label

@@ -521,7 +521,7 @@ export class ReGLQuantizer {
     // utiliser distinct-mapping pour préserver le maximum de couleurs distinctes
     // Note: Cette logique ne s'applique qu'en mode 0 (16 couleurs), pas en modes 1-2
     const isMode0 = actualTargetColors > CPC_MODE_1_MAX_COLORS
-    const autoDistinctMapping = isMode0 && config.autoDistinctMapping !== false // default: true, mais seulement en mode 0
+    const autoDistinctMapping = isMode0 && config.autoDistinctMapping === true // Doit être explicitement activé
     const uniqueColorCount = autoDistinctMapping
       ? countUniqueColors(imageData.data, 16)
       : 17 // Skip detection if disabled or not mode 0

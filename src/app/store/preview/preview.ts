@@ -7,6 +7,7 @@ import {
   weightedRGBDistance
 } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { countUniqueColors } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
 import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 import type { CPCHardware } from '@/libs/types'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
@@ -259,6 +260,18 @@ export const croppedBufferAtom = atom(async (get) => {
     return null
   }
   return extractBuffer(processed)
+})
+
+// 2b. Nombre de couleurs uniques dans l'image source (pour distinct-mapping toggle)
+// Retourne le nombre de couleurs uniques, avec un plafond à 17 (car on ne s'intéresse
+// qu'à savoir si l'image a ≤16 couleurs pour le distinct-mapping)
+export const sourceUniqueColorsCountAtom = atom(async (get) => {
+  const buf = await get(croppedBufferAtom)
+  if (!buf) {
+    return null
+  }
+  // Compter jusqu'à 17 couleurs (on veut juste savoir si ≤16)
+  return countUniqueColors(buf, 17)
 })
 
 // 3. Construction du quantizer sans mémoïsation
