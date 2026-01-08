@@ -21,6 +21,10 @@ import {
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import {
+  countUniqueColors,
+  extractUniqueColors
+} from '@/libs/pixsaur-color/src/utils/count-unique-colors'
 import { getCPCPlusPaletteIndex } from '@/palettes/cpc-palette'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 import {
@@ -493,15 +497,6 @@ export class ReGLQuantizer {
     _candidatesCount: number,
     config: ReGLQuantizeConfig
   ): number[] {
-    // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
-    // Mode 0 (16 couleurs): échantillons suffisent pour CPC Classic
-    // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
-    const sampleCount =
-      config.targetColors <= CPC_MODE_1_MAX_COLORS
-        ? SAMPLE_COUNT_MODE_1_2
-        : SAMPLE_COUNT_MODE_0_CLASSIC
-    const sampledColors = this.sampleImageColors(imageData, sampleCount)
-
     // Récupérer les indices présélectionnés (couleurs lockées)
     const preselectedIndices = config.preselectedIndices || []
 
@@ -511,13 +506,45 @@ export class ReGLQuantizer {
         ? CPC_MODE_0_COLORS
         : config.targetColors
 
+    // Détection image "low-color" (ex: C64, ZX Spectrum) pour CPC Classic
+    // Si l'image source a ≤16 couleurs uniques, utiliser distinct-mapping
+    // pour préserver le maximum de couleurs distinctes
+    const uniqueColorCount = countUniqueColors(imageData.data, 16)
+    const isLowColorImage = uniqueColorCount <= 16
+
+    // Choisir la stratégie appropriée
+    let effectiveStrategy: PaletteStrategyName = (config.paletteStrategy ||
+      'frequency-balanced') as PaletteStrategyName
+
+    // Pour les images low-color, extraire TOUTES les couleurs uniques au lieu d'utiliser le sampling
+    // Ceci garantit que toutes les couleurs source sont passées à la stratégie distinct-mapping
+    let sampledColors: Vector[]
+    if (isLowColorImage && actualTargetColors > CPC_MODE_1_MAX_COLORS) {
+      // Image retro avec peu de couleurs: maximiser les couleurs distinctes
+      effectiveStrategy = 'distinct-mapping'
+      // Extraire TOUTES les couleurs uniques (pas de sampling)
+      sampledColors = extractUniqueColors(imageData.data, 32) as Vector[]
+      adapterLogger.info(
+        `[ReGL] Low-color image detected (${uniqueColorCount} colors), extracted ${sampledColors.length} unique colors, using distinct-mapping strategy`
+      )
+    } else {
+      // Pour les petites palettes (modes 1-2), utiliser plus d'échantillons pour une meilleure précision
+      // Mode 0 (16 couleurs): échantillons suffisent pour CPC Classic
+      // Modes 1-2 (2-4 couleurs): plus d'échantillons pour capturer les nuances importantes
+      const sampleCount =
+        config.targetColors <= CPC_MODE_1_MAX_COLORS
+          ? SAMPLE_COUNT_MODE_1_2
+          : SAMPLE_COUNT_MODE_0_CLASSIC
+      sampledColors = this.sampleImageColors(imageData, sampleCount)
+    }
+
     // CPU: Calcul rapide des couleurs dominantes avec diversité (incluant les présélectionnées)
     const selected = this.selectDiverseColorsFast(
       sampledColors,
       basePalette,
       actualTargetColors,
       preselectedIndices,
-      config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
+      effectiveStrategy
     )
 
     return selected
@@ -691,7 +718,7 @@ export class ReGLQuantizer {
     basePalette: readonly Vector[],
     targetColors: number,
     preselectedIndices: readonly number[] = [],
-    paletteStrategy: PaletteStrategy = 'frequency-balanced'
+    paletteStrategy: PaletteStrategyName = 'frequency-balanced'
   ): number[] {
     const startTime = performance.now()
     // Commencer par les couleurs présélectionnées (priorité absolue)
@@ -710,9 +737,14 @@ export class ReGLQuantizer {
       usedIndices
     )
 
+    // Pour les images low-color (distinct-mapping), utiliser la stratégie v2 même en mode 0
+    // Cela garantit que les couleurs distinctes sont préservées
+    const useStrategyForMode0 = paletteStrategy === 'distinct-mapping'
+
     // Utiliser la nouvelle stratégie de sélection de palette pour les petites palettes
+    // OU pour distinct-mapping en mode 0
     // IMPORTANT: Doit être fait AVANT tout return early
-    if (targetColors <= CPC_MODE_1_MAX_COLORS) {
+    if (targetColors <= CPC_MODE_1_MAX_COLORS || useStrategyForMode0) {
       adapterLogger.info('[ReGLQuantizer] Using palette strategy', {
         strategy: paletteStrategy,
         targetColors,
@@ -734,12 +766,18 @@ export class ReGLQuantizer {
 
       // Utiliser le helper centralisé pour appliquer la stratégie
       // Passer la taille de la palette de base pour distinguer CPC Classic (27) de CPC Plus (4096)
+      // Pour distinct-mapping, passer aussi la palette complète pour trouver des alternatives
       const strategyResult = applyPaletteStrategyV2(
         paletteStrategy as PaletteStrategyName,
         candidates,
         targetColors,
         [...preselectedIndices],
-        { basePaletteSize: basePalette.length, preselectedColors }
+        {
+          basePaletteSize: basePalette.length,
+          preselectedColors,
+          basePalette:
+            paletteStrategy === 'distinct-mapping' ? basePalette : undefined
+        }
       )
 
       adapterLogger.info('[ReGLQuantizer] Strategy selected colors', {

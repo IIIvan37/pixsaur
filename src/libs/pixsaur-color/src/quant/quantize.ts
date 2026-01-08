@@ -6,6 +6,7 @@ import {
   getDistanceFn
 } from '../metric/distance'
 import type { Vector } from '../type'
+import { countUniqueColors } from '../utils/count-unique-colors'
 import {
   applyPaletteStrategyV2,
   type ColorCandidate,
@@ -103,10 +104,28 @@ export function createQuantizer({
 
     const out = idxs.map((i: number) => workingPal[i])
 
-    // Alignement CPU/GPU : utiliser mode0-hue-diversity pour le mode 0 (>4 couleurs)
-    // et la stratégie utilisateur pour les modes 1-2 (≤4 couleurs)
-    const effectiveStrategy: PaletteStrategyName | undefined =
-      limit > 4 ? 'mode0-hue-diversity' : paletteStrategy
+    // Détection image "low-color" (ex: C64, ZX Spectrum) pour CPC Classic uniquement
+    // CPC Plus a assez de couleurs (4096) pour un mapping direct efficace
+    const isCPCClassic = basePalette.length <= 27
+    const uniqueColorCount = countUniqueColors(buf, 16)
+    const isLowColorImage = uniqueColorCount <= 16
+
+    // Choisir la stratégie appropriée:
+    // - Images low-color sur CPC Classic: utiliser distinct-mapping pour préserver les couleurs
+    // - Mode 0 (>4 couleurs) standard: utiliser mode0-hue-diversity
+    // - Modes 1-2 (≤4 couleurs): utiliser la stratégie utilisateur
+    let effectiveStrategy: PaletteStrategyName | undefined
+
+    if (isCPCClassic && isLowColorImage && limit > 4) {
+      // Image retro sur CPC Classic: maximiser les couleurs distinctes
+      effectiveStrategy = 'distinct-mapping'
+    } else if (limit > 4) {
+      // Mode 0 standard: diversité de teinte
+      effectiveStrategy = 'mode0-hue-diversity'
+    } else {
+      // Modes 1-2: stratégie utilisateur
+      effectiveStrategy = paletteStrategy
+    }
 
     if (effectiveStrategy && limit <= 16) {
       // Construire les candidats avec fréquences à partir de l'histogramme
@@ -122,7 +141,12 @@ export function createQuantizer({
         candidates,
         limit,
         [...preIdx],
-        { basePaletteSize: basePalette.length }
+        {
+          basePaletteSize: basePalette.length,
+          // Pour distinct-mapping, passer la palette complète pour trouver des alternatives
+          basePalette:
+            effectiveStrategy === 'distinct-mapping' ? workingPal : undefined
+        }
       )
 
       return strategyResult.selectedIndices.map(

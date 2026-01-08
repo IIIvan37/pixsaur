@@ -98,10 +98,12 @@ export interface StrategyResult {
  * Options pour les stratégies de palette
  * basePaletteSize: taille de la palette de base (27 pour CPC Classic, 4096 pour CPC Plus)
  * preselectedColors: couleurs présélectionnées (lockées) - utilisé pour éviter de sélectionner des couleurs trop proches
+ * basePalette: palette complète (27 ou 4096 couleurs) - nécessaire pour distinct-mapping
  */
 export interface StrategyOptions {
   basePaletteSize?: number
   preselectedColors?: Vector[]
+  basePalette?: readonly Vector[]
 }
 
 /**
@@ -2216,6 +2218,171 @@ export const selectByMode0HueDiversity: PaletteStrategyFunction = (
   return { selectedIndices: result.slice(0, targetColors) }
 }
 
+// ============================================================================
+// DISTINCT MAPPING STRATEGY (for low-color retro images)
+// ============================================================================
+
+/**
+ * Stratégie de mapping distinct pour les images retro à faible nombre de couleurs.
+ *
+ * Cette stratégie est optimisée pour les images provenant de machines 8-bit
+ * (Commodore 64, ZX Spectrum, MSX, etc.) où l'image source n'a que quelques
+ * couleurs distinctes (typiquement ≤16).
+ *
+ * Contrairement aux autres stratégies qui optimisent pour la représentation
+ * perceptuelle d'images photo-réalistes, celle-ci maximise le nombre de
+ * couleurs DISTINCTES dans la palette de sortie.
+ *
+ * Algorithme:
+ * 1. Trie les couleurs sources par fréquence (les plus utilisées d'abord)
+ * 2. Pour chaque couleur source, trouve la couleur CPC la plus proche
+ *    QUI N'A PAS ENCORE ÉTÉ ASSIGNÉE
+ * 3. Si toutes les couleurs proches sont prises, utilise la plus proche disponible
+ *
+ * Cela garantit que si l'image source a N couleurs et la cible supporte N couleurs,
+ * on obtiendra N couleurs distinctes (pas de fusion de couleurs similaires).
+ */
+export const selectByDistinctMapping: PaletteStrategyFunction = (
+  candidates,
+  targetColors,
+  preselectedIndices = [],
+  options
+) => {
+  const result: number[] = [...preselectedIndices]
+  const usedIndices = new Set(preselectedIndices)
+
+  if (result.length >= targetColors) {
+    return { selectedIndices: result.slice(0, targetColors) }
+  }
+
+  // Récupérer la palette complète depuis les options (nécessaire pour trouver des alternatives)
+  const basePalette = options?.basePalette
+
+  // Filtrer les candidats déjà utilisés (présélectionnés/lockés)
+  const availableCandidates = candidates.filter(
+    (c) => !usedIndices.has(c.index)
+  )
+
+  // Trier par fréquence décroissante - les couleurs les plus présentes sont prioritaires
+  const sortedByFrequency = [...availableCandidates].sort(
+    (a, b) => b.frequency - a.frequency
+  )
+
+  // Ensemble des couleurs CPC déjà assignées (pour éviter les doublons)
+  const assignedCPCColors = new Set<string>()
+
+  // Marquer les couleurs présélectionnées comme déjà assignées
+  for (const idx of preselectedIndices) {
+    const preselected = candidates.find((c) => c.index === idx)
+    if (preselected) {
+      const key = `${preselected.converted[0]},${preselected.converted[1]},${preselected.converted[2]}`
+      assignedCPCColors.add(key)
+    }
+  }
+
+  // Distance function
+  const distanceFunc = (a: Vector, b: Vector): number =>
+    weightedRGBDistance(a, b)
+
+  // Pour chaque couleur source (par ordre de fréquence)
+  for (const candidate of sortedByFrequency) {
+    if (result.length >= targetColors) break
+
+    const colorKey = `${candidate.converted[0]},${candidate.converted[1]},${candidate.converted[2]}`
+
+    // Si cette couleur CPC n'a pas encore été assignée, l'utiliser directement
+    if (!assignedCPCColors.has(colorKey)) {
+      result.push(candidate.index)
+      assignedCPCColors.add(colorKey)
+      continue
+    }
+
+    // Sinon, chercher la couleur CPC la plus proche non encore assignée
+    // D'abord parmi les candidats (couleurs présentes dans l'image)
+    let bestAlternativeIdx = -1
+    let bestAlternativeDist = Infinity
+
+    for (const alt of availableCandidates) {
+      if (result.includes(alt.index)) continue
+
+      const altKey = `${alt.converted[0]},${alt.converted[1]},${alt.converted[2]}`
+      if (assignedCPCColors.has(altKey)) continue
+
+      // Distance entre la couleur source originale et cette alternative CPC
+      const dist = distanceFunc(candidate.color, alt.converted)
+      if (dist < bestAlternativeDist) {
+        bestAlternativeDist = dist
+        bestAlternativeIdx = alt.index
+      }
+    }
+
+    // Si pas trouvé parmi les candidats et qu'on a la palette complète,
+    // chercher dans TOUTE la palette CPC
+    if (bestAlternativeIdx < 0 && basePalette) {
+      for (let i = 0; i < basePalette.length; i++) {
+        if (result.includes(i)) continue
+
+        const altColor = basePalette[i]
+        const altKey = `${altColor[0]},${altColor[1]},${altColor[2]}`
+        if (assignedCPCColors.has(altKey)) continue
+
+        const dist = distanceFunc(candidate.color, altColor as Vector)
+        if (dist < bestAlternativeDist) {
+          bestAlternativeDist = dist
+          bestAlternativeIdx = i
+        }
+      }
+    }
+
+    // Si on a trouvé une alternative non assignée
+    if (bestAlternativeIdx >= 0) {
+      result.push(bestAlternativeIdx)
+      // Récupérer la couleur depuis basePalette ou candidates
+      const altColor = basePalette
+        ? basePalette[bestAlternativeIdx]
+        : availableCandidates.find((c) => c.index === bestAlternativeIdx)
+            ?.converted
+      if (altColor) {
+        const altKey = `${altColor[0]},${altColor[1]},${altColor[2]}`
+        assignedCPCColors.add(altKey)
+      }
+    }
+  }
+
+  // Si on n'a pas assez de couleurs, compléter avec les plus fréquentes restantes
+  // parmi les candidats
+  if (result.length < targetColors) {
+    for (const candidate of sortedByFrequency) {
+      if (result.length >= targetColors) break
+      if (!result.includes(candidate.index)) {
+        result.push(candidate.index)
+      }
+    }
+  }
+
+  // Si TOUJOURS pas assez et qu'on a la palette complète,
+  // compléter avec les couleurs CPC les plus proches des couleurs manquantes
+  if (result.length < targetColors && basePalette) {
+    // Calculer le "centre" des couleurs déjà sélectionnées pour diversifier
+    for (
+      let i = 0;
+      i < basePalette.length && result.length < targetColors;
+      i++
+    ) {
+      if (!result.includes(i)) {
+        const color = basePalette[i]
+        const colorKey = `${color[0]},${color[1]},${color[2]}`
+        if (!assignedCPCColors.has(colorKey)) {
+          result.push(i)
+          assignedCPCColors.add(colorKey)
+        }
+      }
+    }
+  }
+
+  return { selectedIndices: result.slice(0, targetColors) }
+}
+
 /**
  * Type pour les noms de stratégies de palette v2
  */
@@ -2233,6 +2400,7 @@ export type PaletteStrategyName =
   | 'diversity-first-max'
   | 'adaptive'
   | 'mode0-hue-diversity'
+  | 'distinct-mapping'
 
 /**
  * Map des stratégies de palette v2
@@ -2254,7 +2422,8 @@ const PALETTE_STRATEGY_MAP: Record<
   'diversity-first-balanced': selectByDiversityFirstBalanced,
   'diversity-first-max': selectByDiversityFirstMax,
   adaptive: selectByAdaptive,
-  'mode0-hue-diversity': selectByMode0HueDiversity
+  'mode0-hue-diversity': selectByMode0HueDiversity,
+  'distinct-mapping': selectByDistinctMapping
 }
 
 /**
