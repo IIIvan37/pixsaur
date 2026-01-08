@@ -66,7 +66,7 @@ msgstr "Enable raster mode to use line-optimized palettes."
 #~ msgid "Activer l'aperçu raster"
 #~ msgstr "Enable raster preview"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:88
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:151
 msgid "Activer le lissage horizontal"
 msgstr "Enable horizontal smoothing"
 
@@ -163,7 +163,7 @@ msgstr "Anti-flicker"
 msgid "Aperçu"
 msgstr "Preview"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:75
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:136
 msgid "Applique un lissage horizontal pour réduire les artefacts de pixels. Désactivé en mode raster."
 msgstr "Applies horizontal smoothing to reduce pixel artifacts. Disabled in raster mode."
 
@@ -259,7 +259,7 @@ msgstr "Changes per line"
 msgid "Changements Raster"
 msgstr "Raster Changes"
 
-#: src/app/components/source-section.tsx:62
+#: src/app/components/source-section.tsx:72
 msgid "Changer d'image"
 msgstr "Change image"
 
@@ -276,7 +276,7 @@ msgstr "Load an image to see the palette"
 msgid "Chargez une image pour voir les palettes"
 msgstr "Load an image to see the palettes"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:41
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:50
 msgid "Choisissez la stratégie de génération de palette pour optimiser la qualité visuelle."
 msgstr "Choose the palette generation strategy to optimize visual quality."
 
@@ -324,7 +324,7 @@ msgstr "Combined"
 msgid "Configuration de l'export"
 msgstr "Export Configuration"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:54
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:66
 msgid "Configuration du Dithering"
 msgstr "Dithering Configuration"
 
@@ -397,6 +397,15 @@ msgstr "Fast movement (×8)"
 msgid "Déplacer le curseur"
 msgstr "Move cursor"
 
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:70
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:131
+msgid "Désactivé quand le mapping distinct est actif pour préserver les couleurs exactes."
+msgstr "Disabled when distinct mapping is active to preserve exact colors."
+
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:96
+msgid "Détecte automatiquement les images avec peu de couleurs (C64, ZX Spectrum, etc.) et préserve toutes les couleurs distinctes."
+msgstr "Automatically detects images with few colors (C64, ZX Spectrum, etc.) and preserves all distinct colors."
+
 #: src/components/color-palette/color-grid/color-grid-view.tsx:74
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
@@ -436,7 +445,7 @@ msgstr "Dithering Aware"
 msgid "Dithering Error Propagation"
 msgstr "Dithering Error Propagation"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:80
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:86
 msgid "Dithering final"
 msgstr "Final dithering"
 
@@ -696,9 +705,13 @@ msgstr "High Res Lines"
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 
-#: src/app/components/source-section.tsx:61
+#: src/app/components/source-section.tsx:71
 msgid "Image source"
 msgstr "Image source"
+
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:93
+msgid "Images retro (low-color)"
+msgstr "Retro images (low-color)"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:354
 #~ msgid "Influence du nombre de lignes où la couleur apparaît (plus haut = favorise les couleurs globales)"
@@ -716,7 +729,7 @@ msgstr "Install Update"
 #~ msgid "Installing..."
 #~ msgstr "Installing..."
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:102
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:109
 msgid "Intensité"
 msgstr "Intensity"
 
@@ -787,7 +800,7 @@ msgstr "Linear ASM (sequential)"
 #~ msgid "Lissage"
 #~ msgstr "Smoothing"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:72
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:127
 msgid "Lissage horizontal"
 msgstr "Horizontal Smoothing"
 
@@ -817,6 +830,10 @@ msgstr "Luminance bins with frequency priority"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:85
 msgid "Luminosité"
 msgstr "Brightness"
+
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:113
+msgid "Mapping distinct automatique"
+msgstr "Automatic distinct mapping"
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:363
 msgid "Max {maxChangesPerLine} changement(s) par ligne"
@@ -990,7 +1007,7 @@ msgstr "Open settings (⌘,)"
 
 #: src/components/info-bar/info-bar.tsx:26
 msgid "paires"
-msgstr ""
+msgstr "pairs"
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:86
 msgid "Paires uniques"
@@ -1252,7 +1269,7 @@ msgstr "Selection"
 #~ msgid "Sélectionner une couleur"
 #~ msgstr "Select a color"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:57
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:75
 msgid "Sélectionnez l'algorithme de dithering et ajustez les paramètres pour optimiser le rendu final."
 msgstr "Select the dithering algorithm and adjust parameters to optimize the final rendering."
 
@@ -1286,7 +1303,7 @@ msgstr "Source"
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: standard CPC dimensions. Overscan: uses full displayable area. Custom: custom dimensions."
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:35
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:44
 msgid "Stratégie de palette"
 msgstr "Palette Strategy"
 
@@ -1395,11 +1412,11 @@ msgstr "Vibrance"
 msgid "Vider"
 msgstr "Clear"
 
-#: src/components/source-selector/source-selector-view.tsx:75
+#: src/components/source-selector/source-selector-view.tsx:79
 msgid "Zone de sélection"
 msgstr "Selection area"
 
-#: src/components/source-selector/source-selector-view.tsx:56
+#: src/components/source-selector/source-selector-view.tsx:60
 msgid "Zone de sélection interactive"
 msgstr "Zone de sélection interactive"
 

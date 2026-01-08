@@ -1431,36 +1431,8 @@ export function preprocessImageForRaster(
       .fill(null)
       .map(() => [0, 0, 0])
 
-    if (!shouldApplyDithering) {
-      // Line already has ≤nColors colors AND no dithering requested: direct mapping
-      for (let x = 0; x < width; x++) {
-        const pixelIdx = lineStart + x * 4
-        const sourceColor: Vector<'RGB'> = [
-          data[pixelIdx],
-          data[pixelIdx + 1],
-          data[pixelIdx + 2]
-        ]
-
-        // Quantize and find exact match in palette
-        const quantizedSource = quantizeColor(sourceColor)
-        const closestIdx = findClosestColorIndex(
-          quantizedSource,
-          quantizedPalette,
-          weightedRGBDistance
-        )
-        const chosenColor = quantizedPalette[closestIdx]
-
-        // Write output pixel (no error propagation)
-        outputData[pixelIdx] = chosenColor[0]
-        outputData[pixelIdx + 1] = chosenColor[1]
-        outputData[pixelIdx + 2] = chosenColor[2]
-        outputData[pixelIdx + 3] = 255
-      }
-
-      // Reset vertical error for next line (no error to propagate)
-      // Keep it at zero
-    } else {
-      // Apply dithering (either line has >nColors or user wants dithering)
+    if (shouldApplyDithering) {
+      // Apply dithering to the line
       // Horizontal error buffer for this line (floating-point)
       const horizError: [number, number, number][] = new Array(width)
         .fill(null)
@@ -1578,6 +1550,34 @@ export function preprocessImageForRaster(
         outputData[pixelIdx + 2] = chosenColor[2]
         outputData[pixelIdx + 3] = 255
       }
+    } else {
+      // Line already has ≤nColors colors AND no dithering requested: direct mapping
+      for (let x = 0; x < width; x++) {
+        const pixelIdx = lineStart + x * 4
+        const sourceColor: Vector<'RGB'> = [
+          data[pixelIdx],
+          data[pixelIdx + 1],
+          data[pixelIdx + 2]
+        ]
+
+        // Quantize and find exact match in palette
+        const quantizedSource = quantizeColor(sourceColor)
+        const closestIdx = findClosestColorIndex(
+          quantizedSource,
+          quantizedPalette,
+          weightedRGBDistance
+        )
+        const chosenColor = quantizedPalette[closestIdx]
+
+        // Write output pixel (no error propagation)
+        outputData[pixelIdx] = chosenColor[0]
+        outputData[pixelIdx + 1] = chosenColor[1]
+        outputData[pixelIdx + 2] = chosenColor[2]
+        outputData[pixelIdx + 3] = 255
+      }
+
+      // Reset vertical error for next line (no error to propagate)
+      // Keep it at zero
     }
 
     // Update for next line

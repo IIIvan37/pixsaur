@@ -23,7 +23,13 @@ import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
 import type { DitheringMode } from '@/libs/pixsaur-color/src'
 
-export function DitheringControls() {
+type DitheringControlsProps = Readonly<{
+  disabled?: boolean
+}>
+
+export function DitheringControls({
+  disabled = false
+}: DitheringControlsProps) {
   const [cfg, setCfg] = useAtom(ditheringAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const egxEnabled = useAtomValue(egxEnabledAtom)
@@ -90,6 +96,7 @@ export function DitheringControls() {
                 intensity: getDefaultDitheringIntensity(newMode)
               })
             }}
+            disabled={disabled}
           >
             {availableModes.map((mode) => (
               <SelectItem key={mode.value} value={mode.value}>
@@ -107,7 +114,7 @@ export function DitheringControls() {
             value={Math.round(cfg.intensity * 100)}
             onChange={(val) => setCfg({ ...cfg, intensity: val / 100 })}
             step={1}
-            disabled={cfg.mode === 'ylioluma2'}
+            disabled={disabled || cfg.mode === 'ylioluma2'}
           />
         </div>
       </Flex>

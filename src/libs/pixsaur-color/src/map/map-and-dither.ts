@@ -389,9 +389,7 @@ export function applyNoDither(
       const g = Math.round(pixelCS[1])
       const b = Math.round(pixelCS[2])
       const mappedIdx = lookupColorIndex(r, g, b)
-      if (mappedIdx !== undefined) {
-        bestI = mappedIdx
-      } else {
+      if (mappedIdx === undefined) {
         // Fallback: chercher la couleur la plus proche
         let bestD = Infinity
         for (let p = 0; p < paletteCS.length; p++) {
@@ -401,6 +399,8 @@ export function applyNoDither(
             bestI = p
           }
         }
+      } else {
+        bestI = mappedIdx
       }
     } else {
       // Mode standard: chercher la couleur la plus proche
@@ -1025,7 +1025,7 @@ export function mapAndDither(
   config: DitheringConfig,
   colorSpace: ColorSpace
 ): Uint8ClampedArray {
-  const { mode, intensity } = config
+  const { mode } = config
   const N = width * height
 
   const distFn = getDistanceFn(
@@ -1043,9 +1043,9 @@ export function mapAndDither(
 
   const { paletteOut, paletteCS } = buildPalette(palette, (v) => Array.from(v))
 
-  // Si intensity = 0 et distinct-mapping actif, utiliser applyNoDither
-  // pour bénéficier du mapping 1:1 des couleurs
-  if (intensity === 0 && isDistinctMappingEnabled()) {
+  // Si distinct-mapping est actif, forcer applyNoDither (pas de dithering)
+  // pour garantir le mapping 1:1 des couleurs source vers palette
+  if (isDistinctMappingEnabled()) {
     return applyNoDither(bufCS, width, height, paletteCS, paletteOut, distFn)
   }
 

@@ -19,6 +19,7 @@ import {
 import { applyResize, type Selection } from '@/source'
 import { paletteProcessorAtom } from '../adapters/processors'
 import {
+  autoDistinctMappingAtom,
   centerImageAtom,
   cpcHardwareAtom,
   ditheringAtom,
@@ -226,13 +227,22 @@ export const smoothedImageAtom = atom(async (get) => {
   const resized = await get(resizedImageAtom)
   const horizontalSmoothing = get(horizontalSmoothingAtom)
   const pixelMode = get(pixelModeAtom)
+  const autoDistinctMapping = get(autoDistinctMappingAtom)
+  const cpcHardware = get(cpcHardwareAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
 
   if (!resized) {
     return null
   }
 
-  // Appliquer le lissage horizontal si activé
-  if (horizontalSmoothing) {
+  // Disable smoothing when distinct-mapping is active (CPC Classic + Mode 0)
+  const isDistinctMappingActive =
+    autoDistinctMapping &&
+    cpcHardware === 'classic' &&
+    modeConfig.nColors === 16
+
+  // Appliquer le lissage horizontal si activé ET distinct-mapping n'est pas actif
+  if (horizontalSmoothing && !isDistinctMappingActive) {
     const pixelWidth = getPixelWidthForMode(pixelMode)
     if (pixelWidth > 1) {
       return applyHorizontalSmoothing(resized, pixelWidth)
@@ -331,10 +341,13 @@ export const reducedPaletteRawAtom = atom(async (get) => {
         )
 
   const paletteStrategy = get(paletteStrategyAtom)
+  // Lire autoDistinctMapping pour créer une dépendance (déclenche re-traitement quand toggle change)
+  const autoDistinctMapping = get(autoDistinctMappingAtom)
 
   logger.info('[Preview] Quantizing palette', {
     targetColors,
     paletteStrategy,
+    autoDistinctMapping,
     hardware: cpcHardware
   })
 
@@ -399,9 +412,25 @@ export const positionedNormalizedImageAtom = atom(async (get) => {
  * Returns the user-configured dithering settings.
  * In raster mode, this dithering is applied AFTER raster optimization
  * using per-line palettes.
+ * When autoDistinctMapping is enabled (CPC Classic + Mode 0), dithering is forced to 'none'
+ * to preserve exact color mapping.
  */
 export const effectiveDitheringAtom = atom((get) => {
   const dithering = get(ditheringAtom)
+  const autoDistinctMapping = get(autoDistinctMappingAtom)
+  const cpcHardware = get(cpcHardwareAtom)
+  const modeConfig = get(effectiveModeConfigAtom)
+
+  // Force no dithering when distinct-mapping is active (CPC Classic + Mode 0)
+  const isDistinctMappingActive =
+    autoDistinctMapping &&
+    cpcHardware === 'classic' &&
+    modeConfig.nColors === 16
+
+  if (isDistinctMappingActive) {
+    return { mode: 'none' as const, intensity: 0 }
+  }
+
   return dithering
 })
 
