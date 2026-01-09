@@ -279,7 +279,31 @@ export const setPaletteStrategyAtom = atom(
 // When enabled, automatically detects images with ≤16 unique colors and uses
 // distinct-mapping strategy to preserve all distinct colors
 // Disabled by default - user must explicitly enable for retro image conversion
+// Mutually exclusive with Mode R, EGX, and Raster
 export const autoDistinctMappingAtom = atom<boolean>(false)
+
+/**
+ * Setter for auto distinct-mapping with mutual exclusion
+ * Disables Mode R, EGX, and Raster when enabling distinct-mapping
+ */
+export const setAutoDistinctMappingAtom = atom(
+  null,
+  (get, set, payload: boolean) => {
+    if (payload) {
+      // Disable Mode R, EGX, and Raster when enabling distinct-mapping
+      if (get(modeREnabledAtom)) {
+        set(modeREnabledAtom, false)
+      }
+      if (get(egxEnabledAtom)) {
+        set(egxEnabledAtom, false)
+      }
+      if (get(rasterEnabledAtom)) {
+        set(rasterEnabledAtom, false)
+      }
+    }
+    set(autoDistinctMappingAtom, payload)
+  }
+)
 
 // CPC Hardware selection atom - persisted to localStorage
 // This ensures consistency between locked colors and hardware selection
@@ -385,16 +409,19 @@ export const setModeRPreviewModeAtom = atom(
 
 /**
  * Setter for Mode R enabled state with mutual exclusion
- * Disables EGX and Raster when enabling Mode R
+ * Disables EGX, Raster, and distinct-mapping when enabling Mode R
  */
 export const setModeREnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
-    // Disable EGX and Raster when enabling Mode R
+    // Disable EGX, Raster, and distinct-mapping when enabling Mode R
     if (get(egxEnabledAtom)) {
       set(egxEnabledAtom, false)
     }
     if (get(rasterEnabledAtom)) {
       set(rasterEnabledAtom, false)
+    }
+    if (get(autoDistinctMappingAtom)) {
+      set(autoDistinctMappingAtom, false)
     }
   }
   set(modeREnabledAtom, payload)
@@ -455,12 +482,15 @@ export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
  */
 export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
-    // Disable Mode R and Raster when enabling EGX
+    // Disable Mode R, Raster, and distinct-mapping when enabling EGX
     if (get(modeREnabledAtom)) {
       set(modeREnabledAtom, false)
     }
     if (get(rasterEnabledAtom)) {
       set(rasterEnabledAtom, false)
+    }
+    if (get(autoDistinctMappingAtom)) {
+      set(autoDistinctMappingAtom, false)
     }
     // Set the appropriate pixel mode for the current EGX type
     const egxType = get(egxTypeAtom)
@@ -477,12 +507,15 @@ export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
  */
 export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
-    // Disable Mode R and EGX when enabling Raster
+    // Disable Mode R, EGX, and distinct-mapping when enabling Raster
     if (get(modeREnabledAtom)) {
       set(modeREnabledAtom, false)
     }
     if (get(egxEnabledAtom)) {
       set(egxEnabledAtom, false)
+    }
+    if (get(autoDistinctMappingAtom)) {
+      set(autoDistinctMappingAtom, false)
     }
 
     // Switch to compatible dithering mode if current mode uses error diffusion

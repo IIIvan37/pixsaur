@@ -2,12 +2,13 @@
  * Dithering settings component (smart component with hooks)
  */
 
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   autoDistinctMappingAtom,
   cpcHardwareAtom,
   effectiveModeConfigAtom,
-  horizontalSmoothingAtom
+  horizontalSmoothingAtom,
+  setAutoDistinctMappingAtom
 } from '@/app/store/config/config'
 import { sourceUniqueColorsCountAtom } from '@/app/store/preview/preview'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
@@ -18,9 +19,8 @@ export function DitheringSettings() {
   const [horizontalSmoothing, setHorizontalSmoothing] = useAtom(
     horizontalSmoothingAtom
   )
-  const [autoDistinctMapping, setAutoDistinctMapping] = useAtom(
-    autoDistinctMappingAtom
-  )
+  const autoDistinctMapping = useAtomValue(autoDistinctMappingAtom)
+  const setAutoDistinctMapping = useSetAtom(setAutoDistinctMappingAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const isPaletteStrategyDisabled = usePaletteStrategyDisabled()
   const cpcHardware = useAtomValue(cpcHardwareAtom)

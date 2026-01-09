@@ -31,6 +31,7 @@ function createDefaultProps(overrides = {}) {
   return {
     rasterEnabled: true,
     onRasterEnabledChange: vi.fn(),
+    isDistinctMappingActive: false,
     maxChangesPerLine: 2,
     onMaxChangesPerLineChange: vi.fn(),
     hardwareLimit: 4,
