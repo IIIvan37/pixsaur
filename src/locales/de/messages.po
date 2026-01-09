@@ -947,6 +947,12 @@ msgstr "Nein"
 msgid "Non disponible : l'image source a plus de 16 couleurs uniques ({0}+)."
 msgstr "Nicht verfügbar: Quellbild hat mehr als 16 einzigartige Farben ({0}+)."
 
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:101
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:133
+#: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:133
+#~ msgid "Non disponible : le mappage distinct est actif."
+#~ msgstr "Nicht verfügbar: Distinkte Zuordnung ist aktiv."
+
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:246
 msgid "palette.strategy.disabled.raster"
