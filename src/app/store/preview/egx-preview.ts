@@ -11,12 +11,13 @@
  * - egx/egx-preview-image.ts: Preview image generation with dithering
  * - egx/egx-index-buffer.ts: Index buffer for editor and export
  * - egx/egx-final.ts: Final output with manual edits and export data
+ *
+ * Note: analyzeHighResLineColors and optimizePaletteForEGX have been moved
+ * to @/libs/pixsaur-egx/palette-reorder.ts for better separation of concerns.
  */
 
 // Re-export everything from egx folder
 export {
-  // Palette
-  analyzeHighResLineColors,
   // Configuration
   egxConfigAtom,
   egxDisplayPaletteAtom,
@@ -33,6 +34,5 @@ export {
   finalEgxIndexBufferAtom,
   finalEgxPreviewImageAtom,
   getEGXModeConfig,
-  optimizePaletteForEGX,
   shouldGrayOut
 } from './egx'

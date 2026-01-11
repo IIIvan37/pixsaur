@@ -29,13 +29,9 @@ export { egxNormalizedImageAtom } from './egx-image'
 // Re-export index buffer atoms
 export { egxIndexBufferAtom, finalEgxIndexBufferAtom } from './egx-index-buffer'
 
-// Re-export palette atoms and helpers
-export {
-  analyzeHighResLineColors,
-  egxDisplayPaletteAtom,
-  egxPaletteAtom,
-  optimizePaletteForEGX
-} from './egx-palette'
+// Re-export palette atoms
+// Note: analyzeHighResLineColors and optimizePaletteForEGX are now in @/libs/pixsaur-egx
+export { egxDisplayPaletteAtom, egxPaletteAtom } from './egx-palette'
 
 // Re-export preview image
 export { egxPreviewImageAtom, shouldGrayOut } from './egx-preview-image'
