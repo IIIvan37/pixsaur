@@ -11,64 +11,64 @@ const IGNORED_SLOT: Vector = [-1, -1, -1]
 // Mock les atoms async car ils sont complexes à tester directement
 // On teste la logique de reconstruction de palette avec slots vides
 
+// Fonction helper qui simule la logique de exportPaletteWithSlotsAtom
+// Les slots ignorés sont marqués avec [-1, -1, -1]
+function buildExportPaletteWithSlots(
+  userPalette: PaletteSlot[],
+  maxColors: number
+): Vector[] {
+  // Collecter les couleurs valides
+  const validColors: Vector[] = []
+  for (let i = 0; i < maxColors; i++) {
+    const slot = userPalette[i]
+    if (slot?.color && !(slot.locked && slot.color === null)) {
+      validColors.push(slot.color)
+    }
+  }
+
+  if (validColors.length === 0) {
+    return []
+  }
+
+  // Trouver la couleur la plus sombre pour remplir les slots vides non lockés
+  const darkestColor = validColors.reduce((darkest, color) => {
+    const luminance = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]
+    const darkestLuminance =
+      0.299 * darkest[0] + 0.587 * darkest[1] + 0.114 * darkest[2]
+    return luminance < darkestLuminance ? color : darkest
+  }, validColors[0])
+
+  // Reconstruire la palette complète
+  const fullPalette: Vector[] = []
+
+  for (let i = 0; i < maxColors; i++) {
+    const slot = userPalette[i]
+    if (slot?.locked && slot.color === null) {
+      // Slot vide locké: marquer comme ignoré avec [-1, -1, -1]
+      fullPalette.push(IGNORED_SLOT)
+    } else if (slot?.color) {
+      // Slot avec couleur
+      fullPalette.push(slot.color)
+    } else {
+      // Slot sans couleur (non locké): remplir avec la couleur la plus sombre
+      fullPalette.push(darkestColor)
+    }
+  }
+
+  return fullPalette
+}
+
+// Helper pour vérifier si un slot est ignoré
+function isIgnoredSlot(color: Vector): boolean {
+  return color[0] === -1 && color[1] === -1 && color[2] === -1
+}
+
 describe('Export Palette With Slots Logic', () => {
   let store: ReturnType<typeof createStore>
 
   beforeEach(() => {
     store = createStore()
   })
-
-  // Fonction helper qui simule la logique de exportPaletteWithSlotsAtom
-  // Les slots ignorés sont marqués avec [-1, -1, -1]
-  function buildExportPaletteWithSlots(
-    userPalette: PaletteSlot[],
-    maxColors: number
-  ): Vector[] {
-    // Collecter les couleurs valides
-    const validColors: Vector[] = []
-    for (let i = 0; i < maxColors; i++) {
-      const slot = userPalette[i]
-      if (slot?.color && !(slot.locked && slot.color === null)) {
-        validColors.push(slot.color)
-      }
-    }
-
-    if (validColors.length === 0) {
-      return []
-    }
-
-    // Trouver la couleur la plus sombre pour remplir les slots vides non lockés
-    const darkestColor = validColors.reduce((darkest, color) => {
-      const luminance = 0.299 * color[0] + 0.587 * color[1] + 0.114 * color[2]
-      const darkestLuminance =
-        0.299 * darkest[0] + 0.587 * darkest[1] + 0.114 * darkest[2]
-      return luminance < darkestLuminance ? color : darkest
-    }, validColors[0])
-
-    // Reconstruire la palette complète
-    const fullPalette: Vector[] = []
-
-    for (let i = 0; i < maxColors; i++) {
-      const slot = userPalette[i]
-      if (slot?.locked && slot.color === null) {
-        // Slot vide locké: marquer comme ignoré avec [-1, -1, -1]
-        fullPalette.push(IGNORED_SLOT)
-      } else if (slot?.color) {
-        // Slot avec couleur
-        fullPalette.push(slot.color)
-      } else {
-        // Slot sans couleur (non locké): remplir avec la couleur la plus sombre
-        fullPalette.push(darkestColor)
-      }
-    }
-
-    return fullPalette
-  }
-
-  // Helper pour vérifier si un slot est ignoré
-  function isIgnoredSlot(color: Vector): boolean {
-    return color[0] === -1 && color[1] === -1 && color[2] === -1
-  }
 
   describe('buildExportPaletteWithSlots', () => {
     it('should return empty array when no valid colors', () => {

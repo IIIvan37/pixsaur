@@ -18,6 +18,27 @@ import { egxConfigAtom } from './egx-config'
 import { egxNormalizedImageAtom } from './egx-image'
 
 // ============================================================================
+// Utility Generators
+// ============================================================================
+
+/**
+ * Generate all combinations of k elements from arr
+ */
+function* combinations(arr: number[], k: number): Generator<number[]> {
+  const n = arr.length
+  if (k > n) return
+  const indices = Array.from({ length: k }, (_, i) => i)
+  while (true) {
+    yield indices.map((i) => arr[i])
+    let i = k - 1
+    while (i >= 0 && indices[i] === n - k + i) i--
+    if (i < 0) break
+    indices[i]++
+    for (let j = i + 1; j < k; j++) indices[j] = indices[j - 1] + 1
+  }
+}
+
+// ============================================================================
 // Palette Analysis Helpers
 // ============================================================================
 
@@ -91,21 +112,6 @@ export function optimizePaletteForEGX(
   const topIndices = sortedIndices.slice(0, Math.max(8, sharedCount))
   let bestScore = -Infinity
   let bestCombo: number[] = []
-
-  // Génère toutes les combinaisons possibles de sharedCount parmi topIndices
-  function* combinations(arr: number[], k: number): Generator<number[]> {
-    const n = arr.length
-    if (k > n) return
-    const indices = Array.from({ length: k }, (_, i) => i)
-    while (true) {
-      yield indices.map((i) => arr[i])
-      let i = k - 1
-      while (i >= 0 && indices[i] === n - k + i) i--
-      if (i < 0) break
-      indices[i]++
-      for (let j = i + 1; j < k; j++) indices[j] = indices[j - 1] + 1
-    }
-  }
 
   // Contraintes de distance uniquement pour CPC Plus (palette 12-bit plus fine)
   const MIN_DISTANCE_SQ = isPlus ? 100 * 100 : 0 // Minimum 100 RGB units pour Plus

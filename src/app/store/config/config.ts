@@ -21,6 +21,7 @@ import { rasterEnabledAtom } from '../raster/raster-config'
 import {
   customDimensionsAtom as customDimensionsAtomImport,
   dimensionPresetAtom as dimensionPresetAtomImport,
+  effectiveModeConfigAtom as effectiveModeConfigAtomImport,
   pixelModeAtom as pixelModeAtomImport
 } from './dimensions'
 import { ditheringAtom as ditheringAtomImport } from './dithering'
@@ -55,8 +56,6 @@ export {
   setModeAtom,
   TARGET_DIMENSION_PRESETS
 } from './dimensions'
-
-import { effectiveModeConfigAtom as effectiveModeConfigAtomImport } from './dimensions'
 
 // Dithering
 export {
