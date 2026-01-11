@@ -309,6 +309,16 @@ export function quantizeModeR(
     useBlueNoise
   })
 
+  // PERFORMANCE: Build lookup table ONCE for fast pair finding
+  const lookupTable = buildBlendLookupTable(palettes)
+  const flickerWeight = config.antiFlickerWeight / 100
+
+  logger.info('[Mode R] Built blend lookup table', {
+    totalBlends: lookupTable.allBlends.length,
+    uniformPairs: lookupTable.uniformPairs.length,
+    spatialBuckets: lookupTable.spatialIndex.size
+  })
+
   // Create two index buffers
   const indexBufferA = new Uint8Array(outWidth * outHeight)
   const indexBufferB = new Uint8Array(outWidth * outHeight)
@@ -391,12 +401,20 @@ export function quantizeModeR(
         )
       }
 
-      // Find best indices considering anti-flicker
-      const result = findBestIndicesWithAntiFlicker(
-        colorA,
-        colorB,
-        palettes,
-        config.antiFlickerWeight,
+      // PERFORMANCE: Use fast lookup instead of exhaustive search
+      // Target color is the perceived blend (average of colorA and colorB)
+      const targetColor: Vector<'RGB'> = [
+        Math.round((colorA[0] + colorB[0]) / 2),
+        Math.round((colorA[1] + colorB[1]) / 2),
+        Math.round((colorA[2] + colorB[2]) / 2)
+      ]
+      const isUniformArea = areColorsSimilar(colorA, colorB)
+
+      const result = findBestIndicesFast(
+        targetColor,
+        isUniformArea,
+        lookupTable,
+        flickerWeight,
         config.maxLuminanceDelta
       )
 
@@ -557,122 +575,191 @@ function areColorsSimilar(
   )
 }
 
+// ============================================================================
+// PERFORMANCE OPTIMIZATION: Pre-computed Blend Lookup Table
+// ============================================================================
+
 /**
- * Find best palette indices for two colors, considering anti-flicker
- *
- * This searches all combinations to find the pair that:
- * 1. Best matches the source colors
- * 2. Has acceptable flicker (luminance difference)
- *
- * Special case: When source colors are very similar (margins/uniform areas),
- * we force using a uniform pair (same or very similar colors in A and B)
- * to avoid any visible flicker in these areas.
+ * Pre-computed pair entry for fast lookup
  */
-function findBestIndicesWithAntiFlicker(
-  colorA: Vector<'RGB'>,
-  colorB: Vector<'RGB'>,
-  palettes: ModeRPalettes,
-  antiFlickerWeight: number,
-  maxLuminanceDelta: number
-): { indexA: number; indexB: number; error: number } {
-  let bestIndexA = 0
-  let bestIndexB = 0
-  let bestCost = Number.POSITIVE_INFINITY
+interface BlendEntry {
+  indexA: number
+  indexB: number
+  blendedColor: Vector<'RGB'>
+  flickerScore: number // Pre-computed luminance delta
+}
 
-  // Weight for anti-flicker (0-1)
-  const flickerWeight = antiFlickerWeight / 100
+/**
+ * Lookup table for fast pair finding
+ * Uses spatial hashing with 8 levels per channel (512 buckets)
+ */
+interface BlendLookupTable {
+  /** All 256 possible blends, sorted by flicker (lowest first) */
+  allBlends: BlendEntry[]
+  /** Uniform pairs (where paletteA[i] ≈ paletteB[j]), for margin areas */
+  uniformPairs: BlendEntry[]
+  /** Spatial index: bucket -> indices into allBlends, sorted by proximity */
+  spatialIndex: Map<number, number[]>
+}
 
-  // The target perceived color is the average of the two source pixels
-  // This is what the eye will see when the two frames alternate
-  const targetPerceivedColor: Vector<'RGB'> = [
-    Math.round((colorA[0] + colorB[0]) / 2),
-    Math.round((colorA[1] + colorB[1]) / 2),
-    Math.round((colorA[2] + colorB[2]) / 2)
-  ]
+/**
+ * Compute spatial bucket key from RGB color (8 levels per channel = 512 buckets)
+ */
+function getSpatialKey(r: number, g: number, b: number): number {
+  const qr = Math.floor(r / 32) // 0-7
+  const qg = Math.floor(g / 32) // 0-7
+  const qb = Math.floor(b / 32) // 0-7
+  return qr * 64 + qg * 8 + qb
+}
 
-  // Detect if this is a margin/uniform area (both source pixels are very similar)
-  // In this case, we MUST use a uniform pair to avoid flicker on margins
-  const isUniformArea = areColorsSimilar(colorA, colorB)
+/**
+ * Pre-compute all 256 blend combinations for fast lookup
+ * This is called ONCE per quantization, not per pixel
+ */
+function buildBlendLookupTable(palettes: ModeRPalettes): BlendLookupTable {
+  const allBlends: BlendEntry[] = []
+  const uniformPairs: BlendEntry[] = []
 
-  // For uniform areas, find the best uniform pair (same color in both palettes)
-  if (isUniformArea) {
-    // Search for the best uniform pair (where A[i] and B[j] are very similar)
-    for (let a = 0; a < palettes.paletteA.length; a++) {
-      const palA = palettes.paletteA[a]
-
-      for (let b = 0; b < palettes.paletteB.length; b++) {
-        const palB = palettes.paletteB[b]
-
-        // Check if this is a uniform pair (very similar colors)
-        const pairDistance = colorDistance(palA, palB)
-        if (pairDistance > 50) continue // Skip non-uniform pairs (threshold ~7 per channel)
-
-        // Color matching error to target (use blended color)
-        const blendedColor: Vector<'RGB'> = [
-          Math.round((palA[0] + palB[0]) / 2),
-          Math.round((palA[1] + palB[1]) / 2),
-          Math.round((palA[2] + palB[2]) / 2)
-        ]
-        const colorError = colorDistance(targetPerceivedColor, blendedColor)
-
-        if (colorError < bestCost) {
-          bestCost = colorError
-          bestIndexA = a
-          bestIndexB = b
-        }
-      }
-    }
-
-    // If we found a valid uniform pair, return it
-    if (bestCost < Number.POSITIVE_INFINITY) {
-      return { indexA: bestIndexA, indexB: bestIndexB, error: bestCost }
-    }
-
-    // Fallback: if no uniform pair found, continue to standard search
-    bestCost = Number.POSITIVE_INFINITY
-  }
-
-  // Standard search for non-uniform areas
-  // KEY FIX: Compare the BLENDED color to the target perceived color
-  // In Mode R, the perceived color is (palA + palB) / 2
+  // Generate all 256 combinations
   for (let a = 0; a < palettes.paletteA.length; a++) {
     const palA = palettes.paletteA[a]
-
     for (let b = 0; b < palettes.paletteB.length; b++) {
       const palB = palettes.paletteB[b]
 
-      // Calculate the blended/perceived color
+      // Blended color (what the eye perceives)
       const blendedColor: Vector<'RGB'> = [
         Math.round((palA[0] + palB[0]) / 2),
         Math.round((palA[1] + palB[1]) / 2),
         Math.round((palA[2] + palB[2]) / 2)
       ]
 
-      // Primary metric: how close is the blended color to the target?
-      const blendError = colorDistance(targetPerceivedColor, blendedColor)
-
-      // Flicker penalty based on luminance difference between the two palette colors
+      // Flicker score (luminance difference)
       const lumA = 0.299 * palA[0] + 0.587 * palA[1] + 0.114 * palA[2]
       const lumB = 0.299 * palB[0] + 0.587 * palB[1] + 0.114 * palB[2]
-      const lumDelta = Math.abs(lumA - lumB)
+      const flickerScore = Math.abs(lumA - lumB)
 
-      // Penalty for exceeding max luminance delta
-      const deltaPenalty =
-        lumDelta > maxLuminanceDelta ? (lumDelta - maxLuminanceDelta) * 5 : 0
+      const entry: BlendEntry = {
+        indexA: a,
+        indexB: b,
+        blendedColor,
+        flickerScore
+      }
 
-      // Combined cost: blend accuracy + flicker penalty
-      const flickerCost = lumDelta * flickerWeight
-      const totalCost = blendError + flickerCost + deltaPenalty
+      allBlends.push(entry)
 
-      if (totalCost < bestCost) {
-        bestCost = totalCost
-        bestIndexA = a
-        bestIndexB = b
+      // Track uniform pairs (distance < 50, ~7 per channel)
+      const pairDistance = colorDistance(palA, palB)
+      if (pairDistance < 50) {
+        uniformPairs.push(entry)
       }
     }
   }
 
-  return { indexA: bestIndexA, indexB: bestIndexB, error: bestCost }
+  // Sort allBlends by flicker (lowest first) for tie-breaking
+  allBlends.sort((a, b) => a.flickerScore - b.flickerScore)
+
+  // Build spatial index: for each bucket, store blend indices sorted by distance to bucket center
+  const spatialIndex = new Map<number, number[]>()
+
+  for (let bucket = 0; bucket < 512; bucket++) {
+    // Bucket center color
+    const centerR = ((bucket >> 6) & 7) * 32 + 16
+    const centerG = ((bucket >> 3) & 7) * 32 + 16
+    const centerB = (bucket & 7) * 32 + 16
+
+    // Sort blend indices by distance to bucket center
+    const indices = allBlends
+      .map((blend, idx) => ({
+        idx,
+        dist:
+          Math.abs(blend.blendedColor[0] - centerR) +
+          Math.abs(blend.blendedColor[1] - centerG) +
+          Math.abs(blend.blendedColor[2] - centerB)
+      }))
+      .sort((a, b) => a.dist - b.dist)
+      .map((x) => x.idx)
+
+    spatialIndex.set(bucket, indices)
+  }
+
+  return { allBlends, uniformPairs, spatialIndex }
+}
+
+/**
+ * Fast pair finding using pre-computed lookup table
+ * Searches only the most promising candidates in the spatial bucket
+ */
+function findBestIndicesFast(
+  targetColor: Vector<'RGB'>,
+  isUniformArea: boolean,
+  lookupTable: BlendLookupTable,
+  flickerWeight: number,
+  maxLuminanceDelta: number
+): { indexA: number; indexB: number; error: number } {
+  // For uniform areas, search only uniform pairs
+  if (isUniformArea && lookupTable.uniformPairs.length > 0) {
+    let bestEntry = lookupTable.uniformPairs[0]
+    let bestCost = Number.POSITIVE_INFINITY
+
+    for (const entry of lookupTable.uniformPairs) {
+      const colorError =
+        Math.abs(targetColor[0] - entry.blendedColor[0]) +
+        Math.abs(targetColor[1] - entry.blendedColor[1]) +
+        Math.abs(targetColor[2] - entry.blendedColor[2])
+
+      if (colorError < bestCost) {
+        bestCost = colorError
+        bestEntry = entry
+      }
+    }
+
+    return {
+      indexA: bestEntry.indexA,
+      indexB: bestEntry.indexB,
+      error: bestCost
+    }
+  }
+
+  // Get spatial bucket for target color
+  const bucket = getSpatialKey(targetColor[0], targetColor[1], targetColor[2])
+  const candidates = lookupTable.spatialIndex.get(bucket)!
+
+  // Search only top N candidates (sorted by proximity to bucket center)
+  // This is the key optimization: O(32) instead of O(256)
+  const MAX_CANDIDATES = 32
+
+  let bestEntry = lookupTable.allBlends[candidates[0]]
+  let bestCost = Number.POSITIVE_INFINITY
+
+  for (let i = 0; i < Math.min(MAX_CANDIDATES, candidates.length); i++) {
+    const entry = lookupTable.allBlends[candidates[i]]
+
+    // Color matching error (Manhattan distance - faster than Euclidean)
+    const colorError =
+      Math.abs(targetColor[0] - entry.blendedColor[0]) +
+      Math.abs(targetColor[1] - entry.blendedColor[1]) +
+      Math.abs(targetColor[2] - entry.blendedColor[2])
+
+    // Flicker penalty
+    const deltaPenalty =
+      entry.flickerScore > maxLuminanceDelta
+        ? (entry.flickerScore - maxLuminanceDelta) * 5
+        : 0
+    const flickerCost = entry.flickerScore * flickerWeight
+
+    const totalCost = colorError + flickerCost + deltaPenalty
+
+    if (totalCost < bestCost) {
+      bestCost = totalCost
+      bestEntry = entry
+    }
+  }
+
+  return {
+    indexA: bestEntry.indexA,
+    indexB: bestEntry.indexB,
+    error: bestCost
+  }
 }
 
 /**
