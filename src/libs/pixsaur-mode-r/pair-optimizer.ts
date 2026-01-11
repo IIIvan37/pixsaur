@@ -64,28 +64,37 @@ function hueDifference(h1: number, h2: number): number {
 }
 
 /**
- * Check if a color has sufficiently different hue from existing colors
- * Only applies to saturated colors (saturation > threshold)
+ * Combined diversity check: hue OR lightness must be diverse
+ * For similar hues, requires different lightness
+ * For similar lightness, requires different hue
+ * This ensures palette covers both hue and lightness dimensions,
+ * allowing palette B to find pairs with similar luminosity (less flicker)
  */
-function isHueDiverse(
+function isHueOrLightnessDiverse(
   color: Vector<'RGB'>,
   existingColors: Vector<'RGB'>[],
   minHueDiff: number,
+  minLightnessDiff: number,
   saturationThreshold = 0.15
 ): boolean {
   const hsl = rgbToHsl(color[0], color[1], color[2])
 
-  // Skip hue check for low saturation (grays)
-  if (hsl.s < saturationThreshold) return true
-
   for (const existing of existingColors) {
     const existingHsl = rgbToHsl(existing[0], existing[1], existing[2])
 
-    // Only compare hues between saturated colors
-    if (existingHsl.s >= saturationThreshold) {
-      if (hueDifference(hsl.h, existingHsl.h) < minHueDiff) {
-        return false
-      }
+    const hueDiff =
+      hsl.s >= saturationThreshold && existingHsl.s >= saturationThreshold
+        ? hueDifference(hsl.h, existingHsl.h)
+        : 360 // Treat unsaturated colors as having "different" hue
+
+    const lightnessDiff = Math.abs(hsl.l - existingHsl.l)
+
+    // Must differ in at least one dimension
+    const hueSimilar = hueDiff < minHueDiff
+    const lightnessSimilar = lightnessDiff < minLightnessDiff
+
+    if (hueSimilar && lightnessSimilar) {
+      return false
     }
   }
   return true
@@ -234,9 +243,12 @@ function selectPaletteForBlends(
     (a, b) => b.score - a.score
   )
 
-  // PHASE 2: Select top candidates with diversity constraint (RGB + Hue)
-  const MIN_DIVERSITY = 60 // Reduced RGB threshold since we also check hue
-  const MIN_HUE_DIFF = 25 // Minimum hue difference in degrees (360/16 ≈ 22.5)
+  // PHASE 2: Select top candidates with diversity constraint (RGB + Hue + Lightness)
+  // This ensures palette A has good coverage across hue AND lightness dimensions,
+  // making it easier for palette B to find pairs with similar luminosity (less flicker)
+  const MIN_DIVERSITY = 50 // RGB threshold
+  const MIN_HUE_DIFF = 20 // Minimum hue difference in degrees
+  const MIN_LIGHTNESS_DIFF = 0.08 // Minimum lightness difference (0-1 scale, ~8%)
 
   for (const candidate of sortedCandidates) {
     if (selected.length >= count) break
@@ -244,21 +256,27 @@ function selectPaletteForBlends(
     const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
     if (usedKeys.has(key)) continue
 
-    // Check both RGB distance AND hue diversity
+    // Check RGB distance AND (hue OR lightness diversity)
+    // Colors must differ in at least one perceptual dimension
     const rgbDiverse =
       selected.length === 0 ||
       isColorDiverse(candidate.color, selected, MIN_DIVERSITY)
-    const hueDiverse =
+    const hueOrLightDiverse =
       selected.length === 0 ||
-      isHueDiverse(candidate.color, selected, MIN_HUE_DIFF)
+      isHueOrLightnessDiverse(
+        candidate.color,
+        selected,
+        MIN_HUE_DIFF,
+        MIN_LIGHTNESS_DIFF
+      )
 
-    if (rgbDiverse && hueDiverse) {
+    if (rgbDiverse && hueOrLightDiverse) {
       selected.push(candidate.color)
       usedKeys.add(key)
     }
   }
 
-  // PHASE 3: Relax hue constraint but keep RGB diversity
+  // PHASE 3: Relax constraints - only require some RGB diversity
   for (const candidate of sortedCandidates) {
     if (selected.length >= count) break
 
@@ -285,7 +303,7 @@ function selectPaletteForBlends(
   // Pad with diverse colors if still not enough
   fillWithDiverseColors(selected, usedKeys, available, count, 50)
 
-  logger.info('[Mode R] Palette A selected (voting + hue diversity)', {
+  logger.info('[Mode R] Palette A selected (hue + lightness diversity)', {
     numSelected: selected.length,
     candidatesEvaluated: candidateScores.size
   })
@@ -425,9 +443,10 @@ function selectPaletteBForCPCPlus(
     (a, b) => b.score - a.score
   )
 
-  // Select top candidates with diversity constraint (RGB + Hue)
-  const MIN_DIVERSITY = 100 // RGB distance threshold
-  const MIN_HUE_DIFF = 20 // Hue difference threshold
+  // Select top candidates with diversity constraint (RGB + Hue + Lightness)
+  const MIN_DIVERSITY = 80 // RGB distance threshold
+  const MIN_HUE_DIFF = 18 // Hue difference threshold
+  const MIN_LIGHTNESS_DIFF = 0.06 // Lightness difference threshold (~6%)
 
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
@@ -435,21 +454,26 @@ function selectPaletteBForCPCPlus(
     const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
     if (usedKeys.has(key)) continue
 
-    // Check both RGB and hue diversity
+    // Check RGB diversity AND (hue OR lightness diversity)
     const rgbDiverse =
       selected.length === 0 ||
       isColorDiverse(candidate.color, selected, MIN_DIVERSITY)
-    const hueDiverse =
+    const hueOrLightDiverse =
       selected.length === 0 ||
-      isHueDiverse(candidate.color, selected, MIN_HUE_DIFF)
+      isHueOrLightnessDiverse(
+        candidate.color,
+        selected,
+        MIN_HUE_DIFF,
+        MIN_LIGHTNESS_DIFF
+      )
 
-    if (rgbDiverse && hueDiverse) {
+    if (rgbDiverse && hueOrLightDiverse) {
       selected.push(candidate.color)
       usedKeys.add(key)
     }
   }
 
-  // Relax hue constraint but keep RGB diversity
+  // Relax constraints - only require some RGB diversity
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
 
@@ -479,7 +503,7 @@ function selectPaletteBForCPCPlus(
   }
 
   const paletteAKeys = new Set(paletteA.map((c) => `${c[0]},${c[1]},${c[2]}`))
-  logger.info('[Mode R] CPC Plus Palette B selection (blend + hue diversity)', {
+  logger.info('[Mode R] CPC Plus Palette B (hue + lightness diversity)', {
     numSelected: selected.length,
     sharedWithA: selected.filter((c) =>
       paletteAKeys.has(`${c[0]},${c[1]},${c[2]}`)
