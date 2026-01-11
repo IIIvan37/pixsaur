@@ -32,6 +32,7 @@ import { getBlueNoiseThresholdRGB } from '@/libs/pixsaur-color/src/map/blue-nois
 import { getOstromoukhovCoefficients } from '@/libs/pixsaur-color/src/map/ostromoukhov-coefficients'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { calculateLuminance, colorDistance } from './blend'
+import { getModeRGPUQuantizer } from './gpu-quantizer'
 import { optimizeModeRPalettes } from './pair-optimizer'
 import type {
   ModeRConfig,
@@ -291,6 +292,43 @@ export function quantizeModeR(
     isOrderedDitheringMode(ditheringMode) && ditherIntensity > 0
   const useBlueNoise = isBlueNoiseMode(ditheringMode) && ditherIntensity > 0
 
+  // Try GPU quantization for non-dithering modes (much faster)
+  // Error diffusion requires sequential processing, so it must stay on CPU
+  const canUseGPU = ditheringMode === 'none' || ditherIntensity === 0
+  if (canUseGPU) {
+    const gpuQuantizer = getModeRGPUQuantizer()
+    if (gpuQuantizer?.isAvailable()) {
+      logger.info('[Mode R] Using GPU quantization')
+      const gpuResult = gpuQuantizer.quantize(
+        imageData,
+        width,
+        height,
+        palettes,
+        config.antiFlickerWeight,
+        config.maxLuminanceDelta
+      )
+      if (gpuResult) {
+        // Count unique blends used
+        const usedBlends = new Set<string>()
+        for (let i = 0; i < gpuResult.indexBufferA.length; i++) {
+          usedBlends.add(
+            `${gpuResult.indexBufferA[i]},${gpuResult.indexBufferB[i]}`
+          )
+        }
+        logger.info('[Mode R] GPU quantization complete', {
+          blendsUsed: usedBlends.size
+        })
+        return {
+          indexBufferA: gpuResult.indexBufferA,
+          indexBufferB: gpuResult.indexBufferB,
+          palettes,
+          totalError: 0 // GPU doesn't track error
+        }
+      }
+      logger.warn('[Mode R] GPU quantization failed, falling back to CPU')
+    }
+  }
+
   // Error buffer for error diffusion modes
   const errorBuffer = useErrorDiffusion
     ? new Float32Array(width * height * 3)
@@ -301,7 +339,7 @@ export function quantizeModeR(
     ? DITHERING_MATRICES[ditheringMode as string]
     : null
 
-  logger.info('[Mode R] Starting quantization with dithering', {
+  logger.info('[Mode R] Starting CPU quantization with dithering', {
     mode: ditheringMode,
     intensity: config.ditheringIntensity,
     useErrorDiffusion,
