@@ -18,6 +18,80 @@ import type {
 import { DEFAULT_MODE_R_CONFIG } from './types'
 
 /**
+ * Convert RGB to HSL (returns hue in degrees 0-360, saturation and lightness 0-1)
+ */
+function rgbToHsl(
+  r: number,
+  g: number,
+  b: number
+): { h: number; s: number; l: number } {
+  r /= 255
+  g /= 255
+  b /= 255
+
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const l = (max + min) / 2
+  let h = 0
+  let s = 0
+
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+        break
+      case g:
+        h = ((b - r) / d + 2) / 6
+        break
+      case b:
+        h = ((r - g) / d + 4) / 6
+        break
+    }
+  }
+
+  return { h: h * 360, s, l }
+}
+
+/**
+ * Calculate hue difference (accounting for circular nature of hue)
+ */
+function hueDifference(h1: number, h2: number): number {
+  const diff = Math.abs(h1 - h2)
+  return Math.min(diff, 360 - diff)
+}
+
+/**
+ * Check if a color has sufficiently different hue from existing colors
+ * Only applies to saturated colors (saturation > threshold)
+ */
+function isHueDiverse(
+  color: Vector<'RGB'>,
+  existingColors: Vector<'RGB'>[],
+  minHueDiff: number,
+  saturationThreshold = 0.15
+): boolean {
+  const hsl = rgbToHsl(color[0], color[1], color[2])
+
+  // Skip hue check for low saturation (grays)
+  if (hsl.s < saturationThreshold) return true
+
+  for (const existing of existingColors) {
+    const existingHsl = rgbToHsl(existing[0], existing[1], existing[2])
+
+    // Only compare hues between saturated colors
+    if (existingHsl.s >= saturationThreshold) {
+      if (hueDifference(hsl.h, existingHsl.h) < minHueDiff) {
+        return false
+      }
+    }
+  }
+  return true
+}
+
+/**
  * Generate all valid CPC Plus colors (4096 total)
  */
 function generateCPCPlusPalette(): Vector<'RGB'>[] {
@@ -160,8 +234,9 @@ function selectPaletteForBlends(
     (a, b) => b.score - a.score
   )
 
-  // PHASE 2: Select top candidates with diversity constraint
-  const MIN_DIVERSITY = 80
+  // PHASE 2: Select top candidates with diversity constraint (RGB + Hue)
+  const MIN_DIVERSITY = 60 // Reduced RGB threshold since we also check hue
+  const MIN_HUE_DIFF = 25 // Minimum hue difference in degrees (360/16 ≈ 22.5)
 
   for (const candidate of sortedCandidates) {
     if (selected.length >= count) break
@@ -169,16 +244,34 @@ function selectPaletteForBlends(
     const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
     if (usedKeys.has(key)) continue
 
-    if (
+    // Check both RGB distance AND hue diversity
+    const rgbDiverse =
       selected.length === 0 ||
       isColorDiverse(candidate.color, selected, MIN_DIVERSITY)
-    ) {
+    const hueDiverse =
+      selected.length === 0 ||
+      isHueDiverse(candidate.color, selected, MIN_HUE_DIFF)
+
+    if (rgbDiverse && hueDiverse) {
       selected.push(candidate.color)
       usedKeys.add(key)
     }
   }
 
-  // PHASE 3: Relax diversity if needed to fill palette
+  // PHASE 3: Relax hue constraint but keep RGB diversity
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= count) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (usedKeys.has(key)) continue
+
+    if (isColorDiverse(candidate.color, selected, MIN_DIVERSITY / 2)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // PHASE 4: Fill remaining slots without constraints
   for (const candidate of sortedCandidates) {
     if (selected.length >= count) break
 
@@ -192,7 +285,7 @@ function selectPaletteForBlends(
   // Pad with diverse colors if still not enough
   fillWithDiverseColors(selected, usedKeys, available, count, 50)
 
-  logger.info('[Mode R] Palette A selected (voting)', {
+  logger.info('[Mode R] Palette A selected (voting + hue diversity)', {
     numSelected: selected.length,
     candidatesEvaluated: candidateScores.size
   })
@@ -332,24 +425,44 @@ function selectPaletteBForCPCPlus(
     (a, b) => b.score - a.score
   )
 
-  // Select top candidates with diversity constraint
-  const MIN_DIVERSITY = 150
+  // Select top candidates with diversity constraint (RGB + Hue)
+  const MIN_DIVERSITY = 100 // RGB distance threshold
+  const MIN_HUE_DIFF = 20 // Hue difference threshold
+
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
 
     const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
     if (usedKeys.has(key)) continue
 
-    if (
+    // Check both RGB and hue diversity
+    const rgbDiverse =
       selected.length === 0 ||
       isColorDiverse(candidate.color, selected, MIN_DIVERSITY)
-    ) {
+    const hueDiverse =
+      selected.length === 0 ||
+      isHueDiverse(candidate.color, selected, MIN_HUE_DIFF)
+
+    if (rgbDiverse && hueDiverse) {
       selected.push(candidate.color)
       usedKeys.add(key)
     }
   }
 
-  // Relax diversity if needed
+  // Relax hue constraint but keep RGB diversity
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= 16) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (usedKeys.has(key)) continue
+
+    if (isColorDiverse(candidate.color, selected, MIN_DIVERSITY / 2)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // Fill remaining slots without constraints
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
 
@@ -366,7 +479,7 @@ function selectPaletteBForCPCPlus(
   }
 
   const paletteAKeys = new Set(paletteA.map((c) => `${c[0]},${c[1]},${c[2]}`))
-  logger.info('[Mode R] CPC Plus Palette B selection (blend-optimized)', {
+  logger.info('[Mode R] CPC Plus Palette B selection (blend + hue diversity)', {
     numSelected: selected.length,
     sharedWithA: selected.filter((c) =>
       paletteAKeys.has(`${c[0]},${c[1]},${c[2]}`)
