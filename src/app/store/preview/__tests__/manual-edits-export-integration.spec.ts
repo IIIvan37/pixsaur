@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { applyManualEditsToBuffer, type IndexBufferData } from './preview'
+import { applyManualEditsToBuffer, type IndexBufferData } from '../preview'
 
 describe('Manual Edits Integration with Exports', () => {
   const createMockIndexBuffer = (

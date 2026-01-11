@@ -20,8 +20,8 @@ import {
   horizontalSmoothingAtom,
   pixelModeAtom,
   resizeModeAtom
-} from '../config/config'
-import { selectionAtom, workingImageAtom } from '../image/image'
+} from '../../config/config'
+import { selectionAtom, workingImageAtom } from '../../image/image'
 
 // ============================================================================
 // 1. CROPPED IMAGE

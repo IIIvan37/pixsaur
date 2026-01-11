@@ -13,11 +13,11 @@ import {
   getMaxColorIndex,
   getModeForLine
 } from '@/libs/pixsaur-egx'
-import { ditheringAtom, egxEnabledAtom } from '../config/config'
+import { ditheringAtom, egxEnabledAtom } from '../../config/config'
+import { applyManualEditsToBuffer, manualPixelEditsAtom } from '../preview'
 import { egxConfigAtom } from './egx-config'
 import { egxNormalizedImageAtom } from './egx-image'
 import { egxPaletteAtom } from './egx-palette'
-import { applyManualEditsToBuffer, manualPixelEditsAtom } from './preview'
 
 /**
  * Generate EGX index buffer for the preview editor.

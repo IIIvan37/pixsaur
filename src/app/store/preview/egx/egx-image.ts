@@ -18,10 +18,13 @@ import {
   egxEnabledAtom,
   horizontalSmoothingAtom,
   resizeModeAtom
-} from '../config/config'
-import { selectionAtom, workingImageAtom } from '../image/image'
+} from '../../config/config'
+import { selectionAtom, workingImageAtom } from '../../image/image'
+import {
+  exportPaletteWithSlotsAtom,
+  positionImageForAutoMode
+} from '../preview'
 import { egxModeConfigAtom } from './egx-config'
-import { exportPaletteWithSlotsAtom, positionImageForAutoMode } from './preview'
 
 /**
  * Image resized and normalized to EGX dimensions (high-resolution mode).

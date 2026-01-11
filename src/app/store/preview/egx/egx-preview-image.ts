@@ -11,7 +11,7 @@ import {
   ditheringAtom,
   egxEnabledAtom,
   egxPreviewModeAtom
-} from '../config/config'
+} from '../../config/config'
 import { egxConfigAtom } from './egx-config'
 import { egxNormalizedImageAtom } from './egx-image'
 import { egxPaletteAtom } from './egx-palette'

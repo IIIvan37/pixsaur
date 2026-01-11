@@ -15,17 +15,17 @@ import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { countUniqueColors } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
-import { paletteProcessorAtom } from '../adapters/processors'
+import { paletteProcessorAtom } from '../../adapters/processors'
 import {
   autoDistinctMappingAtom,
   cpcHardwareAtom,
   effectiveModeConfigAtom,
   paletteStrategyAtom
-} from '../config/config'
+} from '../../config/config'
 import {
   lockedEmptySlotsCountAtom,
   lockedVectorsAtom
-} from '../palette/palette'
+} from '../../palette/palette'
 import { smoothedImageAtom } from './image-pipeline'
 
 // ============================================================================

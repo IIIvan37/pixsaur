@@ -17,9 +17,9 @@ import {
 } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { CPCHardware } from '@/libs/types'
-import { cpcHardwareAtom, effectiveModeConfigAtom } from '../config/config'
-import { userPaletteAtom } from '../palette/palette'
-import type { PaletteSlot } from '../palette/types'
+import { cpcHardwareAtom, effectiveModeConfigAtom } from '../../config/config'
+import { userPaletteAtom } from '../../palette/palette'
+import type { PaletteSlot } from '../../palette/types'
 import { reducedPaletteRgbAtom } from './quantization'
 
 // ============================================================================

@@ -2,69 +2,60 @@
  * Preview Store - Hub Module
  *
  * Central module that re-exports all preview-related atoms.
- * The preview pipeline is decomposed into specialized modules:
+ * The preview pipeline is decomposed into specialized modules organized in folders:
  *
- * - canvas-size.ts: Preview canvas dimensions based on CPC mode
- * - image-pipeline.ts: Image transformation pipeline (crop → resize → smooth)
- * - manual-edits.ts: Manual pixel edits for preview editor
- * - quantization.ts: Color quantization and palette extraction
- * - palette-export.ts: Palette reconstruction for display and export
- * - preview-image.ts: Dithering and final preview image generation
- * - index-buffer.ts: Index buffer generation and final preview
+ * Folder structure:
+ * - pipeline/: Core preview pipeline (crop → resize → quantize → dither → index)
+ * - egx/: EGX mode (line-by-line mode alternation)
+ * - mode-r/: Mode R (dual-image interlaced rendering)
+ * - __tests__/: Test files
  *
  * Pipeline Overview:
  * sourceImage → crop → resize → smooth → quantize → dither → indexBuffer → manualEdits → finalPreview
  */
 
 // ============================================================================
-// RE-EXPORTS FROM SPECIALIZED MODULES
+// RE-EXPORTS FROM PIPELINE
 // ============================================================================
 
 // Re-export IGNORED_SLOT for backward compatibility
 export { IGNORED_SLOT } from '@/domain/cpc'
-// Canvas size (ISP: preview dimensions)
-export { previewCanvasSizeAtom, previewCanvasWidthAtom } from './canvas-size'
-// Image pipeline (ISP: image transformations)
-export {
-  croppedImageAtom,
-  resizedImageAtom,
-  smoothedImageAtom
-} from './image-pipeline'
-// Index buffer (ISP: index buffer and final preview)
-export {
-  finalPreviewImageAtom,
-  finalPreviewIndexBufferAtom,
-  previewIndexBufferAtom,
-  previewVersionAtom
-} from './index-buffer'
-// Manual edits (ISP: preview editor modifications)
-export type { IndexBufferData } from './manual-edits'
+
+// Re-export everything from pipeline
 export {
   applyManualEditsAtom,
   applyManualEditsToBuffer,
   clearManualEditsAtom,
-  hasManualEditsAtom,
-  manualEditsCountAtom,
-  manualPixelEditsAtom
-} from './manual-edits'
-// Palette export (ISP: palette for display and export)
-export {
+  // Quantization
+  croppedBufferAtom,
+  // Image pipeline
+  croppedImageAtom,
+  // Palette export
   displayPaletteAtom,
-  exportPaletteWithSlotsAtom
-} from './palette-export'
-// Preview image (ISP: dithering and preview generation)
-export {
+  // Preview image
   effectiveDitheringAtom,
+  exportPaletteWithSlotsAtom,
+  // Index buffer
+  finalPreviewImageAtom,
+  finalPreviewIndexBufferAtom,
+  hasManualEditsAtom,
+  // Manual edits
+  type IndexBufferData,
+  manualEditsCountAtom,
+  manualPixelEditsAtom,
   normalizedImageAtom,
   positionedNormalizedImageAtom,
   positionImageForAutoMode,
-  previewImageAtom
-} from './preview-image'
-// Quantization (ISP: color quantization)
-export {
-  croppedBufferAtom,
+  // Canvas size
+  previewCanvasSizeAtom,
+  previewCanvasWidthAtom,
+  previewImageAtom,
+  previewIndexBufferAtom,
+  previewVersionAtom,
   quantizerAtom,
   reducedPaletteRawAtom,
   reducedPaletteRgbAtom,
+  resizedImageAtom,
+  smoothedImageAtom,
   sourceUniqueColorsCountAtom
-} from './quantization'
+} from './pipeline'

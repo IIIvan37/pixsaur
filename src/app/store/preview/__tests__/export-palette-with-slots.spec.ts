@@ -1,9 +1,9 @@
 import { createStore } from 'jotai'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { dimensionPresetAtom, pixelModeAtom } from '../config/config'
-import { userPaletteAtom } from '../palette/palette'
-import type { PaletteSlot } from '../palette/types'
+import { dimensionPresetAtom, pixelModeAtom } from '../../config/config'
+import { userPaletteAtom } from '../../palette/palette'
+import type { PaletteSlot } from '../../palette/types'
 
 // Valeur spéciale pour marquer un slot ignoré
 const IGNORED_SLOT: Vector = [-1, -1, -1]

@@ -15,7 +15,7 @@ import {
   egxEnabledAtom,
   egxFirstLineModeAtom,
   egxTypeAtom
-} from '../config/config'
+} from '../../config/config'
 
 /**
  * Get the CPC mode config for EGX based on the high-resolution mode.

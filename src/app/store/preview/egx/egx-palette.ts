@@ -10,12 +10,12 @@ import { logger } from '@/core'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import { colorDistanceSquared, getSharedColorCount } from '@/libs/pixsaur-egx'
-import { egxEnabledAtom } from '../config/config'
-import { userPaletteAtom } from '../palette/palette'
-import type { PaletteSlot } from '../palette/types'
+import { egxEnabledAtom } from '../../config/config'
+import { userPaletteAtom } from '../../palette/palette'
+import type { PaletteSlot } from '../../palette/types'
+import { exportPaletteWithSlotsAtom } from '../preview'
 import { egxConfigAtom } from './egx-config'
 import { egxNormalizedImageAtom } from './egx-image'
-import { exportPaletteWithSlotsAtom } from './preview'
 
 // ============================================================================
 // Palette Analysis Helpers

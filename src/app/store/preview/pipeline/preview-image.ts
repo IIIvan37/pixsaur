@@ -21,7 +21,7 @@ import {
   ditheringAtom,
   effectiveModeConfigAtom,
   resizeModeAtom
-} from '../config/config'
+} from '../../config/config'
 import { smoothedImageAtom } from './image-pipeline'
 import { exportPaletteWithSlotsAtom } from './palette-export'
 import { quantizerAtom } from './quantization'

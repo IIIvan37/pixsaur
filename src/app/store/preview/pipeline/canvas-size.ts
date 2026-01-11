@@ -11,7 +11,7 @@ import {
   egxTypeAtom,
   modeREnabledAtom,
   modeRPreviewModeAtom
-} from '../config/config'
+} from '../../config/config'
 
 /**
  * Container width for the preview canvas (set by the UI)

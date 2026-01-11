@@ -5,7 +5,7 @@
  */
 
 import { atom } from 'jotai'
-import { egxEnabledAtom, egxPreviewModeAtom } from '../config/config'
+import { egxEnabledAtom, egxPreviewModeAtom } from '../../config/config'
 import { egxConfigAtom } from './egx-config'
 import { finalEgxIndexBufferAtom } from './egx-index-buffer'
 import { shouldGrayOut } from './egx-preview-image'
