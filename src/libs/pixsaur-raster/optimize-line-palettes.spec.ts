@@ -3,11 +3,10 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   extractGlobalPaletteFromImage,
   optimizeLinePalettesWithIndexBuffer,
-  posterizeImage,
-  preprocessImageForRaster,
-  quantizeToCPCPlus,
-  rasterTuningOverrides
-} from './optimize-line-palettes'
+  quantizeToCPCPlus
+} from './line-palette-optimizer'
+import { posterizeImage, preprocessImageForRaster } from './preprocess-raster'
+import { rasterTuningOverrides } from './raster-tuning'
 
 /**
  * Create a simple ImageData with specified colors at given positions

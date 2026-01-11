@@ -424,19 +424,35 @@ export function quantizeModeR(
       totalError += result.error
 
       // Propagate dithering errors for error diffusion modes
+      // IMPORTANT: Error is based on the PERCEIVED (blended) color, not individual colors
       if (errorBuffer && useErrorDiffusion) {
         const chosenA = palettes.paletteA[result.indexA]
         const chosenB = palettes.paletteB[result.indexB]
 
+        // Calculate the perceived blended color that will be displayed
+        const blendedChosen: Vector<'RGB'> = [
+          Math.round((chosenA[0] + chosenB[0]) / 2),
+          Math.round((chosenA[1] + chosenB[1]) / 2),
+          Math.round((chosenA[2] + chosenB[2]) / 2)
+        ]
+
+        // Error is the difference between target and perceived blend
+        const blendError: Vector<'RGB'> = [
+          (targetColor[0] - blendedChosen[0]) * ditherIntensity,
+          (targetColor[1] - blendedChosen[1]) * ditherIntensity,
+          (targetColor[2] - blendedChosen[2]) * ditherIntensity
+        ]
+
+        // Distribute error equally to both source pixel positions
         const errorA: Vector<'RGB'> = [
-          (colorA[0] - chosenA[0]) * ditherIntensity,
-          (colorA[1] - chosenA[1]) * ditherIntensity,
-          (colorA[2] - chosenA[2]) * ditherIntensity
+          blendError[0] / 2,
+          blendError[1] / 2,
+          blendError[2] / 2
         ]
         const errorB: Vector<'RGB'> = [
-          (colorB[0] - chosenB[0]) * ditherIntensity,
-          (colorB[1] - chosenB[1]) * ditherIntensity,
-          (colorB[2] - chosenB[2]) * ditherIntensity
+          blendError[0] / 2,
+          blendError[1] / 2,
+          blendError[2] / 2
         ]
 
         // Calculate intensity (luminance) for Ostromoukhov coefficients
@@ -687,46 +703,26 @@ function buildBlendLookupTable(palettes: ModeRPalettes): BlendLookupTable {
 
 /**
  * Fast pair finding using pre-computed lookup table
- * Searches only the most promising candidates in the spatial bucket
+ * Searches the most promising candidates in the spatial bucket
+ *
+ * IMPORTANT: We always search all 256 blends to find the best visual match.
+ * The spatial index helps by ordering candidates by proximity, so we can
+ * often find a good match early and use early termination.
  */
 function findBestIndicesFast(
   targetColor: Vector<'RGB'>,
-  isUniformArea: boolean,
+  _isUniformArea: boolean, // No longer used - always search all blends for best visual result
   lookupTable: BlendLookupTable,
   flickerWeight: number,
   maxLuminanceDelta: number
 ): { indexA: number; indexB: number; error: number } {
-  // For uniform areas, search only uniform pairs
-  if (isUniformArea && lookupTable.uniformPairs.length > 0) {
-    let bestEntry = lookupTable.uniformPairs[0]
-    let bestCost = Number.POSITIVE_INFINITY
-
-    for (const entry of lookupTable.uniformPairs) {
-      const colorError =
-        Math.abs(targetColor[0] - entry.blendedColor[0]) +
-        Math.abs(targetColor[1] - entry.blendedColor[1]) +
-        Math.abs(targetColor[2] - entry.blendedColor[2])
-
-      if (colorError < bestCost) {
-        bestCost = colorError
-        bestEntry = entry
-      }
-    }
-
-    return {
-      indexA: bestEntry.indexA,
-      indexB: bestEntry.indexB,
-      error: bestCost
-    }
-  }
-
   // Get spatial bucket for target color
   const bucket = getSpatialKey(targetColor[0], targetColor[1], targetColor[2])
   const candidates = lookupTable.spatialIndex.get(bucket)!
 
-  // Search only top N candidates (sorted by proximity to bucket center)
-  // This is the key optimization: O(32) instead of O(256)
-  const MAX_CANDIDATES = 32
+  // Search more candidates to find better blends
+  // With 256 total blends, searching 64-128 gives good coverage while staying fast
+  const MAX_CANDIDATES = 128
 
   let bestEntry = lookupTable.allBlends[candidates[0]]
   let bestCost = Number.POSITIVE_INFINITY
