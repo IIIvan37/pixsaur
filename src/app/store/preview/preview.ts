@@ -1,11 +1,18 @@
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import { quantifyToCPCPlus, quantizeCPC, rgbToIndexBufferExact } from '@/export'
-import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import {
-  DISTANCE_METRICS_BY_COLORSPACE,
-  weightedRGBDistance
-} from '@/libs/pixsaur-color/src/metric/distance'
+  extractLockedColors,
+  filterPaletteByLockedColors,
+  findDarkestValidColor,
+  IGNORED_SLOT,
+  quantifyToCPCPlus,
+  quantizeColorForHardware,
+  quantizeCPC
+} from '@/domain/cpc'
+import { positionImageForAutoMode } from '@/domain/image-processing'
+import { rgbToIndexBufferExact } from '@/export'
+import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
+import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { countUniqueColors } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
 import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
@@ -42,52 +49,8 @@ import {
 } from '../palette/palette'
 import type { PaletteSlot } from '../palette/types'
 
-// ============================================================================
-// Utilitaires pour le filtrage des couleurs lockées
-// ============================================================================
-
-// Seuil de distance minimale pour éviter les doublons visuels
-const MIN_PERCEPTUAL_DISTANCE = 50
-
-/**
- * Calcule la distance perceptuelle entre deux couleurs RGB
- */
-function perceptualColorDistance(a: Vector, b: Vector): number {
-  return Math.sqrt(weightedRGBDistance(a, b))
-}
-
-/**
- * Vérifie si une couleur est trop proche d'une des couleurs lockées
- */
-function isColorTooCloseToLocked(
-  color: Vector,
-  lockedColors: Vector[]
-): boolean {
-  return lockedColors.some(
-    (locked) => perceptualColorDistance(color, locked) < MIN_PERCEPTUAL_DISTANCE
-  )
-}
-
-/**
- * Filtre les couleurs de reducedPalette qui sont trop proches des couleurs lockées
- */
-function filterReducedPalette(
-  reducedPalette: Vector[],
-  lockedColors: Vector[]
-): Vector[] {
-  return reducedPalette.filter(
-    (color) => !isColorTooCloseToLocked(color, lockedColors)
-  )
-}
-
-/**
- * Extrait les couleurs des slots lockés (non vides)
- */
-function extractLockedColors(userPalette: PaletteSlot[]): Vector[] {
-  return userPalette
-    .filter((slot) => slot.locked && slot.color)
-    .map((slot) => slot.color!)
-}
+// Re-export IGNORED_SLOT for backward compatibility
+export { IGNORED_SLOT } from '@/domain/cpc'
 
 export const previewCanvasWidthAtom = atom<number | null>(null)
 
@@ -619,7 +582,10 @@ export const displayPaletteAtom = atom(async (get) => {
 
   // Filtrer les couleurs trop proches des couleurs lockées
   const lockedColors = extractLockedColors(userPalette)
-  const filteredReduced = filterReducedPalette(reducedPalette, lockedColors)
+  const filteredReduced = filterPaletteByLockedColors(
+    reducedPalette,
+    lockedColors
+  )
 
   const displaySlots: PaletteSlot[] = []
   let reducedIndex = 0
@@ -646,28 +612,8 @@ export const displayPaletteAtom = atom(async (get) => {
   return displaySlots
 })
 
-// Valeur spéciale pour marquer un slot ignoré dans la palette d'export
-export const IGNORED_SLOT: Vector = [-1, -1, -1]
-
 // Palette pour l'export: reconstruit la palette complète avec les slots vides lockés
 // Les slots vides lockés sont marqués avec IGNORED_SLOT [-1, -1, -1] pour indiquer qu'ils sont ignorés
-// Helper pour quantifier une couleur selon le hardware CPC
-function quantifyColorForHardware(
-  color: Vector,
-  cpcHardware: 'classic' | 'plus'
-): Vector {
-  const result = [...color] as Vector
-  if (cpcHardware === 'classic') {
-    result[0] = quantizeCPC(result[0])
-    result[1] = quantizeCPC(result[1])
-    result[2] = quantizeCPC(result[2])
-  } else {
-    result[0] = quantifyToCPCPlus(result[0])
-    result[1] = quantifyToCPCPlus(result[1])
-    result[2] = quantifyToCPCPlus(result[2])
-  }
-  return result
-}
 
 // Helper pour traiter un slot de palette
 function processSlot(
@@ -681,7 +627,7 @@ function processSlot(
     return IGNORED_SLOT
   }
   if (slot?.locked && slot.color) {
-    return quantifyColorForHardware(slot.color, cpcHardware)
+    return quantizeColorForHardware(slot.color, cpcHardware)
   }
   if (reducedIndex.value < filteredReduced.length) {
     return filteredReduced[reducedIndex.value++]
@@ -700,15 +646,14 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
   }
 
   // Trouver la couleur la plus sombre pour remplir les slots vides
-  const darkestColor = reducedPalette.reduce((darkest, color) => {
-    const colorLuminance = luminance(color)
-    const darkestLuminance = luminance(darkest)
-    return colorLuminance < darkestLuminance ? color : darkest
-  }, reducedPalette[0])
+  const darkestColor = findDarkestValidColor(reducedPalette)
 
   // Filtrer les couleurs trop proches des couleurs lockées
   const lockedColors = extractLockedColors(userPalette)
-  const filteredReduced = filterReducedPalette(reducedPalette, lockedColors)
+  const filteredReduced = filterPaletteByLockedColors(
+    reducedPalette,
+    lockedColors
+  )
 
   // Reconstruire la palette complète en utilisant userPalette comme référence
   const fullPalette: Vector[] = []
@@ -739,63 +684,8 @@ export const exportPaletteWithSlotsAtom = atom(async (get) => {
   return fullPalette
 })
 
-// Helper functions pour réduire la complexité cognitive
-export function positionImageForAutoMode(
-  remapped: ImageData,
-  modeConfig: any,
-  reduced: Vector[],
-  centerImage: boolean
-): ImageData {
-  const targetWidth = modeConfig.width
-  const targetHeight = modeConfig.height
-
-  if (remapped.width === targetWidth && remapped.height === targetHeight) {
-    return remapped
-  }
-
-  const positionedCanvas = document.createElement('canvas')
-  positionedCanvas.width = targetWidth
-  positionedCanvas.height = targetHeight
-  const ctx = positionedCanvas.getContext('2d')
-  if (!ctx) {
-    return remapped
-  }
-
-  // Filter out ignored slots [-1, -1, -1] for darkest color calculation
-  const validColors = reduced.filter(
-    (c) => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
-  )
-  const fallbackColor: Vector = [0, 0, 0]
-  const colorsForDarkest =
-    validColors.length > 0 ? validColors : [fallbackColor]
-
-  // Find darkest color using Rec. 709 luminance
-  const darkestColor = colorsForDarkest.reduce((darkest, color) => {
-    const colorLuminance = luminance(color)
-    const darkestLuminance = luminance(darkest)
-    return colorLuminance < darkestLuminance ? color : darkest
-  }, colorsForDarkest[0])
-
-  ctx.fillStyle = `rgb(${darkestColor[0]}, ${darkestColor[1]}, ${darkestColor[2]})`
-  ctx.fillRect(0, 0, targetWidth, targetHeight)
-
-  const dx = centerImage ? Math.floor((targetWidth - remapped.width) / 2) : 0
-  const dy = centerImage ? Math.floor((targetHeight - remapped.height) / 2) : 0
-
-  const tempCanvas = document.createElement('canvas')
-  tempCanvas.width = remapped.width
-  tempCanvas.height = remapped.height
-  const tempCtx = tempCanvas.getContext('2d')
-  if (!tempCtx) {
-    return remapped
-  }
-  tempCtx.putImageData(remapped, 0, 0)
-
-  ctx.drawImage(tempCanvas, dx, dy)
-
-  const positioned = ctx.getImageData(0, 0, targetWidth, targetHeight)
-  return positioned
-}
+// Re-export positionImageForAutoMode for backward compatibility
+export { positionImageForAutoMode } from '@/domain/image-processing'
 
 // ============================================================================
 // Index Buffer pour les Rasters
