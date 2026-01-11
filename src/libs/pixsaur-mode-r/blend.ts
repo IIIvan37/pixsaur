@@ -5,14 +5,17 @@
  * The human eye blends the two alternating frames at 50Hz.
  */
 
+import { weightedRGBDistance } from '@/libs/pixsaur-color/src/metric/distance'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 
 /**
  * Calculate luminance (Y) from RGB using Rec. 709 coefficients
  * This matches human perception of brightness
+ * Returns value in range [0-255] scale for compatibility
  */
 export function calculateLuminance(color: Vector<'RGB'>): number {
-  return 0.2126 * color[0] + 0.7152 * color[1] + 0.0722 * color[2]
+  return luminance(color) * 255
 }
 
 /**
@@ -53,18 +56,14 @@ export function calculateFlickerScore(
 
 /**
  * Calculate color distance in RGB space
- * Uses weighted Euclidean distance matching human color perception
+ * Uses ITU-R BT.601 weighted distance matching human color perception
+ * Delegates to pixsaur-color for canonical implementation
  */
 export function colorDistance(
   color1: Vector<'RGB'>,
   color2: Vector<'RGB'>
 ): number {
-  // Weighted by human perception sensitivity (green > red > blue)
-  const rDiff = color1[0] - color2[0]
-  const gDiff = color1[1] - color2[1]
-  const bDiff = color1[2] - color2[2]
-
-  return Math.sqrt(2 * rDiff * rDiff + 4 * gDiff * gDiff + 3 * bDiff * bDiff)
+  return Math.sqrt(weightedRGBDistance(color1, color2))
 }
 
 /**

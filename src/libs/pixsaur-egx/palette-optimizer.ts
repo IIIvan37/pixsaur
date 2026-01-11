@@ -15,6 +15,10 @@
 
 import { buildWeightedHistogram } from '@/libs/pixsaur-color/src/histogram'
 import { getDistanceFn } from '@/libs/pixsaur-color/src/metric/distance'
+import {
+  colorDistanceSquared,
+  findClosestInSubset
+} from '@/libs/pixsaur-color/src/metric/find-closest'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig, EGXPalette, EGXPaletteStats } from './types'
@@ -67,45 +71,10 @@ export function getHardwarePalette(
 }
 
 // ============================================================================
-// Color Distance Utilities
+// Color Distance Utilities (using pixsaur-color)
 // ============================================================================
 
 const distFn = getDistanceFn('RGB', 'euclidean')
-
-/**
- * Simple RGB color distance (squared euclidean)
- */
-function colorDistance(a: Vector<'RGB'>, b: Vector<'RGB'>): number {
-  const dr = a[0] - b[0]
-  const dg = a[1] - b[1]
-  const db = a[2] - b[2]
-  return dr * dr + dg * dg + db * db
-}
-
-/**
- * Find closest color in palette
- */
-function findClosestColor(
-  target: Vector<'RGB'>,
-  palette: Vector<'RGB'>[]
-): { color: Vector<'RGB'>; index: number; distance: number } {
-  let bestIndex = 0
-  let bestDistance = Infinity
-
-  for (let i = 0; i < palette.length; i++) {
-    const dist = colorDistance(target, palette[i])
-    if (dist < bestDistance) {
-      bestDistance = dist
-      bestIndex = i
-    }
-  }
-
-  return {
-    color: palette[bestIndex],
-    index: bestIndex,
-    distance: bestDistance
-  }
-}
 
 // ============================================================================
 // Line-based Color Extraction
@@ -354,7 +323,13 @@ function computePaletteStats(
         imageData[pixelIdx + 2]
       ]
 
-      const { index, distance } = findClosestColor(color, availablePalette)
+      // Use findClosestInSubset with full palette length as maxIndex
+      const { index, color: closestColor } = findClosestInSubset(
+        color,
+        availablePalette,
+        availablePalette.length - 1
+      )
+      const distance = colorDistanceSquared(color, closestColor)
       colorSet.add(index)
 
       if (isLowMode) {

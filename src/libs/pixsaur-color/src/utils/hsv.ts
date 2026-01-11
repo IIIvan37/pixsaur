@@ -1,4 +1,5 @@
 import type { Vector } from '../type'
+import { luminance } from './luminance'
 
 /**
  * Calcule la teinte (hue) d'une couleur RGB en degrés (0-360)
@@ -250,9 +251,8 @@ export function isVisuallyColorful(
   const saturation = calculateSaturation(color)
   const value = calculateValue(color)
 
-  // Import luminance from luminance module to avoid circular dependency
-  // Use a simple approximation here or require it as parameter
-  const lum = (color[0] * 0.2126 + color[1] * 0.7152 + color[2] * 0.0722) / 255
+  // Use centralized luminance function
+  const lum = luminance(color)
 
   // Les couleurs très saturées peuvent avoir une luminance plus basse
   const effectiveMinLuminance =

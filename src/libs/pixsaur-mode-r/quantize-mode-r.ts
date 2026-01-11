@@ -31,7 +31,7 @@ import type { DitheringMode } from '@/libs/pixsaur-color/src'
 import { getBlueNoiseThresholdRGB } from '@/libs/pixsaur-color/src/map/blue-noise-texture'
 import { getOstromoukhovCoefficients } from '@/libs/pixsaur-color/src/map/ostromoukhov-coefficients'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { colorDistance } from './blend'
+import { calculateLuminance, colorDistance } from './blend'
 import { optimizeModeRPalettes } from './pair-optimizer'
 import type {
   ModeRConfig,
@@ -997,23 +997,19 @@ export function generateFlickerHeatmap(
 ): Uint8ClampedArray {
   const imageData = new Uint8ClampedArray(width * height * 4)
 
-  // Calculate luminance for all colors
-  const calcLum = (c: Vector<'RGB'>) =>
-    0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
-
   // Find max flicker for normalization
   let maxFlicker = 0
   for (let i = 0; i < indexBufferA.length; i++) {
-    const lumA = calcLum(palettes.paletteA[indexBufferA[i]])
-    const lumB = calcLum(palettes.paletteB[indexBufferB[i]])
+    const lumA = calculateLuminance(palettes.paletteA[indexBufferA[i]])
+    const lumB = calculateLuminance(palettes.paletteB[indexBufferB[i]])
     const flicker = Math.abs(lumA - lumB)
     if (flicker > maxFlicker) maxFlicker = flicker
   }
   if (maxFlicker === 0) maxFlicker = 1
 
   for (let i = 0; i < indexBufferA.length; i++) {
-    const lumA = calcLum(palettes.paletteA[indexBufferA[i]])
-    const lumB = calcLum(palettes.paletteB[indexBufferB[i]])
+    const lumA = calculateLuminance(palettes.paletteA[indexBufferA[i]])
+    const lumB = calculateLuminance(palettes.paletteB[indexBufferB[i]])
     const flicker = Math.abs(lumA - lumB)
     const intensity = Math.round((flicker / maxFlicker) * 255)
 

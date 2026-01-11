@@ -14,40 +14,10 @@
  */
 
 import { getOstromoukhovCoefficients } from '@/libs/pixsaur-color/src/map/ostromoukhov-coefficients'
+import { findClosestInSubset } from '@/libs/pixsaur-color/src/metric/find-closest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig } from './types'
 import { getMaxColorIndex, getModeForLine } from './types'
-
-// ============================================================================
-// Color Distance Utilities
-// ============================================================================
-
-function colorDistanceSquared(a: Vector<'RGB'>, b: Vector<'RGB'>): number {
-  const dr = a[0] - b[0]
-  const dg = a[1] - b[1]
-  const db = a[2] - b[2]
-  return dr * dr + dg * dg + db * db
-}
-
-function findClosestInSubset(
-  target: Vector<'RGB'>,
-  palette: Vector<'RGB'>[],
-  maxIndex: number
-): { index: number; color: Vector<'RGB'> } {
-  let bestIndex = 0
-  let bestDist = Infinity
-
-  const limit = Math.min(maxIndex + 1, palette.length)
-  for (let i = 0; i < limit; i++) {
-    const dist = colorDistanceSquared(target, palette[i])
-    if (dist < bestDist) {
-      bestDist = dist
-      bestIndex = i
-    }
-  }
-
-  return { index: bestIndex, color: palette[bestIndex] }
-}
 
 // ============================================================================
 // EGX Pixel Grouping
@@ -600,5 +570,8 @@ export function applyEGXDitheringByMode(
   )
 }
 
-// Also export the color distance utility for use in palette optimization
-export { colorDistanceSquared, findClosestInSubset }
+// Re-export color utilities from pixsaur-color for convenience
+export {
+  colorDistanceSquared,
+  findClosestInSubset
+} from '@/libs/pixsaur-color/src/metric/find-closest'
