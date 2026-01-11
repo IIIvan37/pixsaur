@@ -5,7 +5,7 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useRef } from 'react'
 import logger from '@/core/logger'
-import { rasterTuningOverrides } from '@/libs/pixsaur-raster/optimize-line-palettes'
+import { rasterTuningOverrides } from '@/libs/pixsaur-raster/raster-tuning'
 import {
   autoOptimizeRasterAtom,
   hasGeneratedRastersAtom,
