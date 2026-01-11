@@ -111,125 +111,90 @@ function fillWithDiverseColors(
 /**
  * Select a palette optimized for Mode R blending.
  *
- * Key insight: In Mode R, the perceived color is blend(A, B) = (A + B) / 2.
- * For a target color T, we need A and B such that (A + B) / 2 ≈ T.
+ * OPTIMIZED: Uses voting approach instead of greedy O(n²) search.
  *
- * This means: A + B ≈ 2*T
+ * For palette A (used alone), we want colors that:
+ * 1. Match target colors directly (self-blend)
+ * 2. Combine well with each other to produce diverse blends
  *
- * Strategy: Select colors that, when combined (including with themselves),
- * produce blends covering the target colors well.
- *
- * For a single palette (A = B), the possible blends are:
- * - Diagonal: A[i] (pure colors, no blend)
- * - Off-diagonal: (A[i] + A[j]) / 2 for i ≠ j
- *
- * We greedily select colors that maximize coverage of target colors
- * via their blends with already-selected colors.
+ * Strategy: Vote for colors based on how close they are to target colors.
+ * Then ensure diversity in selection.
  */
 function selectPaletteForBlends(
   targetColors: Vector<'RGB'>[],
   targetWeights: number[],
   available: Vector<'RGB'>[],
   count: number,
-  maxFlicker: number
+  _maxFlicker: number
 ): Vector<'RGB'>[] {
   const selected: Vector<'RGB'>[] = []
   const usedKeys = new Set<string>()
 
-  // Track which targets are covered and how well
-  const targetCoverage = new Array(targetColors.length).fill(Infinity)
+  // PHASE 1: Vote for candidates based on proximity to targets
+  const candidateScores = new Map<
+    string,
+    { color: Vector<'RGB'>; score: number }
+  >()
 
-  // Helper: calculate best blend error for a target given current palette + candidate
-  const getBestBlendError = (
-    target: Vector<'RGB'>,
-    palette: Vector<'RGB'>[],
-    candidate: Vector<'RGB'>
-  ): number => {
-    let bestError = Infinity
+  for (let t = 0; t < targetColors.length; t++) {
+    const target = targetColors[t]
+    const weight = targetWeights[t]
 
-    // Blend with self (pure color)
-    const selfBlend = candidate
-    const selfError = colorDistance(target, selfBlend)
-    if (selfError < bestError) bestError = selfError
+    // Find nearest available color to target
+    const nearest = findNearestColor(target, available)
+    const key = `${nearest[0]},${nearest[1]},${nearest[2]}`
 
-    // Blend with each existing color in palette
-    for (const existing of palette) {
-      const blend: Vector<'RGB'> = [
-        Math.round((candidate[0] + existing[0]) / 2),
-        Math.round((candidate[1] + existing[1]) / 2),
-        Math.round((candidate[2] + existing[2]) / 2)
-      ]
+    const dist = colorDistance(target, nearest)
+    const score = weight * Math.max(0, 10000 - dist)
 
-      // Check flicker (luminance difference)
-      const lumCandidate =
-        0.299 * candidate[0] + 0.587 * candidate[1] + 0.114 * candidate[2]
-      const lumExisting =
-        0.299 * existing[0] + 0.587 * existing[1] + 0.114 * existing[2]
-      const flicker = Math.abs(lumCandidate - lumExisting)
-
-      if (flicker <= maxFlicker) {
-        const error = colorDistance(target, blend)
-        if (error < bestError) bestError = error
-      }
-    }
-
-    return bestError
-  }
-
-  // Greedy selection: add colors that most improve target coverage
-  while (selected.length < count) {
-    let bestCandidate: Vector<'RGB'> | null = null
-    let bestImprovement = -Infinity
-
-    for (const candidate of available) {
-      const key = `${candidate[0]},${candidate[1]},${candidate[2]}`
-      if (usedKeys.has(key)) continue
-
-      // Calculate improvement in weighted coverage
-      let improvement = 0
-      for (let t = 0; t < targetColors.length; t++) {
-        const newError = getBestBlendError(targetColors[t], selected, candidate)
-        const oldError = targetCoverage[t]
-        if (newError < oldError) {
-          // Weight improvement by target importance
-          improvement += (oldError - newError) * targetWeights[t]
-        }
-      }
-
-      if (improvement > bestImprovement) {
-        bestImprovement = improvement
-        bestCandidate = candidate
-      }
-    }
-
-    if (!bestCandidate) {
-      // No more candidates, fill with diverse colors
-      fillWithDiverseColors(selected, usedKeys, available, count, 100)
-      break
-    }
-
-    // Add best candidate
-    selected.push(bestCandidate)
-    usedKeys.add(`${bestCandidate[0]},${bestCandidate[1]},${bestCandidate[2]}`)
-
-    // Update coverage with new blends
-    for (let t = 0; t < targetColors.length; t++) {
-      const newError = getBestBlendError(
-        targetColors[t],
-        selected.slice(0, -1), // Exclude just-added to avoid double counting
-        bestCandidate
-      )
-      if (newError < targetCoverage[t]) {
-        targetCoverage[t] = newError
-      }
+    const existing = candidateScores.get(key)
+    if (existing) {
+      existing.score += score
+    } else {
+      candidateScores.set(key, { color: nearest, score })
     }
   }
 
-  logger.info('[Mode R] Palette selected for blends', {
+  // Sort by score
+  const sortedCandidates = [...candidateScores.values()].sort(
+    (a, b) => b.score - a.score
+  )
+
+  // PHASE 2: Select top candidates with diversity constraint
+  const MIN_DIVERSITY = 80
+
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= count) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (usedKeys.has(key)) continue
+
+    if (
+      selected.length === 0 ||
+      isColorDiverse(candidate.color, selected, MIN_DIVERSITY)
+    ) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // PHASE 3: Relax diversity if needed to fill palette
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= count) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (!usedKeys.has(key)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // Pad with diverse colors if still not enough
+  fillWithDiverseColors(selected, usedKeys, available, count, 50)
+
+  logger.info('[Mode R] Palette A selected (voting)', {
     numSelected: selected.length,
-    avgCoverage:
-      targetCoverage.reduce((a, b) => a + Math.min(b, 10000), 0) /
-      targetColors.length
+    candidatesEvaluated: candidateScores.size
   })
 
   return selected

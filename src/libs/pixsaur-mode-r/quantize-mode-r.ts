@@ -262,12 +262,12 @@ export function quantizeModeR(
   config: ModeRConfig = DEFAULT_MODE_R_CONFIG,
   existingPalette?: Vector<'RGB'>[]
 ): ModeRQuantizationResult {
-  // Extract image colors with frequency weights
+  // Extract image colors with frequency weights (48 is enough for good coverage)
   const { colors: targetColors, weights: targetWeights } = extractImageColors(
     imageData,
     width,
     height,
-    64
+    48
   )
 
   // Use palette optimization for Mode R - creates 2 independent palettes
