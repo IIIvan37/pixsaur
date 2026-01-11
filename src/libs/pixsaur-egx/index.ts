@@ -14,6 +14,7 @@
  * - Screen encoding for mixed-mode output
  */
 
+export * from './dithering'
 export * from './palette-optimizer'
 export * from './quantize-egx'
 export * from './types'
