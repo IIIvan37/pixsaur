@@ -4,7 +4,7 @@ import PreviewPanel from './preview-panel'
 
 let mockValues: any[] = []
 vi.mock('jotai', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>
+  const actual = (await importOriginal()) as object
   return {
     ...actual,
     useAtomValue: () => mockValues.shift(),
@@ -14,7 +14,7 @@ vi.mock('jotai', async (importOriginal) => {
 
 // Mock ImagePreview, ColorPalette, and RasterBasePalette to avoid atom errors in subcomponents
 vi.mock('@/preview', async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>
+  const actual = (await importOriginal()) as object
   return {
     ...actual,
     ImagePreview: () => <div data-testid='mock-image-preview' />

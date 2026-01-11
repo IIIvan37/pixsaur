@@ -9,6 +9,10 @@
  * - High-res lines (Mode 1 for EGX1): Can only use INK 0-3
  */
 
+import {
+  colorDistanceSquared,
+  findClosestInSubset
+} from '@/libs/pixsaur-color/src/metric/find-closest'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { optimizeEGXPalette } from './palette-optimizer'
 import type { EGXConfig, EGXQuantizationResult } from './types'
@@ -19,43 +23,6 @@ import {
   getMaxColorIndex,
   getModeForLine
 } from './types'
-
-// ============================================================================
-// Color Distance
-// ============================================================================
-
-/**
- * Simple RGB color distance (squared euclidean)
- */
-function colorDistance(a: Vector<'RGB'>, b: Vector<'RGB'>): number {
-  const dr = a[0] - b[0]
-  const dg = a[1] - b[1]
-  const db = a[2] - b[2]
-  return dr * dr + dg * dg + db * db
-}
-
-/**
- * Find closest color index in a palette subset
- */
-function findClosestIndex(
-  target: Vector<'RGB'>,
-  palette: Vector<'RGB'>[],
-  maxIndex: number
-): { index: number; distance: number } {
-  let bestIndex = 0
-  let bestDistance = Infinity
-
-  const limit = Math.min(maxIndex + 1, palette.length)
-  for (let i = 0; i < limit; i++) {
-    const dist = colorDistance(target, palette[i])
-    if (dist < bestDistance) {
-      bestDistance = dist
-      bestIndex = i
-    }
-  }
-
-  return { index: bestIndex, distance: bestDistance }
-}
 
 // ============================================================================
 // Main Quantization
@@ -116,11 +83,14 @@ export function quantizeEGX(
         resizedData[pixelIdx + 2]
       ]
 
-      const { index, distance } = findClosestIndex(
+      const { index, color } = findClosestInSubset(
         targetColor,
         palette.colors,
         maxColorIndex
       )
+
+      // Calculate distance for stats
+      const distance = colorDistanceSquared(targetColor, color)
 
       indexBuffer[y * outWidth + x] = index
       totalError += distance

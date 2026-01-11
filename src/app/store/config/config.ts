@@ -1,14 +1,119 @@
+/**
+ * Configuration Module
+ *
+ * This module re-exports all configuration atoms from their dedicated modules.
+ * Maintained for backward compatibility - new code should import from specific modules.
+ *
+ * Architecture (ISP - Interface Segregation Principle):
+ * - adjustments.ts: Image color/tone adjustments
+ * - dimensions.ts: Pixel mode + dimension management
+ * - dithering.ts: Dithering and color space
+ * - processing.ts: Processor, palette strategy, smoothing
+ * - hardware.ts: CPC hardware selection
+ * - mode-r.ts: Mode R configuration
+ * - egx.ts: EGX mode configuration
+ * - resize.ts: Resize mode settings
+ */
+
 import { atom } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
 import { getWidthStepForMode } from '@/export'
-import type { DitheringConfig } from '@/libs/pixsaur-color/src'
-import type { ColorSpace } from '@/libs/pixsaur-color/src/type'
-import type { CPCHardware } from '@/libs/types'
-import { userPaletteAtom } from '../palette/palette'
-import type { PaletteSlot } from '../palette/types'
 import { rasterEnabledAtom } from '../raster/raster-config'
-import type { ResizeMode } from './resize-types'
-import type {
+import {
+  customDimensionsAtom as customDimensionsAtomImport,
+  dimensionPresetAtom as dimensionPresetAtomImport,
+  effectiveModeConfigAtom as effectiveModeConfigAtomImport,
+  pixelModeAtom as pixelModeAtomImport
+} from './dimensions'
+import { ditheringAtom as ditheringAtomImport } from './dithering'
+import { egxEnabledAtom, egxTypeAtom } from './egx'
+import { modeREnabledAtom } from './mode-r'
+import { autoDistinctMappingAtom as autoDistinctMappingAtomImport } from './processing'
+
+// ============================================================================
+// RE-EXPORTS FROM MODULES
+// ============================================================================
+
+// Adjustments
+export {
+  adjustmentsAtom,
+  clearLastChangedKeyAtom,
+  configAtom,
+  resetAdjustmentsAtom,
+  resetImageAdjustmentsAtom,
+  setAdjustmentAtom,
+  setComponentAtom
+} from './adjustments'
+
+// Dimensions (base exports)
+export {
+  customDimensionsAtom,
+  derivedModeAtom,
+  dimensionPresetAtom,
+  effectiveModeConfigAtom,
+  modeAtom,
+  pixelModeAtom,
+  setCustomDimensionsAtom,
+  setModeAtom,
+  TARGET_DIMENSION_PRESETS
+} from './dimensions'
+
+// Dithering
+export {
+  colorSpaceAtom,
+  ditheringAtom,
+  setColorSpaceAtom,
+  setDitheringAtom,
+  switchToRasterCompatibleDitheringAtom
+} from './dithering'
+export type { EGXFirstLineMode, EGXPreviewMode, EGXType, EgxType } from './egx'
+// EGX (base exports)
+export {
+  egxEnabledAtom,
+  egxFirstLineModeAtom,
+  egxModesPairAtom,
+  egxOverscanAtom,
+  egxPreviewModeAtom,
+  egxTypeAtom,
+  resetEgxAtom,
+  setEgxFirstLineModeAtom,
+  setEgxOverscanAtom,
+  setEgxPreviewModeAtom
+} from './egx'
+// Hardware
+export { cpcHardwareAtom, setCpcHardwareAtom } from './hardware'
+export type {
+  ModeRPixelMode,
+  ModeRPreviewMode
+} from './mode-r'
+// Mode R
+export {
+  modeRAntiFlickerAtom,
+  modeRDualPaletteAtom,
+  modeREnabledAtom,
+  modeRMaxLuminanceDeltaAtom,
+  modeRPreviewModeAtom,
+  resetModeRAtom,
+  setModeRAntiFlickerAtom,
+  setModeRDualPaletteAtom,
+  setModeRMaxLuminanceDeltaAtom,
+  setModeRPreviewModeAtom
+} from './mode-r'
+// Processing
+export {
+  autoDistinctMappingAtom,
+  horizontalSmoothingAtom,
+  paletteStrategyAtom,
+  processorTypeAtom,
+  setPaletteStrategyAtom,
+  setProcessorTypeAtom,
+  smoothingAtom
+} from './processing'
+// Resize
+export { centerImageAtom, resizeModeAtom, setResizeModeAtom } from './resize'
+
+export type { ResizeMode } from './resize-types'
+// Types re-export for convenience
+export type {
   AdjustementKey,
   CpcModeConfig,
   CpcModeKey,
@@ -18,394 +123,18 @@ import type {
   PixelMode,
   ProcessorType
 } from './types'
-import {
+export {
   buildCpcModeKey,
   buildCustomModeConfig,
   CPC_MODE_CONFIG,
   parseCpcModeKey
 } from './types'
 
-// Valeurs par défaut (facteurs multiplicatifs)
-const defaultConfig: { [key in AdjustementKey]: number } & {
-  lastChangedKey: AdjustementKey | null
-} = {
-  red: 1,
-  green: 1,
-  blue: 1,
-  brightness: 1,
-  contrast: 1,
-  saturation: 1,
-  hue: 0, // -180 à +180 degrés
-  vibrance: 0, // -100 à +100
-  temperature: 0, // -100 à +100 (bleu/orange)
-  tint: 0, // -100 à +100 (vert/magenta)
-  gamma: 1, // 0.1 à 3.0
-  exposure: 0, // -3 à +3 stops
-  highlights: 0, // -100 à +100
-  shadows: 0, // -100 à +100
-  posterization: 256,
-  lastChangedKey: null
-}
-
-// Atom principal des réglages
-export const configAtom = atom<typeof defaultConfig>({ ...defaultConfig })
-
-// Setter pour un seul réglage (red, green, etc.)
-export const setComponentAtom = atom(
-  null,
-  (get, set, payload: { key: AdjustementKey; value: number }) => {
-    const prev = get(configAtom)
-    set(configAtom, {
-      ...prev,
-      [payload.key]: payload.value,
-      lastChangedKey: payload.key
-    })
-  }
-)
-
-// Réinitialise uniquement la clé de changement
-export const clearLastChangedKeyAtom = atom(null, (_get, set) => {
-  set(configAtom, (prev) => ({ ...prev, lastChangedKey: null }))
-})
-
-// Réinitialisation complète explicite
-export const resetImageAdjustmentsAtom = atom(null, (_get, set) => {
-  set(configAtom, { ...defaultConfig })
-})
-
-// Atoms pour les autres paramètres de conversion
-// Legacy atom - will be deprecated in favor of separate pixelModeAtom + dimensionPresetAtom
-export const modeAtom = atom<CpcModeKey>('0')
-
 // ============================================================================
-// NEW: SEPARATED PIXEL MODE AND DIMENSION PRESET
+// MUTUAL EXCLUSION SETTERS
+// These setters handle the mutual exclusion between special modes:
+// Mode R, EGX, Raster, and Auto Distinct-Mapping are mutually exclusive
 // ============================================================================
-
-// Pixel mode atom - controls pixel aspect ratio (0, 1, or 2)
-export const pixelModeAtom = atom<PixelMode>(0)
-
-// Dimension preset atom - controls dimensions (standard, overscan, or custom)
-export const dimensionPresetAtom = atom<DimensionPreset>('standard')
-
-// Custom dimensions atom - only used when dimensionPreset is 'custom'
-export const customDimensionsAtom = atom<CustomDimensions>({
-  width: 160,
-  height: 200
-})
-
-// Derived atom that combines pixelMode + dimensionPreset into legacy CpcModeKey
-// For 'custom' preset, returns the base mode ('0', '1', or '2')
-// This maintains backward compatibility with existing code
-export const derivedModeAtom = atom(
-  (get) => {
-    const pixelMode = get(pixelModeAtom)
-    const dimensionPreset = get(dimensionPresetAtom)
-
-    // For custom dimensions, return base mode key
-    if (dimensionPreset === 'custom') {
-      return pixelMode.toString() as CpcModeKey
-    }
-
-    return buildCpcModeKey(pixelMode, dimensionPreset)
-  },
-  (_get, set, payload: CpcModeKey) => {
-    // When setting the derived mode, update both atoms
-    const { pixelMode, dimensionPreset } = parseCpcModeKey(payload)
-    set(pixelModeAtom, pixelMode)
-    set(dimensionPresetAtom, dimensionPreset)
-  }
-)
-
-// Setter for pixel mode only
-// When in custom dimensions mode, adjusts width to maintain same byte count
-// When EGX is enabled, forces the required mode for the EGX type
-export const setPixelModeAtom = atom(null, (get, set, payload: PixelMode) => {
-  const dimensionPreset = get(dimensionPresetAtom)
-  const previousMode = get(pixelModeAtom)
-  const egxEnabled = get(egxEnabledAtom)
-
-  // If EGX is enabled, force the required mode
-  let effectivePayload = payload
-  if (egxEnabled) {
-    const egxType = get(egxTypeAtom)
-    effectivePayload = egxType === 'egx1' ? 0 : 1
-  }
-
-  set(pixelModeAtom, effectivePayload)
-
-  // If in custom mode and mode changed, adjust width to keep same byte count
-  if (dimensionPreset === 'custom' && previousMode !== effectivePayload) {
-    const currentDimensions = get(customDimensionsAtom)
-    const currentWidth = currentDimensions.width
-
-    // Calculate current byte width
-    const currentPixelsPerByte = getWidthStepForMode(previousMode)
-    const byteWidth = currentWidth / currentPixelsPerByte
-
-    // Calculate new pixel width for same byte count
-    const newPixelsPerByte = getWidthStepForMode(effectivePayload)
-    const newWidth = byteWidth * newPixelsPerByte
-
-    // Round to nearest valid step
-    const widthStep = getWidthStepForMode(effectivePayload)
-    const adjustedWidth = Math.round(newWidth / widthStep) * widthStep
-
-    // Clamp to valid range
-    const finalWidth = Math.max(4, Math.min(768, adjustedWidth))
-
-    set(customDimensionsAtom, {
-      ...currentDimensions,
-      width: finalWidth
-    })
-  }
-})
-
-// Setter for dimension preset only
-// When switching to 'custom', inherit current effective dimensions
-export const setDimensionPresetAtom = atom(
-  null,
-  (get, set, payload: DimensionPreset) => {
-    const currentPreset = get(dimensionPresetAtom)
-
-    // If switching TO custom mode, inherit current dimensions
-    if (payload === 'custom' && currentPreset !== 'custom') {
-      const currentConfig = get(effectiveModeConfigAtom)
-      set(customDimensionsAtom, {
-        width: currentConfig.width,
-        height: currentConfig.height
-      })
-    }
-
-    set(dimensionPresetAtom, payload)
-  }
-)
-
-// Setter for custom dimensions
-export const setCustomDimensionsAtom = atom(
-  null,
-  (_get, set, payload: CustomDimensions) => {
-    set(customDimensionsAtom, payload)
-  }
-)
-
-// Derived atom that returns the complete CPC mode configuration
-// Handles custom dimensions when dimensionPreset is 'custom'
-export const effectiveModeConfigAtom = atom((get): CpcModeConfig => {
-  const pixelMode = get(pixelModeAtom)
-  const dimensionPreset = get(dimensionPresetAtom)
-  const customDimensions = get(customDimensionsAtom)
-
-  if (dimensionPreset === 'custom') {
-    return buildCustomModeConfig(pixelMode, customDimensions)
-  }
-
-  const modeKey = buildCpcModeKey(pixelMode, dimensionPreset)
-  return CPC_MODE_CONFIG[modeKey]
-})
-
-// ============================================================================
-// COLOR SPACE AND DITHERING
-// ============================================================================
-
-export const colorSpaceAtom = atom<ColorSpace>('RGB')
-export const ditheringAtom = atom<DitheringConfig>({
-  mode: 'floydSteinberg',
-  intensity: 0.5
-})
-
-// Setter partiel pour le dithering
-export const setDitheringAtom = atom(
-  null,
-  (get, set, payload: Partial<DitheringConfig>) => {
-    const prev = get(ditheringAtom)
-    set(ditheringAtom, { ...prev, ...payload })
-  }
-)
-
-// Setter du mode CPC avec merge des réglages
-export const setModeAtom = atom(null, (get, set, payload: CpcModeKey) => {
-  const prev = get(modeAtom)
-  set(modeAtom, payload)
-  if (prev !== payload) {
-    set(configAtom, (prevConfig) => ({
-      ...defaultConfig,
-      ...prevConfig,
-      lastChangedKey: null
-    }))
-  }
-})
-
-// Setter de l’espace couleur avec merge des réglages
-export const setColorSpaceAtom = atom(null, (get, set, payload: ColorSpace) => {
-  const prev = get(colorSpaceAtom)
-  set(colorSpaceAtom, payload)
-  if (prev !== payload) {
-    set(configAtom, (prevConfig) => ({
-      ...defaultConfig,
-      ...prevConfig,
-      lastChangedKey: null
-    }))
-  }
-})
-
-export const smoothingAtom = atom<boolean>(true)
-
-// Horizontal smoothing (anti-aliasing) for CPC pixel modes
-export const horizontalSmoothingAtom = atom<boolean>(false)
-
-// Processor type selection (auto, cpu, gpu) - GPU par défaut pour de meilleures performances
-export const processorTypeAtom = atom<ProcessorType>('gpu')
-
-// Setter for processor type
-export const setProcessorTypeAtom = atom(
-  null,
-  (_get, set, payload: ProcessorType) => {
-    set(processorTypeAtom, payload)
-  }
-)
-
-// Palette strategy selection for color quantization
-export const paletteStrategyAtom = atom<PaletteStrategy>('exhaustive-contrast')
-
-// Setter for palette strategy
-export const setPaletteStrategyAtom = atom(
-  null,
-  (_get, set, payload: PaletteStrategy) => {
-    set(paletteStrategyAtom, payload)
-  }
-)
-
-// Auto distinct-mapping for low-color retro images (C64, ZX Spectrum, etc.)
-// When enabled, automatically detects images with ≤16 unique colors and uses
-// distinct-mapping strategy to preserve all distinct colors
-// Disabled by default - user must explicitly enable for retro image conversion
-// Mutually exclusive with Mode R, EGX, and Raster
-export const autoDistinctMappingAtom = atom<boolean>(false)
-
-/**
- * Setter for auto distinct-mapping with mutual exclusion
- * Disables Mode R, EGX, and Raster when enabling distinct-mapping
- */
-export const setAutoDistinctMappingAtom = atom(
-  null,
-  (get, set, payload: boolean) => {
-    if (payload) {
-      // Disable Mode R, EGX, and Raster when enabling distinct-mapping
-      if (get(modeREnabledAtom)) {
-        set(modeREnabledAtom, false)
-      }
-      if (get(egxEnabledAtom)) {
-        set(egxEnabledAtom, false)
-      }
-      if (get(rasterEnabledAtom)) {
-        set(rasterEnabledAtom, false)
-      }
-    }
-    set(autoDistinctMappingAtom, payload)
-  }
-)
-
-// CPC Hardware selection atom - persisted to localStorage
-// This ensures consistency between locked colors and hardware selection
-export const cpcHardwareAtom = atomWithStorage<CPCHardware>(
-  'pixsaur-cpc-hardware',
-  'classic'
-)
-
-// Setter for CPC Hardware
-export const setCpcHardwareAtom = atom(
-  null,
-  (get, set, payload: CPCHardware) => {
-    const current = get(cpcHardwareAtom)
-
-    // Débloquer toutes les couleurs lors de tout changement de mode CPC
-    // Cela garantit la cohérence : Classic ↔ Plus = couleurs débloquées
-    if (current !== payload) {
-      const currentPalette = get(userPaletteAtom)
-      const unlockedPalette = currentPalette.map((slot: PaletteSlot) => ({
-        ...slot,
-        locked: false
-      }))
-      set(userPaletteAtom, unlockedPalette)
-    }
-
-    set(cpcHardwareAtom, payload)
-  }
-)
-
-// ============================================================================
-// MODE R CONFIGURATION
-// ============================================================================
-
-/**
- * Mode R enabled state
- * When enabled, forces Mode 0 and uses dual-palette interlacing
- */
-export const modeREnabledAtom = atomWithStorage<boolean>(
-  'pixsaur-mode-r-enabled',
-  false
-)
-
-/**
- * Mode R anti-flicker weight (0-100)
- * Higher values prioritize flicker reduction over color accuracy
- */
-export const modeRAntiFlickerAtom = atomWithStorage<number>(
-  'pixsaur-mode-r-anti-flicker',
-  70
-)
-
-/**
- * Mode R maximum luminance delta for color pairs
- * Pairs with higher luminance difference will be penalized
- */
-export const modeRMaxLuminanceDeltaAtom = atomWithStorage<number>(
-  'pixsaur-mode-r-max-luminance-delta',
-  80
-)
-
-/**
- * Mode R preview mode
- * - 'blended': Show perceived colors (default)
- * - 'frameA': Show frame A only
- * - 'frameB': Show frame B only
- * - 'flicker': Show flicker heatmap
- */
-export const modeRPreviewModeAtom = atom<
-  'blended' | 'frameA' | 'frameB' | 'flicker'
->('blended')
-
-/**
- * Mode R dual palette option
- * - false: Same palette for both frames (default, less flicker)
- * - true: Independent palettes for each frame (more colors, more flicker)
- */
-export const modeRDualPaletteAtom = atomWithStorage<boolean>(
-  'pixsaur-mode-r-dual-palette',
-  false
-)
-
-// Setters for Mode R configuration
-export const setModeRAntiFlickerAtom = atom(
-  null,
-  (_get, set, payload: number) => {
-    set(modeRAntiFlickerAtom, Math.max(0, Math.min(100, payload)))
-  }
-)
-
-export const setModeRMaxLuminanceDeltaAtom = atom(
-  null,
-  (_get, set, payload: number) => {
-    set(modeRMaxLuminanceDeltaAtom, Math.max(0, Math.min(255, payload)))
-  }
-)
-
-export const setModeRPreviewModeAtom = atom(
-  null,
-  (_get, set, payload: 'blended' | 'frameA' | 'frameB' | 'flicker') => {
-    set(modeRPreviewModeAtom, payload)
-  }
-)
 
 /**
  * Setter for Mode R enabled state with mutual exclusion
@@ -413,66 +142,19 @@ export const setModeRPreviewModeAtom = atom(
  */
 export const setModeREnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
-    // Disable EGX, Raster, and distinct-mapping when enabling Mode R
     if (get(egxEnabledAtom)) {
       set(egxEnabledAtom, false)
     }
     if (get(rasterEnabledAtom)) {
       set(rasterEnabledAtom, false)
     }
-    if (get(autoDistinctMappingAtom)) {
-      set(autoDistinctMappingAtom, false)
+    if (get(autoDistinctMappingAtomImport)) {
+      set(autoDistinctMappingAtomImport, false)
     }
   }
   set(modeREnabledAtom, payload)
 })
 
-// ============================================================================
-// EGX MODE CONFIGURATION
-// ============================================================================
-
-import type {
-  EGXFirstLineMode,
-  EGXPreviewMode,
-  EGXType
-} from '@/libs/pixsaur-egx'
-
-/**
- * EGX mode enabled state
- * When enabled, uses line-by-line mode alternation (EGX1 or EGX2)
- * Mutually exclusive with Mode R
- */
-export const egxEnabledAtom = atomWithStorage<boolean>(
-  'pixsaur-egx-enabled',
-  false
-)
-
-/**
- * EGX type selection
- * - egx1: Mode 0/1 alternation (320×200, up to 16 colors)
- * - egx2: Mode 1/2 alternation (640×200, up to 4 colors)
- */
-export const egxTypeAtom = atomWithStorage<EGXType>('pixsaur-egx-type', 'egx1')
-
-/**
- * EGX first line mode
- * - 'low': First line uses lower resolution mode (more colors)
- * - 'high': First line uses higher resolution mode (fewer colors)
- */
-export const egxFirstLineModeAtom = atomWithStorage<EGXFirstLineMode>(
-  'pixsaur-egx-first-line-mode',
-  'low'
-)
-
-/**
- * EGX preview mode
- * - 'combined': Show final combined view
- * - 'highLines': Show only high-resolution lines
- * - 'lowLines': Show only low-resolution lines
- */
-export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
-
-// Setters for EGX configuration
 /**
  * Setter for EGX enabled state with mutual exclusion
  * Disables Mode R and Raster when enabling EGX
@@ -482,23 +164,39 @@ export const egxPreviewModeAtom = atom<EGXPreviewMode>('combined')
  */
 export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
-    // Disable Mode R, Raster, and distinct-mapping when enabling EGX
     if (get(modeREnabledAtom)) {
       set(modeREnabledAtom, false)
     }
     if (get(rasterEnabledAtom)) {
       set(rasterEnabledAtom, false)
     }
-    if (get(autoDistinctMappingAtom)) {
-      set(autoDistinctMappingAtom, false)
+    if (get(autoDistinctMappingAtomImport)) {
+      set(autoDistinctMappingAtomImport, false)
     }
     // Set the appropriate pixel mode for the current EGX type
     const egxType = get(egxTypeAtom)
     const requiredMode = egxType === 'egx1' ? 0 : 1
-    set(pixelModeAtom, requiredMode)
+    set(pixelModeAtomImport, requiredMode)
   }
   set(egxEnabledAtom, payload)
 })
+
+/**
+ * Setter for EGX type with automatic pixel mode adjustment
+ * - EGX1 requires Mode 0 (16 colors)
+ * - EGX2 requires Mode 1 (4 colors)
+ */
+export const setEgxTypeAtom = atom(
+  null,
+  (get, set, payload: 'egx1' | 'egx2') => {
+    set(egxTypeAtom, payload)
+    // If EGX is enabled, update the pixel mode accordingly
+    if (get(egxEnabledAtom)) {
+      const requiredMode = payload === 'egx1' ? 0 : 1
+      set(pixelModeAtomImport, requiredMode)
+    }
+  }
+)
 
 /**
  * Setter for Raster enabled state with mutual exclusion
@@ -507,20 +205,18 @@ export const setEgxEnabledAtom = atom(null, (get, set, payload: boolean) => {
  */
 export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
   if (payload) {
-    // Disable Mode R, EGX, and distinct-mapping when enabling Raster
     if (get(modeREnabledAtom)) {
       set(modeREnabledAtom, false)
     }
     if (get(egxEnabledAtom)) {
       set(egxEnabledAtom, false)
     }
-    if (get(autoDistinctMappingAtom)) {
-      set(autoDistinctMappingAtom, false)
+    if (get(autoDistinctMappingAtomImport)) {
+      set(autoDistinctMappingAtomImport, false)
     }
 
     // Switch to compatible dithering mode if current mode uses error diffusion
-    // Error diffusion modes are not compatible with raster (per-line palettes)
-    const currentDithering = get(ditheringAtom)
+    const currentDithering = get(ditheringAtomImport)
     const errorDiffusionModes = [
       'floydSteinberg',
       'atkinson',
@@ -531,10 +227,9 @@ export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
       currentDithering.mode !== 'none' &&
       errorDiffusionModes.includes(currentDithering.mode)
     ) {
-      // Switch to bayer2x2 as default compatible mode
-      set(ditheringAtom, {
+      set(ditheringAtomImport, {
         mode: 'bayer2x2',
-        intensity: 0.25 // Default intensity for bayer2x2
+        intensity: 0.25
       })
     }
   }
@@ -542,70 +237,85 @@ export const setRasterEnabledAtom = atom(null, (get, set, payload: boolean) => {
 })
 
 /**
- * Setter for EGX type with automatic pixel mode adjustment
- * - EGX1 requires Mode 0 (16 colors)
- * - EGX2 requires Mode 1 (4 colors)
+ * Setter for auto distinct-mapping with mutual exclusion
+ * Disables Mode R, EGX, and Raster when enabling distinct-mapping
  */
-export const setEgxTypeAtom = atom(null, (get, set, payload: EGXType) => {
-  set(egxTypeAtom, payload)
-  // If EGX is enabled, update the pixel mode accordingly
-  if (get(egxEnabledAtom)) {
-    const requiredMode = payload === 'egx1' ? 0 : 1
-    set(pixelModeAtom, requiredMode)
+export const setAutoDistinctMappingAtom = atom(
+  null,
+  (get, set, payload: boolean) => {
+    if (payload) {
+      if (get(modeREnabledAtom)) {
+        set(modeREnabledAtom, false)
+      }
+      if (get(egxEnabledAtom)) {
+        set(egxEnabledAtom, false)
+      }
+      if (get(rasterEnabledAtom)) {
+        set(rasterEnabledAtom, false)
+      }
+    }
+    set(autoDistinctMappingAtomImport, payload)
+  }
+)
+
+/**
+ * Setter for pixel mode with EGX constraint handling
+ * When EGX is enabled, forces the required mode for the EGX type
+ * Also adjusts custom dimensions width to maintain byte count
+ */
+export const setPixelModeAtom = atom(null, (get, set, payload: 0 | 1 | 2) => {
+  const egxEnabled = get(egxEnabledAtom)
+  const dimensionPreset = get(dimensionPresetAtomImport)
+  const previousMode = get(pixelModeAtomImport)
+
+  // If EGX is enabled, force the required mode
+  let effectivePayload = payload
+  if (egxEnabled) {
+    const egxType = get(egxTypeAtom)
+    effectivePayload = egxType === 'egx1' ? 0 : 1
+  }
+
+  set(pixelModeAtomImport, effectivePayload)
+
+  // Adjust custom dimensions width when mode changes
+  if (dimensionPreset === 'custom' && previousMode !== effectivePayload) {
+    const currentDimensions = get(customDimensionsAtomImport)
+    const currentWidth = currentDimensions.width
+
+    const currentPixelsPerByte = getWidthStepForMode(previousMode)
+    const byteWidth = currentWidth / currentPixelsPerByte
+
+    const newPixelsPerByte = getWidthStepForMode(effectivePayload)
+    const newWidth = byteWidth * newPixelsPerByte
+
+    const widthStep = getWidthStepForMode(effectivePayload)
+    const adjustedWidth = Math.round(newWidth / widthStep) * widthStep
+    const finalWidth = Math.max(4, Math.min(768, adjustedWidth))
+
+    set(customDimensionsAtomImport, {
+      ...currentDimensions,
+      width: finalWidth
+    })
   }
 })
 
-export const setEgxFirstLineModeAtom = atom(
+/**
+ * Setter for dimension preset
+ * Inherits current effective dimensions when switching to custom
+ */
+export const setDimensionPresetAtom = atom(
   null,
-  (_get, set, payload: EGXFirstLineMode) => {
-    set(egxFirstLineModeAtom, payload)
+  (get, set, payload: 'standard' | 'overscan' | 'custom') => {
+    const currentPreset = get(dimensionPresetAtomImport)
+
+    if (payload === 'custom' && currentPreset !== 'custom') {
+      const currentConfig = get(effectiveModeConfigAtomImport)
+      set(customDimensionsAtomImport, {
+        width: currentConfig.width,
+        height: currentConfig.height
+      })
+    }
+
+    set(dimensionPresetAtomImport, payload)
   }
 )
-
-export const setEgxPreviewModeAtom = atom(
-  null,
-  (_get, set, payload: EGXPreviewMode) => {
-    set(egxPreviewModeAtom, payload)
-  }
-)
-
-// ============================================================================
-// RESIZE CONFIGURATION
-// ============================================================================
-
-// Resize mode selection (auto is the smart default with CPC aspect ratio correction)
-export const resizeModeAtom = atom<ResizeMode>('auto')
-
-// Setter for resize mode
-export const setResizeModeAtom = atom(
-  null,
-  (_get, set, payload: ResizeMode) => {
-    set(resizeModeAtom, payload)
-  }
-)
-
-// Center image in target (when image is smaller than target dimensions)
-export const centerImageAtom = atom<boolean>(true)
-
-// ============================================================================
-// DEPRECATED: TARGET DIMENSIONS
-// ============================================================================
-// Note: targetDimensionsAtom is OBSOLETE - not used in production code
-// Use customDimensionsAtom (for custom mode) or effectiveModeConfigAtom instead
-// This section remains only for backward compatibility and will be removed
-
-// Preset dimensions for quick selection (Standard + Overscan only)
-export const TARGET_DIMENSION_PRESETS = {
-  mode0: [
-    { name: 'Standard', width: 160, height: 200 }, // 80 bytes/line = 16Ko
-    { name: 'Overscan', width: 192, height: 280 } // 96 bytes/line = 26.25Ko
-  ],
-  mode1: [
-    { name: 'Standard', width: 320, height: 200 }, // 80 bytes/line = 16Ko
-    { name: 'Overscan', width: 384, height: 280 } // 96 bytes/line = 26.25Ko
-  ],
-  mode2: [
-    { name: 'Standard', width: 640, height: 200 }, // 80 bytes/line = 16Ko
-    { name: 'Overscan', width: 768, height: 280 } // 96 bytes/line = 26.25Ko
-  ]
-} as const
