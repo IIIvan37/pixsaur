@@ -18,6 +18,89 @@ import type {
 import { DEFAULT_MODE_R_CONFIG } from './types'
 
 /**
+ * Convert RGB to HSL (returns hue in degrees 0-360, saturation and lightness 0-1)
+ */
+function rgbToHsl(
+  r: number,
+  g: number,
+  b: number
+): { h: number; s: number; l: number } {
+  r /= 255
+  g /= 255
+  b /= 255
+
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const l = (max + min) / 2
+  let h = 0
+  let s = 0
+
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+        break
+      case g:
+        h = ((b - r) / d + 2) / 6
+        break
+      case b:
+        h = ((r - g) / d + 4) / 6
+        break
+    }
+  }
+
+  return { h: h * 360, s, l }
+}
+
+/**
+ * Calculate hue difference (accounting for circular nature of hue)
+ */
+function hueDifference(h1: number, h2: number): number {
+  const diff = Math.abs(h1 - h2)
+  return Math.min(diff, 360 - diff)
+}
+
+/**
+ * Combined diversity check: hue OR lightness must be diverse
+ * For similar hues, requires different lightness
+ * For similar lightness, requires different hue
+ * This ensures palette covers both hue and lightness dimensions,
+ * allowing palette B to find pairs with similar luminosity (less flicker)
+ */
+function isHueOrLightnessDiverse(
+  color: Vector<'RGB'>,
+  existingColors: Vector<'RGB'>[],
+  minHueDiff: number,
+  minLightnessDiff: number,
+  saturationThreshold = 0.15
+): boolean {
+  const hsl = rgbToHsl(color[0], color[1], color[2])
+
+  for (const existing of existingColors) {
+    const existingHsl = rgbToHsl(existing[0], existing[1], existing[2])
+
+    const hueDiff =
+      hsl.s >= saturationThreshold && existingHsl.s >= saturationThreshold
+        ? hueDifference(hsl.h, existingHsl.h)
+        : 360 // Treat unsaturated colors as having "different" hue
+
+    const lightnessDiff = Math.abs(hsl.l - existingHsl.l)
+
+    // Must differ in at least one dimension
+    const hueSimilar = hueDiff < minHueDiff
+    const lightnessSimilar = lightnessDiff < minLightnessDiff
+
+    if (hueSimilar && lightnessSimilar) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
  * Generate all valid CPC Plus colors (4096 total)
  */
 function generateCPCPlusPalette(): Vector<'RGB'>[] {
@@ -111,125 +194,118 @@ function fillWithDiverseColors(
 /**
  * Select a palette optimized for Mode R blending.
  *
- * Key insight: In Mode R, the perceived color is blend(A, B) = (A + B) / 2.
- * For a target color T, we need A and B such that (A + B) / 2 ≈ T.
+ * OPTIMIZED: Uses voting approach instead of greedy O(n²) search.
  *
- * This means: A + B ≈ 2*T
+ * For palette A (used alone), we want colors that:
+ * 1. Match target colors directly (self-blend)
+ * 2. Combine well with each other to produce diverse blends
  *
- * Strategy: Select colors that, when combined (including with themselves),
- * produce blends covering the target colors well.
- *
- * For a single palette (A = B), the possible blends are:
- * - Diagonal: A[i] (pure colors, no blend)
- * - Off-diagonal: (A[i] + A[j]) / 2 for i ≠ j
- *
- * We greedily select colors that maximize coverage of target colors
- * via their blends with already-selected colors.
+ * Strategy: Vote for colors based on how close they are to target colors.
+ * Then ensure diversity in selection.
  */
 function selectPaletteForBlends(
   targetColors: Vector<'RGB'>[],
   targetWeights: number[],
   available: Vector<'RGB'>[],
   count: number,
-  maxFlicker: number
+  _maxFlicker: number
 ): Vector<'RGB'>[] {
   const selected: Vector<'RGB'>[] = []
   const usedKeys = new Set<string>()
 
-  // Track which targets are covered and how well
-  const targetCoverage = new Array(targetColors.length).fill(Infinity)
+  // PHASE 1: Vote for candidates based on proximity to targets
+  const candidateScores = new Map<
+    string,
+    { color: Vector<'RGB'>; score: number }
+  >()
 
-  // Helper: calculate best blend error for a target given current palette + candidate
-  const getBestBlendError = (
-    target: Vector<'RGB'>,
-    palette: Vector<'RGB'>[],
-    candidate: Vector<'RGB'>
-  ): number => {
-    let bestError = Infinity
+  for (let t = 0; t < targetColors.length; t++) {
+    const target = targetColors[t]
+    const weight = targetWeights[t]
 
-    // Blend with self (pure color)
-    const selfBlend = candidate
-    const selfError = colorDistance(target, selfBlend)
-    if (selfError < bestError) bestError = selfError
+    // Find nearest available color to target
+    const nearest = findNearestColor(target, available)
+    const key = `${nearest[0]},${nearest[1]},${nearest[2]}`
 
-    // Blend with each existing color in palette
-    for (const existing of palette) {
-      const blend: Vector<'RGB'> = [
-        Math.round((candidate[0] + existing[0]) / 2),
-        Math.round((candidate[1] + existing[1]) / 2),
-        Math.round((candidate[2] + existing[2]) / 2)
-      ]
+    const dist = colorDistance(target, nearest)
+    const score = weight * Math.max(0, 10000 - dist)
 
-      // Check flicker (luminance difference)
-      const lumCandidate =
-        0.299 * candidate[0] + 0.587 * candidate[1] + 0.114 * candidate[2]
-      const lumExisting =
-        0.299 * existing[0] + 0.587 * existing[1] + 0.114 * existing[2]
-      const flicker = Math.abs(lumCandidate - lumExisting)
-
-      if (flicker <= maxFlicker) {
-        const error = colorDistance(target, blend)
-        if (error < bestError) bestError = error
-      }
+    const existing = candidateScores.get(key)
+    if (existing) {
+      existing.score += score
+    } else {
+      candidateScores.set(key, { color: nearest, score })
     }
-
-    return bestError
   }
 
-  // Greedy selection: add colors that most improve target coverage
-  while (selected.length < count) {
-    let bestCandidate: Vector<'RGB'> | null = null
-    let bestImprovement = -Infinity
+  // Sort by score
+  const sortedCandidates = [...candidateScores.values()].sort(
+    (a, b) => b.score - a.score
+  )
 
-    for (const candidate of available) {
-      const key = `${candidate[0]},${candidate[1]},${candidate[2]}`
-      if (usedKeys.has(key)) continue
+  // PHASE 2: Select top candidates with diversity constraint (RGB + Hue + Lightness)
+  // This ensures palette A has good coverage across hue AND lightness dimensions,
+  // making it easier for palette B to find pairs with similar luminosity (less flicker)
+  const MIN_DIVERSITY = 50 // RGB threshold
+  const MIN_HUE_DIFF = 20 // Minimum hue difference in degrees
+  const MIN_LIGHTNESS_DIFF = 0.08 // Minimum lightness difference (0-1 scale, ~8%)
 
-      // Calculate improvement in weighted coverage
-      let improvement = 0
-      for (let t = 0; t < targetColors.length; t++) {
-        const newError = getBestBlendError(targetColors[t], selected, candidate)
-        const oldError = targetCoverage[t]
-        if (newError < oldError) {
-          // Weight improvement by target importance
-          improvement += (oldError - newError) * targetWeights[t]
-        }
-      }
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= count) break
 
-      if (improvement > bestImprovement) {
-        bestImprovement = improvement
-        bestCandidate = candidate
-      }
-    }
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (usedKeys.has(key)) continue
 
-    if (!bestCandidate) {
-      // No more candidates, fill with diverse colors
-      fillWithDiverseColors(selected, usedKeys, available, count, 100)
-      break
-    }
-
-    // Add best candidate
-    selected.push(bestCandidate)
-    usedKeys.add(`${bestCandidate[0]},${bestCandidate[1]},${bestCandidate[2]}`)
-
-    // Update coverage with new blends
-    for (let t = 0; t < targetColors.length; t++) {
-      const newError = getBestBlendError(
-        targetColors[t],
-        selected.slice(0, -1), // Exclude just-added to avoid double counting
-        bestCandidate
+    // Check RGB distance AND (hue OR lightness diversity)
+    // Colors must differ in at least one perceptual dimension
+    const rgbDiverse =
+      selected.length === 0 ||
+      isColorDiverse(candidate.color, selected, MIN_DIVERSITY)
+    const hueOrLightDiverse =
+      selected.length === 0 ||
+      isHueOrLightnessDiverse(
+        candidate.color,
+        selected,
+        MIN_HUE_DIFF,
+        MIN_LIGHTNESS_DIFF
       )
-      if (newError < targetCoverage[t]) {
-        targetCoverage[t] = newError
-      }
+
+    if (rgbDiverse && hueOrLightDiverse) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
     }
   }
 
-  logger.info('[Mode R] Palette selected for blends', {
+  // PHASE 3: Relax constraints - only require some RGB diversity
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= count) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (usedKeys.has(key)) continue
+
+    if (isColorDiverse(candidate.color, selected, MIN_DIVERSITY / 2)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // PHASE 4: Fill remaining slots without constraints
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= count) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (!usedKeys.has(key)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // Pad with diverse colors if still not enough
+  fillWithDiverseColors(selected, usedKeys, available, count, 50)
+
+  logger.info('[Mode R] Palette A selected (hue + lightness diversity)', {
     numSelected: selected.length,
-    avgCoverage:
-      targetCoverage.reduce((a, b) => a + Math.min(b, 10000), 0) /
-      targetColors.length
+    candidatesEvaluated: candidateScores.size
   })
 
   return selected
@@ -367,24 +443,50 @@ function selectPaletteBForCPCPlus(
     (a, b) => b.score - a.score
   )
 
-  // Select top candidates with diversity constraint
-  const MIN_DIVERSITY = 150
+  // Select top candidates with diversity constraint (RGB + Hue + Lightness)
+  const MIN_DIVERSITY = 80 // RGB distance threshold
+  const MIN_HUE_DIFF = 18 // Hue difference threshold
+  const MIN_LIGHTNESS_DIFF = 0.06 // Lightness difference threshold (~6%)
+
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
 
     const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
     if (usedKeys.has(key)) continue
 
-    if (
+    // Check RGB diversity AND (hue OR lightness diversity)
+    const rgbDiverse =
       selected.length === 0 ||
       isColorDiverse(candidate.color, selected, MIN_DIVERSITY)
-    ) {
+    const hueOrLightDiverse =
+      selected.length === 0 ||
+      isHueOrLightnessDiverse(
+        candidate.color,
+        selected,
+        MIN_HUE_DIFF,
+        MIN_LIGHTNESS_DIFF
+      )
+
+    if (rgbDiverse && hueOrLightDiverse) {
       selected.push(candidate.color)
       usedKeys.add(key)
     }
   }
 
-  // Relax diversity if needed
+  // Relax constraints - only require some RGB diversity
+  for (const candidate of sortedCandidates) {
+    if (selected.length >= 16) break
+
+    const key = `${candidate.color[0]},${candidate.color[1]},${candidate.color[2]}`
+    if (usedKeys.has(key)) continue
+
+    if (isColorDiverse(candidate.color, selected, MIN_DIVERSITY / 2)) {
+      selected.push(candidate.color)
+      usedKeys.add(key)
+    }
+  }
+
+  // Fill remaining slots without constraints
   for (const candidate of sortedCandidates) {
     if (selected.length >= 16) break
 
@@ -401,7 +503,7 @@ function selectPaletteBForCPCPlus(
   }
 
   const paletteAKeys = new Set(paletteA.map((c) => `${c[0]},${c[1]},${c[2]}`))
-  logger.info('[Mode R] CPC Plus Palette B selection (blend-optimized)', {
+  logger.info('[Mode R] CPC Plus Palette B (hue + lightness diversity)', {
     numSelected: selected.length,
     sharedWithA: selected.filter((c) =>
       paletteAKeys.has(`${c[0]},${c[1]},${c[2]}`)
