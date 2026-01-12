@@ -24,6 +24,7 @@ export interface AdjustmentConfig {
   // Convolution filters
   sharpen: number // Sharpen amount: 0 = off, 0.5 = subtle, 1.0 = strong
   blur: number // Blur strength: 0 = off, 1 = full Gaussian
+  edges: number // Edge detection strength: 0 = off, 1 = full edges
 }
 
 /**

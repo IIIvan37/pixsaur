@@ -51,7 +51,7 @@ export const sections: AdjustmentSection[] = [
   {
     id: 'effects',
     title: <Trans>Effets</Trans>,
-    keys: ['posterization', 'sharpen', 'blur']
+    keys: ['posterization', 'sharpen', 'blur', 'edges']
   }
 ]
 
@@ -226,6 +226,16 @@ export const labels: AdjustmentLabel[] = [
       <Trans>
         Adoucit l'image avec un flou gaussien (0 = off, 1 = maximum)
       </Trans>
+    ),
+    min: 0,
+    max: 1,
+    step: 0.05
+  },
+  {
+    key: 'edges',
+    label: <Trans>Contours</Trans>,
+    description: (
+      <Trans>Détection des contours (0 = off, 1 = contours uniquement)</Trans>
     ),
     min: 0,
     max: 1,

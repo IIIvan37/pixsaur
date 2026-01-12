@@ -12,3 +12,5 @@ export { default as modeRQuantizeFragmentShader } from './mode-r-quantize-fragme
 // Raster preview shader (per-line palette lookup)
 export { default as rasterFragmentShader } from './raster-fragment.glsl?raw'
 export { default as simpleVertexShader } from './simple-vertex.glsl?raw'
+// Sobel edge detection shader
+export { default as sobelFragmentShader } from './sobel-fragment.glsl?raw'

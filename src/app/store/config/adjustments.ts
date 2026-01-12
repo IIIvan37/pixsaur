@@ -28,6 +28,7 @@ const defaultAdjustments: { [key in AdjustementKey]: number } & {
   posterization: 256,
   sharpen: 0, // 0 to 2.0 (0 = off, 0.5 = subtle, 1.0 = strong)
   blur: 0, // 0 to 1.0 (0 = off, 1.0 = full Gaussian)
+  edges: 0, // 0 to 1.0 (0 = off, 1.0 = full edge detection)
   lastChangedKey: null
 }
 

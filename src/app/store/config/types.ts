@@ -176,3 +176,4 @@ export type AdjustementKey =
   | 'posterization'
   | 'sharpen'
   | 'blur'
+  | 'edges'

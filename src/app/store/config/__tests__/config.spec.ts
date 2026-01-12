@@ -372,6 +372,7 @@ describe('Config Store', () => {
         posterization: 200,
         sharpen: 0,
         blur: 0,
+        edges: 0,
         lastChangedKey: 'red'
       })
 
@@ -398,6 +399,7 @@ describe('Config Store', () => {
         posterization: 256,
         sharpen: 0,
         blur: 0,
+        edges: 0,
         lastChangedKey: null
       })
     })

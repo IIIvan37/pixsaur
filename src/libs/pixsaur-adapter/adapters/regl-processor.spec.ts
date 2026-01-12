@@ -87,7 +87,8 @@ describe('ReGLProcessor', () => {
       shadows: 0,
       posterization: 0,
       sharpen: 0,
-      blur: 0
+      blur: 0,
+      edges: 0
     }
 
     // Mock ReGL complet
@@ -608,7 +609,8 @@ describe('ReGLProcessor', () => {
         shadows: 0,
         posterization: 0,
         sharpen: 0,
-        blur: 0
+        blur: 0,
+        edges: 0
       }
 
       const mockApplyAdjustments = vi.mocked(applyAdjustmentsInOnePass)

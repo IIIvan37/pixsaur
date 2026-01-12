@@ -24,7 +24,10 @@ import {
   getBlurPassCount,
   kernelToMat3
 } from '../convolution-kernels'
-import { applyConvolutionFilters } from '../cpu-convolution'
+import {
+  applyConvolutionFilters,
+  applySobelEdgeDetection
+} from '../cpu-convolution'
 import type {
   AdjustmentConfig,
   ImageProcessor,
@@ -34,7 +37,8 @@ import {
   convolutionFragmentShader,
   imageAdjustmentFragmentShader,
   rasterFragmentShader,
-  simpleVertexShader
+  simpleVertexShader,
+  sobelFragmentShader
 } from '../shaders'
 import { ReGLQuantizer } from './regl-quantizer'
 
@@ -57,6 +61,9 @@ export class ReGLProcessor implements ImageProcessor {
   // GPU Convolution (sharpen, blur)
   private convolutionCommand?: any
 
+  // GPU Sobel edge detection
+  private sobelCommand?: any
+
   // GPU Raster preview
   private rasterPreviewCommand?: any
 
@@ -78,6 +85,7 @@ export class ReGLProcessor implements ImageProcessor {
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
         this.initializeConvolution(regl)
+        this.initializeSobel(regl)
         this.initializeRasterPreview(regl)
         adapterLogger.info(
           '[ADAPTER] ReGL quantizer and GPU adjustments initialized successfully'
@@ -164,6 +172,31 @@ export class ReGLProcessor implements ImageProcessor {
         u_image: (_ctx, props: any) => props.inputTexture,
         u_texelSize: (_ctx, props: any) => props.texelSize,
         u_kernel: (_ctx, props: any) => props.kernel,
+        u_strength: (_ctx, props: any) => props.strength
+      },
+      primitive: 'triangle strip',
+      count: 4
+    })
+  }
+
+  /**
+   * Initialise la commande GPU pour la détection de contours Sobel
+   */
+  private initializeSobel(regl: REGL.Regl): void {
+    this.sobelCommand = regl({
+      frag: sobelFragmentShader,
+      vert: simpleVertexShader,
+      attributes: {
+        a_position: [
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1]
+        ]
+      },
+      uniforms: {
+        u_image: (_ctx, props: any) => props.inputTexture,
+        u_texelSize: (_ctx, props: any) => props.texelSize,
         u_strength: (_ctx, props: any) => props.strength
       },
       primitive: 'triangle strip',
@@ -412,6 +445,12 @@ export class ReGLProcessor implements ImageProcessor {
       result = applyConvolutionFilters(result, sharpen, blur)
     }
 
+    // Fallback CPU: edge detection
+    const edges = adjustments.edges ?? 0
+    if (edges !== 0) {
+      result = applySobelEdgeDetection(result, edges)
+    }
+
     return result
   }
 
@@ -448,6 +487,7 @@ export class ReGLProcessor implements ImageProcessor {
     const totalPixels = width * height
     const hasConvolution =
       (adjustments.sharpen ?? 0) !== 0 || (adjustments.blur ?? 0) !== 0
+    const hasEdges = (adjustments.edges ?? 0) !== 0
 
     const startTime = performance.now()
 
@@ -595,25 +635,70 @@ export class ReGLProcessor implements ImageProcessor {
       finalTexture = convolutionOutputTexture
     }
 
+    // Pass 3: Sobel edge detection (si actif)
+    let edgesFramebuffer: any = null
+    let edgesPasses = 0
+    if (hasEdges && this.sobelCommand) {
+      edgesPasses = 1
+      const edgesOutputTexture = this.regl!.texture({
+        width,
+        height,
+        format: 'rgba',
+        type: 'uint8'
+      })
+
+      edgesFramebuffer = this.regl!.framebuffer({
+        color: edgesOutputTexture
+      })
+
+      // Input: soit la texture de convolution, soit la texture d'ajustements
+      const inputForEdges = hasConvolution
+        ? finalTexture
+        : adjustmentOutputTexture
+
+      edgesFramebuffer.use(() => {
+        this.sobelCommand!({
+          inputTexture: inputForEdges,
+          texelSize: [1 / width, 1 / height],
+          strength: adjustments.edges
+        })
+      })
+
+      // Si on avait une convolution, on peut nettoyer sa texture maintenant
+      if (hasConvolution && convolutionFramebuffer) {
+        convolutionFramebuffer.destroy()
+        finalTexture.destroy()
+      }
+
+      finalTexture = edgesOutputTexture
+    }
+
     // Lecture du résultat final
     const resultData = new Uint8ClampedArray(width * height * 4)
-    this.regl!.read({
-      framebuffer: hasConvolution
+    const finalFramebuffer = hasEdges
+      ? edgesFramebuffer
+      : hasConvolution
         ? convolutionFramebuffer
-        : adjustmentFramebuffer,
+        : adjustmentFramebuffer
+    this.regl!.read({
+      framebuffer: finalFramebuffer,
       data: new Uint8Array(resultData.buffer)
     })
 
     // Nettoyage
     adjustmentFramebuffer.destroy()
     adjustmentOutputTexture.destroy()
-    if (convolutionFramebuffer) {
+    if (hasConvolution && !hasEdges && convolutionFramebuffer) {
       convolutionFramebuffer.destroy()
+      finalTexture.destroy()
+    }
+    if (hasEdges && edgesFramebuffer) {
+      edgesFramebuffer.destroy()
       finalTexture.destroy()
     }
 
     const totalTime = performance.now() - startTime
-    const totalPasses = 1 + convolutionPasses // 1 for adjustments + convolution passes
+    const totalPasses = 1 + convolutionPasses + edgesPasses // adjustments + convolution + edges
     adapterLogger.info(
       `[ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${totalPasses} pass${totalPasses > 1 ? 'es' : ''}, ${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
     )

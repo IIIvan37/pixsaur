@@ -111,3 +111,77 @@ export function applyConvolutionFilters(
 
   return result
 }
+
+/**
+ * Convert RGB to grayscale using luminance formula
+ */
+function luminance(r: number, g: number, b: number): number {
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+/**
+ * Applique la détection de contours Sobel sur une image
+ *
+ * @param imageData - Image d'entrée
+ * @param strength - Force de la détection (0 = off, 1 = contours uniquement)
+ * @returns Nouvelle ImageData avec les contours détectés
+ */
+export function applySobelEdgeDetection(
+  imageData: ImageData,
+  strength: number
+): ImageData {
+  if (strength === 0) {
+    return imageData
+  }
+
+  const { width, height, data: src } = imageData
+  const dst = new Uint8ClampedArray(src.length)
+
+  // Helper pour obtenir la luminance à une position avec clamping
+  const getLuminance = (x: number, y: number): number => {
+    const cx = Math.max(0, Math.min(width - 1, x))
+    const cy = Math.max(0, Math.min(height - 1, y))
+    const idx = (cy * width + cx) * 4
+    return luminance(src[idx], src[idx + 1], src[idx + 2])
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // Sample 3x3 neighborhood
+      const tl = getLuminance(x - 1, y - 1)
+      const tc = getLuminance(x, y - 1)
+      const tr = getLuminance(x + 1, y - 1)
+      const ml = getLuminance(x - 1, y)
+      const mr = getLuminance(x + 1, y)
+      const bl = getLuminance(x - 1, y + 1)
+      const bc = getLuminance(x, y + 1)
+      const br = getLuminance(x + 1, y + 1)
+
+      // Sobel Gx: horizontal gradient (detects vertical edges)
+      const gx = -tl + tr - 2 * ml + 2 * mr - bl + br
+
+      // Sobel Gy: vertical gradient (detects horizontal edges)
+      const gy = -tl - 2 * tc - tr + bl + 2 * bc + br
+
+      // Gradient magnitude (sum of absolutes for performance)
+      const magnitude = Math.min(255, Math.abs(gx) + Math.abs(gy))
+
+      const dstIdx = (y * width + x) * 4
+      const origR = src[dstIdx]
+      const origG = src[dstIdx + 1]
+      const origB = src[dstIdx + 2]
+
+      // Mix original with edge detection based on strength
+      dst[dstIdx] = Math.round(origR * (1 - strength) + magnitude * strength)
+      dst[dstIdx + 1] = Math.round(
+        origG * (1 - strength) + magnitude * strength
+      )
+      dst[dstIdx + 2] = Math.round(
+        origB * (1 - strength) + magnitude * strength
+      )
+      dst[dstIdx + 3] = src[dstIdx + 3] // Preserve alpha
+    }
+  }
+
+  return new ImageData(dst, width, height)
+}
