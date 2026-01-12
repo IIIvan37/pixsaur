@@ -261,7 +261,7 @@ describe('Config Store', () => {
 
   describe('Processing Atoms', () => {
     it('should initialize processing atoms with default values', () => {
-      expect(store.get(smoothingAtom)).toBe(true)
+      expect(store.get(smoothingAtom)).toBe(false)
       expect(store.get(horizontalSmoothingAtom)).toBe(false)
       expect(store.get(processorTypeAtom)).toBe('gpu')
     })

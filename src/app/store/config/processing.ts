@@ -12,9 +12,10 @@ import type { PaletteStrategy, ProcessorType } from './types'
 // ============================================================================
 
 /**
- * Smoothing enabled (legacy)
+ * Smoothing enabled for preview canvas (bilinear interpolation on upscale)
+ * Disabled by default for accurate CPC pixel rendering
  */
-export const smoothingAtom = atom<boolean>(true)
+export const smoothingAtom = atom<boolean>(false)
 
 /**
  * Horizontal smoothing (anti-aliasing for CPC pixel modes)
