@@ -30,7 +30,9 @@ export const useImageAdjustement = () => {
     exposure,
     highlights,
     shadows,
-    posterization
+    posterization,
+    sharpen,
+    blur
   } = config
 
   // Use refs to always have latest values without recreating debounced function
@@ -79,7 +81,9 @@ export const useImageAdjustement = () => {
             exposure: cfg.exposure,
             highlights: cfg.highlights,
             shadows: cfg.shadows,
-            posterization: cfg.posterization
+            posterization: cfg.posterization,
+            sharpen: cfg.sharpen,
+            blur: cfg.blur
           }
         )
         setSrc(result)
@@ -115,6 +119,8 @@ export const useImageAdjustement = () => {
     exposure,
     highlights,
     shadows,
-    posterization
+    posterization,
+    sharpen,
+    blur
   ])
 }

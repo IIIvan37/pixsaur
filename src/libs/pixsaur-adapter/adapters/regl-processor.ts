@@ -18,12 +18,19 @@ import { applyAdjustmentsInOnePass } from '@/libs/pixsaur-color/src/transform/co
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { createRasterPreviewImageData } from '@/libs/pixsaur-raster/render-with-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
+import {
+  createBlurKernel,
+  createSharpenKernel,
+  kernelToMat3
+} from '../convolution-kernels'
+import { applyConvolutionFilters } from '../cpu-convolution'
 import type {
   AdjustmentConfig,
   ImageProcessor,
   PaletteStrategy
 } from '../interfaces'
 import {
+  convolutionFragmentShader,
   imageAdjustmentFragmentShader,
   rasterFragmentShader,
   simpleVertexShader
@@ -46,6 +53,9 @@ export class ReGLProcessor implements ImageProcessor {
   private imageAdjustmentCommand?: any
   private inputTexture?: any
 
+  // GPU Convolution (sharpen, blur)
+  private convolutionCommand?: any
+
   // GPU Raster preview
   private rasterPreviewCommand?: any
 
@@ -66,6 +76,7 @@ export class ReGLProcessor implements ImageProcessor {
         this.quantizer = new ReGLQuantizer(regl)
         this.regl = regl // Store ReGL instance
         this.initializeGPUAdjustments(regl)
+        this.initializeConvolution(regl)
         this.initializeRasterPreview(regl)
         adapterLogger.info(
           '[ADAPTER] ReGL quantizer and GPU adjustments initialized successfully'
@@ -127,6 +138,32 @@ export class ReGLProcessor implements ImageProcessor {
         u_highlights: (_context, props: any) => props.highlights || 0,
         u_shadows: (_context, props: any) => props.shadows || 0,
         u_posterization: (_context, props: any) => props.posterization
+      },
+      primitive: 'triangle strip',
+      count: 4
+    })
+  }
+
+  /**
+   * Initialise la commande GPU pour les filtres de convolution (sharpen, blur)
+   */
+  private initializeConvolution(regl: REGL.Regl): void {
+    this.convolutionCommand = regl({
+      frag: convolutionFragmentShader,
+      vert: simpleVertexShader,
+      attributes: {
+        a_position: [
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1]
+        ]
+      },
+      uniforms: {
+        u_image: (_ctx, props: any) => props.inputTexture,
+        u_texelSize: (_ctx, props: any) => props.texelSize,
+        u_kernel: (_ctx, props: any) => props.kernel,
+        u_strength: (_ctx, props: any) => props.strength
       },
       primitive: 'triangle strip',
       count: 4
@@ -361,11 +398,20 @@ export class ReGLProcessor implements ImageProcessor {
       return this.applyAdjustmentsGPU(imageData, adjustments)
     }
 
-    // Fallback CPU
-    return applyAdjustmentsInOnePass(
+    // Fallback CPU: ajustements colorimétriques
+    let result = applyAdjustmentsInOnePass(
       imageData,
       this.createAdjustmentConfig(adjustments)
     )
+
+    // Fallback CPU: convolution (sharpen, blur)
+    const sharpen = adjustments.sharpen ?? 0
+    const blur = adjustments.blur ?? 0
+    if (sharpen !== 0 || blur !== 0) {
+      result = applyConvolutionFilters(result, sharpen, blur)
+    }
+
+    return result
   }
 
   /**
@@ -391,6 +437,7 @@ export class ReGLProcessor implements ImageProcessor {
 
   /**
    * Applique les ajustements via GPU ReGL
+   * Pipeline: Input → Adjustments → Convolution (si actif) → Output
    */
   private applyAdjustmentsGPU(
     imageData: ImageData,
@@ -398,6 +445,8 @@ export class ReGLProcessor implements ImageProcessor {
   ): ImageData {
     const { width, height } = imageData
     const totalPixels = width * height
+    const hasConvolution =
+      (adjustments.sharpen ?? 0) !== 0 || (adjustments.blur ?? 0) !== 0
 
     const startTime = performance.now()
 
@@ -410,20 +459,20 @@ export class ReGLProcessor implements ImageProcessor {
       type: 'uint8'
     })
 
-    // Configuration du framebuffer de sortie
-    const outputTexture = this.regl!.texture({
-      width: imageData.width,
-      height: imageData.height,
+    // Configuration du framebuffer de sortie pour ajustements
+    const adjustmentOutputTexture = this.regl!.texture({
+      width,
+      height,
       format: 'rgba',
       type: 'uint8'
     })
 
-    const framebuffer = this.regl!.framebuffer({
-      color: outputTexture
+    const adjustmentFramebuffer = this.regl!.framebuffer({
+      color: adjustmentOutputTexture
     })
 
-    // Rendu avec les ajustements
-    framebuffer.use(() => {
+    // Pass 1: Rendu avec les ajustements colorimétriques
+    adjustmentFramebuffer.use(() => {
       this.imageAdjustmentCommand!({
         rgbFactors: [adjustments.rgb.r, adjustments.rgb.g, adjustments.rgb.b],
         brightness: adjustments.brightness,
@@ -441,20 +490,72 @@ export class ReGLProcessor implements ImageProcessor {
       })
     })
 
-    // Lecture du résultat
+    // Texture finale (après convolution ou directement depuis ajustements)
+    let finalTexture = adjustmentOutputTexture
+    let convolutionFramebuffer: any = null
+
+    // Pass 2: Convolution (sharpen ou blur) si nécessaire
+    if (hasConvolution && this.convolutionCommand) {
+      const convolutionOutputTexture = this.regl!.texture({
+        width,
+        height,
+        format: 'rgba',
+        type: 'uint8'
+      })
+
+      convolutionFramebuffer = this.regl!.framebuffer({
+        color: convolutionOutputTexture
+      })
+
+      // Déterminer kernel et strength
+      const sharpen = adjustments.sharpen ?? 0
+      const blur = adjustments.blur ?? 0
+
+      // Sharpen a priorité, sinon blur
+      let kernel: number[]
+      let strength: number
+
+      if (sharpen === 0) {
+        kernel = kernelToMat3(createBlurKernel(Math.abs(blur)))
+        strength = 1
+      } else {
+        kernel = kernelToMat3(createSharpenKernel(Math.abs(sharpen)))
+        strength = 1 // Le kernel lui-même encode la force
+      }
+
+      convolutionFramebuffer.use(() => {
+        this.convolutionCommand!({
+          inputTexture: adjustmentOutputTexture,
+          texelSize: [1 / width, 1 / height],
+          kernel,
+          strength
+        })
+      })
+
+      finalTexture = convolutionOutputTexture
+    }
+
+    // Lecture du résultat final
     const resultData = new Uint8ClampedArray(width * height * 4)
     this.regl!.read({
-      framebuffer: framebuffer,
+      framebuffer: hasConvolution
+        ? convolutionFramebuffer
+        : adjustmentFramebuffer,
       data: new Uint8Array(resultData.buffer)
     })
 
     // Nettoyage
-    framebuffer.destroy()
-    outputTexture.destroy()
+    adjustmentFramebuffer.destroy()
+    adjustmentOutputTexture.destroy()
+    if (convolutionFramebuffer) {
+      convolutionFramebuffer.destroy()
+      finalTexture.destroy()
+    }
 
     const totalTime = performance.now() - startTime
+    const passes = hasConvolution ? 2 : 1
     adapterLogger.info(
-      `[ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
+      `[ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${passes} passes, ${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
     )
 
     return new ImageData(resultData, width, height)

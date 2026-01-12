@@ -26,6 +26,8 @@ const defaultAdjustments: { [key in AdjustementKey]: number } & {
   highlights: 0, // -100 to +100
   shadows: 0, // -100 to +100
   posterization: 256,
+  sharpen: 0, // 0 to 2.0 (0 = off, 0.5 = subtle, 1.0 = strong)
+  blur: 0, // 0 to 1.0 (0 = off, 1.0 = full Gaussian)
   lastChangedKey: null
 }
 

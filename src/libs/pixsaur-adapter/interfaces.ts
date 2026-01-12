@@ -21,6 +21,9 @@ export interface AdjustmentConfig {
   highlights: number // Ajustement des hautes lumières (-100 à +100)
   shadows: number // Ajustement des ombres (-100 à +100)
   posterization: number
+  // Convolution filters
+  sharpen: number // Sharpen amount: 0 = off, 0.5 = subtle, 1.0 = strong
+  blur: number // Blur strength: 0 = off, 1 = full Gaussian
 }
 
 /**

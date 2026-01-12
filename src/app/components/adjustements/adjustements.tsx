@@ -27,7 +27,9 @@ export default function Adjustments() {
     exposure,
     highlights,
     shadows,
-    posterization
+    posterization,
+    sharpen,
+    blur
   } = useAtomValue(configAtom)
 
   const setComponent = useSetAtom(setComponentAtom)
@@ -49,7 +51,9 @@ export default function Adjustments() {
     exposure: [exposure, -3, 3, 0.1],
     highlights: [highlights, -100, 100, 1],
     shadows: [shadows, -100, 100, 1],
-    posterization: [posterization, 2, 256, 1]
+    posterization: [posterization, 2, 256, 1],
+    sharpen: [sharpen, 0, 2, 0.05],
+    blur: [blur, 0, 1, 0.05]
   }
 
   const handleChange = ({

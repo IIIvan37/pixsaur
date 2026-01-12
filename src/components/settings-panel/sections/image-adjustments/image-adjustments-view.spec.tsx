@@ -18,7 +18,9 @@ const mockValues = {
   exposure: 0,
   highlights: 0,
   shadows: 0,
-  posterization: 256
+  posterization: 256,
+  sharpen: 0,
+  blur: 0
 }
 
 describe('ImageAdjustmentsView', () => {

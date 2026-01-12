@@ -75,7 +75,9 @@ export const workingImageAtom = atom(async (get) => {
     exposure: config.exposure,
     highlights: config.highlights,
     shadows: config.shadows,
-    posterization: config.posterization
+    posterization: config.posterization,
+    sharpen: config.sharpen,
+    blur: config.blur
   })
   logger.timeEnd('applyAdjustmentsSync')
 

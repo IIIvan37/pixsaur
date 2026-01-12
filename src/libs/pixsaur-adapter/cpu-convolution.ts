@@ -1,0 +1,105 @@
+/**
+ * CPU Convolution Implementation
+ *
+ * Fallback CPU pour les filtres de convolution (sharpen, blur)
+ * quand le GPU n'est pas disponible.
+ */
+
+import { createBlurKernel, createSharpenKernel } from './convolution-kernels'
+
+/**
+ * Applique une convolution 3x3 sur une image
+ *
+ * @param imageData - Image d'entrée
+ * @param kernel - Kernel 3x3 en format row-major [9 éléments]
+ * @param strength - Force du mélange (0 = original, 1 = full)
+ * @returns Nouvelle ImageData avec la convolution appliquée
+ */
+export function applyConvolution3x3(
+  imageData: ImageData,
+  kernel: number[],
+  strength: number
+): ImageData {
+  const { width, height, data: src } = imageData
+  const dst = new Uint8ClampedArray(src.length)
+
+  // Si strength est 0, retourner une copie
+  if (strength === 0) {
+    dst.set(src)
+    return new ImageData(dst, width, height)
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let sumR = 0
+      let sumG = 0
+      let sumB = 0
+
+      // Appliquer le kernel 3x3
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          // Coordonnées avec clamping aux bords
+          const sx = Math.max(0, Math.min(width - 1, x + kx))
+          const sy = Math.max(0, Math.min(height - 1, y + ky))
+
+          const srcIdx = (sy * width + sx) * 4
+          const kernelIdx = (ky + 1) * 3 + (kx + 1)
+          const weight = kernel[kernelIdx]
+
+          sumR += src[srcIdx] * weight
+          sumG += src[srcIdx + 1] * weight
+          sumB += src[srcIdx + 2] * weight
+        }
+      }
+
+      const dstIdx = (y * width + x) * 4
+
+      // Mélanger entre original et convolué selon strength
+      const origR = src[dstIdx]
+      const origG = src[dstIdx + 1]
+      const origB = src[dstIdx + 2]
+
+      dst[dstIdx] = Math.round(origR * (1 - strength) + sumR * strength)
+      dst[dstIdx + 1] = Math.round(origG * (1 - strength) + sumG * strength)
+      dst[dstIdx + 2] = Math.round(origB * (1 - strength) + sumB * strength)
+      dst[dstIdx + 3] = src[dstIdx + 3] // Préserver alpha
+    }
+  }
+
+  return new ImageData(dst, width, height)
+}
+
+/**
+ * Applique les filtres de convolution (sharpen et/ou blur) sur une image
+ *
+ * @param imageData - Image d'entrée
+ * @param sharpen - Force du sharpen (0 = off, 1 = strong)
+ * @param blur - Force du blur (0 = off, 1 = full gaussian)
+ * @returns Nouvelle ImageData avec les filtres appliqués
+ */
+export function applyConvolutionFilters(
+  imageData: ImageData,
+  sharpen: number,
+  blur: number
+): ImageData {
+  // Aucun filtre actif
+  if (sharpen === 0 && blur === 0) {
+    return imageData
+  }
+
+  let result = imageData
+
+  // Appliquer blur d'abord (si actif)
+  if (blur !== 0) {
+    const blurKernel = createBlurKernel(Math.abs(blur))
+    result = applyConvolution3x3(result, blurKernel, 1.0)
+  }
+
+  // Puis sharpen (si actif)
+  if (sharpen !== 0) {
+    const sharpenKernel = createSharpenKernel(Math.abs(sharpen))
+    result = applyConvolution3x3(result, sharpenKernel, 1.0)
+  }
+
+  return result
+}

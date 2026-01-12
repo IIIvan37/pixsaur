@@ -1,9 +1,10 @@
 // Export all GLSL shaders for easy importing
 
+// Convolution shaders (sharpen, blur, edge enhance)
+export { default as convolutionFragmentShader } from './convolution-fragment.glsl?raw'
 // Histogram shaders
 export { default as histogramFragmentShader } from './histogram-fragment.glsl?raw'
 export { default as histogramVertexShader } from './histogram-vertex.glsl?raw'
-
 // Image adjustment shaders
 export { default as imageAdjustmentFragmentShader } from './image-adjustment-fragment.glsl?raw'
 // Mode R quantization shader
