@@ -51,7 +51,7 @@ export const sections: AdjustmentSection[] = [
   {
     id: 'effects',
     title: <Trans>Effets</Trans>,
-    keys: ['posterization', 'sharpen', 'blur', 'edges']
+    keys: ['posterization', 'median', 'sharpen', 'blur', 'edges']
   }
 ]
 
@@ -205,6 +205,16 @@ export const labels: AdjustmentLabel[] = [
     ),
     min: 2,
     max: 256,
+    step: 1
+  },
+  {
+    key: 'median',
+    label: <Trans>Médian</Trans>,
+    description: (
+      <Trans>Débruitage qui préserve les contours (0 = off, 1-3 = force)</Trans>
+    ),
+    min: 0,
+    max: 3,
     step: 1
   },
   {

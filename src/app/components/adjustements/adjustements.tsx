@@ -28,6 +28,7 @@ export default function Adjustments() {
     highlights,
     shadows,
     posterization,
+    median,
     sharpen,
     blur,
     edges
@@ -53,6 +54,7 @@ export default function Adjustments() {
     highlights: [highlights, -100, 100, 1],
     shadows: [shadows, -100, 100, 1],
     posterization: [posterization, 2, 256, 1],
+    median: [median, 0, 3, 1],
     sharpen: [sharpen, 0, 2, 0.05],
     blur: [blur, 0, 3, 0.1],
     edges: [edges, 0, 1, 0.05]

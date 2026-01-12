@@ -113,6 +113,79 @@ export function applyConvolutionFilters(
 }
 
 /**
+ * Trouve la médiane d'un tableau de nombres
+ * Utilise un tri partiel pour performance optimale
+ */
+function findMedian(arr: number[]): number {
+  const sorted = arr.slice().sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  return sorted[mid]
+}
+
+/**
+ * Applique un filtre médian sur une image
+ *
+ * Le filtre médian remplace chaque pixel par la médiane de ses voisins.
+ * Excellent pour le débruitage (bruit sel et poivre) tout en préservant les contours.
+ *
+ * @param imageData - Image d'entrée
+ * @param radius - Rayon du filtre: 1 = 3x3, 2 = 5x5, 3 = 7x7
+ * @returns Nouvelle ImageData avec le filtre médian appliqué
+ */
+export function applyMedianFilter(
+  imageData: ImageData,
+  radius: number
+): ImageData {
+  if (radius <= 0) {
+    return imageData
+  }
+
+  // Clamper le rayon entre 1 et 3
+  const r = Math.min(3, Math.max(1, Math.round(radius)))
+  const { width, height, data: src } = imageData
+  const dst = new Uint8ClampedArray(src.length)
+
+  // Taille du kernel
+  const size = 2 * r + 1
+  const kernelSize = size * size
+
+  // Pré-allouer les tableaux pour chaque canal
+  const redValues: number[] = new Array(kernelSize)
+  const greenValues: number[] = new Array(kernelSize)
+  const blueValues: number[] = new Array(kernelSize)
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let idx = 0
+
+      // Collecter tous les pixels du voisinage
+      for (let ky = -r; ky <= r; ky++) {
+        for (let kx = -r; kx <= r; kx++) {
+          // Coordonnées avec clamping aux bords
+          const sx = Math.max(0, Math.min(width - 1, x + kx))
+          const sy = Math.max(0, Math.min(height - 1, y + ky))
+
+          const srcIdx = (sy * width + sx) * 4
+          redValues[idx] = src[srcIdx]
+          greenValues[idx] = src[srcIdx + 1]
+          blueValues[idx] = src[srcIdx + 2]
+          idx++
+        }
+      }
+
+      // Trouver la médiane pour chaque canal
+      const dstIdx = (y * width + x) * 4
+      dst[dstIdx] = findMedian(redValues)
+      dst[dstIdx + 1] = findMedian(greenValues)
+      dst[dstIdx + 2] = findMedian(blueValues)
+      dst[dstIdx + 3] = src[dstIdx + 3] // Préserver alpha
+    }
+  }
+
+  return new ImageData(dst, width, height)
+}
+
+/**
  * Convert RGB to grayscale using luminance formula
  */
 function luminance(r: number, g: number, b: number): number {

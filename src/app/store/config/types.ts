@@ -174,6 +174,7 @@ export type AdjustementKey =
   | 'highlights'
   | 'shadows'
   | 'posterization'
+  | 'median'
   | 'sharpen'
   | 'blur'
   | 'edges'

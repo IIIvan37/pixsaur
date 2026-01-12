@@ -76,6 +76,7 @@ export const workingImageAtom = atom(async (get) => {
     highlights: config.highlights,
     shadows: config.shadows,
     posterization: config.posterization,
+    median: config.median,
     sharpen: config.sharpen,
     blur: config.blur,
     edges: config.edges

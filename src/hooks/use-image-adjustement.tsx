@@ -31,6 +31,7 @@ export const useImageAdjustement = () => {
     highlights,
     shadows,
     posterization,
+    median,
     sharpen,
     blur,
     edges
@@ -83,6 +84,7 @@ export const useImageAdjustement = () => {
             highlights: cfg.highlights,
             shadows: cfg.shadows,
             posterization: cfg.posterization,
+            median: cfg.median,
             sharpen: cfg.sharpen,
             blur: cfg.blur,
             edges: cfg.edges
@@ -122,6 +124,7 @@ export const useImageAdjustement = () => {
     highlights,
     shadows,
     posterization,
+    median,
     sharpen,
     blur,
     edges

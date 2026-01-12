@@ -86,6 +86,7 @@ describe('ReGLProcessor', () => {
       highlights: 0,
       shadows: 0,
       posterization: 0,
+      median: 0,
       sharpen: 0,
       blur: 0,
       edges: 0
@@ -608,6 +609,7 @@ describe('ReGLProcessor', () => {
         highlights: 0,
         shadows: 0,
         posterization: 0,
+        median: 0,
         sharpen: 0,
         blur: 0,
         edges: 0

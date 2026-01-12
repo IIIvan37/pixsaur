@@ -26,6 +26,7 @@ import {
 } from '../convolution-kernels'
 import {
   applyConvolutionFilters,
+  applyMedianFilter,
   applySobelEdgeDetection
 } from '../cpu-convolution'
 import type {
@@ -437,6 +438,12 @@ export class ReGLProcessor implements ImageProcessor {
       imageData,
       this.createAdjustmentConfig(adjustments)
     )
+
+    // Fallback CPU: median filter (débruitage avant autres filtres)
+    const median = adjustments.median ?? 0
+    if (median !== 0) {
+      result = applyMedianFilter(result, median)
+    }
 
     // Fallback CPU: convolution (sharpen, blur)
     const sharpen = adjustments.sharpen ?? 0

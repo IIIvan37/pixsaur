@@ -22,6 +22,7 @@ export interface AdjustmentConfig {
   shadows: number // Ajustement des ombres (-100 à +100)
   posterization: number
   // Convolution filters
+  median: number // Median filter radius: 0 = off, 1-3 = kernel size (3x3, 5x5, 7x7)
   sharpen: number // Sharpen amount: 0 = off, 0.5 = subtle, 1.0 = strong
   blur: number // Blur strength: 0 = off, 1 = full Gaussian
   edges: number // Edge detection strength: 0 = off, 1 = full edges
