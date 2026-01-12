@@ -110,6 +110,59 @@ export function EditorCanvas({
     prevPixelHeightRef.current = pixelHeight
   }, [containerRef, zoom, pixelWidth, pixelHeight])
 
+  // Auto-scroll to keep cursor visible when it moves near edges
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || !cursor) return
+
+    // Calculate cursor position on screen
+    const cursorScreenX = cursor.x * pixelWidth
+    const cursorScreenY = cursor.y * pixelHeight
+    const cursorScreenRight = cursorScreenX + pixelWidth
+    const cursorScreenBottom = cursorScreenY + pixelHeight
+
+    // Define scroll margins (how close to edge before scrolling)
+    const margin = 50 // pixels from edge
+
+    // Get current viewport bounds
+    const viewportLeft = container.scrollLeft
+    const viewportTop = container.scrollTop
+    const viewportRight = viewportLeft + container.clientWidth
+    const viewportBottom = viewportTop + container.clientHeight
+
+    let newScrollX = container.scrollLeft
+    let newScrollY = container.scrollTop
+
+    // Check if cursor is near or outside viewport edges and scroll to keep it visible
+    if (cursorScreenX < viewportLeft + margin) {
+      // Cursor is near/past left edge - scroll left
+      newScrollX = Math.max(0, cursorScreenX - margin)
+    } else if (cursorScreenRight > viewportRight - margin) {
+      // Cursor is near/past right edge - scroll right
+      newScrollX = cursorScreenRight + margin - container.clientWidth
+    }
+
+    if (cursorScreenY < viewportTop + margin) {
+      // Cursor is near/past top edge - scroll up
+      newScrollY = Math.max(0, cursorScreenY - margin)
+    } else if (cursorScreenBottom > viewportBottom - margin) {
+      // Cursor is near/past bottom edge - scroll down
+      newScrollY = cursorScreenBottom + margin - container.clientHeight
+    }
+
+    // Apply scroll if needed
+    if (
+      newScrollX !== container.scrollLeft ||
+      newScrollY !== container.scrollTop
+    ) {
+      container.scrollTo({
+        left: newScrollX,
+        top: newScrollY,
+        behavior: 'smooth'
+      })
+    }
+  }, [containerRef, cursor, pixelWidth, pixelHeight])
+
   // Track if space is held for drawing mode
   const isSpaceHeld = useRef(false)
 
