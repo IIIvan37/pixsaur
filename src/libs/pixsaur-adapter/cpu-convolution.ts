@@ -5,7 +5,11 @@
  * quand le GPU n'est pas disponible.
  */
 
-import { createBlurKernel, createSharpenKernel } from './convolution-kernels'
+import {
+  createBlurKernel,
+  createSharpenKernel,
+  getBlurPassCount
+} from './convolution-kernels'
 
 /**
  * Applique une convolution 3x3 sur une image
@@ -74,7 +78,7 @@ export function applyConvolution3x3(
  *
  * @param imageData - Image d'entrée
  * @param sharpen - Force du sharpen (0 = off, 1 = strong)
- * @param blur - Force du blur (0 = off, 1 = full gaussian)
+ * @param blur - Force du blur (0 = off, 1-3 = passes de gaussian blur)
  * @returns Nouvelle ImageData avec les filtres appliqués
  */
 export function applyConvolutionFilters(
@@ -89,10 +93,14 @@ export function applyConvolutionFilters(
 
   let result = imageData
 
-  // Appliquer blur d'abord (si actif)
+  // Appliquer blur d'abord (multi-pass si blur > 1)
   if (blur !== 0) {
-    const blurKernel = createBlurKernel(Math.abs(blur))
-    result = applyConvolution3x3(result, blurKernel, 1.0)
+    const blurKernel = createBlurKernel(blur)
+    const passes = getBlurPassCount(blur)
+
+    for (let pass = 0; pass < passes; pass++) {
+      result = applyConvolution3x3(result, blurKernel, 1.0)
+    }
   }
 
   // Puis sharpen (si actif)

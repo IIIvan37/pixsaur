@@ -21,6 +21,7 @@ import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import {
   createBlurKernel,
   createSharpenKernel,
+  getBlurPassCount,
   kernelToMat3
 } from '../convolution-kernels'
 import { applyConvolutionFilters } from '../cpu-convolution'
@@ -493,9 +494,17 @@ export class ReGLProcessor implements ImageProcessor {
     // Texture finale (après convolution ou directement depuis ajustements)
     let finalTexture = adjustmentOutputTexture
     let convolutionFramebuffer: any = null
+    let convolutionPasses = 0
 
-    // Pass 2: Convolution (sharpen ou blur) si nécessaire
+    // Pass 2+: Convolution (blur puis sharpen) si nécessaire
     if (hasConvolution && this.convolutionCommand) {
+      const sharpen = adjustments.sharpen ?? 0
+      const blur = adjustments.blur ?? 0
+      const blurPasses = getBlurPassCount(blur)
+      const sharpenPasses = sharpen !== 0 ? 1 : 0
+      convolutionPasses = blurPasses + sharpenPasses
+
+      // Texture de sortie finale
       const convolutionOutputTexture = this.regl!.texture({
         width,
         height,
@@ -507,30 +516,81 @@ export class ReGLProcessor implements ImageProcessor {
         color: convolutionOutputTexture
       })
 
-      // Déterminer kernel et strength
-      const sharpen = adjustments.sharpen ?? 0
-      const blur = adjustments.blur ?? 0
+      // Textures pour ping-pong
+      let currentInput = adjustmentOutputTexture
+      let tempTexture1: any = null
+      let tempTexture2: any = null
+      let passIndex = 0
 
-      // Sharpen a priorité, sinon blur
-      let kernel: number[]
-      let strength: number
-
-      if (sharpen === 0) {
-        kernel = kernelToMat3(createBlurKernel(Math.abs(blur)))
-        strength = 1
-      } else {
-        kernel = kernelToMat3(createSharpenKernel(Math.abs(sharpen)))
-        strength = 1 // Le kernel lui-même encode la force
+      // Helper pour obtenir la texture de sortie
+      const getOutputTexture = (isLastPass: boolean) => {
+        if (isLastPass) return convolutionOutputTexture
+        // Alterner entre temp textures
+        if (!tempTexture1) {
+          tempTexture1 = this.regl!.texture({
+            width,
+            height,
+            format: 'rgba',
+            type: 'uint8'
+          })
+        }
+        if (passIndex % 2 === 0) {
+          return tempTexture1
+        }
+        if (!tempTexture2) {
+          tempTexture2 = this.regl!.texture({
+            width,
+            height,
+            format: 'rgba',
+            type: 'uint8'
+          })
+        }
+        return tempTexture2
       }
 
-      convolutionFramebuffer.use(() => {
-        this.convolutionCommand!({
-          inputTexture: adjustmentOutputTexture,
-          texelSize: [1 / width, 1 / height],
-          kernel,
-          strength
+      // Appliquer blur d'abord (multi-pass)
+      if (blurPasses > 0) {
+        const blurKernel = kernelToMat3(createBlurKernel(blur))
+
+        for (let i = 0; i < blurPasses; i++) {
+          const isLastPass = i === blurPasses - 1 && sharpenPasses === 0
+          const outputTexture = getOutputTexture(isLastPass)
+
+          const fb = this.regl!.framebuffer({ color: outputTexture })
+          fb.use(() => {
+            this.convolutionCommand!({
+              inputTexture: currentInput,
+              texelSize: [1 / width, 1 / height],
+              kernel: blurKernel,
+              strength: 1
+            })
+          })
+          fb.destroy()
+
+          currentInput = outputTexture
+          passIndex++
+        }
+      }
+
+      // Puis appliquer sharpen
+      if (sharpenPasses > 0) {
+        const sharpenKernel = kernelToMat3(createSharpenKernel(sharpen))
+
+        const fb = this.regl!.framebuffer({ color: convolutionOutputTexture })
+        fb.use(() => {
+          this.convolutionCommand!({
+            inputTexture: currentInput,
+            texelSize: [1 / width, 1 / height],
+            kernel: sharpenKernel,
+            strength: 1
+          })
         })
-      })
+        fb.destroy()
+      }
+
+      // Nettoyage textures temporaires
+      if (tempTexture1) tempTexture1.destroy()
+      if (tempTexture2) tempTexture2.destroy()
 
       finalTexture = convolutionOutputTexture
     }
@@ -553,9 +613,9 @@ export class ReGLProcessor implements ImageProcessor {
     }
 
     const totalTime = performance.now() - startTime
-    const passes = hasConvolution ? 2 : 1
+    const totalPasses = 1 + convolutionPasses // 1 for adjustments + convolution passes
     adapterLogger.info(
-      `[ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${passes} passes, ${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
+      `[ReGL] GPU adjustments completed: ${totalPixels} pixels in ${totalTime.toFixed(1)}ms (${totalPasses} pass${totalPasses > 1 ? 'es' : ''}, ${(totalPixels / totalTime / 1000).toFixed(1)}M pixels/sec)`
     )
 
     return new ImageData(resultData, width, height)
