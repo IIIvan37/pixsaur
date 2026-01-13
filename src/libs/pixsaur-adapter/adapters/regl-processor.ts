@@ -596,9 +596,9 @@ export class ReGLProcessor implements ImageProcessor {
 
       // Appliquer blur d'abord (multi-pass)
       if (blurPasses > 0) {
-        const blurKernel = kernelToMat3(createBlurKernel(blur))
-
         for (let i = 0; i < blurPasses; i++) {
+          // Première passe: kernel interpolé, passes suivantes: full Gaussian
+          const blurKernel = kernelToMat3(createBlurKernel(blur, i))
           const isLastPass = i === blurPasses - 1 && sharpenPasses === 0
           const outputTexture = getOutputTexture(isLastPass)
 

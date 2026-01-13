@@ -95,10 +95,11 @@ export function applyConvolutionFilters(
 
   // Appliquer blur d'abord (multi-pass si blur > 1)
   if (blur !== 0) {
-    const blurKernel = createBlurKernel(blur)
     const passes = getBlurPassCount(blur)
 
     for (let pass = 0; pass < passes; pass++) {
+      // Première passe: kernel interpolé, passes suivantes: full Gaussian
+      const blurKernel = createBlurKernel(blur, pass)
       result = applyConvolution3x3(result, blurKernel, 1.0)
     }
   }

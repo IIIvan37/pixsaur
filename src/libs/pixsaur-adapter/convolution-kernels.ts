@@ -116,26 +116,44 @@ export function createSharpenKernel(amount: number): number[] {
 
 /**
  * Create blur kernel with given strength
- * Always uses full Gaussian kernel - strength controls number of passes
+ * Interpolates between identity and Gaussian based on strength for first pass
+ * Additional passes use full Gaussian
  *
- * @param strength - Blur strength (0 = no blur, 1 = 1 pass, 2 = 2 passes, 3 = 3 passes)
+ * @param strength - Blur strength (0-3)
+ * @param passIndex - Which pass (0, 1, 2) - first pass is interpolated
  * @returns 3x3 kernel array (row-major)
  */
-export function createBlurKernel(_strength: number): number[] {
-  // Always return full Gaussian kernel - strength controls passes in processor
+export function createBlurKernel(strength: number, passIndex = 0): number[] {
+  if (strength <= 0) return [...KERNEL_IDENTITY]
+
+  // Pour la première passe, interpoler entre identity et Gaussian
+  // Cela donne un effet progressif de 0 à 1
+  if (passIndex === 0 && strength < 1) {
+    // Interpolation linéaire: identity * (1 - strength) + gaussian * strength
+    return KERNEL_IDENTITY.map(
+      (identity, i) =>
+        identity * (1 - strength) + KERNEL_BLUR_GAUSSIAN[i] * strength
+    )
+  }
+
+  // Passes suivantes ou strength >= 1: full Gaussian
   return [...KERNEL_BLUR_GAUSSIAN]
 }
 
 /**
  * Calculate number of blur passes needed for given strength
- * Uses continuous interpolation: blur 0.5 = 1 pass, blur 1.5 = 2 passes, etc.
+ * - 0 to 1: 1 pass (interpolated)
+ * - 1 to 2: 2 passes
+ * - 2 to 3: 3 passes
+ *
  * @param strength - Blur strength (0-3)
  * @returns Number of passes (0-3)
  */
 export function getBlurPassCount(strength: number): number {
   if (strength <= 0) return 0
-  // Round to nearest integer for discrete passes
-  return Math.min(3, Math.max(1, Math.round(strength)))
+  // Au moins 1 passe dès que strength > 0
+  // Puis passes supplémentaires à 1, 2, 3
+  return Math.min(3, Math.max(1, Math.ceil(strength)))
 }
 
 /**
