@@ -428,22 +428,21 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData {
+    // Le filtre médian est toujours appliqué en CPU (tri des pixels impossible en shader simple)
+    const median = adjustments.median ?? 0
+    const inputData =
+      median !== 0 ? applyMedianFilter(imageData, median) : imageData
+
     // Essayer d'abord le GPU si disponible
     if (this.imageAdjustmentCommand && this.quantizer) {
-      return this.applyAdjustmentsGPU(imageData, adjustments)
+      return this.applyAdjustmentsGPU(inputData, adjustments)
     }
 
     // Fallback CPU: ajustements colorimétriques
     let result = applyAdjustmentsInOnePass(
-      imageData,
+      inputData,
       this.createAdjustmentConfig(adjustments)
     )
-
-    // Fallback CPU: median filter (débruitage avant autres filtres)
-    const median = adjustments.median ?? 0
-    if (median !== 0) {
-      result = applyMedianFilter(result, median)
-    }
 
     // Fallback CPU: convolution (sharpen, blur)
     const sharpen = adjustments.sharpen ?? 0
