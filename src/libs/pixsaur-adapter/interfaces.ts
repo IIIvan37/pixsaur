@@ -26,6 +26,10 @@ export interface AdjustmentConfig {
   sharpen: number // Sharpen amount: 0 = off, 0.5 = subtle, 1.0 = strong
   blur: number // Blur strength: 0 = off, 1 = full Gaussian
   edges: number // Edge detection strength: 0 = off, 1 = full edges
+  // Chroma key (background removal)
+  chromaKeyEnabled: number // 0 = off, 1 = on
+  chromaKeyColor: [number, number, number] | null // RGB color to key out
+  chromaKeyTolerance: number // Distance tolerance (0-100)
 }
 
 /**

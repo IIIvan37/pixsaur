@@ -79,7 +79,10 @@ export const workingImageAtom = atom(async (get) => {
     median: config.median,
     sharpen: config.sharpen,
     blur: config.blur,
-    edges: config.edges
+    edges: config.edges,
+    chromaKeyEnabled: config.chromaKeyEnabled,
+    chromaKeyColor: config.chromaKeyColor,
+    chromaKeyTolerance: config.chromaKeyTolerance
   })
   logger.timeEnd('applyAdjustmentsSync')
 

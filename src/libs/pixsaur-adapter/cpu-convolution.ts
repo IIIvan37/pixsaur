@@ -374,3 +374,60 @@ export function applySobelEdgeDetection(
 
   return new ImageData(dst, width, height)
 }
+
+/**
+ * Applique le chroma key (suppression de fond) sur une image
+ *
+ * Les pixels correspondant à la couleur clé (dans la tolérance) sont remplacés
+ * par la couleur de remplacement (typiquement ink 0 / noir).
+ *
+ * @param imageData - Image d'entrée
+ * @param keyColor - Couleur RGB à supprimer [r, g, b]
+ * @param tolerance - Tolérance de distance euclidienne (0-100)
+ * @param replacementColor - Couleur RGB de remplacement (défaut: noir [0, 0, 0])
+ * @returns Nouvelle ImageData avec le fond remplacé
+ */
+export function applyChromaKey(
+  imageData: ImageData,
+  keyColor: [number, number, number],
+  tolerance: number,
+  replacementColor: [number, number, number] = [0, 0, 0]
+): ImageData {
+  const { width, height, data: src } = imageData
+  const dst = new Uint8ClampedArray(src.length)
+
+  // Tolérance au carré pour éviter sqrt dans la boucle
+  const toleranceSq = tolerance * tolerance
+
+  const [keyR, keyG, keyB] = keyColor
+  const [repR, repG, repB] = replacementColor
+
+  for (let i = 0; i < src.length; i += 4) {
+    const r = src[i]
+    const g = src[i + 1]
+    const b = src[i + 2]
+    const a = src[i + 3]
+
+    // Distance euclidienne au carré
+    const dr = r - keyR
+    const dg = g - keyG
+    const db = b - keyB
+    const distSq = dr * dr + dg * dg + db * db
+
+    if (distSq <= toleranceSq) {
+      // Pixel dans la tolérance -> remplacer par la couleur de remplacement
+      dst[i] = repR
+      dst[i + 1] = repG
+      dst[i + 2] = repB
+      dst[i + 3] = a // Préserver alpha
+    } else {
+      // Pixel hors tolérance -> copier tel quel
+      dst[i] = r
+      dst[i + 1] = g
+      dst[i + 2] = b
+      dst[i + 3] = a
+    }
+  }
+
+  return new ImageData(dst, width, height)
+}

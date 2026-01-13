@@ -10,6 +10,7 @@ import type { AdjustementKey } from './types'
 // Default values (multiplicative factors)
 const defaultAdjustments: { [key in AdjustementKey]: number } & {
   lastChangedKey: AdjustementKey | null
+  chromaKeyColor: [number, number, number] | null
 } = {
   red: 1,
   green: 1,
@@ -30,6 +31,9 @@ const defaultAdjustments: { [key in AdjustementKey]: number } & {
   sharpen: 0, // 0 to 2.0 (0 = off, 0.5 = subtle, 1.0 = strong)
   blur: 0, // 0 to 1.0 (0 = off, 1.0 = full Gaussian)
   edges: 0, // 0 to 1.0 (0 = off, 1.0 = full edge detection)
+  chromaKeyEnabled: 0, // 0 = off, 1 = on
+  chromaKeyTolerance: 30, // 0 to 100 (distance euclidienne)
+  chromaKeyColor: null, // RGB color to key out
   lastChangedKey: null
 }
 
@@ -51,6 +55,20 @@ export const setAdjustmentAtom = atom(
       ...prev,
       [payload.key]: payload.value,
       lastChangedKey: payload.key
+    })
+  }
+)
+
+/**
+ * Setter for chroma key color (RGB tuple or null)
+ */
+export const setChromaKeyColorAtom = atom(
+  null,
+  (get, set, color: [number, number, number] | null) => {
+    const prev = get(adjustmentsAtom)
+    set(adjustmentsAtom, {
+      ...prev,
+      chromaKeyColor: color
     })
   }
 )

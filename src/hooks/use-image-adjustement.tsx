@@ -34,7 +34,10 @@ export const useImageAdjustement = () => {
     median,
     sharpen,
     blur,
-    edges
+    edges,
+    chromaKeyEnabled,
+    chromaKeyColor,
+    chromaKeyTolerance
   } = config
 
   // Use refs to always have latest values without recreating debounced function
@@ -87,7 +90,10 @@ export const useImageAdjustement = () => {
             median: cfg.median,
             sharpen: cfg.sharpen,
             blur: cfg.blur,
-            edges: cfg.edges
+            edges: cfg.edges,
+            chromaKeyEnabled: cfg.chromaKeyEnabled,
+            chromaKeyColor: cfg.chromaKeyColor,
+            chromaKeyTolerance: cfg.chromaKeyTolerance
           }
         )
         setSrc(result)
@@ -127,6 +133,9 @@ export const useImageAdjustement = () => {
     median,
     sharpen,
     blur,
-    edges
+    edges,
+    chromaKeyEnabled,
+    chromaKeyColor,
+    chromaKeyTolerance
   ])
 }

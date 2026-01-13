@@ -178,3 +178,5 @@ export type AdjustementKey =
   | 'sharpen'
   | 'blur'
   | 'edges'
+  | 'chromaKeyEnabled'
+  | 'chromaKeyTolerance'

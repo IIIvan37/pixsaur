@@ -95,6 +95,10 @@ msgstr "Archivos DSK adicionales"
 #~ msgid "Adjustments, Source & Preview"
 #~ msgstr "Ajustes, Fuente y Vista previa"
 
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:237
+msgid "Adoucit l'image avec un flou gaussien (0 = off, 1 = maximum)"
+msgstr "Suaviza la imagen con desenfoque gaussiano (0 = apagado, 1 = máximo)"
+
 #: src/components/preview-editor/help-button/help-button.tsx:30
 msgid "Afficher/masquer la grille"
 msgstr "Mostrar/ocultar cuadrícula"
@@ -111,23 +115,19 @@ msgstr "Añadir cambio"
 #~ msgid "Ajouter une plage"
 #~ msgstr "Añadir rango"
 
-#: src/app/components/adjustements/adjustement.view.tsx:73
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:86
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:87
 msgid "Ajuste la clarté globale de l'image"
 msgstr "Ajusta la claridad global de la imagen"
 
-#: src/app/components/adjustements/adjustement.view.tsx:79
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:95
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:96
 msgid "Ajuste la différence entre les tons clairs et foncés"
 msgstr "Ajusta la diferencia entre tonos claros y oscuros"
 
-#: src/app/components/adjustements/adjustement.view.tsx:143
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:185
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:186
 msgid "Ajuste uniquement les zones claires de l'image"
 msgstr "Ajusta solo las zonas claras de la imagen"
 
-#: src/app/components/adjustements/adjustement.view.tsx:148
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:193
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:194
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajusta solo las zonas oscuras de la imagen"
 
@@ -199,13 +199,11 @@ msgstr "Auto (adaptación CPC inteligente)"
 msgid "Auto: redimensionnement intelligent avec correction du ratio CPC (recommandé). Origin: conserve la taille de sélection originale (pixel-perfect, pas de mise à l'échelle)."
 msgstr "Auto: redimensionamiento inteligente con corrección de relación CPC (recomendado). Origin: conserva el tamaño de selección original (píxel perfecto, sin escala)."
 
-#: src/app/components/adjustements/adjustement.view.tsx:110
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:139
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:140
 msgid "Balance bleu/orange (-100 = froid, +100 = chaud)"
 msgstr "Balance azul/naranja (-100 = frío, +100 = cálido)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:116
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:149
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:150
 msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Balance verde/magenta para corregir dominantes de color"
 
@@ -224,8 +222,7 @@ msgstr "Frecuencia equilibrada (60%) y diversidad (40%)"
 msgid "palette.strategy.balanced-score-balanced.label"
 msgstr "Puntuación Equilibrada"
 
-#: src/app/components/adjustements/adjustement.view.tsx:67
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:77
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:78
 #: src/components/ui/rgb-slider/rgb-slider.tsx:60
 msgid "Bleu"
 msgstr "Azul"
@@ -234,8 +231,7 @@ msgstr "Azul"
 msgid "Bonus de continuité"
 msgstr "Bonificación de Continuidad"
 
-#: src/app/components/adjustements/adjustement.view.tsx:26
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:31
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:32
 msgid "Canaux RGB"
 msgstr "Canales RGB"
 
@@ -333,8 +329,11 @@ msgstr "Configuración de Dithering"
 msgid "Contenu du ZIP"
 msgstr "Contenido del ZIP"
 
-#: src/app/components/adjustements/adjustement.view.tsx:77
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:93
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:247
+msgid "Contours"
+msgstr "Bordes"
+
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:94
 msgid "Contraste"
 msgstr "Contraste"
 
@@ -342,8 +341,7 @@ msgstr "Contraste"
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Convertidor de imágenes Amstrad CPC"
 
-#: src/app/components/adjustements/adjustement.view.tsx:125
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:161
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:162
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Corrección no lineal del brillo (0.1-3.0, 1.0 = neutro)"
 
@@ -352,8 +350,7 @@ msgstr "Corrección no lineal del brillo (0.1-3.0, 1.0 = neutro)"
 msgid "Couleur"
 msgstr "Color"
 
-#: src/app/components/adjustements/adjustement.view.tsx:31
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:36
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:37
 msgid "Couleur & Température"
 msgstr "Color & Temperatura"
 
@@ -382,6 +379,10 @@ msgstr "Hardware CPC"
 msgid "CPC Pixel Mode"
 msgstr "Modo Píxel CPC"
 
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:215
+msgid "Débruitage qui préserve les contours (0 = off, 1-3 = force)"
+msgstr "Reducción de ruido que preserva los bordes (0 = apagado, 1-3 = fuerza)"
+
 #: src/components/raster-panel/raster-panel-view.tsx:315
 #~ msgid "Début"
 #~ msgstr "Inicio"
@@ -406,6 +407,10 @@ msgstr "Desactivado cuando el mapeo distinto está activo para preservar los col
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:109
 msgid "Détecte automatiquement les images avec peu de couleurs (C64, ZX Spectrum, etc.) et préserve toutes les couleurs distinctes."
 msgstr "Detecta automáticamente imágenes con pocos colores (C64, ZX Spectrum, etc.) y conserva todos los colores distintos."
+
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:249
+msgid "Détection des contours (0 = off, 1 = contours uniquement)"
+msgstr "Detección de bordes (0 = apagado, 1 = solo bordes)"
 
 #: src/components/color-palette/color-grid/color-grid-view.tsx:74
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
@@ -502,8 +507,7 @@ msgstr "Editar"
 msgid "Éditeur de Preview"
 msgstr "Editor de Vista Previa"
 
-#: src/app/components/adjustements/adjustement.view.tsx:48
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:53
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:54
 msgid "Effets"
 msgstr "Efectos"
 
@@ -584,13 +588,11 @@ msgstr "Exporte sus imágenes convertidas a varios formatos compatibles con emul
 msgid "Exporter"
 msgstr "Exportar"
 
-#: src/app/components/adjustements/adjustement.view.tsx:132
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:171
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:172
 msgid "Exposition"
 msgstr "Exposición"
 
-#: src/app/components/adjustements/adjustement.view.tsx:36
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:41
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:42
 msgid "Exposition & Tonalité"
 msgstr "Exposición & Tonalidad"
 
@@ -633,6 +635,10 @@ msgstr "¡Archivo exportado con éxito!"
 msgid "First Line Mode"
 msgstr "Modo Primera Línea"
 
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:235
+msgid "Flou"
+msgstr "Desenfoque"
+
 #: src/components/image-upload/image-upload-view.tsx:203
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Formatos soportados: PNG, JPEG, GIF, BMP, WEBP, SVG"
@@ -652,8 +658,7 @@ msgstr "Frecuencia Contraste"
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Prioridad de frecuencia (80%) con diversidad moderada"
 
-#: src/app/components/adjustements/adjustement.view.tsx:123
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:159
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:160
 msgid "Gamma"
 msgstr "Gamma"
 
@@ -685,8 +690,7 @@ msgstr "Hardware"
 msgid "Hardware CPC"
 msgstr "Hardware CPC"
 
-#: src/app/components/adjustements/adjustement.view.tsx:142
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:184
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:185
 msgid "Hautes lumières"
 msgstr "Luces"
 
@@ -734,8 +738,7 @@ msgstr "Instalar actualización"
 msgid "Intensité"
 msgstr "Intensidad"
 
-#: src/app/components/adjustements/adjustement.view.tsx:86
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:105
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:106
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Intensidad de color (0 = blanco y negro, 2 = muy saturado)"
 
@@ -827,8 +830,7 @@ msgstr "Rangos de luminancia con prioridad de diversidad"
 msgid "palette.strategy.perceptual-balanced.desc"
 msgstr "Rangos de luminancia con prioridad de frecuencia"
 
-#: src/app/components/adjustements/adjustement.view.tsx:72
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:85
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:86
 msgid "Luminosité"
 msgstr "Brillo"
 
@@ -849,6 +851,10 @@ msgstr "Maximiza la cobertura de píxeles (minimiza el error global)"
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:181
 msgid "palette.strategy.diversity-first-max.desc"
 msgstr "Diversidad máxima (100%), frecuencia ignorada"
+
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:213
+msgid "Médian"
+msgstr "Mediana"
 
 #: src/components/settings-panel/sections/hardware-settings/custom-dimensions-input/custom-dimensions-input-view.tsx:70
 msgid "Mémoire"
@@ -900,24 +906,25 @@ msgstr "Multi-criterios equilibrados (50% frec, 25% div, 25% lum)"
 msgid "palette.strategy.balanced-score-max.desc"
 msgstr "Multi-criterios con contraste (30% frec, 35% div, 35% lum)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:68
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:78
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:79
 msgid "Multiplie le canal bleu (0-2x)"
 msgstr "Multiplica el canal azul (0-2x)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:58
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:62
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:63
 msgid "Multiplie le canal rouge (0-2x)"
 msgstr "Multiplica el canal rojo (0-2x)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:63
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:70
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:71
 msgid "Multiplie le canal vert (0-2x)"
 msgstr "Multiplica el canal verde (0-2x)"
 
 #: src/components/preview-editor/editor-minimap/editor-minimap-view.tsx:162
 msgid "Navigation"
 msgstr "Navegación"
+
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:223
+msgid "Netteté"
+msgstr "Nitidez"
 
 #: src/components/export-panel/dsk-files-manager.tsx:134
 msgid "No additional files. Upload or add files to include them in the DSK."
@@ -963,8 +970,7 @@ msgstr "Desactivado (modo raster)"
 msgid "Not enough space on DSK"
 msgstr "No hay suficiente espacio en el DSK"
 
-#: src/app/components/adjustements/adjustement.view.tsx:147
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:192
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:193
 msgid "Ombres"
 msgstr "Sombras"
 
@@ -1117,8 +1123,7 @@ msgstr "Peso de Frecuencia"
 msgid "Position"
 msgstr "Posición"
 
-#: src/app/components/adjustements/adjustement.view.tsx:152
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:200
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:201
 msgid "Posterisation"
 msgstr "Posterización"
 
@@ -1187,7 +1192,7 @@ msgstr "Rasters Generados"
 #~ msgid "Redimensionner"
 #~ msgstr "Redimensionar"
 
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:202
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:203
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche"
 msgstr "Reduce el número de niveles de color para un efecto póster"
 
@@ -1196,8 +1201,8 @@ msgstr "Reduce el número de niveles de color para un efecto póster"
 #~ msgstr "Reduce el número de niveles de color para un efecto de póster (2-256)"
 
 #: src/app/components/adjustements/adjustement.view.tsx:154
-msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
-msgstr "Reduce el número de niveles de color para un efecto de póster (256=normal, 128=ligero, 64=moderado, 32=fuerte, 16=muy fuerte, 8=extremo, 4=monocromo, 2=binario)"
+#~ msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche (256=normal, 128=léger, 64=modéré, 32=fort, 16=très fort, 8=extrême, 4=monochrome, 2=binaire)"
+#~ msgstr "Reduce el número de niveles de color para un efecto de póster (256=normal, 128=ligero, 64=moderado, 32=fuerte, 16=muy fuerte, 8=extremo, 4=monocromo, 2=binario)"
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:140
 msgid "Réduit le scintillement en favorisant les couleurs similaires entre les frames"
@@ -1211,8 +1216,7 @@ msgstr "Rehacer"
 msgid "Refaire (Ctrl+Y)"
 msgstr "Rehacer (Ctrl+Y)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:206
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:248
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:313
 msgid "Réinitialiser"
 msgstr "Restablecer"
 
@@ -1236,6 +1240,10 @@ msgstr "Eliminar archivo"
 msgid "Remove image from workspace"
 msgstr "Eliminar imagen del espacio de trabajo"
 
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:225
+msgid "Renforce les contours pour une image plus nette (0 = off, 1 = fort)"
+msgstr "Refuerza los bordes para una imagen más nítida (0 = apagado, 1 = fuerte)"
+
 #: src/components/settings-panel/settings-panel.tsx:44
 msgid "Resize"
 msgstr "Redimensionar"
@@ -1244,24 +1252,20 @@ msgstr "Redimensionar"
 msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 msgstr "Resolución horizontal duplicada (solo Mode 0). Usa 2 imágenes alternadas a 50Hz."
 
-#: src/app/components/adjustements/adjustement.view.tsx:93
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:115
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:116
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
 msgstr "Rotación de colores en el círculo cromático (-180° a +180°)"
 
-#: src/app/components/adjustements/adjustement.view.tsx:57
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:61
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:62
 #: src/components/ui/rgb-slider/rgb-slider.tsx:58
 msgid "Rouge"
 msgstr "Rojo"
 
-#: src/app/components/adjustements/adjustement.view.tsx:84
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:103
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:104
 msgid "Saturation"
 msgstr "Saturación"
 
-#: src/app/components/adjustements/adjustement.view.tsx:102
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:127
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:128
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturación inteligente que realza colores apagados sin sobresaturar"
 
@@ -1298,8 +1302,7 @@ msgstr "Selecciona colores que se mezclan bien en tramado"
 msgid "Settings"
 msgstr "Configuración"
 
-#: src/app/components/adjustements/adjustement.view.tsx:134
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:173
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:174
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simula pasos fotográficos (-3 a +3, ±1 = doble/mitad de luz)"
 
@@ -1335,18 +1338,15 @@ msgstr "Soporta los formatos CPC Classic y CPC Plus. El cargador detecta automá
 msgid "Supprimer le changement"
 msgstr "Eliminar cambio"
 
-#: src/app/components/adjustements/adjustement.view.tsx:91
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:113
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:114
 msgid "Teinte"
 msgstr "Matiz"
 
-#: src/app/components/adjustements/adjustement.view.tsx:114
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:147
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:148
 msgid "Teinte colorée"
 msgstr "Tinte"
 
-#: src/app/components/adjustements/adjustement.view.tsx:109
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:137
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:138
 msgid "Température"
 msgstr "Temperatura"
 
@@ -1408,14 +1408,12 @@ msgstr "Versión"
 #~ msgid "Version {updateVersion}"
 #~ msgstr "Versión {updateVersion}"
 
-#: src/app/components/adjustements/adjustement.view.tsx:62
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:69
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:70
 #: src/components/ui/rgb-slider/rgb-slider.tsx:59
 msgid "Vert"
 msgstr "Verde"
 
-#: src/app/components/adjustements/adjustement.view.tsx:100
-#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:125
+#: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:126
 msgid "Vibrance"
 msgstr "Intensidad"
 

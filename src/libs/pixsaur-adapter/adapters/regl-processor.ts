@@ -25,6 +25,7 @@ import {
   kernelToMat3
 } from '../convolution-kernels'
 import {
+  applyChromaKey,
   applyConvolutionFilters,
   applyMedianFilter,
   applySobelEdgeDetection
@@ -428,10 +429,21 @@ export class ReGLProcessor implements ImageProcessor {
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData {
+    let inputData = imageData
+
+    // Chroma key en premier (suppression de fond -> remplacé par noir = ink 0)
+    const chromaKeyEnabled = adjustments.chromaKeyEnabled ?? 0
+    const chromaKeyColor = adjustments.chromaKeyColor
+    const chromaKeyTolerance = adjustments.chromaKeyTolerance ?? 30
+    if (chromaKeyEnabled && chromaKeyColor) {
+      inputData = applyChromaKey(inputData, chromaKeyColor, chromaKeyTolerance)
+    }
+
     // Le filtre médian est toujours appliqué en CPU (tri des pixels impossible en shader simple)
     const median = adjustments.median ?? 0
-    const inputData =
-      median !== 0 ? applyMedianFilter(imageData, median) : imageData
+    if (median !== 0) {
+      inputData = applyMedianFilter(inputData, median)
+    }
 
     // Essayer d'abord le GPU si disponible
     if (this.imageAdjustmentCommand && this.quantizer) {

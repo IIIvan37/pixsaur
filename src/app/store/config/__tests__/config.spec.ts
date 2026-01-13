@@ -374,6 +374,9 @@ describe('Config Store', () => {
         sharpen: 0,
         blur: 0,
         edges: 0,
+        chromaKeyEnabled: 0,
+        chromaKeyTolerance: 30,
+        chromaKeyColor: null,
         lastChangedKey: 'red'
       })
 
@@ -402,6 +405,9 @@ describe('Config Store', () => {
         sharpen: 0,
         blur: 0,
         edges: 0,
+        chromaKeyEnabled: 0,
+        chromaKeyTolerance: 30,
+        chromaKeyColor: null,
         lastChangedKey: null
       })
     })
