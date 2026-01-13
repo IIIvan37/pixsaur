@@ -85,7 +85,14 @@ describe('ReGLProcessor', () => {
       exposure: 0,
       highlights: 0,
       shadows: 0,
-      posterization: 0
+      posterization: 0,
+      median: 0,
+      sharpen: 0,
+      blur: 0,
+      edges: 0,
+      chromaKeyEnabled: 0,
+      chromaKeyColor: null,
+      chromaKeyTolerance: 30
     }
 
     // Mock ReGL complet
@@ -604,7 +611,14 @@ describe('ReGLProcessor', () => {
         exposure: 0,
         highlights: 0,
         shadows: 0,
-        posterization: 0
+        posterization: 0,
+        median: 0,
+        sharpen: 0,
+        blur: 0,
+        edges: 0,
+        chromaKeyEnabled: 0,
+        chromaKeyColor: null,
+        chromaKeyTolerance: 30
       }
 
       const mockApplyAdjustments = vi.mocked(applyAdjustmentsInOnePass)

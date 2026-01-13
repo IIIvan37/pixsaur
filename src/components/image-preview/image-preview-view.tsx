@@ -50,7 +50,8 @@ export function ImagePreviewView({
             height: '100%',
             objectFit: 'contain',
             display: 'block',
-            cursor: onClick ? 'pointer' : 'default'
+            cursor: onClick ? 'pointer' : 'default',
+            imageRendering: 'pixelated'
           }}
         />
       </div>

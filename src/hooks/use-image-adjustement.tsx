@@ -30,7 +30,14 @@ export const useImageAdjustement = () => {
     exposure,
     highlights,
     shadows,
-    posterization
+    posterization,
+    median,
+    sharpen,
+    blur,
+    edges,
+    chromaKeyEnabled,
+    chromaKeyColor,
+    chromaKeyTolerance
   } = config
 
   // Use refs to always have latest values without recreating debounced function
@@ -79,7 +86,14 @@ export const useImageAdjustement = () => {
             exposure: cfg.exposure,
             highlights: cfg.highlights,
             shadows: cfg.shadows,
-            posterization: cfg.posterization
+            posterization: cfg.posterization,
+            median: cfg.median,
+            sharpen: cfg.sharpen,
+            blur: cfg.blur,
+            edges: cfg.edges,
+            chromaKeyEnabled: cfg.chromaKeyEnabled,
+            chromaKeyColor: cfg.chromaKeyColor,
+            chromaKeyTolerance: cfg.chromaKeyTolerance
           }
         )
         setSrc(result)
@@ -115,6 +129,13 @@ export const useImageAdjustement = () => {
     exposure,
     highlights,
     shadows,
-    posterization
+    posterization,
+    median,
+    sharpen,
+    blur,
+    edges,
+    chromaKeyEnabled,
+    chromaKeyColor,
+    chromaKeyTolerance
   ])
 }

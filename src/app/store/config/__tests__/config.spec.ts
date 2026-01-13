@@ -261,7 +261,7 @@ describe('Config Store', () => {
 
   describe('Processing Atoms', () => {
     it('should initialize processing atoms with default values', () => {
-      expect(store.get(smoothingAtom)).toBe(true)
+      expect(store.get(smoothingAtom)).toBe(false)
       expect(store.get(horizontalSmoothingAtom)).toBe(false)
       expect(store.get(processorTypeAtom)).toBe('gpu')
     })
@@ -370,6 +370,13 @@ describe('Config Store', () => {
         highlights: 0,
         shadows: 0,
         posterization: 200,
+        median: 0,
+        sharpen: 0,
+        blur: 0,
+        edges: 0,
+        chromaKeyEnabled: 0,
+        chromaKeyTolerance: 30,
+        chromaKeyColor: null,
         lastChangedKey: 'red'
       })
 
@@ -394,6 +401,13 @@ describe('Config Store', () => {
         highlights: 0,
         shadows: 0,
         posterization: 256,
+        median: 0,
+        sharpen: 0,
+        blur: 0,
+        edges: 0,
+        chromaKeyEnabled: 0,
+        chromaKeyTolerance: 30,
+        chromaKeyColor: null,
         lastChangedKey: null
       })
     })

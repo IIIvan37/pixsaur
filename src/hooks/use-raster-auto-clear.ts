@@ -39,7 +39,9 @@ export function useRasterAutoClear() {
         prevSignature.adjustments !== signature.adjustments ||
         prevSignature.strategy !== signature.strategy ||
         prevSignature.modeConfig !== signature.modeConfig ||
-        prevSignature.hardware !== signature.hardware
+        prevSignature.hardware !== signature.hardware ||
+        prevSignature.resizeMode !== signature.resizeMode ||
+        prevSignature.centerImage !== signature.centerImage
 
       if (hasChanged) {
         clearRaster()

@@ -17,3 +17,72 @@
   flex-direction: column;
   gap: var(--spacing-md);
 }
+
+/* Chroma Key Section */
+.chromaKeySection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm, 12px);
+}
+
+.chromaKeyToggle {
+  display: flex;
+  align-items: center;
+}
+
+.switchLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs, 8px);
+  cursor: pointer;
+  font-size: var(--font-size-sm, 14px);
+}
+
+.switchLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.chromaKeyColorPicker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 8px);
+}
+
+.chromaKeyColorPicker label {
+  font-size: var(--font-size-sm, 14px);
+  color: var(--color-text-secondary, #888);
+}
+
+.colorInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 12px);
+}
+
+.colorInput {
+  width: 48px;
+  height: 32px;
+  border: 1px solid var(--color-border, #444);
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  padding: 0;
+  background: transparent;
+}
+
+.colorInput::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.colorInput::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+}
+
+.colorHex {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-sm, 14px);
+  color: var(--color-text-secondary, #888);
+  text-transform: uppercase;
+}

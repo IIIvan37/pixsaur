@@ -41,6 +41,7 @@ export {
   resetAdjustmentsAtom,
   resetImageAdjustmentsAtom,
   setAdjustmentAtom,
+  setChromaKeyColorAtom,
   setComponentAtom
 } from './adjustments'
 

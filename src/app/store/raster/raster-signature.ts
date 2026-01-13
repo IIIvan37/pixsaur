@@ -7,10 +7,12 @@
 
 import { atom } from 'jotai'
 import {
+  centerImageAtom,
   configAtom,
   cpcHardwareAtom,
   effectiveModeConfigAtom,
-  paletteStrategyAtom
+  paletteStrategyAtom,
+  resizeModeAtom
 } from '../config/config'
 import { imageAtom, selectionAtom } from '../image/image'
 
@@ -28,6 +30,8 @@ export const rasterInputSignatureAtom = atom((get) => {
   const modeConfig = get(effectiveModeConfigAtom)
   const hardware = get(cpcHardwareAtom)
   const selection = get(selectionAtom)
+  const resizeMode = get(resizeModeAtom)
+  const centerImage = get(centerImageAtom)
 
   // Create a signature from all relevant inputs
   return {
@@ -36,6 +40,8 @@ export const rasterInputSignatureAtom = atom((get) => {
     strategy,
     modeConfig: JSON.stringify(modeConfig),
     hardware,
-    selection: JSON.stringify(selection)
+    selection: JSON.stringify(selection),
+    resizeMode,
+    centerImage
   }
 })

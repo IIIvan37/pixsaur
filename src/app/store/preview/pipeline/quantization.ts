@@ -20,28 +20,48 @@ import {
   autoDistinctMappingAtom,
   cpcHardwareAtom,
   effectiveModeConfigAtom,
-  paletteStrategyAtom
+  paletteStrategyAtom,
+  resizeModeAtom
 } from '../../config/config'
 import {
   lockedEmptySlotsCountAtom,
   lockedVectorsAtom
 } from '../../palette/palette'
-import { smoothedImageAtom } from './image-pipeline'
+import { croppedImageAtom, smoothedImageAtom } from './image-pipeline'
 
 // ============================================================================
 // BUFFER EXTRACTION
 // ============================================================================
 
 /**
- * Extracts RGBA buffer from the smoothed image.
- * Uses smoothedImageAtom (post-resize, post-smooth) as input.
+ * Image source for palette quantization.
+ *
+ * IMPORTANT: In 'origin' mode, we use croppedImageAtom (before resize/padding)
+ * to avoid the black padding pixels from dominating the palette.
+ * In 'auto' mode, we use smoothedImageAtom (post-resize, post-smooth).
+ */
+export const quantizationSourceImageAtom = atom(async (get) => {
+  const resizeMode = get(resizeModeAtom)
+
+  // In origin mode, use cropped image BEFORE padding to get true colors
+  // This prevents black padding from dominating the palette
+  if (resizeMode === 'origin') {
+    return await get(croppedImageAtom)
+  }
+
+  // In auto mode, use smoothed image (standard behavior)
+  return await get(smoothedImageAtom)
+})
+
+/**
+ * Extracts RGBA buffer from the quantization source image.
  */
 export const croppedBufferAtom = atom(async (get) => {
-  const processed = await get(smoothedImageAtom)
-  if (!processed) {
+  const sourceImage = await get(quantizationSourceImageAtom)
+  if (!sourceImage) {
     return null
   }
-  return extractBuffer(processed)
+  return extractBuffer(sourceImage)
 })
 
 /**
@@ -68,11 +88,11 @@ export const sourceUniqueColorsCountAtom = atom(async (get) => {
  */
 export const quantizerAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
-  const processed = await get(smoothedImageAtom)
+  const sourceImage = await get(quantizationSourceImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const colorSpace = 'RGB' // Fixed to RGB
   const cpcHardware = get(cpcHardwareAtom)
-  if (!buf || !processed) {
+  if (!buf || !sourceImage) {
     return null
   }
 
@@ -99,11 +119,11 @@ export const quantizerAtom = atom(async (get) => {
  */
 export const reducedPaletteRawAtom = atom(async (get) => {
   const buf = await get(croppedBufferAtom)
-  const processed = await get(smoothedImageAtom)
+  const sourceImage = await get(quantizationSourceImageAtom)
   const lockedVecs = get(lockedVectorsAtom)
   const cpcHardware = get(cpcHardwareAtom)
 
-  if (!buf || !processed) {
+  if (!buf || !sourceImage) {
     return []
   }
 
@@ -160,7 +180,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
 
   const palette = await paletteProcessor.quantizePalette(
     buf,
-    processed,
+    sourceImage,
     targetColors,
     basePalette,
     quantifiedLockedVecs,

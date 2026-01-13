@@ -51,7 +51,7 @@ export const sections: AdjustmentSection[] = [
   {
     id: 'effects',
     title: <Trans>Effets</Trans>,
-    keys: ['posterization']
+    keys: ['posterization', 'median', 'sharpen', 'blur', 'edges']
   }
 ]
 
@@ -206,6 +206,50 @@ export const labels: AdjustmentLabel[] = [
     min: 2,
     max: 256,
     step: 1
+  },
+  {
+    key: 'median',
+    label: <Trans>Médian</Trans>,
+    description: (
+      <Trans>Débruitage qui préserve les contours (0 = off, 1-3 = force)</Trans>
+    ),
+    min: 0,
+    max: 3,
+    step: 1
+  },
+  {
+    key: 'sharpen',
+    label: <Trans>Netteté</Trans>,
+    description: (
+      <Trans>
+        Renforce les contours pour une image plus nette (0 = off, 1 = fort)
+      </Trans>
+    ),
+    min: 0,
+    max: 2,
+    step: 0.05
+  },
+  {
+    key: 'blur',
+    label: <Trans>Flou</Trans>,
+    description: (
+      <Trans>
+        Adoucit l'image avec un flou gaussien (0 = off, 1 = maximum)
+      </Trans>
+    ),
+    min: 0,
+    max: 1,
+    step: 0.05
+  },
+  {
+    key: 'edges',
+    label: <Trans>Contours</Trans>,
+    description: (
+      <Trans>Détection des contours (0 = off, 1 = contours uniquement)</Trans>
+    ),
+    min: 0,
+    max: 1,
+    step: 0.05
   }
 ]
 
