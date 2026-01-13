@@ -113,13 +113,124 @@ export function applyConvolutionFilters(
 }
 
 /**
- * Trouve la médiane d'un tableau de nombres
- * Utilise un tri partiel pour performance optimale
+ * Réseau de tri optimisé pour 9 éléments (3x3 kernel)
+ * Utilise seulement 25 comparaisons au lieu de ~20 pour un tri complet
+ * Retourne directement la médiane (élément 4)
  */
-function findMedian(arr: number[]): number {
-  const sorted = arr.slice().sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted[mid]
+function median9(v: number[]): number {
+  // Macro de swap conditionnel
+  const swap = (i: number, j: number) => {
+    if (v[i] > v[j]) {
+      const t = v[i]
+      v[i] = v[j]
+      v[j] = t
+    }
+  }
+
+  // Réseau de tri partiel optimisé pour trouver la médiane
+  swap(0, 1)
+  swap(3, 4)
+  swap(6, 7)
+  swap(1, 2)
+  swap(4, 5)
+  swap(7, 8)
+  swap(0, 1)
+  swap(3, 4)
+  swap(6, 7)
+  swap(0, 3)
+  swap(3, 6)
+  swap(0, 3)
+  swap(1, 4)
+  swap(4, 7)
+  swap(1, 4)
+  swap(2, 5)
+  swap(5, 8)
+  swap(2, 5)
+  swap(1, 3)
+  swap(5, 7)
+  swap(2, 6)
+  swap(4, 6)
+  swap(2, 4)
+  swap(2, 3)
+  swap(5, 6)
+  swap(3, 4)
+  swap(4, 5)
+
+  return v[4]
+}
+
+/**
+ * QuickSelect - trouve le k-ième élément en O(n) moyen
+ * Plus rapide que le tri complet pour trouver la médiane
+ */
+function quickSelect(arr: number[], k: number): number {
+  const n = arr.length
+  if (n === 1) return arr[0]
+
+  // Copie pour ne pas modifier l'original
+  const a = arr.slice()
+
+  let left = 0
+  let right = n - 1
+
+  while (left < right) {
+    // Pivot = médiane de trois
+    const mid = (left + right) >> 1
+    if (a[mid] < a[left]) {
+      const t = a[mid]
+      a[mid] = a[left]
+      a[left] = t
+    }
+    if (a[right] < a[left]) {
+      const t = a[right]
+      a[right] = a[left]
+      a[left] = t
+    }
+    if (a[right] < a[mid]) {
+      const t = a[right]
+      a[right] = a[mid]
+      a[mid] = t
+    }
+
+    const pivot = a[mid]
+    let i = left
+    let j = right
+
+    // Partition
+    while (i <= j) {
+      while (a[i] < pivot) i++
+      while (a[j] > pivot) j--
+      if (i <= j) {
+        const t = a[i]
+        a[i] = a[j]
+        a[j] = t
+        i++
+        j--
+      }
+    }
+
+    if (k <= j) {
+      right = j
+    } else if (k >= i) {
+      left = i
+    } else {
+      return a[k]
+    }
+  }
+
+  return a[k]
+}
+
+/**
+ * Trouve la médiane d'un tableau - optimisé selon la taille
+ */
+function findMedian(arr: number[], size: number): number {
+  if (size === 9) {
+    // Utiliser le réseau de tri optimisé pour 3x3
+    return median9(arr.slice(0, 9))
+  }
+  // Pour les plus grands kernels, utiliser quickselect
+  return quickSelect(arr.slice(0, size), size >> 1)
 }
 
 /**
@@ -127,6 +238,10 @@ function findMedian(arr: number[]): number {
  *
  * Le filtre médian remplace chaque pixel par la médiane de ses voisins.
  * Excellent pour le débruitage (bruit sel et poivre) tout en préservant les contours.
+ *
+ * Optimisations:
+ * - Réseau de tri pour kernel 3x3 (25 comparaisons)
+ * - QuickSelect O(n) pour les plus grands kernels
  *
  * @param imageData - Image d'entrée
  * @param radius - Rayon du filtre: 1 = 3x3, 2 = 5x5, 3 = 7x7
@@ -175,9 +290,9 @@ export function applyMedianFilter(
 
       // Trouver la médiane pour chaque canal
       const dstIdx = (y * width + x) * 4
-      dst[dstIdx] = findMedian(redValues)
-      dst[dstIdx + 1] = findMedian(greenValues)
-      dst[dstIdx + 2] = findMedian(blueValues)
+      dst[dstIdx] = findMedian(redValues, kernelSize)
+      dst[dstIdx + 1] = findMedian(greenValues, kernelSize)
+      dst[dstIdx + 2] = findMedian(blueValues, kernelSize)
       dst[dstIdx + 3] = src[dstIdx + 3] // Préserver alpha
     }
   }
