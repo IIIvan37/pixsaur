@@ -33,8 +33,10 @@ import { getCPCPlusPaletteIndex } from '@/palettes/cpc-palette'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 import {
   addBucketRepresentativesWithDistanceCheck,
+  type ColorDiversityParams,
   type ColorFrequencyItem,
   createHueBuckets,
+  getColorDiversityParams,
   selectBucketRepresentativesWithLightness,
   selectFrequentColorsWithDiversity,
   selectMaxMinDistanceColors,
@@ -107,6 +109,9 @@ export interface ReGLQuantizeConfig extends QuantizeConfig {
 
   /** Auto distinct-mapping for low-color retro images (default: true) */
   readonly autoDistinctMapping?: boolean
+
+  /** Color diversity level for CPC Plus Mode 0 (0-100, default: 50) */
+  readonly colorDiversity?: number
 
   /** GPU performance options */
   readonly gpuOptions?: {
@@ -563,7 +568,8 @@ export class ReGLQuantizer {
       basePalette,
       actualTargetColors,
       preselectedIndices,
-      effectiveStrategy
+      effectiveStrategy,
+      config.colorDiversity ?? 50
     )
 
     return selected
@@ -601,7 +607,8 @@ export class ReGLQuantizer {
       basePalette,
       actualTargetColors,
       preselectedIndices,
-      config.paletteStrategy || 'frequency-balanced' // Passer la stratégie de palette
+      config.paletteStrategy || 'frequency-balanced', // Passer la stratégie de palette
+      config.colorDiversity ?? 50
     )
 
     return selected
@@ -737,9 +744,16 @@ export class ReGLQuantizer {
     basePalette: readonly Vector[],
     targetColors: number,
     preselectedIndices: readonly number[] = [],
-    paletteStrategy: PaletteStrategyName = 'frequency-balanced'
+    paletteStrategy: PaletteStrategyName = 'frequency-balanced',
+    colorDiversity = 50
   ): number[] {
     const startTime = performance.now()
+    // Get diversity params from slider value (only affects CPC Plus Mode 0)
+    const diversityParams: ColorDiversityParams | undefined =
+      basePalette.length > 27 && targetColors > 4
+        ? getColorDiversityParams(colorDiversity)
+        : undefined
+
     // Commencer par les couleurs présélectionnées (priorité absolue)
     const result: number[] = [...preselectedIndices]
     const usedIndices = new Set(preselectedIndices)
@@ -878,7 +892,10 @@ export class ReGLQuantizer {
     )
 
     // Utiliser les helpers pour créer et trier les buckets de teinte
-    const hueBuckets = createHueBuckets(colorFrequency as ColorFrequencyItem[])
+    const hueBuckets = createHueBuckets(
+      colorFrequency as ColorFrequencyItem[],
+      diversityParams
+    )
 
     // Trier les buckets par fréquence
     const sortedBuckets = sortBucketsByFrequency(hueBuckets)
@@ -923,7 +940,8 @@ export class ReGLQuantizer {
       result,
       frequencyBudget,
       targetColors,
-      this.calculateDistance
+      this.calculateDistance,
+      diversityParams
     )
 
     // Si encore besoin, compléter avec MaxMin Distance
@@ -933,7 +951,8 @@ export class ReGLQuantizer {
         selectedConverted,
         result,
         targetColors,
-        this.calculateDistance
+        this.calculateDistance,
+        diversityParams
       )
     }
 

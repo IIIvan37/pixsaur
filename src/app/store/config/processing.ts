@@ -39,6 +39,14 @@ export const paletteStrategyAtom = atom<PaletteStrategy>('exhaustive-contrast')
  */
 export const autoDistinctMappingAtom = atom<boolean>(false)
 
+/**
+ * Color diversity level for CPC Plus Mode 0 quantization (0-100)
+ * 0 = Similar shades (prioritize frequency, allow close hues)
+ * 50 = Balanced (default)
+ * 100 = Distinct hues (maximize color variety)
+ */
+export const colorDiversityAtom = atom<number>(50)
+
 // ============================================================================
 // SETTERS
 // ============================================================================
@@ -60,5 +68,15 @@ export const setPaletteStrategyAtom = atom(
   null,
   (_get, set, payload: PaletteStrategy) => {
     set(paletteStrategyAtom, payload)
+  }
+)
+
+/**
+ * Setter for color diversity
+ */
+export const setColorDiversityAtom = atom(
+  null,
+  (_get, set, payload: number) => {
+    set(colorDiversityAtom, Math.max(0, Math.min(100, payload)))
   }
 )

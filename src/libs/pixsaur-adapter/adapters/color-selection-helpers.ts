@@ -68,6 +68,55 @@ export const HUE_BONUS_WEIGHT = 2
 export const VALUE_THRESHOLD_BRIGHT = 0.5
 
 /** Nombre minimum de couleurs claires parmi les représentants de bucket */
+
+// ============================================================================
+// Color Diversity Configuration
+// ============================================================================
+
+/**
+ * Parameters derived from the color diversity slider (0-100)
+ */
+export interface ColorDiversityParams {
+  /** Minimum hue distance in degrees (10-45) */
+  minHueDistance: number
+  /** Minimum RGB distance (50-150) */
+  minRgbDistance: number
+  /** Hue bucket size in degrees (20-45) */
+  hueBucketSize: number
+}
+
+/**
+ * Maps the color diversity slider (0-100) to internal quantization parameters.
+ *
+ * - 0 = "Similar shades": Allows more similar colors, prioritizes frequency
+ * - 50 = "Balanced": Current default behavior
+ * - 100 = "Distinct hues": Maximizes color variety
+ *
+ * @param diversity - Slider value from 0 to 100
+ * @returns Parameters for color selection algorithms
+ */
+export function getColorDiversityParams(
+  diversity: number
+): ColorDiversityParams {
+  // Clamp to 0-100
+  const d = Math.max(0, Math.min(100, diversity))
+
+  // Linear interpolation for each parameter
+  // diversity 0 -> 100 maps to:
+  // - minHueDistance: 10° -> 45° (low = allow similar hues, high = require distinct)
+  // - minRgbDistance: 50 -> 150 (low = allow close RGB, high = require contrast)
+  // - hueBucketSize: 45° -> 20° (low = fewer families, high = more families)
+
+  const minHueDistance = 10 + (d / 100) * 35 // 10 to 45
+  const minRgbDistance = 50 + (d / 100) * 100 // 50 to 150
+  const hueBucketSize = 45 - (d / 100) * 25 // 45 to 20
+
+  return {
+    minHueDistance: Math.round(minHueDistance),
+    minRgbDistance: Math.round(minRgbDistance),
+    hueBucketSize: Math.round(hueBucketSize)
+  }
+}
 export const MIN_BRIGHT_BUCKET_REPRESENTATIVES = 2
 
 // ============================================================================
@@ -115,6 +164,7 @@ export interface HueBucket {
  * @param frequencyBudget - Nombre max de couleurs à sélectionner
  * @param targetColors - Nombre total de couleurs cible (pour détecter mode 0 vs 1-2)
  * @param calculateDistance - Fonction de distance RGB
+ * @param diversityParams - Optional diversity parameters from slider
  */
 export function selectFrequentColorsWithDiversity(
   colorFrequency: ColorFrequencyItem[],
@@ -122,17 +172,20 @@ export function selectFrequentColorsWithDiversity(
   result: number[],
   frequencyBudget: number,
   targetColors: number | undefined,
-  calculateDistance: DistanceFunction
+  calculateDistance: DistanceFunction,
+  diversityParams?: ColorDiversityParams
 ): void {
   // Distance minimale adaptative selon la taille de la palette cible
+  // Use diversity params if provided, otherwise use defaults
   const minDistance =
     targetColors && targetColors <= CPC_MODE_1_MAX_COLORS
       ? MIN_RGB_DISTANCE_MODE_1_2
-      : MIN_RGB_DISTANCE_MODE_0
+      : (diversityParams?.minRgbDistance ?? MIN_RGB_DISTANCE_MODE_0)
 
   // Pour le mode 0, également exiger une diversité de teinte
   const isMode0 = targetColors && targetColors > CPC_MODE_1_MAX_COLORS
-  const minHueDistance = MIN_HUE_DISTANCE_MODE_0
+  const minHueDistance =
+    diversityParams?.minHueDistance ?? MIN_HUE_DISTANCE_MODE_0
 
   for (
     let i = 1;
@@ -209,7 +262,8 @@ export function selectMaxMinDistanceColors(
   selectedConverted: Vector[],
   result: number[],
   targetColors: number,
-  calculateDistance: DistanceFunction
+  calculateDistance: DistanceFunction,
+  _diversityParams?: ColorDiversityParams
 ): void {
   const remaining = colorFrequency.filter((c) => !result.includes(c.index))
   const additionalColors = targetColors - result.length
@@ -283,21 +337,24 @@ export function selectMaxMinDistanceColors(
  * Utilise des buckets de 45° (~8 familles principales + gris)
  *
  * @param colorFrequency - Couleurs candidates
+ * @param diversityParams - Optional diversity parameters from slider
  * @returns Map des buckets avec leurs couleurs
  */
 export function createHueBuckets(
-  colorFrequency: ColorFrequencyItem[]
+  colorFrequency: ColorFrequencyItem[],
+  diversityParams?: ColorDiversityParams
 ): Map<number | 'gray', ColorFrequencyItem[]> {
   const hueBuckets = new Map<number | 'gray', ColorFrequencyItem[]>()
+  const bucketSize = diversityParams?.hueBucketSize ?? HUE_BUCKET_SIZE_DEGREES
 
   for (const candidate of colorFrequency) {
     const sat = calculateSaturation(candidate.converted)
     const hue = calculateHue(candidate.converted, DELTA_MIN_FOR_HUE)
 
-    // Buckets pour avoir ~8 familles principales
+    // Buckets pour avoir ~8-12 familles principales depending on diversity
     const bucketKey: number | 'gray' =
       sat > SATURATION_THRESHOLD_FOR_HUE && hue >= 0
-        ? Math.floor(hue / HUE_BUCKET_SIZE_DEGREES)
+        ? Math.floor(hue / bucketSize)
         : 'gray'
 
     if (!hueBuckets.has(bucketKey)) {

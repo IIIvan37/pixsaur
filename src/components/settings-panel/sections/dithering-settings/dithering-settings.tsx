@@ -5,10 +5,12 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   autoDistinctMappingAtom,
+  colorDiversityAtom,
   cpcHardwareAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
-  setAutoDistinctMappingAtom
+  setAutoDistinctMappingAtom,
+  setColorDiversityAtom
 } from '@/app/store/config/config'
 import { sourceUniqueColorsCountAtom } from '@/app/store/preview/preview'
 import { rasterEnabledAtom } from '@/app/store/raster/raster'
@@ -21,6 +23,8 @@ export function DitheringSettings() {
   )
   const autoDistinctMapping = useAtomValue(autoDistinctMappingAtom)
   const setAutoDistinctMapping = useSetAtom(setAutoDistinctMappingAtom)
+  const colorDiversity = useAtomValue(colorDiversityAtom)
+  const setColorDiversity = useSetAtom(setColorDiversityAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const isPaletteStrategyDisabled = usePaletteStrategyDisabled()
   const cpcHardware = useAtomValue(cpcHardwareAtom)
@@ -39,6 +43,10 @@ export function DitheringSettings() {
   const isDistinctMappingActive =
     autoDistinctMapping && showDistinctMapping && !isDistinctMappingDisabled
 
+  // Color diversity slider: only for CPC Plus Mode 0 (16 colors)
+  const showColorDiversity =
+    cpcHardware === 'plus' && modeConfig.nColors === 16 && !rasterEnabled
+
   return (
     <DitheringSettingsView
       horizontalSmoothing={horizontalSmoothing}
@@ -51,6 +59,9 @@ export function DitheringSettings() {
       sourceUniqueColors={sourceUniqueColors}
       rasterEnabled={rasterEnabled}
       isPaletteStrategyDisabled={isPaletteStrategyDisabled}
+      showColorDiversity={showColorDiversity}
+      colorDiversity={colorDiversity}
+      onColorDiversityChange={setColorDiversity}
     />
   )
 }
