@@ -78,8 +78,8 @@ export const egxNormalizedImageAtom = atom(async (get) => {
   // 2. Resize based on mode
   let resizedImageData: ImageData
 
-  if (resizeMode === 'origin') {
-    // Mode origin: use applyResize which handles the pixel ratio
+  if (resizeMode === 'origin' || resizeMode === 'cover') {
+    // Mode origin/cover: use applyResize which handles the pixel ratio
     const relativeSelection: Selection = {
       sx: 0,
       sy: 0,

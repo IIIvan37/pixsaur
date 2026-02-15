@@ -24,6 +24,8 @@ export function applyResize(
       return resizeAuto(sourceCanvas, selection)
     case 'origin':
       return resizeOrigin(sourceCanvas, selection, config, centerImage)
+    case 'cover':
+      return resizeCover(sourceCanvas, selection, config)
   }
 }
 
@@ -99,6 +101,81 @@ function resizeOrigin(
     dy,
     destWidth,
     destHeight
+  )
+
+  return outputCanvas
+}
+
+/**
+ * Resize mode "cover": Scale the image to fill the target dimensions completely,
+ * cropping any excess. The image is centered, so cropping is symmetric.
+ *
+ * Similar to CSS background-size: cover or object-fit: cover.
+ *
+ * @param sourceCanvas - Source canvas with the image
+ * @param selection - Selection rectangle within the source
+ * @param config - Resize configuration with target dimensions
+ * @returns Canvas filled with the scaled and cropped image
+ */
+function resizeCover(
+  sourceCanvas: HTMLCanvasElement,
+  selection: Selection,
+  config: ResizeConfig
+): HTMLCanvasElement {
+  const { width: cpcWidth, height: cpcHeight } = config.modeConfig
+  const { scaleX, scaleY } = config.modeConfig
+  const pixelRatio = scaleX / scaleY
+
+  // Target dimensions in CPC native pixels
+  const targetWidth = cpcWidth
+  const targetHeight = cpcHeight
+
+  const outputCanvas = document.createElement('canvas')
+  outputCanvas.width = targetWidth
+  outputCanvas.height = targetHeight
+
+  const ctx = outputCanvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) {
+    throw new Error('Failed to get 2D context')
+  }
+
+  // Source dimensions adjusted for pixel ratio
+  // For Mode 0 (ratio 2:1), we need to consider that 1 CPC pixel = 2 source pixels horizontally
+  const sourceAspect = selection.width / pixelRatio / selection.height
+  const targetAspect = targetWidth / targetHeight
+
+  let srcX = selection.sx
+  let srcY = selection.sy
+  let srcW = selection.width
+  let srcH = selection.height
+
+  // Cover mode: scale to fill, then crop excess
+  // We need to determine which dimension to match
+  if (sourceAspect > targetAspect) {
+    // Source is wider than target: crop horizontally
+    // Match height, crop width
+    const newWidth = selection.height * targetAspect * pixelRatio
+    srcX = selection.sx + (selection.width - newWidth) / 2
+    srcW = newWidth
+  } else {
+    // Source is taller than target: crop vertically
+    // Match width, crop height
+    const newHeight = selection.width / pixelRatio / targetAspect
+    srcY = selection.sy + (selection.height - newHeight) / 2
+    srcH = newHeight
+  }
+
+  ctx.imageSmoothingEnabled = true
+  ctx.drawImage(
+    sourceCanvas,
+    srcX,
+    srcY,
+    srcW,
+    srcH,
+    0,
+    0,
+    targetWidth,
+    targetHeight
   )
 
   return outputCanvas

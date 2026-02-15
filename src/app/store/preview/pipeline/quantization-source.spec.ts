@@ -48,16 +48,34 @@ describe('quantizationSourceImageAtom', () => {
       }
     })
 
-    it('should use smoothedImageAtom in auto mode', async () => {
+    it('should use croppedImageAtom in auto mode for better color sampling', async () => {
+      // All modes now use croppedImageAtom for consistent high-resolution
+      // color sampling. This ensures auto and cover modes produce
+      // identical palettes for images that fit CPC proportions.
       store.set(resizeModeAtom, 'auto')
 
       const sourceImage = await store.get(quantizationSourceImageAtom)
 
-      // In auto mode, we expect the full smoothed image (160x200)
+      // In auto mode, we now use the cropped image (same as origin)
+      // for better color sampling at high resolution
       expect(sourceImage).toBeDefined()
       if (sourceImage) {
-        expect(sourceImage.width).toBe(160)
-        expect(sourceImage.height).toBe(200)
+        expect(sourceImage.width).toBe(2)
+        expect(sourceImage.height).toBe(5)
+      }
+    })
+
+    it('should use croppedImageAtom in cover mode for consistent palette', async () => {
+      // Cover mode should produce the same palette as auto for images
+      // that exactly match CPC proportions
+      store.set(resizeModeAtom, 'cover')
+
+      const sourceImage = await store.get(quantizationSourceImageAtom)
+
+      expect(sourceImage).toBeDefined()
+      if (sourceImage) {
+        expect(sourceImage.width).toBe(2)
+        expect(sourceImage.height).toBe(5)
       }
     })
   })

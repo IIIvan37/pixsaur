@@ -38,9 +38,9 @@ export function ResizeSettingsView({
         </h3>
         <p className={styles.description}>
           <Trans>
-            Auto: redimensionnement intelligent avec correction du ratio CPC
-            (recommandé). Origin: conserve la taille de sélection originale
-            (pixel-perfect, pas de mise à l'échelle).
+            Auto: redimensionne pour que l'image tienne entièrement
+            (recommandé). Cover: remplit les dimensions cibles en rognant
+            l'excédent. Origin: conserve la taille originale (pixel-perfect).
           </Trans>
         </p>
 
@@ -59,6 +59,13 @@ export function ResizeSettingsView({
             checked={resizeMode === 'auto'}
             onChange={() => onResizeModeChange('auto')}
             label={t`Auto (Smart CPC adapt)`}
+          />
+          <Radio
+            name='resizeMode'
+            value='cover'
+            checked={resizeMode === 'cover'}
+            onChange={() => onResizeModeChange('cover')}
+            label={t`Cover (Crop to fill)`}
           />
           <Radio
             name='resizeMode'
