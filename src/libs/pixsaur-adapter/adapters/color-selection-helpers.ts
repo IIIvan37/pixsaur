@@ -40,8 +40,8 @@ export const MIN_RGB_DISTANCE_MODE_0 = 100
 /** Distance RGB minimale pour modes 1-2 (2-4 couleurs) - contraste plus élevé */
 export const MIN_RGB_DISTANCE_MODE_1_2 = 200
 
-/** Distance de teinte minimale pour mode 0 (degrés) - augmenté pour plus de diversité */
-export const MIN_HUE_DISTANCE_MODE_0 = 35
+/** Distance de teinte minimale pour mode 0 (degrés) - réduit pour permettre plus de nuances */
+export const MIN_HUE_DISTANCE_MODE_0 = 25
 
 /** Seuil de saturation pour considérer une couleur comme "saturée" */
 export const SATURATION_THRESHOLD_FOR_HUE = 0.2
@@ -52,8 +52,8 @@ export const SATURATION_THRESHOLD_HIGH = 0.3
 /** Delta minimum pour calcul de teinte (évite les erreurs sur les gris) */
 export const DELTA_MIN_FOR_HUE = 0.01
 
-/** Taille des buckets de teinte en degrés (~8 familles: 360/45 = 8) */
-export const HUE_BUCKET_SIZE_DEGREES = 45
+/** Taille des buckets de teinte en degrés (~12 familles: 360/30 = 12) */
+export const HUE_BUCKET_SIZE_DEGREES = 30
 
 /** Demi-range de teinte pour normalisation */
 export const HUE_HALF_RANGE = 180
@@ -367,37 +367,26 @@ export function selectBucketRepresentativesWithLightness(
 ): ColorFrequencyItem[] {
   const representatives: ColorFrequencyItem[] = []
   const bucketIndices: number[] = [] // Pour savoir de quel bucket vient chaque rep
-  const usedMegaFamilies = new Set<number>() // Méga-familles déjà utilisées
+  const usedBuckets = new Set<number | 'gray'>() // Buckets déjà utilisés
 
-  // Définir les méga-familles (regroupement de 2 buckets adjacents = 90°)
-  // Bucket 0-1 (0-90°) = rouge/orange/jaune
-  // Bucket 2-3 (90-180°) = vert/cyan
-  // Bucket 4-5 (180-270°) = cyan/bleu
-  // Bucket 6-7 (270-360°) = violet/magenta/rouge
-  const getMegaFamily = (bucket: number | 'gray'): number => {
-    if (bucket === 'gray') return -1 // Gray est sa propre famille
-    return Math.floor(bucket / 2) // 0-1→0, 2-3→1, 4-5→2, 6-7→3
-  }
-
-  // Phase 1: Sélectionner le plus fréquent de chaque bucket, mais limiter les méga-familles
+  // Phase 1: Sélectionner le plus fréquent de chaque bucket distinct
+  // Avec 12 buckets (30° chacun), on couvre bien les 16 couleurs du mode 0
+  // Buckets: 0=rouge, 1=orange, 2=jaune, 3=chartreuse, 4=vert, 5=cyan-vert,
+  //          6=cyan, 7=bleu-cyan, 8=bleu, 9=violet, 10=magenta, 11=rose
   for (let i = 0; i < sortedBuckets.length; i++) {
     const { bucket, colors } = sortedBuckets[i]
     if (representatives.length >= maxRepresentatives || colors.length === 0)
       continue
 
-    const megaFamily = getMegaFamily(bucket)
-
-    // Gray peut avoir plusieurs représentants (nuances de gris importantes)
-    // Les autres méga-familles : max 1 représentant dans les 8 premiers
-    if (megaFamily !== -1 && usedMegaFamilies.has(megaFamily)) {
+    // Un représentant par bucket (pas de méga-familles)
+    // Cela permet plus de diversité de teintes
+    if (usedBuckets.has(bucket)) {
       continue
     }
 
     representatives.push(colors[0])
     bucketIndices.push(i)
-    if (megaFamily !== -1) {
-      usedMegaFamilies.add(megaFamily)
-    }
+    usedBuckets.add(bucket)
   }
 
   // Compter les couleurs claires parmi les représentants

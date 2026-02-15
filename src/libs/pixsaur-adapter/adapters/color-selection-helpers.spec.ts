@@ -58,8 +58,8 @@ describe('color-selection-helpers', () => {
       expect(MIN_RGB_DISTANCE_MODE_1_2).toBe(200)
     })
 
-    it('should export MIN_HUE_DISTANCE_MODE_0 as 35', () => {
-      expect(MIN_HUE_DISTANCE_MODE_0).toBe(35)
+    it('should export MIN_HUE_DISTANCE_MODE_0 as 25', () => {
+      expect(MIN_HUE_DISTANCE_MODE_0).toBe(25)
     })
 
     it('should export SATURATION_THRESHOLD_FOR_HUE as 0.2', () => {
@@ -70,8 +70,8 @@ describe('color-selection-helpers', () => {
       expect(DELTA_MIN_FOR_HUE).toBe(0.01)
     })
 
-    it('should export HUE_BUCKET_SIZE_DEGREES as 45', () => {
-      expect(HUE_BUCKET_SIZE_DEGREES).toBe(45)
+    it('should export HUE_BUCKET_SIZE_DEGREES as 30', () => {
+      expect(HUE_BUCKET_SIZE_DEGREES).toBe(30)
     })
   })
 
@@ -389,11 +389,12 @@ describe('color-selection-helpers', () => {
   // selectBucketRepresentativesWithLightness
   // ============================================================================
   describe('selectBucketRepresentativesWithLightness', () => {
-    it('should limit representatives per mega-family', () => {
-      // Buckets 0 and 1 are in mega-family 0
+    it('should select one representative per bucket for maximum hue diversity', () => {
+      // Each bucket now gets its own representative (no mega-families)
+      // With 12 buckets (30° each), this provides better hue coverage for mode 0
       const buckets: HueBucket[] = [
         {
-          bucket: 0, // Mega-family 0
+          bucket: 0, // Rouge
           colors: [
             {
               index: 0,
@@ -405,7 +406,7 @@ describe('color-selection-helpers', () => {
           totalFreq: 0.5
         },
         {
-          bucket: 1, // Mega-family 0 (same as bucket 0)
+          bucket: 1, // Orange
           colors: [
             {
               index: 1,
@@ -417,13 +418,13 @@ describe('color-selection-helpers', () => {
           totalFreq: 0.4
         },
         {
-          bucket: 2, // Mega-family 1
+          bucket: 2, // Jaune
           colors: [
             {
               index: 2,
               frequency: 0.3,
-              color: [0, 255, 0],
-              converted: [0, 255, 0]
+              color: [255, 255, 0],
+              converted: [255, 255, 0]
             }
           ],
           totalFreq: 0.3
@@ -432,11 +433,11 @@ describe('color-selection-helpers', () => {
 
       const reps = selectBucketRepresentativesWithLightness(buckets, 10)
 
-      // Should skip bucket 1 because mega-family 0 is already represented
-      expect(reps.length).toBe(2)
+      // All three buckets should be represented (no mega-family restrictions)
+      expect(reps.length).toBe(3)
       expect(reps.map((r) => r.index)).toContain(0)
+      expect(reps.map((r) => r.index)).toContain(1)
       expect(reps.map((r) => r.index)).toContain(2)
-      expect(reps.map((r) => r.index)).not.toContain(1)
     })
 
     it('should allow gray bucket to have representatives', () => {
