@@ -169,7 +169,7 @@ export const modeRSourceImageAtom = atom(async (get) => {
   // In 'origin' mode, use the cropped image BEFORE the standard resize pipeline
   // because the standard pipeline compresses to Mode 0 dimensions (160×200)
   // but Mode R needs the full 320×200 resolution
-  // In 'auto' mode, use resizedImageAtom (NOT smoothedImageAtom) to skip horizontal smoothing
+  // In 'auto' and 'cover' modes, use resizedImageAtom (NOT smoothedImageAtom) to skip horizontal smoothing
   // Mode R has its own sub-pixel resolution, horizontal smoothing would blur it
   const sourceImage =
     resizeMode === 'origin'
@@ -200,7 +200,7 @@ export const modeRSourceImageAtom = atom(async (get) => {
   // Resize to Mode R target dimensions
   // Use different resize strategy based on resize mode:
   // - origin: pixel-perfect 1:1 mapping (like Mode 1)
-  // - auto: fit with aspect ratio preservation
+  // - auto/cover: fit with aspect ratio preservation (cover already cropped by resizedImageAtom)
   const modeRImage =
     resizeMode === 'origin'
       ? resizeForModeROrigin(

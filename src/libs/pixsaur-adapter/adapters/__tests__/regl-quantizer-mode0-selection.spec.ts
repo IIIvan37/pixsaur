@@ -31,13 +31,13 @@ vi.mock('@/core', async (importOriginal) => {
   }
 })
 
-// Constantes de regl-quantizer.ts (version c244923)
+// Constantes de color-selection-helpers.ts
 const CPC_MODE_1_MAX_COLORS = 4
 const SATURATION_THRESHOLD_FOR_HUE = 0.2
 const SATURATION_THRESHOLD_HIGH = 0.3
 const DELTA_MIN_FOR_HUE = 0.01
-const HUE_BUCKET_SIZE_DEGREES = 45
-const MIN_HUE_DISTANCE_MODE_0 = 30
+const HUE_BUCKET_SIZE_DEGREES = 30 // 12 familles pour plus de diversité
+const MIN_HUE_DISTANCE_MODE_0 = 25 // Réduit pour permettre plus de nuances
 const MIN_RGB_DISTANCE_MODE_0 = 20
 const MIN_RGB_DISTANCE_MODE_1_2 = 80
 const HUE_HALF_RANGE = 180

@@ -20,14 +20,13 @@ import {
   autoDistinctMappingAtom,
   cpcHardwareAtom,
   effectiveModeConfigAtom,
-  paletteStrategyAtom,
-  resizeModeAtom
+  paletteStrategyAtom
 } from '../../config/config'
 import {
   lockedEmptySlotsCountAtom,
   lockedVectorsAtom
 } from '../../palette/palette'
-import { croppedImageAtom, smoothedImageAtom } from './image-pipeline'
+import { croppedImageAtom } from './image-pipeline'
 
 // ============================================================================
 // BUFFER EXTRACTION
@@ -38,19 +37,14 @@ import { croppedImageAtom, smoothedImageAtom } from './image-pipeline'
  *
  * IMPORTANT: In 'origin' mode, we use croppedImageAtom (before resize/padding)
  * to avoid the black padding pixels from dominating the palette.
- * In 'auto' mode, we use smoothedImageAtom (post-resize, post-smooth).
+ * In 'auto' and 'cover' modes, we also use croppedImageAtom for better color sampling
+ * at high resolution. This ensures consistent palette extraction regardless of resize mode.
  */
 export const quantizationSourceImageAtom = atom(async (get) => {
-  const resizeMode = get(resizeModeAtom)
-
-  // In origin mode, use cropped image BEFORE padding to get true colors
-  // This prevents black padding from dominating the palette
-  if (resizeMode === 'origin') {
-    return await get(croppedImageAtom)
-  }
-
-  // In auto mode, use smoothed image (standard behavior)
-  return await get(smoothedImageAtom)
+  // Use cropped image (before resize) for all modes
+  // This provides better color sampling at high resolution
+  // and ensures consistent results between auto/cover for images that fit perfectly
+  return await get(croppedImageAtom)
 })
 
 /**

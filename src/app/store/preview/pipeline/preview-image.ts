@@ -41,10 +41,10 @@ export const normalizedImageAtom = atom(async (get) => {
 
   if (!processed) return null
 
-  // In origin mode, image is already at correct CPC dimensions
+  // In origin and cover modes, image is already at correct CPC dimensions
   // In auto mode, normalize to CPC dimensions
   const normalized =
-    resizeMode === 'origin'
+    resizeMode === 'origin' || resizeMode === 'cover'
       ? processed
       : getVisualRegionNormalized(processed, modeConfig)
 
@@ -162,7 +162,7 @@ export const previewImageAtom = atom(async (get) => {
     normalized.height
   )
 
-  // Positioning for auto mode (origin handles its own centering)
+  // Positioning for auto mode (origin and cover handle their own positioning)
   // In auto mode, getVisualRegionNormalized returns variable-sized ImageData (scaledW × scaledH)
   // that must be placed in canvas at target size (160x200 or 320x200)
   if (resizeMode === 'auto') {

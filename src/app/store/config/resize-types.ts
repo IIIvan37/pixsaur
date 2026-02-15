@@ -16,6 +16,7 @@ export type CPCMode = 0 | 1 | 2
 export type ResizeMode =
   | 'auto' // Smart resize with CPC aspect ratio correction (RECOMMENDED)
   | 'origin' // Keep original selection size (pixel-perfect, no scaling)
+  | 'cover' // Scale to fill target dimensions, cropping excess (crop cover)
 
 /**
  * Resize configuration (simplified - no manual dimensions)

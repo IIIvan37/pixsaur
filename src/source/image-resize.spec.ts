@@ -159,6 +159,83 @@ describe('image-resize', () => {
     })
   })
 
+  describe('resizeCover', () => {
+    it('should create canvas with exact CPC dimensions', () => {
+      const source = createMockCanvas(800, 600)
+      const selection: Selection = { sx: 0, sy: 0, width: 800, height: 600 }
+      const config: ResizeConfig = {
+        mode: 'cover',
+        modeConfig: CPC_MODE_CONFIG['0'] // Mode 0: 160×200
+      }
+
+      const result = applyResize(source, selection, config)
+
+      // Cover mode fills target dimensions exactly
+      expect(result.width).toBe(160)
+      expect(result.height).toBe(200)
+    })
+
+    it('should fill CPC dimensions for mode 1', () => {
+      const source = createMockCanvas(640, 480)
+      const selection: Selection = { sx: 0, sy: 0, width: 640, height: 480 }
+      const config: ResizeConfig = {
+        mode: 'cover',
+        modeConfig: CPC_MODE_CONFIG['1'] // Mode 1: 320×200
+      }
+
+      const result = applyResize(source, selection, config)
+
+      expect(result.width).toBe(320)
+      expect(result.height).toBe(200)
+    })
+
+    it('should fill CPC dimensions for mode 2', () => {
+      const source = createMockCanvas(1280, 800)
+      const selection: Selection = { sx: 0, sy: 0, width: 1280, height: 800 }
+      const config: ResizeConfig = {
+        mode: 'cover',
+        modeConfig: CPC_MODE_CONFIG['2'] // Mode 2: 640×200
+      }
+
+      const result = applyResize(source, selection, config)
+
+      expect(result.width).toBe(640)
+      expect(result.height).toBe(200)
+    })
+
+    it('should crop excess when source is wider than target aspect', () => {
+      // Source: 400×100 (aspect 4:1), Target: 160×200 (aspect 0.8:1 with Mode 0 pixel ratio 2:1)
+      // Mode 0 cover should crop the width
+      const source = createMockCanvas(400, 100)
+      const selection: Selection = { sx: 0, sy: 0, width: 400, height: 100 }
+      const config: ResizeConfig = {
+        mode: 'cover',
+        modeConfig: CPC_MODE_CONFIG['0']
+      }
+
+      const result = applyResize(source, selection, config)
+
+      expect(result.width).toBe(160)
+      expect(result.height).toBe(200)
+    })
+
+    it('should crop excess when source is taller than target aspect', () => {
+      // Source: 100×400 (aspect 0.25:1), Target: 320×200 (aspect 1.6:1)
+      // Mode 1 cover should crop the height
+      const source = createMockCanvas(100, 400)
+      const selection: Selection = { sx: 0, sy: 0, width: 100, height: 400 }
+      const config: ResizeConfig = {
+        mode: 'cover',
+        modeConfig: CPC_MODE_CONFIG['1']
+      }
+
+      const result = applyResize(source, selection, config)
+
+      expect(result.width).toBe(320)
+      expect(result.height).toBe(200)
+    })
+  })
+
   describe('extractSelection', () => {
     it('should create canvas with selection dimensions', () => {
       const source = createMockCanvas(200, 200)
