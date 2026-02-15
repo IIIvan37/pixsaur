@@ -111,6 +111,7 @@ function resizeOrigin(
  * cropping any excess. The image is centered, so cropping is symmetric.
  *
  * Similar to CSS background-size: cover or object-fit: cover.
+ * Takes into account CPC pixel aspect ratio to preserve perceived proportions.
  *
  * @param sourceCanvas - Source canvas with the image
  * @param selection - Selection rectangle within the source
@@ -139,31 +140,33 @@ function resizeCover(
     throw new Error('Failed to get 2D context')
   }
 
-  // Source dimensions adjusted for pixel ratio
-  // For Mode 0 (ratio 2:1), we need to consider that 1 CPC pixel = 2 source pixels horizontally
-  const sourceAspect = selection.width / pixelRatio / selection.height
-  const targetAspect = targetWidth / targetHeight
+  // Calculate PERCEIVED aspect ratios
+  // Source image has square pixels
+  const sourceAspect = selection.width / selection.height
+  // CPC target has non-square pixels in mode 0 (2:1) and mode 2 (0.5:1)
+  // The perceived aspect ratio = (targetWidth * pixelRatio) / targetHeight
+  const targetPerceivedAspect = (targetWidth * pixelRatio) / targetHeight
 
   let srcX = selection.sx
   let srcY = selection.sy
   let srcW = selection.width
   let srcH = selection.height
 
-  // Cover mode: scale to fill, then crop excess
-  // We need to determine which dimension to match
-  if (sourceAspect > targetAspect) {
-    // Source is wider than target: crop horizontally
-    // Match height, crop width
-    const newWidth = selection.height * targetAspect * pixelRatio
+  // Cover mode: scale to fill, crop excess to match perceived aspect ratio
+  if (sourceAspect > targetPerceivedAspect) {
+    // Source is wider than target (perceived): crop horizontally
+    // Keep full height, calculate width to match target aspect ratio
+    const newWidth = selection.height * targetPerceivedAspect
     srcX = selection.sx + (selection.width - newWidth) / 2
     srcW = newWidth
-  } else {
-    // Source is taller than target: crop vertically
-    // Match width, crop height
-    const newHeight = selection.width / pixelRatio / targetAspect
+  } else if (sourceAspect < targetPerceivedAspect) {
+    // Source is taller than target (perceived): crop vertically
+    // Keep full width, calculate height to match target aspect ratio
+    const newHeight = selection.width / targetPerceivedAspect
     srcY = selection.sy + (selection.height - newHeight) / 2
     srcH = newHeight
   }
+  // If equal, no cropping needed
 
   ctx.imageSmoothingEnabled = true
   ctx.drawImage(
