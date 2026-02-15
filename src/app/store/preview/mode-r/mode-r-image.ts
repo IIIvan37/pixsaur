@@ -91,6 +91,76 @@ export function resizeForModeRAuto(
 }
 
 /**
+ * Resize image to Mode R target dimensions for COVER mode
+ *
+ * Cover mode: Scale the image to fill the target dimensions completely,
+ * cropping any excess. The image is centered, so cropping is symmetric.
+ * Mode R has SQUARE perceived pixels, so no aspect ratio correction needed.
+ *
+ * @param src - Source ImageData (from cropped image)
+ * @param targetWidth - Target width (e.g., 320 for standard Mode 0 R)
+ * @param targetHeight - Target height (e.g., 200 for standard Mode 0 R)
+ * @returns ImageData filled with the scaled and cropped image
+ */
+export function resizeForModeRCover(
+  src: ImageData,
+  targetWidth: number,
+  targetHeight: number
+): ImageData {
+  // Mode R has SQUARE perceived pixels
+  const sourceAspect = src.width / src.height
+  const targetAspect = targetWidth / targetHeight
+
+  // Create temporary canvas for the source
+  const srcCanvas = document.createElement('canvas')
+  srcCanvas.width = src.width
+  srcCanvas.height = src.height
+  const srcCtx = srcCanvas.getContext('2d')!
+  srcCtx.putImageData(src, 0, 0)
+
+  // Calculate source region to crop (cover mode)
+  let srcX = 0
+  let srcY = 0
+  let srcW = src.width
+  let srcH = src.height
+
+  if (sourceAspect > targetAspect) {
+    // Source is wider: crop horizontally
+    const newWidth = src.height * targetAspect
+    srcX = (src.width - newWidth) / 2
+    srcW = newWidth
+  } else if (sourceAspect < targetAspect) {
+    // Source is taller: crop vertically
+    const newHeight = src.width / targetAspect
+    srcY = (src.height - newHeight) / 2
+    srcH = newHeight
+  }
+
+  // Create output canvas at full target dimensions
+  const outCanvas = document.createElement('canvas')
+  outCanvas.width = targetWidth
+  outCanvas.height = targetHeight
+  const outCtx = outCanvas.getContext('2d')!
+  outCtx.imageSmoothingEnabled = true
+  outCtx.imageSmoothingQuality = 'high'
+
+  // Draw cropped and scaled image
+  outCtx.drawImage(
+    srcCanvas,
+    srcX,
+    srcY,
+    srcW,
+    srcH,
+    0,
+    0,
+    targetWidth,
+    targetHeight
+  )
+
+  return outCtx.getImageData(0, 0, targetWidth, targetHeight)
+}
+
+/**
  * Resize image to Mode R target dimensions for ORIGIN mode
  *
  * In origin mode, Mode R behaves like Mode 1: pixel-perfect 1:1 mapping.
@@ -166,21 +236,19 @@ export const modeRSourceImageAtom = atom(async (get) => {
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom)
 
-  // In 'origin' mode, use the cropped image BEFORE the standard resize pipeline
-  // because the standard pipeline compresses to Mode 0 dimensions (160×200)
-  // but Mode R needs the full 320×200 resolution
-  // In 'auto' and 'cover' modes, use resizedImageAtom (NOT smoothedImageAtom) to skip horizontal smoothing
-  // Mode R has its own sub-pixel resolution, horizontal smoothing would blur it
+  // Target dimensions for Mode R: doubled horizontal resolution
+  const targetWidth = modeConfig.width * 2 // 320 for standard Mode 0
+  const targetHeight = modeConfig.height // 200 for standard
+
+  // Select source image based on resize mode:
+  // - 'origin' and 'cover': use cropped image (before resize) to apply Mode R-specific resize
+  // - 'auto': use resizedImageAtom (already fit to Mode 0 dimensions, then scaled to Mode R)
   const sourceImage =
-    resizeMode === 'origin'
+    resizeMode === 'origin' || resizeMode === 'cover'
       ? await get(croppedImageAtom)
       : await get(resizedImageAtom)
 
   if (!sourceImage) return null
-
-  // Target dimensions for Mode R: doubled horizontal resolution
-  const targetWidth = modeConfig.width * 2 // 320 for standard Mode 0
-  const targetHeight = modeConfig.height // 200 for standard
 
   // Skip resize if in 'origin' mode and image already matches target
   if (
@@ -200,21 +268,32 @@ export const modeRSourceImageAtom = atom(async (get) => {
   // Resize to Mode R target dimensions
   // Use different resize strategy based on resize mode:
   // - origin: pixel-perfect 1:1 mapping (like Mode 1)
-  // - auto/cover: fit with aspect ratio preservation (cover already cropped by resizedImageAtom)
-  const modeRImage =
-    resizeMode === 'origin'
-      ? resizeForModeROrigin(
-          sourceImage,
-          targetWidth,
-          targetHeight,
-          centerImage
-        )
-      : resizeForModeRAuto(sourceImage, targetWidth, targetHeight, centerImage)
+  // - cover: fill target dimensions, cropping excess (preserves aspect ratio)
+  // - auto: fit with aspect ratio preservation (may have margins)
+  let modeRImage: ImageData
+  if (resizeMode === 'origin') {
+    modeRImage = resizeForModeROrigin(
+      sourceImage,
+      targetWidth,
+      targetHeight,
+      centerImage
+    )
+  } else if (resizeMode === 'cover') {
+    modeRImage = resizeForModeRCover(sourceImage, targetWidth, targetHeight)
+  } else {
+    modeRImage = resizeForModeRAuto(
+      sourceImage,
+      targetWidth,
+      targetHeight,
+      centerImage
+    )
+  }
 
   logger.info('[Mode R] Source image resized to true high resolution', {
     sourceSize: `${sourceImage.width}×${sourceImage.height}`,
     modeRSize: `${modeRImage.width}×${modeRImage.height}`,
-    targetDimensions: `${targetWidth}×${targetHeight}`
+    targetDimensions: `${targetWidth}×${targetHeight}`,
+    resizeMode
   })
 
   return modeRImage
