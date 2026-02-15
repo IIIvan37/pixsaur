@@ -18,6 +18,7 @@ import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { paletteProcessorAtom } from '../../adapters/processors'
 import {
   autoDistinctMappingAtom,
+  colorDiversityAtom,
   cpcHardwareAtom,
   effectiveModeConfigAtom,
   paletteStrategyAtom
@@ -164,11 +165,14 @@ export const reducedPaletteRawAtom = atom(async (get) => {
   const paletteStrategy = get(paletteStrategyAtom)
   // Read autoDistinctMapping to create dependency (triggers re-processing when toggle changes)
   const autoDistinctMapping = get(autoDistinctMappingAtom)
+  // Read colorDiversity to create dependency (triggers re-processing when slider changes)
+  const colorDiversity = get(colorDiversityAtom)
 
   logger.info('[Preview] Quantizing palette', {
     targetColors,
     paletteStrategy,
     autoDistinctMapping,
+    colorDiversity,
     hardware: cpcHardware
   })
 

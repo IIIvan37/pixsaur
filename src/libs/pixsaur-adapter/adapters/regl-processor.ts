@@ -9,6 +9,7 @@ import type REGL from 'regl'
 // Import pour accéder à l'atome de stratégie de palette et auto distinct-mapping
 import {
   autoDistinctMappingAtom,
+  colorDiversityAtom,
   paletteStrategyAtom
 } from '@/app/store/config/config'
 import { adapterLogger, paletteLogger } from '@/core'
@@ -769,6 +770,7 @@ export class ReGLProcessor implements ImageProcessor {
             paletteStrategy:
               paletteStrategy || getDefaultStore().get(paletteStrategyAtom),
             autoDistinctMapping: getDefaultStore().get(autoDistinctMappingAtom),
+            colorDiversity: getDefaultStore().get(colorDiversityAtom),
             gpuOptions: {
               minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
             }

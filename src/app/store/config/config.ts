@@ -102,9 +102,11 @@ export {
 // Processing
 export {
   autoDistinctMappingAtom,
+  colorDiversityAtom,
   horizontalSmoothingAtom,
   paletteStrategyAtom,
   processorTypeAtom,
+  setColorDiversityAtom,
   setPaletteStrategyAtom,
   setProcessorTypeAtom,
   smoothingAtom

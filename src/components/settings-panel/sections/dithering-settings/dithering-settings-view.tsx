@@ -2,10 +2,13 @@
  * Dithering settings view (dumb component)
  */
 
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useId } from 'react'
 import Flex from '@/components/ui/flex'
 import { Switch } from '@/components/ui/switch'
+import { TuningSlider } from '../../shared/tuning-slider'
 import styles from '../../tabs/tab.module.css'
 import { DitheringControls } from './dithering-controls'
 import { PaletteStrategySelector } from './palette-strategy-selector/palette-strategy-selector'
@@ -21,6 +24,9 @@ type DitheringSettingsViewProps = Readonly<{
   sourceUniqueColors: number | null
   rasterEnabled: boolean
   isPaletteStrategyDisabled: boolean
+  showColorDiversity: boolean
+  colorDiversity: number
+  onColorDiversityChange: (value: number) => void
 }>
 
 export function DitheringSettingsView({
@@ -33,10 +39,14 @@ export function DitheringSettingsView({
   isDistinctMappingDisabled,
   sourceUniqueColors,
   rasterEnabled,
-  isPaletteStrategyDisabled
+  isPaletteStrategyDisabled,
+  showColorDiversity,
+  colorDiversity,
+  onColorDiversityChange
 }: DitheringSettingsViewProps) {
   const smoothingId = useId()
   const distinctMappingId = useId()
+  const { _ } = useLingui()
 
   return (
     <>
@@ -59,6 +69,52 @@ export function DitheringSettingsView({
 
         <PaletteStrategySelector />
       </div>
+
+      {showColorDiversity && (
+        <>
+          <div className={styles.separator} />
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Diversité des couleurs</Trans>
+            </h3>
+            <p className={styles.description}>
+              <Trans>
+                Ajustez l'équilibre entre fidélité aux couleurs fréquentes et
+                variété des teintes (CPC Plus Mode 0).
+              </Trans>
+            </p>
+
+            <TuningSlider
+              min={0}
+              max={100}
+              step={1}
+              value={colorDiversity}
+              defaultValue={50}
+              onChange={onColorDiversityChange}
+              label={_(
+                msg({
+                  id: 'color.diversity.label',
+                  message: 'Diversité'
+                })
+              )}
+              description={_(
+                msg({
+                  id: 'color.diversity.description',
+                  message: 'Nuances similaires (0) ◄► Teintes distinctes (100)'
+                })
+              )}
+              format={(v) => `${v}`}
+              resetTitle={_(
+                msg({
+                  id: 'color.diversity.reset',
+                  message: 'Réinitialiser à 50'
+                })
+              )}
+            />
+          </div>
+        </>
+      )}
 
       <div className={styles.separator} />
 
