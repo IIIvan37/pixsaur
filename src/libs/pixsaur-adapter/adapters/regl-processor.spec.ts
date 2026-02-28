@@ -15,7 +15,8 @@ vi.mock('@/libs/pixsaur-color/src/quant/quantize')
 vi.mock('@/core')
 vi.mock('@/app/store/config/config', () => ({
   paletteStrategyAtom: { _type: 'paletteStrategy' },
-  autoDistinctMappingAtom: { _type: 'autoDistinctMapping' }
+  autoDistinctMappingAtom: { _type: 'autoDistinctMapping' },
+  colorDiversityAtom: { _type: 'colorDiversity' }
 }))
 vi.mock('jotai', () => ({
   getDefaultStore: vi.fn(() => ({

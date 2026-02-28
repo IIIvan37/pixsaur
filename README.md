@@ -54,18 +54,7 @@ Download the latest version for your platform:
 
 > **Tip**: The desktop app includes automatic updates! You'll be notified when new versions are available.
 
-### Web Version
-
-No installation required! Try Pixsaur directly in your browser:
-
-**[pixsaur.iiivan.org](https://pixsaur.iiivan.org/)**
-
-Works on any device with a modern web browser.
-
-## Development
-
-### Quick Setup (Automated)
-
+### Web Version 
 For **macOS** and **Linux**, we provide an automated setup script that installs everything you need:
 
 ```bash
