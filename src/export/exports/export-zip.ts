@@ -401,8 +401,7 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
   const maxScrAddress =
     (maxY & 7) * 2048 + (maxY >> 3) * widthInBytes + (widthInBytes - 1)
   const canExportSCR =
-    isStandardMode ||
-    (!modeConfig.overscan && maxScrAddress < 16384)
+    isStandardMode || (!modeConfig.overscan && maxScrAddress < 16384)
 
   // ===== GENERATE SHARED ASM DATA (used for both ZIP files and SNA) =====
   const hasRasters = rasterChanges.length > 0
