@@ -36,11 +36,13 @@ export default function ExportConfigDialog({
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
 
-  // Calculate SCR size in bytes for current dimensions and mode
-  const scrSizeBytes =
-    (modeConfig.width * modeConfig.height) / getPixelsPerByte(modeConfig.mode)
+  // Calculate max CPC interleaved address for current dimensions
+  const widthInBytes = modeConfig.width / getPixelsPerByte(modeConfig.mode)
+  const maxY = modeConfig.height - 1
+  const maxScrAddress =
+    (maxY & 7) * 2048 + (maxY >> 3) * widthInBytes + (widthInBytes - 1)
 
-  // SCR export is allowed for standard modes OR custom dimensions if size <= 16384 bytes
+  // SCR export is allowed for standard modes OR custom dimensions if max address fits in 16KB
   const isStandardMode =
     !modeConfig.overscan &&
     ((modeConfig.mode === 0 &&
@@ -53,8 +55,10 @@ export default function ExportConfigDialog({
         modeConfig.width === 640 &&
         modeConfig.height === 200))
 
-  // Allow SCR export for standard modes OR custom dimensions with size <= 16384 bytes
-  const canExportSCR = isStandardMode || scrSizeBytes <= MAX_SCR_SIZE_BYTES
+  // Allow SCR export for standard modes OR custom dimensions fitting in 16KB CPC screen memory
+  const canExportSCR =
+    isStandardMode ||
+    (!modeConfig.overscan && maxScrAddress < MAX_SCR_SIZE_BYTES)
 
   // SNA export is only available for standard modes or overscan
   const isOverscanMode = modeConfig.overscan
@@ -150,7 +154,7 @@ export default function ExportConfigDialog({
               canExportSCR
                 ? undefined
                 : _(
-                    msg`Le format SCR nécessite une taille <= 16 Ko (taille actuelle: ${Math.round(scrSizeBytes / 1024)} Ko)`
+                    msg`Le format SCR nécessite des dimensions tenant dans 16 Ko de mémoire écran CPC (sans overscan)`
                   )
             }
           />

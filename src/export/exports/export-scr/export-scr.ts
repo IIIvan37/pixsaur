@@ -1,35 +1,32 @@
 import type { CpcModeConfig } from '@/app/store/config/types'
 import { encodeByte } from '../encode-byte'
 
-export function computeCPCAddress(x: number, y: number): number {
-  return (y & 7) * 2048 + (y >> 3) * 80 + x
+export function computeCPCAddress(
+  x: number,
+  y: number,
+  bytesPerLine = 80
+): number {
+  return (y & 7) * 2048 + (y >> 3) * bytesPerLine + x
 }
 export function exportSCR(
   indexBuf: Uint8Array,
   modeConfig: CpcModeConfig
 ): Uint8Array {
-  // Check if mode is standard (required for SCR format)
-  // SCR format requires standard 16KB screen dimensions
-  const isStandardMode =
-    !modeConfig.overscan &&
-    ((modeConfig.mode === 0 &&
-      modeConfig.width === 160 &&
-      modeConfig.height === 200) ||
-      (modeConfig.mode === 1 &&
-        modeConfig.width === 320 &&
-        modeConfig.height === 200) ||
-      (modeConfig.mode === 2 &&
-        modeConfig.width === 640 &&
-        modeConfig.height === 200))
-
-  if (!isStandardMode) {
-    throw new Error(
-      'SCR export only supports standard CPC screen dimensions (160x200, 320x200, or 640x200 without overscan)'
-    )
-  }
-
   const pixelsPerByte = [2, 4, 8][modeConfig.mode]
   const widthInBytes = modeConfig.width / pixelsPerByte
+
+  // SCR format uses CPC interleaved screen memory layout (16KB max)
+  // Validate that the max address fits within 16384 bytes
+  const maxY = modeConfig.height - 1
+  const maxAddress =
+    (maxY & 7) * 2048 + (maxY >> 3) * widthInBytes + (widthInBytes - 1)
+  const canExportSCR = !modeConfig.overscan && maxAddress < 16384
+
+  if (!canExportSCR) {
+    throw new Error(
+      'SCR export requires dimensions fitting in 16KB CPC screen memory (no overscan)'
+    )
+  }
 
   // SCR format is always 16384 bytes (16KB)
   const scr = new Uint8Array(16384).fill(0)
@@ -44,7 +41,7 @@ export function exportSCR(
         modeConfig.mode,
         modeConfig.width
       )
-      const addr = computeCPCAddress(x, y)
+      const addr = computeCPCAddress(x, y, widthInBytes)
       scr[addr] = byte
     }
   }

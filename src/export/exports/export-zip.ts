@@ -372,9 +372,7 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
   if (!data) return false
 
-  // Check if mode is standard (required for SCR format)
-  // SCR format requires standard 16KB screen dimensions
-  // For EGX, check dimensions based on EGX type using effective dimensions
+  // Check if mode is standard (needed for SNA export)
   const isStandardMode = isEgxMode
     ? // EGX mode: check EGX-specific dimensions
       (egxConfig.type === 'egx1' &&
@@ -394,6 +392,17 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
         (modeConfig.mode === 2 &&
           modeConfig.width === 640 &&
           modeConfig.height === 200))
+
+  // SCR export: allowed for standard modes OR custom dimensions fitting in 16KB
+  // Must match the UI logic in export-config-dialog.tsx
+  const pixelsPerByte = [2, 4, 8][modeConfig.mode]
+  const widthInBytes = modeConfig.width / pixelsPerByte
+  const maxY = modeConfig.height - 1
+  const maxScrAddress =
+    (maxY & 7) * 2048 + (maxY >> 3) * widthInBytes + (widthInBytes - 1)
+  const canExportSCR =
+    isStandardMode ||
+    (!modeConfig.overscan && maxScrAddress < 16384)
 
   // ===== GENERATE SHARED ASM DATA (used for both ZIP files and SNA) =====
   const hasRasters = rasterChanges.length > 0
@@ -502,7 +511,7 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
       reducedPalette,
       config,
       asmLabel,
-      isStandardMode
+      canExportSCR
     )
 
     // Export rasters (using pre-generated ASM)
@@ -517,7 +526,7 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
       modeConfig,
       config,
       asmLabel,
-      isStandardMode
+      canExportSCR
     )
 
     // Export rasters (using pre-generated ASM)
