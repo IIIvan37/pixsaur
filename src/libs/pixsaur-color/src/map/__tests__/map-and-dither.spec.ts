@@ -261,7 +261,8 @@ describe('Map and Dither', () => {
         paletteCS,
         paletteOut,
         distFn,
-        0.5
+        0.5,
+        { enabled: true, errorClamp: 64 }
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)

@@ -15,7 +15,7 @@ import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { countUniqueColors } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
-import { paletteProcessorAtom } from '../../adapters/processors'
+import { imageProcessorAtom } from '../../adapters/processors'
 import {
   autoDistinctMappingAtom,
   colorDiversityAtom,
@@ -122,7 +122,7 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     return []
   }
 
-  const paletteProcessor = get(paletteProcessorAtom)
+  const paletteProcessor = get(imageProcessorAtom)
   if (!paletteProcessor) {
     logger.warn('Palette processor not initialized')
     return []
@@ -182,7 +182,11 @@ export const reducedPaletteRawAtom = atom(async (get) => {
     targetColors,
     basePalette,
     quantifiedLockedVecs,
-    paletteStrategy
+    paletteStrategy,
+    {
+      autoDistinctMapping,
+      colorDiversity
+    }
   )
 
   return palette

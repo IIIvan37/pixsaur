@@ -1,7 +1,7 @@
-// Re-export du factory centralisé
-export { processorFactory } from '@/app/store/adapters/processors'
+export { processorFactory } from './factory'
 export type {
   AdjustmentConfig,
   ImageProcessor,
-  ProcessorFactory
+  ProcessorFactory,
+  QuantizationOptions
 } from './interfaces'

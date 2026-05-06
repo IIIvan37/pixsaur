@@ -1,14 +1,11 @@
 import { atom } from 'jotai'
-import type REGL from 'regl'
-import createREGL from 'regl'
 import { processorTypeAtom } from '@/app/store/config/config'
 import { adapterLogger } from '@/core'
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
-import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
+import { processorFactory } from '@/libs/pixsaur-adapter/factory'
 
 // Atomes pour les adaptateurs auto-sélectionnés
 export const imageProcessorAtom = atom<ImageProcessor | null>(null)
-export const paletteProcessorAtom = atom<ImageProcessor | null>(null)
 
 // État d'initialisation pour éviter les multiples initialisations
 let initializationPromise: Promise<void> | null = null
@@ -24,8 +21,7 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
 
   // Si déjà initialisés, ne rien faire
   const currentImage = _get(imageProcessorAtom)
-  const currentPalette = _get(paletteProcessorAtom)
-  if (currentImage && currentPalette) {
+  if (currentImage) {
     return
   }
 
@@ -35,21 +31,15 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
     try {
       const processorType = _get(processorTypeAtom)
 
-      // Créer les processeurs avec sélection automatique WebGL/CPU
+      // Créer un processeur unique partagé par le pipeline image + palette
       const imageProcessor =
-        await processorFactory.createBestProcessor(processorType)
-      const paletteProcessor =
         await processorFactory.createBestProcessor(processorType)
 
       adapterLogger.info(
-        `Image processor: ${imageProcessor.type === 'regl' ? 'WebGL (GPU)' : 'CPU'}`
-      )
-      adapterLogger.info(
-        `Palette processor: ${paletteProcessor.type === 'regl' ? 'WebGL (GPU)' : 'CPU'}`
+        `Processor initialized: ${imageProcessor.type === 'regl' ? 'WebGL (GPU)' : 'CPU fallback'}`
       )
 
       set(imageProcessorAtom, imageProcessor)
-      set(paletteProcessorAtom, paletteProcessor)
     } catch (error) {
       adapterLogger.error('Failed to initialize processors:', error)
       throw error
@@ -65,16 +55,10 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
 // Atome pour nettoyer les ressources
 export const disposeProcessorsAtom = atom(null, (get, set) => {
   const imageProcessor = get(imageProcessorAtom)
-  const paletteProcessor = get(paletteProcessorAtom)
 
   if (imageProcessor) {
     imageProcessor.dispose()
     set(imageProcessorAtom, null)
-  }
-
-  if (paletteProcessor) {
-    paletteProcessor.dispose()
-    set(paletteProcessorAtom, null)
   }
 })
 
@@ -94,35 +78,4 @@ export const processorTypeListenerAtom = atom(
     await set(reinitializeProcessorsAtom)
   }
 )
-export const processorFactory = {
-  async createBestProcessor(type = 'gpu') {
-    // Si CPU est explicitement demandé, créer un processeur CPU
-    if (type === 'cpu') {
-      // Créer un processeur CPU basique (pas de ReGL)
-      return new ReGLProcessor(undefined) // undefined = pas de GPU, fallback CPU
-    }
-
-    // Créer une instance ReGL pour GPU processing
-    let reglInstance: REGL.Regl | undefined
-    try {
-      reglInstance = createREGL({
-        // Configuration optimisée pour image processing
-        extensions: [],
-        optionalExtensions: ['OES_texture_float', 'OES_texture_half_float'],
-        attributes: {
-          preserveDrawingBuffer: false,
-          antialias: false,
-          depth: false,
-          stencil: false
-        }
-      })
-    } catch (error) {
-      adapterLogger.warn(
-        '[FACTORY] Failed to create ReGL instance, falling back to CPU:',
-        error
-      )
-    }
-
-    return new ReGLProcessor(reglInstance)
-  }
-}
+export { processorFactory } from '@/libs/pixsaur-adapter/factory'

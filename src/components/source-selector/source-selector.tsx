@@ -8,6 +8,7 @@ import {
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { SourceSelectorView } from './source-selector-view'
 import {
+  clampSelectionToBounds,
   type Handle,
   logicalToPercentRect,
   percentRectToLogical
@@ -55,10 +56,34 @@ export const SourceSelector = ({
   const selection = useAtomValue(selectionAtom)
   const setSelection = useSetAtom(setSelectionAtom)
   const setIsSelectionDragging = useSetAtom(isSelectionDraggingAtom)
+  const normalizeSelection = useCallback(
+    (next: Selection) => clampSelectionToBounds(next, width, height),
+    [width, height]
+  )
 
   const [sel, setSel] = useState<Selection>(
-    selection ?? { sx: 0, sy: 0, width, height }
+    normalizeSelection(selection ?? { sx: 0, sy: 0, width, height })
   )
+  const [dragging, setDragging] = useState(false)
+
+  useEffect(() => {
+    if (dragging) {
+      return
+    }
+
+    const next = normalizeSelection(
+      selection ?? { sx: 0, sy: 0, width, height }
+    )
+    const hasChanged =
+      next.sx !== sel.sx ||
+      next.sy !== sel.sy ||
+      next.width !== sel.width ||
+      next.height !== sel.height
+
+    if (hasChanged) {
+      setSel(next)
+    }
+  }, [selection, width, height, dragging, normalizeSelection, sel])
 
   const detectHandleHit = useCallback(
     (
@@ -109,7 +134,6 @@ export const SourceSelector = ({
     []
   )
 
-  const [dragging, setDragging] = useState(false)
   const [dragOrigin, setDragOrigin] = useState<{ x: number; y: number } | null>(
     null
   )
@@ -187,11 +211,11 @@ export const SourceSelector = ({
       setDragging(false)
       setIsSelectionDragging(false)
       setDragOrigin(null)
-      setSelection(sel)
+      setSelection(normalizeSelection(sel))
       setResizeHandle(null)
       setHoveredHandle(null)
     }
-  }, [dragging, sel, setSelection, setIsSelectionDragging])
+  }, [dragging, normalizeSelection, sel, setSelection, setIsSelectionDragging])
 
   // Use window events during drag so we can track the mouse even outside the container
   useEffect(() => {
@@ -255,7 +279,7 @@ export const SourceSelector = ({
       setDragging(false)
       setIsSelectionDragging(false)
       setDragOrigin(null)
-      setSelection(sel)
+      setSelection(normalizeSelection(sel))
       setResizeHandle(null)
       setHoveredHandle(null)
     }
@@ -278,7 +302,8 @@ export const SourceSelector = ({
     sel,
     setSelection,
     setIsSelectionDragging,
-    getPercentPosFromEvent
+    getPercentPosFromEvent,
+    normalizeSelection
   ])
 
   const onMouseLeave = useCallback(() => {

@@ -3,15 +3,13 @@ import { useCallback, useEffect } from 'react'
 import {
   disposeProcessorsAtom,
   imageProcessorAtom,
-  initializeProcessorsAtom,
-  paletteProcessorAtom
+  initializeProcessorsAtom
 } from '@/app/store/adapters/processors'
 import { adapterLogger, logger } from '@/core'
 import type { AdjustmentConfig } from '@/libs/pixsaur-adapter'
 
 export const useImageProcessors = () => {
   const imageProcessor = useAtomValue(imageProcessorAtom)
-  const paletteProcessor = useAtomValue(paletteProcessorAtom)
   const initializeProcessors = useSetAtom(initializeProcessorsAtom)
   const disposeProcessors = useSetAtom(disposeProcessorsAtom)
 
@@ -31,14 +29,14 @@ export const useImageProcessors = () => {
     }
 
     // Lancer l'initialisation si les processeurs ne sont pas disponibles
-    if (!imageProcessor || !paletteProcessor) {
+    if (!imageProcessor) {
       initialize()
     }
 
     return () => {
       mounted = false
     }
-  }, [imageProcessor, paletteProcessor, initializeProcessors])
+  }, [imageProcessor, initializeProcessors])
 
   // Nettoyage au démontage
   useEffect(() => {
@@ -63,11 +61,10 @@ export const useImageProcessors = () => {
     [imageProcessor]
   )
 
-  const isInitialized = !!(imageProcessor && paletteProcessor)
+  const isInitialized = !!imageProcessor
 
   return {
     imageProcessor,
-    paletteProcessor,
     applyAdjustments,
     isInitialized
   }

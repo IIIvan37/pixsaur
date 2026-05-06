@@ -8,7 +8,7 @@ import { isDevelopment } from '@/core'
 
 const PROCESSOR_TYPES = [
   { value: 'auto', label: 'Auto (GPU puis CPU)' },
-  { value: 'gpu', label: 'GPU (ReGL)' },
+  { value: 'gpu', label: 'GPU (ReGL, strict)' },
   { value: 'cpu', label: 'CPU' }
 ] as const
 

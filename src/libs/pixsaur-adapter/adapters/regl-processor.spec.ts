@@ -13,24 +13,6 @@ import { ReGLProcessor } from './regl-processor'
 vi.mock('@/libs/pixsaur-color/src/transform/color-transform/adjust')
 vi.mock('@/libs/pixsaur-color/src/quant/quantize')
 vi.mock('@/core')
-vi.mock('@/app/store/config/config', () => ({
-  paletteStrategyAtom: { _type: 'paletteStrategy' },
-  autoDistinctMappingAtom: { _type: 'autoDistinctMapping' },
-  colorDiversityAtom: { _type: 'colorDiversity' }
-}))
-vi.mock('jotai', () => ({
-  getDefaultStore: vi.fn(() => ({
-    get: vi.fn((atom: { _type?: string }) => {
-      if (atom?._type === 'paletteStrategy') {
-        return 'frequency-balanced'
-      }
-      if (atom?._type === 'autoDistinctMapping') {
-        return true
-      }
-      return undefined
-    })
-  }))
-}))
 
 // Helper pour créer un mock canvas WebGL
 const createMockCanvas = (
@@ -115,7 +97,7 @@ describe('ReGLProcessor', () => {
   describe('Constructeur et disponibilité', () => {
     test('devrait être disponible même sans ReGL', () => {
       const processor = new ReGLProcessor()
-      expect(processor.type).toBe('regl')
+      expect(processor.type).toBe('cpu-fallback')
       expect(processor.isAvailable).toBe(true)
     })
 
@@ -253,7 +235,7 @@ describe('ReGLProcessor', () => {
         preselected,
         quantConfig: expect.objectContaining({
           distanceMetric: 'euclidean',
-          paletteStrategy: 'frequency-balanced'
+          paletteStrategy: 'exhaustive-contrast'
         })
       })
       expect(mockQuantizer.quantize).toHaveBeenCalledWith(2)
@@ -675,7 +657,7 @@ describe('ReGLProcessor', () => {
     test("devrait implémenter l'interface ImageProcessor correctement", () => {
       const processor = new ReGLProcessor()
 
-      expect(processor.type).toBe('regl')
+      expect(processor.type).toBe('cpu-fallback')
       expect(typeof processor.isAvailable).toBe('boolean')
       expect(typeof processor.applyAdjustments).toBe('function')
       expect(typeof processor.applyAdjustmentsSync).toBe('function')

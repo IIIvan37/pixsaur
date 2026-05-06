@@ -4,6 +4,11 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 export type { PaletteStrategy } from '@/app/store/config/types'
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
+export interface QuantizationOptions {
+  autoDistinctMapping?: boolean
+  colorDiversity?: number
+}
+
 /**
  * Configuration pour les ajustements d'image
  */
@@ -39,7 +44,7 @@ export interface ImageProcessor {
   /**
    * Type d'implémentation (cpu, webgl ou regl)
    */
-  readonly type: 'cpu' | 'webgl' | 'regl'
+  readonly type: 'cpu' | 'webgl' | 'regl' | 'cpu-fallback'
 
   /**
    * Disponibilité du processor
@@ -73,7 +78,8 @@ export interface ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    paletteStrategy?: PaletteStrategy
+    paletteStrategy?: PaletteStrategy,
+    options?: QuantizationOptions
   ): Promise<Vector[]>
 
   /**
