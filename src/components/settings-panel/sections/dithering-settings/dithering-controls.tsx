@@ -35,6 +35,7 @@ export function DitheringControls({
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
   const egxEnabled = useAtomValue(egxEnabledAtom)
   const correctionSwitchId = useId()
+  const orderedCorrectionSwitchId = useId()
 
   // When raster is enabled, switch to a compatible dithering mode if current mode is incompatible
   useEffect(() => {
@@ -68,6 +69,13 @@ export function DitheringControls({
     cfg.mode === 'floydSteinberg' ||
     cfg.mode === 'atkinson' ||
     cfg.mode === 'ostromoukhov'
+
+  const showOrderedCorrectionSwitch =
+    cfg.mode === 'bayer2x2' ||
+    cfg.mode === 'bayer4x4' ||
+    cfg.mode === 'bayer8x8' ||
+    cfg.mode === 'halftone4x4' ||
+    cfg.mode === 'blueNoise'
 
   // Filter modes based on active features
   const getAvailableModes = () => {
@@ -139,6 +147,24 @@ export function DitheringControls({
               />
               <label htmlFor={correctionSwitchId}>
                 <Trans>Correction diffusion (anti-bavure)</Trans>
+              </label>
+            </Flex>
+          )}
+
+          {showOrderedCorrectionSwitch && (
+            <Flex direction='row' gap='0.5rem' align='center'>
+              <Switch
+                checked={cfg.useOrderedCorrection ?? true}
+                onCheckedChange={(value) =>
+                  setCfg({ ...cfg, useOrderedCorrection: value })
+                }
+                disabled={disabled}
+                id={orderedCorrectionSwitchId}
+              />
+              <label htmlFor={orderedCorrectionSwitchId}>
+                <Trans>
+                  Correction ordonnée (amplitude adaptative + skip exact)
+                </Trans>
               </label>
             </Flex>
           )}

@@ -79,12 +79,24 @@ interface DiffusionCorrectionOptions {
   errorClamp: number
 }
 
+interface OrderedCorrectionOptions {
+  enabled: boolean
+}
+
 function resolveDiffusionCorrectionOptions(
   config: DitheringConfig
 ): DiffusionCorrectionOptions {
   return {
     enabled: config.useDiffusionCorrection ?? true,
     errorClamp: 64
+  }
+}
+
+function resolveOrderedCorrectionOptions(
+  config: DitheringConfig
+): OrderedCorrectionOptions {
+  return {
+    enabled: config.useOrderedCorrection ?? true
   }
 }
 
@@ -407,6 +419,12 @@ export function applyBayerDither(
   const out = new Uint8ClampedArray(width * height * 4)
   const { size, matrix } = BAYER_MATRICES[mode]
   const pixelCS = new Float32Array(3)
+  const correction = resolveOrderedCorrectionOptions(config)
+
+  // Adaptive amplitude: scale by 1/sqrt(paletteSize) so larger palettes get less noise
+  const amplitude = correction.enabled
+    ? intensity * (255 / Math.sqrt(paletteCS.length))
+    : intensity * 255
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -414,13 +432,32 @@ export function applyBayerDither(
       const i3 = i * 3
       const i4 = i * 4
 
-      const bayerVal = matrix[y % size][x % size]
-      const threshold = (bayerVal / (size * size) - 0.5) * intensity * 255
+      const origR = bufCS[i3]
+      const origG = bufCS[i3 + 1]
+      const origB = bufCS[i3 + 2]
 
-      // Clamp to valid range to avoid dark artifacts
-      pixelCS[0] = Math.max(0, Math.min(255, bufCS[i3] + threshold))
-      pixelCS[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + threshold))
-      pixelCS[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + threshold))
+      // Skip perturbation if pixel already exactly matches a palette color
+      if (correction.enabled) {
+        pixelCS[0] = origR
+        pixelCS[1] = origG
+        pixelCS[2] = origB
+        const exactIdx = findClosestColorIndex(pixelCS, paletteCS, distFn)
+        if (distFn(pixelCS, paletteCS[exactIdx]) < 1e-4) {
+          const rgb = paletteOut[exactIdx]
+          out[i4 + 0] = rgb[0]
+          out[i4 + 1] = rgb[1]
+          out[i4 + 2] = rgb[2]
+          out[i4 + 3] = 255
+          continue
+        }
+      }
+
+      const bayerVal = matrix[y % size][x % size]
+      const threshold = (bayerVal / (size * size) - 0.5) * amplitude
+
+      pixelCS[0] = Math.max(0, Math.min(255, origR + threshold))
+      pixelCS[1] = Math.max(0, Math.min(255, origG + threshold))
+      pixelCS[2] = Math.max(0, Math.min(255, origB + threshold))
 
       const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
 
@@ -506,11 +543,15 @@ export function applyBlueNoiseDither(
   paletteCS: Float32Array[],
   paletteOut: Uint8ClampedArray[],
   intensity: number,
-  distFn: DistanceFn
+  distFn: DistanceFn,
+  correction: OrderedCorrectionOptions = { enabled: true }
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
-  const scale = intensity * 255
+  // Adaptive amplitude: scale by 1/sqrt(paletteSize) so larger palettes get less noise
+  const scale = correction.enabled
+    ? intensity * (255 / Math.sqrt(paletteCS.length))
+    : intensity * 255
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -518,14 +559,34 @@ export function applyBlueNoiseDither(
       const i3 = i * 3
       const i4 = i * 4
 
+      const origR = bufCS[i3]
+      const origG = bufCS[i3 + 1]
+      const origB = bufCS[i3 + 2]
+
+      // Skip perturbation if pixel already exactly matches a palette color
+      if (correction.enabled) {
+        pixelCS[0] = origR
+        pixelCS[1] = origG
+        pixelCS[2] = origB
+        const exactIdx = findClosestColorIndex(pixelCS, paletteCS, distFn)
+        if (distFn(pixelCS, paletteCS[exactIdx]) < 1e-4) {
+          const rgb = paletteOut[exactIdx]
+          out[i4 + 0] = rgb[0]
+          out[i4 + 1] = rgb[1]
+          out[i4 + 2] = rgb[2]
+          out[i4 + 3] = 255
+          continue
+        }
+      }
+
       // Get decorrelated blue noise thresholds for each RGB channel
       // This prevents pixels from clustering together
       const [tR, tG, tB] = getBlueNoiseThresholdRGB(x, y)
 
       // Apply per-channel dithering
-      pixelCS[0] = Math.max(0, Math.min(255, bufCS[i3] + tR * scale))
-      pixelCS[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + tG * scale))
-      pixelCS[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + tB * scale))
+      pixelCS[0] = Math.max(0, Math.min(255, origR + tR * scale))
+      pixelCS[1] = Math.max(0, Math.min(255, origG + tG * scale))
+      pixelCS[2] = Math.max(0, Math.min(255, origB + tB * scale))
 
       const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
 
@@ -921,7 +982,8 @@ const DITHER_MODES: Record<string, DitherFn> = {
       paletteCS,
       paletteOut,
       config.intensity,
-      distFn
+      distFn,
+      resolveOrderedCorrectionOptions(config)
     ),
   ostromoukhov: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
     applyOstromoukhovDither(
@@ -949,7 +1011,8 @@ function applyBayerDitherWithDynamicPalette(
   getPaletteForLine: (y: number) => Vector[],
   mode: BayerMode,
   intensity: number,
-  distFn: DistanceFn
+  distFn: DistanceFn,
+  correction: OrderedCorrectionOptions = { enabled: true }
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
@@ -963,19 +1026,44 @@ function applyBayerDitherWithDynamicPalette(
       Array.from(v)
     )
 
+    // Adaptive amplitude per line (palette size may vary in raster mode)
+    const amplitude = correction.enabled
+      ? intensity * (255 / Math.sqrt(paletteCS.length))
+      : intensity * 255
+
     for (let x = 0; x < width; x++) {
       const idx = y * width + x
       const i3 = idx * 3
       const i4 = idx * 4
 
+      const origR = bufCS[i3]
+      const origG = bufCS[i3 + 1]
+      const origB = bufCS[i3 + 2]
+
+      // Skip perturbation if pixel already exactly matches a palette color
+      if (correction.enabled) {
+        pixel[0] = origR
+        pixel[1] = origG
+        pixel[2] = origB
+        const exactIdx = findClosestColorIndex(pixel, paletteCS, distFn)
+        if (distFn(pixel, paletteCS[exactIdx]) < 1e-4) {
+          const color = paletteOut[exactIdx]
+          out[i4 + 0] = color[0]
+          out[i4 + 1] = color[1]
+          out[i4 + 2] = color[2]
+          out[i4 + 3] = 255
+          continue
+        }
+      }
+
       // Get Bayer threshold
       const bayerValue = matrix[y % size][x % size] / maxBayer - 0.5
-      const noise = bayerValue * intensity * 255
+      const noise = bayerValue * amplitude
 
       // Get pixel with Bayer noise, clamped to valid range
-      pixel[0] = Math.max(0, Math.min(255, bufCS[i3] + noise))
-      pixel[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + noise))
-      pixel[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + noise))
+      pixel[0] = Math.max(0, Math.min(255, origR + noise))
+      pixel[1] = Math.max(0, Math.min(255, origG + noise))
+      pixel[2] = Math.max(0, Math.min(255, origB + noise))
 
       // Find nearest palette color for this line
       const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
@@ -1045,11 +1133,11 @@ function applyBlueNoiseDitherWithDynamicPalette(
   height: number,
   getPaletteForLine: (y: number) => Vector[],
   intensity: number,
-  distFn: DistanceFn
+  distFn: DistanceFn,
+  correction: OrderedCorrectionOptions = { enabled: true }
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
-  const scale = intensity * 255
 
   for (let y = 0; y < height; y++) {
     const palette = getPaletteForLine(y)
@@ -1057,18 +1145,43 @@ function applyBlueNoiseDitherWithDynamicPalette(
       Array.from(v)
     )
 
+    // Adaptive amplitude per line
+    const scale = correction.enabled
+      ? intensity * (255 / Math.sqrt(paletteCS.length))
+      : intensity * 255
+
     for (let x = 0; x < width; x++) {
       const idx = y * width + x
       const i3 = idx * 3
       const i4 = idx * 4
 
+      const origR = bufCS[i3]
+      const origG = bufCS[i3 + 1]
+      const origB = bufCS[i3 + 2]
+
+      // Skip perturbation if pixel already exactly matches a palette color
+      if (correction.enabled) {
+        pixel[0] = origR
+        pixel[1] = origG
+        pixel[2] = origB
+        const exactIdx = findClosestColorIndex(pixel, paletteCS, distFn)
+        if (distFn(pixel, paletteCS[exactIdx]) < 1e-4) {
+          const color = paletteOut[exactIdx]
+          out[i4 + 0] = color[0]
+          out[i4 + 1] = color[1]
+          out[i4 + 2] = color[2]
+          out[i4 + 3] = 255
+          continue
+        }
+      }
+
       // Get decorrelated blue noise thresholds for each RGB channel
       const [tR, tG, tB] = getBlueNoiseThresholdRGB(x, y)
 
       // Apply per-channel dithering
-      pixel[0] = Math.max(0, Math.min(255, bufCS[i3] + tR * scale))
-      pixel[1] = Math.max(0, Math.min(255, bufCS[i3 + 1] + tG * scale))
-      pixel[2] = Math.max(0, Math.min(255, bufCS[i3 + 2] + tB * scale))
+      pixel[0] = Math.max(0, Math.min(255, origR + tR * scale))
+      pixel[1] = Math.max(0, Math.min(255, origG + tG * scale))
+      pixel[2] = Math.max(0, Math.min(255, origB + tB * scale))
 
       // Find nearest palette color for this line
       const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
@@ -1207,7 +1320,8 @@ export function mapAndDitherWithDynamicPalette(
         getPaletteForLine,
         mode as BayerMode,
         config.intensity,
-        distFn
+        distFn,
+        resolveOrderedCorrectionOptions(config)
       )
     case 'blueNoise':
       return applyBlueNoiseDitherWithDynamicPalette(
@@ -1216,7 +1330,8 @@ export function mapAndDitherWithDynamicPalette(
         height,
         getPaletteForLine,
         config.intensity,
-        distFn
+        distFn,
+        resolveOrderedCorrectionOptions(config)
       )
     case 'none':
       return applyNoDitherWithDynamicPalette(
