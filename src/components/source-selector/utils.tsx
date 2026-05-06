@@ -47,3 +47,18 @@ export function percentRectToLogical(
     height: Math.round((rect.height / 100) * imageHeight)
   }
 }
+
+export function clampSelectionToBounds(
+  sel: Selection,
+  imageWidth: number,
+  imageHeight: number
+): Selection {
+  const maxWidth = Math.max(1, imageWidth)
+  const maxHeight = Math.max(1, imageHeight)
+  const sx = Math.max(0, Math.min(sel.sx, maxWidth - 1))
+  const sy = Math.max(0, Math.min(sel.sy, maxHeight - 1))
+  const width = Math.max(1, Math.min(sel.width, maxWidth - sx))
+  const height = Math.max(1, Math.min(sel.height, maxHeight - sy))
+
+  return { sx, sy, width, height }
+}

@@ -4,14 +4,7 @@
  * ReGL simplifiera la gestion WebGL quand l'implémentation GPU sera prête
  */
 
-import { getDefaultStore } from 'jotai'
 import type REGL from 'regl'
-// Import pour accéder à l'atome de stratégie de palette et auto distinct-mapping
-import {
-  autoDistinctMappingAtom,
-  colorDiversityAtom,
-  paletteStrategyAtom
-} from '@/app/store/config/config'
 import { adapterLogger, paletteLogger } from '@/core'
 import type { DistanceMetric } from '@/libs/pixsaur-color/src/metric/distance'
 import { createQuantizer } from '@/libs/pixsaur-color/src/quant/quantize'
@@ -34,7 +27,8 @@ import {
 import type {
   AdjustmentConfig,
   ImageProcessor,
-  PaletteStrategy
+  PaletteStrategy,
+  QuantizationOptions
 } from '../interfaces'
 import {
   convolutionFragmentShader,
@@ -50,12 +44,12 @@ import { ReGLQuantizer } from './regl-quantizer'
  * Phase 1: Infrastructure ReGL prête avec fallback CPU
  */
 export class ReGLProcessor implements ImageProcessor {
-  readonly type = 'regl' as const
+  readonly type: 'regl' | 'cpu-fallback'
   readonly isAvailable: boolean
 
   // ReGL et quantizer (Phase 1: préparation pour GPU)
-  private readonly quantizer?: ReGLQuantizer
-  private readonly regl?: REGL.Regl
+  private quantizer?: ReGLQuantizer
+  private regl?: REGL.Regl
 
   // GPU Image Adjustments
   private imageAdjustmentCommand?: any
@@ -78,6 +72,8 @@ export class ReGLProcessor implements ImageProcessor {
   }
 
   constructor(regl?: REGL.Regl) {
+    this.type = 'cpu-fallback'
+
     // Évaluer si ReGL pourrait être utilisé
     this.reglCapabilities = this.evaluateReGLCapabilities()
 
@@ -90,6 +86,7 @@ export class ReGLProcessor implements ImageProcessor {
         this.initializeConvolution(regl)
         this.initializeSobel(regl)
         this.initializeRasterPreview(regl)
+        this.type = 'regl'
         adapterLogger.info(
           '[ADAPTER] ReGL quantizer and GPU adjustments initialized successfully'
         )
@@ -510,14 +507,33 @@ export class ReGLProcessor implements ImageProcessor {
 
     const startTime = performance.now()
 
-    // Mise à jour de la texture d'entrée
-    this.inputTexture = this.regl!.texture({
-      width,
-      height,
-      data: imageData.data,
-      format: 'rgba',
-      type: 'uint8'
-    })
+    // Mise à jour de la texture d'entrée (réutilise l'allocation existante si possible)
+    if (!this.inputTexture) {
+      this.inputTexture = this.regl!.texture({
+        width,
+        height,
+        format: 'rgba',
+        type: 'uint8'
+      })
+    }
+    if (typeof this.inputTexture === 'function') {
+      this.inputTexture({
+        width,
+        height,
+        data: imageData.data,
+        format: 'rgba',
+        type: 'uint8'
+      })
+    } else {
+      this.inputTexture.destroy?.()
+      this.inputTexture = this.regl!.texture({
+        width,
+        height,
+        data: imageData.data,
+        format: 'rgba',
+        type: 'uint8'
+      })
+    }
 
     // Configuration du framebuffer de sortie pour ajustements
     const adjustmentOutputTexture = this.regl!.texture({
@@ -736,7 +752,8 @@ export class ReGLProcessor implements ImageProcessor {
     targetColors: number,
     basePalette: Vector[],
     preselected: Vector[],
-    paletteStrategy?: PaletteStrategy
+    paletteStrategy?: PaletteStrategy,
+    options?: QuantizationOptions
   ): Promise<Vector[]> {
     // RGB utilise euclidean distance
     const distanceMetric: DistanceMetric = 'euclidean'
@@ -767,10 +784,9 @@ export class ReGLProcessor implements ImageProcessor {
           {
             distanceMetric,
             targetColors,
-            paletteStrategy:
-              paletteStrategy || getDefaultStore().get(paletteStrategyAtom),
-            autoDistinctMapping: getDefaultStore().get(autoDistinctMappingAtom),
-            colorDiversity: getDefaultStore().get(colorDiversityAtom),
+            paletteStrategy: paletteStrategy ?? 'exhaustive-contrast',
+            autoDistinctMapping: options?.autoDistinctMapping ?? false,
+            colorDiversity: options?.colorDiversity ?? 50,
             gpuOptions: {
               minPixelsForGPU: 128 * 128 // GPU avantageux pour images moyennes+
             }
@@ -795,7 +811,7 @@ export class ReGLProcessor implements ImageProcessor {
       basePalette,
       preselected,
       distanceMetric,
-      paletteStrategy || getDefaultStore().get(paletteStrategyAtom)
+      paletteStrategy ?? 'exhaustive-contrast'
     )
   }
 
@@ -840,6 +856,15 @@ export class ReGLProcessor implements ImageProcessor {
   dispose(): void {
     try {
       this.quantizer?.dispose()
+      this.inputTexture?.destroy?.()
+      this.regl?.destroy?.()
+      this.quantizer = undefined
+      this.inputTexture = undefined
+      this.imageAdjustmentCommand = undefined
+      this.convolutionCommand = undefined
+      this.sobelCommand = undefined
+      this.rasterPreviewCommand = undefined
+      this.regl = undefined
     } catch (error) {
       adapterLogger.error(
         '[ADAPTER] Error during ReGL processor disposal',
@@ -852,13 +877,13 @@ export class ReGLProcessor implements ImageProcessor {
    * Obtient des informations sur les capacités ReGL actuelles et futures
    */
   getCapabilities(): {
-    currentMode: 'cpu-fallback'
+    currentMode: 'regl' | 'cpu-fallback'
     futureReGLCapable: boolean
     webglVersion: string | null
     maxTextureSize: number
   } {
     return {
-      currentMode: 'cpu-fallback',
+      currentMode: this.type,
       futureReGLCapable: this.reglCapabilities.canUseReGL,
       webglVersion: this.reglCapabilities.webglVersion,
       maxTextureSize: this.reglCapabilities.maxTextureSize

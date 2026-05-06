@@ -1,11 +1,11 @@
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import { processorFactory } from '@/libs/pixsaur-adapter'
 import {
   downscaleImage,
   type Selection
 } from '@/libs/pixsaur-adapter/io/downscale-image'
-import { configAtom, processorTypeAtom } from '../config/config'
+import { imageProcessorAtom } from '../adapters/processors'
+import { configAtom } from '../config/config'
 
 const LOGICAL_WIDTH = 800
 
@@ -47,7 +47,7 @@ export const workingImageAtom = atom(async (get) => {
   const custom = get(srcAtom)
   const config = get(configAtom)
   const downscaled = get(downscaledAtom)
-  const processorType = get(processorTypeAtom)
+  const imageProcessor = get(imageProcessorAtom)
 
   if (!downscaled) {
     logger.timeEnd('workingImageAtom')
@@ -58,11 +58,13 @@ export const workingImageAtom = atom(async (get) => {
     return custom
   }
 
-  // Utilise l'adapter CPU pour les ajustements
-  const processor = await processorFactory.createBestProcessor(processorType)
+  if (!imageProcessor) {
+    logger.timeEnd('workingImageAtom')
+    return downscaled
+  }
 
   logger.time('applyAdjustmentsSync')
-  const result = (processor as any).applyAdjustmentsSync(downscaled, {
+  const result = imageProcessor.applyAdjustmentsSync(downscaled, {
     rgb: { r: config.red, g: config.green, b: config.blue },
     brightness: config.brightness,
     contrast: config.contrast,
@@ -86,7 +88,6 @@ export const workingImageAtom = atom(async (get) => {
   })
   logger.timeEnd('applyAdjustmentsSync')
 
-  // Ne pas disposer le processor - la factory gère la durée de vie
   logger.timeEnd('workingImageAtom')
   return result
 })
