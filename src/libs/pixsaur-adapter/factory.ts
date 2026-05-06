@@ -6,8 +6,8 @@
 import type REGL from 'regl'
 import createREGL from 'regl'
 import { adapterLogger } from '@/core'
-import type { ProcessorType } from './interfaces'
 import { ReGLProcessor } from './adapters/regl-processor'
+import type { ProcessorType } from './interfaces'
 
 export const processorFactory = {
   async createBestProcessor(type: ProcessorType | string = 'gpu') {
@@ -18,7 +18,9 @@ export const processorFactory = {
     if (type === 'gpu') {
       const reglInstance = this.createGpuInstance()
       if (!reglInstance) {
-        throw new Error('GPU processor requested but ReGL initialization failed')
+        throw new Error(
+          'GPU processor requested but ReGL initialization failed'
+        )
       }
       return new ReGLProcessor(reglInstance)
     }

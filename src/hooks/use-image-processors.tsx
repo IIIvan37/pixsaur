@@ -61,11 +61,10 @@ export const useImageProcessors = () => {
     [imageProcessor]
   )
 
-  const isInitialized = !!(imageProcessor && paletteProcessor)
+  const isInitialized = !!imageProcessor
 
   return {
     imageProcessor,
-    paletteProcessor,
     applyAdjustments,
     isInitialized
   }

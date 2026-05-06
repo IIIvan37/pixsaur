@@ -32,9 +32,8 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
       const processorType = _get(processorTypeAtom)
 
       // Créer un processeur unique partagé par le pipeline image + palette
-      const imageProcessor = await processorFactory.createBestProcessor(
-        processorType
-      )
+      const imageProcessor =
+        await processorFactory.createBestProcessor(processorType)
 
       adapterLogger.info(
         `Processor initialized: ${imageProcessor.type === 'regl' ? 'WebGL (GPU)' : 'CPU fallback'}`

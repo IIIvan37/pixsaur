@@ -64,13 +64,16 @@ export const SourceSelector = ({
   const [sel, setSel] = useState<Selection>(
     normalizeSelection(selection ?? { sx: 0, sy: 0, width, height })
   )
+  const [dragging, setDragging] = useState(false)
 
   useEffect(() => {
     if (dragging) {
       return
     }
 
-    const next = normalizeSelection(selection ?? { sx: 0, sy: 0, width, height })
+    const next = normalizeSelection(
+      selection ?? { sx: 0, sy: 0, width, height }
+    )
     const hasChanged =
       next.sx !== sel.sx ||
       next.sy !== sel.sy ||
@@ -131,7 +134,6 @@ export const SourceSelector = ({
     []
   )
 
-  const [dragging, setDragging] = useState(false)
   const [dragOrigin, setDragOrigin] = useState<{ x: number; y: number } | null>(
     null
   )
@@ -300,7 +302,8 @@ export const SourceSelector = ({
     sel,
     setSelection,
     setIsSelectionDragging,
-    getPercentPosFromEvent
+    getPercentPosFromEvent,
+    normalizeSelection
   ])
 
   const onMouseLeave = useCallback(() => {
