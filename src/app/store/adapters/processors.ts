@@ -1,10 +1,8 @@
 import { atom } from 'jotai'
-import type REGL from 'regl'
-import createREGL from 'regl'
 import { processorTypeAtom } from '@/app/store/config/config'
 import { adapterLogger } from '@/core'
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
-import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
+import { processorFactory } from '@/libs/pixsaur-adapter/factory'
 
 // Atomes pour les adaptateurs auto-sélectionnés
 export const imageProcessorAtom = atom<ImageProcessor | null>(null)
@@ -81,49 +79,4 @@ export const processorTypeListenerAtom = atom(
     await set(reinitializeProcessorsAtom)
   }
 )
-export const processorFactory = {
-  async createBestProcessor(type = 'gpu') {
-    // Si CPU est explicitement demandé, créer un processeur CPU
-    if (type === 'cpu') {
-      return new ReGLProcessor(undefined)
-    }
-
-    // GPU forcé: échec dur si ReGL indisponible
-    if (type === 'gpu') {
-      const reglInstance = this.createGpuInstance()
-      if (!reglInstance) {
-        throw new Error('GPU processor requested but ReGL initialization failed')
-      }
-      return new ReGLProcessor(reglInstance)
-    }
-
-    // auto: tenter GPU puis fallback CPU
-    const reglInstance = this.createGpuInstance()
-    if (!reglInstance) {
-      adapterLogger.warn(
-        '[FACTORY] Auto mode fallback: ReGL unavailable, using CPU processor'
-      )
-      return new ReGLProcessor(undefined)
-    }
-
-    return new ReGLProcessor(reglInstance)
-  },
-
-  createGpuInstance(): REGL.Regl | undefined {
-    try {
-      return createREGL({
-        extensions: [],
-        optionalExtensions: ['OES_texture_float', 'OES_texture_half_float'],
-        attributes: {
-          preserveDrawingBuffer: false,
-          antialias: false,
-          depth: false,
-          stencil: false
-        }
-      })
-    } catch (error) {
-      adapterLogger.warn('[FACTORY] Failed to create ReGL instance:', error)
-      return undefined
-    }
-  }
-}
+export { processorFactory } from '@/libs/pixsaur-adapter/factory'

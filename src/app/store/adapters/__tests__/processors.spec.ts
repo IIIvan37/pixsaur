@@ -3,11 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { processorTypeAtom } from '@/app/store/config/config'
 import { adapterLogger } from '@/core'
 import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
+import { processorFactory } from '@/libs/pixsaur-adapter/factory'
 import {
   disposeProcessorsAtom,
   imageProcessorAtom,
   initializeProcessorsAtom,
-  processorFactory,
   processorTypeListenerAtom,
   reinitializeProcessorsAtom
 } from '../processors'
