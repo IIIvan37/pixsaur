@@ -66,7 +66,7 @@ msgstr "Activa el modo raster para usar paletas optimizadas por línea."
 #~ msgid "Activer l'aperçu raster"
 #~ msgstr "Activar vista previa raster"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:223
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:222
 msgid "Activer le lissage horizontal"
 msgstr "Activar el suavizado horizontal"
 
@@ -139,7 +139,7 @@ msgstr "Ajusta el equilibrio entre fidelidad a colores frecuentes y variedad de 
 msgid "Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs. EGX2: 640×200 4 couleurs."
 msgstr "Alternancia de modos línea por línea. EGX1: 320×200 16 colores. EGX2: 640×200 4 colores."
 
-#: src/components/export-panel/export-config-dialog.tsx:131
+#: src/components/export-panel/export-config-dialog.tsx:135
 #: src/components/preview-editor/help-button/help-button.tsx:23
 #: src/components/preview-editor/preview-editor-view.tsx:61
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
@@ -167,7 +167,7 @@ msgstr "Anti-parpadeo"
 msgid "Aperçu"
 msgstr "Vista previa"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:208
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:207
 msgid "Applique un lissage horizontal pour réduire les artefacts de pixels. Désactivé en mode raster."
 msgstr "Aplica suavizado horizontal para reducir artefactos de píxeles. Desactivado en modo raster."
 
@@ -325,15 +325,15 @@ msgstr "Color {index}: {color}"
 msgid "Combined"
 msgstr "Combinado"
 
-#: src/components/export-panel/export-config-dialog.tsx:124
+#: src/components/export-panel/export-config-dialog.tsx:128
 msgid "Configuration de l'export"
 msgstr "Configuración de la exportación"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:127
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:126
 msgid "Configuration du Dithering"
 msgstr "Configuración de Dithering"
 
-#: src/components/export-panel/export-config-dialog.tsx:141
+#: src/components/export-panel/export-config-dialog.tsx:145
 msgid "Contenu du ZIP"
 msgstr "Contenido del ZIP"
 
@@ -349,9 +349,17 @@ msgstr "Contraste"
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Convertidor de imágenes Amstrad CPC"
 
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:149
+msgid "Correction diffusion (anti-bavure)"
+msgstr "Correccion de difusion (anti-emborronado)"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:161
 msgid "Correction non-linéaire de la luminosité (0.1-3.0, 1.0 = neutre)"
 msgstr "Corrección no lineal del brillo (0.1-3.0, 1.0 = neutro)"
+
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:165
+msgid "Correction ordonnée (amplitude adaptative + skip exact)"
+msgstr "Correccion ordenada (amplitud adaptativa + omitir coincidencia exacta)"
 
 #: src/components/preview-editor/pixel-info/pixel-info-view.tsx:55
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:161
@@ -411,12 +419,12 @@ msgstr "Movimiento rápido (×8)"
 msgid "Déplacer le curseur"
 msgstr "Mover cursor"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:131
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:203
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:130
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:202
 msgid "Désactivé quand le mapping distinct est actif pour préserver les couleurs exactes."
 msgstr "Desactivado cuando el mapeo distinto está activo para preservar los colores exactos."
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:166
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:165
 msgid "Détecte automatiquement les images avec peu de couleurs (C64, ZX Spectrum, etc.) et préserve toutes les couleurs distinctes."
 msgstr "Detecta automáticamente imágenes con pocos colores (C64, ZX Spectrum, etc.) y conserva todos los colores distintos."
 
@@ -463,7 +471,7 @@ msgstr "Tramado Óptimo"
 msgid "Dithering Error Propagation"
 msgstr "Propagación de Error de Dithering"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:88
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:105
 msgid "Dithering final"
 msgstr "Tramado final"
 
@@ -604,7 +612,7 @@ msgstr "Opciones de Exportación"
 msgid "Export your converted images to various formats compatible with CPC emulators and real hardware."
 msgstr "Exporte sus imágenes convertidas a varios formatos compatibles con emuladores CPC y hardware real."
 
-#: src/components/export-panel/export-config-dialog.tsx:134
+#: src/components/export-panel/export-config-dialog.tsx:138
 #: src/components/export-panel/export-panel-view.tsx:30
 msgid "Exporter"
 msgstr "Exportar"
@@ -683,7 +691,7 @@ msgstr "Prioridad de frecuencia (80%) con diversidad moderada"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/export-panel/export-config-dialog.tsx:175
+#: src/components/export-panel/export-config-dialog.tsx:179
 msgid "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
 msgstr "Genera un archivo snapshot (.SNA) con código de visualización integrado"
 
@@ -735,7 +743,7 @@ msgstr "Líneas Alta Res"
 msgid "Image source"
 msgstr "Imagen de origen"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:157
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:156
 msgid "Images retro (low-color)"
 msgstr "Imágenes retro (pocos colores)"
 
@@ -755,7 +763,7 @@ msgstr "Instalar actualización"
 #~ msgid "Installing..."
 #~ msgstr "Instalando..."
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:111
+#: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:129
 msgid "Intensité"
 msgstr "Intensidad"
 
@@ -763,11 +771,11 @@ msgstr "Intensidad"
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Intensidad de color (0 = blanco y negro, 2 = muy saturado)"
 
-#: src/components/export-panel/export-config-dialog.tsx:225
+#: src/components/export-panel/export-config-dialog.tsx:229
 msgid "Label de la palette"
 msgstr "Etiqueta de la paleta"
 
-#: src/components/export-panel/export-config-dialog.tsx:217
+#: src/components/export-panel/export-config-dialog.tsx:221
 msgid "Label des données"
 msgstr "Etiqueta de los datos"
 
@@ -787,12 +795,15 @@ msgstr "Más tarde"
 #~ msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 #~ msgstr "El formato SCR requiere dimensiones estándar (160x200, 320x200 o 640x200)"
 
-#. placeholder {0}: Math.round(scrSizeBytes / 1024)
-#: src/components/export-panel/export-config-dialog.tsx:153
-msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
-msgstr "El formato SCR requiere tamaño <= 16 KB (tamaño actual: {0} KB)"
+#: src/components/export-panel/export-config-dialog.tsx:157
+msgid "Le format SCR nécessite des dimensions tenant dans 16 Ko de mémoire écran CPC (sans overscan)"
+msgstr "El formato SCR requiere dimensiones que quepan en 16 KB de memoria de pantalla CPC (sin overscan)"
 
-#: src/components/export-panel/export-config-dialog.tsx:178
+#: src/components/export-panel/export-config-dialog.tsx:153
+#~ msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
+#~ msgstr "El formato SCR requiere tamaño <= 16 KB (tamaño actual: {0} KB)"
+
+#: src/components/export-panel/export-config-dialog.tsx:182
 msgid "Le format SNA n'est disponible que pour les tailles standard ou overscan"
 msgstr "El formato SNA solo está disponible para tamaños estándar u overscan"
 
@@ -817,7 +828,7 @@ msgstr "Línea 0 en modo baja resolución (más colores)"
 msgid "Ligne 0 en mode haute résolution (plus de détails)"
 msgstr "Línea 0 en modo alta resolución (más detalles)"
 
-#: src/components/export-panel/export-config-dialog.tsx:160
+#: src/components/export-panel/export-config-dialog.tsx:164
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (secuencial)"
 
@@ -825,7 +836,7 @@ msgstr "Linear ASM (secuencial)"
 #~ msgid "Lissage"
 #~ msgstr "Suavizado"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:199
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:198
 msgid "Lissage horizontal"
 msgstr "Suavizado horizontal"
 
@@ -855,7 +866,7 @@ msgstr "Rangos de luminancia con prioridad de frecuencia"
 msgid "Luminosité"
 msgstr "Brillo"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:185
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:184
 msgid "Mapping distinct automatique"
 msgstr "Mapeo de colores automático"
 
@@ -959,7 +970,7 @@ msgstr "No hay imagen para añadir"
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "Aún no hay imágenes en el espacio de trabajo. Añada imágenes convertidas para crear su archivo DSK."
 
-#: src/components/export-panel/export-config-dialog.tsx:235
+#: src/components/export-panel/export-config-dialog.tsx:239
 msgid "Nom du fichier ZIP"
 msgstr "Nombre del archivo ZIP"
 
@@ -972,7 +983,7 @@ msgid "Non"
 msgstr "No"
 
 #. placeholder {0}: sourceUniqueColors ?? '?'
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:161
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:160
 msgid "Non disponible : l'image source a plus de 16 couleurs uniques ({0}+)."
 msgstr "No disponible: la imagen fuente tiene más de 16 colores únicos ({0}+)."
 
@@ -1070,7 +1081,7 @@ msgstr "Selección de Paleta"
 msgid "Palettes"
 msgstr "Paletas"
 
-#: src/components/export-panel/export-config-dialog.tsx:165
+#: src/components/export-panel/export-config-dialog.tsx:169
 msgid "Palettes (firmware/hardware)"
 msgstr "Paletas (firmware/hardware)"
 
@@ -1125,11 +1136,11 @@ msgstr "Más alto = preferencia por colores similares a las líneas anteriores"
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (vista previa)"
 
-#: src/components/export-panel/export-config-dialog.tsx:192
+#: src/components/export-panel/export-config-dialog.tsx:196
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (relación de aspecto CPC correcta)"
 
-#: src/components/export-panel/export-config-dialog.tsx:185
+#: src/components/export-panel/export-config-dialog.tsx:189
 msgid "PNG (pixels carrés)"
 msgstr "PNG (píxeles cuadrados)"
 
@@ -1206,7 +1217,7 @@ msgstr "Ajuste Raster"
 msgid "Rasters"
 msgstr "Rasters"
 
-#: src/components/export-panel/export-config-dialog.tsx:200
+#: src/components/export-panel/export-config-dialog.tsx:204
 msgid "Rasters (données ASM)"
 msgstr "Rasters (datos ASM)"
 
@@ -1247,7 +1258,7 @@ msgid "Réinitialiser"
 msgstr "Restablecer"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:110
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:109
 msgid "color.diversity.reset"
 msgstr "Restablecer a 50"
 
@@ -1300,7 +1311,7 @@ msgstr "Saturación"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturación inteligente que realza colores apagados sin sobresaturar"
 
-#: src/components/export-panel/export-config-dialog.tsx:147
+#: src/components/export-panel/export-config-dialog.tsx:151
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (formato CPC entrelazado)"
 
@@ -1316,11 +1327,11 @@ msgstr "Selección"
 #~ msgid "Sélectionner une couleur"
 #~ msgstr "Seleccionar un color"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:136
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:135
 msgid "Sélectionnez l'algorithme de dithering et ajustez les paramètres pour optimiser le rendu final."
 msgstr "Seleccione el algoritmo de dithering y ajuste los parámetros para optimizar el renderizado final."
 
-#: src/components/export-panel/export-config-dialog.tsx:126
+#: src/components/export-panel/export-config-dialog.tsx:130
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Seleccione los archivos a incluir en el archivo ZIP"
 
@@ -1337,7 +1348,7 @@ msgstr "Configuración"
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simula pasos fotográficos (-3 a +3, ±1 = doble/mitad de luz)"
 
-#: src/components/export-panel/export-config-dialog.tsx:170
+#: src/components/export-panel/export-config-dialog.tsx:174
 msgid "SNA (snapshot exécutable)"
 msgstr "SNA (snapshot ejecutable)"
 
@@ -1418,7 +1429,7 @@ msgstr "Usa una paleta diferente para cada frame (más colores, más parpadeo)"
 #~ msgid "utilisée"
 #~ msgstr "usada"
 
-#: src/components/export-panel/export-config-dialog.tsx:210
+#: src/components/export-panel/export-config-dialog.tsx:214
 msgid "Utiliser des labels personnalisés"
 msgstr "Usar etiquetas personalizadas"
 
