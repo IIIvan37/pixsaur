@@ -30,6 +30,7 @@ export type DitheringMode =
 export type DitheringConfig = {
   mode: DitheringMode | 'none'
   intensity: number // de 0 (off) à 1 (plein)
+  useDiffusionCorrection?: boolean
 }
 
 // Re-export PaletteStrategy type from palette-strategies-v2 for external use

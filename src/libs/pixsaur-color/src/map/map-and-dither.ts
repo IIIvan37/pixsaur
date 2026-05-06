@@ -69,6 +69,64 @@ function pseudoRandomVec(
   return [r1, r2, r3]
 }
 
+type PaletteBounds = {
+  min: [number, number, number]
+  max: [number, number, number]
+}
+
+interface DiffusionCorrectionOptions {
+  enabled: boolean
+  errorClamp: number
+}
+
+function resolveDiffusionCorrectionOptions(
+  config: DitheringConfig
+): DiffusionCorrectionOptions {
+  return {
+    enabled: config.useDiffusionCorrection ?? true,
+    errorClamp: 64
+  }
+}
+
+function computePaletteBounds(paletteCS: Float32Array[]): PaletteBounds {
+  const min: [number, number, number] = [255, 255, 255]
+  const max: [number, number, number] = [0, 0, 0]
+
+  for (const color of paletteCS) {
+    if (color[0] < min[0]) min[0] = color[0]
+    if (color[1] < min[1]) min[1] = color[1]
+    if (color[2] < min[2]) min[2] = color[2]
+    if (color[0] > max[0]) max[0] = color[0]
+    if (color[1] > max[1]) max[1] = color[1]
+    if (color[2] > max[2]) max[2] = color[2]
+  }
+
+  return { min, max }
+}
+
+function clampPixelToPaletteBounds(
+  pixel: Float32Array,
+  bounds: PaletteBounds,
+  correction: DiffusionCorrectionOptions
+): void {
+  if (!correction.enabled) return
+
+  pixel[0] = Math.max(bounds.min[0], Math.min(bounds.max[0], pixel[0]))
+  pixel[1] = Math.max(bounds.min[1], Math.min(bounds.max[1], pixel[1]))
+  pixel[2] = Math.max(bounds.min[2], Math.min(bounds.max[2], pixel[2]))
+}
+
+function clampErrorValue(
+  value: number,
+  correction: DiffusionCorrectionOptions
+): number {
+  if (!correction.enabled) return value
+  return Math.max(
+    -correction.errorClamp,
+    Math.min(correction.errorClamp, value)
+  )
+}
+
 function applyAtkinsonDither(
   bufCS: Float32Array,
   width: number,
@@ -82,6 +140,8 @@ function applyAtkinsonDither(
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
   const errorBuf = new Float32Array(bufCS) // copy
+  const correction = resolveDiffusionCorrectionOptions(config)
+  const bounds = computePaletteBounds(paletteCS)
 
   // Atkinson diffusion offsets (relative to current pixel)
   const offsets = [
@@ -103,7 +163,9 @@ function applyAtkinsonDither(
     paletteOut,
     distFn,
     intensity,
-    offsets
+    offsets,
+    bounds,
+    correction
   }
 
   for (let y = 0; y < height; y++) {
@@ -129,6 +191,8 @@ interface AtkinsonContext {
   distFn: DistanceFn
   intensity: number
   offsets: number[][]
+  bounds: PaletteBounds
+  correction: DiffusionCorrectionOptions
 }
 
 /**
@@ -150,6 +214,7 @@ function processAtkinsonPixel(
   pixel[0] = errorBuf[i3]
   pixel[1] = errorBuf[i3 + 1]
   pixel[2] = errorBuf[i3 + 2]
+  clampPixelToPaletteBounds(pixel, context.bounds, context.correction)
 
   // Find nearest palette color
   const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
@@ -179,9 +244,18 @@ function distributeAtkinsonError(
   const { width, height, errorBuf, intensity, offsets } = context
 
   // Compute error
-  const errR = (pixel[0] - paletteColor[0]) * intensity
-  const errG = (pixel[1] - paletteColor[1]) * intensity
-  const errB = (pixel[2] - paletteColor[2]) * intensity
+  const errR = clampErrorValue(
+    (pixel[0] - paletteColor[0]) * intensity,
+    context.correction
+  )
+  const errG = clampErrorValue(
+    (pixel[1] - paletteColor[1]) * intensity,
+    context.correction
+  )
+  const errB = clampErrorValue(
+    (pixel[2] - paletteColor[2]) * intensity,
+    context.correction
+  )
 
   // Distribute error (1/8 to each neighbor)
   for (const [dx, dy] of offsets) {
@@ -489,12 +563,14 @@ export function applyOstromoukhovDither(
   paletteCS: Float32Array[],
   paletteOut: Uint8ClampedArray[],
   distFn: DistanceFn,
-  intensity: number
+  intensity: number,
+  correction: DiffusionCorrectionOptions
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
   const errorBuf = new Float32Array(bufCS) // working copy
   const w3 = width * 3
+  const bounds = computePaletteBounds(paletteCS)
 
   let leftToRight = true
 
@@ -511,6 +587,7 @@ export function applyOstromoukhovDither(
       pixelCS[0] = errorBuf[idx3]
       pixelCS[1] = errorBuf[idx3 + 1]
       pixelCS[2] = errorBuf[idx3 + 2]
+      clampPixelToPaletteBounds(pixelCS, bounds, correction)
 
       // Find nearest palette color
       const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
@@ -524,9 +601,18 @@ export function applyOstromoukhovDither(
 
       // Compute quantization error
       const palColor = paletteCS[bestIndex]
-      const err0 = (pixelCS[0] - palColor[0]) * intensity
-      const err1 = (pixelCS[1] - palColor[1]) * intensity
-      const err2 = (pixelCS[2] - palColor[2]) * intensity
+      const err0 = clampErrorValue(
+        (pixelCS[0] - palColor[0]) * intensity,
+        correction
+      )
+      const err1 = clampErrorValue(
+        (pixelCS[1] - palColor[1]) * intensity,
+        correction
+      )
+      const err2 = clampErrorValue(
+        (pixelCS[2] - palColor[2]) * intensity,
+        correction
+      )
 
       // Get intensity-dependent coefficients
       // Use average luminance for coefficient lookup
@@ -586,11 +672,13 @@ export function applyFloydSteinbergDither(
   paletteCS: Float32Array[],
   paletteOut: Uint8ClampedArray[],
   distFn: DistanceFn,
-  intensity: number
+  intensity: number,
+  correction: DiffusionCorrectionOptions
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
   const w3 = width * 3
+  const bounds = computePaletteBounds(paletteCS)
 
   // Floyd-Steinberg diffusion pattern: right 7/16, down-left 3/16, down 5/16, down-right 1/16
   const offsets = [3, -3 + w3, w3, 3 + w3]
@@ -607,7 +695,9 @@ export function applyFloydSteinbergDither(
     paletteOut,
     distFn,
     offsets,
-    weights
+    weights,
+    bounds,
+    correction
   }
 
   for (let y = 0; y < height; y++) {
@@ -644,6 +734,8 @@ interface FloydSteinbergContext {
   distFn: DistanceFn
   offsets: number[]
   weights: number[]
+  bounds: PaletteBounds
+  correction: DiffusionCorrectionOptions
 }
 
 /**
@@ -663,6 +755,7 @@ function processFloydSteinbergPixel(
   pixelCS[0] = bufCS[idx3]
   pixelCS[1] = bufCS[idx3 + 1]
   pixelCS[2] = bufCS[idx3 + 2]
+  clampPixelToPaletteBounds(pixelCS, context.bounds, context.correction)
 
   // Find nearest palette color
   const bestIndex = findClosestColorIndex(pixelCS, paletteCS, distFn)
@@ -695,9 +788,9 @@ function distributeFloydSteinbergError(
   const idx3 = (y * width + x) * 3
 
   // Compute quantization error
-  const err0 = pixel[0] - paletteColor[0]
-  const err1 = pixel[1] - paletteColor[1]
-  const err2 = pixel[2] - paletteColor[2]
+  const err0 = clampErrorValue(pixel[0] - paletteColor[0], context.correction)
+  const err1 = clampErrorValue(pixel[1] - paletteColor[1], context.correction)
+  const err2 = clampErrorValue(pixel[2] - paletteColor[2], context.correction)
 
   // Distribute error to neighboring pixels
   for (let k = 0; k < 4; k++) {
@@ -742,7 +835,8 @@ const DITHER_MODES: Record<string, DitherFn> = {
       paletteCS,
       paletteOut,
       distFn,
-      config.intensity
+      config.intensity,
+      resolveDiffusionCorrectionOptions(config)
     ),
 
   bayer2x2: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
@@ -837,7 +931,8 @@ const DITHER_MODES: Record<string, DitherFn> = {
       paletteCS,
       paletteOut,
       distFn,
-      config.intensity
+      config.intensity,
+      resolveDiffusionCorrectionOptions(config)
     )
 }
 

@@ -22,7 +22,8 @@ export const colorSpaceAtom = atom<ColorSpace>('RGB')
  */
 export const ditheringAtom = atom<DitheringConfig>({
   mode: 'floydSteinberg',
-  intensity: 0.5
+  intensity: 0.5,
+  useDiffusionCorrection: true
 })
 
 // ============================================================================

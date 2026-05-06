@@ -149,10 +149,11 @@ export const previewImageAtom = atom(async (get) => {
   )
 
   logger.time('dithering')
-  const previewBuffer = quantizer.dither(normalized, ditheringPalette, {
-    mode: dithering.mode,
-    intensity: dithering.intensity
-  })
+  const previewBuffer = quantizer.dither(
+    normalized,
+    ditheringPalette,
+    dithering
+  )
   logger.timeEnd('dithering')
 
   // Dithering returns RGB buffer, no remapping needed!
