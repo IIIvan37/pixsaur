@@ -109,6 +109,20 @@ export interface ModeRConfig {
    * - true: Independent palettes for each frame (more colors, more flicker)
    */
   useDualPalette: boolean
+
+  /**
+   * Enable diffusion correction for error-diffusion modes:
+   * - Clamp accumulated pixel values to combined palette bounds
+   * - Clamp individual error components to ±64 before propagation
+   */
+  useDiffusionCorrection?: boolean
+
+  /**
+   * Enable ordered correction for Bayer/blueNoise modes:
+   * - Adaptive amplitude: intensity × (255 / √paletteSize)
+   * - Skip perturbation when pixel already exactly matches a palette color
+   */
+  useOrderedCorrection?: boolean
 }
 
 /**
@@ -120,7 +134,9 @@ export const DEFAULT_MODE_R_CONFIG: ModeRConfig = {
   targetHardware: 'plus', // Mode R works best on CPC Plus
   ditheringMode: 'floydSteinberg',
   ditheringIntensity: 100,
-  useDualPalette: false // Default: same palette for both frames (less flicker)
+  useDualPalette: false, // Default: same palette for both frames (less flicker)
+  useDiffusionCorrection: true,
+  useOrderedCorrection: true
 }
 
 /**
