@@ -96,6 +96,20 @@ export interface EGXConfig {
    * 0 = no dithering effect, 100 = full dithering
    */
   ditheringIntensity: number
+
+  /**
+   * Enable diffusion correction:
+   * - Clamp accumulated error to ±64 to prevent smearing
+   * - Clamp pixel+error to palette gamut before quantization
+   */
+  useDiffusionCorrection?: boolean
+
+  /**
+   * Enable ordered correction:
+   * - Adaptive amplitude: intensity × (255 / √paletteSize)
+   * - Skip perturbation when pixel is at gamut boundary
+   */
+  useOrderedCorrection?: boolean
 }
 
 /**
