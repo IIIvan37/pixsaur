@@ -123,35 +123,53 @@ function isBlueNoiseMode(mode: DitheringMode | 'none'): boolean {
 }
 
 /**
- * Get Blue Noise thresholds for a pixel position (decorrelated per RGB channel)
- * Uses the same formula as applyBlueNoiseDither in pixsaur-color
+ * Compute bounding box of a combined set of palettes (A + B).
+ * Used for diffusion correction to clamp accumulated pixels to the gamut.
+ */
+function computeCombinedPaletteBounds(
+  paletteA: Array<Vector<'RGB'>>,
+  paletteB: Array<Vector<'RGB'>>
+): { min: [number, number, number]; max: [number, number, number] } {
+  const min: [number, number, number] = [255, 255, 255]
+  const max: [number, number, number] = [0, 0, 0]
+  for (const c of [...paletteA, ...paletteB]) {
+    if (c[0] < min[0]) min[0] = c[0]
+    if (c[1] < min[1]) min[1] = c[1]
+    if (c[2] < min[2]) min[2] = c[2]
+    if (c[0] > max[0]) max[0] = c[0]
+    if (c[1] > max[1]) max[1] = c[1]
+    if (c[2] > max[2]) max[2] = c[2]
+  }
+  return { min, max }
+}
+
+/**
+ * Get Blue Noise thresholds for a pixel position (decorrelated per RGB channel).
+ * @param scale - Pre-computed amplitude (intensity × adaptive factor × 255)
  */
 function getBlueNoiseThresholds(
   x: number,
   y: number,
-  intensity: number
+  scale: number
 ): [number, number, number] {
   const [tR, tG, tB] = getBlueNoiseThresholdRGB(x, y)
-  const scale = intensity * 255
   return [tR * scale, tG * scale, tB * scale]
 }
 
 /**
- * Get ordered dithering threshold for a pixel position
- * Uses the same formula as applyBayerDither in pixsaur-color:
- * threshold = (bayerVal / (size * size) - 0.5) * intensity * 255
+ * Get ordered dithering threshold for a pixel position.
+ * @param amplitude - Pre-computed amplitude (intensity × adaptive factor, already scaled to [0,255] range)
  */
 function getOrderedThreshold(
   x: number,
   y: number,
   matrix: DitheringMatrix,
-  intensity: number
+  amplitude: number
 ): number {
   const mx = x % matrix.size
   const my = y % matrix.size
   const bayerVal = matrix.matrix[my][mx]
-  // Normalize to -0.5 to 0.5 range, then scale by intensity and 255
-  return (bayerVal / matrix.maxValue - 0.5) * intensity * 255
+  return (bayerVal / matrix.maxValue - 0.5) * amplitude
 }
 
 /**
@@ -292,6 +310,22 @@ export function quantizeModeR(
     isOrderedDitheringMode(ditheringMode) && ditherIntensity > 0
   const useBlueNoise = isBlueNoiseMode(ditheringMode) && ditherIntensity > 0
 
+  const useDiffusionCorrection = config.useDiffusionCorrection ?? true
+  const useOrderedCorrection = config.useOrderedCorrection ?? true
+  const ERROR_CLAMP = 64
+
+  // Combined palette bounds (for diffusion clamping and ordered skip)
+  const paletteBounds = computeCombinedPaletteBounds(
+    palettes.paletteA,
+    palettes.paletteB
+  )
+
+  // Adaptive amplitude for ordered modes: larger palette → less noise needed
+  const paletteSize = palettes.paletteA.length
+  const orderedAmplitude = useOrderedCorrection
+    ? ditherIntensity * (255 / Math.sqrt(paletteSize))
+    : ditherIntensity * 255
+
   // Try GPU quantization for non-dithering modes (much faster)
   // Error diffusion requires sequential processing, so it must stay on CPU
   const canUseGPU = ditheringMode === 'none' || ditherIntensity === 0
@@ -385,7 +419,7 @@ export function quantizeModeR(
           x,
           y,
           ditherMatrix,
-          ditherIntensity
+          orderedAmplitude
         )
 
         colorA = getSourceColorWithThreshold(
@@ -393,33 +427,37 @@ export function quantizeModeR(
           width,
           srcXA,
           y,
-          threshold
+          threshold,
+          useOrderedCorrection ? paletteBounds : null
         )
         colorB = getSourceColorWithThreshold(
           imageData,
           width,
           srcXB,
           y,
-          threshold
+          threshold,
+          useOrderedCorrection ? paletteBounds : null
         )
       } else if (useBlueNoise) {
         // Blue Noise dithering: apply per-channel threshold-based color adjustment
         // Use OUTPUT coordinates (x, y) for the dithering pattern
-        const thresholds = getBlueNoiseThresholds(x, y, ditherIntensity)
+        const thresholds = getBlueNoiseThresholds(x, y, orderedAmplitude)
 
         colorA = getSourceColorWithRGBThresholds(
           imageData,
           width,
           srcXA,
           y,
-          thresholds
+          thresholds,
+          useOrderedCorrection ? paletteBounds : null
         )
         colorB = getSourceColorWithRGBThresholds(
           imageData,
           width,
           srcXB,
           y,
-          thresholds
+          thresholds,
+          useOrderedCorrection ? paletteBounds : null
         )
       } else {
         // Error diffusion or no dithering: use error buffer
@@ -428,14 +466,16 @@ export function quantizeModeR(
           errorBuffer,
           width,
           srcXA,
-          y
+          y,
+          useDiffusionCorrection ? paletteBounds : null
         )
         colorB = getSourceColorWithError(
           imageData,
           errorBuffer,
           width,
           srcXB,
-          y
+          y,
+          useDiffusionCorrection ? paletteBounds : null
         )
       }
 
@@ -508,7 +548,8 @@ export function quantizeModeR(
           y,
           error: errorA,
           mode: ditheringMode,
-          originalIntensity: intensityA
+          originalIntensity: intensityA,
+          errorClamp: useDiffusionCorrection ? ERROR_CLAMP : undefined
         })
         propagateError({
           errorBuffer,
@@ -518,7 +559,8 @@ export function quantizeModeR(
           y,
           error: errorB,
           mode: ditheringMode,
-          originalIntensity: intensityB
+          originalIntensity: intensityB,
+          errorClamp: useDiffusionCorrection ? ERROR_CLAMP : undefined
         })
       }
     }
@@ -543,14 +585,19 @@ export function quantizeModeR(
 }
 
 /**
- * Get source pixel color with accumulated dithering error (for error diffusion)
+ * Get source pixel color with accumulated dithering error (for error diffusion).
+ * When bounds are provided, clamps the result to the combined palette gamut.
  */
 function getSourceColorWithError(
   imageData: Uint8ClampedArray,
   errorBuffer: Float32Array | null,
   width: number,
   x: number,
-  y: number
+  y: number,
+  bounds: {
+    min: [number, number, number]
+    max: [number, number, number]
+  } | null = null
 ): Vector<'RGB'> {
   const pixelIdx = (y * width + x) * 4
   const r = imageData[pixelIdx]
@@ -560,28 +607,53 @@ function getSourceColorWithError(
   if (!errorBuffer) return [r, g, b]
 
   const errorIdx = (y * width + x) * 3
+  const pr = r + errorBuffer[errorIdx]
+  const pg = g + errorBuffer[errorIdx + 1]
+  const pb = b + errorBuffer[errorIdx + 2]
+
+  if (bounds) {
+    return [
+      Math.max(bounds.min[0], Math.min(bounds.max[0], pr)),
+      Math.max(bounds.min[1], Math.min(bounds.max[1], pg)),
+      Math.max(bounds.min[2], Math.min(bounds.max[2], pb))
+    ]
+  }
   return [
-    Math.max(0, Math.min(255, r + errorBuffer[errorIdx])),
-    Math.max(0, Math.min(255, g + errorBuffer[errorIdx + 1])),
-    Math.max(0, Math.min(255, b + errorBuffer[errorIdx + 2]))
+    Math.max(0, Math.min(255, pr)),
+    Math.max(0, Math.min(255, pg)),
+    Math.max(0, Math.min(255, pb))
   ]
 }
 
 /**
- * Get source pixel color with ordered dithering applied
- * Uses pre-calculated threshold for consistent pattern
+ * Get source pixel color with ordered dithering applied.
+ * When bounds are provided, skips perturbation if the pixel already exactly
+ * matches a palette color (skip-on-exact-match).
  */
 function getSourceColorWithThreshold(
   imageData: Uint8ClampedArray,
   width: number,
   x: number,
   y: number,
-  threshold: number
+  threshold: number,
+  bounds: {
+    min: [number, number, number]
+    max: [number, number, number]
+  } | null = null
 ): Vector<'RGB'> {
   const pixelIdx = (y * width + x) * 4
   const r = imageData[pixelIdx]
   const g = imageData[pixelIdx + 1]
   const b = imageData[pixelIdx + 2]
+
+  // Skip perturbation when the pixel is already on the palette gamut boundary
+  // (heuristic for exact match: all channels within 1 unit of a boundary)
+  if (bounds) {
+    const onBoundR = r <= bounds.min[0] + 1 || r >= bounds.max[0] - 1
+    const onBoundG = g <= bounds.min[1] + 1 || g >= bounds.max[1] - 1
+    const onBoundB = b <= bounds.min[2] + 1 || b >= bounds.max[2] - 1
+    if (onBoundR && onBoundG && onBoundB) return [r, g, b]
+  }
 
   return [
     Math.max(0, Math.min(255, r + threshold)),
@@ -591,20 +663,32 @@ function getSourceColorWithThreshold(
 }
 
 /**
- * Get source pixel color with per-channel RGB thresholds applied
- * Used for decorrelated blue noise dithering
+ * Get source pixel color with per-channel RGB thresholds applied.
+ * Used for decorrelated blue noise dithering.
+ * When bounds are provided, skips perturbation if the pixel is at gamut boundary.
  */
 function getSourceColorWithRGBThresholds(
   imageData: Uint8ClampedArray,
   width: number,
   x: number,
   y: number,
-  thresholds: [number, number, number]
+  thresholds: [number, number, number],
+  bounds: {
+    min: [number, number, number]
+    max: [number, number, number]
+  } | null = null
 ): Vector<'RGB'> {
   const pixelIdx = (y * width + x) * 4
   const r = imageData[pixelIdx]
   const g = imageData[pixelIdx + 1]
   const b = imageData[pixelIdx + 2]
+
+  if (bounds) {
+    const onBoundR = r <= bounds.min[0] + 1 || r >= bounds.max[0] - 1
+    const onBoundG = g <= bounds.min[1] + 1 || g >= bounds.max[1] - 1
+    const onBoundB = b <= bounds.min[2] + 1 || b >= bounds.max[2] - 1
+    if (onBoundR && onBoundG && onBoundB) return [r, g, b]
+  }
 
   return [
     Math.max(0, Math.min(255, r + thresholds[0])),
@@ -860,14 +944,33 @@ interface PropagateErrorOptions {
   error: Vector<'RGB'>
   mode: DitheringMode | 'none'
   originalIntensity?: number
+  /** When set, clamps each error component to ±errorClamp before adding */
+  errorClamp?: number
 }
 
 /**
  * Propagate quantization error to neighboring pixels using the specified algorithm
  */
 function propagateError(opts: PropagateErrorOptions): void {
-  const { errorBuffer, width, height, x, y, error, mode, originalIntensity } =
-    opts
+  const {
+    errorBuffer,
+    width,
+    height,
+    x,
+    y,
+    error,
+    mode,
+    originalIntensity,
+    errorClamp
+  } = opts
+
+  const clamp = (v: number) =>
+    errorClamp !== undefined
+      ? Math.max(-errorClamp, Math.min(errorClamp, v))
+      : v
+  const e0 = clamp(error[0])
+  const e1 = clamp(error[1])
+  const e2 = clamp(error[2])
 
   // Ostromoukhov uses variable coefficients based on intensity
   if (mode === 'ostromoukhov' && originalIntensity !== undefined) {
@@ -883,9 +986,9 @@ function propagateError(opts: PropagateErrorOptions): void {
       const ny = y + dy
       if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
         const idx = (ny * width + nx) * 3
-        errorBuffer[idx] += error[0] * factor
-        errorBuffer[idx + 1] += error[1] * factor
-        errorBuffer[idx + 2] += error[2] * factor
+        errorBuffer[idx] += e0 * factor
+        errorBuffer[idx + 1] += e1 * factor
+        errorBuffer[idx + 2] += e2 * factor
       }
     }
     return
@@ -900,9 +1003,9 @@ function propagateError(opts: PropagateErrorOptions): void {
     const ny = y + dy
     if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
       const idx = (ny * width + nx) * 3
-      errorBuffer[idx] += error[0] * factor
-      errorBuffer[idx + 1] += error[1] * factor
-      errorBuffer[idx + 2] += error[2] * factor
+      errorBuffer[idx] += e0 * factor
+      errorBuffer[idx + 1] += e1 * factor
+      errorBuffer[idx + 2] += e2 * factor
     }
   }
 }

@@ -20,6 +20,31 @@ import type { EGXConfig } from './types'
 import { getMaxColorIndex, getModeForLine } from './types'
 
 // ============================================================================
+// EGX Helpers
+// ============================================================================
+
+/**
+ * Compute bounding box of the full EGX palette.
+ * Used for diffusion correction (clamp pixel+error to gamut) and ordered correction (boundary skip).
+ */
+function computeEGXPaletteBounds(palette: Vector<'RGB'>[]): {
+  min: [number, number, number]
+  max: [number, number, number]
+} {
+  const min: [number, number, number] = [255, 255, 255]
+  const max: [number, number, number] = [0, 0, 0]
+  for (const c of palette) {
+    if (c[0] < min[0]) min[0] = c[0]
+    if (c[1] < min[1]) min[1] = c[1]
+    if (c[2] < min[2]) min[2] = c[2]
+    if (c[0] > max[0]) max[0] = c[0]
+    if (c[1] > max[1]) max[1] = c[1]
+    if (c[2] > max[2]) max[2] = c[2]
+  }
+  return { min, max }
+}
+
+// ============================================================================
 // EGX Pixel Grouping
 // ============================================================================
 
@@ -103,6 +128,16 @@ function applyEGXFloydSteinbergDithering(
     errorBuffer[i * 3 + 2] = data[i * 4 + 2]
   }
 
+  const useDiffusionCorrection = config.useDiffusionCorrection ?? true
+  const ERROR_CLAMP = 64
+  const bounds = useDiffusionCorrection
+    ? computeEGXPaletteBounds(palette)
+    : null
+  const clampErr = (v: number) =>
+    useDiffusionCorrection
+      ? Math.max(-ERROR_CLAMP, Math.min(ERROR_CLAMP, v))
+      : v
+
   // Floyd-Steinberg weights
   const FS_RIGHT = (7 / 16) * intensity
   const FS_BOTTOM_LEFT = (3 / 16) * intensity
@@ -119,10 +154,22 @@ function applyEGXFloydSteinbergDithering(
       const idx3 = idx * 3
       const idx4 = idx * 4
 
-      // Get current pixel with accumulated error
-      const r = Math.max(0, Math.min(255, errorBuffer[idx3]))
-      const g = Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
-      const b = Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
+      // Get current pixel with accumulated error (clamped to palette gamut if correction enabled)
+      const r = bounds
+        ? Math.max(bounds.min[0], Math.min(bounds.max[0], errorBuffer[idx3]))
+        : Math.max(0, Math.min(255, errorBuffer[idx3]))
+      const g = bounds
+        ? Math.max(
+            bounds.min[1],
+            Math.min(bounds.max[1], errorBuffer[idx3 + 1])
+          )
+        : Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
+      const b = bounds
+        ? Math.max(
+            bounds.min[2],
+            Math.min(bounds.max[2], errorBuffer[idx3 + 2])
+          )
+        : Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
 
       // Find closest color in the sub-palette for this line
       const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
@@ -133,10 +180,10 @@ function applyEGXFloydSteinbergDithering(
       output[idx4 + 2] = color[2]
       output[idx4 + 3] = 255
 
-      // Calculate quantization error
-      const errR = r - color[0]
-      const errG = g - color[1]
-      const errB = b - color[2]
+      // Calculate quantization error (clamped to prevent smearing if correction enabled)
+      const errR = clampErr(r - color[0])
+      const errG = clampErr(g - color[1])
+      const errB = clampErr(b - color[2])
 
       // Distribute error to neighbors (Floyd-Steinberg pattern)
       // Right pixel (x+1, y)
@@ -208,6 +255,16 @@ function applyEGXOstromoukhovDithering(
     errorBuffer[i * 3 + 2] = data[i * 4 + 2]
   }
 
+  const useDiffusionCorrection = config.useDiffusionCorrection ?? true
+  const ERROR_CLAMP = 64
+  const bounds = useDiffusionCorrection
+    ? computeEGXPaletteBounds(palette)
+    : null
+  const clampErr = (v: number) =>
+    useDiffusionCorrection
+      ? Math.max(-ERROR_CLAMP, Math.min(ERROR_CLAMP, v))
+      : v
+
   for (let y = 0; y < height; y++) {
     // Get the sub-palette limit for this line
     const lineMode = getModeForLine(y, config)
@@ -222,10 +279,22 @@ function applyEGXOstromoukhovDithering(
       const idx3 = idx * 3
       const idx4 = idx * 4
 
-      // Get current pixel with accumulated error
-      const r = Math.max(0, Math.min(255, errorBuffer[idx3]))
-      const g = Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
-      const b = Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
+      // Get current pixel with accumulated error (clamped to palette gamut if correction enabled)
+      const r = bounds
+        ? Math.max(bounds.min[0], Math.min(bounds.max[0], errorBuffer[idx3]))
+        : Math.max(0, Math.min(255, errorBuffer[idx3]))
+      const g = bounds
+        ? Math.max(
+            bounds.min[1],
+            Math.min(bounds.max[1], errorBuffer[idx3 + 1])
+          )
+        : Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
+      const b = bounds
+        ? Math.max(
+            bounds.min[2],
+            Math.min(bounds.max[2], errorBuffer[idx3 + 2])
+          )
+        : Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
 
       // Find closest color in the sub-palette for this line
       const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
@@ -236,10 +305,10 @@ function applyEGXOstromoukhovDithering(
       output[idx4 + 2] = color[2]
       output[idx4 + 3] = 255
 
-      // Calculate quantization error
-      const errR = r - color[0]
-      const errG = g - color[1]
-      const errB = b - color[2]
+      // Calculate quantization error (clamped to prevent smearing if correction enabled)
+      const errR = clampErr(r - color[0])
+      const errG = clampErr(g - color[1])
+      const errB = clampErr(b - color[2])
 
       // Get intensity-dependent coefficients from pixel luminance
       const pixelIntensity = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
@@ -373,19 +442,43 @@ function applyEGXOrderedDithering(
   // Divisor is size * size (same as original algorithm)
   const divisor = matrixSize * matrixSize
 
+  // Ordered correction: adaptive amplitude + boundary skip
+  const useOrderedCorrection = config.useOrderedCorrection ?? true
+  const orderedBounds = useOrderedCorrection
+    ? computeEGXPaletteBounds(palette)
+    : null
+  const amplitude = useOrderedCorrection
+    ? intensity * (255 / Math.sqrt(palette.length))
+    : intensity * 255
+
   for (let y = 0; y < height; y++) {
     const lineMode = getModeForLine(y, config)
     const maxColorIndex = getMaxColorIndex(lineMode, config.type)
 
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4
-      // Match original algorithm: (bayerVal / divisor - 0.5) * intensity * 255
+      // Adaptive amplitude: intensity × (255 / √paletteSize) when correction enabled
       const bayerVal = matrix[y % matrixSize][x % matrixSize]
-      const threshold = (bayerVal / divisor - 0.5) * intensity * 255
+      const threshold = (bayerVal / divisor - 0.5) * amplitude
 
-      const r = Math.max(0, Math.min(255, data[idx] + threshold))
-      const g = Math.max(0, Math.min(255, data[idx + 1] + threshold))
-      const b = Math.max(0, Math.min(255, data[idx + 2] + threshold))
+      // Skip perturbation when pixel is at palette gamut boundary
+      const sr = data[idx],
+        sg = data[idx + 1],
+        sb = data[idx + 2]
+      const skipPerturbation =
+        orderedBounds !== null &&
+        (sr <= orderedBounds.min[0] + 1 || sr >= orderedBounds.max[0] - 1) &&
+        (sg <= orderedBounds.min[1] + 1 || sg >= orderedBounds.max[1] - 1) &&
+        (sb <= orderedBounds.min[2] + 1 || sb >= orderedBounds.max[2] - 1)
+      const r = skipPerturbation
+        ? sr
+        : Math.max(0, Math.min(255, sr + threshold))
+      const g = skipPerturbation
+        ? sg
+        : Math.max(0, Math.min(255, sg + threshold))
+      const b = skipPerturbation
+        ? sb
+        : Math.max(0, Math.min(255, sb + threshold))
 
       const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
 
@@ -419,6 +512,16 @@ function applyEGXAtkinsonDithering(
     errorBuffer[i * 3 + 2] = data[i * 4 + 2]
   }
 
+  const useDiffusionCorrection = config.useDiffusionCorrection ?? true
+  const ERROR_CLAMP = 64
+  const bounds = useDiffusionCorrection
+    ? computeEGXPaletteBounds(palette)
+    : null
+  const clampErr = (v: number) =>
+    useDiffusionCorrection
+      ? Math.max(-ERROR_CLAMP, Math.min(ERROR_CLAMP, v))
+      : v
+
   // Atkinson distributes 1/8 of error to 6 neighbors (total 6/8 = 3/4)
   const weight = (1 / 8) * intensity
 
@@ -441,9 +544,21 @@ function applyEGXAtkinsonDithering(
       const idx3 = idx * 3
       const idx4 = idx * 4
 
-      const r = Math.max(0, Math.min(255, errorBuffer[idx3]))
-      const g = Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
-      const b = Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
+      const r = bounds
+        ? Math.max(bounds.min[0], Math.min(bounds.max[0], errorBuffer[idx3]))
+        : Math.max(0, Math.min(255, errorBuffer[idx3]))
+      const g = bounds
+        ? Math.max(
+            bounds.min[1],
+            Math.min(bounds.max[1], errorBuffer[idx3 + 1])
+          )
+        : Math.max(0, Math.min(255, errorBuffer[idx3 + 1]))
+      const b = bounds
+        ? Math.max(
+            bounds.min[2],
+            Math.min(bounds.max[2], errorBuffer[idx3 + 2])
+          )
+        : Math.max(0, Math.min(255, errorBuffer[idx3 + 2]))
 
       const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
 
@@ -452,9 +567,9 @@ function applyEGXAtkinsonDithering(
       output[idx4 + 2] = color[2]
       output[idx4 + 3] = 255
 
-      const errR = r - color[0]
-      const errG = g - color[1]
-      const errB = b - color[2]
+      const errR = clampErr(r - color[0])
+      const errG = clampErr(g - color[1])
+      const errB = clampErr(b - color[2])
 
       // Distribute to 6 neighbors
       for (const [dx, dy] of offsets) {

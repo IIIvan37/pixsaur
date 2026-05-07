@@ -74,7 +74,9 @@ export const egxConfigAtom = atom((get): EGXConfig => {
     firstLineMode,
     targetHardware: hardware,
     ditheringMode: ditheringEnabled ? dithering.mode : 'none',
-    ditheringIntensity
+    ditheringIntensity,
+    useDiffusionCorrection: dithering.useDiffusionCorrection,
+    useOrderedCorrection: dithering.useOrderedCorrection
   }
 })
 

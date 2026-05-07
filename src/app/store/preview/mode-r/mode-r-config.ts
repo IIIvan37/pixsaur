@@ -43,6 +43,8 @@ export const modeRConfigAtom = atom((get): ModeRConfig => {
     // Pass the actual dithering mode from settings
     ditheringMode: ditheringEnabled ? dithering.mode : 'none',
     ditheringIntensity,
-    useDualPalette
+    useDualPalette,
+    useDiffusionCorrection: dithering.useDiffusionCorrection,
+    useOrderedCorrection: dithering.useOrderedCorrection
   }
 })

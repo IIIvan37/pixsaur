@@ -235,7 +235,9 @@ describe('Config Store', () => {
       const dithering = store.get(ditheringAtom)
       expect(dithering).toEqual({
         mode: 'floydSteinberg',
-        intensity: 0.5
+        intensity: 0.5,
+        useDiffusionCorrection: true,
+        useOrderedCorrection: true
       })
     })
 
@@ -243,13 +245,17 @@ describe('Config Store', () => {
       store.set(setDitheringAtom, { intensity: 0.8 })
       expect(store.get(ditheringAtom)).toEqual({
         mode: 'floydSteinberg',
-        intensity: 0.8
+        intensity: 0.8,
+        useDiffusionCorrection: true,
+        useOrderedCorrection: true
       })
 
       store.set(setDitheringAtom, { mode: 'bayer4x4' })
       expect(store.get(ditheringAtom)).toEqual({
         mode: 'bayer4x4',
-        intensity: 0.8
+        intensity: 0.8,
+        useDiffusionCorrection: true,
+        useOrderedCorrection: true
       })
     })
 
