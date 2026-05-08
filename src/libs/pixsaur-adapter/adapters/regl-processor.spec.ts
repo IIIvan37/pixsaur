@@ -78,20 +78,28 @@ describe('ReGLProcessor', () => {
       chromaKeyTolerance: 30
     }
 
-    // Mock ReGL complet
-    mockRegl = {
-      texture: vi.fn(() => ({
-        destroy: vi.fn(),
-        width: 1,
-        height: 1
-      })),
-      framebuffer: vi.fn(() => ({
-        use: vi.fn((callback) => callback()),
+    // Mock ReGL complet: ReGL itself is callable and also exposes helpers.
+    mockRegl = Object.assign(
+      vi.fn(() => vi.fn()),
+      {
+        _gl: {
+          MAX_TEXTURE_SIZE: 0x0d33,
+          getExtension: vi.fn(() => null),
+          getParameter: vi.fn(() => 2048)
+        },
+        texture: vi.fn(() => ({
+          destroy: vi.fn(),
+          width: 1,
+          height: 1
+        })),
+        framebuffer: vi.fn(() => ({
+          use: vi.fn((callback) => callback()),
+          destroy: vi.fn()
+        })),
+        read: vi.fn(),
         destroy: vi.fn()
-      })),
-      read: vi.fn(),
-      destroy: vi.fn()
-    } as any
+      }
+    ) as any
   })
 
   describe('Constructeur et disponibilité', () => {

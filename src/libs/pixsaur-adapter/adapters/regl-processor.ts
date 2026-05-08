@@ -371,11 +371,11 @@ export class ReGLProcessor implements ImageProcessor {
   } {
     try {
       const canvas = document.createElement('canvas')
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+      const webgl2Context = canvas.getContext('webgl2')
+      const gl = webgl2Context || canvas.getContext('webgl')
 
       if (gl) {
-        const version =
-          gl instanceof WebGL2RenderingContext ? 'WebGL 2.0' : 'WebGL 1.0'
+        const version = webgl2Context ? 'WebGL 2.0' : 'WebGL 1.0'
         const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE)
 
         return {
