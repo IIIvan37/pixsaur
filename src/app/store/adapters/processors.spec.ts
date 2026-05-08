@@ -60,7 +60,7 @@ describe('processorFactory and processor lifecycle', () => {
     expect(() => proc.dispose()).not.toThrow()
   })
 
-  it('falls back to CPU when ReGL creation fails', async () => {
+  it('falls back to CPU in auto mode when ReGL creation fails', async () => {
     // Mock `regl` module to throw on creation
     vi.doMock('regl', () => ({
       __esModule: true,
@@ -74,7 +74,7 @@ describe('processorFactory and processor lifecycle', () => {
       '@/libs/pixsaur-adapter'
     )
 
-    const proc = await mockedFactory.createBestProcessor('gpu')
+    const proc = await mockedFactory.createBestProcessor('auto')
     // Can't use toBeInstanceOf because the mocked module import creates a different class reference
     // Instead, verify the processor has the expected interface and behavior
     expect(proc).toBeDefined()
