@@ -5,7 +5,7 @@
  */
 
 import { atom } from 'jotai'
-import type { PaletteStrategy, ProcessorType } from './types'
+import type { Mode0Filter, PaletteStrategy, ProcessorType } from './types'
 
 // ============================================================================
 // CORE ATOMS
@@ -47,6 +47,12 @@ export const autoDistinctMappingAtom = atom<boolean>(false)
  */
 export const colorDiversityAtom = atom<number>(50)
 
+/**
+ * Reconstruction filter for the mode 0 linear-light horizontal 2:1 downscale.
+ * Only applies to CPC mode 0 in 'origin' resize. Lanczos-2 = best quality.
+ */
+export const mode0FilterAtom = atom<Mode0Filter>('lanczos2')
+
 // ============================================================================
 // SETTERS
 // ============================================================================
@@ -78,5 +84,15 @@ export const setColorDiversityAtom = atom(
   null,
   (_get, set, payload: number) => {
     set(colorDiversityAtom, Math.max(0, Math.min(100, payload)))
+  }
+)
+
+/**
+ * Setter for the mode 0 resample filter
+ */
+export const setMode0FilterAtom = atom(
+  null,
+  (_get, set, payload: Mode0Filter) => {
+    set(mode0FilterAtom, payload)
   }
 )

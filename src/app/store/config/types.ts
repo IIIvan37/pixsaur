@@ -22,6 +22,9 @@ export type CpcModeKey =
 // Processor types for image processing
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
+// Reconstruction filter for the mode 0 linear-light horizontal 2:1 downscale
+export type Mode0Filter = 'box' | 'tent' | 'lanczos2'
+
 // Palette selection strategy for color quantization
 export type PaletteStrategy =
   | 'exhaustive-contrast' // Exhaustive search: tests all combinations, maximizes min distance

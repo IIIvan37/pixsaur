@@ -104,9 +104,11 @@ export {
   autoDistinctMappingAtom,
   colorDiversityAtom,
   horizontalSmoothingAtom,
+  mode0FilterAtom,
   paletteStrategyAtom,
   processorTypeAtom,
   setColorDiversityAtom,
+  setMode0FilterAtom,
   setPaletteStrategyAtom,
   setProcessorTypeAtom,
   smoothingAtom
