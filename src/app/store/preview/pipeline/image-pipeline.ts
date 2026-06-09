@@ -9,7 +9,8 @@ import { logger } from '@/core'
 import {
   applyHorizontalSmoothing,
   getPixelWidthForMode,
-  getVisualRegion
+  getVisualRegion,
+  resampleMode0Origin
 } from '@/preview'
 import { applyResize, type Selection } from '@/source'
 import {
@@ -18,6 +19,7 @@ import {
   cpcHardwareAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
+  mode0FilterAtom,
   pixelModeAtom,
   resizeModeAtom
 } from '../../config/config'
@@ -51,13 +53,22 @@ export const croppedImageAtom = atom(async (get) => {
  * - 'origin': Keep original dimensions
  */
 export const resizedImageAtom = atom(async (get) => {
-  const cropped = await get(croppedImageAtom)
+  // Read all atoms synchronously (before any await) so Jotai tracks them.
   const resizeMode = get(resizeModeAtom)
   const modeConfig = get(effectiveModeConfigAtom)
   const centerImage = get(centerImageAtom)
+  const mode0Filter = get(mode0FilterAtom)
+  const cropped = await get(croppedImageAtom)
 
   if (!cropped) {
     return cropped
+  }
+
+  // Mode 0 'origin': linear-light horizontal 2:1 downscale (filter + decimate)
+  // instead of the gamma-space canvas drawImage path.
+  const isMode0 = modeConfig.mode === 0 && modeConfig.nColors === 16
+  if (resizeMode === 'origin' && isMode0) {
+    return resampleMode0Origin(cropped, modeConfig, mode0Filter, centerImage)
   }
 
   // Convert ImageData to Canvas for applyResize
@@ -114,15 +125,23 @@ export const resizedImageAtom = atom(async (get) => {
  * Disabled when distinct-mapping is active (CPC Classic + Mode 0)
  */
 export const smoothedImageAtom = atom(async (get) => {
-  const resized = await get(resizedImageAtom)
   const horizontalSmoothing = get(horizontalSmoothingAtom)
   const pixelMode = get(pixelModeAtom)
   const autoDistinctMapping = get(autoDistinctMappingAtom)
   const cpcHardware = get(cpcHardwareAtom)
   const modeConfig = get(effectiveModeConfigAtom)
+  const resizeMode = get(resizeModeAtom)
+  const resized = await get(resizedImageAtom)
 
   if (!resized) {
     return null
+  }
+
+  // Mode 0 'origin' already ran the linear-light resampler (which IS the
+  // anti-alias filter). A second gamma-space box blur would undo the gain.
+  const isMode0 = modeConfig.mode === 0 && modeConfig.nColors === 16
+  if (resizeMode === 'origin' && isMode0) {
+    return resized
   }
 
   // Disable smoothing when distinct-mapping is active (CPC Classic + Mode 0)
