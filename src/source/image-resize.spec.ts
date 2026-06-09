@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ResizeConfig } from '@/app/store/config/resize-types'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
-import { applyResize, extractSelection, type Selection } from '@/source'
+import {
+  applyResize,
+  computeOriginContentRect,
+  extractSelection,
+  type Selection
+} from '@/source'
 
 // Mock canvas for testing (happy-dom doesn't support 2D context fully)
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {
@@ -156,6 +161,51 @@ describe('image-resize', () => {
       // Limité aux dimensions CPC
       expect(result.width).toBe(320)
       expect(result.height).toBe(200)
+    })
+  })
+
+  describe('computeOriginContentRect', () => {
+    it('maps a full-width mode 0 selection to 160 with no padding', () => {
+      const selection: Selection = { sx: 0, sy: 0, width: 320, height: 200 }
+      const rect = computeOriginContentRect(
+        selection,
+        CPC_MODE_CONFIG['0'],
+        true
+      )
+
+      expect(rect.destWidth).toBe(160)
+      expect(rect.destHeight).toBe(200)
+      expect(rect.dx).toBe(0)
+      expect(rect.dy).toBe(0)
+      expect(rect.sourceWidth).toBe(320)
+      expect(rect.sourceHeight).toBe(200)
+    })
+
+    it('centers a narrow mode 0 selection with horizontal padding', () => {
+      // width 200 -> destWidth floor(200/2)=100, centered in 160 -> dx=30
+      const selection: Selection = { sx: 0, sy: 0, width: 200, height: 200 }
+      const rect = computeOriginContentRect(
+        selection,
+        CPC_MODE_CONFIG['0'],
+        true
+      )
+
+      expect(rect.destWidth).toBe(100)
+      expect(rect.dx).toBe(30)
+      expect(rect.destHeight).toBe(200)
+      expect(rect.dy).toBe(0)
+    })
+
+    it('does not pad when centerImage is false', () => {
+      const selection: Selection = { sx: 0, sy: 0, width: 200, height: 200 }
+      const rect = computeOriginContentRect(
+        selection,
+        CPC_MODE_CONFIG['0'],
+        false
+      )
+
+      expect(rect.dx).toBe(0)
+      expect(rect.dy).toBe(0)
     })
   })
 

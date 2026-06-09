@@ -11,6 +11,50 @@ export interface Selection {
   height: number
 }
 
+/** Placement of the source content inside the CPC-native canvas (origin mode). */
+export interface OriginContentRect {
+  /** Source pixels read from the selection. */
+  sourceWidth: number
+  sourceHeight: number
+  /** Content size once mapped to CPC native pixels. */
+  destWidth: number
+  destHeight: number
+  /** Top-left offset of the content inside the CPC canvas (centering padding). */
+  dx: number
+  dy: number
+}
+
+/**
+ * Compute how a selection maps onto the CPC-native canvas in 'origin' mode:
+ * the source region read, the destination content size (after the mode's
+ * horizontal pixel-ratio compression), and the centering offsets. Shared by
+ * `resizeOrigin` and the mode-0 linear resampler so both stay in sync.
+ */
+export function computeOriginContentRect(
+  selection: Selection,
+  modeConfig: ResizeConfig['modeConfig'],
+  centerImage = true
+): OriginContentRect {
+  const {
+    width: targetWidth,
+    height: targetHeight,
+    scaleX,
+    scaleY
+  } = modeConfig
+  const pixelRatio = scaleX / scaleY
+
+  const sourceWidth = Math.min(selection.width, targetWidth * pixelRatio)
+  const sourceHeight = Math.min(selection.height, targetHeight)
+
+  const destWidth = Math.min(Math.floor(sourceWidth / pixelRatio), targetWidth)
+  const destHeight = Math.min(sourceHeight, targetHeight)
+
+  const dx = centerImage ? Math.floor((targetWidth - destWidth) / 2) : 0
+  const dy = centerImage ? Math.floor((targetHeight - destHeight) / 2) : 0
+
+  return { sourceWidth, sourceHeight, destWidth, destHeight, dx, dy }
+}
+
 export function applyResize(
   sourceCanvas: HTMLCanvasElement,
   selection: Selection,
@@ -46,13 +90,7 @@ function resizeOrigin(
   // Mode 0 : 160×200 (pixels CPC, seront étirés par le pipeline de preview)
   // Mode 1 : 320×200 (pixels carrés)
   // Mode 2 : 640×200 (mais limité par la sélection)
-  const { width: cpcWidth, height: cpcHeight } = config.modeConfig
-  const { scaleX, scaleY } = config.modeConfig
-  const pixelRatio = scaleX / scaleY
-
-  // Dimensions de sortie = dimensions CPC natives (pas d'affichage)
-  const targetWidth = cpcWidth // 160 pour mode 0, 320 pour mode 1
-  const targetHeight = cpcHeight // 200 pour tous les modes
+  const { width: targetWidth, height: targetHeight } = config.modeConfig
 
   const outputCanvas = document.createElement('canvas')
   outputCanvas.width = targetWidth
@@ -66,25 +104,9 @@ function resizeOrigin(
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, targetWidth, targetHeight)
 
-  // Calculer combien de pixels source on peut mapper sur le canvas CPC
-  // Mode 0 : 1 pixel CPC = 2 pixels source (ratio 2:1)
-  // Mode 1 : 1 pixel CPC = 1 pixel source (ratio 1:1)
-  // Mode 2 : 1 pixel CPC = 0.5 pixel source (ratio 0.5:1, mais on prend 1:1 en pratique)
-
-  // Pixels source couverts par le canvas CPC
-  const sourceWidthCovered = targetWidth * pixelRatio // 160*2=320 pour mode 0
-  const sourceHeightCovered = targetHeight // 200
-
-  // Pixels source à lire (limités par la sélection)
-  const sourceWidth = Math.min(selection.width, sourceWidthCovered)
-  const sourceHeight = Math.min(selection.height, sourceHeightCovered)
-
-  // Pixels CPC de destination
-  const destWidth = Math.min(Math.floor(sourceWidth / pixelRatio), targetWidth)
-  const destHeight = Math.min(sourceHeight, targetHeight)
-
-  const dx = centerImage ? Math.floor((targetWidth - destWidth) / 2) : 0
-  const dy = centerImage ? Math.floor((targetHeight - destHeight) / 2) : 0
+  // Mapping source -> CPC natif (compression horizontale selon le pixel-ratio du mode)
+  const { sourceWidth, sourceHeight, destWidth, destHeight, dx, dy } =
+    computeOriginContentRect(selection, config.modeConfig, centerImage)
 
   // Compression directe de la source vers les dimensions CPC
   // Mode 0 : 320×200 source → 160×200 CPC (compression horizontale)
