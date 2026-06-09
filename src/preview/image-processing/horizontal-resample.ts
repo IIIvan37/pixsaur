@@ -1,11 +1,15 @@
 /**
- * Separable horizontal resampler in linear light.
+ * Separable resampler in linear light.
  *
- * Downscaling (e.g. CPC mode 0: ~320 -> 160 wide) is a 2:1 resampling: filter
- * then decimate. Doing it in gamma/sRGB space darkens and dirties fine detail;
- * this resampler converts to linear light, applies a reconstruction filter over
- * the horizontal axis, then re-encodes to sRGB. The vertical axis is never
- * touched — output is `destWidth × src.height`.
+ * Downscaling (e.g. CPC mode 0: ~320 -> 160 wide, or the 2D scale-to-fit of the
+ * auto/cover resize modes) is a resampling: filter then decimate. Doing it in
+ * gamma/sRGB space darkens and dirties fine detail; this resampler converts to
+ * linear light, applies a reconstruction filter, then re-encodes to sRGB.
+ *
+ * `resampleLinear` resamples both axes (separable: horizontal pass then vertical
+ * pass, with a single sRGB<->linear round-trip). `resampleHorizontalLinear` is a
+ * thin wrapper that keeps the height unchanged (used by the mode 0 'origin' path
+ * where the vertical axis is 1:1).
  */
 
 import { linearToSrgb, srgbToLinear } from '@/libs/pixsaur-color/src/space'
@@ -48,26 +52,31 @@ const SRGB_TO_LINEAR_LUT = (() => {
   return lut
 })()
 
-interface ColumnTaps {
+interface AxisTaps {
   readonly indices: number[]
   readonly weights: number[]
 }
 
 /**
- * Precompute the source taps + normalized weights for each destination column.
- * The same set applies to every row, so this runs once per resample.
+ * Precompute source taps + normalized weights for each destination index along
+ * one axis. The same set applies to every line, so this runs once per axis.
+ * Downscaling only (ratio >= 1): for upscaling the support would shrink, which
+ * we never need here.
  */
-function buildColumnTaps(
-  srcWidth: number,
-  destWidth: number,
+function buildAxisTaps(
+  srcLen: number,
+  destLen: number,
   filter: ResampleFilter
-): ColumnTaps[] {
-  const ratio = srcWidth / destWidth
-  const support = FILTER_RADIUS[filter] * ratio
-  const columns: ColumnTaps[] = []
+): AxisTaps[] {
+  const ratio = srcLen / destLen
+  // For downscaling, widen the filter support by the ratio; for ratio < 1
+  // (no downscale) keep the native support so the result is an identity.
+  const scale = Math.max(1, ratio)
+  const support = FILTER_RADIUS[filter] * scale
+  const taps: AxisTaps[] = []
 
-  for (let dx = 0; dx < destWidth; dx++) {
-    const center = (dx + 0.5) * ratio - 0.5
+  for (let d = 0; d < destLen; d++) {
+    const center = (d + 0.5) * ratio - 0.5
     const start = Math.floor(center - support)
     const end = Math.ceil(center + support)
 
@@ -75,11 +84,11 @@ function buildColumnTaps(
     const weights: number[] = []
     let sum = 0
 
-    for (let sx = start; sx <= end; sx++) {
-      const w = kernel(filter, (sx - center) / ratio)
+    for (let s = start; s <= end; s++) {
+      const w = kernel(filter, (s - center) / scale)
       if (w === 0) continue
       // Edge clamp: replicate the border pixel for out-of-range taps.
-      const clamped = sx < 0 ? 0 : sx > srcWidth - 1 ? srcWidth - 1 : sx
+      const clamped = s < 0 ? 0 : s > srcLen - 1 ? srcLen - 1 : s
       indices.push(clamped)
       weights.push(w)
       sum += w
@@ -90,50 +99,99 @@ function buildColumnTaps(
       for (let i = 0; i < weights.length; i++) weights[i] /= sum
     }
 
-    columns.push({ indices, weights })
+    taps.push({ indices, weights })
   }
 
-  return columns
+  return taps
 }
 
-export function resampleHorizontalLinear(
+function clamp01(v: number): number {
+  return v < 0 ? 0 : v > 1 ? 1 : v
+}
+
+/**
+ * Resample `src` to `destWidth × destHeight` in linear light with the given
+ * reconstruction filter. Separable: horizontal pass then vertical pass.
+ */
+export function resampleLinear(
   src: ImageData,
   destWidth: number,
+  destHeight: number,
   filter: ResampleFilter
 ): ImageData {
-  const { width: srcWidth, height, data } = src
-  const out = new ImageData(destWidth, height)
-  const columns = buildColumnTaps(srcWidth, destWidth, filter)
+  const { width: srcW, height: srcH, data } = src
 
-  for (let y = 0; y < height; y++) {
-    const rowOffset = y * srcWidth
+  // 1. Decode source to linear-light float (alpha normalized to [0,1]).
+  const lin = new Float32Array(srcW * srcH * 4)
+  for (let i = 0; i < lin.length; i += 4) {
+    lin[i] = SRGB_TO_LINEAR_LUT[data[i]]
+    lin[i + 1] = SRGB_TO_LINEAR_LUT[data[i + 1]]
+    lin[i + 2] = SRGB_TO_LINEAR_LUT[data[i + 2]]
+    lin[i + 3] = data[i + 3] / 255
+  }
+
+  // 2. Horizontal pass: srcW -> destWidth (intermediate is destWidth × srcH).
+  const colTaps = buildAxisTaps(srcW, destWidth, filter)
+  const tmp = new Float32Array(destWidth * srcH * 4)
+  for (let y = 0; y < srcH; y++) {
+    const rowIn = y * srcW * 4
+    const rowOut = y * destWidth * 4
     for (let dx = 0; dx < destWidth; dx++) {
-      const { indices, weights } = columns[dx]
+      const { indices, weights } = colTaps[dx]
       let r = 0
       let g = 0
       let b = 0
       let a = 0
-
-      for (let i = 0; i < indices.length; i++) {
-        const srcIdx = (rowOffset + indices[i]) * 4
-        const w = weights[i]
-        r += SRGB_TO_LINEAR_LUT[data[srcIdx]] * w
-        g += SRGB_TO_LINEAR_LUT[data[srcIdx + 1]] * w
-        b += SRGB_TO_LINEAR_LUT[data[srcIdx + 2]] * w
-        a += data[srcIdx + 3] * w // alpha is linear already
+      for (let k = 0; k < indices.length; k++) {
+        const idx = rowIn + indices[k] * 4
+        const w = weights[k]
+        r += lin[idx] * w
+        g += lin[idx + 1] * w
+        b += lin[idx + 2] * w
+        a += lin[idx + 3] * w
       }
+      const o = rowOut + dx * 4
+      tmp[o] = r
+      tmp[o + 1] = g
+      tmp[o + 2] = b
+      tmp[o + 3] = a
+    }
+  }
 
-      const destIdx = (y * destWidth + dx) * 4
-      out.data[destIdx] = Math.round(clamp01(linearToSrgb(r)) * 255)
-      out.data[destIdx + 1] = Math.round(clamp01(linearToSrgb(g)) * 255)
-      out.data[destIdx + 2] = Math.round(clamp01(linearToSrgb(b)) * 255)
-      out.data[destIdx + 3] = Math.round(a)
+  // 3. Vertical pass: srcH -> destHeight.
+  const rowTaps = buildAxisTaps(srcH, destHeight, filter)
+  const out = new ImageData(destWidth, destHeight)
+  for (let dx = 0; dx < destWidth; dx++) {
+    for (let dy = 0; dy < destHeight; dy++) {
+      const { indices, weights } = rowTaps[dy]
+      let r = 0
+      let g = 0
+      let b = 0
+      let a = 0
+      for (let k = 0; k < indices.length; k++) {
+        const idx = (indices[k] * destWidth + dx) * 4
+        const w = weights[k]
+        r += tmp[idx] * w
+        g += tmp[idx + 1] * w
+        b += tmp[idx + 2] * w
+        a += tmp[idx + 3] * w
+      }
+      const o = (dy * destWidth + dx) * 4
+      out.data[o] = Math.round(clamp01(linearToSrgb(r)) * 255)
+      out.data[o + 1] = Math.round(clamp01(linearToSrgb(g)) * 255)
+      out.data[o + 2] = Math.round(clamp01(linearToSrgb(b)) * 255)
+      out.data[o + 3] = Math.round(clamp01(a) * 255)
     }
   }
 
   return out
 }
 
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v
+/** Resample horizontally only (height unchanged). */
+export function resampleHorizontalLinear(
+  src: ImageData,
+  destWidth: number,
+  filter: ResampleFilter
+): ImageData {
+  return resampleLinear(src, destWidth, src.height, filter)
 }

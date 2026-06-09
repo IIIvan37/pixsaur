@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resampleHorizontalLinear } from './horizontal-resample'
+import { resampleHorizontalLinear, resampleLinear } from './horizontal-resample'
 
 describe('resampleHorizontalLinear', () => {
   it('averages a white/black pair in LINEAR light (~188), not gamma (128)', () => {
@@ -61,6 +61,44 @@ describe('resampleHorizontalLinear', () => {
     expect(out.data[0]).toBe(240)
     expect(out.data[last]).toBe(240)
   })
+
+  it('vertically averages a white/black pair in LINEAR light (~188)', () => {
+    // 1×2 -> 1×1: same headline proof, but on the vertical axis.
+    const src = new ImageData(1, 2)
+    src.data.set([255, 255, 255, 255, 0, 0, 0, 255])
+
+    const out = resampleLinear(src, 1, 1, 'box')
+
+    expect(out.width).toBe(1)
+    expect(out.height).toBe(1)
+    expect(out.data[0]).toBe(188)
+  })
+
+  it('downscales both axes to the requested size', () => {
+    const src = new ImageData(320, 240)
+    const out = resampleLinear(src, 160, 200, 'lanczos2')
+    expect(out.width).toBe(160)
+    expect(out.height).toBe(200)
+  })
+
+  it.each(['box', 'tent', 'lanczos2'] as const)(
+    '2D preserves a uniform color with %s',
+    (filter) => {
+      const src = new ImageData(8, 8)
+      for (let i = 0; i < src.data.length; i += 4) {
+        src.data.set([100, 150, 200, 255], i)
+      }
+
+      const out = resampleLinear(src, 4, 4, filter)
+
+      for (let i = 0; i < out.data.length; i += 4) {
+        expect(out.data[i]).toBe(100)
+        expect(out.data[i + 1]).toBe(150)
+        expect(out.data[i + 2]).toBe(200)
+        expect(out.data[i + 3]).toBe(255)
+      }
+    }
+  )
 
   it('resamples each row independently (vertical axis untouched)', () => {
     const src = new ImageData(2, 2)
