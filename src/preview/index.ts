@@ -10,5 +10,5 @@ export type {
 export * from './get-visual-region'
 export * from './image-processing/horizontal-resample'
 export * from './image-processing/horizontal-smoothing'
-export * from './image-processing/mode0-resample'
+export * from './image-processing/resize-resample'
 export * from './validate-custom-dimensions'

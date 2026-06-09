@@ -39,9 +39,9 @@ export function getVisualRegionNormalized(
   const scaledH = Math.round(src.height * scale * pixelAspectRatio)
   if (scaledW === 0 || scaledH === 0) return null
 
-  // Mode 0: the horizontal 2:1 squeeze (and any vertical scale) must happen in
-  // linear light. Other modes keep the canvas path (out of scope).
-  if (filter && modeConfig.mode === 0) {
+  // Linear-light scale-to-fit when a filter is provided (all pixel modes).
+  // Without a filter, fall back to the legacy canvas path below.
+  if (filter) {
     return resampleLinear(src, scaledW, scaledH, filter)
   }
 

@@ -1,12 +1,12 @@
 /**
- * CPC mode 0 horizontal 2:1 downscale in linear light.
+ * Linear-light resize for the standard CPC pixel modes (0/1/2 + overscan).
  *
- * Replaces the gamma-space canvas `drawImage` path for mode 0 'origin' resize:
- * reads the covered source region, resamples it horizontally to the CPC-native
- * width with the chosen filter, then places it (centered, black padding) into a
- * mode-0-sized canvas. Vertical rows are never scaled — in origin mode the
- * destination height always equals the source height, so this stays a pure
- * horizontal resample. ImageData-only (no canvas) so it is unit-testable.
+ * Replaces the gamma-space canvas `drawImage` path. Mode-agnostic: the
+ * destination geometry comes entirely from `modeConfig` via the shared
+ * `computeOriginContentRect` / `computeCoverCropRect` helpers. 'origin' never
+ * scales vertically (dest height == source height) so it stays a pure
+ * horizontal resample; 'cover' is a full 2D resample. ImageData-only (no
+ * canvas) so it is unit-testable.
  */
 
 import type { CpcModeConfig } from '@/app/store/config/types'
@@ -56,7 +56,7 @@ function cropRegion(
   return out
 }
 
-export function resampleMode0Origin(
+export function resampleOriginLinear(
   cropped: ImageData,
   modeConfig: CpcModeConfig,
   filter: ResampleFilter,
@@ -75,7 +75,7 @@ export function resampleMode0Origin(
   const region = cropTopLeft(cropped, sourceWidth, sourceHeight)
   const resampled = resampleHorizontalLinear(region, destWidth, filter)
 
-  // Opaque-black mode-0 canvas, content blitted at the centering offset.
+  // Opaque-black CPC-native canvas, content blitted at the centering offset.
   const out = new ImageData(modeConfig.width, modeConfig.height)
   for (let i = 0; i < out.data.length; i += 4) out.data[i + 3] = 255
 
@@ -92,10 +92,10 @@ export function resampleMode0Origin(
 }
 
 /**
- * Mode 0 'cover' linear downscale: crop the source to the CPC perceived aspect
- * (centered), then resample it to fill the full mode-0 canvas in linear light.
+ * 'cover' linear downscale: crop the source to the CPC perceived aspect
+ * (centered), then resample it to fill the full CPC canvas in linear light.
  */
-export function resampleMode0Cover(
+export function resampleCoverLinear(
   cropped: ImageData,
   modeConfig: CpcModeConfig,
   filter: ResampleFilter
