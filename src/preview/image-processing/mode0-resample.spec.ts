@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
-import { resampleMode0Origin } from './mode0-resample'
+import { resampleMode0Cover, resampleMode0Origin } from './mode0-resample'
 
 const MODE0 = CPC_MODE_CONFIG['0'] // 160×200, ratio 2
 
@@ -62,5 +62,22 @@ describe('resampleMode0Origin', () => {
 
     // Content starts at column 0.
     expect(Array.from(out.data.slice(0, 4))).toEqual([255, 0, 0, 255])
+  })
+})
+
+describe('resampleMode0Cover', () => {
+  it('crops to aspect and fills 160×200 (no padding)', () => {
+    // 400×200 -> crop to 320×200 (centered), then downscale to 160×200.
+    const src = solid(400, 200, [10, 200, 30])
+    const out = resampleMode0Cover(src, MODE0, 'box')
+
+    expect(out.width).toBe(160)
+    expect(out.height).toBe(200)
+    // Fully covered: corners are the source color, fully opaque (no black bars).
+    expect(Array.from(out.data.slice(0, 4))).toEqual([10, 200, 30, 255])
+    const last = (160 * 200 - 1) * 4
+    expect(Array.from(out.data.slice(last, last + 4))).toEqual([
+      10, 200, 30, 255
+    ])
   })
 })

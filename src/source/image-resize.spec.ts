@@ -3,6 +3,7 @@ import type { ResizeConfig } from '@/app/store/config/resize-types'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
 import {
   applyResize,
+  computeCoverCropRect,
   computeOriginContentRect,
   extractSelection,
   type Selection
@@ -206,6 +207,32 @@ describe('image-resize', () => {
 
       expect(rect.dx).toBe(0)
       expect(rect.dy).toBe(0)
+    })
+  })
+
+  describe('computeCoverCropRect', () => {
+    it('crops width when the source is wider than the perceived aspect (mode 0)', () => {
+      // Mode 0 perceived aspect = (160*2)/200 = 1.6. Source 400×200 -> aspect 2.
+      const selection: Selection = { sx: 0, sy: 0, width: 400, height: 200 }
+      const rect = computeCoverCropRect(selection, CPC_MODE_CONFIG['0'])
+
+      // newWidth = 200 * 1.6 = 320, centered -> srcX = (400-320)/2 = 40
+      expect(rect.srcW).toBe(320)
+      expect(rect.srcX).toBe(40)
+      expect(rect.srcH).toBe(200)
+      expect(rect.srcY).toBe(0)
+    })
+
+    it('crops height when the source is taller than the perceived aspect', () => {
+      // Source 320×400 -> aspect 0.8 < 1.6 -> crop height.
+      const selection: Selection = { sx: 0, sy: 0, width: 320, height: 400 }
+      const rect = computeCoverCropRect(selection, CPC_MODE_CONFIG['0'])
+
+      // newHeight = 320 / 1.6 = 200, centered -> srcY = (400-200)/2 = 100
+      expect(rect.srcH).toBe(200)
+      expect(rect.srcY).toBe(100)
+      expect(rect.srcW).toBe(320)
+      expect(rect.srcX).toBe(0)
     })
   })
 

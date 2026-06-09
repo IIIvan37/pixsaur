@@ -10,6 +10,7 @@ import {
   applyHorizontalSmoothing,
   getPixelWidthForMode,
   getVisualRegion,
+  resampleMode0Cover,
   resampleMode0Origin
 } from '@/preview'
 import { applyResize, type Selection } from '@/source'
@@ -64,11 +65,15 @@ export const resizedImageAtom = atom(async (get) => {
     return cropped
   }
 
-  // Mode 0 'origin': linear-light horizontal 2:1 downscale (filter + decimate)
-  // instead of the gamma-space canvas drawImage path.
+  // Mode 0: linear-light downscale (filter + decimate) instead of the
+  // gamma-space canvas drawImage path. 'auto' is handled later in
+  // normalizedImageAtom; 'origin' and 'cover' are handled here.
   const isMode0 = modeConfig.mode === 0 && modeConfig.nColors === 16
-  if (resizeMode === 'origin' && isMode0) {
+  if (isMode0 && resizeMode === 'origin') {
     return resampleMode0Origin(cropped, modeConfig, mode0Filter, centerImage)
+  }
+  if (isMode0 && resizeMode === 'cover') {
+    return resampleMode0Cover(cropped, modeConfig, mode0Filter)
   }
 
   // Convert ImageData to Canvas for applyResize
@@ -137,10 +142,10 @@ export const smoothedImageAtom = atom(async (get) => {
     return null
   }
 
-  // Mode 0 'origin' already ran the linear-light resampler (which IS the
-  // anti-alias filter). A second gamma-space box blur would undo the gain.
+  // Mode 0 'origin'/'cover' already ran the linear-light resampler (which IS
+  // the anti-alias filter). A second gamma-space box blur would undo the gain.
   const isMode0 = modeConfig.mode === 0 && modeConfig.nColors === 16
-  if (resizeMode === 'origin' && isMode0) {
+  if (isMode0 && (resizeMode === 'origin' || resizeMode === 'cover')) {
     return resized
   }
 

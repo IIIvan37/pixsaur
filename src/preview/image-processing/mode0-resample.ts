@@ -10,10 +10,15 @@
  */
 
 import type { CpcModeConfig } from '@/app/store/config/types'
-import { computeOriginContentRect, type Selection } from '@/source/image-resize'
+import {
+  computeCoverCropRect,
+  computeOriginContentRect,
+  type Selection
+} from '@/source/image-resize'
 import {
   type ResampleFilter,
-  resampleHorizontalLinear
+  resampleHorizontalLinear,
+  resampleLinear
 } from './horizontal-resample'
 
 /** Copy the top-left `width × height` region of `src` into a fresh ImageData. */
@@ -26,6 +31,27 @@ function cropTopLeft(src: ImageData, width: number, height: number): ImageData {
       src.data.subarray(srcStart, srcStart + width * 4),
       y * width * 4
     )
+  }
+  return out
+}
+
+/** Copy an arbitrary (clamped, integer) region of `src` into a fresh ImageData. */
+function cropRegion(
+  src: ImageData,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+): ImageData {
+  const ix = Math.max(0, Math.round(x))
+  const iy = Math.max(0, Math.round(y))
+  const iw = Math.min(src.width - ix, Math.round(w))
+  const ih = Math.min(src.height - iy, Math.round(h))
+  if (ix === 0 && iy === 0 && iw === src.width && ih === src.height) return src
+  const out = new ImageData(iw, ih)
+  for (let row = 0; row < ih; row++) {
+    const srcStart = ((iy + row) * src.width + ix) * 4
+    out.data.set(src.data.subarray(srcStart, srcStart + iw * 4), row * iw * 4)
   }
   return out
 }
@@ -63,4 +89,24 @@ export function resampleMode0Origin(
   }
 
   return out
+}
+
+/**
+ * Mode 0 'cover' linear downscale: crop the source to the CPC perceived aspect
+ * (centered), then resample it to fill the full mode-0 canvas in linear light.
+ */
+export function resampleMode0Cover(
+  cropped: ImageData,
+  modeConfig: CpcModeConfig,
+  filter: ResampleFilter
+): ImageData {
+  const selection: Selection = {
+    sx: 0,
+    sy: 0,
+    width: cropped.width,
+    height: cropped.height
+  }
+  const { srcX, srcY, srcW, srcH } = computeCoverCropRect(selection, modeConfig)
+  const region = cropRegion(cropped, srcX, srcY, srcW, srcH)
+  return resampleLinear(region, modeConfig.width, modeConfig.height, filter)
 }

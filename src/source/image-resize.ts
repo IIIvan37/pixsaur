@@ -55,6 +55,51 @@ export function computeOriginContentRect(
   return { sourceWidth, sourceHeight, destWidth, destHeight, dx, dy }
 }
 
+/** Source crop rectangle for 'cover' resize (scale-to-fill, centered crop). */
+export interface CoverCropRect {
+  srcX: number
+  srcY: number
+  srcW: number
+  srcH: number
+}
+
+/**
+ * Compute the centered source crop that matches the CPC perceived aspect ratio
+ * in 'cover' mode (excess cropped on the longer axis). Shared by `resizeCover`
+ * and the mode-0 linear resampler.
+ */
+export function computeCoverCropRect(
+  selection: Selection,
+  modeConfig: ResizeConfig['modeConfig']
+): CoverCropRect {
+  const {
+    width: targetWidth,
+    height: targetHeight,
+    scaleX,
+    scaleY
+  } = modeConfig
+  const pixelRatio = scaleX / scaleY
+  const sourceAspect = selection.width / selection.height
+  const targetPerceivedAspect = (targetWidth * pixelRatio) / targetHeight
+
+  let srcX = selection.sx
+  let srcY = selection.sy
+  let srcW = selection.width
+  let srcH = selection.height
+
+  if (sourceAspect > targetPerceivedAspect) {
+    const newWidth = selection.height * targetPerceivedAspect
+    srcX = selection.sx + (selection.width - newWidth) / 2
+    srcW = newWidth
+  } else if (sourceAspect < targetPerceivedAspect) {
+    const newHeight = selection.width / targetPerceivedAspect
+    srcY = selection.sy + (selection.height - newHeight) / 2
+    srcH = newHeight
+  }
+
+  return { srcX, srcY, srcW, srcH }
+}
+
 export function applyResize(
   sourceCanvas: HTMLCanvasElement,
   selection: Selection,
@@ -145,13 +190,8 @@ function resizeCover(
   selection: Selection,
   config: ResizeConfig
 ): HTMLCanvasElement {
-  const { width: cpcWidth, height: cpcHeight } = config.modeConfig
-  const { scaleX, scaleY } = config.modeConfig
-  const pixelRatio = scaleX / scaleY
-
   // Target dimensions in CPC native pixels
-  const targetWidth = cpcWidth
-  const targetHeight = cpcHeight
+  const { width: targetWidth, height: targetHeight } = config.modeConfig
 
   const outputCanvas = document.createElement('canvas')
   outputCanvas.width = targetWidth
@@ -162,33 +202,11 @@ function resizeCover(
     throw new Error('Failed to get 2D context')
   }
 
-  // Calculate PERCEIVED aspect ratios
-  // Source image has square pixels
-  const sourceAspect = selection.width / selection.height
-  // CPC target has non-square pixels in mode 0 (2:1) and mode 2 (0.5:1)
-  // The perceived aspect ratio = (targetWidth * pixelRatio) / targetHeight
-  const targetPerceivedAspect = (targetWidth * pixelRatio) / targetHeight
-
-  let srcX = selection.sx
-  let srcY = selection.sy
-  let srcW = selection.width
-  let srcH = selection.height
-
-  // Cover mode: scale to fill, crop excess to match perceived aspect ratio
-  if (sourceAspect > targetPerceivedAspect) {
-    // Source is wider than target (perceived): crop horizontally
-    // Keep full height, calculate width to match target aspect ratio
-    const newWidth = selection.height * targetPerceivedAspect
-    srcX = selection.sx + (selection.width - newWidth) / 2
-    srcW = newWidth
-  } else if (sourceAspect < targetPerceivedAspect) {
-    // Source is taller than target (perceived): crop vertically
-    // Keep full width, calculate height to match target aspect ratio
-    const newHeight = selection.width / targetPerceivedAspect
-    srcY = selection.sy + (selection.height - newHeight) / 2
-    srcH = newHeight
-  }
-  // If equal, no cropping needed
+  // Cover mode: scale to fill, crop excess to match perceived aspect ratio.
+  const { srcX, srcY, srcW, srcH } = computeCoverCropRect(
+    selection,
+    config.modeConfig
+  )
 
   ctx.imageSmoothingEnabled = true
   ctx.drawImage(
