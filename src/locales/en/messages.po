@@ -239,7 +239,7 @@ msgstr "Blue"
 msgid "Bonus de continuité"
 msgstr "Continuity Bonus"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:109
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:116
 msgid "Box"
 msgstr "Box"
 
@@ -247,15 +247,15 @@ msgstr "Box"
 msgid "Canaux RGB"
 msgstr "RGB Channels"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:134
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:141
 msgid "Centrage de l'image"
 msgstr "Image centering"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:137
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:144
 msgid "Centre automatiquement l'image dans le canvas aux dimensions CPC cibles."
 msgstr "Automatically centers the image in the canvas to target CPC dimensions."
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:150
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:157
 msgid "Centrer l'image"
 msgstr "Center image"
 
@@ -287,6 +287,14 @@ msgstr "Load an image to see the palettes"
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:64
 msgid "Choisissez la stratégie de génération de palette pour optimiser la qualité visuelle."
 msgstr "Choose the palette generation strategy to optimize visual quality."
+
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:109
+msgid "Classique"
+msgstr "Classic"
+
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:96
+msgid "Classique: ancien redimensionnement (espace gamma). Les autres rééchantillonnent en lumière linéaire — Lanczos-2: plus net; Tent: intermédiaire; Box: le plus doux."
+msgstr "Classic: legacy resize (gamma space). The others resample in linear light — Lanczos-2: sharper; Tent: in-between; Box: softest."
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:77
 #~ msgid "Clear"
@@ -660,12 +668,12 @@ msgid "File exported successfully!"
 msgstr "File exported successfully!"
 
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:93
-msgid "Filtre de réduction (Mode 0)"
-msgstr "Reduction filter (Mode 0)"
+#~ msgid "Filtre de réduction (Mode 0)"
+#~ msgstr "Reduction filter (Mode 0)"
 
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:96
-msgid "Filtre de rééchantillonnage pour la réduction horizontale 2:1 en lumière linéaire. Lanczos-2: plus net. Tent: intermédiaire. Box: le plus doux."
-msgstr "Resampling filter for the linear-light 2:1 horizontal reduction. Lanczos-2: sharper. Tent: in-between. Box: softest."
+#~ msgid "Filtre de rééchantillonnage pour la réduction horizontale 2:1 en lumière linéaire. Lanczos-2: plus net. Tent: intermédiaire. Box: le plus doux."
+#~ msgstr "Resampling filter for the linear-light 2:1 horizontal reduction. Lanczos-2: sharper. Tent: in-between. Box: softest."
 
 #: src/components/raster-panel/raster-panel-view.tsx:319
 #~ msgid "Fin"
@@ -790,7 +798,7 @@ msgstr "Palette Label"
 msgid "Label des données"
 msgstr "Data Label"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:123
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:130
 msgid "Lanczos-2"
 msgstr "Lanczos-2"
 
@@ -1383,6 +1391,10 @@ msgstr "Palette Strategy"
 #~ msgid "Stratégie de palette non utilisée en mode raster"
 #~ msgstr "Palette strategy not used in raster mode"
 
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:93
+msgid "Stratégie de redimensionnement"
+msgstr "Resize strategy"
+
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:45
 msgid "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
 msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
@@ -1407,7 +1419,7 @@ msgstr "Tint"
 msgid "Température"
 msgstr "Temperature"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:116
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:123
 msgid "Tent"
 msgstr "Tent"
 

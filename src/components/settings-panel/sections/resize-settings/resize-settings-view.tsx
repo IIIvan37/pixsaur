@@ -90,17 +90,24 @@ export function ResizeSettingsView({
 
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>
-              <Trans>Filtre de réduction (Mode 0)</Trans>
+              <Trans>Stratégie de redimensionnement</Trans>
             </h3>
             <p className={styles.description}>
               <Trans>
-                Filtre de rééchantillonnage pour la réduction horizontale 2:1 en
-                lumière linéaire. Lanczos-2: plus net. Tent: intermédiaire. Box:
-                le plus doux.
+                Classique: ancien redimensionnement (espace gamma). Les autres
+                rééchantillonnent en lumière linéaire — Lanczos-2: plus net;
+                Tent: intermédiaire; Box: le plus doux.
               </Trans>
             </p>
 
             <Flex direction='row' wrap='wrap' gap='1rem' align='flex-start'>
+              <Radio
+                name='resampleStrategy'
+                value='classic'
+                checked={strategy === 'classic'}
+                onChange={() => onStrategyChange('classic')}
+                label={t`Classique`}
+              />
               <Radio
                 name='resampleStrategy'
                 value='box'

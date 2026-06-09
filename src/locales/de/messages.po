@@ -239,7 +239,7 @@ msgstr "Blau"
 msgid "Bonus de continuité"
 msgstr "Kontinuitätsbonus"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:109
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:116
 msgid "Box"
 msgstr "Box"
 
@@ -247,15 +247,15 @@ msgstr "Box"
 msgid "Canaux RGB"
 msgstr "RGB-Kanäle"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:134
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:141
 msgid "Centrage de l'image"
 msgstr "Bildzentrierung"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:137
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:144
 msgid "Centre automatiquement l'image dans le canvas aux dimensions CPC cibles."
 msgstr "Zentriert das Bild automatisch auf die CPC-Zielabmessungen."
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:150
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:157
 msgid "Centrer l'image"
 msgstr "Bild zentrieren"
 
@@ -287,6 +287,14 @@ msgstr "Laden Sie ein Bild, um die Paletten zu sehen"
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:64
 msgid "Choisissez la stratégie de génération de palette pour optimiser la qualité visuelle."
 msgstr "Wählen Sie die Palettengenerierungsstrategie zur Optimierung der visuellen Qualität."
+
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:109
+msgid "Classique"
+msgstr "Klassisch"
+
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:96
+msgid "Classique: ancien redimensionnement (espace gamma). Les autres rééchantillonnent en lumière linéaire — Lanczos-2: plus net; Tent: intermédiaire; Box: le plus doux."
+msgstr "Klassisch: alte Größenänderung (Gamma-Raum). Die anderen resampeln im linearen Licht — Lanczos-2: schärfer; Tent: dazwischen; Box: am weichsten."
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:77
 #~ msgid "Clear"
@@ -660,12 +668,12 @@ msgid "File exported successfully!"
 msgstr "Datei erfolgreich exportiert!"
 
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:93
-msgid "Filtre de réduction (Mode 0)"
-msgstr "Reduktionsfilter (Modus 0)"
+#~ msgid "Filtre de réduction (Mode 0)"
+#~ msgstr "Reduktionsfilter (Modus 0)"
 
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:96
-msgid "Filtre de rééchantillonnage pour la réduction horizontale 2:1 en lumière linéaire. Lanczos-2: plus net. Tent: intermédiaire. Box: le plus doux."
-msgstr "Resampling-Filter für die horizontale 2:1-Reduktion im linearen Licht. Lanczos-2: schärfer. Tent: dazwischen. Box: am weichsten."
+#~ msgid "Filtre de rééchantillonnage pour la réduction horizontale 2:1 en lumière linéaire. Lanczos-2: plus net. Tent: intermédiaire. Box: le plus doux."
+#~ msgstr "Resampling-Filter für die horizontale 2:1-Reduktion im linearen Licht. Lanczos-2: schärfer. Tent: dazwischen. Box: am weichsten."
 
 #: src/components/raster-panel/raster-panel-view.tsx:105
 #~ msgid "Fin"
@@ -790,7 +798,7 @@ msgstr "Paletten-Label"
 msgid "Label des données"
 msgstr "Daten-Label"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:123
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:130
 msgid "Lanczos-2"
 msgstr "Lanczos-2"
 
@@ -1383,6 +1391,10 @@ msgstr "Palettenstrategie"
 #~ msgid "Stratégie de palette non utilisée en mode raster"
 #~ msgstr "Palettenstrategie wird im Raster-Modus nicht verwendet"
 
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:93
+msgid "Stratégie de redimensionnement"
+msgstr "Größenänderungsstrategie"
+
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:45
 msgid "Supports both CPC Classic and CPC Plus formats. The loader auto-detects the hardware type."
 msgstr "Unterstützt CPC Classic und CPC Plus Formate. Der Lader erkennt automatisch den Hardware-Typ."
@@ -1407,7 +1419,7 @@ msgstr "Farbstich"
 msgid "Température"
 msgstr "Temperatur"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:116
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:123
 msgid "Tent"
 msgstr "Tent"
 

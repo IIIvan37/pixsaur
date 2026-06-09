@@ -5,7 +5,6 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import {
   centerImageAtom,
-  pixelModeAtom,
   resampleStrategyAtom,
   resizeModeAtom,
   setResampleStrategyAtom,
@@ -19,13 +18,12 @@ export function ResizeSettings() {
   const setResizeMode = useSetAtom(setResizeModeAtom)
   const selection = useAtomValue(selectionAtom)
   const [centerImage, setCenterImage] = useAtom(centerImageAtom)
-  const pixelMode = useAtomValue(pixelModeAtom)
   const strategy = useAtomValue(resampleStrategyAtom)
   const setStrategy = useSetAtom(setResampleStrategyAtom)
 
-  // The linear resampler runs for CPC mode 0 in every resize mode
-  // (auto/cover/origin all downscale to the 2:1 mode-0 pixel grid).
-  const showStrategy = pixelMode === 0
+  // Applies to every pixel mode (all modes downscale in auto/cover, and mode 0
+  // also in origin). Mode 1 origin is 1:1, where the choice is a no-op.
+  const showStrategy = true
 
   return (
     <ResizeSettingsView

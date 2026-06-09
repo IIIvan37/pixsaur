@@ -98,6 +98,9 @@ describe('ResizeSettingsView', () => {
   it('shows the resample strategy selector when showStrategy is true', () => {
     renderWithProviders(<ResizeSettingsView {...defaultProps} showStrategy />)
 
+    expect(
+      screen.getByRole('radio', { name: /Classique/i })
+    ).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Box/i })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Tent/i })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Lanczos/i })).toBeChecked()
@@ -109,6 +112,14 @@ describe('ResizeSettingsView', () => {
     await userEvent.click(screen.getByRole('radio', { name: /Box/i }))
 
     expect(mockOnStrategyChange).toHaveBeenCalledWith('box')
+  })
+
+  it('calls onStrategyChange with classic for the legacy option', async () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} showStrategy />)
+
+    await userEvent.click(screen.getByRole('radio', { name: /Classique/i }))
+
+    expect(mockOnStrategyChange).toHaveBeenCalledWith('classic')
   })
 
   it('reflects correct checked state for center image switch', () => {
