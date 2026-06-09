@@ -195,11 +195,11 @@ msgstr "Aucune image traitée"
 #~ msgid "Aucune plage raster définie."
 #~ msgstr "Aucune plage raster définie."
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:61
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:68
 msgid "Auto (Smart CPC adapt)"
 msgstr "Auto (adaptation CPC intelligente)"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:40
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:47
 msgid "Auto: redimensionne pour que l'image tienne entièrement (recommandé). Cover: remplit les dimensions cibles en rognant l'excédent. Origin: conserve la taille originale (pixel-perfect)."
 msgstr "Auto: redimensionne pour que l'image tienne entièrement (recommandé). Cover: remplit les dimensions cibles en rognant l'excédent. Origin: conserve la taille originale (pixel-perfect)."
 
@@ -239,19 +239,23 @@ msgstr "Bleu"
 msgid "Bonus de continuité"
 msgstr "Bonus de continuité"
 
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:109
+msgid "Box"
+msgstr "Box"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:31
 msgid "Canaux RGB"
 msgstr "Canaux RGB"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:84
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:134
 msgid "Centrage de l'image"
 msgstr "Centrage de l'image"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:87
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:137
 msgid "Centre automatiquement l'image dans le canvas aux dimensions CPC cibles."
 msgstr "Centre automatiquement l'image dans le canvas aux dimensions CPC cibles."
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:100
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:150
 msgid "Centrer l'image"
 msgstr "Centrer l'image"
 
@@ -378,7 +382,7 @@ msgstr "Couleurs"
 msgid "Couleurs partagées"
 msgstr "Couleurs partagées"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:68
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:75
 msgid "Cover (Crop to fill)"
 msgstr "Cover (Crop to fill)"
 
@@ -656,6 +660,14 @@ msgstr "Le fichier {0} est trop volumineux (max 64 Ko). Fichier ignoré."
 msgid "File exported successfully!"
 msgstr "Fichier exporté avec succès !"
 
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:93
+msgid "Filtre de réduction (Mode 0)"
+msgstr "Filtre de réduction (Mode 0)"
+
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:96
+msgid "Filtre de rééchantillonnage pour la réduction horizontale 2:1 en lumière linéaire. Lanczos-2: plus net. Tent: intermédiaire. Box: le plus doux."
+msgstr "Filtre de rééchantillonnage pour la réduction horizontale 2:1 en lumière linéaire. Lanczos-2: plus net. Tent: intermédiaire. Box: le plus doux."
+
 #: src/components/raster-panel/raster-panel-view.tsx:319
 #~ msgid "Fin"
 #~ msgstr "Fin"
@@ -778,6 +790,10 @@ msgstr "Label de la palette"
 #: src/components/export-panel/export-config-dialog.tsx:221
 msgid "Label des données"
 msgstr "Label des données"
+
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:123
+msgid "Lanczos-2"
+msgstr "Lanczos-2"
 
 #: src/components/settings-panel/sections/hardware-settings/custom-dimensions-input/custom-dimensions-input-view.tsx:43
 msgid "Largeur"
@@ -908,7 +924,7 @@ msgstr "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
 #~ msgid "Mode de dithering"
 #~ msgstr "Mode de dithering"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:37
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:44
 msgid "Mode de redimensionnement"
 msgstr "Mode de redimensionnement"
 
@@ -1031,7 +1047,7 @@ msgstr "Optimisation..."
 msgid "Options de couleur"
 msgstr "Options de couleur"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:75
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:82
 msgid "Origin (No Scale)"
 msgstr "Origine (sans échelle)"
 
@@ -1315,7 +1331,7 @@ msgstr "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (format CPC entrelacé)"
 
-#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:50
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:57
 msgid "Sélection"
 msgstr "Sélection"
 
@@ -1391,6 +1407,10 @@ msgstr "Teinte colorée"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:137
 msgid "Température"
 msgstr "Température"
+
+#: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:116
+msgid "Tent"
+msgstr "Tent"
 
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:31

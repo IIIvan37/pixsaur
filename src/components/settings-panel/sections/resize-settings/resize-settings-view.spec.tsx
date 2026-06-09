@@ -7,12 +7,17 @@ describe('ResizeSettingsView', () => {
   const mockOnResizeModeChange = vi.fn()
   const mockOnCenterImageChange = vi.fn()
 
+  const mockOnMode0FilterChange = vi.fn()
+
   const defaultProps = {
     resizeMode: 'auto' as const,
     onResizeModeChange: mockOnResizeModeChange,
     selection: null,
     centerImage: false,
-    onCenterImageChange: mockOnCenterImageChange
+    onCenterImageChange: mockOnCenterImageChange,
+    showMode0Filter: false,
+    mode0Filter: 'lanczos2' as const,
+    onMode0FilterChange: mockOnMode0FilterChange
   }
 
   beforeEach(() => {
@@ -80,6 +85,34 @@ describe('ResizeSettingsView', () => {
 
     expect(autoRadio).toBeChecked()
     expect(originRadio).not.toBeChecked()
+  })
+
+  it('hides the mode 0 filter selector when showMode0Filter is false', () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} />)
+
+    expect(
+      screen.queryByRole('radio', { name: /Lanczos/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the mode 0 filter selector when showMode0Filter is true', () => {
+    renderWithProviders(
+      <ResizeSettingsView {...defaultProps} showMode0Filter />
+    )
+
+    expect(screen.getByRole('radio', { name: /Box/i })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Tent/i })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Lanczos/i })).toBeChecked()
+  })
+
+  it('calls onMode0FilterChange when a filter is clicked', async () => {
+    renderWithProviders(
+      <ResizeSettingsView {...defaultProps} showMode0Filter />
+    )
+
+    await userEvent.click(screen.getByRole('radio', { name: /Box/i }))
+
+    expect(mockOnMode0FilterChange).toHaveBeenCalledWith('box')
   })
 
   it('reflects correct checked state for center image switch', () => {
