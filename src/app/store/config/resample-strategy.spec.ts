@@ -15,5 +15,9 @@ describe('resampleStrategyAtom', () => {
 
     store.set(setResampleStrategyAtom, 'tent')
     expect(store.get(resampleStrategyAtom)).toBe('tent')
+
+    // 'classic' = legacy gamma canvas path.
+    store.set(setResampleStrategyAtom, 'classic')
+    expect(store.get(resampleStrategyAtom)).toBe('classic')
   })
 })

@@ -66,9 +66,10 @@ export const resizedImageAtom = atom(async (get) => {
   }
 
   // Linear-light downscale (filter + decimate) instead of the gamma-space
-  // canvas drawImage path, for every pixel mode. 'auto' is handled later in
-  // normalizedImageAtom; 'origin' and 'cover' are handled here.
-  if (resizeMode === 'origin') {
+  // canvas drawImage path, for every pixel mode. 'classic' keeps the legacy
+  // canvas path below. 'auto' is handled later in normalizedImageAtom.
+  const useLinear = resampleStrategy !== 'classic'
+  if (useLinear && resizeMode === 'origin') {
     return resampleOriginLinear(
       cropped,
       modeConfig,
@@ -76,7 +77,7 @@ export const resizedImageAtom = atom(async (get) => {
       centerImage
     )
   }
-  if (resizeMode === 'cover') {
+  if (useLinear && resizeMode === 'cover') {
     return resampleCoverLinear(cropped, modeConfig, resampleStrategy)
   }
 
@@ -140,15 +141,17 @@ export const smoothedImageAtom = atom(async (get) => {
   const cpcHardware = get(cpcHardwareAtom)
   const modeConfig = get(effectiveModeConfigAtom)
   const resizeMode = get(resizeModeAtom)
+  const resampleStrategy = get(resampleStrategyAtom)
   const resized = await get(resizedImageAtom)
 
   if (!resized) {
     return null
   }
 
-  // 'origin'/'cover' already ran the linear-light resampler (which IS the
-  // anti-alias filter). A second gamma-space box blur would undo the gain.
-  if (resizeMode === 'origin' || resizeMode === 'cover') {
+  // When the linear resampler ran ('origin'/'cover', non-classic), it IS the
+  // anti-alias filter — a second gamma-space box blur would undo the gain.
+  const useLinear = resampleStrategy !== 'classic'
+  if (useLinear && (resizeMode === 'origin' || resizeMode === 'cover')) {
     return resized
   }
 

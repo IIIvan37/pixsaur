@@ -43,13 +43,16 @@ export const normalizedImageAtom = atom(async (get) => {
 
   if (!processed) return null
 
-  // Auto downscale uses linear-light resampling for every pixel mode.
+  // Auto downscale uses linear-light resampling for every pixel mode, unless
+  // 'classic' is selected (legacy gamma canvas path → no filter passed).
+  const filter = resampleStrategy === 'classic' ? undefined : resampleStrategy
+
   // In origin and cover modes, image is already at correct CPC dimensions
   // In auto mode, normalize to CPC dimensions
   const normalized =
     resizeMode === 'origin' || resizeMode === 'cover'
       ? processed
-      : getVisualRegionNormalized(processed, modeConfig, resampleStrategy)
+      : getVisualRegionNormalized(processed, modeConfig, filter)
 
   return normalized
 })
