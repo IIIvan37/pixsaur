@@ -104,13 +104,13 @@ export {
   autoDistinctMappingAtom,
   colorDiversityAtom,
   horizontalSmoothingAtom,
-  mode0FilterAtom,
   paletteStrategyAtom,
   processorTypeAtom,
+  resampleStrategyAtom,
   setColorDiversityAtom,
-  setMode0FilterAtom,
   setPaletteStrategyAtom,
   setProcessorTypeAtom,
+  setResampleStrategyAtom,
   smoothingAtom
 } from './processing'
 // Resize

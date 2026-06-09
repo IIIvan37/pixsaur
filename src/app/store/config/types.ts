@@ -22,8 +22,9 @@ export type CpcModeKey =
 // Processor types for image processing
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
-// Reconstruction filter for the mode 0 linear-light horizontal 2:1 downscale
-export type Mode0Filter = 'box' | 'tent' | 'lanczos2'
+// Resize strategy: linear-light reconstruction filter applied to every pixel
+// mode. ('classic' = legacy gamma canvas path is added later.)
+export type ResampleStrategy = 'box' | 'tent' | 'lanczos2'
 
 // Palette selection strategy for color quantization
 export type PaletteStrategy =

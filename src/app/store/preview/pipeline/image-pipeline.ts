@@ -20,8 +20,8 @@ import {
   cpcHardwareAtom,
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
-  mode0FilterAtom,
   pixelModeAtom,
+  resampleStrategyAtom,
   resizeModeAtom
 } from '../../config/config'
 import { selectionAtom, workingImageAtom } from '../../image/image'
@@ -58,7 +58,7 @@ export const resizedImageAtom = atom(async (get) => {
   const resizeMode = get(resizeModeAtom)
   const modeConfig = get(effectiveModeConfigAtom)
   const centerImage = get(centerImageAtom)
-  const mode0Filter = get(mode0FilterAtom)
+  const resampleStrategy = get(resampleStrategyAtom)
   const cropped = await get(croppedImageAtom)
 
   if (!cropped) {
@@ -70,10 +70,15 @@ export const resizedImageAtom = atom(async (get) => {
   // normalizedImageAtom; 'origin' and 'cover' are handled here.
   const isMode0 = modeConfig.mode === 0 && modeConfig.nColors === 16
   if (isMode0 && resizeMode === 'origin') {
-    return resampleMode0Origin(cropped, modeConfig, mode0Filter, centerImage)
+    return resampleMode0Origin(
+      cropped,
+      modeConfig,
+      resampleStrategy,
+      centerImage
+    )
   }
   if (isMode0 && resizeMode === 'cover') {
-    return resampleMode0Cover(cropped, modeConfig, mode0Filter)
+    return resampleMode0Cover(cropped, modeConfig, resampleStrategy)
   }
 
   // Convert ImageData to Canvas for applyResize

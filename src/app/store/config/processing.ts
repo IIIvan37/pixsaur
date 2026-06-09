@@ -5,7 +5,7 @@
  */
 
 import { atom } from 'jotai'
-import type { Mode0Filter, PaletteStrategy, ProcessorType } from './types'
+import type { PaletteStrategy, ProcessorType, ResampleStrategy } from './types'
 
 // ============================================================================
 // CORE ATOMS
@@ -48,10 +48,10 @@ export const autoDistinctMappingAtom = atom<boolean>(false)
 export const colorDiversityAtom = atom<number>(50)
 
 /**
- * Reconstruction filter for the mode 0 linear-light horizontal 2:1 downscale.
- * Only applies to CPC mode 0 in 'origin' resize. Lanczos-2 = best quality.
+ * Resize strategy applied to every pixel mode. 'classic' = legacy gamma-space
+ * canvas downscale; box/tent/lanczos2 = linear-light filters. Lanczos-2 default.
  */
-export const mode0FilterAtom = atom<Mode0Filter>('lanczos2')
+export const resampleStrategyAtom = atom<ResampleStrategy>('lanczos2')
 
 // ============================================================================
 // SETTERS
@@ -88,11 +88,11 @@ export const setColorDiversityAtom = atom(
 )
 
 /**
- * Setter for the mode 0 resample filter
+ * Setter for the resize strategy
  */
-export const setMode0FilterAtom = atom(
+export const setResampleStrategyAtom = atom(
   null,
-  (_get, set, payload: Mode0Filter) => {
-    set(mode0FilterAtom, payload)
+  (_get, set, payload: ResampleStrategy) => {
+    set(resampleStrategyAtom, payload)
   }
 )

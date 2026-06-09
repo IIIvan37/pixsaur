@@ -5,7 +5,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { useId } from 'react'
 import type { ResizeMode } from '@/app/store/config/resize-types'
-import type { Mode0Filter } from '@/app/store/config/types'
+import type { ResampleStrategy } from '@/app/store/config/types'
 import Flex from '@/components/ui/flex'
 import Radio from '@/components/ui/radio/radio'
 import { Switch } from '@/components/ui/switch'
@@ -19,9 +19,9 @@ type ResizeSettingsViewProps = Readonly<{
   selection: Selection | null
   centerImage: boolean
   onCenterImageChange: (checked: boolean) => void
-  showMode0Filter: boolean
-  mode0Filter: Mode0Filter
-  onMode0FilterChange: (filter: Mode0Filter) => void
+  showStrategy: boolean
+  strategy: ResampleStrategy
+  onStrategyChange: (strategy: ResampleStrategy) => void
 }>
 
 export function ResizeSettingsView({
@@ -30,9 +30,9 @@ export function ResizeSettingsView({
   selection,
   centerImage,
   onCenterImageChange,
-  showMode0Filter,
-  mode0Filter,
-  onMode0FilterChange
+  showStrategy,
+  strategy,
+  onStrategyChange
 }: ResizeSettingsViewProps) {
   const { t } = useLingui()
   const centerId = useId()
@@ -84,7 +84,7 @@ export function ResizeSettingsView({
         </Flex>
       </div>
 
-      {showMode0Filter && (
+      {showStrategy && (
         <>
           <div className={styles.separator} />
 
@@ -102,24 +102,24 @@ export function ResizeSettingsView({
 
             <Flex direction='row' wrap='wrap' gap='1rem' align='flex-start'>
               <Radio
-                name='mode0Filter'
+                name='resampleStrategy'
                 value='box'
-                checked={mode0Filter === 'box'}
-                onChange={() => onMode0FilterChange('box')}
+                checked={strategy === 'box'}
+                onChange={() => onStrategyChange('box')}
                 label={t`Box`}
               />
               <Radio
-                name='mode0Filter'
+                name='resampleStrategy'
                 value='tent'
-                checked={mode0Filter === 'tent'}
-                onChange={() => onMode0FilterChange('tent')}
+                checked={strategy === 'tent'}
+                onChange={() => onStrategyChange('tent')}
                 label={t`Tent`}
               />
               <Radio
-                name='mode0Filter'
+                name='resampleStrategy'
                 value='lanczos2'
-                checked={mode0Filter === 'lanczos2'}
-                onChange={() => onMode0FilterChange('lanczos2')}
+                checked={strategy === 'lanczos2'}
+                onChange={() => onStrategyChange('lanczos2')}
                 label={t`Lanczos-2`}
               />
             </Flex>

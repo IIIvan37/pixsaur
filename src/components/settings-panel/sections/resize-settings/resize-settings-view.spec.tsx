@@ -7,7 +7,7 @@ describe('ResizeSettingsView', () => {
   const mockOnResizeModeChange = vi.fn()
   const mockOnCenterImageChange = vi.fn()
 
-  const mockOnMode0FilterChange = vi.fn()
+  const mockOnStrategyChange = vi.fn()
 
   const defaultProps = {
     resizeMode: 'auto' as const,
@@ -15,9 +15,9 @@ describe('ResizeSettingsView', () => {
     selection: null,
     centerImage: false,
     onCenterImageChange: mockOnCenterImageChange,
-    showMode0Filter: false,
-    mode0Filter: 'lanczos2' as const,
-    onMode0FilterChange: mockOnMode0FilterChange
+    showStrategy: false,
+    strategy: 'lanczos2' as const,
+    onStrategyChange: mockOnStrategyChange
   }
 
   beforeEach(() => {
@@ -87,7 +87,7 @@ describe('ResizeSettingsView', () => {
     expect(originRadio).not.toBeChecked()
   })
 
-  it('hides the mode 0 filter selector when showMode0Filter is false', () => {
+  it('hides the resample strategy selector when showStrategy is false', () => {
     renderWithProviders(<ResizeSettingsView {...defaultProps} />)
 
     expect(
@@ -95,24 +95,20 @@ describe('ResizeSettingsView', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('shows the mode 0 filter selector when showMode0Filter is true', () => {
-    renderWithProviders(
-      <ResizeSettingsView {...defaultProps} showMode0Filter />
-    )
+  it('shows the resample strategy selector when showStrategy is true', () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} showStrategy />)
 
     expect(screen.getByRole('radio', { name: /Box/i })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Tent/i })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: /Lanczos/i })).toBeChecked()
   })
 
-  it('calls onMode0FilterChange when a filter is clicked', async () => {
-    renderWithProviders(
-      <ResizeSettingsView {...defaultProps} showMode0Filter />
-    )
+  it('calls onStrategyChange when a filter is clicked', async () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} showStrategy />)
 
     await userEvent.click(screen.getByRole('radio', { name: /Box/i }))
 
-    expect(mockOnMode0FilterChange).toHaveBeenCalledWith('box')
+    expect(mockOnStrategyChange).toHaveBeenCalledWith('box')
   })
 
   it('reflects correct checked state for center image switch', () => {
