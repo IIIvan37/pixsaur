@@ -23,8 +23,9 @@ export function ResizeSettings() {
   const mode0Filter = useAtomValue(mode0FilterAtom)
   const setMode0Filter = useSetAtom(setMode0FilterAtom)
 
-  // The linear resampler only runs for CPC mode 0 in 'origin' resize.
-  const showMode0Filter = pixelMode === 0 && resizeMode === 'origin'
+  // The linear resampler runs for CPC mode 0 in every resize mode
+  // (auto/cover/origin all downscale to the 2:1 mode-0 pixel grid).
+  const showMode0Filter = pixelMode === 0
 
   return (
     <ResizeSettingsView
