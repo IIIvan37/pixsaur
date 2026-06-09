@@ -20,6 +20,7 @@ import {
   cpcHardwareAtom,
   ditheringAtom,
   effectiveModeConfigAtom,
+  mode0FilterAtom,
   resizeModeAtom
 } from '../../config/config'
 import { smoothedImageAtom } from './image-pipeline'
@@ -36,17 +37,21 @@ import { quantizerAtom } from './quantization'
  */
 export const normalizedImageAtom = atom(async (get) => {
   const modeConfig = get(effectiveModeConfigAtom)
-  const processed = await get(smoothedImageAtom)
   const resizeMode = get(resizeModeAtom)
+  const mode0Filter = get(mode0FilterAtom)
+  const processed = await get(smoothedImageAtom)
 
   if (!processed) return null
+
+  // Mode 0 auto downscale uses linear-light resampling; other modes unchanged.
+  const filter = modeConfig.mode === 0 ? mode0Filter : undefined
 
   // In origin and cover modes, image is already at correct CPC dimensions
   // In auto mode, normalize to CPC dimensions
   const normalized =
     resizeMode === 'origin' || resizeMode === 'cover'
       ? processed
-      : getVisualRegionNormalized(processed, modeConfig)
+      : getVisualRegionNormalized(processed, modeConfig, filter)
 
   return normalized
 })

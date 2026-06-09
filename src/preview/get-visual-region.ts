@@ -1,6 +1,10 @@
 // Copied from previous utils implementation
 import type { CpcModeConfig } from '@/app/store/config/types'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
+import {
+  type ResampleFilter,
+  resampleLinear
+} from './image-processing/horizontal-resample'
 
 export function getVisualRegion(
   src: ImageData,
@@ -18,7 +22,8 @@ export function getVisualRegion(
 
 export function getVisualRegionNormalized(
   src: ImageData,
-  modeConfig: CpcModeConfig
+  modeConfig: CpcModeConfig,
+  filter?: ResampleFilter
 ): ImageData | null {
   const targetW = modeConfig.width
   const targetH = modeConfig.height
@@ -33,6 +38,12 @@ export function getVisualRegionNormalized(
   const scaledW = Math.round(src.width * scale)
   const scaledH = Math.round(src.height * scale * pixelAspectRatio)
   if (scaledW === 0 || scaledH === 0) return null
+
+  // Mode 0: the horizontal 2:1 squeeze (and any vertical scale) must happen in
+  // linear light. Other modes keep the canvas path (out of scope).
+  if (filter && modeConfig.mode === 0) {
+    return resampleLinear(src, scaledW, scaledH, filter)
+  }
 
   const scaledCanvas = document.createElement('canvas')
   scaledCanvas.width = scaledW
