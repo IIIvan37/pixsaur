@@ -1,0 +1,6 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["src/locales/**", "src/libs/rasm-wasm/**", "src/types/**"],
+  "ignoreExportsUsedInFile": true
+}

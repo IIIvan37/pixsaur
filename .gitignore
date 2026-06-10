@@ -27,7 +27,9 @@ dist-ssr
 disk.dsk
 
 # Internal documentation (kept local only)
-docs/
+docs/*
+# ...except the refactor status & session reports (shared cross-session resume point)
+!docs/refactor/
 
 # AppImage build artifacts and documentation
 appimage_howto_/

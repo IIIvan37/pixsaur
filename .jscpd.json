@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kucherenko/jscpd/master/packages/jscpd/schema.json",
+  "minTokens": 70,
+  "minLines": 8,
+  "reporters": ["console"],
+  "absolute": false,
+  "gitignore": true,
+  "format": ["typescript", "tsx"],
+  "ignore": [
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__/**",
+    "src/locales/**",
+    "src/libs/rasm-wasm/**",
+    "**/*.d.ts"
+  ]
+}
