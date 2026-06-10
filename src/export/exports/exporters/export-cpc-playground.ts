@@ -8,7 +8,7 @@
 import { createLogger } from '@/core'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { CPCHardware } from '@/libs/types'
-import { isTauri } from '@/tauri'
+import { resolvePlaygroundPort } from '../../application/playground-port'
 import { firmwareToHardware } from '../cpc-format'
 import { cpcPlusValuesToASM, paletteToCPCPlusValues } from '../cpc-plus-format'
 import { exportEgxLinear, exportEgxSCR, isEgxOverscan } from '../export-scr'
@@ -91,15 +91,10 @@ async function shareAsmToCpcPlayground(
 
   logger.info(`${exportType} CPC Playground share created`, { shareUrl })
 
-  // Open in browser (Tauri uses shell plugin, web uses window.open)
-  if (isTauri()) {
-    const { open } = await import('@tauri-apps/plugin-shell')
-    await open(shareUrl)
-    logger.debug('Opened URL via Tauri shell plugin')
-  } else {
-    window.open(shareUrl, '_blank')
-    logger.debug('Opened URL via window.open')
-  }
+  // Open the share URL through the playground port (Tauri shell on desktop,
+  // new tab on web). The platform-specific adapter is resolved at the edge.
+  await resolvePlaygroundPort().open(shareUrl)
+  logger.debug('Opened CPC Playground share URL')
 
   return {
     success: true,
