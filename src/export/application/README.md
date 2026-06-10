@@ -13,14 +13,17 @@ inject the real ports, and map the result to UI.
 
 Interfaces in `ports.ts`. Reuse one of these before defining a new port.
 
-| Port | Responsibility | Web adapter | Desktop adapter |
-|------|----------------|-------------|-----------------|
-| `PlaygroundPort` | open an artifact in CPC Playground | `adapters/web-playground.ts` | `src/tauri/playground.ts` |
-| `FileSink` | persist / download the produced file(s) | `@/export/download-file` | Tauri save dialog (`src/tauri/`) |
-| `CanvasFactory` | create a drawing canvas (`createCanvas(w,h)`) | DOM `document.createElement` | DOM (webview) |
+| Port | Responsibility | Web adapter | Desktop adapter | Status |
+|------|----------------|-------------|-----------------|--------|
+| `PlaygroundPort` | open a CPC Playground share URL | `adapters/web-playground.ts` (`webPlaygroundPort`) | `src/tauri/playground.ts` (`tauriPlaygroundPort`) | ✅ landed (PR1) |
+| `FileSink` | persist / download the produced file(s) | `@/export/download-file` | Tauri save dialog (`src/tauri/`) | ⬜ planned (PR2) |
+| `CanvasFactory` | create a drawing canvas (`createCanvas(w,h)`) | DOM `document.createElement` | DOM (webview) | ⬜ planned (PR2) |
 
-> Status: planned in PR0; implemented across PR1–PR4. Update the adapter paths
-> as they land.
+> `PlaygroundPort` lives in `ports.ts`; the runtime adapter is selected by
+> `resolvePlaygroundPort()` in `playground-port.ts` (the impure seam). `FileSink`
+> and `CanvasFactory` land with the use-cases that need them (PR2+) to keep the
+> dead-code ratchet at zero — define a port when a code path consumes it, not
+> before.
 
 ## Use-cases
 
