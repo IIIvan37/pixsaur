@@ -12,6 +12,17 @@
   gap: var(--spacing-sm);
 }
 
+.presetSelector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs, 8px);
+}
+
+.presetLabel {
+  font-size: var(--font-size-sm, 14px);
+  color: var(--color-text-secondary, #888);
+}
+
 .sliderGrid {
   display: flex;
   flex-direction: column;

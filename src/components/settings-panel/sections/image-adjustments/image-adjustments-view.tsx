@@ -2,13 +2,20 @@
  * Image adjustments view (dumb component)
  */
 
-import { Trans } from '@lingui/react/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
+import {
+  ADJUSTMENT_PRESETS,
+  type AdjustmentPresetId
+} from '@/app/store/config/adjustment-presets'
 import type { AdjustementKey } from '@/app/store/config/types'
 import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import { Header } from '@/components/ui/layout/header/header'
+import { Select, SelectItem } from '@/components/ui/select'
 import PixsaurSlider from '@/components/ui/slider'
 import styles from './image-adjustments.module.css'
+
+const CUSTOM_PRESET_VALUE = 'custom'
 
 export type AdjustmentLabel = {
   key: AdjustementKey
@@ -258,14 +265,27 @@ type ImageAdjustmentsViewProps = Readonly<{
   values: Record<AdjustementKey, number>
   onValueChange: (key: AdjustementKey, value: number) => void
   onReset: () => void
+  activePresetId: string | null
+  onApplyPreset: (id: AdjustmentPresetId) => void
 }>
 
 export function ImageAdjustmentsView({
   disabled,
   values,
   onValueChange,
-  onReset
+  onReset,
+  activePresetId,
+  onApplyPreset
 }: ImageAdjustmentsViewProps) {
+  const { t } = useLingui()
+
+  const presetLabels: Record<AdjustmentPresetId, string> = {
+    neutral: t`Neutre`,
+    vivid: t`Photo vive`,
+    'dark-photo': t`Photo sombre`,
+    poster: t`Poster`
+  }
+
   const renderSlider = (adj: AdjustmentLabel) => {
     const value = values[adj.key]
 
@@ -292,6 +312,32 @@ export function ImageAdjustmentsView({
         actionLabel={<Trans>Réinitialiser</Trans>}
         disabled={disabled}
       />
+
+      <div className={styles.presetSelector}>
+        <div className={styles.presetLabel}>
+          <Trans>Préréglage</Trans>
+        </div>
+        <Select
+          value={activePresetId ?? CUSTOM_PRESET_VALUE}
+          onValueChange={(value) => {
+            if (value !== CUSTOM_PRESET_VALUE) {
+              onApplyPreset(value as AdjustmentPresetId)
+            }
+          }}
+          disabled={disabled}
+        >
+          {ADJUSTMENT_PRESETS.map((preset) => (
+            <SelectItem key={preset.id} value={preset.id}>
+              {presetLabels[preset.id]}
+            </SelectItem>
+          ))}
+          {activePresetId === null && (
+            <SelectItem value={CUSTOM_PRESET_VALUE}>
+              {t`Personnalisé`}
+            </SelectItem>
+          )}
+        </Select>
+      </div>
 
       <div className={styles.sectionsContainer}>
         {sections.map((section) => {

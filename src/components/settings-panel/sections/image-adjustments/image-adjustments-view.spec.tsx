@@ -38,6 +38,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
@@ -57,6 +59,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
@@ -73,6 +77,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
@@ -90,6 +96,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
@@ -112,6 +120,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
@@ -136,6 +146,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
@@ -161,6 +173,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
@@ -181,6 +195,8 @@ describe('ImageAdjustmentsView', () => {
         values={mockValues}
         onValueChange={mockOnValueChange}
         onReset={mockOnReset}
+        activePresetId={null}
+        onApplyPreset={vi.fn()}
       />
     )
 
