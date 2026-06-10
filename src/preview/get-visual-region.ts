@@ -1,6 +1,10 @@
 // Copied from previous utils implementation
 import type { CpcModeConfig } from '@/app/store/config/types'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
+import {
+  type ResampleFilter,
+  resampleLinear
+} from './image-processing/horizontal-resample'
 
 export function getVisualRegion(
   src: ImageData,
@@ -18,7 +22,8 @@ export function getVisualRegion(
 
 export function getVisualRegionNormalized(
   src: ImageData,
-  modeConfig: CpcModeConfig
+  modeConfig: CpcModeConfig,
+  filter?: ResampleFilter
 ): ImageData | null {
   const targetW = modeConfig.width
   const targetH = modeConfig.height
@@ -33,6 +38,12 @@ export function getVisualRegionNormalized(
   const scaledW = Math.round(src.width * scale)
   const scaledH = Math.round(src.height * scale * pixelAspectRatio)
   if (scaledW === 0 || scaledH === 0) return null
+
+  // Linear-light scale-to-fit when a filter is provided (all pixel modes).
+  // Without a filter, fall back to the legacy canvas path below.
+  if (filter) {
+    return resampleLinear(src, scaledW, scaledH, filter)
+  }
 
   const scaledCanvas = document.createElement('canvas')
   scaledCanvas.width = scaledW

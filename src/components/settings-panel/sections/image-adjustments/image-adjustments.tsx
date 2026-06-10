@@ -3,7 +3,10 @@
  */
 
 import { useAtomValue, useSetAtom } from 'jotai'
+import type { AdjustmentPresetId } from '@/app/store/config/adjustment-presets'
 import {
+  activePresetIdAtom,
+  applyAdjustmentPresetAtom,
   configAtom,
   resetImageAdjustmentsAtom,
   setComponentAtom
@@ -16,6 +19,8 @@ export function ImageAdjustments() {
   const config = useAtomValue(configAtom)
   const setComponent = useSetAtom(setComponentAtom)
   const resetAdjustments = useSetAtom(resetImageAdjustmentsAtom)
+  const activePresetId = useAtomValue(activePresetIdAtom)
+  const applyPreset = useSetAtom(applyAdjustmentPresetAtom)
   const workingImage = useAtomValue(workingImageAtom)
   const disabled = !workingImage?.data
 
@@ -29,6 +34,8 @@ export function ImageAdjustments() {
       values={config}
       onValueChange={handleValueChange}
       onReset={resetAdjustments}
+      activePresetId={activePresetId}
+      onApplyPreset={(id: AdjustmentPresetId) => applyPreset(id)}
     />
   )
 }

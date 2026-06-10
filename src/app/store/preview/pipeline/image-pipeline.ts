@@ -9,7 +9,9 @@ import { logger } from '@/core'
 import {
   applyHorizontalSmoothing,
   getPixelWidthForMode,
-  getVisualRegion
+  getVisualRegion,
+  resampleCoverLinear,
+  resampleOriginLinear
 } from '@/preview'
 import { applyResize, type Selection } from '@/source'
 import {
@@ -19,6 +21,7 @@ import {
   effectiveModeConfigAtom,
   horizontalSmoothingAtom,
   pixelModeAtom,
+  resampleStrategyAtom,
   resizeModeAtom
 } from '../../config/config'
 import { selectionAtom, workingImageAtom } from '../../image/image'
@@ -51,13 +54,31 @@ export const croppedImageAtom = atom(async (get) => {
  * - 'origin': Keep original dimensions
  */
 export const resizedImageAtom = atom(async (get) => {
-  const cropped = await get(croppedImageAtom)
+  // Read all atoms synchronously (before any await) so Jotai tracks them.
   const resizeMode = get(resizeModeAtom)
   const modeConfig = get(effectiveModeConfigAtom)
   const centerImage = get(centerImageAtom)
+  const resampleStrategy = get(resampleStrategyAtom)
+  const cropped = await get(croppedImageAtom)
 
   if (!cropped) {
     return cropped
+  }
+
+  // Linear-light downscale (filter + decimate) instead of the gamma-space
+  // canvas drawImage path, for every pixel mode. 'classic' keeps the legacy
+  // canvas path below. 'auto' is handled later in normalizedImageAtom.
+  const useLinear = resampleStrategy !== 'classic'
+  if (useLinear && resizeMode === 'origin') {
+    return resampleOriginLinear(
+      cropped,
+      modeConfig,
+      resampleStrategy,
+      centerImage
+    )
+  }
+  if (useLinear && resizeMode === 'cover') {
+    return resampleCoverLinear(cropped, modeConfig, resampleStrategy)
   }
 
   // Convert ImageData to Canvas for applyResize
@@ -114,15 +135,24 @@ export const resizedImageAtom = atom(async (get) => {
  * Disabled when distinct-mapping is active (CPC Classic + Mode 0)
  */
 export const smoothedImageAtom = atom(async (get) => {
-  const resized = await get(resizedImageAtom)
   const horizontalSmoothing = get(horizontalSmoothingAtom)
   const pixelMode = get(pixelModeAtom)
   const autoDistinctMapping = get(autoDistinctMappingAtom)
   const cpcHardware = get(cpcHardwareAtom)
   const modeConfig = get(effectiveModeConfigAtom)
+  const resizeMode = get(resizeModeAtom)
+  const resampleStrategy = get(resampleStrategyAtom)
+  const resized = await get(resizedImageAtom)
 
   if (!resized) {
     return null
+  }
+
+  // When the linear resampler ran ('origin'/'cover', non-classic), it IS the
+  // anti-alias filter — a second gamma-space box blur would undo the gain.
+  const useLinear = resampleStrategy !== 'classic'
+  if (useLinear && (resizeMode === 'origin' || resizeMode === 'cover')) {
+    return resized
   }
 
   // Disable smoothing when distinct-mapping is active (CPC Classic + Mode 0)

@@ -8,7 +8,7 @@ import { atom } from 'jotai'
 import type { AdjustementKey } from './types'
 
 // Default values (multiplicative factors)
-const defaultAdjustments: { [key in AdjustementKey]: number } & {
+export const defaultAdjustments: { [key in AdjustementKey]: number } & {
   lastChangedKey: AdjustementKey | null
   chromaKeyColor: [number, number, number] | null
 } = {
@@ -45,6 +45,13 @@ export const adjustmentsAtom = atom<typeof defaultAdjustments>({
 })
 
 /**
+ * Id of the currently applied adjustment preset, or null when the user has
+ * manually tweaked a value ("Personnalisé"). Defaults to the neutral preset.
+ * Typed as string to avoid a dependency cycle with adjustment-presets.ts.
+ */
+export const activePresetIdAtom = atom<string | null>('neutral')
+
+/**
  * Setter for a single adjustment value
  */
 export const setAdjustmentAtom = atom(
@@ -56,6 +63,8 @@ export const setAdjustmentAtom = atom(
       [payload.key]: payload.value,
       lastChangedKey: payload.key
     })
+    // A manual change means we no longer match any preset.
+    set(activePresetIdAtom, null)
   }
 )
 
@@ -85,6 +94,7 @@ export const clearLastChangedKeyAtom = atom(null, (_get, set) => {
  */
 export const resetAdjustmentsAtom = atom(null, (_get, set) => {
   set(adjustmentsAtom, { ...defaultAdjustments })
+  set(activePresetIdAtom, 'neutral')
 })
 
 // ============================================================================

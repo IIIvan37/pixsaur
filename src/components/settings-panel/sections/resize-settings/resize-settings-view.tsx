@@ -5,6 +5,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { useId } from 'react'
 import type { ResizeMode } from '@/app/store/config/resize-types'
+import type { ResampleStrategy } from '@/app/store/config/types'
 import Flex from '@/components/ui/flex'
 import Radio from '@/components/ui/radio/radio'
 import { Switch } from '@/components/ui/switch'
@@ -18,6 +19,9 @@ type ResizeSettingsViewProps = Readonly<{
   selection: Selection | null
   centerImage: boolean
   onCenterImageChange: (checked: boolean) => void
+  showStrategy: boolean
+  strategy: ResampleStrategy
+  onStrategyChange: (strategy: ResampleStrategy) => void
 }>
 
 export function ResizeSettingsView({
@@ -25,7 +29,10 @@ export function ResizeSettingsView({
   onResizeModeChange,
   selection,
   centerImage,
-  onCenterImageChange
+  onCenterImageChange,
+  showStrategy,
+  strategy,
+  onStrategyChange
 }: ResizeSettingsViewProps) {
   const { t } = useLingui()
   const centerId = useId()
@@ -76,6 +83,56 @@ export function ResizeSettingsView({
           />
         </Flex>
       </div>
+
+      {showStrategy && (
+        <>
+          <div className={styles.separator} />
+
+          <div className={styles.section}>
+            <h3 className={styles.sectionTitle}>
+              <Trans>Stratégie de redimensionnement</Trans>
+            </h3>
+            <p className={styles.description}>
+              <Trans>
+                Classique: ancien redimensionnement (espace gamma). Les autres
+                rééchantillonnent en lumière linéaire — Lanczos-2: plus net;
+                Tent: intermédiaire; Box: le plus doux.
+              </Trans>
+            </p>
+
+            <Flex direction='row' wrap='wrap' gap='1rem' align='flex-start'>
+              <Radio
+                name='resampleStrategy'
+                value='classic'
+                checked={strategy === 'classic'}
+                onChange={() => onStrategyChange('classic')}
+                label={t`Classique`}
+              />
+              <Radio
+                name='resampleStrategy'
+                value='box'
+                checked={strategy === 'box'}
+                onChange={() => onStrategyChange('box')}
+                label={t`Box`}
+              />
+              <Radio
+                name='resampleStrategy'
+                value='tent'
+                checked={strategy === 'tent'}
+                onChange={() => onStrategyChange('tent')}
+                label={t`Tent`}
+              />
+              <Radio
+                name='resampleStrategy'
+                value='lanczos2'
+                checked={strategy === 'lanczos2'}
+                onChange={() => onStrategyChange('lanczos2')}
+                label={t`Lanczos-2`}
+              />
+            </Flex>
+          </div>
+        </>
+      )}
 
       <div className={styles.separator} />
 

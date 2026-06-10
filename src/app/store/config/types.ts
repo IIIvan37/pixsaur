@@ -22,6 +22,10 @@ export type CpcModeKey =
 // Processor types for image processing
 export type ProcessorType = 'auto' | 'cpu' | 'gpu'
 
+// Resize strategy applied to every pixel mode. 'classic' = legacy gamma-space
+// canvas downscale; box/tent/lanczos2 = linear-light reconstruction filters.
+export type ResampleStrategy = 'classic' | 'box' | 'tent' | 'lanczos2'
+
 // Palette selection strategy for color quantization
 export type PaletteStrategy =
   | 'exhaustive-contrast' // Exhaustive search: tests all combinations, maximizes min distance

@@ -7,12 +7,17 @@ describe('ResizeSettingsView', () => {
   const mockOnResizeModeChange = vi.fn()
   const mockOnCenterImageChange = vi.fn()
 
+  const mockOnStrategyChange = vi.fn()
+
   const defaultProps = {
     resizeMode: 'auto' as const,
     onResizeModeChange: mockOnResizeModeChange,
     selection: null,
     centerImage: false,
-    onCenterImageChange: mockOnCenterImageChange
+    onCenterImageChange: mockOnCenterImageChange,
+    showStrategy: false,
+    strategy: 'lanczos2' as const,
+    onStrategyChange: mockOnStrategyChange
   }
 
   beforeEach(() => {
@@ -80,6 +85,41 @@ describe('ResizeSettingsView', () => {
 
     expect(autoRadio).toBeChecked()
     expect(originRadio).not.toBeChecked()
+  })
+
+  it('hides the resample strategy selector when showStrategy is false', () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} />)
+
+    expect(
+      screen.queryByRole('radio', { name: /Lanczos/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the resample strategy selector when showStrategy is true', () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} showStrategy />)
+
+    expect(
+      screen.getByRole('radio', { name: /Classique/i })
+    ).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Box/i })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Tent/i })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: /Lanczos/i })).toBeChecked()
+  })
+
+  it('calls onStrategyChange when a filter is clicked', async () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} showStrategy />)
+
+    await userEvent.click(screen.getByRole('radio', { name: /Box/i }))
+
+    expect(mockOnStrategyChange).toHaveBeenCalledWith('box')
+  })
+
+  it('calls onStrategyChange with classic for the legacy option', async () => {
+    renderWithProviders(<ResizeSettingsView {...defaultProps} showStrategy />)
+
+    await userEvent.click(screen.getByRole('radio', { name: /Classique/i }))
+
+    expect(mockOnStrategyChange).toHaveBeenCalledWith('classic')
   })
 
   it('reflects correct checked state for center image switch', () => {

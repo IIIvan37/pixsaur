@@ -33,11 +33,20 @@ import { autoDistinctMappingAtom as autoDistinctMappingAtomImport } from './proc
 // RE-EXPORTS FROM MODULES
 // ============================================================================
 
+// Adjustment presets
+export {
+  ADJUSTMENT_PRESETS,
+  type AdjustmentPreset,
+  type AdjustmentPresetId,
+  applyAdjustmentPresetAtom
+} from './adjustment-presets'
 // Adjustments
 export {
+  activePresetIdAtom,
   adjustmentsAtom,
   clearLastChangedKeyAtom,
   configAtom,
+  defaultAdjustments,
   resetAdjustmentsAtom,
   resetImageAdjustmentsAtom,
   setAdjustmentAtom,
@@ -106,9 +115,11 @@ export {
   horizontalSmoothingAtom,
   paletteStrategyAtom,
   processorTypeAtom,
+  resampleStrategyAtom,
   setColorDiversityAtom,
   setPaletteStrategyAtom,
   setProcessorTypeAtom,
+  setResampleStrategyAtom,
   smoothingAtom
 } from './processing'
 // Resize

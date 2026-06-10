@@ -5,7 +5,7 @@
  */
 
 import { atom } from 'jotai'
-import type { PaletteStrategy, ProcessorType } from './types'
+import type { PaletteStrategy, ProcessorType, ResampleStrategy } from './types'
 
 // ============================================================================
 // CORE ATOMS
@@ -47,6 +47,12 @@ export const autoDistinctMappingAtom = atom<boolean>(false)
  */
 export const colorDiversityAtom = atom<number>(50)
 
+/**
+ * Resize strategy applied to every pixel mode. 'classic' = legacy gamma-space
+ * canvas downscale; box/tent/lanczos2 = linear-light filters. Lanczos-2 default.
+ */
+export const resampleStrategyAtom = atom<ResampleStrategy>('lanczos2')
+
 // ============================================================================
 // SETTERS
 // ============================================================================
@@ -78,5 +84,15 @@ export const setColorDiversityAtom = atom(
   null,
   (_get, set, payload: number) => {
     set(colorDiversityAtom, Math.max(0, Math.min(100, payload)))
+  }
+)
+
+/**
+ * Setter for the resize strategy
+ */
+export const setResampleStrategyAtom = atom(
+  null,
+  (_get, set, payload: ResampleStrategy) => {
+    set(resampleStrategyAtom, payload)
   }
 )

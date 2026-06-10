@@ -11,6 +11,95 @@ export interface Selection {
   height: number
 }
 
+/** Placement of the source content inside the CPC-native canvas (origin mode). */
+export interface OriginContentRect {
+  /** Source pixels read from the selection. */
+  sourceWidth: number
+  sourceHeight: number
+  /** Content size once mapped to CPC native pixels. */
+  destWidth: number
+  destHeight: number
+  /** Top-left offset of the content inside the CPC canvas (centering padding). */
+  dx: number
+  dy: number
+}
+
+/**
+ * Compute how a selection maps onto the CPC-native canvas in 'origin' mode:
+ * the source region read, the destination content size (after the mode's
+ * horizontal pixel-ratio compression), and the centering offsets. Shared by
+ * `resizeOrigin` and the mode-0 linear resampler so both stay in sync.
+ */
+export function computeOriginContentRect(
+  selection: Selection,
+  modeConfig: ResizeConfig['modeConfig'],
+  centerImage = true
+): OriginContentRect {
+  const {
+    width: targetWidth,
+    height: targetHeight,
+    scaleX,
+    scaleY
+  } = modeConfig
+  const pixelRatio = scaleX / scaleY
+
+  const sourceWidth = Math.min(selection.width, targetWidth * pixelRatio)
+  const sourceHeight = Math.min(selection.height, targetHeight)
+
+  const destWidth = Math.min(Math.floor(sourceWidth / pixelRatio), targetWidth)
+  const destHeight = Math.min(sourceHeight, targetHeight)
+
+  const dx = centerImage ? Math.floor((targetWidth - destWidth) / 2) : 0
+  const dy = centerImage ? Math.floor((targetHeight - destHeight) / 2) : 0
+
+  return { sourceWidth, sourceHeight, destWidth, destHeight, dx, dy }
+}
+
+/** Source crop rectangle for 'cover' resize (scale-to-fill, centered crop). */
+export interface CoverCropRect {
+  srcX: number
+  srcY: number
+  srcW: number
+  srcH: number
+}
+
+/**
+ * Compute the centered source crop that matches the CPC perceived aspect ratio
+ * in 'cover' mode (excess cropped on the longer axis). Shared by `resizeCover`
+ * and the mode-0 linear resampler.
+ */
+export function computeCoverCropRect(
+  selection: Selection,
+  modeConfig: ResizeConfig['modeConfig']
+): CoverCropRect {
+  const {
+    width: targetWidth,
+    height: targetHeight,
+    scaleX,
+    scaleY
+  } = modeConfig
+  const pixelRatio = scaleX / scaleY
+  const sourceAspect = selection.width / selection.height
+  const targetPerceivedAspect = (targetWidth * pixelRatio) / targetHeight
+
+  let srcX = selection.sx
+  let srcY = selection.sy
+  let srcW = selection.width
+  let srcH = selection.height
+
+  if (sourceAspect > targetPerceivedAspect) {
+    const newWidth = selection.height * targetPerceivedAspect
+    srcX = selection.sx + (selection.width - newWidth) / 2
+    srcW = newWidth
+  } else if (sourceAspect < targetPerceivedAspect) {
+    const newHeight = selection.width / targetPerceivedAspect
+    srcY = selection.sy + (selection.height - newHeight) / 2
+    srcH = newHeight
+  }
+
+  return { srcX, srcY, srcW, srcH }
+}
+
 export function applyResize(
   sourceCanvas: HTMLCanvasElement,
   selection: Selection,
@@ -46,13 +135,7 @@ function resizeOrigin(
   // Mode 0 : 160×200 (pixels CPC, seront étirés par le pipeline de preview)
   // Mode 1 : 320×200 (pixels carrés)
   // Mode 2 : 640×200 (mais limité par la sélection)
-  const { width: cpcWidth, height: cpcHeight } = config.modeConfig
-  const { scaleX, scaleY } = config.modeConfig
-  const pixelRatio = scaleX / scaleY
-
-  // Dimensions de sortie = dimensions CPC natives (pas d'affichage)
-  const targetWidth = cpcWidth // 160 pour mode 0, 320 pour mode 1
-  const targetHeight = cpcHeight // 200 pour tous les modes
+  const { width: targetWidth, height: targetHeight } = config.modeConfig
 
   const outputCanvas = document.createElement('canvas')
   outputCanvas.width = targetWidth
@@ -66,25 +149,9 @@ function resizeOrigin(
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, targetWidth, targetHeight)
 
-  // Calculer combien de pixels source on peut mapper sur le canvas CPC
-  // Mode 0 : 1 pixel CPC = 2 pixels source (ratio 2:1)
-  // Mode 1 : 1 pixel CPC = 1 pixel source (ratio 1:1)
-  // Mode 2 : 1 pixel CPC = 0.5 pixel source (ratio 0.5:1, mais on prend 1:1 en pratique)
-
-  // Pixels source couverts par le canvas CPC
-  const sourceWidthCovered = targetWidth * pixelRatio // 160*2=320 pour mode 0
-  const sourceHeightCovered = targetHeight // 200
-
-  // Pixels source à lire (limités par la sélection)
-  const sourceWidth = Math.min(selection.width, sourceWidthCovered)
-  const sourceHeight = Math.min(selection.height, sourceHeightCovered)
-
-  // Pixels CPC de destination
-  const destWidth = Math.min(Math.floor(sourceWidth / pixelRatio), targetWidth)
-  const destHeight = Math.min(sourceHeight, targetHeight)
-
-  const dx = centerImage ? Math.floor((targetWidth - destWidth) / 2) : 0
-  const dy = centerImage ? Math.floor((targetHeight - destHeight) / 2) : 0
+  // Mapping source -> CPC natif (compression horizontale selon le pixel-ratio du mode)
+  const { sourceWidth, sourceHeight, destWidth, destHeight, dx, dy } =
+    computeOriginContentRect(selection, config.modeConfig, centerImage)
 
   // Compression directe de la source vers les dimensions CPC
   // Mode 0 : 320×200 source → 160×200 CPC (compression horizontale)
@@ -123,13 +190,8 @@ function resizeCover(
   selection: Selection,
   config: ResizeConfig
 ): HTMLCanvasElement {
-  const { width: cpcWidth, height: cpcHeight } = config.modeConfig
-  const { scaleX, scaleY } = config.modeConfig
-  const pixelRatio = scaleX / scaleY
-
   // Target dimensions in CPC native pixels
-  const targetWidth = cpcWidth
-  const targetHeight = cpcHeight
+  const { width: targetWidth, height: targetHeight } = config.modeConfig
 
   const outputCanvas = document.createElement('canvas')
   outputCanvas.width = targetWidth
@@ -140,33 +202,11 @@ function resizeCover(
     throw new Error('Failed to get 2D context')
   }
 
-  // Calculate PERCEIVED aspect ratios
-  // Source image has square pixels
-  const sourceAspect = selection.width / selection.height
-  // CPC target has non-square pixels in mode 0 (2:1) and mode 2 (0.5:1)
-  // The perceived aspect ratio = (targetWidth * pixelRatio) / targetHeight
-  const targetPerceivedAspect = (targetWidth * pixelRatio) / targetHeight
-
-  let srcX = selection.sx
-  let srcY = selection.sy
-  let srcW = selection.width
-  let srcH = selection.height
-
-  // Cover mode: scale to fill, crop excess to match perceived aspect ratio
-  if (sourceAspect > targetPerceivedAspect) {
-    // Source is wider than target (perceived): crop horizontally
-    // Keep full height, calculate width to match target aspect ratio
-    const newWidth = selection.height * targetPerceivedAspect
-    srcX = selection.sx + (selection.width - newWidth) / 2
-    srcW = newWidth
-  } else if (sourceAspect < targetPerceivedAspect) {
-    // Source is taller than target (perceived): crop vertically
-    // Keep full width, calculate height to match target aspect ratio
-    const newHeight = selection.width / targetPerceivedAspect
-    srcY = selection.sy + (selection.height - newHeight) / 2
-    srcH = newHeight
-  }
-  // If equal, no cropping needed
+  // Cover mode: scale to fill, crop excess to match perceived aspect ratio.
+  const { srcX, srcY, srcW, srcH } = computeCoverCropRect(
+    selection,
+    config.modeConfig
+  )
 
   ctx.imageSmoothingEnabled = true
   ctx.drawImage(

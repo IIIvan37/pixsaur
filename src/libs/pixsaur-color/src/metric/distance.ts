@@ -46,6 +46,30 @@ export function weightedRGBDistance(a: Vector, b: Vector): number {
 }
 
 /**
+ * "Redmean" low-cost perceptual color distance (used by dithertron).
+ * Weights red/blue by the mean red level and green ~4x, approximating
+ * human color perception better than flat weighted-RGB. Returns the squared
+ * magnitude (sqrt omitted: monotonic, so argmin is preserved) for speed.
+ *
+ * @param {Vector} a - The first color in RGB space [0-255].
+ * @param {Vector} b - The second color in RGB space [0-255].
+ * @returns {number} - The (squared) redmean distance.
+ */
+export function redmeanDistance(a: Vector, b: Vector): number {
+  const [r1, g1, b1] = a
+  const [r2, g2, b2] = b
+  const rmean = (r1 + r2) / 2
+  const dr = r1 - r2
+  const dg = g1 - g2
+  const db = b1 - b2
+  return (
+    ((512 + rmean) * dr * dr) / 256 +
+    4 * dg * dg +
+    ((767 - rmean) * db * db) / 256
+  )
+}
+
+/**
  * Calculates the Delta E 2000 distance between two colors in the Lab color space.
  *
  * @param {Vector} a - The first color in Lab space.
@@ -121,6 +145,7 @@ export type DistanceFn = (a: Vector, b: Vector) => number
 export type DistanceMetric =
   | 'euclidean'
   | 'weighted-rgb'
+  | 'redmean'
   | 'cie76'
   | 'deltaE2000'
 
@@ -128,12 +153,14 @@ export const DISTANCE_METRICS_BY_COLORSPACE: Record<
   ColorSpace,
   DistanceMetric[]
 > = {
-  RGB: ['weighted-rgb', 'euclidean'] // weighted-rgb par défaut pour meilleure perception
+  // redmean (dithertron) par défaut: perception couleur plus fine que weighted-rgb
+  RGB: ['redmean', 'weighted-rgb', 'euclidean']
 }
 
 const distanceFnFromMetric: Record<DistanceMetric, DistanceFn> = {
   euclidean: euclideanDistance,
   'weighted-rgb': weightedRGBDistance,
+  redmean: redmeanDistance,
   cie76: cie76Distance,
   deltaE2000: deltaE2000Distance
 }
