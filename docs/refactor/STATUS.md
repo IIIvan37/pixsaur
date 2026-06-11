@@ -83,19 +83,30 @@ quantize, then the preview pipeline.
 | PR13 | `paintPixels` use-case (pure, sync, total, `Clock` port; unify+extract `paintPixelAtom`+`paintPixelsAtom`, dedup history mgmt); seeds `src/editor/application/` | ✅ done (`e63aecc`) |
 | PR14 | `enterEditMode` use-case (pure, sync, total, no port; extract state-derivation from async `enterEditModeAtom` — base-buffer fallback, EGX capture, pixel mode, copies) | ✅ done (`d07c6fb`) |
 | PR15 | `renderRasterPreview` use-case (pure, sync, total, `RasterRenderer` port; unify the two duplicated render branches of `rasterPreviewImageAtom`) | ✅ done (`820d85b`) |
-| — | All five pivots extracted. Strangler-fig complete. EGX / Mode-R / DSK = lib-delegation plumbing, skip. Open follow-ups: push/PR; dedup `validate-custom-dimensions.ts`. | ⬜ optional |
+| — | All five pivots extracted. Strangler-fig complete. EGX / Mode-R / DSK = lib-delegation plumbing, skip. Open follow-ups: push/PR. | ⬜ optional |
+| — | Dead-file sweep: deleted 23 unused files (knip files 23→0); deduped `validate-custom-dimensions.ts`. | ✅ done (`5ba1e97`, `c8a3e8b`) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.73% duplication, 41 clones** (lowered 2026-06-11, post-PR15 dedup)
-- knip: **23 unused files, 59 unused exports** (lowered 2026-06-11, post-PR15 dedup)
+- jscpd: **1.71% duplication, 40 clones** (lowered 2026-06-11, dead-file sweep)
+- knip: **0 unused files, 59 unused exports, 19 unused types** (files 23→0
+  2026-06-11, `5ba1e97`: deleted dead barrels + orphan modules)
 - ~~Known real duplication: `validate-custom-dimensions.ts` in `src/preview/` +
   `src/source/`~~ — resolved 2026-06-11 (`c8a3e8b`): deleted the orphan
   `src/source/` copy (imported by nobody; the source barrel already defers to
   preview).
+- **Remaining knip surface (deferred, per-symbol grind):** 59 unused exports +
+  19 unused types — mostly never-wired setter atoms (`config/egx.ts` ×7,
+  `config/mode-r.ts` ×6), unused convolution kernels (×7), and lib/domain helpers
+  (`pixsaur-*`, `domain/cpc`). Deleting lib/domain exports **narrows public API** —
+  do deliberately, not blanket. Investigated 2026-06-11.
+- **Remaining jscpd (mostly intrinsic):** ~30 of 40 clones are *intra-file*
+  algorithmic repetition in EGX / Mode-R / quant / map (mode 0/1/2 branches,
+  dithering variants) — risky to DRY, low payoff. Real cross-file candidate left:
+  `export-zip.ts` ↔ `export-cpc-playground.ts` (~51 lines).
 
 ## How to resume (checklist)
 
