@@ -1,33 +1,23 @@
 import { atom } from 'jotai'
 import type { PixelMode } from '@/app/store/config/types'
+// Domain types now live in the application layer; imported for local use and
+// re-exported below for the store's many consumers (preview pipeline, barrels).
+import {
+  type EditHistoryEntry,
+  MAX_HISTORY_SIZE,
+  type PixelEdit
+} from '@/editor/application/types'
 import { getAspectRatioMultipliers } from '@/export/cpc-calculations'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import { getMaxColorIndex, getModeForLine } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 
+export { type EditHistoryEntry, MAX_HISTORY_SIZE, type PixelEdit }
+
 // ============================================================================
 // État de l'éditeur de preview
 // ============================================================================
-
-/**
- * Modification d'un pixel individuel
- */
-export interface PixelEdit {
-  x: number
-  y: number
-  previousInkIndex: number
-  newInkIndex: number
-}
-
-/**
- * Entrée dans l'historique des modifications
- */
-export interface EditHistoryEntry {
-  type: 'pixel' | 'region' | 'fill'
-  edits: PixelEdit[]
-  timestamp: number
-}
 
 /**
  * Copie de travail de l'index buffer pendant l'édition
@@ -120,11 +110,6 @@ export const editorHistoryAtom = atom<EditHistoryEntry[]>([])
  * Index courant dans l'historique (-1 = aucune modification)
  */
 export const editorHistoryIndexAtom = atom<number>(-1)
-
-/**
- * Taille maximale de l'historique
- */
-export const MAX_HISTORY_SIZE = 100
 
 // ============================================================================
 // Atomes dérivés
