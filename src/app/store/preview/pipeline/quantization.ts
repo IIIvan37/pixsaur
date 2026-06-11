@@ -9,12 +9,11 @@
 
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import { quantifyToCPCPlus, quantizeCPC } from '@/domain/cpc'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { countUniqueColors } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'
+import { quantizePalette } from '@/preview/application/quantize-palette'
 import { imageProcessorAtom } from '../../adapters/processors'
 import {
   autoDistinctMappingAtom,
@@ -109,184 +108,59 @@ export const quantizerAtom = atom(async (get) => {
 // ============================================================================
 
 /**
+ * Thin adapter over the `quantizePalette` use-case
+ * (`@/preview/application/quantize-palette`). Assembles the input from atoms,
+ * injects the real quantizer (`imageProcessorAtom`), and exposes the result;
+ * the raw / RGB palette atoms below select their field from it.
+ *
+ * Returns `null` when there is no source image or the processor is not yet
+ * initialized — the public atoms map that to an empty palette.
+ */
+const quantizedPaletteAtom = atom(async (get) => {
+  const buf = await get(croppedBufferAtom)
+  const sourceImage = await get(quantizationSourceImageAtom)
+  if (!buf || !sourceImage) {
+    return null
+  }
+
+  const quantizer = get(imageProcessorAtom)
+  if (!quantizer) {
+    logger.warn('Palette processor not initialized')
+    return null
+  }
+
+  const result = await quantizePalette(
+    {
+      buf,
+      sourceImage,
+      lockedVecs: get(lockedVectorsAtom),
+      cpcHardware: get(cpcHardwareAtom),
+      modeConfig: get(effectiveModeConfigAtom),
+      lockedEmptyCount: get(lockedEmptySlotsCountAtom),
+      paletteStrategy: get(paletteStrategyAtom),
+      autoDistinctMapping: get(autoDistinctMappingAtom),
+      colorDiversity: get(colorDiversityAtom)
+    },
+    { quantizer }
+  )
+
+  return result.ok ? result : null
+})
+
+/**
  * Raw quantized palette from the palette processor.
  * Colors are in RGB format but not yet hardware-quantized.
  */
 export const reducedPaletteRawAtom = atom(async (get) => {
-  const buf = await get(croppedBufferAtom)
-  const sourceImage = await get(quantizationSourceImageAtom)
-  const lockedVecs = get(lockedVectorsAtom)
-  const cpcHardware = get(cpcHardwareAtom)
-
-  if (!buf || !sourceImage) {
-    return []
-  }
-
-  const paletteProcessor = get(imageProcessorAtom)
-  if (!paletteProcessor) {
-    logger.warn('Palette processor not initialized')
-    return []
-  }
-
-  const basePalette = getPaletteForHardware(cpcHardware)
-  const modeConfig = get(effectiveModeConfigAtom)
-  const lockedEmptyCount = get(lockedEmptySlotsCountAtom)
-  // Always request max colors for palette stability
-  // We'll truncate after to exclude extra colors
-  const targetColors = modeConfig.nColors
-
-  logger.info('[Preview] Target colors calculation', {
-    modeNColors: modeConfig.nColors,
-    lockedEmptyCount,
-    targetColors,
-    lockedVecsCount: lockedVecs.length
-  })
-
-  // Quantify locked colors according to hardware BEFORE passing to quantizer
-  const quantifiedLockedVecs =
-    cpcHardware === 'plus'
-      ? lockedVecs.map(
-          (color) =>
-            [
-              quantifyToCPCPlus(color[0]),
-              quantifyToCPCPlus(color[1]),
-              quantifyToCPCPlus(color[2])
-            ] as Vector<'RGB'>
-        )
-      : lockedVecs.map(
-          (color) =>
-            [
-              quantizeCPC(color[0]),
-              quantizeCPC(color[1]),
-              quantizeCPC(color[2])
-            ] as Vector<'RGB'>
-        )
-
-  const paletteStrategy = get(paletteStrategyAtom)
-  // Read autoDistinctMapping to create dependency (triggers re-processing when toggle changes)
-  const autoDistinctMapping = get(autoDistinctMappingAtom)
-  // Read colorDiversity to create dependency (triggers re-processing when slider changes)
-  const colorDiversity = get(colorDiversityAtom)
-
-  logger.info('[Preview] Quantizing palette', {
-    targetColors,
-    paletteStrategy,
-    autoDistinctMapping,
-    colorDiversity,
-    hardware: cpcHardware
-  })
-
-  const palette = await paletteProcessor.quantizePalette(
-    buf,
-    sourceImage,
-    targetColors,
-    basePalette,
-    quantifiedLockedVecs,
-    paletteStrategy,
-    {
-      autoDistinctMapping,
-      colorDiversity
-    }
-  )
-
-  return palette
+  const result = await get(quantizedPaletteAtom)
+  return result ? result.rawPalette : []
 })
-
-// ============================================================================
-// HARDWARE QUANTIZATION HELPERS
-// ============================================================================
-
-/**
- * Quantifies colors to CPC Classic 3-level format (0, 128, 255).
- * Skips colors that are already locked.
- */
-function quantifyCPCClassicWithLocked(
-  projected: Vector[],
-  lockedColorKeys: Set<string>
-): void {
-  const quantifyToCPClassic = (value: number): number => {
-    const levels = [0, 128, 255]
-    let best = levels[0]
-    let bestDist = Math.abs(value - best)
-
-    for (const lvl of levels) {
-      const dist = Math.abs(value - lvl)
-      if (dist < bestDist) {
-        bestDist = dist
-        best = lvl
-      }
-    }
-    return best
-  }
-
-  for (const color of projected) {
-    const colorKey = `${color[0]},${color[1]},${color[2]}`
-
-    // Skip quantification for locked colors
-    if (lockedColorKeys.has(colorKey)) {
-      continue
-    }
-
-    color[0] = quantifyToCPClassic(color[0])
-    color[1] = quantifyToCPClassic(color[1])
-    color[2] = quantifyToCPClassic(color[2])
-  }
-}
-
-/**
- * Quantifies colors to CPC Plus 4-bit format.
- * Skips colors that are already locked.
- */
-function quantifyCPCPlusWithLocked(
-  projected: Vector[],
-  lockedColorKeys: Set<string>
-): void {
-  for (const color of projected) {
-    const colorKey = `${color[0]},${color[1]},${color[2]}`
-
-    // Skip quantification for locked colors
-    if (lockedColorKeys.has(colorKey)) {
-      continue
-    }
-
-    color[0] = quantifyToCPCPlus(color[0])
-    color[1] = quantifyToCPCPlus(color[1])
-    color[2] = quantifyToCPCPlus(color[2])
-  }
-}
 
 /**
  * RGB-quantized palette ready for display.
  * Colors are quantized according to CPC hardware (Classic: 27 colors, Plus: 4096 colors).
  */
 export const reducedPaletteRgbAtom = atom(async (get) => {
-  const cpcHardware = get(cpcHardwareAtom)
-  const raw = await get(reducedPaletteRawAtom)
-  const modeConfig = get(effectiveModeConfigAtom)
-  const lockedEmptyCount = get(lockedEmptySlotsCountAtom)
-
-  logger.info('[Preview] reducedPaletteRgbAtom', {
-    rawLength: raw.length,
-    modeNColors: modeConfig.nColors,
-    lockedEmptyCount
-  })
-
-  // Colors are already in RGB format, no conversion needed
-  const projected = [...raw] as Vector[] // Create a copy to avoid mutating original
-
-  // Quantification according to selected hardware
-  if (cpcHardware === 'classic') {
-    quantifyCPCClassicWithLocked(projected, new Set())
-  } else if (cpcHardware === 'plus') {
-    quantifyCPCPlusWithLocked(projected, new Set())
-  }
-
-  // Ensure we never exceed the final limit
-  // Account for locked empty slots to truncate palette
-  const effectiveMaxColors = modeConfig.nColors - lockedEmptyCount
-  if (projected.length > effectiveMaxColors) {
-    projected.splice(effectiveMaxColors)
-  }
-
-  return projected
+  const result = await get(quantizedPaletteAtom)
+  return result ? result.rgbPalette : []
 })
