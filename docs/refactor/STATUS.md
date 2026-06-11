@@ -38,10 +38,10 @@ big picture: `src/export/application/README.md` and the memory note
 - **Next step:** strangler-fig extraction is **complete** — `raster-preview.ts`
   (the last reasonable candidate) is done. All five pivots (export, preview,
   palette, raster, editor) are seeded with their main orchestrations extracted.
-  EGX / Mode-R / DSK store atoms are lib-delegation plumbing — skip. Next
-  session: either (a) push the branch / open the PR (never pushed, 15 ahead), or
-  (b) resolve the known real duplication `validate-custom-dimensions.ts`
-  (identical in `src/preview/` and `src/source/`).
+  EGX / Mode-R / DSK store atoms are lib-delegation plumbing — skip. The
+  `validate-custom-dimensions.ts` duplication is now resolved (`c8a3e8b`). Next
+  session: push the branch / open the PR (never pushed, 16 ahead) — no extraction
+  work remains.
 
 ## What PR5 landed (quantize)
 
@@ -90,10 +90,12 @@ quantize, then the preview pipeline.
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.82% duplication, 42 clones** (flat 2026-06-11, PR15)
-- knip: **24 unused files, 59 unused exports** (flat 2026-06-11, PR15)
-- Known real duplication to resolve later: `validate-custom-dimensions.ts`
-  identical in `src/preview/` and `src/source/`.
+- jscpd: **1.73% duplication, 41 clones** (lowered 2026-06-11, post-PR15 dedup)
+- knip: **23 unused files, 59 unused exports** (lowered 2026-06-11, post-PR15 dedup)
+- ~~Known real duplication: `validate-custom-dimensions.ts` in `src/preview/` +
+  `src/source/`~~ — resolved 2026-06-11 (`c8a3e8b`): deleted the orphan
+  `src/source/` copy (imported by nobody; the source barrel already defers to
+  preview).
 
 ## How to resume (checklist)
 
