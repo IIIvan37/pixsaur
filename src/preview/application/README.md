@@ -41,7 +41,20 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 | `renderIndexBufferToImageData` ✅ PR8 | `finalPreviewImageAtom` orchestration in `app/store/preview/pipeline/index-buffer.ts` | `IndexBuffer` (`{ buffer, width, height, palette }`) | `ImageData` (total, no union) | _none (pure render)_ |
 | `normalizeImage` ✅ PR9 | `normalizedImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ processed, modeConfig, resizeMode }` | `ImageData \| null` (total, no union) | _none (pure)_ |
 | `positionNormalizedImage` ✅ PR9 | `positionedNormalizedImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ normalized, modeConfig, resizeMode, exportPalette, centerImage }` | `ImageData \| null` (total, no union) | _none (pure)_ |
+| `smoothImage` ✅ PR10 | `smoothedImageAtom` orchestration in `app/store/preview/pipeline/image-pipeline.ts` | `{ resized, horizontalSmoothing, pixelMode, autoDistinctMapping, cpcHardware, modeConfig }` | `ImageData \| null` (total, no union) | _none (pure)_ |
 
+> Status: `smoothImage` landed in PR10 — `smooth-image.ts` (+ 6-test spec). The
+> last preview-pipeline transformation step. A pure, **synchronous** function:
+> skips smoothing when distinct-mapping is active (CPC Classic + Mode 0,
+> `nColors === 16`), when the user toggle is off, or when the mode's pixel width
+> is 1, otherwise calls `applyHorizontalSmoothing`
+> (`../image-processing/horizontal-smoothing`). **No port** — the helpers are
+> deterministic. **Total** — returns `ImageData | null` directly (the `null` is
+> the no-upstream-image pipeline-availability case). `smoothedImageAtom` is now a
+> thin adapter that assembles input from atoms and delegates; the upstream
+> `croppedImageAtom` / `resizedImageAtom` remain processor/canvas plumbing, not
+> orchestration.
+>
 > Status: `normalizeImage` + `positionNormalizedImage` landed in PR9 —
 > `normalize-image.ts` (+ spec, 8 tests). Two pure, **synchronous** functions in
 > one file (the two atoms stay separate so they keep distinct Jotai dependency

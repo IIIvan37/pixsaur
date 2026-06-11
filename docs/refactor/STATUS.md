@@ -11,16 +11,16 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR9 (`normalizeImage` + `positionNormalizedImage` use-cases,
-  pure / no port) — DONE (commit follows). Report:
-  `sessions/2026-06-11-pr9-normalize-image.md`.
+- **Current step:** PR10 (`smoothImage` use-case, pure / sync / no port) — DONE
+  (commit follows). Report: `sessions/2026-06-11-pr10-smooth-image.md`.
   **Committed so far:** PR0 `a743503`, PR1 `e177a53`, PR2 `d9c01cb`,
   PR3 `273dafd`, PR4 `9bb16ae`, PR5 `0e94df6`, PR6 `5c6f550`, PR7 `e22fe11`,
-  PR8 `213712e`.
-- **Next step:** continue the **preview pipeline** extraction upstream — the
-  **smoothed-image** step (`smoothedImageAtom` in `image-pipeline.ts`) — with
-  `/extract-use-case`, or decide the pipeline extraction is complete (the
-  remaining upstream atoms are processor-adapter plumbing, not orchestration).
+  PR8 `213712e`, PR9 (committed alongside its report).
+- **Next step:** preview-pipeline transformation extraction is **effectively
+  complete** (smoothImage was the last orchestration step; `croppedImageAtom` /
+  `resizedImageAtom` are processor/canvas plumbing, not orchestration). Pick a
+  **new feature** to strangle with `/extract-use-case`, or formally close the
+  refactor.
 
 ## What PR5 landed (quantize)
 
@@ -56,7 +56,8 @@ quantize, then the preview pipeline.
 | PR7 | `buildIndexBuffer` use-case (pure, no port; extract `previewIndexBufferAtom`); `IndexBuffer` type owned by application layer, `IndexBufferData` aliased | ✅ done (`e22fe11`) |
 | PR8 | `renderIndexBufferToImageData` use-case (pure, no port, total → `ImageData`; extract `finalPreviewImageAtom`) | ✅ done (`213712e`) |
 | PR9 | `normalizeImage` + `positionNormalizedImage` use-cases (pure, no port, total → `ImageData \| null`; extract `normalizedImageAtom` / `positionedNormalizedImageAtom`) | ✅ done |
-| — | Then: rest of preview pipeline (smoothed-image `smoothedImageAtom` in `image-pipeline.ts`), or stop — remaining upstream atoms are processor-adapter plumbing | ⬜ next |
+| PR10 | `smoothImage` use-case (pure, sync, no port, total → `ImageData \| null`; extract `smoothedImageAtom` in `image-pipeline.ts`) | ✅ done |
+| — | Preview-pipeline transformation extraction complete. `croppedImageAtom` / `resizedImageAtom` are processor/canvas plumbing — out of scope. Next: pick a new feature to strangle, or close the refactor. | ⬜ next |
 
 ## Guardrail baseline (ratchet — must not regress)
 
