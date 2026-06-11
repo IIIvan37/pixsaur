@@ -4,11 +4,10 @@ import {
   egxTypeAtom,
   pixelModeAtom
 } from '@/app/store/config/config'
-import type { PixelMode } from '@/app/store/config/types'
 import { logger } from '@/core'
+import { enterEditMode } from '@/editor/application/enter-edit-mode'
 import { paintPixels } from '@/editor/application/paint-pixels'
 import type { Clock } from '@/editor/application/ports'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { egxConfigAtom, egxIndexBufferAtom } from '../preview/egx-preview'
 import {
   applyManualEditsAtom,
@@ -58,84 +57,55 @@ const systemClock: Clock = { now: () => Date.now() }
  * - Initialise l'historique
  */
 export const enterEditModeAtom = atom(null, async (get, set) => {
-  // Use the effective buffer (with manual edits) for editing
-  const indexBufferData = await get(effectiveIndexBufferAtom)
+  // Use the effective buffer (with manual edits) for editing.
+  const effective = await get(effectiveIndexBufferAtom)
 
-  if (!indexBufferData) {
+  if (!effective) {
     logger.warn('[Editor] No index buffer available to edit')
     return false
   }
 
-  const { buffer, width, height, palette } = indexBufferData
-
-  // Get the BASE buffer (without manual edits) for comparison when applying changes
-  // This allows accumulating edits correctly
   const egxEnabled = get(egxEnabledAtom)
   const rasterEnabled = get(rasterEnabledAtom)
 
-  let baseBuffer: Uint8Array
+  // Resolve the mode-specific RAW base buffer (without manual edits), awaiting
+  // only the active mode's source. The use-case applies the fallback to the
+  // effective buffer when this is null.
+  let baseBufferRaw: Uint8Array | null
   if (egxEnabled) {
     const egxBuffer = await get(egxIndexBufferAtom)
-    baseBuffer = egxBuffer
-      ? new Uint8Array(egxBuffer.buffer)
-      : new Uint8Array(buffer)
+    baseBufferRaw = egxBuffer ? new Uint8Array(egxBuffer.buffer) : null
   } else if (rasterEnabled) {
     const rasterBuffer = get(rasterIndexBufferAtom)
-    baseBuffer = rasterBuffer
-      ? new Uint8Array(rasterBuffer.buffer)
-      : new Uint8Array(buffer)
+    baseBufferRaw = rasterBuffer ? new Uint8Array(rasterBuffer.buffer) : null
   } else {
     const previewBuffer = await get(previewIndexBufferAtom)
-    baseBuffer = previewBuffer
-      ? new Uint8Array(previewBuffer.buffer)
-      : new Uint8Array(buffer)
+    baseBufferRaw = previewBuffer ? new Uint8Array(previewBuffer.buffer) : null
   }
 
-  // Save the BASE buffer (without edits) for comparison when applying changes
-  set(editorOriginalBufferAtom, baseBuffer)
+  const session = enterEditMode({
+    effective,
+    baseBufferRaw,
+    egxEnabled,
+    egxConfig: get(egxConfigAtom),
+    egxType: get(egxTypeAtom),
+    configPixelMode: get(pixelModeAtom),
+    rasterChanges: get(rasterChangesAtom)
+  })
 
-  // Copy the EFFECTIVE buffer (with existing edits) for editing
-  const editBuffer = new Uint8Array(buffer)
+  // Map the computed session onto the editor atoms.
+  set(editorOriginalBufferAtom, session.originalBuffer)
+  set(editorIndexBufferAtom, session.editBuffer)
+  set(editorDimensionsAtom, session.dimensions)
+  set(editorEgxEnabledAtom, session.egxEnabled)
+  set(editorEgxConfigAtom, session.egxConfig)
+  set(editorPixelModeAtom, session.pixelMode)
+  set(editorBasePaletteAtom, session.basePalette)
+  set(editorRasterChangesAtom, session.rasterChanges)
 
-  set(editorIndexBufferAtom, editBuffer)
-  set(editorDimensionsAtom, { width, height })
-
-  // Capturer l'état EGX (déjà récupéré plus haut)
-  set(editorEgxEnabledAtom, egxEnabled)
-  if (egxEnabled) {
-    const egxConfig = get(egxConfigAtom)
-    set(editorEgxConfigAtom, egxConfig)
-  } else {
-    set(editorEgxConfigAtom, null)
-  }
-
-  // Capturer le mode pixel pour l'aspect ratio
-  // En EGX, utiliser le mode haute résolution pour l'aspect ratio
-  if (egxEnabled) {
-    const egxType = get(egxTypeAtom)
-    // EGX1 uses Mode 1 dimensions (square pixels)
-    // EGX2 uses Mode 2 dimensions (tall pixels)
-    const egxPixelMode: PixelMode = egxType === 'egx1' ? 1 : 2
-    set(editorPixelModeAtom, egxPixelMode)
-  } else {
-    set(editorPixelModeAtom, get(pixelModeAtom))
-  }
-
-  // Copier la palette de base
-  set(
-    editorBasePaletteAtom,
-    palette.map((c) => [...c] as Vector<'RGB'>)
-  )
-
-  // Copier les changements raster
-  const rasterChanges = get(rasterChangesAtom)
-  set(editorRasterChangesAtom, [...rasterChanges])
-
-  // Initialiser l'historique
+  // Constant resets (no business logic): fresh history + view controls.
   set(editorHistoryAtom, [])
   set(editorHistoryIndexAtom, -1)
-
-  // Réinitialiser les contrôles
   set(editorSelectedInkAtom, 0)
   set(editorCursorAtom, null)
   set(editorViewportAtom, { x: 0, y: 0 })
@@ -145,7 +115,11 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
   // Activer le mode édition
   set(editorModeAtom, true)
 
-  logger.info('[Editor] Entered edit mode', { width, height, egxEnabled })
+  logger.info('[Editor] Entered edit mode', {
+    width: session.dimensions.width,
+    height: session.dimensions.height,
+    egxEnabled: session.egxEnabled
+  })
   return true
 })
 
