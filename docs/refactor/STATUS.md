@@ -11,11 +11,17 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR13 (`paintPixels` use-case, pure / sync / total, one
-  `Clock` port) — DONE (`e63aecc`). Report:
-  `sessions/2026-06-11-pr13-paint-pixels.md`. First use-case of the **editor**
-  feature (seeds `src/editor/application/`); unified `paintPixelAtom` +
-  `paintPixelsAtom` and deduped the history-management logic; moved
+- **Current step:** PR14 (`enterEditMode` use-case, pure / sync / total / no
+  port) — DONE (`d07c6fb`). Report:
+  `sessions/2026-06-11-pr14-enter-edit-mode.md`. Second editor use-case:
+  extracted the state-derivation buried in async `enterEditModeAtom` (base-buffer
+  fallback, EGX capture, aspect-ratio pixel mode, defensive copies). The atom is
+  now a thin adapter — awaits the candidate buffers, resolves the active mode's
+  raw base buffer, calls the use-case, writes the `EditSession` + does the
+  constant view-control resets.
+- **Prev step:** PR13 (`paintPixels` use-case, pure / sync / total, one `Clock`
+  port) — DONE (`e63aecc`). Seeded `src/editor/application/`; unified
+  `paintPixelAtom` + `paintPixelsAtom`, deduped history mgmt; moved
   `PixelEdit` / `EditHistoryEntry` / `MAX_HISTORY_SIZE` to the application layer
   (re-exported by `editor-state.ts`).
 - **Rebased onto `origin/main` (`e169299`, #327 mode0 horizontal downscale)** —
@@ -27,13 +33,14 @@ big picture: `src/export/application/README.md` and the memory note
   apply the linear-resample / skip-second-blur rule (the atoms forward
   `resampleStrategyAtom`). Verified: typecheck + targeted specs (71) + full
   suite green.
-- **Next step:** the **editor** pivot has started (`paintPixels` extracted).
-  Next editor candidate is `enterEditModeAtom` (async, captures
-  buffers/palette/EGX state — meatier but mostly atom-graph wiring; assess purity
-  payoff first). `undoEditAtom` / `redoEditAtom` stay thin (replay a history
-  entry — nothing to extract). Otherwise raster's `raster-preview.ts` (205 LOC,
-  low payoff). EGX / Mode-R / DSK are mostly lib-delegation plumbing — skip. Run
-  `/extract-use-case`.
+- **Next step:** editor orchestration is now **done** (`paintPixels` +
+  `enterEditMode` extracted). `cancelEditModeAtom` / `applyEditModeAtom` /
+  `undoEditAtom` / `redoEditAtom` stay thin (teardown / history replay — nothing
+  to extract). Remaining strangler-fig candidate is raster's `raster-preview.ts`
+  (205 LOC, low payoff — mostly processor/lib delegation). EGX / Mode-R / DSK are
+  lib-delegation plumbing — skip. Either pick `raster-preview.ts` via
+  `/extract-use-case`, or pause: all five pivots (export, preview, palette,
+  raster, editor) are seeded with their main orchestrations extracted.
 
 ## What PR5 landed (quantize)
 
@@ -73,15 +80,16 @@ quantize, then the preview pipeline.
 | PR11 | `reducePalette` use-case (pure, sync, no port, total → `PaletteSlot[]`; extract `setReducedPaletteAtom`); dedup store helpers/type onto `@/domain/cpc` | ✅ done |
 | PR12 | `optimizeRaster` use-case (pure, sync, total, `IdGenerator` port; extract `autoOptimizeRasterAtom`); seeds `src/raster/application/` | ✅ done |
 | PR13 | `paintPixels` use-case (pure, sync, total, `Clock` port; unify+extract `paintPixelAtom`+`paintPixelsAtom`, dedup history mgmt); seeds `src/editor/application/` | ✅ done (`e63aecc`) |
-| — | Preview + palette + raster main orchestration done; editor pivot started. Next: editor `enterEditModeAtom` (assess payoff) or `raster-preview.ts` (low payoff). EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ next |
+| PR14 | `enterEditMode` use-case (pure, sync, total, no port; extract state-derivation from async `enterEditModeAtom` — base-buffer fallback, EGX capture, pixel mode, copies) | ✅ done (`d07c6fb`) |
+| — | All five pivots (export, preview, palette, raster, editor) seeded with main orchestrations extracted. Remaining: `raster-preview.ts` (low payoff). EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ optional |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.83% duplication, 42 clones** (lowered 2026-06-11, PR13)
-- knip: **24 unused files, 59 unused exports** (flat 2026-06-11, PR13)
+- jscpd: **1.82% duplication, 42 clones** (lowered 2026-06-11, PR14)
+- knip: **24 unused files, 59 unused exports** (flat 2026-06-11, PR14)
 - Known real duplication to resolve later: `validate-custom-dimensions.ts`
   identical in `src/preview/` and `src/source/`.
 
