@@ -11,11 +11,13 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR12 (`optimizeRaster` use-case, pure / sync / total, one
-  `IdGenerator` port) — DONE. Report:
-  `sessions/2026-06-11-pr12-optimize-raster.md`. First use-case of the **raster**
-  feature (seeds `src/raster/application/`); extracted the
-  `autoOptimizeRasterAtom` orchestration.
+- **Current step:** PR13 (`paintPixels` use-case, pure / sync / total, one
+  `Clock` port) — DONE (`e63aecc`). Report:
+  `sessions/2026-06-11-pr13-paint-pixels.md`. First use-case of the **editor**
+  feature (seeds `src/editor/application/`); unified `paintPixelAtom` +
+  `paintPixelsAtom` and deduped the history-management logic; moved
+  `PixelEdit` / `EditHistoryEntry` / `MAX_HISTORY_SIZE` to the application layer
+  (re-exported by `editor-state.ts`).
 - **Rebased onto `origin/main` (`e169299`, #327 mode0 horizontal downscale)** —
   the branch now sits on top of current main (0 behind / 13 ahead). All 13
   refactor SHAs were rewritten by the rebase; **see `git log` for current
@@ -25,11 +27,12 @@ big picture: `src/export/application/README.md` and the memory note
   apply the linear-resample / skip-second-blur rule (the atoms forward
   `resampleStrategyAtom`). Verified: typecheck + targeted specs (71) + full
   suite green.
-- **Next step:** the **raster** feature's main orchestration
-  (`autoOptimizeRasterAtom`) is now extracted. Remaining raster files are thin
-  atom wiring / lib-delegation — `raster-preview.ts` (205 LOC) is the next raster
-  candidate but lower payoff. Otherwise pivot to **editor** (largest/riskiest).
-  EGX / Mode-R / DSK are mostly lib-delegation plumbing — skip. Run
+- **Next step:** the **editor** pivot has started (`paintPixels` extracted).
+  Next editor candidate is `enterEditModeAtom` (async, captures
+  buffers/palette/EGX state — meatier but mostly atom-graph wiring; assess purity
+  payoff first). `undoEditAtom` / `redoEditAtom` stay thin (replay a history
+  entry — nothing to extract). Otherwise raster's `raster-preview.ts` (205 LOC,
+  low payoff). EGX / Mode-R / DSK are mostly lib-delegation plumbing — skip. Run
   `/extract-use-case`.
 
 ## What PR5 landed (quantize)
@@ -69,15 +72,16 @@ quantize, then the preview pipeline.
 | PR10 | `smoothImage` use-case (pure, sync, no port, total → `ImageData \| null`; extract `smoothedImageAtom` in `image-pipeline.ts`) | ✅ done |
 | PR11 | `reducePalette` use-case (pure, sync, no port, total → `PaletteSlot[]`; extract `setReducedPaletteAtom`); dedup store helpers/type onto `@/domain/cpc` | ✅ done |
 | PR12 | `optimizeRaster` use-case (pure, sync, total, `IdGenerator` port; extract `autoOptimizeRasterAtom`); seeds `src/raster/application/` | ✅ done |
-| — | Preview + palette done; raster's main orchestration extracted. Next: `raster-preview.ts` (low payoff) or pivot to **editor**. EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ next |
+| PR13 | `paintPixels` use-case (pure, sync, total, `Clock` port; unify+extract `paintPixelAtom`+`paintPixelsAtom`, dedup history mgmt); seeds `src/editor/application/` | ✅ done (`e63aecc`) |
+| — | Preview + palette + raster main orchestration done; editor pivot started. Next: editor `enterEditModeAtom` (assess payoff) or `raster-preview.ts` (low payoff). EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ next |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.89% duplication, 43 clones** (lowered 2026-06-11, PR12)
-- knip: **24 unused files, 59 unused exports** (lowered 2026-06-11, PR12)
+- jscpd: **1.83% duplication, 42 clones** (lowered 2026-06-11, PR13)
+- knip: **24 unused files, 59 unused exports** (flat 2026-06-11, PR13)
 - Known real duplication to resolve later: `validate-custom-dimensions.ts`
   identical in `src/preview/` and `src/source/`.
 
