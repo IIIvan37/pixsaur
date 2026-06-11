@@ -6,21 +6,20 @@
 
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { IndexBuffer } from '@/preview/application/build-index-buffer'
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 /**
- * Index buffer with metadata
+ * Index buffer with metadata.
+ *
+ * Canonical shape owned by the application layer (`buildIndexBuffer` use-case);
+ * aliased here for the existing store/component consumers (adapter depends on
+ * the application layer, not the reverse).
  */
-export type IndexBufferData = {
-  buffer: Uint8Array
-  width: number
-  height: number
-  palette: Vector[]
-}
+export type IndexBufferData = IndexBuffer
 
 // ============================================================================
 // CORE ATOMS

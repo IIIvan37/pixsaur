@@ -9,8 +9,7 @@
  */
 
 import { atom } from 'jotai'
-import { findDarkestValidColor, replaceIgnoredSlots } from '@/domain/cpc'
-import { rgbToIndexBufferExact } from '@/export'
+import { buildIndexBuffer } from '@/preview/application/build-index-buffer'
 import { applyManualEditsToBuffer, manualPixelEditsAtom } from './manual-edits'
 import { exportPaletteWithSlotsAtom } from './palette-export'
 import { previewImageAtom } from './preview-image'
@@ -20,42 +19,24 @@ import { previewImageAtom } from './preview-image'
 // ============================================================================
 
 /**
- * Index buffer of the preview image.
- * Each pixel is represented by its palette index (0-15).
- * Used for raster rendering (palette modification per line).
+ * Index buffer of the preview image — thin adapter over the `buildIndexBuffer`
+ * use-case (`@/preview/application/build-index-buffer`). Each pixel is
+ * represented by its palette index (0-15); used for raster rendering (palette
+ * modification per line).
+ *
+ * Returns `null` when there is no preview image yet or the use-case fails
+ * (e.g. an empty export palette).
  */
 export const previewIndexBufferAtom = atom(async (get) => {
   const previewImage = await get(previewImageAtom)
-  const exportPalette = await get(exportPaletteWithSlotsAtom)
+  if (!previewImage) return null
 
-  if (!previewImage || exportPalette.length === 0) {
-    return null
-  }
+  const result = buildIndexBuffer({
+    previewImage,
+    exportPalette: await get(exportPaletteWithSlotsAtom)
+  })
 
-  // Prepare palette for mapping: replace ignored slots [-1,-1,-1] with the
-  // darkest valid color so every pixel maps — same prep as the dither step.
-  const ditheringPalette = replaceIgnoredSlots(
-    exportPalette,
-    findDarkestValidColor(exportPalette)
-  )
-
-  // Convert ImageData to index buffer
-  // rgbToIndexBufferExact expects Uint8ClampedArray (RGBA data)
-  // 3rd param (quantize) must be false since image is already quantized
-  // 4th param (fallbackToDarkest) must be true to handle unmapped pixels
-  const indexBuffer = rgbToIndexBufferExact(
-    previewImage.data,
-    ditheringPalette,
-    false,
-    true
-  )
-
-  return {
-    buffer: indexBuffer,
-    width: previewImage.width,
-    height: previewImage.height,
-    palette: ditheringPalette
-  }
+  return result.ok ? result.indexBuffer : null
 })
 
 // ============================================================================
