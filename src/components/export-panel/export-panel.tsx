@@ -27,10 +27,15 @@ import {
   exportEgxToCpcPlayground,
   exportModeRToCpcPlayground,
   exportToCpcPlayground,
-  exportZip,
   generateClassicRasterASM,
   generatePlusRasterASM
 } from '@/export'
+import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
+import {
+  type ExportImageToZipInput,
+  exportImageToZip
+} from '@/export/application/export-image-to-zip'
+import { resolveFileSink } from '@/export/application/file-sink'
 import { paletteToCPCPlusValues } from '@/export/exports/cpc-plus-format'
 import { rgbToFirmwareIndex } from '@/export/exports/raster-format'
 import ExportConfigDialog from './export-config-dialog'
@@ -80,94 +85,29 @@ export default function ExportPanel() {
   }
 
   const handleExport = async (config: ExportConfig) => {
-    // EGX export path
-    if (egxEnabled && egxExportData) {
-      const {
-        indexBuffer,
-        palette,
-        width,
-        height,
-        config: egxConfig
-      } = egxExportData
+    const egx = egxEnabled && egxExportData ? egxExportData : null
 
-      // Convert palette to firmware indices
-      const paletteFirmware = palette.map((c) =>
-        rgbToFirmwareIndex(c[0], c[1], c[2])
-      )
-
-      // Convert palette to export format
-      const paletteForExport = palette.map(
-        (c) => [c[0], c[1], c[2]] as [number, number, number]
-      )
-
-      // Create canvas for PNG export
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')
-      if (ctx) {
-        const imageData = new ImageData(width, height)
-        for (let i = 0; i < indexBuffer.length; i++) {
-          const color = palette[indexBuffer[i]] ?? [0, 0, 0]
-          imageData.data[i * 4] = color[0]
-          imageData.data[i * 4 + 1] = color[1]
-          imageData.data[i * 4 + 2] = color[2]
-          imageData.data[i * 4 + 3] = 255
+    let standard: ExportImageToZipInput['standard'] = null
+    if (!egx) {
+      const data = getExportData()
+      if (data) {
+        standard = {
+          indexBuf: data.indexBuf,
+          paletteFirmware: data.paletteFirmware,
+          effectivePalette: data.effectivePalette,
+          cleanImage: data.cleanImage,
+          rasterChanges,
+          previewImage: previewImageWithRasters ?? undefined
         }
-        ctx.putImageData(imageData, 0, 0)
       }
-
-      const success = await exportZip({
-        indexBuf: indexBuffer,
-        paletteFirmware,
-        canvas,
-        modeConfig,
-        cpcHardware,
-        reducedPalette: paletteForExport,
-        config,
-        egxConfig,
-        egxWidth: width,
-        egxHeight: height
-      })
-
-      if (success) {
-        setNotificationType('success')
-        setNotificationMessage(_(msg`File exported successfully!`))
-        setShowNotification(true)
-      }
-      return
     }
 
-    // Standard export path
-    const data = getExportData()
-    if (!data) return
+    const result = await exportImageToZip(
+      { modeConfig, cpcHardware, config, egx, standard },
+      { canvasFactory: domCanvasFactory, fileSink: resolveFileSink() }
+    )
 
-    const { indexBuf, paletteFirmware, effectivePalette, cleanImage } = data
-
-    const paletteForExport = effectivePalette.map((colorData: any) => {
-      const color = Array.isArray(colorData) ? colorData : Array.from(colorData)
-      return [color[0], color[1], color[2]] as [number, number, number]
-    })
-
-    const canvas = document.createElement('canvas')
-    canvas.width = cleanImage.width
-    canvas.height = cleanImage.height
-    const ctx = canvas.getContext('2d')
-    ctx?.putImageData(cleanImage, 0, 0)
-
-    const success = await exportZip({
-      indexBuf,
-      paletteFirmware,
-      canvas,
-      modeConfig,
-      cpcHardware,
-      reducedPalette: paletteForExport,
-      config,
-      rasterChanges,
-      previewImage: previewImageWithRasters ?? undefined
-    })
-
-    if (success) {
+    if (result.ok) {
       setNotificationType('success')
       setNotificationMessage(_(msg`File exported successfully!`))
       setShowNotification(true)

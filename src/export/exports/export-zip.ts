@@ -3,7 +3,6 @@ import type { CpcModeConfig } from '@/app/store/config/types'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCHardware } from '@/libs/types'
-import { isTauri, saveZipFileTauri } from '@/tauri'
 import { firmwareToHardware } from './cpc-format'
 import { cpcPlusValuesToASM, paletteToCPCPlusValues } from './cpc-plus-format'
 import { exportEgxLinear, exportEgxSCR, isEgxOverscan } from './export-scr'
@@ -338,7 +337,15 @@ async function exportCPCClassicData(
   exportPalettesClassic(zip, paletteFirmware, config)
 }
 
-export async function exportZip(params: ExportZipParams): Promise<boolean> {
+/**
+ * Build the export ZIP and return it as a {@link Blob}. Persisting the blob
+ * (browser download vs desktop save dialog) is the caller's responsibility via
+ * a `FileSink` — see `src/export/application/`. Returns `null` when the canvas
+ * pixels can't be read back.
+ */
+export async function buildExportZipBlob(
+  params: ExportZipParams
+): Promise<Blob | null> {
   const {
     indexBuf,
     paletteFirmware,
@@ -370,7 +377,7 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
 
   const ctx = canvas.getContext('2d')
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
-  if (!data) return false
+  if (!data) return null
 
   // Check if mode is standard (needed for SNA export)
   const isStandardMode = isEgxMode
@@ -558,25 +565,6 @@ export async function exportZip(params: ExportZipParams): Promise<boolean> {
     })
   }
 
-  // 5. Finalisation et téléchargement
-  const zipBlob = await zip.generateAsync({ type: 'blob' })
-
-  // Check if running in Tauri (desktop) or web
-  if (isTauri()) {
-    // Use Tauri's native file dialog and save
-    const success = await saveZipFileTauri(
-      zipBlob,
-      `${config.filename || 'pixsaur-export'}.zip`
-    )
-    return success
-  } else {
-    // Use browser download
-    const url = URL.createObjectURL(zipBlob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${config.filename || 'pixsaur-export'}.zip`
-    a.click()
-    URL.revokeObjectURL(url)
-    return true
-  }
+  // Finalisation: hand the blob back to the caller's FileSink for persistence.
+  return zip.generateAsync({ type: 'blob' })
 }
