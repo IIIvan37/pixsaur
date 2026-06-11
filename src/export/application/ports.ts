@@ -8,6 +8,15 @@
  * Living registry: see `./README.md`.
  */
 
+import type {
+  CpcPlaygroundExportResult,
+  EgxCpcPlaygroundExportOptions
+} from '../exports/exporters/export-cpc-playground'
+import type {
+  ModeRSnaExportOptions,
+  SnaExportOptions
+} from '../exports/exporters/export-sna'
+
 /**
  * Opens a CPC Playground share URL in the user's environment.
  *
@@ -44,4 +53,29 @@ export interface FileSink {
 export interface CanvasFactory {
   /** Create a canvas sized `width` × `height`. */
   createCanvas(width: number, height: number): HTMLCanvasElement
+}
+
+/**
+ * Shares a rendered image to CPC Playground (uploads the generated ASM and
+ * opens the resulting share URL) for each render mode.
+ *
+ * Wraps the impure exporters in `../exports/exporters/export-cpc-playground.ts`
+ * (network `fetch` + {@link PlaygroundPort} URL open) behind one interface so
+ * the `openImageInPlayground` use-case stays pure and testable with a fake.
+ *
+ * - Web & desktop adapter: `./adapters/cpc-playground-exporter.ts`
+ *   (`cpcPlaygroundExporter`); the underlying exporters resolve the
+ *   {@link PlaygroundPort} per runtime.
+ */
+export interface PlaygroundExporter {
+  /** Standard (single-frame) export. */
+  exportStandard(options: SnaExportOptions): Promise<CpcPlaygroundExportResult>
+  /** Mode R (dual-frame interlaced) export. */
+  exportModeR(
+    options: ModeRSnaExportOptions
+  ): Promise<CpcPlaygroundExportResult>
+  /** EGX (line-by-line mode alternation) export. */
+  exportEgx(
+    options: EgxCpcPlaygroundExportOptions
+  ): Promise<CpcPlaygroundExportResult>
 }
