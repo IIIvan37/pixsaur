@@ -45,6 +45,13 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 > `CanvasFactory` prediction was dropped; the impure upload + URL-open arrive
 > through the new `PlaygroundExporter` port. The `Result` carries `mode` so the
 > UI keeps its per-mode localized success/error messages.
+>
+> PR4 added the `useExportActions` hook
+> (`components/export-panel/use-export-actions.ts`) — the React adapter that owns
+> the atom→input wiring + port injection for **both** use-cases plus the
+> notification / loading UI state. `export-panel.tsx` is now thin UI (dialog open
+> state + render) and holds no orchestration. The per-mode Lingui message helpers
+> moved into the hook (templates unchanged → no catalog change).
 
 ## Mode branching
 
