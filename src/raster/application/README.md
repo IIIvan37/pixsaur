@@ -15,6 +15,7 @@ the real ports, and map the result to state.
 | Port | Method | Runtime adapter | Used by |
 |------|--------|-----------------|---------|
 | `IdGenerator` | `generate(): string` | `generateChangeId` (`app/store/raster/raster-changes.ts`, `Date.now()`+`Math.random()`) | `optimizeRaster` |
+| `RasterRenderer` | `renderRasterPreview(...)` (`Pick<ImageProcessor, …>`) | `imageProcessorAtom` (GPU/CPU; **nullable**) | `renderRasterPreview` |
 
 ## Use-cases
 
@@ -23,6 +24,7 @@ One row per extracted use-case.
 | Use-case | Replaces | Input (summary) | Result | Ports used |
 |----------|----------|-----------------|--------|------------|
 | `optimizeRaster` ✅ | `autoOptimizeRasterAtom` orchestration in `app/store/raster/raster-optimizer.ts` | `{ sourceImage, exportPalette, modeConfig, hardware, ditheringIntensity, existingChanges, resetChanges, maxChangesPerLine }` | `{ optimizationResult, changes, changesCount, linesAffected }` (total) | `IdGenerator` |
+| `renderRasterPreview` ✅ | the two duplicated render branches in `rasterPreviewImageAtom` (`app/store/raster/raster-preview.ts`) | `{ indexBuffer, changes, modeConfig: { width, height } }` | `ImageData \| null` (total) | `RasterRenderer` |
 
 > Status: `optimizeRaster` is the first raster use-case (seeds the folder). A
 > pure, **synchronous** function: it derives the fixed global palette (Mode 0
@@ -47,6 +49,18 @@ One row per extracted use-case.
 > (`preprocessImageForRaster`, `optimizeLinePalettesWithIndexBuffer`,
 > `MODE_0_*`); `cpcPalette` comes from `@/palettes/cpc-palette`. The verbose
 > `logger.time` / `logger.info` traces in the old atom were dropped.
+
+> `renderRasterPreview` unifies the two near-identical branches that used to live
+> in `rasterPreviewImageAtom` (optimized raster buffer vs standard preview
+> buffer): both validated buffer dimensions against the mode config and rendered
+> with a GPU→CPU fallback. The use-case takes the already-chosen `IndexBuffer`
+> (reused from `@/preview/application/build-index-buffer`), validates dims
+> (stale → `null`), tries the GPU via the nullable `RasterRenderer` port, and
+> falls back to the pure `createRasterPreviewImageData` on absence/throw. The GPU
+> output is always copied into a fresh `ImageData` (GPU buffers may be recycled).
+> The atom stays a thin adapter: enabled/changes guards, export-palette
+> dependency, and choosing which buffer to feed in. Verbose `[RASTER]` debug logs
+> were dropped (matching the `optimizeRaster` precedent).
 
 ## Notes
 

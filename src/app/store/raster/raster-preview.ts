@@ -6,8 +6,7 @@
  */
 
 import { atom } from 'jotai'
-import { logger } from '@/core'
-import { createRasterPreviewImageData } from '@/libs/pixsaur-raster'
+import { renderRasterPreview } from '@/raster/application/render-raster-preview'
 import { imageProcessorAtom } from '../adapters/processors'
 import {
   effectiveModeConfigAtom,
@@ -41,125 +40,42 @@ export const rasterPreviewImageAtom = atom(async (get) => {
   const enabled = get(rasterEnabledAtom)
   const changes = get(rasterChangesAtom)
 
-  // Explicitly depend on optimization result AND version to force re-evaluation
-  const optimizationResult = get(rasterOptimizationResultAtom)
-  const version = get(rasterVersionAtom)
-
-  logger.debug('[RASTER] rasterPreviewImageAtom evaluation', {
-    enabled,
-    changesCount: changes.length,
-    hasOptimizationResult: !!optimizationResult,
-    version
-  })
+  // Explicitly depend on optimization result AND version to force re-evaluation.
+  get(rasterOptimizationResultAtom)
+  get(rasterVersionAtom)
 
   if (!enabled || changes.length === 0) {
-    logger.debug('[RASTER] rasterPreviewImageAtom returning null', {
-      reason: enabled ? 'no changes' : 'disabled'
-    })
     return null
   }
 
-  // Get the export palette for rendering
+  // Depend on the export palette so the preview recomputes once it is ready.
   const exportPalette = await get(exportPaletteWithSlotsAtom)
   if (exportPalette.length === 0) {
     return null
   }
 
-  // Get current mode config to validate dimensions
   const modeConfig = get(effectiveModeConfigAtom)
+  const deps = { renderer: get(imageProcessorAtom) }
+  const dims = { width: modeConfig.width, height: modeConfig.height }
 
-  // Check if we have an optimized raster index buffer (with manual edits applied)
+  // Prefer the optimized raster buffer (with manual edits); fall back to the
+  // standard preview buffer for purely manual raster changes.
   const rasterIndexBuffer = get(finalRasterIndexBufferAtom)
-
   if (rasterIndexBuffer) {
-    logger.debug('[RASTER] Using optimized raster index buffer', {
-      bufferWidth: rasterIndexBuffer.width,
-      bufferHeight: rasterIndexBuffer.height,
-      modeWidth: modeConfig.width,
-      modeHeight: modeConfig.height
-    })
-
-    // Validate that buffer dimensions match current mode config
-    if (
-      rasterIndexBuffer.width !== modeConfig.width ||
-      rasterIndexBuffer.height !== modeConfig.height
-    ) {
-      // Dimensions changed, buffer is stale - return null
-      logger.debug('[RASTER] Buffer dimensions mismatch, returning null')
-      return null
-    }
-
-    // Use the optimized index buffer from auto-optimization
-    // This ensures pixel-to-ink mapping is consistent with raster changes
-    const { buffer, width, height, palette } = rasterIndexBuffer
-    const processor = get(imageProcessorAtom)
-    if (processor) {
-      try {
-        const preview = processor.renderRasterPreview(
-          buffer,
-          width,
-          height,
-          palette,
-          changes
-        )
-        logger.debug('[RASTER] GPU preview rendered successfully')
-        // Force creation of new ImageData to avoid GPU cache issues
-        return new ImageData(
-          new Uint8ClampedArray(preview.data),
-          preview.width,
-          preview.height
-        )
-      } catch (error_) {
-        // Fallback CPU if GPU path fails
-        logger.warn('[RASTER] GPU preview failed, falling back to CPU', {
-          error: error_
-        })
-      }
-    }
-    const preview = createRasterPreviewImageData(
-      buffer,
-      width,
-      height,
-      palette,
-      changes
+    return renderRasterPreview(
+      { indexBuffer: rasterIndexBuffer, changes, modeConfig: dims },
+      deps
     )
-    return preview
   }
 
-  // Fallback to standard preview index buffer for manual raster changes
   const indexBufferData = await get(finalPreviewIndexBufferAtom)
   if (!indexBufferData) {
     return null
   }
-
-  // Validate that buffer dimensions match current mode config
-  if (
-    indexBufferData.width !== modeConfig.width ||
-    indexBufferData.height !== modeConfig.height
-  ) {
-    // Dimensions changed, buffer is stale - return null
-    return null
-  }
-
-  const { buffer, width, height, palette } = indexBufferData
-  const processor = get(imageProcessorAtom)
-  if (processor) {
-    try {
-      return processor.renderRasterPreview(
-        buffer,
-        width,
-        height,
-        palette,
-        changes
-      )
-    } catch (error_) {
-      // Fallback CPU if GPU path fails
-      logger.warn('[RASTER] GPU render failed, falling back to CPU', {
-        error: error_
-      })
-    }
-  }
-  return createRasterPreviewImageData(buffer, width, height, palette, changes)
+  return renderRasterPreview(
+    { indexBuffer: indexBufferData, changes, modeConfig: dims },
+    deps
+  )
 })
 
 /**

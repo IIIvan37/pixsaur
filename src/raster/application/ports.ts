@@ -8,6 +8,8 @@
  * Living registry: see `./README.md`.
  */
 
+import type { ImageProcessor } from '@/libs/pixsaur-adapter/interfaces'
+
 /**
  * Produces unique identifiers for newly created raster changes.
  *
@@ -20,3 +22,13 @@ export interface IdGenerator {
   /** Return a fresh, unique id. */
   generate(): string
 }
+
+/**
+ * Renders a raster preview (per-line palette changes) from an index buffer.
+ *
+ * The runtime adapter is the GPU/CPU `ImageProcessor` (`imageProcessorAtom`);
+ * its `renderRasterPreview` runs on the GPU when available. `renderRasterPreview`
+ * (the use-case) falls back to the pure CPU renderer when this port is absent or
+ * throws, so it is injected nullable.
+ */
+export type RasterRenderer = Pick<ImageProcessor, 'renderRasterPreview'>
