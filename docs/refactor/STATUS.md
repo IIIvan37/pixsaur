@@ -11,19 +11,21 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR14 (`enterEditMode` use-case, pure / sync / total / no
+- **Current step:** PR15 (`renderRasterPreview` use-case, pure / sync / total,
+  `RasterRenderer` port) — DONE (`820d85b`). Report:
+  `sessions/2026-06-11-pr15-render-raster-preview.md`. Unified the two duplicated
+  render branches of `rasterPreviewImageAtom` (optimized raster buffer vs
+  standard preview buffer) into one use-case: validate buffer dims vs mode config
+  (stale → `null`), render via nullable `RasterRenderer` port (GPU) with CPU
+  fallback (`createRasterPreviewImageData`), always copy GPU output into a fresh
+  `ImageData`. Atom is now a thin adapter (guards + buffer choice + atom reads);
+  verbose `[RASTER]` logs dropped. `effectivePreviewImageAtom` (pure priority
+  selector) left as-is.
+- **Prev step:** PR14 (`enterEditMode` use-case, pure / sync / total / no
   port) — DONE (`d07c6fb`). Report:
-  `sessions/2026-06-11-pr14-enter-edit-mode.md`. Second editor use-case:
-  extracted the state-derivation buried in async `enterEditModeAtom` (base-buffer
-  fallback, EGX capture, aspect-ratio pixel mode, defensive copies). The atom is
-  now a thin adapter — awaits the candidate buffers, resolves the active mode's
-  raw base buffer, calls the use-case, writes the `EditSession` + does the
-  constant view-control resets.
-- **Prev step:** PR13 (`paintPixels` use-case, pure / sync / total, one `Clock`
-  port) — DONE (`e63aecc`). Seeded `src/editor/application/`; unified
-  `paintPixelAtom` + `paintPixelsAtom`, deduped history mgmt; moved
-  `PixelEdit` / `EditHistoryEntry` / `MAX_HISTORY_SIZE` to the application layer
-  (re-exported by `editor-state.ts`).
+  `sessions/2026-06-11-pr14-enter-edit-mode.md`. Extracted the state-derivation
+  buried in async `enterEditModeAtom` (base-buffer fallback, EGX capture,
+  aspect-ratio pixel mode, defensive copies); atom became a thin adapter.
 - **Rebased onto `origin/main` (`e169299`, #327 mode0 horizontal downscale)** —
   the branch now sits on top of current main (0 behind / 13 ahead). All 13
   refactor SHAs were rewritten by the rebase; **see `git log` for current
@@ -33,14 +35,13 @@ big picture: `src/export/application/README.md` and the memory note
   apply the linear-resample / skip-second-blur rule (the atoms forward
   `resampleStrategyAtom`). Verified: typecheck + targeted specs (71) + full
   suite green.
-- **Next step:** editor orchestration is now **done** (`paintPixels` +
-  `enterEditMode` extracted). `cancelEditModeAtom` / `applyEditModeAtom` /
-  `undoEditAtom` / `redoEditAtom` stay thin (teardown / history replay — nothing
-  to extract). Remaining strangler-fig candidate is raster's `raster-preview.ts`
-  (205 LOC, low payoff — mostly processor/lib delegation). EGX / Mode-R / DSK are
-  lib-delegation plumbing — skip. Either pick `raster-preview.ts` via
-  `/extract-use-case`, or pause: all five pivots (export, preview, palette,
-  raster, editor) are seeded with their main orchestrations extracted.
+- **Next step:** strangler-fig extraction is **complete** — `raster-preview.ts`
+  (the last reasonable candidate) is done. All five pivots (export, preview,
+  palette, raster, editor) are seeded with their main orchestrations extracted.
+  EGX / Mode-R / DSK store atoms are lib-delegation plumbing — skip. Next
+  session: either (a) push the branch / open the PR (never pushed, 15 ahead), or
+  (b) resolve the known real duplication `validate-custom-dimensions.ts`
+  (identical in `src/preview/` and `src/source/`).
 
 ## What PR5 landed (quantize)
 
@@ -81,15 +82,16 @@ quantize, then the preview pipeline.
 | PR12 | `optimizeRaster` use-case (pure, sync, total, `IdGenerator` port; extract `autoOptimizeRasterAtom`); seeds `src/raster/application/` | ✅ done |
 | PR13 | `paintPixels` use-case (pure, sync, total, `Clock` port; unify+extract `paintPixelAtom`+`paintPixelsAtom`, dedup history mgmt); seeds `src/editor/application/` | ✅ done (`e63aecc`) |
 | PR14 | `enterEditMode` use-case (pure, sync, total, no port; extract state-derivation from async `enterEditModeAtom` — base-buffer fallback, EGX capture, pixel mode, copies) | ✅ done (`d07c6fb`) |
-| — | All five pivots (export, preview, palette, raster, editor) seeded with main orchestrations extracted. Remaining: `raster-preview.ts` (low payoff). EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ optional |
+| PR15 | `renderRasterPreview` use-case (pure, sync, total, `RasterRenderer` port; unify the two duplicated render branches of `rasterPreviewImageAtom`) | ✅ done (`820d85b`) |
+| — | All five pivots extracted. Strangler-fig complete. EGX / Mode-R / DSK = lib-delegation plumbing, skip. Open follow-ups: push/PR; dedup `validate-custom-dimensions.ts`. | ⬜ optional |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.82% duplication, 42 clones** (lowered 2026-06-11, PR14)
-- knip: **24 unused files, 59 unused exports** (flat 2026-06-11, PR14)
+- jscpd: **1.82% duplication, 42 clones** (flat 2026-06-11, PR15)
+- knip: **24 unused files, 59 unused exports** (flat 2026-06-11, PR15)
 - Known real duplication to resolve later: `validate-custom-dimensions.ts`
   identical in `src/preview/` and `src/source/`.
 
