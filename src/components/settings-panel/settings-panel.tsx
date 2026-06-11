@@ -3,12 +3,12 @@
  */
 
 import { Trans } from '@lingui/react/macro'
-import * as Tabs from '@radix-ui/react-tabs'
 import { useAtom } from 'jotai'
 import { useRef } from 'react'
 import { settingsPanelEnabledAtom } from '@/app/store/settings/settings-panel'
 import DraggableDialog from '@/components/ui/draggable-dialog'
-import Icon from '@/components/ui/icon'
+import Icon, { type IconName } from '@/components/ui/icon'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import styles from './settings-panel.module.css'
 import { DitheringTab } from './tabs/dithering-tab.tsx'
 import { ExportTab } from './tabs/export-tab.tsx'
@@ -28,7 +28,7 @@ type TabId =
 interface TabDefinition {
   id: TabId
   label: React.ReactNode
-  icon: string
+  icon: IconName
   component: React.ComponentType
 }
 
@@ -93,31 +93,31 @@ export function SettingsPanel() {
         }, 0)
       }}
     >
-      <Tabs.Root defaultValue='source' className={styles.container}>
-        <Tabs.List className={styles.tabs} aria-label='Settings tabs'>
+      <Tabs defaultValue='source' className={styles.container}>
+        <TabsList className={styles.tabs} aria-label='Settings tabs'>
           {tabs.map((tab, index) => (
-            <Tabs.Trigger
+            <TabsTrigger
               key={tab.id}
               value={tab.id}
               className={styles.tab}
               ref={index === 0 ? firstTabRef : undefined}
             >
-              <Icon name={tab.icon as any} />
+              <Icon name={tab.icon} />
               <span>{tab.label}</span>
-            </Tabs.Trigger>
+            </TabsTrigger>
           ))}
-        </Tabs.List>
+        </TabsList>
         {tabs.map((tab) => (
-          <Tabs.Content
+          <TabsContent
             key={tab.id}
             value={tab.id}
             className={styles.content}
             tabIndex={-1}
           >
             <tab.component />
-          </Tabs.Content>
+          </TabsContent>
         ))}
-      </Tabs.Root>
+      </Tabs>
     </DraggableDialog>
   )
 }
