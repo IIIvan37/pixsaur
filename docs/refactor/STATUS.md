@@ -11,16 +11,23 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR10 (`smoothImage` use-case, pure / sync / no port) — DONE
-  (commit follows). Report: `sessions/2026-06-11-pr10-smooth-image.md`.
-  **Committed so far:** PR0 `a743503`, PR1 `e177a53`, PR2 `d9c01cb`,
-  PR3 `273dafd`, PR4 `9bb16ae`, PR5 `0e94df6`, PR6 `5c6f550`, PR7 `e22fe11`,
-  PR8 `213712e`, PR9 (committed alongside its report).
-- **Next step:** preview-pipeline transformation extraction is **effectively
-  complete** (smoothImage was the last orchestration step; `croppedImageAtom` /
-  `resizedImageAtom` are processor/canvas plumbing, not orchestration). Pick a
-  **new feature** to strangle with `/extract-use-case`, or formally close the
-  refactor.
+- **Current step:** PR11 (`reducePalette` use-case, pure / sync / no port) — DONE.
+  Report: `sessions/2026-06-11-pr11-reduce-palette.md`. First use-case of the
+  **palette** feature (preview pipeline finished at PR10).
+- **Rebased onto `origin/main` (`e169299`, #327 mode0 horizontal downscale)** —
+  the branch now sits on top of current main (0 behind / 13 ahead). All 13
+  refactor SHAs were rewritten by the rebase; **see `git log` for current
+  hashes** (the branch has never been pushed). Two conflicts resolved by folding
+  #327's new `resampleStrategy` logic INTO the extracted use-cases:
+  `normalizeImage` and `smoothImage` now take a `resampleStrategy` input and
+  apply the linear-resample / skip-second-blur rule (the atoms forward
+  `resampleStrategyAtom`). Verified: typecheck + targeted specs (71) + full
+  suite green.
+- **Next step:** continue strangling the **palette** feature is **done** for the
+  only orchestration it had (`setReducedPalette`); the other palette atoms are
+  trivial slot mutations. Pick the next feature: **raster** is recommended
+  (highest algorithmic payoff, ~1000 LOC), then **editor**. EGX / Mode-R / DSK
+  are mostly lib-delegation plumbing — skip. Run `/extract-use-case`.
 
 ## What PR5 landed (quantize)
 
@@ -57,15 +64,16 @@ quantize, then the preview pipeline.
 | PR8 | `renderIndexBufferToImageData` use-case (pure, no port, total → `ImageData`; extract `finalPreviewImageAtom`) | ✅ done (`213712e`) |
 | PR9 | `normalizeImage` + `positionNormalizedImage` use-cases (pure, no port, total → `ImageData \| null`; extract `normalizedImageAtom` / `positionedNormalizedImageAtom`) | ✅ done |
 | PR10 | `smoothImage` use-case (pure, sync, no port, total → `ImageData \| null`; extract `smoothedImageAtom` in `image-pipeline.ts`) | ✅ done |
-| — | Preview-pipeline transformation extraction complete. `croppedImageAtom` / `resizedImageAtom` are processor/canvas plumbing — out of scope. Next: pick a new feature to strangle, or close the refactor. | ⬜ next |
+| PR11 | `reducePalette` use-case (pure, sync, no port, total → `PaletteSlot[]`; extract `setReducedPaletteAtom`); dedup store helpers/type onto `@/domain/cpc` | ✅ done |
+| — | Preview + palette features done. Next feature to strangle: **raster** (recommended), then **editor**. EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ next |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.97% duplication, 44 clones** (lowered 2026-06-11, PR6)
-- knip: **25 unused files, 60 unused exports** (lowered 2026-06-11, PR6)
+- jscpd: **1.96% duplication, 44 clones** (lowered 2026-06-11, PR11)
+- knip: **25 unused files, 59 unused exports** (lowered 2026-06-11, PR11)
 - Known real duplication to resolve later: `validate-custom-dimensions.ts`
   identical in `src/preview/` and `src/source/`.
 
