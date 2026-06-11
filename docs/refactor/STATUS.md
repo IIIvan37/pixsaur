@@ -11,11 +11,12 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR1 (export `PlaygroundPort` + Tauri leak killed) — DONE,
-  uncommitted. (PR0 committed in `a743503`.)
-- **Next step:** PR2 — extract the `exportImageToZip` use-case (`handleExport`
-  in `export-panel.tsx`), defining `FileSink` + `CanvasFactory` as it needs
-  them. Use `/extract-use-case`.
+- **Current step:** PR2 (`exportImageToZip` use-case + `FileSink`/`CanvasFactory`
+  ports + split `exportZip`→`buildExportZipBlob`) — DONE, uncommitted. (PR0 in
+  `a743503`, PR1 in `e177a53`.)
+- **Next step:** PR3 — extract the `openImageInPlayground` use-case
+  (`handleOpenInPlayground` in `export-panel.tsx`), reusing `PlaygroundPort` +
+  `CanvasFactory` (both exist). Use `/extract-use-case`.
 
 ## Roadmap
 
@@ -25,8 +26,8 @@ quantize, then the preview pipeline.
 | PR | Scope | Status |
 |----|-------|--------|
 | PR0 | Guardrails: knip + jscpd (report-only), skills, registry, this doc | ✅ done (uncommitted) |
-| PR1 | Export `PlaygroundPort` + adapters + kill Tauri leak (`FileSink`/`CanvasFactory` deferred to PR2) | ✅ done (uncommitted) |
-| PR2 | `exportImageToZip` use-case (extract `handleExport`) + tests | ⬜ todo |
+| PR1 | Export `PlaygroundPort` + adapters + kill Tauri leak (`FileSink`/`CanvasFactory` deferred to PR2) | ✅ done (`e177a53`) |
+| PR2 | `exportImageToZip` use-case (extract `handleExport`) + `FileSink`/`CanvasFactory` ports + tests | ✅ done (uncommitted) |
 | PR3 | `openImageInPlayground` use-case (extract `handleOpenInPlayground`) + tests | ⬜ todo |
 | PR4 | `useExportActions` hook → `export-panel.tsx` becomes thin UI | ⬜ todo |
 | — | Then: quantize feature, then preview pipeline | ⬜ later |
