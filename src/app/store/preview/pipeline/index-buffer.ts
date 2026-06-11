@@ -10,6 +10,7 @@
 
 import { atom } from 'jotai'
 import { buildIndexBuffer } from '@/preview/application/build-index-buffer'
+import { renderIndexBufferToImageData } from '@/preview/application/render-index-buffer'
 import { applyManualEditsToBuffer, manualPixelEditsAtom } from './manual-edits'
 import { exportPaletteWithSlotsAtom } from './palette-export'
 import { previewImageAtom } from './preview-image'
@@ -68,28 +69,16 @@ export const finalPreviewIndexBufferAtom = atom(async (get) => {
 })
 
 /**
- * Final preview image with manual edits applied.
- * Converts finalPreviewIndexBufferAtom to ImageData for display.
+ * Final preview image with manual edits applied — thin adapter over the
+ * `renderIndexBufferToImageData` use-case
+ * (`@/preview/application/render-index-buffer`). Converts
+ * `finalPreviewIndexBufferAtom` to `ImageData` for display.
+ *
+ * Returns `null` when there is no index buffer yet.
  */
 export const finalPreviewImageAtom = atom(async (get) => {
   const bufferData = await get(finalPreviewIndexBufferAtom)
   if (!bufferData) return null
 
-  const { buffer, width, height, palette } = bufferData
-
-  // Create ImageData from index buffer and palette
-  const imageData = new ImageData(width, height)
-  const data = imageData.data
-
-  for (let i = 0; i < buffer.length; i++) {
-    const inkIndex = buffer[i]
-    const color = palette[inkIndex] ?? [0, 0, 0]
-    const pixelIndex = i * 4
-    data[pixelIndex] = color[0] // R
-    data[pixelIndex + 1] = color[1] // G
-    data[pixelIndex + 2] = color[2] // B
-    data[pixelIndex + 3] = 255 // A
-  }
-
-  return imageData
+  return renderIndexBufferToImageData(bufferData)
 })

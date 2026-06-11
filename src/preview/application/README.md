@@ -38,6 +38,7 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 | `quantizePalette` ✅ PR5 | `reducedPaletteRawAtom` + `reducedPaletteRgbAtom` orchestration in `app/store/preview/pipeline/quantization.ts` | `{ buf, sourceImage, lockedVecs, cpcHardware, modeConfig, lockedEmptyCount, paletteStrategy, autoDistinctMapping, colorDiversity }` | `{ ok, rawPalette, rgbPalette } \| { ok:false, error }` | `PaletteQuantizer` |
 | `ditherImage` ✅ PR6 | `previewImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ normalized, exportPalette, dithering, modeConfig, resizeMode, centerImage }` | `{ ok, image } \| { ok:false, error }` | `ImageDitherer` |
 | `buildIndexBuffer` ✅ PR7 | `previewIndexBufferAtom` orchestration in `app/store/preview/pipeline/index-buffer.ts` | `{ previewImage, exportPalette }` | `{ ok, indexBuffer } \| { ok:false, error }` | _none (pure encoder)_ |
+| `renderIndexBufferToImageData` ✅ PR8 | `finalPreviewImageAtom` orchestration in `app/store/preview/pipeline/index-buffer.ts` | `IndexBuffer` (`{ buffer, width, height, palette }`) | `ImageData` (total, no union) | _none (pure render)_ |
 
 > Status: `ditherImage` landed in PR6 — `dither-image.ts` (+ spec). It prepares
 > the dithering palette (ignored slots → darkest valid color, reusing
@@ -53,6 +54,17 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 > `index-buffer.ts`. PR6 folded both onto the `@/domain/cpc` helpers and dropped
 > the verbose `[Preview] Index buffer created` log.
 
+> Status: `renderIndexBufferToImageData` landed in PR8 — `render-index-buffer.ts`
+> (+ spec). It walks the index buffer once, resolving each pixel's ink index
+> against the buffer's palette (missing entries fall back to black) and writing
+> opaque RGBA into a fresh `ImageData`. **No port** (pure render) and
+> **synchronous** like `buildIndexBuffer`. **Total** — it returns `ImageData`
+> directly with no `{ ok }` union, because a valid `IndexBuffer` always renders;
+> the "no buffer yet" case stays in the adapter atom (maps to `null`). Reuses the
+> application-layer `IndexBuffer` type from `buildIndexBuffer` as its input. This
+> is the non-raster preview render; the per-line raster path stays in
+> `@/libs/pixsaur-raster` (`renderPreviewWithRaster`) and is out of scope.
+>
 > Status: `buildIndexBuffer` landed in PR7 — `build-index-buffer.ts` (+ spec). It
 > reuses the dither step's "replace ignored slots → darkest valid color" prep
 > (`@/domain/cpc`), then converts the already-quantized preview image with the
