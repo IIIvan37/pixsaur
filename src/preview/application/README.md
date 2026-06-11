@@ -37,6 +37,7 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 |----------|----------|-----------------|--------|------------|
 | `quantizePalette` ✅ PR5 | `reducedPaletteRawAtom` + `reducedPaletteRgbAtom` orchestration in `app/store/preview/pipeline/quantization.ts` | `{ buf, sourceImage, lockedVecs, cpcHardware, modeConfig, lockedEmptyCount, paletteStrategy, autoDistinctMapping, colorDiversity }` | `{ ok, rawPalette, rgbPalette } \| { ok:false, error }` | `PaletteQuantizer` |
 | `ditherImage` ✅ PR6 | `previewImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ normalized, exportPalette, dithering, modeConfig, resizeMode, centerImage }` | `{ ok, image } \| { ok:false, error }` | `ImageDitherer` |
+| `buildIndexBuffer` ✅ PR7 | `previewIndexBufferAtom` orchestration in `app/store/preview/pipeline/index-buffer.ts` | `{ previewImage, exportPalette }` | `{ ok, indexBuffer } \| { ok:false, error }` | _none (pure encoder)_ |
 
 > Status: `ditherImage` landed in PR6 — `dither-image.ts` (+ spec). It prepares
 > the dithering palette (ignored slots → darkest valid color, reusing
@@ -52,6 +53,17 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 > `index-buffer.ts`. PR6 folded both onto the `@/domain/cpc` helpers and dropped
 > the verbose `[Preview] Index buffer created` log.
 
+> Status: `buildIndexBuffer` landed in PR7 — `build-index-buffer.ts` (+ spec). It
+> reuses the dither step's "replace ignored slots → darkest valid color" prep
+> (`@/domain/cpc`), then converts the already-quantized preview image with the
+> **pure** encoder `rgbToIndexBufferExact` (`@/export`, quantize=false /
+> fallbackToDarkest=true). **No port** — pure encoders are called directly per
+> the recipe — and **synchronous** like `ditherImage`. An empty export palette is
+> an explicit `{ ok:false }` (the atom maps it to `null`). The canonical
+> `IndexBuffer` result type now lives here; the store's `IndexBufferData`
+> (`pipeline/manual-edits.ts`) is a re-export alias, so the adapter depends on the
+> application layer rather than the reverse.
+>
 > Status: `quantizePalette` landed in PR5 — `quantize-palette.ts` (+ spec). It
 > produces **both** palettes in one pass: `rawPalette` (RGB, not yet
 > hardware-quantized) and `rgbPalette` (hardware-quantized copy, truncated to
