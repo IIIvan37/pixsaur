@@ -9,6 +9,7 @@
  */
 
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
+import type { createQuantizer } from '@/libs/pixsaur-color/src'
 
 /**
  * Quantizes an image buffer down to a CPC palette.
@@ -21,3 +22,15 @@ import type { ImageProcessor } from '@/libs/pixsaur-adapter'
  *   `deps.quantizer`.
  */
 export type PaletteQuantizer = Pick<ImageProcessor, 'quantizePalette'>
+
+/**
+ * Applies dithering to map an image onto a reduced CPC palette.
+ *
+ * Narrow facet of the quantizer returned by `createQuantizer`
+ * (`@/libs/pixsaur-color`) — use-cases depend only on `dither`, not the whole
+ * quantizer surface.
+ *
+ * - Runtime adapter: the `quantizerAtom` value
+ *   (`app/store/preview/pipeline/quantization.ts`), injected as `deps.ditherer`.
+ */
+export type ImageDitherer = Pick<ReturnType<typeof createQuantizer>, 'dither'>

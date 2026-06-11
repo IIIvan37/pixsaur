@@ -9,11 +9,9 @@
  */
 
 import { atom } from 'jotai'
-import { logger } from '@/core'
 import { positionImageForAutoMode } from '@/domain/image-processing'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 import { getVisualRegionNormalized } from '@/preview'
+import { ditherImage } from '@/preview/application/dither-image'
 import {
   autoDistinctMappingAtom,
   centerImageAtom,
@@ -120,68 +118,34 @@ export const effectiveDitheringAtom = atom((get) => {
 // ============================================================================
 
 /**
- * Final preview image with optimized dithering cache.
- * Applies dithering to the normalized image using the quantizer.
+ * Final preview image — thin adapter over the `ditherImage` use-case
+ * (`@/preview/application/dither-image`). Assembles the input from atoms,
+ * injects the real ditherer (`quantizerAtom`), and maps the result to state.
+ *
+ * Returns `null` when there is no quantizer or no normalized image yet.
  */
 export const previewImageAtom = atom(async (get) => {
-  const modeConfig = get(effectiveModeConfigAtom)
   const quantizer = await get(quantizerAtom)
-  // Use palette with slots so indices match export
-  const exportPalette = await get(exportPaletteWithSlotsAtom)
   const normalized = await get(normalizedImageAtom)
-  const dithering = get(effectiveDitheringAtom)
-  const resizeMode = get(resizeModeAtom)
-  const centerImage = get(centerImageAtom)
 
   if (!quantizer || !normalized) {
     return null
   }
 
-  // Prepare palette for dithering: replace ignored slots [-1,-1,-1]
-  // with a valid color (black) for dithering to work
-  const validColors = exportPalette.filter(
-    (c) => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
-  )
-  const fallbackColor: Vector =
-    validColors.length > 0
-      ? validColors.reduce((darkest, color) => {
-          return luminance(color) < luminance(darkest) ? color : darkest
-        }, validColors[0])
-      : [0, 0, 0]
-
-  // Palette for dithering: same structure as export but with fallback for ignored
-  const ditheringPalette = exportPalette.map((color) =>
-    color[0] === -1 ? fallbackColor : color
+  const result = ditherImage(
+    {
+      normalized,
+      // Use palette with slots so indices match export.
+      exportPalette: await get(exportPaletteWithSlotsAtom),
+      dithering: get(effectiveDitheringAtom),
+      modeConfig: get(effectiveModeConfigAtom),
+      resizeMode: get(resizeModeAtom),
+      centerImage: get(centerImageAtom)
+    },
+    { ditherer: quantizer }
   )
 
-  logger.time('dithering')
-  const previewBuffer = quantizer.dither(
-    normalized,
-    ditheringPalette,
-    dithering
-  )
-  logger.timeEnd('dithering')
-
-  // Dithering returns RGB buffer, no remapping needed!
-  const remapped = new ImageData(
-    new Uint8ClampedArray(previewBuffer),
-    normalized.width,
-    normalized.height
-  )
-
-  // Positioning for auto mode (origin and cover handle their own positioning)
-  // In auto mode, getVisualRegionNormalized returns variable-sized ImageData (scaledW × scaledH)
-  // that must be placed in canvas at target size (160x200 or 320x200)
-  if (resizeMode === 'auto') {
-    return positionImageForAutoMode(
-      remapped,
-      modeConfig,
-      exportPalette,
-      centerImage
-    )
-  }
-
-  return remapped
+  return result.ok ? result.image : null
 })
 
 // Re-export positionImageForAutoMode for backward compatibility
