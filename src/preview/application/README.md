@@ -39,7 +39,25 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 | `ditherImage` ✅ PR6 | `previewImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ normalized, exportPalette, dithering, modeConfig, resizeMode, centerImage }` | `{ ok, image } \| { ok:false, error }` | `ImageDitherer` |
 | `buildIndexBuffer` ✅ PR7 | `previewIndexBufferAtom` orchestration in `app/store/preview/pipeline/index-buffer.ts` | `{ previewImage, exportPalette }` | `{ ok, indexBuffer } \| { ok:false, error }` | _none (pure encoder)_ |
 | `renderIndexBufferToImageData` ✅ PR8 | `finalPreviewImageAtom` orchestration in `app/store/preview/pipeline/index-buffer.ts` | `IndexBuffer` (`{ buffer, width, height, palette }`) | `ImageData` (total, no union) | _none (pure render)_ |
+| `normalizeImage` ✅ PR9 | `normalizedImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ processed, modeConfig, resizeMode }` | `ImageData \| null` (total, no union) | _none (pure)_ |
+| `positionNormalizedImage` ✅ PR9 | `positionedNormalizedImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ normalized, modeConfig, resizeMode, exportPalette, centerImage }` | `ImageData \| null` (total, no union) | _none (pure)_ |
 
+> Status: `normalizeImage` + `positionNormalizedImage` landed in PR9 —
+> `normalize-image.ts` (+ spec, 8 tests). Two pure, **synchronous** functions in
+> one file (the two atoms stay separate so they keep distinct Jotai dependency
+> graphs — `positionNormalizedImage` reads `exportPalette`/`centerImage` that
+> `normalizeImage` must not depend on). `normalizeImage` returns the smoothed
+> image untouched in `origin`/`cover` and rescales it via
+> `getVisualRegionNormalized` (`@/preview`) in `auto`. `positionNormalizedImage`
+> places the normalized image into the target CPC canvas via
+> `positionImageForAutoMode` (`@/domain/image-processing`) in `auto` only — the
+> same helper `ditherImage` already calls directly. **No port** — these
+> canvas-backed helpers are deterministic image-processing functions invoked
+> directly per the recipe. **Total** — both return `ImageData | null` with no
+> `{ ok }` union: the `null` cases (no upstream image, or a degenerate zero-size
+> scale) are pipeline-availability concerns, not expected errors, so they map
+> straight to the atom's `null`.
+>
 > Status: `ditherImage` landed in PR6 — `dither-image.ts` (+ spec). It prepares
 > the dithering palette (ignored slots → darkest valid color, reusing
 > `@/domain/cpc` `replaceIgnoredSlots` + `findDarkestValidColor`), calls

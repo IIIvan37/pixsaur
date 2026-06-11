@@ -9,9 +9,11 @@
  */
 
 import { atom } from 'jotai'
-import { positionImageForAutoMode } from '@/domain/image-processing'
-import { getVisualRegionNormalized } from '@/preview'
 import { ditherImage } from '@/preview/application/dither-image'
+import {
+  normalizeImage,
+  positionNormalizedImage
+} from '@/preview/application/normalize-image'
 import {
   autoDistinctMappingAtom,
   centerImageAtom,
@@ -33,54 +35,29 @@ import { quantizerAtom } from './quantization'
  * Image normalized to CPC dimensions (before dithering).
  * Used for line-by-line raster optimization.
  */
-export const normalizedImageAtom = atom(async (get) => {
-  const modeConfig = get(effectiveModeConfigAtom)
-  const resizeMode = get(resizeModeAtom)
-  const resampleStrategy = get(resampleStrategyAtom)
-  const processed = await get(smoothedImageAtom)
-
-  if (!processed) return null
-
-  // Auto downscale uses linear-light resampling for every pixel mode, unless
-  // 'classic' is selected (legacy gamma canvas path → no filter passed).
-  const filter = resampleStrategy === 'classic' ? undefined : resampleStrategy
-
-  // In origin and cover modes, image is already at correct CPC dimensions
-  // In auto mode, normalize to CPC dimensions
-  const normalized =
-    resizeMode === 'origin' || resizeMode === 'cover'
-      ? processed
-      : getVisualRegionNormalized(processed, modeConfig, filter)
-
-  return normalized
-})
+export const normalizedImageAtom = atom(async (get) =>
+  normalizeImage({
+    processed: await get(smoothedImageAtom),
+    modeConfig: get(effectiveModeConfigAtom),
+    resizeMode: get(resizeModeAtom),
+    resampleStrategy: get(resampleStrategyAtom)
+  })
+)
 
 /**
  * Positioned normalized image (same dimensions as previewImage).
  * Used for raster optimization - must have exact same dimensions
  * as previewIndexBufferAtom for indices to match.
  */
-export const positionedNormalizedImageAtom = atom(async (get) => {
-  const modeConfig = get(effectiveModeConfigAtom)
-  const normalized = await get(normalizedImageAtom)
-  const resizeMode = get(resizeModeAtom)
-  const centerImage = get(centerImageAtom)
-  const exportPalette = await get(exportPaletteWithSlotsAtom)
-
-  if (!normalized) return null
-
-  // In auto mode, apply same positioning as previewImageAtom
-  if (resizeMode === 'auto') {
-    return positionImageForAutoMode(
-      normalized,
-      modeConfig,
-      exportPalette,
-      centerImage
-    )
-  }
-
-  return normalized
-})
+export const positionedNormalizedImageAtom = atom(async (get) =>
+  positionNormalizedImage({
+    normalized: await get(normalizedImageAtom),
+    modeConfig: get(effectiveModeConfigAtom),
+    resizeMode: get(resizeModeAtom),
+    exportPalette: await get(exportPaletteWithSlotsAtom),
+    centerImage: get(centerImageAtom)
+  })
+)
 
 // ============================================================================
 // DITHERING CONFIGURATION
