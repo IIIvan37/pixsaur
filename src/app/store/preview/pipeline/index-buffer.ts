@@ -9,10 +9,8 @@
  */
 
 import { atom } from 'jotai'
-import { logger } from '@/core'
+import { findDarkestValidColor, replaceIgnoredSlots } from '@/domain/cpc'
 import { rgbToIndexBufferExact } from '@/export'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { luminance } from '@/libs/pixsaur-color/src/utils/luminance'
 import { applyManualEditsToBuffer, manualPixelEditsAtom } from './manual-edits'
 import { exportPaletteWithSlotsAtom } from './palette-export'
 import { previewImageAtom } from './preview-image'
@@ -34,20 +32,11 @@ export const previewIndexBufferAtom = atom(async (get) => {
     return null
   }
 
-  // Prepare palette for mapping: replace ignored slots [-1,-1,-1]
-  // with a valid color (black) for mapping to work
-  const validColors = exportPalette.filter(
-    (c) => c[0] !== -1 && c[1] !== -1 && c[2] !== -1
-  )
-  const fallbackColor: Vector =
-    validColors.length > 0
-      ? validColors.reduce((darkest, color) => {
-          return luminance(color) < luminance(darkest) ? color : darkest
-        }, validColors[0])
-      : [0, 0, 0]
-
-  const ditheringPalette = exportPalette.map((color) =>
-    color[0] === -1 ? fallbackColor : color
+  // Prepare palette for mapping: replace ignored slots [-1,-1,-1] with the
+  // darkest valid color so every pixel maps — same prep as the dither step.
+  const ditheringPalette = replaceIgnoredSlots(
+    exportPalette,
+    findDarkestValidColor(exportPalette)
   )
 
   // Convert ImageData to index buffer
@@ -60,13 +49,6 @@ export const previewIndexBufferAtom = atom(async (get) => {
     false,
     true
   )
-
-  logger.info('[Preview] Index buffer created', {
-    width: previewImage.width,
-    height: previewImage.height,
-    bufferLength: indexBuffer.length,
-    paletteSize: ditheringPalette.length
-  })
 
   return {
     buffer: indexBuffer,

@@ -11,12 +11,13 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR5 (`quantizePalette` use-case + `PaletteQuantizer` port) —
+- **Current step:** PR6 (`ditherImage` use-case + `ImageDitherer` port) —
   DONE, **not yet committed** (working tree dirty). Report:
-  `sessions/2026-06-11-pr5-quantize-palette.md`. **Export pilot complete &
-  committed (PR1–PR4):** PR1 `e177a53`, PR2 `d9c01cb`, PR3 `273dafd`,
-  PR4 `9bb16ae` (PR0 `a743503`).
-- **Next step:** commit PR5, then extract the **preview pipeline** with
+  `sessions/2026-06-11-pr6-dither-image.md`. **Committed so far:** PR0
+  `a743503`, PR1 `e177a53`, PR2 `d9c01cb`, PR3 `273dafd`, PR4 `9bb16ae`,
+  PR5 `0e94df6`.
+- **Next step:** commit PR6, then continue the **preview pipeline** extraction
+  (index-buffer / final-preview, or the normalized-image step) with
   `/extract-use-case`.
 
 ## What PR5 landed (quantize)
@@ -48,16 +49,17 @@ quantize, then the preview pipeline.
 | PR2 | `exportImageToZip` use-case (extract `handleExport`) + `FileSink`/`CanvasFactory` ports + tests | ✅ done (`d9c01cb`) |
 | PR3 | `openImageInPlayground` use-case (extract `handleOpenInPlayground`) + `PlaygroundExporter` port + tests | ✅ done (`273dafd`) |
 | PR4 | `useExportActions` hook → `export-panel.tsx` becomes thin UI | ✅ done (`9bb16ae`) |
-| PR5 | `quantizePalette` use-case + `PaletteQuantizer` port (extract `reducedPaletteRaw`/`reducedPaletteRgb` atoms) | ✅ done (uncommitted) |
-| — | Then: preview pipeline | ⬜ next |
+| PR5 | `quantizePalette` use-case + `PaletteQuantizer` port (extract `reducedPaletteRaw`/`reducedPaletteRgb` atoms) | ✅ done (`0e94df6`) |
+| PR6 | `ditherImage` use-case + `ImageDitherer` port (extract `previewImageAtom`); dedup ignored-slot prep in `index-buffer.ts` | ✅ done (uncommitted) |
+| — | Then: rest of preview pipeline (index-buffer / final-preview, normalized-image) | ⬜ next |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **2.01% duplication, 45 clones** (lowered 2026-06-11, PR5)
-- knip: **25 unused files, 61 unused exports** (lowered 2026-06-11, PR5)
+- jscpd: **1.97% duplication, 44 clones** (lowered 2026-06-11, PR6)
+- knip: **25 unused files, 60 unused exports** (lowered 2026-06-11, PR6)
 - Known real duplication to resolve later: `validate-custom-dimensions.ts`
   identical in `src/preview/` and `src/source/`.
 
