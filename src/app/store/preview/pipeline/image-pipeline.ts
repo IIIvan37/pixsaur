@@ -7,12 +7,11 @@
 import { atom } from 'jotai'
 import { logger } from '@/core'
 import {
-  applyHorizontalSmoothing,
-  getPixelWidthForMode,
   getVisualRegion,
   resampleCoverLinear,
   resampleOriginLinear
 } from '@/preview'
+import { smoothImage } from '@/preview/application/smooth-image'
 import { applyResize, type Selection } from '@/source'
 import {
   autoDistinctMappingAtom,
@@ -131,42 +130,23 @@ export const resizedImageAtom = atom(async (get) => {
 // ============================================================================
 
 /**
- * Apply horizontal smoothing after resize
- * Disabled when distinct-mapping is active (CPC Classic + Mode 0)
+ * Apply horizontal smoothing after resize.
+ *
+ * Thin adapter over the `smoothImage` use-case
+ * (`@/preview/application/smooth-image`): assembles the input from atoms and
+ * delegates the pure transformation (smoothing is disabled when distinct-mapping
+ * is active — CPC Classic + Mode 0). Stays async only to await its upstream
+ * pipeline atom.
  */
-export const smoothedImageAtom = atom(async (get) => {
-  const horizontalSmoothing = get(horizontalSmoothingAtom)
-  const pixelMode = get(pixelModeAtom)
-  const autoDistinctMapping = get(autoDistinctMappingAtom)
-  const cpcHardware = get(cpcHardwareAtom)
-  const modeConfig = get(effectiveModeConfigAtom)
-  const resizeMode = get(resizeModeAtom)
-  const resampleStrategy = get(resampleStrategyAtom)
-  const resized = await get(resizedImageAtom)
-
-  if (!resized) {
-    return null
-  }
-
-  // When the linear resampler ran ('origin'/'cover', non-classic), it IS the
-  // anti-alias filter — a second gamma-space box blur would undo the gain.
-  const useLinear = resampleStrategy !== 'classic'
-  if (useLinear && (resizeMode === 'origin' || resizeMode === 'cover')) {
-    return resized
-  }
-
-  // Disable smoothing when distinct-mapping is active (CPC Classic + Mode 0)
-  const isDistinctMappingActive =
-    autoDistinctMapping &&
-    cpcHardware === 'classic' &&
-    modeConfig.nColors === 16
-
-  if (horizontalSmoothing && !isDistinctMappingActive) {
-    const pixelWidth = getPixelWidthForMode(pixelMode)
-    if (pixelWidth > 1) {
-      return applyHorizontalSmoothing(resized, pixelWidth)
-    }
-  }
-
-  return resized
-})
+export const smoothedImageAtom = atom(async (get) =>
+  smoothImage({
+    resized: await get(resizedImageAtom),
+    horizontalSmoothing: get(horizontalSmoothingAtom),
+    pixelMode: get(pixelModeAtom),
+    autoDistinctMapping: get(autoDistinctMappingAtom),
+    cpcHardware: get(cpcHardwareAtom),
+    modeConfig: get(effectiveModeConfigAtom),
+    resizeMode: get(resizeModeAtom),
+    resampleStrategy: get(resampleStrategyAtom)
+  })
+)
