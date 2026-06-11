@@ -23,21 +23,18 @@ import {
 } from '@/app/store/raster/raster'
 import { Notification } from '@/components/ui/notification/notification'
 import type { ExportConfig } from '@/export'
-import {
-  exportEgxToCpcPlayground,
-  exportModeRToCpcPlayground,
-  exportToCpcPlayground,
-  generateClassicRasterASM,
-  generatePlusRasterASM
-} from '@/export'
+import { cpcPlaygroundExporter } from '@/export/application/adapters/cpc-playground-exporter'
 import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
 import {
   type ExportImageToZipInput,
   exportImageToZip
 } from '@/export/application/export-image-to-zip'
 import { resolveFileSink } from '@/export/application/file-sink'
-import { paletteToCPCPlusValues } from '@/export/exports/cpc-plus-format'
-import { rgbToFirmwareIndex } from '@/export/exports/raster-format'
+import {
+  type OpenImageInPlaygroundInput,
+  openImageInPlayground,
+  type PlaygroundMode
+} from '@/export/application/open-image-in-playground'
 import ExportConfigDialog from './export-config-dialog'
 import { prepareExportData } from './export-data-helpers'
 import ExportPanelView from './export-panel-view'
@@ -114,160 +111,79 @@ export default function ExportPanel() {
     }
   }
 
+  const playgroundSuccessMessage = (mode: PlaygroundMode) => {
+    switch (mode) {
+      case 'modeR':
+        return _(msg`Mode R opened in CPC Playground!`)
+      case 'egx':
+        return _(msg`EGX opened in CPC Playground!`)
+      default:
+        return _(msg`Opened in CPC Playground!`)
+    }
+  }
+
+  const playgroundErrorMessage = (mode: PlaygroundMode, error: string) => {
+    switch (mode) {
+      case 'modeR':
+        return _(msg`Failed to open Mode R in CPC Playground: ${error}`)
+      case 'egx':
+        return _(msg`Failed to open EGX in CPC Playground: ${error}`)
+      default:
+        return _(msg`Failed to open in CPC Playground: ${error}`)
+    }
+  }
+
   const handleOpenInPlayground = async () => {
     setPlaygroundLoading(true)
 
     try {
-      // Mode R export path
-      if (modeREnabled && modeRExportData) {
-        const isPlus = cpcHardware === 'plus'
+      const modeR =
+        modeREnabled && modeRExportData
+          ? {
+              indexBufferA: modeRExportData.indexBufferA,
+              indexBufferB: modeRExportData.indexBufferB,
+              paletteA: modeRExportData.paletteA,
+              paletteB: modeRExportData.paletteB
+            }
+          : null
 
-        // Convert palettes to appropriate format
-        const paletteAFirmware = modeRExportData.paletteA.map((c) =>
-          rgbToFirmwareIndex(c[0], c[1], c[2])
-        )
-        const paletteBFirmware = modeRExportData.paletteB.map((c) =>
-          rgbToFirmwareIndex(c[0], c[1], c[2])
-        )
-        const paletteAPlus = paletteToCPCPlusValues(
-          modeRExportData.paletteA.map(
-            (c) => [c[0], c[1], c[2]] as [number, number, number]
-          )
-        )
-        const paletteBPlus = paletteToCPCPlusValues(
-          modeRExportData.paletteB.map(
-            (c) => [c[0], c[1], c[2]] as [number, number, number]
-          )
-        )
+      const egx =
+        !modeR && egxEnabled && egxExportData
+          ? {
+              indexBuffer: egxExportData.indexBuffer,
+              palette: egxExportData.palette,
+              width: egxExportData.width,
+              height: egxExportData.height,
+              config: egxExportData.config
+            }
+          : null
 
-        const result = await exportModeRToCpcPlayground({
-          indexBufA: modeRExportData.indexBufferA,
-          indexBufB: modeRExportData.indexBufferB,
-          modeConfig,
-          hardware: cpcHardware,
-          paletteAFirmware: isPlus ? undefined : paletteAFirmware,
-          paletteBFirmware: isPlus ? undefined : paletteBFirmware,
-          paletteAPlus: isPlus ? paletteAPlus : undefined,
-          paletteBPlus: isPlus ? paletteBPlus : undefined,
-          filename: 'pixsaur_modeR'
-        })
-
-        if (result.success) {
-          setNotificationType('success')
-          setNotificationMessage(_(msg`Mode R opened in CPC Playground!`))
-          setShowNotification(true)
-        } else {
-          setNotificationType('error')
-          setNotificationMessage(
-            _(
-              msg`Failed to open Mode R in CPC Playground: ${
-                result.error ?? 'Unknown error'
-              }`
-            )
-          )
-          setShowNotification(true)
-        }
-        return
-      }
-
-      // EGX export path
-      if (egxEnabled && egxExportData) {
-        const {
-          indexBuffer,
-          palette,
-          width,
-          height,
-          config: egxConfig
-        } = egxExportData
-
-        // Convert palette to firmware indices (for Classic)
-        const paletteFirmware = palette.map((c) =>
-          rgbToFirmwareIndex(c[0], c[1], c[2])
-        )
-
-        // Convert palette to RGB format (for Plus)
-        const paletteRgb = palette.map(
-          (c) => [c[0], c[1], c[2]] as [number, number, number]
-        )
-
-        const result = await exportEgxToCpcPlayground({
-          indexBuf: indexBuffer,
-          width,
-          height,
-          egxConfig,
-          paletteFirmware,
-          paletteRgb,
-          hardware: cpcHardware,
-          filename: 'pixsaur_egx'
-        })
-
-        if (result.success) {
-          setNotificationType('success')
-          setNotificationMessage(_(msg`EGX opened in CPC Playground!`))
-          setShowNotification(true)
-        } else {
-          setNotificationType('error')
-          setNotificationMessage(
-            _(
-              msg`Failed to open EGX in CPC Playground: ${
-                result.error ?? 'Unknown error'
-              }`
-            )
-          )
-          setShowNotification(true)
-        }
-        return
-      }
-
-      // Standard export path
-      const data = getExportData()
-      if (!data) return
-
-      const { indexBuf, paletteFirmware, palettePlus } = data
-
-      // Generate raster ASM if rasters are enabled
-      let rasterAsm: string | undefined
-      if (rasterEnabled && rasterChanges && rasterChanges.length > 0) {
-        if (cpcHardware === 'classic') {
-          rasterAsm = generateClassicRasterASM(
-            rasterChanges,
-            modeConfig.height,
-            paletteFirmware
-          )
-        } else {
-          rasterAsm = generatePlusRasterASM(
-            rasterChanges,
-            modeConfig.height,
-            palettePlus
-          )
+      let standard: OpenImageInPlaygroundInput['standard'] = null
+      if (!modeR && !egx) {
+        const data = getExportData()
+        if (data) {
+          standard = {
+            indexBuf: data.indexBuf,
+            paletteFirmware: data.paletteFirmware,
+            palettePlus: data.palettePlus,
+            rasterChanges: rasterEnabled ? rasterChanges : undefined
+          }
         }
       }
 
-      const result = await exportToCpcPlayground({
-        indexBuf,
-        modeConfig,
-        hardware: cpcHardware,
-        paletteFirmware:
-          cpcHardware === 'classic' ? paletteFirmware : undefined,
-        palettePlus: cpcHardware === 'plus' ? palettePlus : undefined,
-        rasterAsm,
-        hasRasters:
-          rasterEnabled && !!rasterChanges && rasterChanges.length > 0,
-        filename: 'pixsaur'
-      })
+      const result = await openImageInPlayground(
+        { modeConfig, cpcHardware, modeR, egx, standard },
+        { exporter: cpcPlaygroundExporter }
+      )
 
-      if (result.success) {
+      if (result.ok) {
         setNotificationType('success')
-        setNotificationMessage(_(msg`Opened in CPC Playground!`))
+        setNotificationMessage(playgroundSuccessMessage(result.mode))
         setShowNotification(true)
-      } else {
+      } else if (result.mode) {
         setNotificationType('error')
         setNotificationMessage(
-          _(
-            msg`Failed to open in CPC Playground: ${
-              result.error ?? 'Unknown error'
-            }`
-          )
+          playgroundErrorMessage(result.mode, result.error)
         )
         setShowNotification(true)
       }

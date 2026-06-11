@@ -11,12 +11,12 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR2 (`exportImageToZip` use-case + `FileSink`/`CanvasFactory`
-  ports + split `exportZip`→`buildExportZipBlob`) — DONE, uncommitted. (PR0 in
-  `a743503`, PR1 in `e177a53`.)
-- **Next step:** PR3 — extract the `openImageInPlayground` use-case
-  (`handleOpenInPlayground` in `export-panel.tsx`), reusing `PlaygroundPort` +
-  `CanvasFactory` (both exist). Use `/extract-use-case`.
+- **Current step:** PR4 (`useExportActions` hook → `export-panel.tsx` thin UI) —
+  DONE, uncommitted. (PR0 in `a743503`, PR1 in `e177a53`, PR2 in `d9c01cb`; PR3
+  + PR4 working-tree only.) **Export pilot complete (PR1–PR4).**
+- **Next step:** commit the Export pilot, then replay the use-cases + ports
+  pattern on the **quantize** feature with `/extract-use-case` (then the preview
+  pipeline).
 
 ## Roadmap
 
@@ -27,9 +27,9 @@ quantize, then the preview pipeline.
 |----|-------|--------|
 | PR0 | Guardrails: knip + jscpd (report-only), skills, registry, this doc | ✅ done (uncommitted) |
 | PR1 | Export `PlaygroundPort` + adapters + kill Tauri leak (`FileSink`/`CanvasFactory` deferred to PR2) | ✅ done (`e177a53`) |
-| PR2 | `exportImageToZip` use-case (extract `handleExport`) + `FileSink`/`CanvasFactory` ports + tests | ✅ done (uncommitted) |
-| PR3 | `openImageInPlayground` use-case (extract `handleOpenInPlayground`) + tests | ⬜ todo |
-| PR4 | `useExportActions` hook → `export-panel.tsx` becomes thin UI | ⬜ todo |
+| PR2 | `exportImageToZip` use-case (extract `handleExport`) + `FileSink`/`CanvasFactory` ports + tests | ✅ done (`d9c01cb`) |
+| PR3 | `openImageInPlayground` use-case (extract `handleOpenInPlayground`) + `PlaygroundExporter` port + tests | ✅ done (uncommitted) |
+| PR4 | `useExportActions` hook → `export-panel.tsx` becomes thin UI | ✅ done (uncommitted) |
 | — | Then: quantize feature, then preview pipeline | ⬜ later |
 
 ## Guardrail baseline (ratchet — must not regress)
