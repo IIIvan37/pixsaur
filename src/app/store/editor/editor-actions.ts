@@ -6,8 +6,9 @@ import {
 } from '@/app/store/config/config'
 import type { PixelMode } from '@/app/store/config/types'
 import { logger } from '@/core'
+import { paintPixels } from '@/editor/application/paint-pixels'
+import type { Clock } from '@/editor/application/ports'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { getMaxColorIndex, getModeForLine } from '@/libs/pixsaur-egx'
 import { egxConfigAtom, egxIndexBufferAtom } from '../preview/egx-preview'
 import {
   applyManualEditsAtom,
@@ -30,7 +31,6 @@ import {
   type ZoomLevel
 } from './editor-config'
 import {
-  type EditHistoryEntry,
   editorBasePaletteAtom,
   editorDimensionsAtom,
   editorEgxConfigAtom,
@@ -40,10 +40,11 @@ import {
   editorIndexBufferAtom,
   editorOriginalBufferAtom,
   editorPixelModeAtom,
-  editorRasterChangesAtom,
-  MAX_HISTORY_SIZE,
-  type PixelEdit
+  editorRasterChangesAtom
 } from './editor-state'
+
+/** Runtime adapter for the editor's `Clock` port. */
+const systemClock: Clock = { now: () => Date.now() }
 
 // ============================================================================
 // Actions de l'éditeur
@@ -215,106 +216,31 @@ export const paintPixelAtom = atom(
   (get, set, { x, y }: { x: number; y: number }) => {
     const buffer = get(editorIndexBufferAtom)
     const dimensions = get(editorDimensionsAtom)
-    const selectedInk = get(editorSelectedInkAtom)
-    const egxEnabled = get(editorEgxEnabledAtom)
-    const egxConfig = get(editorEgxConfigAtom)
-
     if (!buffer || !dimensions) return
 
-    // Vérifier les limites
-    if (x < 0 || x >= dimensions.width || y < 0 || y >= dimensions.height) {
-      return
-    }
+    const egxEnabled = get(editorEgxEnabledAtom)
+    const result = paintPixels(
+      {
+        buffer,
+        width: dimensions.width,
+        height: dimensions.height,
+        selectedInk: get(editorSelectedInkAtom),
+        egxConfig: egxEnabled ? get(editorEgxConfigAtom) : null,
+        pixels: [{ x, y }],
+        entryType: 'pixel',
+        // Single click: expand to the CPC pixel group on EGX low-res lines.
+        expandLowResGroups: true,
+        history: get(editorHistoryAtom),
+        historyIndex: get(editorHistoryIndexAtom)
+      },
+      { clock: systemClock }
+    )
 
-    // Vérifier les contraintes EGX
-    if (egxEnabled && egxConfig) {
-      const lineMode = getModeForLine(y, egxConfig)
-      const maxColorIndex = getMaxColorIndex(lineMode, egxConfig.type)
-      if (selectedInk > maxColorIndex) {
-        logger.warn('[Editor] EGX: ink index exceeds line limit', {
-          selectedInk,
-          maxColorIndex,
-          line: y,
-          lineMode
-        })
-        return
-      }
-    }
+    if (!result.changed) return
 
-    const { width } = dimensions
-
-    // Determine if this is a low-res line in EGX mode
-    // Low-res lines have pixels grouped by 2
-    let isLowResLine = false
-    if (egxEnabled && egxConfig) {
-      const lineMode = getModeForLine(y, egxConfig)
-      const highResMode = egxConfig.type === 'egx1' ? 1 : 2
-      isLowResLine = lineMode !== highResMode
-    }
-
-    // For low-res lines, align x to the pixel group boundary (even x)
-    const alignedX = isLowResLine ? x - (x % 2) : x
-
-    // Collect all pixels to paint (1 for high-res, 2 for low-res)
-    const pixelsToPaint: Array<{ x: number; y: number; offset: number }> = []
-
-    if (isLowResLine) {
-      // Paint both pixels of the CPC pixel group
-      pixelsToPaint.push({ x: alignedX, y, offset: y * width + alignedX })
-      if (alignedX + 1 < width) {
-        pixelsToPaint.push({
-          x: alignedX + 1,
-          y,
-          offset: y * width + alignedX + 1
-        })
-      }
-    } else {
-      // High-res line: paint single pixel
-      pixelsToPaint.push({ x, y, offset: y * width + x })
-    }
-
-    // Check if any pixel actually changes
-    const edits: PixelEdit[] = []
-    for (const pixel of pixelsToPaint) {
-      const previousInk = buffer[pixel.offset]
-      if (previousInk !== selectedInk) {
-        edits.push({
-          x: pixel.x,
-          y: pixel.y,
-          previousInkIndex: previousInk,
-          newInkIndex: selectedInk
-        })
-        buffer[pixel.offset] = selectedInk
-      }
-    }
-
-    // Ne rien faire si aucun pixel n'a changé
-    if (edits.length === 0) return
-
-    // Créer l'entrée d'historique
-    const entry: EditHistoryEntry = {
-      type: 'pixel',
-      edits,
-      timestamp: Date.now()
-    }
-
-    // Ajouter à l'historique
-    const history = get(editorHistoryAtom)
-    const index = get(editorHistoryIndexAtom)
-
-    // Tronquer l'historique si on a fait undo puis nouvelle action
-    const newHistory = [...history.slice(0, index + 1), entry]
-
-    // Limiter la taille de l'historique
-    if (newHistory.length > MAX_HISTORY_SIZE) {
-      newHistory.shift()
-    }
-
-    set(editorHistoryAtom, newHistory)
-    set(editorHistoryIndexAtom, newHistory.length - 1)
-
-    // Forcer le re-render en créant une nouvelle référence
-    set(editorIndexBufferAtom, new Uint8Array(buffer))
+    set(editorHistoryAtom, result.history)
+    set(editorHistoryIndexAtom, result.historyIndex)
+    set(editorIndexBufferAtom, result.buffer)
   }
 )
 
@@ -326,66 +252,31 @@ export const paintPixelsAtom = atom(
   (get, set, pixels: Array<{ x: number; y: number }>) => {
     const buffer = get(editorIndexBufferAtom)
     const dimensions = get(editorDimensionsAtom)
-    const selectedInk = get(editorSelectedInkAtom)
-    const egxEnabled = get(editorEgxEnabledAtom)
-    const egxConfig = get(editorEgxConfigAtom)
-
     if (!buffer || !dimensions || pixels.length === 0) return
 
-    const { width, height } = dimensions
-    const edits: PixelEdit[] = []
+    const egxEnabled = get(editorEgxEnabledAtom)
+    const result = paintPixels(
+      {
+        buffer,
+        width: dimensions.width,
+        height: dimensions.height,
+        selectedInk: get(editorSelectedInkAtom),
+        egxConfig: egxEnabled ? get(editorEgxConfigAtom) : null,
+        pixels,
+        entryType: 'region',
+        // Drag stroke: paint raw pixels, no group expansion.
+        expandLowResGroups: false,
+        history: get(editorHistoryAtom),
+        historyIndex: get(editorHistoryIndexAtom)
+      },
+      { clock: systemClock }
+    )
 
-    for (const { x, y } of pixels) {
-      // Vérifier les limites
-      if (x < 0 || x >= width || y < 0 || y >= height) continue
+    if (!result.changed) return
 
-      // Vérifier les contraintes EGX
-      if (egxEnabled && egxConfig) {
-        const lineMode = getModeForLine(y, egxConfig)
-        const maxColorIndex = getMaxColorIndex(lineMode, egxConfig.type)
-        if (selectedInk > maxColorIndex) {
-          continue // Skip pixels where selected ink exceeds line limit
-        }
-      }
-
-      const offset = y * width + x
-      const previousInk = buffer[offset]
-
-      // Ne pas ajouter si c'est la même couleur
-      if (previousInk === selectedInk) continue
-
-      // Modifier le buffer
-      buffer[offset] = selectedInk
-
-      edits.push({
-        x,
-        y,
-        previousInkIndex: previousInk,
-        newInkIndex: selectedInk
-      })
-    }
-
-    if (edits.length === 0) return
-
-    // Créer l'entrée d'historique
-    const entry: EditHistoryEntry = {
-      type: 'region',
-      edits,
-      timestamp: Date.now()
-    }
-
-    // Ajouter à l'historique
-    const history = get(editorHistoryAtom)
-    const index = get(editorHistoryIndexAtom)
-    const newHistory = [...history.slice(0, index + 1), entry]
-
-    if (newHistory.length > MAX_HISTORY_SIZE) {
-      newHistory.shift()
-    }
-
-    set(editorHistoryAtom, newHistory)
-    set(editorHistoryIndexAtom, newHistory.length - 1)
-    set(editorIndexBufferAtom, new Uint8Array(buffer))
+    set(editorHistoryAtom, result.history)
+    set(editorHistoryIndexAtom, result.historyIndex)
+    set(editorIndexBufferAtom, result.buffer)
   }
 )
 
