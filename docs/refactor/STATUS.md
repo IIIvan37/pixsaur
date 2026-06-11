@@ -11,9 +11,11 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR11 (`reducePalette` use-case, pure / sync / no port) — DONE.
-  Report: `sessions/2026-06-11-pr11-reduce-palette.md`. First use-case of the
-  **palette** feature (preview pipeline finished at PR10).
+- **Current step:** PR12 (`optimizeRaster` use-case, pure / sync / total, one
+  `IdGenerator` port) — DONE. Report:
+  `sessions/2026-06-11-pr12-optimize-raster.md`. First use-case of the **raster**
+  feature (seeds `src/raster/application/`); extracted the
+  `autoOptimizeRasterAtom` orchestration.
 - **Rebased onto `origin/main` (`e169299`, #327 mode0 horizontal downscale)** —
   the branch now sits on top of current main (0 behind / 13 ahead). All 13
   refactor SHAs were rewritten by the rebase; **see `git log` for current
@@ -23,11 +25,12 @@ big picture: `src/export/application/README.md` and the memory note
   apply the linear-resample / skip-second-blur rule (the atoms forward
   `resampleStrategyAtom`). Verified: typecheck + targeted specs (71) + full
   suite green.
-- **Next step:** continue strangling the **palette** feature is **done** for the
-  only orchestration it had (`setReducedPalette`); the other palette atoms are
-  trivial slot mutations. Pick the next feature: **raster** is recommended
-  (highest algorithmic payoff, ~1000 LOC), then **editor**. EGX / Mode-R / DSK
-  are mostly lib-delegation plumbing — skip. Run `/extract-use-case`.
+- **Next step:** the **raster** feature's main orchestration
+  (`autoOptimizeRasterAtom`) is now extracted. Remaining raster files are thin
+  atom wiring / lib-delegation — `raster-preview.ts` (205 LOC) is the next raster
+  candidate but lower payoff. Otherwise pivot to **editor** (largest/riskiest).
+  EGX / Mode-R / DSK are mostly lib-delegation plumbing — skip. Run
+  `/extract-use-case`.
 
 ## What PR5 landed (quantize)
 
@@ -65,15 +68,16 @@ quantize, then the preview pipeline.
 | PR9 | `normalizeImage` + `positionNormalizedImage` use-cases (pure, no port, total → `ImageData \| null`; extract `normalizedImageAtom` / `positionedNormalizedImageAtom`) | ✅ done |
 | PR10 | `smoothImage` use-case (pure, sync, no port, total → `ImageData \| null`; extract `smoothedImageAtom` in `image-pipeline.ts`) | ✅ done |
 | PR11 | `reducePalette` use-case (pure, sync, no port, total → `PaletteSlot[]`; extract `setReducedPaletteAtom`); dedup store helpers/type onto `@/domain/cpc` | ✅ done |
-| — | Preview + palette features done. Next feature to strangle: **raster** (recommended), then **editor**. EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ next |
+| PR12 | `optimizeRaster` use-case (pure, sync, total, `IdGenerator` port; extract `autoOptimizeRasterAtom`); seeds `src/raster/application/` | ✅ done |
+| — | Preview + palette done; raster's main orchestration extracted. Next: `raster-preview.ts` (low payoff) or pivot to **editor**. EGX / Mode-R / DSK = lib-delegation plumbing, skip. | ⬜ next |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.96% duplication, 44 clones** (lowered 2026-06-11, PR11)
-- knip: **25 unused files, 59 unused exports** (lowered 2026-06-11, PR11)
+- jscpd: **1.89% duplication, 43 clones** (lowered 2026-06-11, PR12)
+- knip: **24 unused files, 59 unused exports** (lowered 2026-06-11, PR12)
 - Known real duplication to resolve later: `validate-custom-dimensions.ts`
   identical in `src/preview/` and `src/source/`.
 
