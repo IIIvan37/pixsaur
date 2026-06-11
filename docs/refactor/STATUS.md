@@ -11,13 +11,14 @@ big picture: `src/export/application/README.md` and the memory note
 ## Where we are
 
 - **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR7 (`buildIndexBuffer` use-case, pure / no port) — DONE.
-  Report: `sessions/2026-06-11-pr7-build-index-buffer.md`. **Committed so far:**
-  PR0 `a743503`, PR1 `e177a53`, PR2 `d9c01cb`, PR3 `273dafd`, PR4 `9bb16ae`,
-  PR5 `0e94df6`, PR6 `5c6f550`.
+- **Current step:** PR8 (`renderIndexBufferToImageData` use-case, pure / no port)
+  — DONE. Report: `sessions/2026-06-11-pr8-render-index-buffer.md`.
+  **Committed so far:** PR0 `a743503`, PR1 `e177a53`, PR2 `d9c01cb`,
+  PR3 `273dafd`, PR4 `9bb16ae`, PR5 `0e94df6`, PR6 `5c6f550`, PR7 `e22fe11`.
 - **Next step:** continue the **preview pipeline** extraction — the
-  **final-preview** step (`finalPreviewImageAtom`: index buffer → `ImageData`)
-  or the **normalized-image** (resize/normalize) step — with `/extract-use-case`.
+  **normalized-image** (resize/normalize) step (`normalizedImageAtom` /
+  `positionedNormalizedImageAtom` in `preview-image.ts`) — with
+  `/extract-use-case`, or decide the pipeline extraction is complete.
 
 ## What PR5 landed (quantize)
 
@@ -50,8 +51,9 @@ quantize, then the preview pipeline.
 | PR4 | `useExportActions` hook → `export-panel.tsx` becomes thin UI | ✅ done (`9bb16ae`) |
 | PR5 | `quantizePalette` use-case + `PaletteQuantizer` port (extract `reducedPaletteRaw`/`reducedPaletteRgb` atoms) | ✅ done (`0e94df6`) |
 | PR6 | `ditherImage` use-case + `ImageDitherer` port (extract `previewImageAtom`); dedup ignored-slot prep in `index-buffer.ts` | ✅ done (`5c6f550`) |
-| PR7 | `buildIndexBuffer` use-case (pure, no port; extract `previewIndexBufferAtom`); `IndexBuffer` type owned by application layer, `IndexBufferData` aliased | ✅ done |
-| — | Then: rest of preview pipeline (final-preview `finalPreviewImageAtom`, normalized-image) | ⬜ next |
+| PR7 | `buildIndexBuffer` use-case (pure, no port; extract `previewIndexBufferAtom`); `IndexBuffer` type owned by application layer, `IndexBufferData` aliased | ✅ done (`e22fe11`) |
+| PR8 | `renderIndexBufferToImageData` use-case (pure, no port, total → `ImageData`; extract `finalPreviewImageAtom`) | ✅ done |
+| — | Then: rest of preview pipeline (normalized-image `normalizedImageAtom` / `positionedNormalizedImageAtom`) | ⬜ next |
 
 ## Guardrail baseline (ratchet — must not regress)
 
