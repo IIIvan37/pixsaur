@@ -10,9 +10,17 @@ big picture: `src/export/application/README.md` and the memory note
 
 ## Where we are
 
-- **Branch:** `refactor/pr0-guardrails` — committed (`a30e69c`), **ahead of
-  origin by 4 (unpushed)**.
-- **Current step:** backlog #3 — deps cleanup — DONE (`a30e69c`). Report:
+- **Branch:** `refactor/pr0-guardrails` — committed (`8da1e58`), **ahead of
+  origin by 7 (unpushed)**.
+- **Current step:** backlog #4 — specs for `src/domain/` — DONE (`8da1e58`).
+  Report: `sessions/2026-06-12-domain-specs.md`. Added 7 spec files / 61 tests
+  for the previously-untested pure domain modules (cpc/quantization,
+  color-distance, color-utils, palette-filtering, ignored-slot, slot;
+  image-processing/positioning). `src/raster/` already covered (PR12/PR15), the
+  two barrels need no spec. Suite 2112 passed (+61), typecheck clean, jscpd
+  unchanged (39/1.62%); knip unused exports 59→52 (specs now import several
+  domain symbols — test usage, not real dead-code reduction).
+- **Prev step:** backlog #3 — deps cleanup — DONE (`a30e69c`). Report:
   `sessions/2026-06-12-deps-cleanup.md`. Dropped 11 dead deps (knip-verified):
   `marked`, `@lingui/macro` (v5 uses `@lingui/{core,react}/macro` subpaths),
   `lodash`+`@types/lodash` (inlined a minimal trailing debounce in
@@ -57,10 +65,12 @@ big picture: `src/export/application/README.md` and the memory note
      `@types/bun`, review knip's `@lingui/macro` + devDeps flags.~~ ✅ done
      (`a30e69c`): dropped 11 dead deps, inlined debounce, pinned `@types/bun`;
      knip deps 15→1 (`@netlify/functions` kept as infra placeholder).
-  4. Specs for `src/domain/` (9 files, 0 specs) and `src/raster/`. ⟵ **next**
+  4. ~~Specs for `src/domain/` (9 files, 0 specs) and `src/raster/`.~~ ✅ done
+     (`8da1e58`): 7 spec files / 61 tests for the cpc + image-processing domain
+     modules; `src/raster/` was already covered (PR12/PR15).
   5. Optional extractions (atoms that DO hold real logic despite the earlier
      "skip EGX/Mode-R" call): `mode-r-image.ts:33-210`,
-     `egx-palette.ts:56-119`, `egx-image.ts:50-138`.
+     `egx-palette.ts:56-119`, `egx-image.ts:50-138`. ⟵ **next** (optional)
   6. Minor: popup `innerHTML` (`image-preview.tsx:165`), 2 Biome `!important`
      warnings, `setTimeout(…, 0)` workarounds in `editor-canvas.tsx`.
 
@@ -110,6 +120,7 @@ quantize, then the preview pipeline.
 | — | Backlog #1: stabilize load-flaky specs — global 15s `testTimeout`/`hookTimeout`, dropped redundant `resetModules` in `export-cpc-playground.spec`. | ✅ done (`c2f2364`) |
 | — | Backlog #2: dedup duplicated canvas `draw()` in `image-preview.tsx` (double paint) — collapse callback + identical inline effect to one effect. | ✅ done (`2199a36`) |
 | — | Backlog #3: deps cleanup — drop 11 dead deps (marked, @lingui/macro, lodash, @happy-dom/global-registrator, bun-types, add, autoprefixer, postcss, lint-staged, @types/lodash), inline debounce, pin @types/bun; knip deps 15→1. | ✅ done (`a30e69c`) |
+| — | Backlog #4: specs for `src/domain/` — 7 spec files / 61 tests (cpc quantization/color-distance/color-utils/palette-filtering/ignored-slot/slot + image-processing/positioning). `src/raster/` already covered. | ✅ done (`8da1e58`) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
@@ -118,10 +129,12 @@ Detectors are **report-only** (not in blocking `pnpm check`). Run
 
 - jscpd: **1.62% duplication, 39 clones** (lowered 2026-06-12, image-preview
   draw dedup removed the lone tsx clone)
-- knip: **0 unused files, 59 unused exports, 19 unused types, 1 unused dep**
+- knip: **0 unused files, 52 unused exports, 19 unused types, 1 unused dep**
   (files 23→0 2026-06-11, `5ba1e97`: deleted dead barrels + orphan modules;
   deps 15→1 2026-06-12, `a30e69c`: dropped 11 dead deps — the lone remaining
-  `@netlify/functions` is an intentional Netlify infra placeholder)
+  `@netlify/functions` is an intentional Netlify infra placeholder; exports
+  59→52 2026-06-12, `8da1e58`: new domain specs import several previously-unused
+  symbols — test usage, *not* real product usage, so don't over-trust this)
 - ~~Known real duplication: `validate-custom-dimensions.ts` in `src/preview/` +
   `src/source/`~~ — resolved 2026-06-11 (`c8a3e8b`): deleted the orphan
   `src/source/` copy (imported by nobody; the source barrel already defers to
