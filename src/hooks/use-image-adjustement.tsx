@@ -1,5 +1,4 @@
 import { useAtomValue, useSetAtom } from 'jotai'
-import debounce from 'lodash/debounce'
 import { useEffect, useMemo, useRef } from 'react'
 import { configAtom } from '@/app/store/config/config'
 import { downscaledAtom, setWorkingImageAtom } from '@/app/store/image/image'
@@ -8,6 +7,24 @@ import { useImageProcessors } from './use-image-processors'
 // Debounce delay for adjustment changes (ms)
 // 50ms provides a good balance between responsiveness and performance
 const ADJUSTMENT_DEBOUNCE_MS = 50
+
+// Minimal trailing debounce with a cancel() method — sole replacement for the
+// former lodash/debounce dependency (only `()` and `.cancel()` were used).
+function debounce<A extends unknown[]>(
+  fn: (...args: A) => void,
+  delay: number
+): ((...args: A) => void) & { cancel: () => void } {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const debounced = (...args: A) => {
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), delay)
+  }
+  debounced.cancel = () => {
+    if (timer) clearTimeout(timer)
+    timer = undefined
+  }
+  return debounced
+}
 
 export const useImageAdjustement = () => {
   const setSrc = useSetAtom(setWorkingImageAtom)
