@@ -1,32 +1,28 @@
 /**
- * Helpers pour la sélection de couleurs dans les palettes CPC
+ * Sélection de couleurs « mode 0 hue diversity » — source unique partagée.
  *
- * Ces fonctions sont extraites de ReGLQuantizer pour:
- * - Faciliter les tests unitaires
- * - Réutilisation potentielle
- * - Meilleure lisibilité du code principal
+ * Deux chemins de production utilisent cet algorithme avec des réglages
+ * volontairement différents, encodés dans deux presets :
+ * - le quantizer GPU (pixsaur-adapter) : CPC_ADAPTER_MODE0_TUNING
+ *   (comportement de production c244923, surchargeable par le slider
+ *   de diversité via getColorDiversityParams)
+ * - la stratégie `mode0-hue-diversity` (palette-strategies-v2) :
+ *   STRATEGY_V2_MODE0_TUNING
  *
- * IMPORTANT: Ce module préserve exactement le comportement de production (c244923)
+ * IMPORTANT: les presets reproduisent bit-à-bit les deux comportements
+ * historiques — ne pas « harmoniser » les constantes entre eux.
  */
 
-import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '../type'
 import {
   calculateHue,
   calculateHueDistance,
   calculateSaturation,
   calculateValue
-} from '@/libs/pixsaur-color/src/utils/hsv'
-
-// Ré-export des fonctions HSV pour utilisation dans regl-quantizer.ts
-export {
-  calculateHue,
-  calculateHueDistance,
-  calculateSaturation,
-  calculateValue
-} from '../../pixsaur-color/src/utils/hsv'
+} from '../utils/hsv'
 
 // ============================================================================
-// Constantes de configuration
+// Constantes de configuration (héritées du quantizer GPU)
 // ============================================================================
 
 /** Nombre max de couleurs pour modes 1-2 (mode 0 = plus de 4 couleurs) */
@@ -45,9 +41,6 @@ export const MIN_HUE_DISTANCE_MODE_0 = 25
 
 /** Seuil de saturation pour considérer une couleur comme "saturée" */
 export const SATURATION_THRESHOLD_FOR_HUE = 0.2
-
-/** Seuil de saturation élevé pour vérification de teinte */
-export const SATURATION_THRESHOLD_HIGH = 0.3
 
 /** Delta minimum pour calcul de teinte (évite les erreurs sur les gris) */
 export const DELTA_MIN_FOR_HUE = 0.01
@@ -68,9 +61,113 @@ export const HUE_BONUS_WEIGHT = 2
 export const VALUE_THRESHOLD_BRIGHT = 0.5
 
 /** Nombre minimum de couleurs claires parmi les représentants de bucket */
+export const MIN_BRIGHT_BUCKET_REPRESENTATIVES = 2
 
 // ============================================================================
-// Color Diversity Configuration
+// Types
+// ============================================================================
+
+/** Représente une couleur candidate avec ses métadonnées */
+export interface ColorCandidate {
+  /** Index dans la palette de base */
+  index: number
+  /** Fréquence d'apparition (0-1) */
+  frequency: number
+  /** Couleur originale RGB */
+  color: Vector
+  /** Couleur convertie/mappée RGB */
+  converted: Vector
+}
+
+/** Alias historique côté pixsaur-adapter */
+export type ColorFrequencyItem = ColorCandidate
+
+/** Fonction de calcul de distance entre deux couleurs */
+export type DistanceFunction = (a: Vector, b: Vector) => number
+
+/** Bucket de teinte avec ses couleurs */
+export interface HueBucket {
+  /** Clé du bucket (numéro ou 'gray') */
+  bucket: number | 'gray'
+  /** Couleurs triées par fréquence décroissante */
+  colors: ColorCandidate[]
+  /** Fréquence totale du bucket */
+  totalFreq: number
+}
+
+// ============================================================================
+// Tuning (presets historiques)
+// ============================================================================
+
+/**
+ * Réglages de l'algorithme. Chaque preset reproduit exactement un
+ * comportement historique — voir l'en-tête du module.
+ */
+export interface Mode0HueDiversityTuning {
+  /** Distance RGB minimale (grandes palettes / mode 0) */
+  minRgbDistance: number
+  /** Distance RGB minimale pour petites palettes (modes 1-2); null = pas de distinction */
+  smallPaletteMinRgbDistance: number | null
+  /** Distance de teinte minimale en degrés */
+  minHueDistance: number
+  /** Seuil de saturation du contrôle de teinte (sélection par fréquence) */
+  freqHueSatThreshold: number
+  /** Le contrôle de teinte (fréquence) ne s'applique qu'aux grandes palettes */
+  freqHueCheckLargePaletteOnly: boolean
+  /** Seuil de saturation du bonus de teinte (MaxMin) */
+  maxMinSatThreshold: number
+  /** Le bonus de teinte (MaxMin) ne s'applique qu'aux grandes palettes */
+  maxMinHueBonusLargePaletteOnly: boolean
+  /** Taille des buckets de teinte en degrés */
+  hueBucketSize: number
+  /** Seuil de saturation pour le bucketing */
+  bucketSatThreshold: number
+  /** Distance de teinte — les deux historiques divergent sur les teintes
+   * achromatiques (-1) : hsv.calculateHueDistance retourne 180,
+   * wrapHueDistance n'a pas de garde */
+  hueDistance: (hue1: number, hue2: number) => number
+}
+
+/**
+ * Distance de teinte circulaire SANS garde achromatique.
+ * Conservée pour la fidélité bit-à-bit avec la stratégie v2 historique :
+ * une teinte -1 (achromatique) participe au calcul telle quelle.
+ */
+export function wrapHueDistance(hue1: number, hue2: number): number {
+  const diff = Math.abs(hue1 - hue2)
+  return Math.min(diff, 360 - diff)
+}
+
+/** Comportement du quantizer GPU (pixsaur-adapter, production c244923) */
+export const CPC_ADAPTER_MODE0_TUNING: Mode0HueDiversityTuning = {
+  minRgbDistance: MIN_RGB_DISTANCE_MODE_0,
+  smallPaletteMinRgbDistance: MIN_RGB_DISTANCE_MODE_1_2,
+  minHueDistance: MIN_HUE_DISTANCE_MODE_0,
+  freqHueSatThreshold: 0.15,
+  freqHueCheckLargePaletteOnly: true,
+  maxMinSatThreshold: SATURATION_THRESHOLD_FOR_HUE,
+  maxMinHueBonusLargePaletteOnly: true,
+  hueBucketSize: HUE_BUCKET_SIZE_DEGREES,
+  bucketSatThreshold: SATURATION_THRESHOLD_FOR_HUE,
+  hueDistance: calculateHueDistance
+}
+
+/** Comportement de la stratégie `mode0-hue-diversity` (palette-strategies-v2) */
+export const STRATEGY_V2_MODE0_TUNING: Mode0HueDiversityTuning = {
+  minRgbDistance: 20,
+  smallPaletteMinRgbDistance: null,
+  minHueDistance: 30,
+  freqHueSatThreshold: 0.3,
+  freqHueCheckLargePaletteOnly: false,
+  maxMinSatThreshold: 0.2,
+  maxMinHueBonusLargePaletteOnly: false,
+  hueBucketSize: 45,
+  bucketSatThreshold: 0.2,
+  hueDistance: wrapHueDistance
+}
+
+// ============================================================================
+// Color Diversity Configuration (slider)
 // ============================================================================
 
 /**
@@ -117,36 +214,6 @@ export function getColorDiversityParams(
     hueBucketSize: Math.round(hueBucketSize)
   }
 }
-export const MIN_BRIGHT_BUCKET_REPRESENTATIVES = 2
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/** Représente une couleur candidate avec ses métadonnées */
-export interface ColorFrequencyItem {
-  /** Index dans la palette de base */
-  index: number
-  /** Fréquence d'apparition (0-1) */
-  frequency: number
-  /** Couleur originale RGB */
-  color: Vector
-  /** Couleur convertie/mappée RGB */
-  converted: Vector
-}
-
-/** Fonction de calcul de distance entre deux couleurs */
-export type DistanceFunction = (a: Vector, b: Vector) => number
-
-/** Bucket de teinte avec ses couleurs */
-export interface HueBucket {
-  /** Clé du bucket (numéro ou 'gray') */
-  bucket: number | 'gray'
-  /** Couleurs triées par fréquence décroissante */
-  colors: ColorFrequencyItem[]
-  /** Fréquence totale du bucket */
-  totalFreq: number
-}
 
 // ============================================================================
 // Fonctions de sélection
@@ -165,27 +232,33 @@ export interface HueBucket {
  * @param targetColors - Nombre total de couleurs cible (pour détecter mode 0 vs 1-2)
  * @param calculateDistance - Fonction de distance RGB
  * @param diversityParams - Optional diversity parameters from slider
+ * @param tuning - Preset de comportement (défaut: quantizer GPU)
  */
 export function selectFrequentColorsWithDiversity(
-  colorFrequency: ColorFrequencyItem[],
+  colorFrequency: ColorCandidate[],
   selectedConverted: Vector[],
   result: number[],
   frequencyBudget: number,
   targetColors: number | undefined,
   calculateDistance: DistanceFunction,
-  diversityParams?: ColorDiversityParams
+  diversityParams?: ColorDiversityParams,
+  tuning: Mode0HueDiversityTuning = CPC_ADAPTER_MODE0_TUNING
 ): void {
   // Distance minimale adaptative selon la taille de la palette cible
-  // Use diversity params if provided, otherwise use defaults
-  const minDistance =
-    targetColors && targetColors <= CPC_MODE_1_MAX_COLORS
-      ? MIN_RGB_DISTANCE_MODE_1_2
-      : (diversityParams?.minRgbDistance ?? MIN_RGB_DISTANCE_MODE_0)
+  const useSmallPaletteDistance =
+    tuning.smallPaletteMinRgbDistance !== null &&
+    targetColors &&
+    targetColors <= CPC_MODE_1_MAX_COLORS
+  const minDistance = useSmallPaletteDistance
+    ? (tuning.smallPaletteMinRgbDistance as number)
+    : (diversityParams?.minRgbDistance ?? tuning.minRgbDistance)
 
-  // Pour le mode 0, également exiger une diversité de teinte
-  const isMode0 = targetColors && targetColors > CPC_MODE_1_MAX_COLORS
+  // Contrôle de teinte: toujours, ou seulement pour les grandes palettes (mode 0)
+  const applyHueCheck = tuning.freqHueCheckLargePaletteOnly
+    ? Boolean(targetColors && targetColors > CPC_MODE_1_MAX_COLORS)
+    : true
   const minHueDistance =
-    diversityParams?.minHueDistance ?? MIN_HUE_DISTANCE_MODE_0
+    diversityParams?.minHueDistance ?? tuning.minHueDistance
 
   for (
     let i = 1;
@@ -197,31 +270,25 @@ export function selectFrequentColorsWithDiversity(
     const candidateSat = calculateSaturation(candidateConverted)
     let isDiverse = true
 
-    if (isMode0) {
-      // Mode 0: vérifier la diversité de teinte pour couleurs ayant une teinte identifiable
-      // Utiliser le même seuil que pour le compteur de bucket (0.08) pour cohérence
-      // Cela inclut les jaunes/verts désaturés qui ont quand même une teinte visible
-      const MIN_SAT_FOR_HUE_CHECK = 0.15
-      if (candidateSat > MIN_SAT_FOR_HUE_CHECK && candidateHue >= 0) {
-        for (const selectedColor of selectedConverted) {
-          const selectedSat = calculateSaturation(selectedColor)
+    if (
+      applyHueCheck &&
+      candidateSat > tuning.freqHueSatThreshold &&
+      candidateHue >= 0
+    ) {
+      // Vérifier la diversité de teinte pour couleurs ayant une teinte identifiable
+      for (const selectedColor of selectedConverted) {
+        const selectedSat = calculateSaturation(selectedColor)
 
-          // Si la couleur sélectionnée a aussi une teinte identifiable, vérifier
-          if (selectedSat > MIN_SAT_FOR_HUE_CHECK) {
-            const selectedHue = calculateHue(selectedColor, DELTA_MIN_FOR_HUE)
-            if (selectedHue >= 0) {
-              const hueDistance = calculateHueDistance(
-                candidateHue,
-                selectedHue
-              )
+        // Si la couleur sélectionnée a aussi une teinte identifiable, vérifier
+        if (selectedSat > tuning.freqHueSatThreshold) {
+          const selectedHue = calculateHue(selectedColor, DELTA_MIN_FOR_HUE)
+          const hueDistance = tuning.hueDistance(candidateHue, selectedHue)
 
-              // Si teintes trop proches, rejeter (même si RGB différent)
-              // Cela garantit que la palette couvre bien l'espace des teintes
-              if (hueDistance < minHueDistance) {
-                isDiverse = false
-                break
-              }
-            }
+          // Si teintes trop proches, rejeter (même si RGB différent)
+          // Cela garantit que la palette couvre bien l'espace des teintes
+          if (hueDistance < minHueDistance) {
+            isDiverse = false
+            break
           }
         }
       }
@@ -256,18 +323,22 @@ export function selectFrequentColorsWithDiversity(
  * @param result - Indices sélectionnés (modifié in-place)
  * @param targetColors - Nombre total de couleurs cible
  * @param calculateDistance - Fonction de distance RGB
+ * @param tuning - Preset de comportement (défaut: quantizer GPU)
  */
 export function selectMaxMinDistanceColors(
-  colorFrequency: ColorFrequencyItem[],
+  colorFrequency: ColorCandidate[],
   selectedConverted: Vector[],
   result: number[],
   targetColors: number,
   calculateDistance: DistanceFunction,
-  _diversityParams?: ColorDiversityParams
+  _diversityParams?: ColorDiversityParams,
+  tuning: Mode0HueDiversityTuning = CPC_ADAPTER_MODE0_TUNING
 ): void {
   const remaining = colorFrequency.filter((c) => !result.includes(c.index))
   const additionalColors = targetColors - result.length
-  const isMode0 = targetColors > CPC_MODE_1_MAX_COLORS
+  const applyHueBonus = tuning.maxMinHueBonusLargePaletteOnly
+    ? targetColors > CPC_MODE_1_MAX_COLORS
+    : true
 
   for (let i = 0; i < additionalColors && remaining.length > 0; i++) {
     let maxScore = -1
@@ -285,24 +356,21 @@ export function selectMaxMinDistanceColors(
 
       let score = minRGBDistance
 
-      // En mode 0, ajouter un bonus pour la diversité de teinte
-      if (isMode0) {
+      // Ajouter un bonus pour la diversité de teinte
+      if (applyHueBonus) {
         const candidateHue = calculateHue(candidateConverted, DELTA_MIN_FOR_HUE)
         const candidateSat = calculateSaturation(candidateConverted)
 
         // Pour les couleurs saturées, calculer la distance de teinte minimale
-        if (candidateSat > SATURATION_THRESHOLD_FOR_HUE && candidateHue >= 0) {
+        if (candidateSat > tuning.maxMinSatThreshold && candidateHue >= 0) {
           let minHueDistanceVal = 360
 
           for (const selectedColor of selectedConverted) {
             const selectedSat = calculateSaturation(selectedColor)
 
-            if (selectedSat > SATURATION_THRESHOLD_FOR_HUE) {
+            if (selectedSat > tuning.maxMinSatThreshold) {
               const selectedHue = calculateHue(selectedColor, DELTA_MIN_FOR_HUE)
-              const hueDistance = calculateHueDistance(
-                candidateHue,
-                selectedHue
-              )
+              const hueDistance = tuning.hueDistance(candidateHue, selectedHue)
               minHueDistanceVal = Math.min(minHueDistanceVal, hueDistance)
             }
           }
@@ -334,18 +402,18 @@ export function selectMaxMinDistanceColors(
 /**
  * Crée des buckets de teinte pour regrouper les couleurs par famille
  *
- * Utilise des buckets de 45° (~8 familles principales + gris)
- *
  * @param colorFrequency - Couleurs candidates
  * @param diversityParams - Optional diversity parameters from slider
+ * @param tuning - Preset de comportement (défaut: quantizer GPU)
  * @returns Map des buckets avec leurs couleurs
  */
 export function createHueBuckets(
-  colorFrequency: ColorFrequencyItem[],
-  diversityParams?: ColorDiversityParams
-): Map<number | 'gray', ColorFrequencyItem[]> {
-  const hueBuckets = new Map<number | 'gray', ColorFrequencyItem[]>()
-  const bucketSize = diversityParams?.hueBucketSize ?? HUE_BUCKET_SIZE_DEGREES
+  colorFrequency: ColorCandidate[],
+  diversityParams?: ColorDiversityParams,
+  tuning: Mode0HueDiversityTuning = CPC_ADAPTER_MODE0_TUNING
+): Map<number | 'gray', ColorCandidate[]> {
+  const hueBuckets = new Map<number | 'gray', ColorCandidate[]>()
+  const bucketSize = diversityParams?.hueBucketSize ?? tuning.hueBucketSize
 
   for (const candidate of colorFrequency) {
     const sat = calculateSaturation(candidate.converted)
@@ -353,7 +421,7 @@ export function createHueBuckets(
 
     // Buckets pour avoir ~8-12 familles principales depending on diversity
     const bucketKey: number | 'gray' =
-      sat > SATURATION_THRESHOLD_FOR_HUE && hue >= 0
+      sat > tuning.bucketSatThreshold && hue >= 0
         ? Math.floor(hue / bucketSize)
         : 'gray'
 
@@ -373,7 +441,7 @@ export function createHueBuckets(
  * @returns Array de HueBucket triés
  */
 export function sortBucketsByFrequency(
-  hueBuckets: Map<number | 'gray', ColorFrequencyItem[]>
+  hueBuckets: Map<number | 'gray', ColorCandidate[]>
 ): HueBucket[] {
   return Array.from(hueBuckets.entries())
     .map(([bucket, colors]) => ({
@@ -394,8 +462,8 @@ export function sortBucketsByFrequency(
 export function selectBucketRepresentatives(
   sortedBuckets: HueBucket[],
   maxRepresentatives: number
-): ColorFrequencyItem[] {
-  const representatives: ColorFrequencyItem[] = []
+): ColorCandidate[] {
+  const representatives: ColorCandidate[] = []
 
   for (const { colors } of sortedBuckets) {
     if (representatives.length < maxRepresentatives && colors.length > 0) {
@@ -410,9 +478,8 @@ export function selectBucketRepresentatives(
  * Sélectionne les représentants de bucket avec diversité de luminosité
  *
  * Stratégie:
- * 1. Regroupe les buckets adjacents en "méga-familles" (ex: verts 45-135°)
- * 2. Ne prend qu'UN représentant par méga-famille pour garantir la diversité
- * 3. Assure un minimum de couleurs claires
+ * 1. Un représentant par bucket distinct pour garantir la diversité
+ * 2. Assure un minimum de couleurs claires
  *
  * @param sortedBuckets - Buckets triés par fréquence
  * @param maxRepresentatives - Nombre max de représentants
@@ -421,8 +488,8 @@ export function selectBucketRepresentatives(
 export function selectBucketRepresentativesWithLightness(
   sortedBuckets: HueBucket[],
   maxRepresentatives: number
-): ColorFrequencyItem[] {
-  const representatives: ColorFrequencyItem[] = []
+): ColorCandidate[] {
+  const representatives: ColorCandidate[] = []
   const bucketIndices: number[] = [] // Pour savoir de quel bucket vient chaque rep
   const usedBuckets = new Set<number | 'gray'>() // Buckets déjà utilisés
 
@@ -535,20 +602,19 @@ export interface AddRepresentativesResult {
  * @param result - Current result indices (modified in-place)
  * @param selectedConverted - Currently selected colors (modified in-place)
  * @param calculateDistance - Distance function
+ * @param tuning - Preset de comportement (défaut: quantizer GPU)
  * @returns Statistics about added/skipped representatives
  */
 export function addBucketRepresentativesWithDistanceCheck(
-  bucketRepresentatives: ColorFrequencyItem[],
+  bucketRepresentatives: ColorCandidate[],
   _sortedBuckets: HueBucket[],
   result: number[],
   selectedConverted: Vector[],
-  calculateDistance: DistanceFunction
+  calculateDistance: DistanceFunction,
+  tuning: Mode0HueDiversityTuning = CPC_ADAPTER_MODE0_TUNING
 ): AddRepresentativesResult {
   let added = 0
   let skipped = 0
-
-  // Constants for distance checks
-  const MIN_SAT_FOR_HUE_CHECK = 0.15
 
   for (const rep of bucketRepresentatives) {
     if (result.includes(rep.index)) continue
@@ -562,7 +628,7 @@ export function addBucketRepresentativesWithDistanceCheck(
       const dist = calculateDistance(rep.converted, existing)
 
       // RGB distance check
-      if (dist < MIN_RGB_DISTANCE_MODE_0) {
+      if (dist < tuning.minRgbDistance) {
         tooClose = true
         skipped++
         break
@@ -571,14 +637,14 @@ export function addBucketRepresentativesWithDistanceCheck(
       // Hue distance check (for colors with identifiable hue)
       const existingSat = calculateSaturation(existing)
       if (
-        repSat > MIN_SAT_FOR_HUE_CHECK &&
+        repSat > tuning.freqHueSatThreshold &&
         repHue >= 0 &&
-        existingSat > MIN_SAT_FOR_HUE_CHECK
+        existingSat > tuning.freqHueSatThreshold
       ) {
         const existingHue = calculateHue(existing, DELTA_MIN_FOR_HUE)
         if (existingHue >= 0) {
-          const hueDist = calculateHueDistance(repHue, existingHue)
-          if (hueDist < MIN_HUE_DISTANCE_MODE_0) {
+          const hueDist = tuning.hueDistance(repHue, existingHue)
+          if (hueDist < tuning.minHueDistance) {
             tooClose = true
             skipped++
             break
