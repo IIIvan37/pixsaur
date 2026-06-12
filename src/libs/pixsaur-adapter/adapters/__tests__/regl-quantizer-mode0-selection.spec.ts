@@ -31,7 +31,7 @@ vi.mock('@/core', async (importOriginal) => {
   }
 })
 
-// Constantes de color-selection-helpers.ts
+// Constantes du module mode0-hue-diversity (pixsaur-color)
 const CPC_MODE_1_MAX_COLORS = 4
 const SATURATION_THRESHOLD_FOR_HUE = 0.2
 const SATURATION_THRESHOLD_HIGH = 0.3

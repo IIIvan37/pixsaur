@@ -17,6 +17,17 @@ import {
   setColorMapping
 } from '@/libs/pixsaur-color/src/quant/color-mapping-cache'
 import {
+  addBucketRepresentativesWithDistanceCheck,
+  type ColorDiversityParams,
+  type ColorFrequencyItem,
+  createHueBuckets,
+  getColorDiversityParams,
+  selectBucketRepresentativesWithLightness,
+  selectFrequentColorsWithDiversity,
+  selectMaxMinDistanceColors,
+  sortBucketsByFrequency
+} from '@/libs/pixsaur-color/src/quant/mode0-hue-diversity'
+import {
   applyPaletteStrategyV2,
   type ColorCandidate,
   convertPreselectedToIndices,
@@ -31,17 +42,6 @@ import {
 } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
 import { getCPCPlusPaletteIndex } from '@/palettes/cpc-palette'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
-import {
-  addBucketRepresentativesWithDistanceCheck,
-  type ColorDiversityParams,
-  type ColorFrequencyItem,
-  createHueBuckets,
-  getColorDiversityParams,
-  selectBucketRepresentativesWithLightness,
-  selectFrequentColorsWithDiversity,
-  selectMaxMinDistanceColors,
-  sortBucketsByFrequency
-} from './color-selection-helpers'
 
 /**
  * Constantes pour la configuration GPU
@@ -732,7 +732,7 @@ export class ReGLQuantizer {
   }
 
   // NOTE: selectFrequentColorsWithDiversity et selectMaxMinDistanceColors
-  // sont maintenant dans color-selection-helpers.ts
+  // sont dans @/libs/pixsaur-color/src/quant/mode0-hue-diversity
 
   /**
    * Sélection rapide avec diversité maximale + espaces colorimetriques

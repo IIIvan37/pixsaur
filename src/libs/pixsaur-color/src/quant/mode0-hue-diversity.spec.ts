@@ -1,20 +1,22 @@
 /**
- * Tests for color-selection-helpers.ts
+ * Tests for mode0-hue-diversity.ts (ex color-selection-helpers.ts)
  *
  * These tests cover the functionality before SonarQube fixes to ensure
  * no regressions are introduced.
  */
 
 import { describe, expect, it, vi } from 'vitest'
-import type { Vector } from '@/libs/pixsaur-color/src/type'
+import type { Vector } from '../type'
+import {
+  calculateHue,
+  calculateHueDistance,
+  calculateSaturation,
+  calculateValue
+} from '../utils/hsv'
 import {
   addBucketRepresentativesWithDistanceCheck,
   type ColorFrequencyItem,
   CPC_MODE_1_MAX_COLORS,
-  calculateHue,
-  calculateHueDistance,
-  calculateSaturation,
-  calculateValue,
   createHueBuckets,
   DELTA_MIN_FOR_HUE,
   getMinRGBDistance,
@@ -30,7 +32,7 @@ import {
   selectFrequentColorsWithDiversity,
   selectMaxMinDistanceColors,
   sortBucketsByFrequency
-} from './color-selection-helpers'
+} from './mode0-hue-diversity'
 
 // Mock the logger to avoid console output during tests
 vi.mock('@/core', () => ({
