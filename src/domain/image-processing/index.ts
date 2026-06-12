@@ -5,6 +5,12 @@
  */
 
 export {
+  isProcessedImage,
+  isSourceImage,
+  type ProcessedImage,
+  type SourceImage
+} from './image-types'
+export {
   type PositioningOptions,
   positionImage,
   positionImageForAutoMode,

@@ -11,15 +11,15 @@
 
 import type { CpcModeConfig } from '@/domain/cpc'
 import {
-  computeCoverCropRect,
-  computeOriginContentRect,
-  type Selection
-} from '@/source/image-resize'
-import {
   type ResampleFilter,
   resampleHorizontalLinear,
   resampleLinear
 } from './horizontal-resample'
+import {
+  computeCoverCropRect,
+  computeOriginContentRect,
+  type Selection
+} from './image-resize'
 
 /** Copy the top-left `width × height` region of `src` into a fresh ImageData. */
 function cropTopLeft(src: ImageData, width: number, height: number): ImageData {

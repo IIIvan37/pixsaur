@@ -9,10 +9,11 @@ import { atom } from 'jotai'
 import { logger } from '@/core'
 import {
   applyHorizontalSmoothing,
+  applyResize,
   getPixelWidthForMode,
-  getVisualRegionNormalized
+  getVisualRegionNormalized,
+  type Selection
 } from '@/preview'
-import { applyResize, type Selection } from '@/source'
 import {
   centerImageAtom,
   egxEnabledAtom,
