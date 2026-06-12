@@ -10,38 +10,34 @@ big picture: `src/export/application/README.md` and the memory note
 
 ## Where we are
 
-- **Branch:** `refactor/pr0-guardrails`
-- **Current step:** PR15 (`renderRasterPreview` use-case, pure / sync / total,
-  `RasterRenderer` port) — DONE (`820d85b`). Report:
-  `sessions/2026-06-11-pr15-render-raster-preview.md`. Unified the two duplicated
-  render branches of `rasterPreviewImageAtom` (optimized raster buffer vs
-  standard preview buffer) into one use-case: validate buffer dims vs mode config
-  (stale → `null`), render via nullable `RasterRenderer` port (GPU) with CPU
-  fallback (`createRasterPreviewImageData`), always copy GPU output into a fresh
-  `ImageData`. Atom is now a thin adapter (guards + buffer choice + atom reads);
-  verbose `[RASTER]` logs dropped. `effectivePreviewImageAtom` (pure priority
-  selector) left as-is.
-- **Prev step:** PR14 (`enterEditMode` use-case, pure / sync / total / no
-  port) — DONE (`d07c6fb`). Report:
-  `sessions/2026-06-11-pr14-enter-edit-mode.md`. Extracted the state-derivation
-  buried in async `enterEditModeAtom` (base-buffer fallback, EGX capture,
-  aspect-ratio pixel mode, defensive copies); atom became a thin adapter.
-- **Rebased onto `origin/main` (`e169299`, #327 mode0 horizontal downscale)** —
-  the branch now sits on top of current main (0 behind / 13 ahead). All 13
-  refactor SHAs were rewritten by the rebase; **see `git log` for current
-  hashes** (the branch has never been pushed). Two conflicts resolved by folding
-  #327's new `resampleStrategy` logic INTO the extracted use-cases:
-  `normalizeImage` and `smoothImage` now take a `resampleStrategy` input and
-  apply the linear-resample / skip-second-blur rule (the atoms forward
-  `resampleStrategyAtom`). Verified: typecheck + targeted specs (71) + full
-  suite green.
-- **Next step:** strangler-fig extraction is **complete** — `raster-preview.ts`
-  (the last reasonable candidate) is done. All five pivots (export, preview,
-  palette, raster, editor) are seeded with their main orchestrations extracted.
-  EGX / Mode-R / DSK store atoms are lib-delegation plumbing — skip. The
-  `validate-custom-dimensions.ts` duplication is now resolved (`c8a3e8b`). Next
-  session: push the branch / open the PR (never pushed, 16 ahead) — no extraction
-  work remains.
+- **Branch:** `refactor/pr0-guardrails` — **pushed, in sync with origin**.
+- **Current step:** strict full-codebase review + first backlog fix — DONE
+  (`f221c3f`). Report: `sessions/2026-06-12-strict-review-radix-guard.md`.
+  Review verdict: typecheck clean, suite green (only load-flaky specs),
+  guardrails at baseline, all 13 use-cases pure + spec-covered, correctness
+  review of the 16-commit diff found no functional bug. Fixed the
+  long-standing `pnpm check` failure (Radix guard, red since `d1c35d4` on
+  main): new `src/components/ui/tabs/` wrapper, `settings-panel.tsx` rewired,
+  `icon` typed `IconName`.
+- **Prev steps:** PR15 `renderRasterPreview` (`820d85b`), PR14 `enterEditMode`
+  (`d07c6fb`) — see their session reports. Strangler-fig extraction is
+  **complete**: all five pivots (export, preview, palette, raster, editor)
+  extracted; rebased onto `origin/main` (#327 `resampleStrategy` folded into
+  `normalizeImage`/`smoothImage`).
+- **Next step:** burn down the **review backlog** (one item per session, same
+  flow as the PR steps — session report + STATUS update each time):
+  1. Stabilize load-flaky specs (`export-cpc-playground`, `raster-settings` —
+     5s timeouts under WSL load; all pass isolated). ⟵ **next**
+  2. Dedup the duplicated canvas `draw()` in
+     `image-preview.tsx:40-116` (paints twice per preview change).
+  3. Deps cleanup: drop `marked`, replace lone `lodash/debounce`, pin
+     `@types/bun`, review knip's `@lingui/macro` + devDeps flags.
+  4. Specs for `src/domain/` (9 files, 0 specs) and `src/raster/`.
+  5. Optional extractions (atoms that DO hold real logic despite the earlier
+     "skip EGX/Mode-R" call): `mode-r-image.ts:33-210`,
+     `egx-palette.ts:56-119`, `egx-image.ts:50-138`.
+  6. Minor: popup `innerHTML` (`image-preview.tsx:165`), 2 Biome `!important`
+     warnings, `setTimeout(…, 0)` workarounds in `editor-canvas.tsx`.
 
 ## What PR5 landed (quantize)
 
@@ -83,8 +79,9 @@ quantize, then the preview pipeline.
 | PR13 | `paintPixels` use-case (pure, sync, total, `Clock` port; unify+extract `paintPixelAtom`+`paintPixelsAtom`, dedup history mgmt); seeds `src/editor/application/` | ✅ done (`e63aecc`) |
 | PR14 | `enterEditMode` use-case (pure, sync, total, no port; extract state-derivation from async `enterEditModeAtom` — base-buffer fallback, EGX capture, pixel mode, copies) | ✅ done (`d07c6fb`) |
 | PR15 | `renderRasterPreview` use-case (pure, sync, total, `RasterRenderer` port; unify the two duplicated render branches of `rasterPreviewImageAtom`) | ✅ done (`820d85b`) |
-| — | All five pivots extracted. Strangler-fig complete. EGX / Mode-R / DSK = lib-delegation plumbing, skip. Open follow-ups: push/PR. | ⬜ optional |
+| — | All five pivots extracted. Strangler-fig complete. EGX / Mode-R / DSK = lib-delegation plumbing, skip. Open follow-ups: push/PR. | ✅ done (pushed) |
 | — | Dead-file sweep: deleted 23 unused files (knip files 23→0); deduped `validate-custom-dimensions.ts`. | ✅ done (`5ba1e97`, `c8a3e8b`) |
+| — | Strict review of full codebase + fix Radix-guard violation (`ui/tabs` wrapper). Review backlog recorded in "Where we are". | ✅ done (`f221c3f`) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
