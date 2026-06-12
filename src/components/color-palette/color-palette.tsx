@@ -8,7 +8,7 @@ import {
 } from '@/app/store/palette/palette'
 import { egxDisplayPaletteAtom } from '@/app/store/preview/egx-preview'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
-import { cpcFullPalette } from '@/palettes/cpc-palette'
+import { cpcFullPalette } from '@/domain/cpc'
 import { ColorPaletteView } from './color-palette-view'
 
 /**

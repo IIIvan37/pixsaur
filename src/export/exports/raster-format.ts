@@ -8,8 +8,8 @@
  * - CPC Plus Mode 1: DB #00 (no change) or DW color0, color1, color2, color3 (8 bytes for 4 inks)
  */
 
+import { cpcFullPalette } from '@/domain/cpc'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
-import { cpcFullPalette } from '@/palettes/cpc-palette'
 import { firmwareToHardware } from './cpc-format'
 import { rgbToCPCPlus } from './cpc-plus-format'
 

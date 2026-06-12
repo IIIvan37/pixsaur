@@ -6,7 +6,12 @@
  */
 
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { toCPCPlusLevel } from '@/libs/pixsaur-color/src/utils/cpc-plus'
 import type { CPCHardware } from '@/libs/types'
+
+// 4-bit level conversion lives in pixsaur-color (shared with the GPU
+// quantizer); re-exported here to keep the @/domain/cpc API stable
+export { toCPCPlusLevel } from '@/libs/pixsaur-color/src/utils/cpc-plus'
 
 // CPC Classic color levels (3 levels per component: 0, 128, 255)
 const CPC_CLASSIC_LEVELS = [0, 128, 255] as const
@@ -35,20 +40,7 @@ export function quantizeCPC(value: number): number {
  * @returns Nearest CPC Plus level (mapped back to 0-255 range)
  */
 export function quantifyToCPCPlus(value: number): number {
-  const clampedValue = Math.max(0, Math.min(255, value))
-  const val4bit = Math.round((clampedValue / 255) * 15)
-  return Math.round((val4bit / 15) * 255)
-}
-
-/**
- * Convert 8-bit RGB value to 4-bit CPC Plus level (0-15)
- *
- * @param value - RGB component value (0-255)
- * @returns CPC Plus 4-bit level (0-15)
- */
-export function toCPCPlusLevel(value: number): number {
-  const clamped = Math.max(0, Math.min(255, value))
-  return Math.round((clamped / 255) * 15)
+  return Math.round((toCPCPlusLevel(value) / 15) * 255)
 }
 
 /**

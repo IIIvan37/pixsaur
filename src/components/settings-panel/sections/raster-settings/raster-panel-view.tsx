@@ -10,10 +10,10 @@ import {
   SimpleRgbPicker
 } from '@/components/ui/simple-color-picker'
 import PixsaurSlider from '@/components/ui/slider'
+import { vectorToHex } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCColor } from '@/libs/types'
-import { vectorToHex } from '@/palettes/cpc-palette'
 import styles from './raster-panel.module.css'
 
 export interface RasterPanelViewProps {

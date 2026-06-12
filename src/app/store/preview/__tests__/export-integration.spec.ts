@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { generateAmstradCPCPalette } from '@/domain/cpc'
 import { rgbToIndexBufferExact } from '@/export'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { generateAmstradCPCPalette } from '@/palettes/cpc-palette'
 
 describe('Export Integration with CPC Quantization', () => {
   it('should successfully export quantified colors without throwing', () => {

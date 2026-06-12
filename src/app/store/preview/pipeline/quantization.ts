@@ -9,10 +9,10 @@
 
 import { atom } from 'jotai'
 import { logger } from '@/core'
+import { getPaletteForHardware } from '@/domain/cpc'
 import { createQuantizer, extractBuffer } from '@/libs/pixsaur-color/src'
 import { DISTANCE_METRICS_BY_COLORSPACE } from '@/libs/pixsaur-color/src/metric/distance'
 import { countUniqueColors } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
-import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import { quantizePalette } from '@/preview/application/quantize-palette'
 import { imageProcessorAtom } from '../../adapters/processors'
 import {

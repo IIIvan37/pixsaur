@@ -34,9 +34,9 @@ import {
   verticalErrorCoefficientAtom
 } from '@/app/store/raster/raster-tuning'
 import { useRasterTuningRegeneration } from '@/app/store/raster/use-raster-tuning-regeneration'
+import { cpcFullPalette } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
-import { cpcFullPalette } from '@/palettes/cpc-palette'
 import { RasterSettingsView } from './raster-settings-view'
 
 export function RasterSettings() {
