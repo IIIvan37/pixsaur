@@ -28,8 +28,11 @@ disk.dsk
 
 # Internal documentation (kept local only)
 docs/*
-# ...except the refactor status & session reports (shared cross-session resume point)
+# ...except the refactor status & ADRs (shared resume point)
 !docs/refactor/
+# Session reports stay local-only (working history, not repo content) — template kept
+docs/refactor/sessions/*
+!docs/refactor/sessions/_TEMPLATE.md
 
 # AppImage build artifacts and documentation
 appimage_howto_/

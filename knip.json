@@ -2,13 +2,6 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "project": ["src/**/*.{ts,tsx}"],
   "ignore": ["src/locales/**", "src/libs/rasm-wasm/**"],
-  "ignoreDependencies": [
-    "canvas",
-    "chalk",
-    "jpeg-js",
-    "pngjs",
-    "sharp",
-    "@welldone-software/why-did-you-render"
-  ],
+  "ignoreDependencies": ["@welldone-software/why-did-you-render"],
   "ignoreExportsUsedInFile": true
 }
