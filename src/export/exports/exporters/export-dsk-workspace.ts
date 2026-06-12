@@ -1,10 +1,10 @@
-import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
-import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
 import { dskLogger } from '@/core'
 import {
   generateScrDskTemplate,
   generateUniversalScrLoader
 } from '@/export/exports/templates'
+import { generateDskFilenames } from '../dsk-workspace-utils'
+import type { DskImage } from '../types'
 
 type RasmInstance = Awaited<
   ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>

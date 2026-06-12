@@ -1,6 +1,6 @@
 import JSZip from 'jszip'
 import { describe, expect, it, vi } from 'vitest'
-import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
+import type { DskImage } from '../types'
 import { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
 
 vi.mock('./export-dsk-workspace', () => ({

@@ -1,6 +1,4 @@
 import JSZip from 'jszip'
-import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
-import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
 import { dskLogger } from '@/core'
 import { injectPaletteDataIntoSCR } from '@/export/exports/cpc-format'
 import { injectCPCPlusPaletteIntoSCR } from '@/export/exports/cpc-plus-format'
@@ -8,9 +6,11 @@ import {
   generateClassicRasterASM,
   generatePlusRasterASM
 } from '@/export/exports/raster-format'
+import { generateDskFilenames } from '../dsk-workspace-utils'
 import { exportSCR } from '../export-scr/export-scr'
 import { generateDskReadmePdf } from '../generate-dsk-readme-pdf'
 import { toASMData } from '../to-asm-data'
+import type { DskImage } from '../types'
 import { exportDskWorkspace } from './export-dsk-workspace'
 
 type RasmInstance = Awaited<

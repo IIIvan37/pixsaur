@@ -1,5 +1,5 @@
-import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
-import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
+import { generateDskFilenames } from './dsk-workspace-utils'
+import type { DskImage } from './types'
 
 /**
  * Generate README.md content for the DSK export

@@ -1,26 +1,12 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
+import type { DskImage } from '@/export/exports/types'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCHardware } from '@/libs/types'
 
-export interface DskImage {
-  id: string
-  name: string
-  scrData: number[] // Array instead of Uint8Array for JSON serialization
-  mode: 0 | 1 | 2
-  width: number
-  height: number
-  overscan: boolean
-  nColors: number
-  scaleX: number
-  scaleY: number
-  cpcHardware: CPCHardware // Hardware type for palette format
-  paletteFirmware: number[] // Firmware palette indices for CPC Classic export
-  palettePlus?: number[] // CPC Plus 16-bit palette values (optional, only for CPC Plus)
-  thumbnailDataUrl?: string // Base64 data URL for preview
-  paletteColors?: string[] // RGB hex colors for palette display
-  rasterChanges?: RasterChange[] // Raster changes for this image (optional)
-}
+// Canonical definition lives in the export feature; re-exported here so
+// existing store-path imports keep working (store layout frozen)
+export type { DskImage } from '@/export/exports/types'
 
 interface DskWorkspaceData {
   images: DskImage[]

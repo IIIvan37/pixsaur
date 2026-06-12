@@ -7,12 +7,12 @@ import {
   hasDskImagesAtom,
   removeImageFromDskAtom
 } from '@/app/store/dsk-workspace/dsk-workspace'
-import type { CPCHardware } from '@/libs/types'
 import {
   calculateDskRemainingSpace,
   canAddImageToDsk,
   formatDskSpace
-} from './dsk-workspace-utils'
+} from '@/export/exports/dsk-workspace-utils'
+import type { CPCHardware } from '@/libs/types'
 import { DskWorkspaceView } from './dsk-workspace-view'
 
 interface DskWorkspaceProps {

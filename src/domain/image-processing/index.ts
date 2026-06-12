@@ -17,3 +17,9 @@ export {
   type TargetDimensions
 } from './positioning'
 export type { ResampleStrategy } from './resample-strategy'
+export {
+  type CPCMode,
+  getNormalizedTargetSize,
+  type ResizeConfig,
+  type ResizeMode
+} from './resize-types'

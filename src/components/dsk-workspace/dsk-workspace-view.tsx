@@ -2,7 +2,6 @@ import { Trans } from '@lingui/react/macro'
 import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import Button from '@/components/ui/button/button'
 import Icon from '@/components/ui/icon'
-import styles from './dsk-workspace.module.css'
 import {
   calculateLinearSize,
   calculateScrSize,
@@ -12,7 +11,8 @@ import {
   generateDskFilenames,
   getModeLabel,
   isStandardMode
-} from './dsk-workspace-utils'
+} from '@/export/exports/dsk-workspace-utils'
+import styles from './dsk-workspace.module.css'
 
 interface DskWorkspaceViewProps {
   readonly images: DskImage[]
