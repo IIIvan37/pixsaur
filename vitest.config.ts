@@ -18,6 +18,13 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     environment: 'happy-dom',
     setupFiles: './vitest.setup.tsx',
+    // Default 5s is too aggressive under WSL parallel load: render-heavy RTL
+    // specs (raster-settings) and the one-time WASM/transform cold-start
+    // (export-cpc-playground) are correct but can briefly exceed 5s when the
+    // CPU is saturated by the full suite. 15s gives headroom without weakening
+    // any assertion — a timeout only fires on a genuine hang.
+    testTimeout: 15000,
+    hookTimeout: 15000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],

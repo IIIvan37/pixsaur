@@ -58,8 +58,10 @@ describe('export-cpc-playground', () => {
   }
 
   beforeEach(() => {
+    // No vi.resetModules(): the module under test holds no eval-time state and
+    // reads every mock at call time, so re-instantiating it per test only
+    // re-pays the cold transform cost (the source of the load flakiness).
     vi.clearAllMocks()
-    vi.resetModules()
     mockIsTauri.mockReturnValue(false)
     mockGenerateSnaAsmSource.mockReturnValue('; Test ASM source')
     mockGenerateModeRSnaAsmSource.mockReturnValue('; Test Mode R ASM source')
