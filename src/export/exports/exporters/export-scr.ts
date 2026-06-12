@@ -1,5 +1,5 @@
 import type JSZip from 'jszip'
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { injectPaletteDataIntoSCR } from '@/export/exports/cpc-format'
 import { injectCPCPlusPaletteIntoSCR } from '@/export/exports/cpc-plus-format'
 import { exportSCR } from '../export-scr/export-scr'

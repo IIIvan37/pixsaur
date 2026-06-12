@@ -1,5 +1,5 @@
 import type JSZip from 'jszip'
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { exportLinearAsm } from '../export-linear-asm/export-linear.asm'
 import { toASMData } from '../to-asm-data'
 import type { ExportConfig } from '../types'

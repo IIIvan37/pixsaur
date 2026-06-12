@@ -3,7 +3,7 @@
  * Shared functions for exporting PNG with different aspect ratios
  */
 
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { getAspectRatioMultipliers } from '@/export'
 
 /**

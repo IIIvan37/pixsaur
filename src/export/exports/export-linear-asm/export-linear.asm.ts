@@ -1,4 +1,4 @@
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { getPixelsPerByte } from '@/export'
 import { encodeByte } from '../encode-byte/encode-byte'
 

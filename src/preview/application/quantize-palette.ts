@@ -10,12 +10,12 @@
  * Living registry: see `./README.md`.
  */
 
-import type { PaletteStrategy } from '@/app/store/config/types'
 import {
   quantizeArrayForHardware,
   quantizeColorForHardware,
   truncatePalette
 } from '@/domain/cpc'
+import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { CPCHardware } from '@/libs/types'
 import { getPaletteForHardware } from '@/palettes/cpc-palette'

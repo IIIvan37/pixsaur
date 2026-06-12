@@ -6,8 +6,8 @@
  * in standard SCR or overscan format.
  */
 
-import type { CpcModeConfig } from '@/app/store/config/types'
 import { createLogger } from '@/core'
+import type { CpcModeConfig } from '@/domain/cpc'
 import type { CPCHardware } from '@/libs/types'
 import { firmwareToHardware } from '../cpc-format'
 import {

@@ -10,3 +10,4 @@ export {
   positionImageForAutoMode,
   type TargetDimensions
 } from './positioning'
+export type { ResampleStrategy } from './resample-strategy'

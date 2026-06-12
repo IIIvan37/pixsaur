@@ -9,7 +9,7 @@
  * canvas) so it is unit-testable.
  */
 
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import {
   computeCoverCropRect,
   computeOriginContentRect,

@@ -1,5 +1,5 @@
 import type JSZip from 'jszip'
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { generatePaletteAsm } from '../asm-generator'
 import { firmwareToHardware } from '../cpc-format'
 import { cpcPlusValuesToASM } from '../cpc-plus-format'

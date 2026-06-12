@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { getHeader } from './utils'
 
 describe('getHeader', () => {
