@@ -19,6 +19,7 @@
  * the mutually-exclusive render modes.
  */
 
+import { cpcPalette } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   MODE_0_FIXED_COLORS,
@@ -27,7 +28,6 @@ import {
   preprocessImageForRaster
 } from '@/libs/pixsaur-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
-import { cpcPalette } from '@/palettes/cpc-palette'
 import type { IdGenerator } from './ports'
 
 export interface OptimizeRasterInput {

@@ -5,12 +5,13 @@
  * Replaces the inlined orchestration of `reducedPaletteRawAtom` /
  * `reducedPaletteRgbAtom` in `src/app/store/preview/pipeline/quantization.ts`.
  * The impure quantizer arrives through the {@link PaletteQuantizer} port; every
- * other step is pure domain logic (`@/domain/cpc`, `@/palettes`).
+ * other step is pure domain logic (`@/domain/cpc`).
  *
  * Living registry: see `./README.md`.
  */
 
 import {
+  getPaletteForHardware,
   quantizeArrayForHardware,
   quantizeColorForHardware,
   truncatePalette
@@ -18,7 +19,6 @@ import {
 import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { CPCHardware } from '@/libs/types'
-import { getPaletteForHardware } from '@/palettes/cpc-palette'
 import type { PaletteQuantizer } from './ports'
 
 export interface QuantizePaletteInput {

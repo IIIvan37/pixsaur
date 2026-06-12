@@ -27,6 +27,15 @@ export {
   isColorTooClose,
   perceptualDistance
 } from './color-distance'
+// Hardware palettes (27-color classic, 4096-color Plus)
+export {
+  cpcFullPalette,
+  cpcPalette,
+  generateAmstradCPCPalette,
+  generateCPCPlusPalette,
+  getPaletteForHardware,
+  vectorToHex
+} from './cpc-palette'
 // Ignored slot marker
 export {
   findDarkestValidColor,

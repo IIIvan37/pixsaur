@@ -40,7 +40,7 @@ import {
   countUniqueColors,
   extractUniqueColors
 } from '@/libs/pixsaur-color/src/utils/count-unique-colors'
-import { getCPCPlusPaletteIndex } from '@/palettes/cpc-palette'
+import { getCPCPlusPaletteIndex } from '@/libs/pixsaur-color/src/utils/cpc-plus'
 import { histogramFragmentShader, histogramVertexShader } from '../shaders'
 
 /**
