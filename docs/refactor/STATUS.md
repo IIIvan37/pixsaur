@@ -1,7 +1,9 @@
 # Refactor — STATUS (canonical resume point)
 
 **Read this first when resuming in a new session.** It always reflects the
-current state. History lives in `docs/refactor/sessions/` (append-only).
+current state. History lives in `docs/refactor/sessions/` (append-only,
+**local-only since 2026-06-12** — git-ignored, only `_TEMPLATE.md` is tracked;
+this file is the canonical summary for the repo).
 
 Effort: incremental strangler-fig toward **use-cases + light ports** (NOT a
 rewrite). Jotai/React become thin adapters over pure use-cases. Rationale &
