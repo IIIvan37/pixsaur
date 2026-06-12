@@ -1,11 +1,29 @@
 import { describe, expect, it } from 'vitest'
+import type { Vector } from '../type'
 import {
   findDarkestColor,
+  findDarkestInPalette,
   isBright,
   isDark,
   luminance,
   luminanceGammaCorrected
 } from './luminance'
+
+describe('findDarkestInPalette', () => {
+  it('returns the lowest-luminance color', () => {
+    const palette: Vector[] = [
+      [255, 255, 255],
+      [0, 0, 0],
+      [255, 0, 0]
+    ]
+    expect(findDarkestInPalette(palette)).toEqual([0, 0, 0])
+  })
+
+  it('returns the fallback for an empty palette', () => {
+    expect(findDarkestInPalette([])).toEqual([0, 0, 0])
+    expect(findDarkestInPalette([], [7, 8, 9])).toEqual([7, 8, 9])
+  })
+})
 
 describe('luminance utilities', () => {
   describe('luminance', () => {

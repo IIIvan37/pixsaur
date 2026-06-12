@@ -6,6 +6,7 @@
  */
 
 import type { Vector } from '@/libs/pixsaur-color/src/type'
+import { findDarkestInPalette } from '@/libs/pixsaur-color/src/utils/luminance'
 
 /**
  * Marker for ignored slots in export palette
@@ -32,4 +33,20 @@ export function replaceIgnoredSlots(
   replacement: Vector
 ): Vector[] {
   return palette.map((color) => (isIgnoredSlot(color) ? replacement : color))
+}
+
+/**
+ * Find the darkest valid color in a palette
+ * Filters out ignored slots [-1,-1,-1] before comparison
+ *
+ * @param palette - Array of color vectors (may include IGNORED_SLOT)
+ * @param fallback - Fallback color if no valid colors found (default: black)
+ * @returns Darkest valid color or fallback
+ */
+export function findDarkestValidColor(
+  palette: Vector[],
+  fallback: Vector = [0, 0, 0]
+): Vector {
+  const validColors = palette.filter((c) => !isIgnoredSlot(c))
+  return findDarkestInPalette(validColors, fallback)
 }
