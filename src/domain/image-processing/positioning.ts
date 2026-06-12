@@ -5,7 +5,7 @@
  * handling margins, centering, and background color fills.
  */
 
-import { findDarkestValidColor } from '@/domain/cpc/color-utils'
+import { findDarkestValidColor } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 
 /**

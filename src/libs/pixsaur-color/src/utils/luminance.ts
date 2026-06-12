@@ -69,6 +69,29 @@ export function isBright(color: Vector): boolean {
 }
 
 /**
+ * Find the darkest color in a palette using fast (non gamma-corrected)
+ * luminance, with a fallback for empty palettes.
+ *
+ * NOTE: different semantics from findDarkestColor below, which uses
+ * gamma-corrected luminance and throws on an empty palette. Both are
+ * kept on purpose — they serve different call sites.
+ *
+ * @param palette - Array of color vectors
+ * @param fallback - Fallback color if palette is empty (default: black)
+ * @returns Darkest color or fallback
+ */
+export function findDarkestInPalette(
+  palette: Vector[],
+  fallback: Vector = [0, 0, 0]
+): Vector {
+  if (palette.length === 0) return fallback
+
+  return palette.reduce((darkest, color) => {
+    return luminance(color) < luminance(darkest) ? color : darkest
+  }, palette[0])
+}
+
+/**
  * Finds the darkest color in a palette based on gamma-corrected luminance
  * @param palette Array of RGB color vectors
  * @returns The darkest color vector from the palette

@@ -7,9 +7,19 @@
  * - color-distance: Perceptual color distance calculations
  * - palette-filtering: Filtering palettes by various criteria
  * - ignored-slot: Special ignored slot marker handling
- * - color-utils: Generic color vector operations
  */
 
+// Color utilities (generic ones live in pixsaur-color, re-exported here
+// to keep the public @/domain/cpc API stable)
+export {
+  colorToKey,
+  createColorKeySet,
+  keyToColor
+} from '@/libs/pixsaur-color/src/utils/color-key'
+export {
+  findDarkestColor,
+  findDarkestInPalette
+} from '@/libs/pixsaur-color/src/utils/luminance'
 // Color distance calculations
 export {
   areColorsSimilar,
@@ -17,17 +27,9 @@ export {
   isColorTooClose,
   perceptualDistance
 } from './color-distance'
-// Color utilities
-export {
-  colorToKey,
-  createColorKeySet,
-  findDarkestColor,
-  findDarkestInPalette,
-  findDarkestValidColor,
-  keyToColor
-} from './color-utils'
 // Ignored slot marker
 export {
+  findDarkestValidColor,
   IGNORED_SLOT,
   isIgnoredSlot,
   replaceIgnoredSlots

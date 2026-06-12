@@ -1,5 +1,6 @@
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
+  findDarkestValidColor,
   IGNORED_SLOT,
   isIgnoredSlot,
   replaceIgnoredSlots
@@ -21,6 +22,26 @@ describe('isIgnoredSlot', () => {
     expect(isIgnoredSlot([-1, -1, 0])).toBe(false)
     expect(isIgnoredSlot([-1, 0, -1])).toBe(false)
     expect(isIgnoredSlot([255, 255, 255])).toBe(false)
+  })
+})
+
+describe('findDarkestValidColor', () => {
+  it('ignores [-1,-1,-1] slots before comparing', () => {
+    const palette: Vector[] = [
+      [-1, -1, -1],
+      [100, 100, 100],
+      [200, 200, 200]
+    ]
+    expect(findDarkestValidColor(palette)).toEqual([100, 100, 100])
+  })
+
+  it('returns the fallback when every slot is ignored', () => {
+    const palette: Vector[] = [
+      [-1, -1, -1],
+      [-1, -1, -1]
+    ]
+    expect(findDarkestValidColor(palette)).toEqual([0, 0, 0])
+    expect(findDarkestValidColor(palette, [5, 5, 5])).toEqual([5, 5, 5])
   })
 })
 
