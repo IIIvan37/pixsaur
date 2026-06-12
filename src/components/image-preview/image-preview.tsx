@@ -75,42 +75,8 @@ const ImagePreview = () => {
     }
   }, [previewImage, width, height, smoothing])
 
-  // Direct effect without useCallback to ensure it runs on every previewImage change
-  useEffect(() => {
-    const canvas = ref.current
-    if (!canvas || !previewImage || width <= 0 || height <= 0) return
-
-    canvas.width = width
-    canvas.height = height
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    ctx.imageSmoothingEnabled = smoothing
-
-    if (previewImage instanceof ImageData) {
-      const tempCanvas = document.createElement('canvas')
-      tempCanvas.width = previewImage.width
-      tempCanvas.height = previewImage.height
-      const tempCtx = tempCanvas.getContext('2d')
-      if (tempCtx) {
-        tempCtx.putImageData(previewImage, 0, 0)
-        ctx.drawImage(
-          tempCanvas,
-          0,
-          0,
-          tempCanvas.width,
-          tempCanvas.height,
-          0,
-          0,
-          width,
-          height
-        )
-      }
-    }
-  }, [previewImage, width, height, smoothing])
-
-  // Keep old draw for click handler
+  // Repaint whenever the drawing inputs change. `draw` is memoized on the same
+  // deps, so this fires exactly once per relevant change (no double paint).
   useEffect(() => {
     draw()
   }, [draw])
