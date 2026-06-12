@@ -10,9 +10,16 @@ big picture: `src/export/application/README.md` and the memory note
 
 ## Where we are
 
-- **Branch:** `refactor/pr0-guardrails` — committed (`c2f2364`), **ahead of
-  origin by 1 (unpushed)**.
-- **Current step:** backlog #1 — stabilize load-flaky specs — DONE
+- **Branch:** `refactor/pr0-guardrails` — committed (`2199a36`), **ahead of
+  origin by 3 (unpushed)**.
+- **Current step:** backlog #2 — dedup duplicated canvas `draw()` in
+  `image-preview.tsx` — DONE (`2199a36`). Report:
+  `sessions/2026-06-12-dedup-image-preview-draw.md`. The `draw` callback and an
+  identical inline effect both painted the canvas (same deps) → double paint per
+  change; collapsed to a single `draw()` callback driven by one effect (−36/+2).
+  Full suite green (2051 passed), typecheck clean, jscpd improved (40→39 clones,
+  1.71%→1.62%), knip at baseline.
+- **Prev step:** backlog #1 — stabilize load-flaky specs — DONE
   (`c2f2364`). Report: `sessions/2026-06-12-stabilize-load-flaky-specs.md`.
   Raised `testTimeout`/`hookTimeout` 5s → 15s in `vitest.config.ts` (a timeout
   is a hang-detector; 5s is too tight for happy-dom render + one-time WASM
@@ -36,10 +43,11 @@ big picture: `src/export/application/README.md` and the memory note
   1. ~~Stabilize load-flaky specs (`export-cpc-playground`, `raster-settings`).~~
      ✅ done (`c2f2364`): global 15s test timeout + dropped redundant
      `resetModules`.
-  2. Dedup the duplicated canvas `draw()` in
-     `image-preview.tsx:40-116` (paints twice per preview change). ⟵ **next**
+  2. ~~Dedup the duplicated canvas `draw()` in `image-preview.tsx:40-116`
+     (paints twice per preview change).~~ ✅ done (`2199a36`): collapsed the
+     `draw` callback + identical inline effect to one effect.
   3. Deps cleanup: drop `marked`, replace lone `lodash/debounce`, pin
-     `@types/bun`, review knip's `@lingui/macro` + devDeps flags.
+     `@types/bun`, review knip's `@lingui/macro` + devDeps flags. ⟵ **next**
   4. Specs for `src/domain/` (9 files, 0 specs) and `src/raster/`.
   5. Optional extractions (atoms that DO hold real logic despite the earlier
      "skip EGX/Mode-R" call): `mode-r-image.ts:33-210`,
@@ -91,13 +99,15 @@ quantize, then the preview pipeline.
 | — | Dead-file sweep: deleted 23 unused files (knip files 23→0); deduped `validate-custom-dimensions.ts`. | ✅ done (`5ba1e97`, `c8a3e8b`) |
 | — | Strict review of full codebase + fix Radix-guard violation (`ui/tabs` wrapper). Review backlog recorded in "Where we are". | ✅ done (`f221c3f`) |
 | — | Backlog #1: stabilize load-flaky specs — global 15s `testTimeout`/`hookTimeout`, dropped redundant `resetModules` in `export-cpc-playground.spec`. | ✅ done (`c2f2364`) |
+| — | Backlog #2: dedup duplicated canvas `draw()` in `image-preview.tsx` (double paint) — collapse callback + identical inline effect to one effect. | ✅ done (`2199a36`) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.71% duplication, 40 clones** (lowered 2026-06-11, dead-file sweep)
+- jscpd: **1.62% duplication, 39 clones** (lowered 2026-06-12, image-preview
+  draw dedup removed the lone tsx clone)
 - knip: **0 unused files, 59 unused exports, 19 unused types** (files 23→0
   2026-06-11, `5ba1e97`: deleted dead barrels + orphan modules)
 - ~~Known real duplication: `validate-custom-dimensions.ts` in `src/preview/` +
