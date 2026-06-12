@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
 import type { CPCHardware } from '@/libs/types'
 import type { CpcMode } from '@/preview/validate-custom-dimensions'
+import type { DskImage } from '../types'
 
 // Mock RASM WASM
 let mockRasmInstance: any
@@ -36,7 +36,7 @@ vi.mock('@/core', () => ({
   dskLogger: mockDskLogger
 }))
 
-vi.mock('@/components/dsk-workspace/dsk-workspace-utils', () => ({
+vi.mock('../dsk-workspace-utils', () => ({
   generateDskFilenames: mockGenerateDskFilenames
 }))
 

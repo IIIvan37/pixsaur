@@ -14,8 +14,8 @@
  * Living registry: see `./README.md`.
  */
 
-import type { ResizeMode } from '@/app/store/config/resize-types'
 import { findDarkestValidColor, replaceIgnoredSlots } from '@/domain/cpc'
+import type { ResizeMode } from '@/domain/image-processing'
 import { positionImageForAutoMode } from '@/domain/image-processing'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
 import type { Vector } from '@/libs/pixsaur-color/src/type'

@@ -2,7 +2,7 @@
  * Image Resize Utilities for Pixsaur (moved from `src/utils`)
  */
 
-import type { ResizeConfig } from '@/app/store/config/resize-types'
+import type { ResizeConfig } from '@/domain/image-processing'
 
 export interface Selection {
   sx: number

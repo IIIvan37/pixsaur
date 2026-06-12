@@ -18,9 +18,8 @@
  * Living registry: see `./README.md`.
  */
 
-import type { ResizeMode } from '@/app/store/config/resize-types'
 import type { CpcModeConfig } from '@/domain/cpc'
-import type { ResampleStrategy } from '@/domain/image-processing'
+import type { ResampleStrategy, ResizeMode } from '@/domain/image-processing'
 import type { CPCHardware } from '@/libs/types'
 import {
   applyHorizontalSmoothing,

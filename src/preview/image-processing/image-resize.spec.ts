@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { ResizeConfig } from '@/app/store/config/resize-types'
 import { CPC_MODE_CONFIG } from '@/app/store/config/types'
+import type { ResizeConfig } from '@/domain/image-processing'
 import {
   applyResize,
   computeCoverCropRect,

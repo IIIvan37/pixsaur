@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import type { DskImage } from '@/app/store/dsk-workspace/dsk-workspace'
-import { generateDskFilenames } from '@/components/dsk-workspace/dsk-workspace-utils'
+import { generateDskFilenames } from './dsk-workspace-utils'
+import type { DskImage } from './types'
 
 /**
  * Generate PDF README for DSK export

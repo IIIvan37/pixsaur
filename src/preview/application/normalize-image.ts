@@ -20,9 +20,8 @@
  * Living registry: see `./README.md`.
  */
 
-import type { ResizeMode } from '@/app/store/config/resize-types'
 import type { CpcModeConfig } from '@/domain/cpc'
-import type { ResampleStrategy } from '@/domain/image-processing'
+import type { ResampleStrategy, ResizeMode } from '@/domain/image-processing'
 import { positionImageForAutoMode } from '@/domain/image-processing'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { getVisualRegionNormalized } from '../get-visual-region'
