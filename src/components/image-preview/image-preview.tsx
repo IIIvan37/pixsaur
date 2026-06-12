@@ -16,9 +16,9 @@ import { effectivePreviewImageAtom } from '@/app/store/raster/raster'
 import { ManualEditsWarning } from '@/components/manual-edits-warning'
 import { PreviewEditor } from '@/components/preview-editor'
 import { createCorrectedAspectCanvas } from '@/export'
-import { useObservedCanvasWidth } from '@/hooks/use-observed-canvas-vidth'
 import { isTauri } from '@/tauri'
 import { ImagePreviewView } from './image-preview-view'
+import { useObservedCanvasWidth } from './use-observed-canvas-width'
 
 // Mémoriser le résultat de isTauri pour éviter les logs répétés
 const IS_TAURI = isTauri()
