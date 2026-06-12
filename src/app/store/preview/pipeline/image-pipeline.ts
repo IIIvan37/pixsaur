@@ -7,12 +7,13 @@
 import { atom } from 'jotai'
 import { logger } from '@/core'
 import {
+  applyResize,
   getVisualRegion,
   resampleCoverLinear,
-  resampleOriginLinear
+  resampleOriginLinear,
+  type Selection
 } from '@/preview'
 import { smoothImage } from '@/preview/application/smooth-image'
-import { applyResize, type Selection } from '@/source'
 import {
   autoDistinctMappingAtom,
   centerImageAtom,

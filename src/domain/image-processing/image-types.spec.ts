@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isProcessedImage, isSourceImage } from './image'
+import { isProcessedImage, isSourceImage } from './image-types'
 
 describe('image types', () => {
   it('detects processed images (ImageData)', () => {

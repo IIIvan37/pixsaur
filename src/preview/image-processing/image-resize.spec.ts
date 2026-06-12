@@ -7,7 +7,7 @@ import {
   computeOriginContentRect,
   extractSelection,
   type Selection
-} from '@/source'
+} from './image-resize'
 
 // Mock canvas for testing (happy-dom doesn't support 2D context fully)
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {

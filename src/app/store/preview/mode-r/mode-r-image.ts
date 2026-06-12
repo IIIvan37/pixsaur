@@ -7,7 +7,7 @@
 
 import { atom } from 'jotai'
 import { logger } from '@/core'
-import { applyResize, type Selection } from '@/source'
+import { applyResize, type Selection } from '@/preview'
 import {
   centerImageAtom,
   effectiveModeConfigAtom,
