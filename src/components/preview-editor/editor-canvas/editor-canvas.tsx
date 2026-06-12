@@ -315,39 +315,28 @@ export function EditorCanvas({
 
       // Arrow keys for cursor navigation (paint if space is held)
       const largeStep = e.shiftKey
+      // moveCursor writes editorCursorAtom synchronously, so paintAtCursor reads
+      // the new position immediately — no setTimeout deferral needed.
+      const moveAndPaint = (direction: 'up' | 'down' | 'left' | 'right') => {
+        e.preventDefault()
+        e.stopPropagation()
+        moveCursor(direction, largeStep)
+        if (isSpaceHeld.current) {
+          paintAtCursor()
+        }
+      }
       switch (e.key) {
         case 'ArrowUp':
-          e.preventDefault()
-          e.stopPropagation()
-          moveCursor('up', largeStep)
-          if (isSpaceHeld.current) {
-            // Paint after cursor moved (use setTimeout to ensure cursor is updated)
-            setTimeout(() => paintAtCursor(), 0)
-          }
+          moveAndPaint('up')
           return
         case 'ArrowDown':
-          e.preventDefault()
-          e.stopPropagation()
-          moveCursor('down', largeStep)
-          if (isSpaceHeld.current) {
-            setTimeout(() => paintAtCursor(), 0)
-          }
+          moveAndPaint('down')
           return
         case 'ArrowLeft':
-          e.preventDefault()
-          e.stopPropagation()
-          moveCursor('left', largeStep)
-          if (isSpaceHeld.current) {
-            setTimeout(() => paintAtCursor(), 0)
-          }
+          moveAndPaint('left')
           return
         case 'ArrowRight':
-          e.preventDefault()
-          e.stopPropagation()
-          moveCursor('right', largeStep)
-          if (isSpaceHeld.current) {
-            setTimeout(() => paintAtCursor(), 0)
-          }
+          moveAndPaint('right')
           return
         case 'Enter':
           if (cursor) {
