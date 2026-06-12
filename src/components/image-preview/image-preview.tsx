@@ -108,10 +108,11 @@ const ImagePreview = () => {
       if (blob) {
         const blobUrl = URL.createObjectURL(blob)
 
-        // Create an HTML document with the image as blob URL
-        // Blob URLs are more reliable than data URLs for opening in new tabs
-        const html = `
-<!DOCTYPE html>
+        // Wrap the image in a minimal HTML document. Serving it as its own
+        // blob URL (instead of injecting innerHTML into an opened window) keeps
+        // the new tab navigated to a real document and avoids string-built DOM.
+        // Blob URLs are more reliable than data URLs for opening in new tabs.
+        const html = `<!DOCTYPE html>
 <html>
 <head>
   <title>Preview - Pixsaur</title>
@@ -125,11 +126,10 @@ const ImagePreview = () => {
 </body>
 </html>`
 
-        // Open new window and inject HTML content
-        const newWindow = window.open('', '_blank')
-        if (newWindow) {
-          newWindow.document.documentElement.innerHTML = html
-        }
+        const htmlUrl = URL.createObjectURL(
+          new Blob([html], { type: 'text/html' })
+        )
+        window.open(htmlUrl, '_blank')
       }
     }, 'image/png')
   }, [previewImage, modeConfig])

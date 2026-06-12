@@ -89,11 +89,13 @@ export default function DraggableDialog({
         <Dialog.Content
           ref={contentRef}
           className={styles.content}
-          style={{
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            cursor: isDragging ? 'grabbing' : 'default'
-          }}
+          style={
+            {
+              '--dialog-x': `${position.x}px`,
+              '--dialog-y': `${position.y}px`,
+              cursor: isDragging ? 'grabbing' : 'default'
+            } as React.CSSProperties
+          }
           onEscapeKeyDown={() => onOpenChange(false)}
           onOpenAutoFocus={onOpenAutoFocus}
         >

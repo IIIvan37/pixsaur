@@ -19,6 +19,11 @@
 
 .content {
   position: fixed;
+  /* Drag position is injected as custom properties (see draggable-dialog.tsx).
+     Using vars (not inline left/top) lets the mobile media query override the
+     position with a normal cascade, no !important needed. */
+  left: var(--dialog-x, 100px);
+  top: var(--dialog-y, 100px);
   z-index: 1001;
   background-color: var(--color-background, #0a0a0a);
   border: 1px solid var(--color-border, #1a1a1a);
@@ -42,9 +47,9 @@
     max-width: 100vw;
     max-height: 100vh;
     border-radius: 0;
-    /* Force top-left position on mobile, override inline styles */
-    left: 0 !important;
-    top: 0 !important;
+    /* Force top-left position on mobile, overriding the dragged position */
+    left: 0;
+    top: 0;
     right: 0;
     bottom: 0;
   }

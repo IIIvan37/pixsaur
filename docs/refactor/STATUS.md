@@ -12,7 +12,19 @@ big picture: `src/export/application/README.md` and the memory note
 
 - **Branch:** `refactor/pr0-guardrails` — committed (`8da1e58`), **ahead of
   origin by 7 (unpushed)**.
-- **Current step:** backlog #4 — specs for `src/domain/` — DONE (`8da1e58`).
+- **Current step:** backlog #6 — minor cleanups — DONE (uncommitted). Report:
+  `sessions/2026-06-12-backlog-6-minor-cleanups.md`. (1) Removed the 2 Biome
+  `noImportantStyles` warnings in `draggable-dialog.module.css` by driving the
+  drag position through `--dialog-x`/`--dialog-y` CSS custom properties (set in
+  `draggable-dialog.tsx`), so the mobile `@media` overrides `left`/`top` via a
+  normal cascade. (2) Removed the 4 `setTimeout(() => paintAtCursor(), 0)`
+  workarounds in `editor-canvas.tsx` (Jotai writes are sync → cursor is already
+  readable) and deduped the 4 arrow cases into a `moveAndPaint(direction)`
+  helper. (3) `image-preview.tsx` popup no longer injects
+  `documentElement.innerHTML`; it opens a `text/html` Blob object URL. Suite
+  2112 passed, typecheck + `pnpm check` clean, preflight at baseline (jscpd
+  39/1.62%, knip 1/52/19).
+- **Prev step:** backlog #4 — specs for `src/domain/` — DONE (`8da1e58`).
   Report: `sessions/2026-06-12-domain-specs.md`. Added 7 spec files / 61 tests
   for the previously-untested pure domain modules (cpc/quantization,
   color-distance, color-utils, palette-filtering, ignored-slot, slot;
@@ -71,8 +83,10 @@ big picture: `src/export/application/README.md` and the memory note
   5. Optional extractions (atoms that DO hold real logic despite the earlier
      "skip EGX/Mode-R" call): `mode-r-image.ts:33-210`,
      `egx-palette.ts:56-119`, `egx-image.ts:50-138`. ⟵ **next** (optional)
-  6. Minor: popup `innerHTML` (`image-preview.tsx:165`), 2 Biome `!important`
-     warnings, `setTimeout(…, 0)` workarounds in `editor-canvas.tsx`.
+  6. ~~Minor: popup `innerHTML` (`image-preview.tsx`), 2 Biome `!important`
+     warnings, `setTimeout(…, 0)` workarounds in `editor-canvas.tsx`.~~ ✅ done
+     (uncommitted): `innerHTML`→`text/html` Blob URL; `!important`→`--dialog-x/y`
+     custom props; `setTimeout`→sync `paintAtCursor` + `moveAndPaint` helper.
 
 ## What PR5 landed (quantize)
 
@@ -121,6 +135,7 @@ quantize, then the preview pipeline.
 | — | Backlog #2: dedup duplicated canvas `draw()` in `image-preview.tsx` (double paint) — collapse callback + identical inline effect to one effect. | ✅ done (`2199a36`) |
 | — | Backlog #3: deps cleanup — drop 11 dead deps (marked, @lingui/macro, lodash, @happy-dom/global-registrator, bun-types, add, autoprefixer, postcss, lint-staged, @types/lodash), inline debounce, pin @types/bun; knip deps 15→1. | ✅ done (`a30e69c`) |
 | — | Backlog #4: specs for `src/domain/` — 7 spec files / 61 tests (cpc quantization/color-distance/color-utils/palette-filtering/ignored-slot/slot + image-processing/positioning). `src/raster/` already covered. | ✅ done (`8da1e58`) |
+| — | Backlog #6: minor cleanups — popup `innerHTML`→Blob URL, 2 Biome `!important`→`--dialog-x/y` custom props, 4 `setTimeout(…,0)` cursor-paint workarounds→sync + `moveAndPaint` helper. | ✅ done (uncommitted) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
