@@ -32,7 +32,10 @@ echo "🔍 Running console usage check..."
 node scripts/check-console-usage.js
 
 echo "🔍 Checking forbidden Radix imports..."
-node scripts/check-utils-imports.js
+node scripts/check-radix-imports.js
 node scripts/check-tauri-imports.js
+
+echo "🔍 Checking layer imports..."
+node scripts/check-layer-imports.js
 
 echo "✅ Pre-commit checks passed!"
