@@ -8,7 +8,6 @@
  */
 
 import type REGL from 'regl'
-import type { PaletteStrategy } from '@/app/store/config/types'
 import { adapterLogger } from '@/core'
 import { weightedRGBDistance } from '@/libs/pixsaur-color/src/metric/distance'
 import { findClosestColorIndex } from '@/libs/pixsaur-color/src/metric/find-closest'
@@ -35,6 +34,7 @@ import {
 } from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
 import type { QuantizeConfig } from '@/libs/pixsaur-color/src/quant/quantize'
 import { selectTopIndicesCore } from '@/libs/pixsaur-color/src/quant/select-to-indices'
+import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   countUniqueColors,

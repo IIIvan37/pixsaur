@@ -1,4 +1,4 @@
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   type NormalizeImageInput,

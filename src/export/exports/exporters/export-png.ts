@@ -1,5 +1,5 @@
 import type JSZip from 'jszip'
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import {
   canvasToPNGBlob,
   createCorrectedAspectCanvas,

@@ -5,7 +5,7 @@
  * New code should import directly from '@/domain/cpc'.
  */
 
-import type { PixelMode } from '@/app/store/config/types'
+import type { PixelMode } from '@/domain/cpc'
 
 // Re-export quantization functions from domain layer
 export { quantifyToCPCPlus, quantizeCPC } from '@/domain/cpc'

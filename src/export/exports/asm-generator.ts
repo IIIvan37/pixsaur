@@ -3,7 +3,7 @@
  * Generates Z80 assembly code with image data in SCR or linear format
  */
 
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { generateDataSection, generatePaletteSection } from './asm-templates'
 import { exportSCR } from './export-scr/export-scr'
 

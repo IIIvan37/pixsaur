@@ -20,7 +20,7 @@
  *   deep-copied per color.
  */
 
-import type { PixelMode } from '@/app/store/config/types'
+import type { PixelMode } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig, EGXType } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'

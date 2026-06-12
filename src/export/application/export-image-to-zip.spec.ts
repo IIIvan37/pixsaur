@@ -1,4 +1,4 @@
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { DEFAULT_EGX_CONFIG } from '@/libs/pixsaur-egx'
 import type { CPCHardware } from '@/libs/types'
 import { rgbToFirmwareIndex } from '../exports/raster-format'

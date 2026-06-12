@@ -19,7 +19,8 @@
  */
 
 import type { ResizeMode } from '@/app/store/config/resize-types'
-import type { CpcModeConfig, ResampleStrategy } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
+import type { ResampleStrategy } from '@/domain/image-processing'
 import type { CPCHardware } from '@/libs/types'
 import {
   applyHorizontalSmoothing,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CPC_MODE_CONFIG } from '@/app/store/config/types'
+import { CPC_MODE_CONFIG } from '@/domain/cpc'
 import { resampleCoverLinear, resampleOriginLinear } from './resize-resample'
 
 const MODE0 = CPC_MODE_CONFIG['0'] // 160×200, ratio 2

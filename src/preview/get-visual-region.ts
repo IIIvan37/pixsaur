@@ -1,5 +1,5 @@
 // Copied from previous utils implementation
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import {
   type ResampleFilter,

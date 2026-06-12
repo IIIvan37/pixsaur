@@ -32,6 +32,18 @@ export {
   isIgnoredSlot,
   replaceIgnoredSlots
 } from './ignored-slot'
+// Mode configuration (source of truth for mode 0/1/2 dims and color counts)
+export {
+  buildCpcModeKey,
+  buildCustomModeConfig,
+  CPC_MODE_CONFIG,
+  type CpcModeConfig,
+  type CpcModeKey,
+  type CustomDimensions,
+  type DimensionPreset,
+  type PixelMode,
+  parseCpcModeKey
+} from './mode-config'
 
 // Palette filtering
 export {

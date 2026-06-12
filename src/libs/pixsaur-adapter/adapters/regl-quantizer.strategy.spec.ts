@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { PaletteStrategy } from '@/app/store/config/types'
+import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 
 // Mock des stratégies
 vi.mock('../../pixsaur-color/src/quant/palette-strategies-v2', () => ({

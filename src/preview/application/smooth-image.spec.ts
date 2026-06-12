@@ -1,4 +1,4 @@
-import type { CpcModeConfig } from '@/app/store/config/types'
+import type { CpcModeConfig } from '@/domain/cpc'
 import { type SmoothImageInput, smoothImage } from './smooth-image'
 
 const mode0: CpcModeConfig = {

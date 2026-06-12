@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CPC_MODE_CONFIG } from '@/app/store/config/types'
+import { CPC_MODE_CONFIG } from '@/domain/cpc'
 import type { Selection } from '@/libs/pixsaur-adapter/io/downscale-image'
 import { getVisualRegion, getVisualRegionNormalized } from '@/preview'
 
