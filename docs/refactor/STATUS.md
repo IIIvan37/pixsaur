@@ -10,15 +10,22 @@ big picture: `src/export/application/README.md` and the memory note
 
 ## Where we are
 
-- **Branch:** `refactor/pr0-guardrails` — **pushed, in sync with origin**.
-- **Current step:** strict full-codebase review + first backlog fix — DONE
+- **Branch:** `refactor/pr0-guardrails` — committed (`c2f2364`), **ahead of
+  origin by 1 (unpushed)**.
+- **Current step:** backlog #1 — stabilize load-flaky specs — DONE
+  (`c2f2364`). Report: `sessions/2026-06-12-stabilize-load-flaky-specs.md`.
+  Raised `testTimeout`/`hookTimeout` 5s → 15s in `vitest.config.ts` (a timeout
+  is a hang-detector; 5s is too tight for happy-dom render + one-time WASM
+  transform under full-suite WSL contention) and dropped the redundant
+  `vi.resetModules()` from `export-cpc-playground.spec.ts`. Full suite green
+  (2051 passed), typecheck clean, guardrails at baseline.
+- **Prev step:** strict full-codebase review + Radix guard fix — DONE
   (`f221c3f`). Report: `sessions/2026-06-12-strict-review-radix-guard.md`.
-  Review verdict: typecheck clean, suite green (only load-flaky specs),
-  guardrails at baseline, all 13 use-cases pure + spec-covered, correctness
-  review of the 16-commit diff found no functional bug. Fixed the
-  long-standing `pnpm check` failure (Radix guard, red since `d1c35d4` on
-  main): new `src/components/ui/tabs/` wrapper, `settings-panel.tsx` rewired,
-  `icon` typed `IconName`.
+  Review verdict: typecheck clean, suite green, guardrails at baseline, all 13
+  use-cases pure + spec-covered, correctness review of the 16-commit diff found
+  no functional bug. Fixed the long-standing `pnpm check` failure (Radix guard,
+  red since `d1c35d4` on main): new `src/components/ui/tabs/` wrapper,
+  `settings-panel.tsx` rewired, `icon` typed `IconName`.
 - **Prev steps:** PR15 `renderRasterPreview` (`820d85b`), PR14 `enterEditMode`
   (`d07c6fb`) — see their session reports. Strangler-fig extraction is
   **complete**: all five pivots (export, preview, palette, raster, editor)
@@ -26,10 +33,11 @@ big picture: `src/export/application/README.md` and the memory note
   `normalizeImage`/`smoothImage`).
 - **Next step:** burn down the **review backlog** (one item per session, same
   flow as the PR steps — session report + STATUS update each time):
-  1. Stabilize load-flaky specs (`export-cpc-playground`, `raster-settings` —
-     5s timeouts under WSL load; all pass isolated). ⟵ **next**
+  1. ~~Stabilize load-flaky specs (`export-cpc-playground`, `raster-settings`).~~
+     ✅ done (`c2f2364`): global 15s test timeout + dropped redundant
+     `resetModules`.
   2. Dedup the duplicated canvas `draw()` in
-     `image-preview.tsx:40-116` (paints twice per preview change).
+     `image-preview.tsx:40-116` (paints twice per preview change). ⟵ **next**
   3. Deps cleanup: drop `marked`, replace lone `lodash/debounce`, pin
      `@types/bun`, review knip's `@lingui/macro` + devDeps flags.
   4. Specs for `src/domain/` (9 files, 0 specs) and `src/raster/`.
@@ -82,6 +90,7 @@ quantize, then the preview pipeline.
 | — | All five pivots extracted. Strangler-fig complete. EGX / Mode-R / DSK = lib-delegation plumbing, skip. Open follow-ups: push/PR. | ✅ done (pushed) |
 | — | Dead-file sweep: deleted 23 unused files (knip files 23→0); deduped `validate-custom-dimensions.ts`. | ✅ done (`5ba1e97`, `c8a3e8b`) |
 | — | Strict review of full codebase + fix Radix-guard violation (`ui/tabs` wrapper). Review backlog recorded in "Where we are". | ✅ done (`f221c3f`) |
+| — | Backlog #1: stabilize load-flaky specs — global 15s `testTimeout`/`hookTimeout`, dropped redundant `resetModules` in `export-cpc-playground.spec`. | ✅ done (`c2f2364`) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
