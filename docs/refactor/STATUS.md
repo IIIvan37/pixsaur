@@ -10,9 +10,23 @@ big picture: `src/export/application/README.md` and the memory note
 
 ## Where we are
 
-- **Branch:** `refactor/pr0-guardrails` — committed (`8da1e58`), **ahead of
-  origin by 7 (unpushed)**.
-- **Current step:** backlog #6 — minor cleanups — DONE (uncommitted). Report:
+- **Branch:** `refactor/pr0-guardrails` — committed (`6c077ff`), **ahead of
+  origin by 19 (unpushed — push is overdue)**.
+- **Current step:** file-layout reorg (ADR-001) — DONE (8 commits
+  `51e0bab`…`6c077ff`). Report: `sessions/2026-06-12-file-layout-reorg.md`.
+  Deduped the diverged mode-0 hue-diversity selection into
+  `pixsaur-color/quant/mode0-hue-diversity.ts` (two bit-for-bit presets, 599-line
+  adapter helper deleted); moved `CPC_MODE_CONFIG`/mode types + hardware
+  palettes into `@/domain/cpc`, resize/image types into
+  `@/domain/image-processing`, `PaletteStrategy` + 4-bit CPC-Plus math into
+  pixsaur-color; dissolved `src/types`, `src/source`, `src/hooks`,
+  `src/palettes`; store `config/types.ts` / `config/resize-types.ts` /
+  `DskImage` are now re-export shims (store layout frozen — never re-declare
+  locally). New blocking guard `scripts/check-layer-imports.js` (in `pnpm
+  check` + pre-commit; pre-commit now also actually runs the radix guard);
+  `check-utils-imports.js` retired. Convention + decision tree + exceptions
+  register in `docs/refactor/ADR-001-file-layout.md` and CLAUDE.md.
+- **Prev step:** backlog #6 — minor cleanups — DONE (`8937485`). Report:
   `sessions/2026-06-12-backlog-6-minor-cleanups.md`. (1) Removed the 2 Biome
   `noImportantStyles` warnings in `draggable-dialog.module.css` by driving the
   drag position through `--dialog-x`/`--dialog-y` CSS custom properties (set in
@@ -135,16 +149,19 @@ quantize, then the preview pipeline.
 | — | Backlog #2: dedup duplicated canvas `draw()` in `image-preview.tsx` (double paint) — collapse callback + identical inline effect to one effect. | ✅ done (`2199a36`) |
 | — | Backlog #3: deps cleanup — drop 11 dead deps (marked, @lingui/macro, lodash, @happy-dom/global-registrator, bun-types, add, autoprefixer, postcss, lint-staged, @types/lodash), inline debounce, pin @types/bun; knip deps 15→1. | ✅ done (`a30e69c`) |
 | — | Backlog #4: specs for `src/domain/` — 7 spec files / 61 tests (cpc quantization/color-distance/color-utils/palette-filtering/ignored-slot/slot + image-processing/positioning). `src/raster/` already covered. | ✅ done (`8da1e58`) |
-| — | Backlog #6: minor cleanups — popup `innerHTML`→Blob URL, 2 Biome `!important`→`--dialog-x/y` custom props, 4 `setTimeout(…,0)` cursor-paint workarounds→sync + `moveAndPaint` helper. | ✅ done (uncommitted) |
+| — | Backlog #6: minor cleanups — popup `innerHTML`→Blob URL, 2 Biome `!important`→`--dialog-x/y` custom props, 4 `setTimeout(…,0)` cursor-paint workarounds→sync + `moveAndPaint` helper. | ✅ done (`8937485`) |
+| — | File-layout reorg (ADR-001): dedup mode-0 hue-diversity into pixsaur-color (2 bit-for-bit presets); CPC mode config + hardware palettes → domain/cpc; resize/image types → domain/image-processing; PaletteStrategy + CPC-Plus 4-bit math → pixsaur-color; dissolve src/{types,source,hooks,palettes}; DSK utils + DskImage → export feature; store shims; new blocking `check-layer-imports` guard; ADR-001 + CLAUDE.md. | ✅ done (`51e0bab`…`6c077ff`) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
 Detectors are **report-only** (not in blocking `pnpm check`). Run
 `pnpm refactor:preflight`. Numbers below are the high-water mark to drive down.
 
-- jscpd: **1.62% duplication, 39 clones** (lowered 2026-06-12, image-preview
-  draw dedup removed the lone tsx clone)
-- knip: **0 unused files, 52 unused exports, 19 unused types, 1 unused dep**
+- jscpd: **1.61% duplication, 38 clones** (lowered 2026-06-12, mode-0
+  hue-diversity dedup; previously 39 after the image-preview draw dedup)
+- knip: **0 unused files, 51 unused exports, 19 unused types, 1 unused dep**
+  (exports 52→51 2026-06-12 file-layout reorg, with `src/types/**` no longer
+  knip-ignored — coverage widened, dead `ConfiguredImage` deleted)
   (files 23→0 2026-06-11, `5ba1e97`: deleted dead barrels + orphan modules;
   deps 15→1 2026-06-12, `a30e69c`: dropped 11 dead deps — the lone remaining
   `@netlify/functions` is an intentional Netlify infra placeholder; exports
