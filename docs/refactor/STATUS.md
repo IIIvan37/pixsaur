@@ -10,15 +10,22 @@ big picture: `src/export/application/README.md` and the memory note
 
 ## Where we are
 
-- **Branch:** `refactor/pr0-guardrails` — committed (`2199a36`), **ahead of
-  origin by 3 (unpushed)**.
-- **Current step:** backlog #2 — dedup duplicated canvas `draw()` in
+- **Branch:** `refactor/pr0-guardrails` — committed (`a30e69c`), **ahead of
+  origin by 4 (unpushed)**.
+- **Current step:** backlog #3 — deps cleanup — DONE (`a30e69c`). Report:
+  `sessions/2026-06-12-deps-cleanup.md`. Dropped 11 dead deps (knip-verified):
+  `marked`, `@lingui/macro` (v5 uses `@lingui/{core,react}/macro` subpaths),
+  `lodash`+`@types/lodash` (inlined a minimal trailing debounce in
+  `use-image-adjustement.tsx`), `@happy-dom/global-registrator`, `bun-types`,
+  `add`, `autoprefixer`, `postcss`, `lint-staged`. Pinned `@types/bun`
+  `latest`→`^1.2.13`. Documented script-only false positives in `knip.json`
+  `ignoreDependencies` (canvas/chalk/jpeg-js/pngjs/sharp/why-did-you-render).
+  knip deps now 1 (`@netlify/functions`, intentional infra placeholder). Full
+  suite green (2051 passed), typecheck clean, jscpd unchanged (39/1.62%).
+- **Prev step:** backlog #2 — dedup duplicated canvas `draw()` in
   `image-preview.tsx` — DONE (`2199a36`). Report:
-  `sessions/2026-06-12-dedup-image-preview-draw.md`. The `draw` callback and an
-  identical inline effect both painted the canvas (same deps) → double paint per
-  change; collapsed to a single `draw()` callback driven by one effect (−36/+2).
-  Full suite green (2051 passed), typecheck clean, jscpd improved (40→39 clones,
-  1.71%→1.62%), knip at baseline.
+  `sessions/2026-06-12-dedup-image-preview-draw.md`. Collapsed the `draw`
+  callback + identical inline effect to one effect (−36/+2); jscpd 40→39.
 - **Prev step:** backlog #1 — stabilize load-flaky specs — DONE
   (`c2f2364`). Report: `sessions/2026-06-12-stabilize-load-flaky-specs.md`.
   Raised `testTimeout`/`hookTimeout` 5s → 15s in `vitest.config.ts` (a timeout
@@ -46,9 +53,11 @@ big picture: `src/export/application/README.md` and the memory note
   2. ~~Dedup the duplicated canvas `draw()` in `image-preview.tsx:40-116`
      (paints twice per preview change).~~ ✅ done (`2199a36`): collapsed the
      `draw` callback + identical inline effect to one effect.
-  3. Deps cleanup: drop `marked`, replace lone `lodash/debounce`, pin
-     `@types/bun`, review knip's `@lingui/macro` + devDeps flags. ⟵ **next**
-  4. Specs for `src/domain/` (9 files, 0 specs) and `src/raster/`.
+  3. ~~Deps cleanup: drop `marked`, replace lone `lodash/debounce`, pin
+     `@types/bun`, review knip's `@lingui/macro` + devDeps flags.~~ ✅ done
+     (`a30e69c`): dropped 11 dead deps, inlined debounce, pinned `@types/bun`;
+     knip deps 15→1 (`@netlify/functions` kept as infra placeholder).
+  4. Specs for `src/domain/` (9 files, 0 specs) and `src/raster/`. ⟵ **next**
   5. Optional extractions (atoms that DO hold real logic despite the earlier
      "skip EGX/Mode-R" call): `mode-r-image.ts:33-210`,
      `egx-palette.ts:56-119`, `egx-image.ts:50-138`.
@@ -100,6 +109,7 @@ quantize, then the preview pipeline.
 | — | Strict review of full codebase + fix Radix-guard violation (`ui/tabs` wrapper). Review backlog recorded in "Where we are". | ✅ done (`f221c3f`) |
 | — | Backlog #1: stabilize load-flaky specs — global 15s `testTimeout`/`hookTimeout`, dropped redundant `resetModules` in `export-cpc-playground.spec`. | ✅ done (`c2f2364`) |
 | — | Backlog #2: dedup duplicated canvas `draw()` in `image-preview.tsx` (double paint) — collapse callback + identical inline effect to one effect. | ✅ done (`2199a36`) |
+| — | Backlog #3: deps cleanup — drop 11 dead deps (marked, @lingui/macro, lodash, @happy-dom/global-registrator, bun-types, add, autoprefixer, postcss, lint-staged, @types/lodash), inline debounce, pin @types/bun; knip deps 15→1. | ✅ done (`a30e69c`) |
 
 ## Guardrail baseline (ratchet — must not regress)
 
@@ -108,8 +118,10 @@ Detectors are **report-only** (not in blocking `pnpm check`). Run
 
 - jscpd: **1.62% duplication, 39 clones** (lowered 2026-06-12, image-preview
   draw dedup removed the lone tsx clone)
-- knip: **0 unused files, 59 unused exports, 19 unused types** (files 23→0
-  2026-06-11, `5ba1e97`: deleted dead barrels + orphan modules)
+- knip: **0 unused files, 59 unused exports, 19 unused types, 1 unused dep**
+  (files 23→0 2026-06-11, `5ba1e97`: deleted dead barrels + orphan modules;
+  deps 15→1 2026-06-12, `a30e69c`: dropped 11 dead deps — the lone remaining
+  `@netlify/functions` is an intentional Netlify infra placeholder)
 - ~~Known real duplication: `validate-custom-dimensions.ts` in `src/preview/` +
   `src/source/`~~ — resolved 2026-06-11 (`c8a3e8b`): deleted the orphan
   `src/source/` copy (imported by nobody; the source barrel already defers to
