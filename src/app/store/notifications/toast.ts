@@ -8,7 +8,10 @@
 
 import { atom } from 'jotai'
 
-export type ToastKind = 'gpu-fallback'
+export type ToastKind =
+  | 'gpu-fallback'
+  | 'image-too-large'
+  | 'image-dimensions-too-large'
 
 export interface ToastState {
   readonly kind: ToastKind

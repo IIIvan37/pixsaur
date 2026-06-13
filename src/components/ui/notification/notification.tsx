@@ -58,7 +58,11 @@ export const Notification = ({
         sideOffset={12}
         variant='unstyled'
       >
-        <div className={`${styles.notificationContent} ${styles[type]}`}>
+        <div
+          className={`${styles.notificationContent} ${styles[type]}`}
+          role={type === 'error' ? 'alert' : undefined}
+          aria-live={type === 'error' ? 'assertive' : 'polite'}
+        >
           <div className={styles.notificationHeader}>
             <Icon name={getIcon()} size={20} className={styles.icon} />
             <p className={styles.message}>{message}</p>
