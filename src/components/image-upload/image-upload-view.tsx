@@ -22,6 +22,8 @@ export type ImageUploadProps = {
 
 // Constants
 const IMAGE_EXTENSIONS = ['png', 'jpeg', 'jpg', 'gif', 'bmp', 'webp', 'svg']
+// Bundled image used by the "try a sample" onboarding shortcut.
+const SAMPLE_IMAGE_URL = 'pixsaur_logo_512.png'
 
 /**
  * Detects the current environment characteristics
@@ -155,6 +157,21 @@ export const ImageUploadView = ({
     }
   }
 
+  // Onboarding shortcut: load a bundled sample image so a first-time user can
+  // explore the whole pipeline without having to find an image first.
+  const handleTrySample = useCallback(async () => {
+    try {
+      const response = await fetch(SAMPLE_IMAGE_URL)
+      const blob = await response.blob()
+      const file = new File([blob], 'pixsaur-sample.png', {
+        type: blob.type || 'image/png'
+      })
+      onUpload([file])
+    } catch (error) {
+      logger.warn('[ImageUpload] Failed to load sample image:', error)
+    }
+  }, [onUpload])
+
   const handleClick = useCallback(
     async (e: React.MouseEvent) => {
       // In Tauri mode, open native file dialog
@@ -232,55 +249,69 @@ export const ImageUploadView = ({
   }, [openImagePickerRequest, isTauri, setOpenImagePicker, handleClick])
 
   return (
-    <button
-      type='button'
-      {...rootProps}
-      data-testid='image-upload-dropzone'
-      className={`${styles.dropzone} ${
-        isDragActive ? styles.dropzoneActive : ''
-      }`}
-      onClick={isTauri ? handleClick : rootProps.onClick}
-      tabIndex={0}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          if (isTauri) {
-            handleClick(e as unknown as React.MouseEvent)
+    <div className={styles.uploadWrapper}>
+      <button
+        type='button'
+        {...rootProps}
+        data-testid='image-upload-dropzone'
+        aria-label={primaryText || defaultPrimaryText}
+        className={`${styles.dropzone} ${
+          isDragActive ? styles.dropzoneActive : ''
+        }`}
+        onClick={isTauri ? handleClick : rootProps.onClick}
+        tabIndex={0}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (isTauri) {
+              handleClick(e as unknown as React.MouseEvent)
+            }
           }
-        }
-      }}
-      onDragEnter={(e) => {
-        if (rootProps.onDragEnter) rootProps.onDragEnter(e)
-      }}
-      onDragOver={(e) => {
-        if (rootProps.onDragOver) rootProps.onDragOver(e)
-      }}
-      onDragLeave={(e) => {
-        if (rootProps.onDragLeave) rootProps.onDragLeave(e)
-      }}
-      onDrop={(e) => {
-        if (rootProps.onDrop) rootProps.onDrop(e)
-      }}
-    >
-      {!isTauri && (
-        <input
-          {...inputProps}
-          id={uploadId}
-          data-testid='image-upload-input'
-          ref={(node) => {
-            // Must handle case where getInputProps() returned a ref callback
-            const origRef = (inputProps as any).ref
-            inputRef.current = node
-            if (typeof origRef === 'function') origRef(node)
-            else if (origRef && 'current' in origRef) origRef.current = node
-          }}
-        />
-      )}
-      <Icon name='UploadIcon' className={styles.icon} />
-      <p className={styles.primaryText}>{primaryText || defaultPrimaryText}</p>
-      <p className={styles.secondaryText}>
-        {secondaryText || defaultSecondaryText}
-      </p>
-      <p className={styles.helpText}>{helpText || defaultHelpText}</p>
-    </button>
+        }}
+        onDragEnter={(e) => {
+          if (rootProps.onDragEnter) rootProps.onDragEnter(e)
+        }}
+        onDragOver={(e) => {
+          if (rootProps.onDragOver) rootProps.onDragOver(e)
+        }}
+        onDragLeave={(e) => {
+          if (rootProps.onDragLeave) rootProps.onDragLeave(e)
+        }}
+        onDrop={(e) => {
+          if (rootProps.onDrop) rootProps.onDrop(e)
+        }}
+      >
+        {!isTauri && (
+          <input
+            {...inputProps}
+            id={uploadId}
+            data-testid='image-upload-input'
+            ref={(node) => {
+              // Must handle case where getInputProps() returned a ref callback
+              const origRef = (inputProps as any).ref
+              inputRef.current = node
+              if (typeof origRef === 'function') origRef(node)
+              else if (origRef && 'current' in origRef) origRef.current = node
+            }}
+          />
+        )}
+        <Icon name='UploadIcon' className={styles.icon} />
+        <p className={styles.primaryText}>
+          {primaryText || defaultPrimaryText}
+        </p>
+        <p className={styles.secondaryText}>
+          {secondaryText || defaultSecondaryText}
+        </p>
+        <p className={styles.helpText}>{helpText || defaultHelpText}</p>
+      </button>
+
+      <button
+        type='button'
+        className={styles.sampleButton}
+        onClick={handleTrySample}
+      >
+        <Icon name='ImageIcon' />
+        {_(msg`Essayer avec un exemple`)}
+      </button>
+    </div>
   )
 }

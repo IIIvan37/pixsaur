@@ -7,9 +7,15 @@
 .settingsButtonContainer {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
   padding: 0.5rem 0;
   flex-shrink: 0;
+}
+
+/* Push the live info readout to the right of the action buttons. */
+.settingsButtonContainer > :last-child {
+  margin-left: auto;
 }
 
 .flexRow {

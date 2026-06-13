@@ -1,5 +1,6 @@
 import { atom } from 'jotai'
 import { processorTypeAtom } from '@/app/store/config/config'
+import { pushToastAtom } from '@/app/store/notifications/toast'
 import { adapterLogger } from '@/core'
 import type { ImageProcessor } from '@/libs/pixsaur-adapter'
 import { processorFactory } from '@/libs/pixsaur-adapter/factory'
@@ -38,6 +39,12 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
       adapterLogger.info(
         `Processor initialized: ${imageProcessor.type === 'regl' ? 'WebGL (GPU)' : 'CPU fallback'}`
       )
+
+      // Auto mode silently falls back to CPU when WebGL is unavailable; surface
+      // it so the user understands a slower path is in use.
+      if (processorType !== 'cpu' && imageProcessor.type !== 'regl') {
+        set(pushToastAtom, 'gpu-fallback')
+      }
 
       set(imageProcessorAtom, imageProcessor)
     } catch (error) {

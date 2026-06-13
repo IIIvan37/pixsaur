@@ -58,6 +58,10 @@ msgstr "A new version of Pixsaur is available. Click below to download and insta
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 
+#: src/components/toaster/toaster.tsx:23
+msgid "Accélération GPU indisponible — basculement sur le processeur CPU (plus lent)."
+msgstr "GPU acceleration unavailable — falling back to the CPU processor (slower)."
+
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:130
 msgid "Active le mode raster pour utiliser des palettes optimisées par ligne."
 msgstr "Enable raster mode to use line-optimized palettes."
@@ -66,7 +70,7 @@ msgstr "Enable raster mode to use line-optimized palettes."
 #~ msgid "Activer l'aperçu raster"
 #~ msgstr "Enable raster preview"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:222
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:235
 msgid "Activer le lissage horizontal"
 msgstr "Enable horizontal smoothing"
 
@@ -84,12 +88,12 @@ msgid "Add Current Image"
 msgstr "Add Current Image"
 
 #: src/components/export-panel/dsk-files-manager.tsx:125
-msgid "Add Empty"
-msgstr "Add Empty"
+#~ msgid "Add Empty"
+#~ msgstr "Add Empty"
 
 #: src/components/export-panel/dsk-files-manager.tsx:104
-msgid "Additional DSK Files"
-msgstr "Additional DSK Files"
+#~ msgid "Additional DSK Files"
+#~ msgstr "Additional DSK Files"
 
 #: src/app/components/main-content/main-content.tsx:12
 #~ msgid "Adjustments, Source & Preview"
@@ -131,11 +135,11 @@ msgstr "Ajuste uniquement les zones claires de l'image"
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajuste uniquement les zones sombres de l'image"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:82
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:96
 msgid "Ajustez l'équilibre entre fidélité aux couleurs fréquentes et variété des teintes (CPC Plus Mode 0)."
 msgstr "Adjust the balance between fidelity to frequent colors and hue variety (CPC Plus Mode 0)."
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:123
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:131
 msgid "Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs. EGX2: 640×200 4 couleurs."
 msgstr "Line-by-line mode alternation. EGX1: 320×200 16 colors. EGX2: 640×200 4 colors."
 
@@ -167,7 +171,7 @@ msgstr "Anti-flicker"
 msgid "Aperçu"
 msgstr "Preview"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:207
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:220
 msgid "Applique un lissage horizontal pour réduire les artefacts de pixels. Désactivé en mode raster."
 msgstr "Applies horizontal smoothing to reduce pixel artifacts. Disabled in raster mode."
 
@@ -178,6 +182,10 @@ msgstr "Apply"
 #: src/components/preview-editor/help-button/help-button.tsx:57
 msgid "Appliquer les modifications"
 msgstr "Apply changes"
+
+#: src/components/settings-panel/tabs/dsk-tab.tsx:20
+msgid "Assemblez une image disque DSK multi-fichiers compatible avec les émulateurs et le matériel CPC réel."
+msgstr "Build a multi-file DSK disk image compatible with emulators and real CPC hardware."
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:369
 msgid "Aucun changement raster défini."
@@ -267,7 +275,7 @@ msgstr "Changes per line"
 msgid "Changements Raster"
 msgstr "Raster Changes"
 
-#: src/app/components/source-section.tsx:72
+#: src/app/components/source-section.tsx:73
 msgid "Changer d'image"
 msgstr "Change image"
 
@@ -284,7 +292,7 @@ msgstr "Load an image to see the palette"
 msgid "Chargez une image pour voir les palettes"
 msgstr "Load an image to see the palettes"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:64
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:67
 msgid "Choisissez la stratégie de génération de palette pour optimiser la qualité visuelle."
 msgstr "Choose the palette generation strategy to optimize visual quality."
 
@@ -304,7 +312,7 @@ msgstr "Classic: legacy resize (gamma space). The others resample in linear ligh
 #~ msgid "Clear all images from workspace"
 #~ msgstr "Clear all images from workspace"
 
-#: src/components/image-preview/image-preview.tsx:171
+#: src/components/image-preview/image-preview.tsx:137
 msgid "Cliquer pour ouvrir dans un nouvel onglet"
 msgstr "Click to open in a new tab"
 
@@ -312,7 +320,7 @@ msgstr "Click to open in a new tab"
 #~ msgid "Cliquer pour ouvrir en plein écran dans un nouvel onglet"
 #~ msgstr "Click to open fullscreen in a new tab"
 
-#: src/components/image-upload/image-upload-view.tsx:197
+#: src/components/image-upload/image-upload-view.tsx:214
 msgid "Cliquez pour sélectionner une image"
 msgstr "Cliquez pour sélectionner une image"
 
@@ -340,7 +348,7 @@ msgstr "Combined"
 msgid "Configuration de l'export"
 msgstr "Export Configuration"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:126
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:140
 msgid "Configuration du Dithering"
 msgstr "Dithering Configuration"
 
@@ -398,15 +406,15 @@ msgstr "Cover (Crop to fill)"
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Coverage Aware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:72
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:73
 msgid "CPC Classic: palette de 27 couleurs fixes. CPC Plus: palette de 4096 couleurs."
 msgstr "CPC Classic: fixed 27-color palette. CPC Plus: 4096-color palette."
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:81
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:82
 msgid "CPC Hardware"
 msgstr "CPC Hardware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:157
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:165
 msgid "CPC Pixel Mode"
 msgstr "CPC Pixel Mode"
 
@@ -430,12 +438,12 @@ msgstr "Fast movement (×8)"
 msgid "Déplacer le curseur"
 msgstr "Move cursor"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:130
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:202
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:144
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:215
 msgid "Désactivé quand le mapping distinct est actif pour préserver les couleurs exactes."
 msgstr "Disabled when distinct mapping is active to preserve exact colors."
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:165
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:177
 msgid "Détecte automatiquement les images avec peu de couleurs (C64, ZX Spectrum, etc.) et préserve toutes les couleurs distinctes."
 msgstr "Automatically detects images with few colors (C64, ZX Spectrum, etc.) and preserves all distinct colors."
 
@@ -452,14 +460,18 @@ msgstr "Unlock"
 msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
 msgstr "Maximum luminance difference allowed between alternating colors"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:187
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:195
 msgid "Dimension Preset"
 msgstr "Dimension Preset"
 
 #: src/components/info-bar/info-bar.tsx:113
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:175
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:183
 msgid "Dimensions"
 msgstr "Dimensions"
+
+#: src/components/settings-panel/settings-panel.tsx:67
+msgid "Disque"
+msgstr "Disk"
 
 #: src/components/export-panel/export-config-dialog.tsx:156
 #~ msgid "Disquette DSK (image écran)"
@@ -469,7 +481,7 @@ msgstr "Dimensions"
 msgid "Distance de continuité"
 msgstr "Continuity Distance"
 
-#: src/components/settings-panel/settings-panel.tsx:56
+#: src/components/settings-panel/settings-panel.tsx:55
 msgid "Dithering"
 msgstr "Dithering"
 
@@ -479,8 +491,8 @@ msgid "palette.strategy.dithering-aware.label"
 msgstr "Dithering Aware"
 
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:64
-msgid "Dithering Error Propagation"
-msgstr "Dithering Error Propagation"
+#~ msgid "Dithering Error Propagation"
+#~ msgstr "Dithering Error Propagation"
 
 #: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:105
 msgid "Dithering final"
@@ -495,11 +507,11 @@ msgid "Dithering raster"
 msgstr "Raster dithering"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:96
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:110
 msgid "color.diversity.label"
 msgstr "Diversity"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:79
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:83
 msgid "Diversité des couleurs"
 msgstr "Color Diversity"
 
@@ -525,7 +537,7 @@ msgstr "Downloading..."
 #~ msgid "DSK Manager"
 #~ msgstr "DSK Manager"
 
-#: src/components/settings-panel/sections/export-settings/export-settings-view.tsx:31
+#: src/components/settings-panel/tabs/dsk-tab.tsx:17
 msgid "DSK Workspace"
 msgstr "DSK Workspace"
 
@@ -555,11 +567,11 @@ msgstr "Effects"
 msgid "Effets Raster"
 msgstr "Raster Effects"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:120
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:128
 msgid "EGX Mode"
 msgstr "EGX Mode"
 
-#: src/components/export-panel/export-panel.tsx:266
+#: src/components/export-panel/use-export-actions.ts:268
 msgid "EGX opened in CPC Playground!"
 msgstr "EGX opened in CPC Playground!"
 
@@ -593,14 +605,17 @@ msgstr "Previous ink"
 msgid "Encre suivante"
 msgstr "Next ink"
 
-#. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
 #: src/components/export-panel/dsk-files-manager.tsx:65
-msgid "Error reading file: {0}"
-msgstr "Error reading file: {0}"
+#~ msgid "Error reading file: {0}"
+#~ msgstr "Error reading file: {0}"
+
+#: src/components/image-upload/image-upload-view.tsx:313
+msgid "Essayer avec un exemple"
+msgstr "Try a sample"
 
 #: src/components/export-panel/dsk-files-manager.tsx:188
-msgid "Exec"
-msgstr "Exec"
+#~ msgid "Exec"
+#~ msgstr "Exec"
 
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:25
@@ -608,20 +623,20 @@ msgid "palette.strategy.exhaustive-contrast.label"
 msgstr "Exhaustive Contrast"
 
 #: src/components/settings-panel/settings-panel.tsx:68
-msgid "Export"
-msgstr "Export"
+#~ msgid "Export"
+#~ msgstr "Export"
 
 #: src/components/dsk-workspace/dsk-workspace-view.tsx:168
 msgid "Export DSK"
 msgstr "Export DSK"
 
 #: src/components/settings-panel/sections/export-settings/export-settings-view.tsx:15
-msgid "Export Options"
-msgstr "Export Options"
+#~ msgid "Export Options"
+#~ msgstr "Export Options"
 
 #: src/components/settings-panel/sections/export-settings/export-settings-view.tsx:18
-msgid "Export your converted images to various formats compatible with CPC emulators and real hardware."
-msgstr "Export your converted images to various formats compatible with CPC emulators and real hardware."
+#~ msgid "Export your converted images to various formats compatible with CPC emulators and real hardware."
+#~ msgstr "Export your converted images to various formats compatible with CPC emulators and real hardware."
 
 #: src/components/export-panel/export-config-dialog.tsx:138
 #: src/components/export-panel/export-panel-view.tsx:30
@@ -640,30 +655,40 @@ msgstr "Exposure & Tone"
 msgid "Extraction palette de base"
 msgstr "Base palette extraction"
 
-#. placeholder {0}: result.error ?? 'Unknown error'
 #: src/components/export-panel/export-panel.tsx:272
-msgid "Failed to open EGX in CPC Playground: {0}"
-msgstr "Failed to open EGX in CPC Playground: {0}"
+#~ msgid "Failed to open EGX in CPC Playground: {0}"
+#~ msgstr "Failed to open EGX in CPC Playground: {0}"
+
+#: src/components/export-panel/use-export-actions.ts:283
+msgid "Failed to open EGX in CPC Playground: {error}"
+msgstr "Failed to open EGX in CPC Playground: {error}"
 
 #. placeholder {0}: error instanceof Error ? error.message : 'Unknown error'
-#. placeholder {0}: result.error ?? 'Unknown error'
-#: src/components/export-panel/export-panel.tsx:327
-#: src/components/export-panel/export-panel.tsx:338
+#: src/components/export-panel/use-export-actions.ts:219
 msgid "Failed to open in CPC Playground: {0}"
 msgstr "Failed to open in CPC Playground: {0}"
 
-#. placeholder {0}: result.error ?? 'Unknown error'
+#: src/components/export-panel/use-export-actions.ts:285
+msgid "Failed to open in CPC Playground: {error}"
+msgstr "Failed to open in CPC Playground: {error}"
+
 #: src/components/export-panel/export-panel.tsx:223
-msgid "Failed to open Mode R in CPC Playground: {0}"
-msgstr "Failed to open Mode R in CPC Playground: {0}"
+#~ msgid "Failed to open Mode R in CPC Playground: {0}"
+#~ msgstr "Failed to open Mode R in CPC Playground: {0}"
 
-#. placeholder {0}: file.name
+#: src/components/export-panel/use-export-actions.ts:281
+msgid "Failed to open Mode R in CPC Playground: {error}"
+msgstr "Failed to open Mode R in CPC Playground: {error}"
+
+#: src/components/settings-panel/settings-panel.tsx:107
+msgid "Fermer les paramètres"
+msgstr "Close settings"
+
 #: src/components/export-panel/dsk-files-manager.tsx:39
-msgid "File {0} is too large (max 64KB). File skipped."
-msgstr "File {0} is too large (max 64KB). File skipped."
+#~ msgid "File {0} is too large (max 64KB). File skipped."
+#~ msgstr "File {0} is too large (max 64KB). File skipped."
 
-#: src/components/export-panel/export-panel.tsx:135
-#: src/components/export-panel/export-panel.tsx:172
+#: src/components/export-panel/use-export-actions.ts:151
 msgid "File exported successfully!"
 msgstr "File exported successfully!"
 
@@ -687,7 +712,7 @@ msgstr "First Line Mode"
 msgid "Flou"
 msgstr "Blur"
 
-#: src/components/image-upload/image-upload-view.tsx:203
+#: src/components/image-upload/image-upload-view.tsx:220
 msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Supported formats: PNG, JPEG, GIF, BMP, WEBP, SVG"
 
@@ -722,7 +747,7 @@ msgstr "Generate rasters"
 msgid "Gestion des changements d'encre par ligne (générés automatiquement ou manuels)"
 msgstr "Manage ink changes per line (automatically generated or manual)"
 
-#: src/components/image-upload/image-upload-view.tsx:198
+#: src/components/image-upload/image-upload-view.tsx:215
 msgid "Glissez & déposez une image ici"
 msgstr "Drag & drop an image here"
 
@@ -730,11 +755,11 @@ msgstr "Drag & drop an image here"
 msgid "Grille (H)"
 msgstr "Grid (H)"
 
-#: src/components/settings-panel/settings-panel.tsx:50
+#: src/components/settings-panel/settings-panel.tsx:49
 msgid "Hardware"
 msgstr "Hardware"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:69
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:70
 msgid "Hardware CPC"
 msgstr "CPC Hardware"
 
@@ -758,11 +783,11 @@ msgstr "High Res Lines"
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 
-#: src/app/components/source-section.tsx:71
+#: src/app/components/source-section.tsx:72
 msgid "Image source"
 msgstr "Image source"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:156
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:166
 msgid "Images retro (low-color)"
 msgstr "Retro images (low-color)"
 
@@ -859,13 +884,13 @@ msgstr "Linear ASM (sequential)"
 #~ msgid "Lissage"
 #~ msgstr "Smoothing"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:198
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:209
 msgid "Lissage horizontal"
 msgstr "Horizontal Smoothing"
 
 #: src/components/export-panel/dsk-files-manager.tsx:164
-msgid "Load"
-msgstr "Load"
+#~ msgid "Load"
+#~ msgstr "Load"
 
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:107
 msgid "Low Res first"
@@ -889,7 +914,7 @@ msgstr "Luminance bins with frequency priority"
 msgid "Luminosité"
 msgstr "Brightness"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:184
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:198
 msgid "Mapping distinct automatique"
 msgstr "Automatic distinct mapping"
 
@@ -923,7 +948,7 @@ msgstr "Mode"
 #~ msgid "Mode 0 CPC Plus (12+4)"
 #~ msgstr "Mode 0 CPC Plus (12+4)"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:148
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:156
 msgid "Mode 0: 160 pixels de large, Mode 1: 320 pixels, Mode 2: 640 pixels"
 msgstr "Mode 0: 160 pixels wide, Mode 1: 320 pixels, Mode 2: 640 pixels"
 
@@ -935,11 +960,11 @@ msgstr "Mode 0: 160 pixels wide, Mode 1: 320 pixels, Mode 2: 640 pixels"
 msgid "Mode de redimensionnement"
 msgstr "Resize mode"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:95
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:103
 msgid "Mode R"
 msgstr "Mode R"
 
-#: src/components/export-panel/export-panel.tsx:217
+#: src/components/export-panel/use-export-actions.ts:266
 msgid "Mode R opened in CPC Playground!"
 msgstr "Mode R opened in CPC Playground!"
 
@@ -950,6 +975,14 @@ msgstr "Mode R Settings"
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:127
 msgid "Mode Raster"
 msgstr "Raster Mode"
+
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:97
+msgid "Modes avancés (Mode R / EGX)"
+msgstr "Advanced modes (Mode R / EGX)"
+
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:86
+msgid "Montez la valeur pour des images riches en teintes variées ; baissez-la pour mieux préserver les dégradés et nuances proches."
+msgstr "Increase the value for images rich in varied hues; lower it to better preserve gradients and close shades."
 
 #. js-lingui-explicit-id
 #: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:106
@@ -983,11 +1016,11 @@ msgstr "Sharpness"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:283
 msgid "Neutre"
-msgstr ""
+msgstr "Neutral"
 
 #: src/components/export-panel/dsk-files-manager.tsx:134
-msgid "No additional files. Upload or add files to include them in the DSK."
-msgstr "No additional files. Upload or add files to include them in the DSK."
+#~ msgid "No additional files. Upload or add files to include them in the DSK."
+#~ msgstr "No additional files. Upload or add files to include them in the DSK."
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:75
 msgid "No image to add"
@@ -1010,7 +1043,7 @@ msgid "Non"
 msgstr "No"
 
 #. placeholder {0}: sourceUniqueColors ?? '?'
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:160
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:172
 msgid "Non disponible : l'image source a plus de 16 couleurs uniques ({0}+)."
 msgstr "Not available: source image has more than 16 unique colors ({0}+)."
 
@@ -1030,7 +1063,7 @@ msgid "Not enough space on DSK"
 msgstr "Not enough space on DSK"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:102
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:116
 msgid "color.diversity.description"
 msgstr "Similar shades (0) ◄► Distinct hues (100)"
 
@@ -1042,7 +1075,7 @@ msgstr "Shadows"
 msgid "Open in CPC Playground"
 msgstr "Open in CPC Playground"
 
-#: src/components/export-panel/export-panel.tsx:321
+#: src/components/export-panel/use-export-actions.ts:270
 msgid "Opened in CPC Playground!"
 msgstr "Opened in CPC Playground!"
 
@@ -1062,11 +1095,11 @@ msgstr "Color options"
 msgid "Origin (No Scale)"
 msgstr "Origin (No Scale)"
 
-#: src/components/image-upload/image-upload-view.tsx:201
+#: src/components/image-upload/image-upload-view.tsx:218
 msgid "ou cliquez pour sélectionner un fichier"
 msgstr "or click to select a file"
 
-#: src/components/image-upload/image-upload-view.tsx:200
+#: src/components/image-upload/image-upload-view.tsx:217
 msgid "Ou glissez-déposez un fichier (si supporté)"
 msgstr "Ou glissez-déposez un fichier (si supporté)"
 
@@ -1101,8 +1134,8 @@ msgid "Palette"
 msgstr "Palette"
 
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:93
-msgid "Palette Selection"
-msgstr "Palette Selection"
+#~ msgid "Palette Selection"
+#~ msgstr "Palette Selection"
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:177
 msgid "Palettes"
@@ -1111,6 +1144,10 @@ msgstr "Palettes"
 #: src/components/export-panel/export-config-dialog.tsx:169
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
+
+#: src/components/settings-panel/settings-panel.tsx:98
+msgid "Panneau des paramètres"
+msgstr "Settings panel"
 
 #: src/components/settings-panel/settings-button.tsx:40
 msgid "Paramètres"
@@ -1141,17 +1178,17 @@ msgstr "Perceptual Contrast"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:336
 msgid "Personnalisé"
-msgstr ""
+msgstr "Custom"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:285
 msgid "Photo sombre"
-msgstr ""
+msgstr "Dark photo"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:284
 msgid "Photo vive"
-msgstr ""
+msgstr "Vivid photo"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:145
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:153
 msgid "Pixel Mode"
 msgstr "Pixel Mode"
 
@@ -1201,7 +1238,7 @@ msgstr "Position"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:286
 msgid "Poster"
-msgstr ""
+msgstr "Poster"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:207
 msgid "Posterisation"
@@ -1213,7 +1250,7 @@ msgstr "1D dithering preprocessing applied to the image before palette extractio
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:318
 msgid "Préréglage"
-msgstr ""
+msgstr "Preset"
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:163
 msgid "Preview mode"
@@ -1248,13 +1285,13 @@ msgstr "Pure Diversity"
 msgid "Raccourcis clavier"
 msgstr "Keyboard shortcuts"
 
-#: src/components/settings-panel/settings-panel.tsx:62
+#: src/components/settings-panel/settings-panel.tsx:61
 msgid "Raster"
 msgstr "Raster"
 
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:56
-msgid "Raster Tuning"
-msgstr "Raster Tuning"
+#~ msgid "Raster Tuning"
+#~ msgstr "Raster Tuning"
 
 #: src/components/raster-panel/raster-panel-view.tsx:336
 #~ msgid "Raster: changements d'encre par ligne"
@@ -1305,7 +1342,7 @@ msgid "Réinitialiser"
 msgstr "Reset"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:109
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:123
 msgid "color.diversity.reset"
 msgstr "Reset to 50"
 
@@ -1322,8 +1359,8 @@ msgid "Réinitialiser à la valeur par défaut"
 msgstr "Reset to default value"
 
 #: src/components/export-panel/dsk-files-manager.tsx:214
-msgid "Remove file"
-msgstr "Remove file"
+#~ msgid "Remove file"
+#~ msgstr "Remove file"
 
 #: src/components/dsk-workspace/dsk-workspace.tsx:85
 msgid "Remove image from workspace"
@@ -1333,11 +1370,11 @@ msgstr "Remove image from workspace"
 msgid "Renforce les contours pour une image plus nette (0 = off, 1 = fort)"
 msgstr "Sharpens edges for a crisper image (0 = off, 1 = strong)"
 
-#: src/components/settings-panel/settings-panel.tsx:44
+#: src/components/settings-panel/settings-panel.tsx:43
 msgid "Resize"
 msgstr "Resize"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:98
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:106
 msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 msgstr "Doubled horizontal resolution (Mode 0 only). Uses 2 alternating images at 50Hz."
 
@@ -1374,7 +1411,7 @@ msgstr "Selection"
 #~ msgid "Sélectionner une couleur"
 #~ msgstr "Select a color"
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:135
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:149
 msgid "Sélectionnez l'algorithme de dithering et ajustez les paramètres pour optimiser le rendu final."
 msgstr "Select the dithering algorithm and adjust parameters to optimize the final rendering."
 
@@ -1387,7 +1424,7 @@ msgstr "Select files to include in ZIP archive"
 msgid "palette.strategy.dithering-aware.desc"
 msgstr "Selects colors that blend well in dithering"
 
-#: src/components/settings-panel/settings-panel.tsx:84
+#: src/components/settings-panel/settings-panel.tsx:101
 msgid "Settings"
 msgstr "Settings"
 
@@ -1399,15 +1436,15 @@ msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumi
 msgid "SNA (snapshot exécutable)"
 msgstr "SNA (executable snapshot)"
 
-#: src/components/settings-panel/settings-panel.tsx:38
+#: src/components/settings-panel/settings-panel.tsx:37
 msgid "Source"
 msgstr "Source"
 
-#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:178
+#: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:186
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: standard CPC dimensions. Overscan: uses full displayable area. Custom: custom dimensions."
 
-#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:58
+#: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:61
 msgid "Stratégie de palette"
 msgstr "Palette Strategy"
 
@@ -1473,8 +1510,8 @@ msgstr "Update available: version {updateVersion}"
 #~ msgstr "Update Now"
 
 #: src/components/export-panel/dsk-files-manager.tsx:109
-msgid "Upload Files"
-msgstr "Upload Files"
+#~ msgid "Upload Files"
+#~ msgstr "Upload Files"
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:125
 msgid "Utilise une palette différente pour chaque frame (plus de couleurs, plus de scintillement)"

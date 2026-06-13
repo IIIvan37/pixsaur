@@ -28,8 +28,8 @@ vi.mock('./sections/raster-settings', () => ({
   RasterSettings: () => <div data-testid='raster-settings'>Raster Settings</div>
 }))
 
-vi.mock('./sections/export-settings', () => ({
-  ExportSettings: () => <div data-testid='export-settings'>Export Settings</div>
+vi.mock('@/components/dsk-workspace/dsk-workspace-panel', () => ({
+  default: () => <div data-testid='dsk-workspace'>DSK Workspace</div>
 }))
 
 describe('SettingsPanel', () => {
@@ -61,7 +61,7 @@ describe('SettingsPanel', () => {
       'hardware',
       'dithering',
       'raster',
-      'export'
+      'dsk'
     ]
 
     // Component should be importable
