@@ -214,7 +214,7 @@ export const EditorCanvasView = forwardRef<
     // Draw hover highlight (if different from cursor)
     const shouldShowHover =
       hoveredPixel &&
-      (!cursor || hoveredPixel.x !== cursor.x || hoveredPixel.y !== cursor.y)
+      (hoveredPixel.x !== cursor?.x || hoveredPixel.y !== cursor?.y)
 
     if (shouldShowHover) {
       renderHover(

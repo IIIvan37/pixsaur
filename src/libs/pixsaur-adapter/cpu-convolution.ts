@@ -100,14 +100,14 @@ export function applyConvolutionFilters(
     for (let pass = 0; pass < passes; pass++) {
       // Première passe: kernel interpolé, passes suivantes: full Gaussian
       const blurKernel = createBlurKernel(blur, pass)
-      result = applyConvolution3x3(result, blurKernel, 1.0)
+      result = applyConvolution3x3(result, blurKernel, 1)
     }
   }
 
   // Puis sharpen (si actif)
   if (sharpen !== 0) {
     const sharpenKernel = createSharpenKernel(Math.abs(sharpen))
-    result = applyConvolution3x3(result, sharpenKernel, 1.0)
+    result = applyConvolution3x3(result, sharpenKernel, 1)
   }
 
   return result
