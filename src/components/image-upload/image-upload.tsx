@@ -1,9 +1,15 @@
+import { useSetAtom } from 'jotai'
 import { memo, useCallback } from 'react'
+import { pushToastAtom } from '@/app/store/notifications/toast'
 import { logger } from '@/core'
 import { isTauri } from '@/tauri'
 import { ImageUploadView } from './image-upload-view'
 import { pickImageFileTauriAsFile } from './tauri-file-picker'
 import { processImageFile } from './utils'
+import {
+  validateFileSize,
+  validateImageDimensions
+} from './validate-image-file'
 
 export type ImageUploadProps = {
   onImageLoaded: (img: HTMLImageElement) => void
@@ -16,32 +22,53 @@ export type ImageUploadProps = {
 
 export const ImageUpload = memo(
   ({ onImageLoaded }: Readonly<ImageUploadProps>) => {
-    const handleUpload = useCallback(
-      async (acceptedFiles: File[]) => {
-        // In Tauri with empty array, use native dialog
-        if (isTauri() && acceptedFiles.length === 0) {
-          try {
-            const file = await pickImageFileTauriAsFile()
-            if (!file) return
-            const img = await processImageFile(file)
-            onImageLoaded(img)
-          } catch (error) {
-            logger.error('[ImageUpload] Failed to load image:', error)
-          }
+    const pushToast = useSetAtom(pushToastAtom)
+
+    // Decode a validated file and surface a toast if it exceeds the limits.
+    const loadValidatedFile = useCallback(
+      async (file: File) => {
+        const sizeCheck = validateFileSize(file)
+        if (!sizeCheck.ok) {
+          pushToast('image-too-large')
           return
         }
 
-        // Handle dropped/selected file
-        const file = acceptedFiles[0]
-        if (!file?.type.startsWith('image/')) return
+        const img = await processImageFile(file)
 
-        // In Tauri, drag & drop is disabled - only native dialog works
-        // In web mode, use standard FileReader
-        processImageFile(file)
-          .then(onImageLoaded)
-          .catch((e) => logger.error(e))
+        const dimensionCheck = validateImageDimensions(img)
+        if (!dimensionCheck.ok) {
+          pushToast('image-dimensions-too-large')
+          return
+        }
+
+        onImageLoaded(img)
       },
-      [onImageLoaded]
+      [onImageLoaded, pushToast]
+    )
+
+    const handleUpload = useCallback(
+      async (acceptedFiles: File[]) => {
+        try {
+          // In Tauri with empty array, use native dialog
+          if (isTauri() && acceptedFiles.length === 0) {
+            const file = await pickImageFileTauriAsFile()
+            if (!file) return
+            await loadValidatedFile(file)
+            return
+          }
+
+          // Handle dropped/selected file
+          const file = acceptedFiles[0]
+          if (!file?.type.startsWith('image/')) return
+
+          // In Tauri, drag & drop is disabled - only native dialog works
+          // In web mode, use standard FileReader
+          await loadValidatedFile(file)
+        } catch (error) {
+          logger.error('[ImageUpload] Failed to load image:', error)
+        }
+      },
+      [loadValidatedFile]
     )
 
     return <ImageUploadView onUpload={handleUpload} isTauri={isTauri()} />

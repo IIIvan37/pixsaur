@@ -58,7 +58,7 @@ msgstr "Una nueva versión de Pixsaur está disponible. Haga clic a continuació
 #~ msgid "A new version of Pixsaur is available. Update now to get the latest features and improvements."
 #~ msgstr "Una nueva versión de Pixsaur está disponible. Actualice ahora para obtener las últimas funciones y mejoras."
 
-#: src/components/toaster/toaster.tsx:23
+#: src/components/toaster/toaster.tsx:30
 msgid "Accélération GPU indisponible — basculement sur le processeur CPU (plus lent)."
 msgstr "Aceleración por GPU no disponible: se utiliza el procesador CPU (más lento)."
 
@@ -365,7 +365,7 @@ msgstr "Bordes"
 msgid "Contraste"
 msgstr "Contraste"
 
-#: src/app/app.tsx:142
+#: src/app/app.tsx:151
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Convertidor de imágenes Amstrad CPC"
 
@@ -788,6 +788,14 @@ msgstr "Líneas Alta Res"
 msgid "Image source"
 msgstr "Imagen de origen"
 
+#: src/components/toaster/toaster.tsx:38
+msgid "Image trop grande (maximum {MAX_IMAGE_DIMENSION}×{MAX_IMAGE_DIMENSION} px). Veuillez réduire ses dimensions."
+msgstr "Imagen demasiado grande (máximo {MAX_IMAGE_DIMENSION}×{MAX_IMAGE_DIMENSION} px). Reduzca sus dimensiones."
+
+#: src/components/toaster/toaster.tsx:34
+msgid "Image trop volumineuse (maximum {MAX_FILE_SIZE_MB} Mo). Veuillez choisir un fichier plus petit."
+msgstr "Imagen demasiado pesada (máximo {MAX_FILE_SIZE_MB} MB). Elija un archivo más pequeño."
+
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:166
 msgid "Images retro (low-color)"
 msgstr "Imágenes retro (pocos colores)"
@@ -815,6 +823,10 @@ msgstr "Intensidad"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:112
 msgid "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgstr "Intensidad de color (0 = blanco y negro, 2 = muy saturado)"
+
+#: src/components/error-boundary/error-fallback.tsx:26
+msgid "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
+msgstr "La aplicación encontró un problema. Puede volver a intentarlo; si persiste, recargue la página."
 
 #: src/components/export-panel/export-config-dialog.tsx:229
 msgid "Label de la palette"
@@ -1310,6 +1322,10 @@ msgstr "Rasters (datos ASM)"
 msgid "Rasters générés"
 msgstr "Rasters Generados"
 
+#: src/components/error-boundary/error-fallback.tsx:47
+msgid "Recharger la page"
+msgstr "Recargar la página"
+
 #: src/components/source-selector/source-selector-view.tsx:112
 #~ msgid "Redimensionner"
 #~ msgstr "Redimensionar"
@@ -1329,6 +1345,10 @@ msgstr "Reduce el número de niveles de color para un efecto póster"
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:140
 msgid "Réduit le scintillement en favorisant les couleurs similaires entre les frames"
 msgstr "Reduce el parpadeo favoreciendo colores similares entre frames"
+
+#: src/components/error-boundary/error-fallback.tsx:41
+msgid "Réessayer"
+msgstr "Reintentar"
 
 #: src/components/preview-editor/help-button/help-button.tsx:24
 msgid "Refaire"
@@ -1497,6 +1517,10 @@ msgstr "Total"
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:407
 msgid "Tout supprimer"
 msgstr "Eliminar todo"
+
+#: src/components/error-boundary/error-fallback.tsx:23
+msgid "Une erreur inattendue s'est produite"
+msgstr "Se produjo un error inesperado"
 
 #: src/components/updater/updater-view.tsx:61
 msgid "Update Available"

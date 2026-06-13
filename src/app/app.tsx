@@ -1,5 +1,6 @@
 import { Trans } from '@lingui/react/macro'
 import { useEffect } from 'react'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { LanguageSelector } from '@/components/language-selector'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { Toaster } from '@/components/toaster/toaster'
@@ -13,6 +14,8 @@ import { invoke, isTauri } from '@/tauri'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
 import { useAutoRegenerateRasters } from './store/raster/use-auto-regenerate-rasters'
+import { useSessionPersistence } from './store/session/use-session-persistence'
+import { useUnsavedChangesWarning } from './use-unsaved-changes-warning'
 
 /**
  * Check if running in Tauri environment
@@ -25,6 +28,12 @@ export default function App() {
 
   // Auto-regenerate rasters when selection/parameters change
   useAutoRegenerateRasters()
+
+  // Auto-restore the previous session and auto-save changes
+  useSessionPersistence()
+
+  // Warn before leaving the page while unsaved manual edits exist
+  useUnsavedChangesWarning()
 
   // Add F12 shortcut to open debug window
   useEffect(() => {
@@ -170,7 +179,9 @@ export default function App() {
               </div>
             </header>
 
-            <ImageConverter />
+            <ErrorBoundary>
+              <ImageConverter />
+            </ErrorBoundary>
 
             <footer className={styles.footer}></footer>
           </div>
