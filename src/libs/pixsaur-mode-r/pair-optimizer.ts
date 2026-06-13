@@ -632,7 +632,7 @@ export function optimizeModeRPalettes(
 ): ModeRPalettes {
   // Generate uniform weights if not provided
   const weights =
-    targetWeights && targetWeights.length === targetColors.length
+    targetWeights?.length === targetColors.length
       ? targetWeights
       : targetColors.map(() => 1 / targetColors.length)
 

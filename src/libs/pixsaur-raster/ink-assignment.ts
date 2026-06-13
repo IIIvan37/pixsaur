@@ -6,7 +6,7 @@
  */
 
 import type { Vector } from '../pixsaur-color/src/type'
-import { colorKey, colorsEqual } from './palette-selection'
+import { colorKey } from './palette-selection'
 
 /**
  * Find the best assignment of line colors to ink indices.
@@ -69,4 +69,4 @@ export function assignColorsToInks(
 }
 
 // Re-export utilities for convenience
-export { colorKey, colorsEqual }
+export { colorKey, colorsEqual } from './palette-selection'

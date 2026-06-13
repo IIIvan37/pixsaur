@@ -617,14 +617,6 @@ export function applyEGXDitheringByMode(
     case 'none':
       result = applyEGXNoDithering(imageData, palette, config)
       break
-    case 'floydSteinberg':
-      result = applyEGXFloydSteinbergDithering(
-        imageData,
-        palette,
-        config,
-        intensity
-      )
-      break
     case 'ostromoukhov':
       result = applyEGXOstromoukhovDithering(
         imageData,
@@ -664,8 +656,8 @@ export function applyEGXDitheringByMode(
       )
       break
     default:
-      // For unsupported modes (ylioluma1, ylioluma2, halftone4x4),
-      // fall back to Floyd-Steinberg
+      // Floyd-Steinberg, plus the fallback for unsupported modes
+      // (ylioluma1, ylioluma2, halftone4x4).
       result = applyEGXFloydSteinbergDithering(
         imageData,
         palette,

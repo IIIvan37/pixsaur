@@ -14,7 +14,11 @@ import type {
 } from '@/libs/pixsaur-egx'
 
 // Re-export types for convenience
-export type { EGXFirstLineMode, EGXPreviewMode, EGXType }
+export type {
+  EGXFirstLineMode,
+  EGXPreviewMode,
+  EGXType
+} from '@/libs/pixsaur-egx'
 
 // Also export as EgxType for consistency
 export type EgxType = EGXType
