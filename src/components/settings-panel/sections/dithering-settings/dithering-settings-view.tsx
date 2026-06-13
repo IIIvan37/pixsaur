@@ -6,8 +6,11 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useId } from 'react'
+import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import Flex from '@/components/ui/flex'
+import Icon from '@/components/ui/icon'
 import { Switch } from '@/components/ui/switch'
+import { Tooltip } from '@/components/ui/tooltip/tooltip'
 import { TuningSlider } from '../../shared/tuning-slider'
 import styles from '../../tabs/tab.module.css'
 import { DitheringControls } from './dithering-controls'
@@ -74,10 +77,21 @@ export function DitheringSettingsView({
         <>
           <div className={styles.separator} />
 
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>
-              <Trans>Diversité des couleurs</Trans>
-            </h3>
+          <CollapsibleSection
+            title={
+              <Flex align='center' gap='0.375rem'>
+                <Trans>Diversité des couleurs</Trans>
+                <Tooltip
+                  content={_(
+                    msg`Montez la valeur pour des images riches en teintes variées ; baissez-la pour mieux préserver les dégradés et nuances proches.`
+                  )}
+                >
+                  <Icon name='QuestionMarkCircledIcon' />
+                </Tooltip>
+              </Flex>
+            }
+            defaultOpen={false}
+          >
             <p className={styles.description}>
               <Trans>
                 Ajustez l'équilibre entre fidélité aux couleurs fréquentes et
@@ -112,7 +126,7 @@ export function DitheringSettingsView({
                 })
               )}
             />
-          </div>
+          </CollapsibleSection>
         </>
       )}
 
@@ -148,81 +162,81 @@ export function DitheringSettingsView({
             <>
               <div className={styles.separator} />
 
-              <div
-                className={styles.section}
-                style={{ opacity: isDistinctMappingDisabled ? 0.5 : 1 }}
+              <CollapsibleSection
+                title={<Trans>Images retro (low-color)</Trans>}
+                defaultOpen={false}
               >
-                <h3 className={styles.sectionTitle}>
-                  <Trans>Images retro (low-color)</Trans>
-                </h3>
-                <p className={styles.description}>
-                  {isDistinctMappingDisabled ? (
-                    <Trans>
-                      Non disponible : l'image source a plus de 16 couleurs
-                      uniques ({sourceUniqueColors ?? '?'}+).
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Détecte automatiquement les images avec peu de couleurs
-                      (C64, ZX Spectrum, etc.) et préserve toutes les couleurs
-                      distinctes.
-                    </Trans>
-                  )}
-                </p>
+                <div style={{ opacity: isDistinctMappingDisabled ? 0.5 : 1 }}>
+                  <p className={styles.description}>
+                    {isDistinctMappingDisabled ? (
+                      <Trans>
+                        Non disponible : l'image source a plus de 16 couleurs
+                        uniques ({sourceUniqueColors ?? '?'}+).
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Détecte automatiquement les images avec peu de couleurs
+                        (C64, ZX Spectrum, etc.) et préserve toutes les couleurs
+                        distinctes.
+                      </Trans>
+                    )}
+                  </p>
 
-                <Flex direction='row' gap='0.5rem' align='center'>
-                  <Switch
-                    checked={autoDistinctMapping && !isDistinctMappingDisabled}
-                    onCheckedChange={onAutoDistinctMappingChange}
-                    disabled={isDistinctMappingDisabled}
-                    id={distinctMappingId}
-                  />
-                  <label
-                    htmlFor={distinctMappingId}
-                    className={styles.switchLabel}
-                  >
-                    <Trans>Mapping distinct automatique</Trans>
-                  </label>
-                </Flex>
-              </div>
+                  <Flex direction='row' gap='0.5rem' align='center'>
+                    <Switch
+                      checked={
+                        autoDistinctMapping && !isDistinctMappingDisabled
+                      }
+                      onCheckedChange={onAutoDistinctMappingChange}
+                      disabled={isDistinctMappingDisabled}
+                      id={distinctMappingId}
+                    />
+                    <label
+                      htmlFor={distinctMappingId}
+                      className={styles.switchLabel}
+                    >
+                      <Trans>Mapping distinct automatique</Trans>
+                    </label>
+                  </Flex>
+                </div>
+              </CollapsibleSection>
             </>
           )}
 
           <div className={styles.separator} />
 
-          <div
-            className={styles.section}
-            style={{ opacity: isDistinctMappingActive ? 0.5 : 1 }}
+          <CollapsibleSection
+            title={<Trans>Lissage horizontal</Trans>}
+            defaultOpen={false}
           >
-            <h3 className={styles.sectionTitle}>
-              <Trans>Lissage horizontal</Trans>
-            </h3>
-            <p className={styles.description}>
-              {isDistinctMappingActive ? (
-                <Trans>
-                  Désactivé quand le mapping distinct est actif pour préserver
-                  les couleurs exactes.
-                </Trans>
-              ) : (
-                <Trans>
-                  Applique un lissage horizontal pour réduire les artefacts de
-                  pixels. Désactivé en mode raster.
-                </Trans>
-              )}
-            </p>
+            <div style={{ opacity: isDistinctMappingActive ? 0.5 : 1 }}>
+              <p className={styles.description}>
+                {isDistinctMappingActive ? (
+                  <Trans>
+                    Désactivé quand le mapping distinct est actif pour préserver
+                    les couleurs exactes.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    Applique un lissage horizontal pour réduire les artefacts de
+                    pixels. Désactivé en mode raster.
+                  </Trans>
+                )}
+              </p>
 
-            <Flex direction='row' gap='0.5rem' align='center'>
-              <Switch
-                checked={horizontalSmoothing && !isDistinctMappingActive}
-                onCheckedChange={onHorizontalSmoothingChange}
-                disabled={isDistinctMappingActive}
-                id={smoothingId}
-              />
-              <label htmlFor={smoothingId} className={styles.switchLabel}>
-                <Trans>Activer le lissage horizontal</Trans>
-              </label>
-            </Flex>
-          </div>
+              <Flex direction='row' gap='0.5rem' align='center'>
+                <Switch
+                  checked={horizontalSmoothing && !isDistinctMappingActive}
+                  onCheckedChange={onHorizontalSmoothingChange}
+                  disabled={isDistinctMappingActive}
+                  id={smoothingId}
+                />
+                <label htmlFor={smoothingId} className={styles.switchLabel}>
+                  <Trans>Activer le lissage horizontal</Trans>
+                </label>
+              </Flex>
+            </div>
+          </CollapsibleSection>
         </>
       )}
     </>

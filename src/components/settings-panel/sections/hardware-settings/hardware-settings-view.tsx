@@ -5,6 +5,7 @@
 import { Trans } from '@lingui/react/macro'
 import { useId } from 'react'
 import type { DimensionPreset, PixelMode } from '@/app/store/config/types'
+import { CollapsibleSection } from '@/components/ui/collapsible-section/collapsible-section'
 import Flex from '@/components/ui/flex'
 import { Switch } from '@/components/ui/switch'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
@@ -88,7 +89,14 @@ export function HardwareSettingsView({
             ariaLabelPrefix='Hardware'
           />
         </div>
+      </div>
 
+      <div className={styles.separator} />
+
+      <CollapsibleSection
+        title={<Trans>Modes avancés (Mode R / EGX)</Trans>}
+        defaultOpen={modeREnabled || egxEnabled}
+      >
         <Flex align='center' justify='space-between' style={{ width: '100%' }}>
           <div>
             <h4 className={styles.sectionTitle}>
@@ -134,7 +142,7 @@ export function HardwareSettingsView({
         </Flex>
 
         {egxEnabled && <EGXSettings />}
-      </div>
+      </CollapsibleSection>
 
       {!modeREnabled && !egxEnabled && (
         <>
