@@ -965,9 +965,9 @@ function propagateError(opts: PropagateErrorOptions): void {
   } = opts
 
   const clamp = (v: number) =>
-    errorClamp !== undefined
-      ? Math.max(-errorClamp, Math.min(errorClamp, v))
-      : v
+    errorClamp === undefined
+      ? v
+      : Math.max(-errorClamp, Math.min(errorClamp, v))
   const e0 = clamp(error[0])
   const e1 = clamp(error[1])
   const e2 = clamp(error[2])

@@ -88,7 +88,7 @@ function buildAxisTaps(
       const w = kernel(filter, (s - center) / scale)
       if (w === 0) continue
       // Edge clamp: replicate the border pixel for out-of-range taps.
-      const clamped = s < 0 ? 0 : s > srcLen - 1 ? srcLen - 1 : s
+      const clamped = Math.max(0, Math.min(s, srcLen - 1))
       indices.push(clamped)
       weights.push(w)
       sum += w
@@ -106,7 +106,7 @@ function buildAxisTaps(
 }
 
 function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v
+  return Math.max(0, Math.min(v, 1))
 }
 
 /**

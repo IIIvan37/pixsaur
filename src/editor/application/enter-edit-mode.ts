@@ -79,11 +79,8 @@ export function enterEditMode(input: EnterEditModeInput): EditSession {
   } = input
 
   // EGX1 uses Mode 1 dimensions (square pixels); EGX2 uses Mode 2 (tall pixels).
-  const pixelMode: PixelMode = egxEnabled
-    ? egxType === 'egx1'
-      ? 1
-      : 2
-    : configPixelMode
+  const egxPixelMode: PixelMode = egxType === 'egx1' ? 1 : 2
+  const pixelMode: PixelMode = egxEnabled ? egxPixelMode : configPixelMode
 
   return {
     originalBuffer: new Uint8Array(baseBufferRaw ?? effective.buffer),

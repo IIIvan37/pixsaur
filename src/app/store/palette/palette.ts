@@ -51,7 +51,7 @@ export const userPaletteAtom = atom(
     const stored = get(paletteStorageAtom)
     // Convertir les arrays en tuples Vector<'RGB'>
     return stored.map((slot) => ({
-      color: slot.color as Vector<'RGB'> | null,
+      color: slot.color,
       locked: slot.locked
     })) as PaletteSlot[]
   },
@@ -59,7 +59,7 @@ export const userPaletteAtom = atom(
     const prev = get(paletteStorageAtom)
     // Convertir pour la comparaison
     const prevPalette = prev.map((slot) => ({
-      color: slot.color as Vector<'RGB'> | null,
+      color: slot.color,
       locked: slot.locked
     })) as PaletteSlot[]
 
@@ -106,9 +106,7 @@ export const onClearSlotAtom = atom(null, (get, set, idx: number) => {
 
 export const lockedVectorsAtom = atom((get) => {
   const { nColors } = get(effectiveModeConfigAtom)
-  return extractLockedColors(
-    get(userPaletteAtom).slice(0, nColors)
-  ) as Vector<'RGB'>[]
+  return extractLockedColors(get(userPaletteAtom).slice(0, nColors))
 })
 
 // Compte le nombre de slots vides verrouilles (pour reduire le nombre de couleurs a generer)

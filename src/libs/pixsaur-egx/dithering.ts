@@ -44,6 +44,15 @@ function computeEGXPaletteBounds(palette: Vector<'RGB'>[]): {
   return { min, max }
 }
 
+/**
+ * Build the per-pixel error clamp shared by the EGX error-diffusion ditherers.
+ * When correction is enabled, the quantization error is clamped to ±`clamp` to
+ * prevent smearing; otherwise it passes through unchanged.
+ */
+function makeErrorClamp(enabled: boolean, clamp: number) {
+  return (v: number) => (enabled ? Math.max(-clamp, Math.min(clamp, v)) : v)
+}
+
 // ============================================================================
 // EGX Pixel Grouping
 // ============================================================================
@@ -133,10 +142,7 @@ function applyEGXFloydSteinbergDithering(
   const bounds = useDiffusionCorrection
     ? computeEGXPaletteBounds(palette)
     : null
-  const clampErr = (v: number) =>
-    useDiffusionCorrection
-      ? Math.max(-ERROR_CLAMP, Math.min(ERROR_CLAMP, v))
-      : v
+  const clampErr = makeErrorClamp(useDiffusionCorrection, ERROR_CLAMP)
 
   // Floyd-Steinberg weights
   const FS_RIGHT = (7 / 16) * intensity
@@ -260,10 +266,7 @@ function applyEGXOstromoukhovDithering(
   const bounds = useDiffusionCorrection
     ? computeEGXPaletteBounds(palette)
     : null
-  const clampErr = (v: number) =>
-    useDiffusionCorrection
-      ? Math.max(-ERROR_CLAMP, Math.min(ERROR_CLAMP, v))
-      : v
+  const clampErr = makeErrorClamp(useDiffusionCorrection, ERROR_CLAMP)
 
   for (let y = 0; y < height; y++) {
     // Get the sub-palette limit for this line
@@ -517,10 +520,7 @@ function applyEGXAtkinsonDithering(
   const bounds = useDiffusionCorrection
     ? computeEGXPaletteBounds(palette)
     : null
-  const clampErr = (v: number) =>
-    useDiffusionCorrection
-      ? Math.max(-ERROR_CLAMP, Math.min(ERROR_CLAMP, v))
-      : v
+  const clampErr = makeErrorClamp(useDiffusionCorrection, ERROR_CLAMP)
 
   // Atkinson distributes 1/8 of error to 6 neighbors (total 6/8 = 3/4)
   const weight = (1 / 8) * intensity

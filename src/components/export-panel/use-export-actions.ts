@@ -238,11 +238,10 @@ export function useExportActions(): UseExportActions {
     notify
   ])
 
-  const canExport = modeREnabled
-    ? !!modeRExportData
-    : egxEnabled
-      ? !!egxExportData
-      : !!finalPreviewIndexBuffer
+  const fallbackCanExport = egxEnabled
+    ? !!egxExportData
+    : !!finalPreviewIndexBuffer
+  const canExport = modeREnabled ? !!modeRExportData : fallbackCanExport
 
   return {
     canExport,

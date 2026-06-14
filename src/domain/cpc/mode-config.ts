@@ -105,7 +105,7 @@ export function buildCpcModeKey(
   if (dimensionPreset === 'standard') {
     return pixelMode.toString() as CpcModeKey
   }
-  return `${pixelMode}-overscan` as CpcModeKey
+  return `${pixelMode}-overscan`
 }
 
 /**
