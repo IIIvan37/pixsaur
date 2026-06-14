@@ -117,9 +117,7 @@ async function entriesOf(blob: Blob | null): Promise<string[]> {
   return Object.keys(zip.files).sort()
 }
 
-// In the non-EGX classic/plus paths the palette ASM files are written
-// unconditionally (the dedicated palette exporters ignore the content flag),
-// so they are always present in the archive.
+// Palette ASM files are emitted only when `includePalettes` is enabled.
 const CLASSIC_PALETTE_FILES = ['palette_firmware.asm', 'palette_hardware.asm']
 const PLUS_PALETTE_FILES = ['palette_plus.asm']
 
@@ -158,9 +156,8 @@ describe('buildExportZipBlob', () => {
     })
 
     expect(blob).toBeInstanceOf(Blob)
-    // No selectable formats enabled, but the classic palette files are always
-    // emitted by the dedicated palette exporters (they ignore the flag).
-    expect(await entriesOf(blob)).toEqual(CLASSIC_PALETTE_FILES)
+    // Nothing enabled -> empty archive (palettes are gated by includePalettes).
+    expect(await entriesOf(blob)).toEqual([])
   })
 
   describe('CPC Classic', () => {
@@ -185,10 +182,7 @@ describe('buildExportZipBlob', () => {
         )
       })
 
-      expect(await entriesOf(blob)).toEqual([
-        'MyImage.asm',
-        ...CLASSIC_PALETTE_FILES
-      ])
+      expect(await entriesOf(blob)).toEqual(['MyImage.asm'])
     })
 
     it('uses the default media label when labels are disabled', async () => {
@@ -212,10 +206,7 @@ describe('buildExportZipBlob', () => {
         )
       })
 
-      expect(await entriesOf(blob)).toEqual([
-        ...CLASSIC_PALETTE_FILES,
-        'pixsaur_data.asm'
-      ])
+      expect(await entriesOf(blob)).toEqual(['pixsaur_data.asm'])
     })
 
     it('includes the linear ASM file when includeLinear is enabled', async () => {
@@ -229,13 +220,10 @@ describe('buildExportZipBlob', () => {
         config: makeConfig({ includeLinear: true })
       })
 
-      expect(await entriesOf(blob)).toEqual([
-        ...CLASSIC_PALETTE_FILES,
-        'pixsaur_data_linear.asm'
-      ])
+      expect(await entriesOf(blob)).toEqual(['pixsaur_data_linear.asm'])
     })
 
-    it('always emits both classic palette files in the standard path', async () => {
+    it('emits both classic palette files when includePalettes is enabled', async () => {
       const blob = await buildExportZipBlob({
         indexBuf: makeIndexBuf(MODE0_STANDARD),
         paletteFirmware: makeFirmwarePalette(),
@@ -261,7 +249,8 @@ describe('buildExportZipBlob', () => {
         rasterChanges: []
       })
 
-      expect(await entriesOf(blob)).toEqual(CLASSIC_PALETTE_FILES)
+      // No raster changes and nothing else enabled -> empty archive.
+      expect(await entriesOf(blob)).toEqual([])
     })
 
     it('includes rasters.asm when raster changes exist and rasters are enabled', async () => {
@@ -280,10 +269,7 @@ describe('buildExportZipBlob', () => {
         rasterChanges
       })
 
-      expect(await entriesOf(blob)).toEqual([
-        ...CLASSIC_PALETTE_FILES,
-        'rasters.asm'
-      ])
+      expect(await entriesOf(blob)).toEqual(['rasters.asm'])
     })
 
     it('omits rasters.asm when raster changes exist but rasters are disabled', async () => {
@@ -302,8 +288,8 @@ describe('buildExportZipBlob', () => {
         rasterChanges
       })
 
-      // rasters.asm omitted; only the always-present palette files remain.
-      expect(await entriesOf(blob)).toEqual(CLASSIC_PALETTE_FILES)
+      // rasters.asm omitted and nothing else enabled -> empty archive.
+      expect(await entriesOf(blob)).toEqual([])
     })
 
     it('bundles SCR, linear and palette files together when all enabled', async () => {
@@ -355,13 +341,10 @@ describe('buildExportZipBlob', () => {
         config: makeConfig({ includeSCR: true })
       })
 
-      expect(await entriesOf(blob)).toEqual([
-        ...PLUS_PALETTE_FILES,
-        'pixsaur_data.asm'
-      ])
+      expect(await entriesOf(blob)).toEqual(['pixsaur_data.asm'])
     })
 
-    it('always emits the Plus palette file in the standard path', async () => {
+    it('emits the Plus palette file when includePalettes is enabled', async () => {
       const blob = await buildExportZipBlob({
         indexBuf: makeIndexBuf(MODE0_STANDARD),
         paletteFirmware: makeFirmwarePalette(),
@@ -386,10 +369,7 @@ describe('buildExportZipBlob', () => {
         config: makeConfig({ includeLinear: true })
       })
 
-      expect(await entriesOf(blob)).toEqual([
-        ...PLUS_PALETTE_FILES,
-        'pixsaur_data_linear.asm'
-      ])
+      expect(await entriesOf(blob)).toEqual(['pixsaur_data_linear.asm'])
     })
   })
 
@@ -428,10 +408,7 @@ describe('buildExportZipBlob', () => {
         config: makeConfig({ includePNG: true })
       })
 
-      expect(await entriesOf(blob)).toEqual([
-        ...CLASSIC_PALETTE_FILES,
-        'pixsaur.png'
-      ])
+      expect(await entriesOf(blob)).toEqual(['pixsaur.png'])
     })
   })
 
