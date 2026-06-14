@@ -56,6 +56,17 @@ const BAYER_MATRICES: Record<string, { size: number; data: number[] }> = {
 /**
  * GPU-accelerated Mode R quantizer using ReGL
  */
+export interface ModeRQuantizeParams {
+  imageData: Uint8ClampedArray
+  width: number
+  height: number
+  palettes: ModeRPalettes
+  flickerWeight: number
+  maxLuminanceDelta: number
+  ditheringMode?: DitheringMode | 'none'
+  ditheringIntensity?: number
+}
+
 export class ModeRGPUQuantizer {
   private readonly regl: REGL.Regl
   private quantizeCommand?: REGL.DrawCommand
@@ -242,16 +253,19 @@ export class ModeRGPUQuantizer {
    * Quantize image using GPU
    * Returns index buffers A and B
    */
-  quantize(
-    imageData: Uint8ClampedArray,
-    width: number,
-    height: number,
-    palettes: ModeRPalettes,
-    flickerWeight: number,
-    maxLuminanceDelta: number,
-    ditheringMode: DitheringMode | 'none' = 'bayer4x4',
-    ditheringIntensity: number = 50
-  ): { indexBufferA: Uint8Array; indexBufferB: Uint8Array } | null {
+  quantize({
+    imageData,
+    width,
+    height,
+    palettes,
+    flickerWeight,
+    maxLuminanceDelta,
+    ditheringMode = 'bayer4x4',
+    ditheringIntensity = 50
+  }: ModeRQuantizeParams): {
+    indexBufferA: Uint8Array
+    indexBufferB: Uint8Array
+  } | null {
     if (!this.isInitialized || !this.quantizeCommand) {
       logger.warn('[Mode R GPU] Not initialized, falling back to CPU')
       return null

@@ -649,9 +649,13 @@ describe('ReGLProcessor', () => {
         writable: true
       })
 
-      processor.applyAdjustmentsSync(imageData, mockAdjustmentConfig)
+      const result = processor.applyAdjustmentsSync(
+        imageData,
+        mockAdjustmentConfig
+      )
 
       // Les logs de performance sont gérés par adapterLogger, mocké au niveau global
+      expect(result).toBeInstanceOf(ImageData)
     })
 
     test("devrait logger les informations d'initialisation", () => {

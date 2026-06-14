@@ -311,7 +311,7 @@ export function optimizeLinePalettesWithIndexBuffer(
         )
 
     // Collect and apply changes
-    const lineChanges = collectLineChanges(
+    const lineChanges = collectLineChanges({
       line,
       currentPalette,
       newPalette,
@@ -321,7 +321,7 @@ export function optimizeLinePalettesWithIndexBuffer(
       data,
       width,
       quantizeColor
-    )
+    })
 
     // Apply maxChangesPerLine constraint
     const finalPalette = applyChangeLimit(
@@ -564,17 +564,29 @@ interface LineChange {
   impact: number
 }
 
-function collectLineChanges(
-  line: number,
-  currentPalette: Vector<'RGB'>[],
-  newPalette: Vector<'RGB'>[],
-  rasterSlotStart: number,
-  rasterSlotEnd: number,
-  existingChangeSet: Set<string>,
-  data: Uint8ClampedArray,
-  width: number,
+interface CollectLineChangesParams {
+  line: number
+  currentPalette: Vector<'RGB'>[]
+  newPalette: Vector<'RGB'>[]
+  rasterSlotStart: number
+  rasterSlotEnd: number
+  existingChangeSet: Set<string>
+  data: Uint8ClampedArray
+  width: number
   quantizeColor: (color: Vector<'RGB'>) => Vector<'RGB'>
-): LineChange[] {
+}
+
+function collectLineChanges({
+  line,
+  currentPalette,
+  newPalette,
+  rasterSlotStart,
+  rasterSlotEnd,
+  existingChangeSet,
+  data,
+  width,
+  quantizeColor
+}: CollectLineChangesParams): LineChange[] {
   const lineChanges: LineChange[] = []
 
   for (let inkIndex = rasterSlotStart; inkIndex < rasterSlotEnd; inkIndex++) {

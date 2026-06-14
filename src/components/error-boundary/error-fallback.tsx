@@ -4,10 +4,10 @@ import Icon from '@/components/ui/icon'
 import { isDevelopment } from '@/core'
 import styles from './error-boundary.module.css'
 
-export type ErrorFallbackProps = {
+export type ErrorFallbackProps = Readonly<{
   error: Error | null
   onReset: () => void
-}
+}>
 
 /**
  * User-facing recovery UI rendered when a render-time error is caught by

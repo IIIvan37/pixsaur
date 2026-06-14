@@ -16,9 +16,10 @@ export function useUnsavedChangesWarning() {
     if (!hasManualEdits) return
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Per the current spec, calling preventDefault() is enough to trigger the
+      // browser's native "leave site?" confirmation (the legacy returnValue
+      // assignment is deprecated).
       event.preventDefault()
-      // Legacy requirement: some browsers need returnValue set to show the prompt.
-      event.returnValue = ''
     }
 
     globalThis.addEventListener('beforeunload', handleBeforeUnload)
