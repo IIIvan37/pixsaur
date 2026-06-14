@@ -88,6 +88,42 @@ const DEFAULT_ORDERED_CORRECTION: OrderedCorrectionOptions = Object.freeze({
   enabled: true
 })
 
+/** Params for the error-diffusion ditherers (Floyd-Steinberg, Ostromoukhov). */
+interface ErrorDiffusionDitherParams {
+  bufCS: Float32Array
+  width: number
+  height: number
+  paletteCS: Float32Array[]
+  paletteOut: Uint8ClampedArray[]
+  distFn: DistanceFn
+  intensity: number
+  correction: DiffusionCorrectionOptions
+}
+
+/** Params for the blue-noise ditherer. */
+interface BlueNoiseDitherParams {
+  bufCS: Float32Array
+  width: number
+  height: number
+  paletteCS: Float32Array[]
+  paletteOut: Uint8ClampedArray[]
+  intensity: number
+  distFn: DistanceFn
+  correction?: OrderedCorrectionOptions
+}
+
+/** Params for Bayer dithering with dynamic per-line palettes. */
+interface BayerDynamicDitherParams {
+  bufCS: Float32Array
+  width: number
+  height: number
+  getPaletteForLine: (y: number) => Vector[]
+  mode: BayerMode
+  intensity: number
+  distFn: DistanceFn
+  correction?: OrderedCorrectionOptions
+}
+
 function resolveDiffusionCorrectionOptions(
   config: DitheringConfig
 ): DiffusionCorrectionOptions {
@@ -541,16 +577,16 @@ export function applyNoDither(
   return out
 }
 
-export function applyBlueNoiseDither(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
-  intensity: number,
-  distFn: DistanceFn,
-  correction: OrderedCorrectionOptions = DEFAULT_ORDERED_CORRECTION
-): Uint8ClampedArray {
+export function applyBlueNoiseDither({
+  bufCS,
+  width,
+  height,
+  paletteCS,
+  paletteOut,
+  intensity,
+  distFn,
+  correction = DEFAULT_ORDERED_CORRECTION
+}: BlueNoiseDitherParams): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
   // Adaptive amplitude: scale by 1/sqrt(paletteSize) so larger palettes get less noise
@@ -622,16 +658,16 @@ import { getOstromoukhovCoefficients } from './ostromoukhov-coefficients'
  *   Left-to-right:  X -> right, down-left, down
  *   Right-to-left:  X -> left, down-right, down
  */
-export function applyOstromoukhovDither(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
-  distFn: DistanceFn,
-  intensity: number,
-  correction: DiffusionCorrectionOptions
-): Uint8ClampedArray {
+export function applyOstromoukhovDither({
+  bufCS,
+  width,
+  height,
+  paletteCS,
+  paletteOut,
+  distFn,
+  intensity,
+  correction
+}: ErrorDiffusionDitherParams): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
   const errorBuf = new Float32Array(bufCS) // working copy
@@ -731,16 +767,16 @@ import { findClosestColorIndex } from '../metric/find-closest'
 import type { DitheringConfig } from '../quant'
 import type { ColorSpace, Vector } from '../type'
 
-export function applyFloydSteinbergDither(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
-  distFn: DistanceFn,
-  intensity: number,
-  correction: DiffusionCorrectionOptions
-): Uint8ClampedArray {
+export function applyFloydSteinbergDither({
+  bufCS,
+  width,
+  height,
+  paletteCS,
+  paletteOut,
+  distFn,
+  intensity,
+  correction
+}: ErrorDiffusionDitherParams): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
   const w3 = width * 3
@@ -894,16 +930,16 @@ const DITHER_MODES: Record<string, DitherFn> = {
     config,
     distFn
   ) =>
-    applyFloydSteinbergDither(
+    applyFloydSteinbergDither({
       bufCS,
       width,
       height,
       paletteCS,
       paletteOut,
       distFn,
-      config.intensity,
-      resolveDiffusionCorrectionOptions(config)
-    ),
+      intensity: config.intensity,
+      correction: resolveDiffusionCorrectionOptions(config)
+    }),
 
   bayer2x2: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
     applyBayerDither(
@@ -980,27 +1016,27 @@ const DITHER_MODES: Record<string, DitherFn> = {
       distFn
     ),
   blueNoise: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
-    applyBlueNoiseDither(
+    applyBlueNoiseDither({
       bufCS,
       width,
       height,
       paletteCS,
       paletteOut,
-      config.intensity,
+      intensity: config.intensity,
       distFn,
-      resolveOrderedCorrectionOptions(config)
-    ),
+      correction: resolveOrderedCorrectionOptions(config)
+    }),
   ostromoukhov: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
-    applyOstromoukhovDither(
+    applyOstromoukhovDither({
       bufCS,
       width,
       height,
       paletteCS,
       paletteOut,
       distFn,
-      config.intensity,
-      resolveDiffusionCorrectionOptions(config)
-    )
+      intensity: config.intensity,
+      correction: resolveDiffusionCorrectionOptions(config)
+    })
 }
 
 /**
@@ -1009,16 +1045,16 @@ const DITHER_MODES: Record<string, DitherFn> = {
 /**
  * Apply Bayer dithering with dynamic per-line palettes
  */
-function applyBayerDitherWithDynamicPalette(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  getPaletteForLine: (y: number) => Vector[],
-  mode: BayerMode,
-  intensity: number,
-  distFn: DistanceFn,
-  correction: OrderedCorrectionOptions = DEFAULT_ORDERED_CORRECTION
-): Uint8ClampedArray {
+function applyBayerDitherWithDynamicPalette({
+  bufCS,
+  width,
+  height,
+  getPaletteForLine,
+  mode,
+  intensity,
+  distFn,
+  correction = DEFAULT_ORDERED_CORRECTION
+}: BayerDynamicDitherParams): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
   const bayerMatrix = BAYER_MATRICES[mode]
@@ -1318,16 +1354,16 @@ export function mapAndDitherWithDynamicPalette(
     case 'bayer4x4':
     case 'bayer8x8':
     case 'halftone4x4':
-      return applyBayerDitherWithDynamicPalette(
+      return applyBayerDitherWithDynamicPalette({
         bufCS,
         width,
         height,
         getPaletteForLine,
         mode,
-        config.intensity,
+        intensity: config.intensity,
         distFn,
-        resolveOrderedCorrectionOptions(config)
-      )
+        correction: resolveOrderedCorrectionOptions(config)
+      })
     case 'blueNoise':
       return applyBlueNoiseDitherWithDynamicPalette(
         bufCS,
