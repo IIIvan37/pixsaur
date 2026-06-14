@@ -254,16 +254,16 @@ describe('Map and Dither', () => {
       ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
-      const result = applyFloydSteinbergDither(
+      const result = applyFloydSteinbergDither({
         bufCS,
-        2,
-        1,
+        width: 2,
+        height: 1,
         paletteCS,
         paletteOut,
         distFn,
-        0.5,
-        { enabled: true, errorClamp: 64 }
-      )
+        intensity: 0.5,
+        correction: { enabled: true, errorClamp: 64 }
+      })
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
       expect(result.length).toBe(8)
