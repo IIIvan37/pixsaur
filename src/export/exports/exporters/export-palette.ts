@@ -10,8 +10,9 @@ export function exportPalettePlus(
   zip: JSZip,
   cpcPaletteValues: number[],
   modeConfig: CpcModeConfig,
-  _config: ExportConfig
+  config: ExportConfig
 ) {
+  if (!config.content.includePalettes) return
   const asm = cpcPlusValuesToASM(cpcPaletteValues, 'Palette')
   const header = getHeader(modeConfig, 'Palette', true)
   zip.file('palette_plus.asm', header + asm)
@@ -39,8 +40,9 @@ function generateHardwarePaletteAsm(
 export function exportPalettesClassic(
   zip: JSZip,
   paletteFirmware: number[],
-  _config: ExportConfig
+  config: ExportConfig
 ) {
+  if (!config.content.includePalettes) return
   // Export firmware palette
   const firmwareAsm = generatePaletteAsm(paletteFirmware, 'Palette_Firmware')
   zip.file('palette_firmware.asm', firmwareAsm)
