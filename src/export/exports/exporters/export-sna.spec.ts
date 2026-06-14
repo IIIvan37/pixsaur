@@ -417,4 +417,504 @@ describe('export-sna', () => {
       expect(result.error).toBe('Unexpected error')
     })
   })
+
+  // ===========================================================================
+  // Standard SCR export (exportSna / generateSnaAsmSource)
+  // ===========================================================================
+
+  const fullFirmware = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+  describe('generateSnaAsmSource - standard SCR', () => {
+    it('should return null when paletteFirmware is missing for classic', async () => {
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        hasRasters: false
+      })
+
+      expect(result).toBeNull()
+    })
+
+    it('should return null when palettePlus is missing for plus', async () => {
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'plus',
+        hasRasters: false
+      })
+
+      expect(result).toBeNull()
+    })
+
+    it('should return null when SCR image generation fails', async () => {
+      mockToASMData.mockReturnValueOnce([])
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toBeNull()
+    })
+
+    it('should emit classic palette DB bytes mapped via firmwareToHardware', async () => {
+      mockToASMData.mockReturnValue('; Image data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).not.toBeNull()
+      expect(result).toContain('Palette_Hardware:')
+      // firmware 0 -> 0x54, firmware 13 -> 0x40
+      expect(result).toContain(
+        '#54,#44,#55,#5C,#58,#5D,#4C,#45,#4D,#56,#46,#57,#5E,#40,#5F,#4E'
+      )
+    })
+
+    it('should place SCR image at org #c000 (standard, not overscan)', async () => {
+      mockToASMData.mockReturnValue('; Image data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toContain('; === IMAGE DATA ===')
+      expect(result).toContain('org #c000')
+      expect(result).not.toContain('org #4268')
+    })
+
+    it('should emit mode 0 gate-array register #7c8C', async () => {
+      mockToASMData.mockReturnValue('; Image data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: { ...defaultModeConfig, mode: 0 },
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toContain('#7c8C')
+    })
+
+    it('should emit mode 1 gate-array register #7c8D', async () => {
+      mockToASMData.mockReturnValue('; Image data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: {
+          mode: 1,
+          width: 320,
+          height: 200,
+          overscan: false,
+          nColors: 4,
+          scaleX: 1,
+          scaleY: 1
+        },
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toContain('#7c8D')
+    })
+
+    it('should emit mode 2 gate-array register #7c8E', async () => {
+      mockToASMData.mockReturnValue('; Image data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: {
+          mode: 2,
+          width: 640,
+          height: 200,
+          overscan: false,
+          nColors: 2,
+          scaleX: 1,
+          scaleY: 1
+        },
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toContain('#7c8E')
+    })
+
+    it('should emit plus DEFW palette and CPC_TYPE 4 for plus hardware', async () => {
+      mockToASMData.mockReturnValue('; Image data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'plus',
+        palettePlus: [0x000, 0xfff, 0x123],
+        hasRasters: false
+      })
+
+      expect(result).not.toBeNull()
+      expect(result).toContain('SNASET CPC_TYPE, 4')
+      expect(result).toContain('Palette:')
+      expect(result).toContain('DEFW')
+      // 0x000 -> #0000, 0xfff -> #0FFF, 0x123 -> #0123
+      expect(result).toContain('#0000, #0FFF, #0123')
+      expect(result).toContain('Asic_unlock')
+    })
+
+    it('should include raster data section when hasRasters is true', async () => {
+      mockToASMData.mockReturnValue('; Image data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        rasterAsm: 'RasterData:\n    DB #00',
+        hasRasters: true
+      })
+
+      expect(result).toContain('; === RASTER DATA ===')
+      expect(result).toContain('RasterData:')
+      expect(result).toContain('jmp_table')
+    })
+
+    it('should return null on unexpected exception', async () => {
+      mockToASMData.mockImplementation(() => {
+        throw new Error('boom')
+      })
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('generateSnaAsmSource - overscan', () => {
+    const overscanConfig: CpcModeConfig = {
+      mode: 0,
+      width: 192,
+      height: 272,
+      overscan: true,
+      nColors: 16,
+      scaleX: 2,
+      scaleY: 1
+    }
+
+    beforeEach(() => {
+      mockExportLinearAsm.mockReturnValue(new Uint8Array(100))
+      mockSplitLinearIntoChunks.mockReturnValue([
+        { data: new Uint8Array(50), index: 1 }
+      ])
+    })
+
+    it('should return null when linear image generation yields no chunks', async () => {
+      mockSplitLinearIntoChunks.mockReturnValue([])
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: overscanConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toBeNull()
+    })
+
+    it('should place image at org #4268 and program at org #b000', async () => {
+      mockToASMData.mockReturnValue('; chunk data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: overscanConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).not.toBeNull()
+      expect(result).toContain('org #4268')
+      expect(result).toContain('org #b000')
+      expect(result).not.toContain('org #c000')
+    })
+
+    it('should append second chunk when linear data spans two chunks', async () => {
+      mockSplitLinearIntoChunks.mockReturnValue([
+        { data: new Uint8Array(50), index: 1 },
+        { data: new Uint8Array(50), index: 2 }
+      ])
+      mockToASMData.mockReturnValueOnce('; chunk0 data')
+      mockToASMData.mockReturnValueOnce('; chunk1 data')
+
+      const { generateSnaAsmSource } = await import('./export-sna')
+
+      const result = generateSnaAsmSource({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: overscanConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result).toContain('; chunk0 data')
+      expect(result).toContain('; chunk1 data')
+    })
+  })
+
+  describe('exportSna', () => {
+    beforeEach(() => {
+      mockToASMData.mockReturnValue('; Image data')
+    })
+
+    it('should return error when firmware palette missing for classic', async () => {
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Firmware palette required')
+    })
+
+    it('should return error when plus palette missing for plus', async () => {
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'plus',
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('CPC Plus palette required')
+    })
+
+    it('should return error when SCR image generation fails', async () => {
+      // toASMData returns an empty chunk array -> [0]?.content is null
+      mockToASMData.mockReturnValue([])
+
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Failed to generate SCR image data')
+    })
+
+    it('should return error when linear image generation fails (overscan)', async () => {
+      mockExportLinearAsm.mockReturnValue(new Uint8Array(100))
+      mockSplitLinearIntoChunks.mockReturnValue([])
+
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: {
+          mode: 0,
+          width: 192,
+          height: 272,
+          overscan: true,
+          nColors: 16,
+          scaleX: 2,
+          scaleY: 1
+        },
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Failed to generate linear image data')
+    })
+
+    it('should return error when RASM assembly fails', async () => {
+      mockRasmAssemble.mockResolvedValue({
+        success: false,
+        output: 'bad opcode'
+      })
+
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Assembly failed')
+      expect(result.asmSource).toBeDefined()
+    })
+
+    it('should return error when no snapshot is generated', async () => {
+      mockRasmAssemble.mockResolvedValue({
+        success: true,
+        snapshot: undefined,
+        output: ''
+      })
+
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('No snapshot generated')
+    })
+
+    it('should return success with snapshot for classic standard', async () => {
+      const snapshotData = new Uint8Array([
+        0x4d, 0x56, 0x20, 0x2d, 0x20, 0x53, 0x4e, 0x41
+      ])
+      mockRasmAssemble.mockResolvedValue({
+        success: true,
+        snapshot: snapshotData,
+        output: ''
+      })
+
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false,
+        filename: 'my_export'
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.snapshot).toEqual(snapshotData)
+      expect(result.asmSource).toContain('Palette_Hardware:')
+    })
+
+    it('should pass filename through to RASM assemble options', async () => {
+      mockRasmAssemble.mockResolvedValue({
+        success: true,
+        snapshot: new Uint8Array([1, 2, 3]),
+        output: ''
+      })
+
+      const { exportSna } = await import('./export-sna')
+
+      await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false,
+        filename: 'custom_name'
+      })
+
+      const [, opts] = mockRasmAssemble.mock.calls[0]
+      expect(opts).toMatchObject({
+        outputFile: 'custom_name.bin',
+        exportType: 'snapshot',
+        snapshotFile: 'custom_name.sna'
+      })
+    })
+
+    it('should return success for plus hardware', async () => {
+      mockRasmAssemble.mockResolvedValue({
+        success: true,
+        snapshot: new Uint8Array([0x4d, 0x56]),
+        output: ''
+      })
+
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'plus',
+        palettePlus: [0x000, 0xfff],
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.asmSource).toContain('SNASET CPC_TYPE, 4')
+    })
+
+    it('should handle exceptions gracefully', async () => {
+      mockToASMData.mockImplementation(() => {
+        throw new Error('kaboom')
+      })
+
+      const { exportSna } = await import('./export-sna')
+
+      const result = await exportSna({
+        indexBuf: new Uint8Array([0, 1, 2, 3]),
+        modeConfig: defaultModeConfig,
+        hardware: 'classic',
+        paletteFirmware: fullFirmware,
+        hasRasters: false
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('kaboom')
+    })
+  })
 })
