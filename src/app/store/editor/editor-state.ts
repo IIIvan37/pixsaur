@@ -2,18 +2,18 @@ import { atom } from 'jotai'
 import type { PixelMode } from '@/app/store/config/types'
 // Domain types now live in the application layer; imported for local use and
 // re-exported below for the store's many consumers (preview pipeline, barrels).
-import {
-  type EditHistoryEntry,
-  MAX_HISTORY_SIZE,
-  type PixelEdit
-} from '@/editor/application/types'
+import type { EditHistoryEntry } from '@/editor/application/types'
 import { getAspectRatioMultipliers } from '@/export/cpc-calculations'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import { getMaxColorIndex, getModeForLine } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 
-export { type EditHistoryEntry, MAX_HISTORY_SIZE, type PixelEdit }
+export type { EditHistoryEntry }
+export {
+  MAX_HISTORY_SIZE,
+  type PixelEdit
+} from '@/editor/application/types'
 
 // ============================================================================
 // État de l'éditeur de preview

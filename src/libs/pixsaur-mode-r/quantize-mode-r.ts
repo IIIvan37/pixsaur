@@ -333,14 +333,14 @@ export function quantizeModeR(
     const gpuQuantizer = getModeRGPUQuantizer()
     if (gpuQuantizer?.isAvailable()) {
       logger.info('[Mode R] Using GPU quantization')
-      const gpuResult = gpuQuantizer.quantize(
+      const gpuResult = gpuQuantizer.quantize({
         imageData,
         width,
         height,
         palettes,
-        config.antiFlickerWeight,
-        config.maxLuminanceDelta
-      )
+        flickerWeight: config.antiFlickerWeight,
+        maxLuminanceDelta: config.maxLuminanceDelta
+      })
       if (gpuResult) {
         // Count unique blends used
         const usedBlends = new Set<string>()

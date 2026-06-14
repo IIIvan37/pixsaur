@@ -261,7 +261,7 @@ export function preprocessImageForRaster(
       .map(() => [0, 0, 0])
 
     if (shouldApplyDithering) {
-      processLineWithDithering(
+      processLineWithDithering({
         line,
         width,
         data,
@@ -270,7 +270,7 @@ export function preprocessImageForRaster(
         newVerticalError,
         quantizedPalette,
         ditheringIntensity
-      )
+      })
     } else {
       processLineWithoutDithering(
         line,
@@ -292,16 +292,27 @@ export function preprocessImageForRaster(
 // Line Processing Helpers
 // ============================================================================
 
-function processLineWithDithering(
-  line: number,
-  width: number,
-  data: Uint8ClampedArray,
-  outputData: Uint8ClampedArray,
-  verticalError: [number, number, number][],
-  newVerticalError: [number, number, number][],
-  quantizedPalette: Vector<'RGB'>[],
+interface ProcessLineWithDitheringParams {
+  line: number
+  width: number
+  data: Uint8ClampedArray
+  outputData: Uint8ClampedArray
+  verticalError: [number, number, number][]
+  newVerticalError: [number, number, number][]
+  quantizedPalette: Vector<'RGB'>[]
   ditheringIntensity: number
-): void {
+}
+
+function processLineWithDithering({
+  line,
+  width,
+  data,
+  outputData,
+  verticalError,
+  newVerticalError,
+  quantizedPalette,
+  ditheringIntensity
+}: ProcessLineWithDitheringParams): void {
   const lineStart = line * width * 4
   const horizError: [number, number, number][] = new Array(width)
     .fill(null)
