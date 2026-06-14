@@ -83,6 +83,11 @@ interface OrderedCorrectionOptions {
   enabled: boolean
 }
 
+/** Shared default so callers that omit `correction` reuse one frozen object. */
+const DEFAULT_ORDERED_CORRECTION: OrderedCorrectionOptions = Object.freeze({
+  enabled: true
+})
+
 function resolveDiffusionCorrectionOptions(
   config: DitheringConfig
 ): DiffusionCorrectionOptions {
@@ -544,7 +549,7 @@ export function applyBlueNoiseDither(
   paletteOut: Uint8ClampedArray[],
   intensity: number,
   distFn: DistanceFn,
-  correction: OrderedCorrectionOptions = { enabled: true }
+  correction: OrderedCorrectionOptions = DEFAULT_ORDERED_CORRECTION
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
@@ -1012,7 +1017,7 @@ function applyBayerDitherWithDynamicPalette(
   mode: BayerMode,
   intensity: number,
   distFn: DistanceFn,
-  correction: OrderedCorrectionOptions = { enabled: true }
+  correction: OrderedCorrectionOptions = DEFAULT_ORDERED_CORRECTION
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
@@ -1134,7 +1139,7 @@ function applyBlueNoiseDitherWithDynamicPalette(
   getPaletteForLine: (y: number) => Vector[],
   intensity: number,
   distFn: DistanceFn,
-  correction: OrderedCorrectionOptions = { enabled: true }
+  correction: OrderedCorrectionOptions = DEFAULT_ORDERED_CORRECTION
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixel = new Float32Array(3)
@@ -1318,7 +1323,7 @@ export function mapAndDitherWithDynamicPalette(
         width,
         height,
         getPaletteForLine,
-        mode as BayerMode,
+        mode,
         config.intensity,
         distFn,
         resolveOrderedCorrectionOptions(config)

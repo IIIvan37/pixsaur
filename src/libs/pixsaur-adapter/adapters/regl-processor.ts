@@ -44,7 +44,7 @@ import { ReGLQuantizer } from './regl-quantizer'
  * Phase 1: Infrastructure ReGL prête avec fallback CPU
  */
 export class ReGLProcessor implements ImageProcessor {
-  readonly type: 'regl' | 'cpu-fallback'
+  readonly type: 'regl' | 'cpu-fallback' = 'cpu-fallback'
   readonly isAvailable: boolean
 
   // ReGL et quantizer (Phase 1: préparation pour GPU)
@@ -72,8 +72,6 @@ export class ReGLProcessor implements ImageProcessor {
   }
 
   constructor(regl?: REGL.Regl) {
-    this.type = 'cpu-fallback'
-
     // Évaluer si ReGL pourrait être utilisé
     this.reglCapabilities = this.evaluateReGLCapabilities()
 
@@ -576,7 +574,7 @@ export class ReGLProcessor implements ImageProcessor {
       const sharpen = adjustments.sharpen ?? 0
       const blur = adjustments.blur ?? 0
       const blurPasses = getBlurPassCount(blur)
-      const sharpenPasses = sharpen !== 0 ? 1 : 0
+      const sharpenPasses = sharpen === 0 ? 0 : 1
       convolutionPasses = blurPasses + sharpenPasses
 
       // Texture de sortie finale
@@ -710,11 +708,10 @@ export class ReGLProcessor implements ImageProcessor {
 
     // Lecture du résultat final
     const resultData = new Uint8ClampedArray(width * height * 4)
-    const finalFramebuffer = hasEdges
-      ? edgesFramebuffer
-      : hasConvolution
-        ? convolutionFramebuffer
-        : adjustmentFramebuffer
+    const nonEdgeFramebuffer = hasConvolution
+      ? convolutionFramebuffer
+      : adjustmentFramebuffer
+    const finalFramebuffer = hasEdges ? edgesFramebuffer : nonEdgeFramebuffer
     this.regl!.read({
       framebuffer: finalFramebuffer,
       data: new Uint8Array(resultData.buffer)

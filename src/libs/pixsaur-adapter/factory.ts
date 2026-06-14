@@ -10,7 +10,7 @@ import { ReGLProcessor } from './adapters/regl-processor'
 import type { ProcessorType } from './interfaces'
 
 export const processorFactory = {
-  async createBestProcessor(type: ProcessorType | string = 'gpu') {
+  async createBestProcessor(type: ProcessorType = 'gpu') {
     if (type === 'cpu') {
       return new ReGLProcessor(undefined)
     }

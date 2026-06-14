@@ -533,8 +533,8 @@ export class ReGLQuantizer {
     const isLowColorImage = uniqueColorCount <= 16
 
     // Choisir la stratégie appropriée
-    let effectiveStrategy: PaletteStrategyName = (config.paletteStrategy ||
-      'frequency-balanced') as PaletteStrategyName
+    let effectiveStrategy: PaletteStrategyName =
+      config.paletteStrategy || 'frequency-balanced'
 
     // Pour les images low-color, extraire TOUTES les couleurs uniques au lieu d'utiliser le sampling
     // Ceci garantit que toutes les couleurs source sont passées à la stratégie distinct-mapping
@@ -547,7 +547,7 @@ export class ReGLQuantizer {
       // Image retro avec peu de couleurs: maximiser les couleurs distinctes
       effectiveStrategy = 'distinct-mapping'
       // Extraire TOUTES les couleurs uniques (pas de sampling)
-      sampledColors = extractUniqueColors(imageData.data, 32) as Vector[]
+      sampledColors = extractUniqueColors(imageData.data, 32)
       adapterLogger.info(
         `[ReGL] Low-color image detected (${uniqueColorCount} colors), extracted ${sampledColors.length} unique colors, using distinct-mapping strategy`
       )
@@ -892,10 +892,7 @@ export class ReGLQuantizer {
     )
 
     // Utiliser les helpers pour créer et trier les buckets de teinte
-    const hueBuckets = createHueBuckets(
-      colorFrequency as ColorFrequencyItem[],
-      diversityParams
-    )
+    const hueBuckets = createHueBuckets(colorFrequency, diversityParams)
 
     // Trier les buckets par fréquence
     const sortedBuckets = sortBucketsByFrequency(hueBuckets)
