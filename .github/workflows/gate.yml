@@ -1,0 +1,44 @@
+name: Quality gate
+
+# Fast blocking gate on every PR: typecheck (+ comprehensive), Biome & custom
+# guards, Sheriff (report-only), react-doctor (ratchet vs base), impeccable
+# (report-only) and tests with coverage. Mutation testing (Stryker) is a deeper
+# post-merge job — see mutation.yml. knip/jscpd stay ratchet (refactor:preflight),
+# not in this blocking gate.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # react-doctor --scope changed diffs against the base branch.
+          fetch-depth: 0
+
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.11.0 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run quality gate
+        run: pnpm gate

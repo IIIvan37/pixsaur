@@ -30,6 +30,7 @@
     "check:design": "impeccable detect src || true",
     "check:dead": "knip",
     "check:dup": "jscpd src",
+    "gate": "pnpm run \"/^(typecheck|typecheck:comprehensive|check|check:arch|check:react|check:design|test:coverage)$/\"",
     "refactor:preflight": "tsc --noEmit && knip --no-exit-code && jscpd src",
     "preview": "vite preview",
     "i18n:extract": "lingui extract",
