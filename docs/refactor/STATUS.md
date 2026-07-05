@@ -16,8 +16,10 @@ big picture: `src/export/application/README.md` and the memory note
   `chore/quality-gates-from-loupe`. Plan : `PLAN-quality-gates-from-loupe.md`.
   **Phase 1 (Stryker) DONE** (`f7b5103`, score 79.30 %, break 72) et **Phase 2
   (skills) DONE** (`72a14a7` : tdd-cycle, new-feature-hexa, quality-gate,
-  react-testing-patterns, lingui-best-practices + session-report enrichi). Next :
-  Phase 3 (Sheriff). Reports : `sessions/2026-07-05-*`.
+  react-testing-patterns, lingui-best-practices + session-report enrichi) et
+  **Phase 3 (Sheriff) DONE** (`7065339` : Sheriff en diagnostic non-bloquant
+  `check:arch` ; fuite `core→@/tauri` du logger corrigée par un port `LogSink`).
+  Next : Phase 4 (react-doctor + impeccable). Reports : `sessions/2026-07-05-*`.
 - **Branch:** `refactor/pr0-guardrails` — committed (`6c077ff`), **ahead of
   origin by 19 (unpushed — push is overdue)**.
 - **Current step:** file-layout reorg (ADR-001) — DONE (8 commits

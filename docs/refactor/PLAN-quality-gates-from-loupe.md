@@ -106,7 +106,32 @@ Copier dans `.claude/skills/` **en adaptant** `packages/core`→`src/libs`+`src/
   l'étape Stryker** (« si le step a touché le scope muté, lancer
   `pnpm test:mutation` et reporter le score »).
 
-## Phase 3 — Sheriff (archi hexa) · PR 3 · non-bloquant → bloquant
+## Phase 3 — Sheriff (archi hexa) · ✅ FAIT (décision : diagnostic non-bloquant)
+
+**Résultat réel (2026-07-05, commit `7065339`).** Sheriff installé + `sheriff.config.ts`
+mappé sur les couches pixsaur, exposé via `pnpm check:arch` (`sheriff verify … || true`,
+**report-only, hors gate/pre-commit**).
+
+**Décision : NE PAS rendre Sheriff bloquant.** Pixsaur importe en profondeur
+(`@/libs/pixsaur-color/src/type` …) sans barrels d'API publique → ~165 violations
+d'« encapsulation » qui ne disparaîtraient qu'après un refactor barrels à travers
+libs/domain/features (initiative séparée, non entreprise). `check-layer-imports.js`
+**reste le guard de layering autoritaire et bloquant** (il couvre en plus la pureté
+npm jotai/react que Sheriff ne voit pas).
+
+**Valeur confirmée** : Sheriff a détecté une fuite `core → @/tauri` **invisible au
+guard regex** (limite documentée : les `import()` dynamiques) — un
+`await import('@/tauri')` dans `logger.logToTauri`. **Corrigé par inversion de
+dépendance** : port `LogSink` dans `src/core/logger.ts`, adapter
+`src/tauri/log-sink.ts`, injecté au démarrage dans `src/app/app.tsx`. `core` ne
+dépend plus de rien (Sheriff : 0 violation `core→tauri`). +2 tests logger.
+
+**Dette trackée** : le refactor barrels (pour rendre Sheriff vert/bloquant) reste
+optionnel et non planifié ; Sheriff sert de radar en attendant.
+
+### (Notes de conception d'origine — pour référence)
+
+Approche non-bloquant → bloquant envisagée initialement :
 
 - Deps : `@softarc/sheriff-core`.
 - `sheriff.config.ts` mappé sur les couches pixsaur :
