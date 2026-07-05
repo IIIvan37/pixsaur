@@ -17,9 +17,12 @@ big picture: `src/export/application/README.md` and the memory note
   **Phase 1 (Stryker) DONE** (`f7b5103`, score 79.30 %, break 72) et **Phase 2
   (skills) DONE** (`72a14a7` : tdd-cycle, new-feature-hexa, quality-gate,
   react-testing-patterns, lingui-best-practices + session-report enrichi) et
-  **Phase 3 (Sheriff) DONE** (`7065339` : Sheriff en diagnostic non-bloquant
-  `check:arch` ; fuite `core→@/tauri` du logger corrigée par un port `LogSink`).
-  Next : Phase 4 (react-doctor + impeccable). Reports : `sessions/2026-07-05-*`.
+  **Phase 3 (Sheriff) DONE** (`7065339` : diagnostic non-bloquant `check:arch` ;
+  fuite `core→@/tauri` du logger corrigée par un port `LogSink`), **Phase 4
+  (react-doctor + impeccable) DONE** (`2a8b8b8` : `check:react` ratchet +
+  `check:design` report-only) et **Phase 5 (gate composite) DONE** (`b07dfb5` :
+  `pnpm gate` + CI PR). **Les 5 phases sont livrées.** Reste : ouvrir la PR de la
+  branche. Reports : `sessions/2026-07-05-*`.
 - **Branch:** `refactor/pr0-guardrails` — committed (`6c077ff`), **ahead of
   origin by 19 (unpushed — push is overdue)**.
 - **Current step:** file-layout reorg (ADR-001) — DONE (8 commits

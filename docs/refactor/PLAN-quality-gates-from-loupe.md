@@ -148,7 +148,19 @@ Approche non-bloquant → bloquant envisagée initialement :
   bloquant → **décision** : retirer `check-layer-imports.js` (Sheriff le subsume
   sur le vrai graphe). Recommandé pour ne pas maintenir deux vérités.
 
-## Phase 4 — react-doctor + impeccable · PR 4 · ratchet
+## Phase 4 — react-doctor + impeccable · ✅ FAIT (commit `2a8b8b8`)
+
+- `react-doctor` + `impeccable` en devDeps.
+- `check:react` = `react-doctor src --scope changed --no-telemetry` (**ratchet** :
+  ne remonte que les régressions vs base ; baseline full = 0 erreur, ~9 a11y + ~19
+  maintainability). `check:react:full` pour l'arbre complet.
+- `check:design` = `impeccable detect src || true` (**report-only**, radar de
+  smells UI subjectifs — 8 anti-patterns, surtout des `border-left` colorés).
+- Skill `react-doctor` copié + note pixsaur (scripts locaux).
+
+### (Notes d'origine)
+
+## Phase 4 — react-doctor + impeccable · PR 4 · ratchet (plan initial)
 
 - Deps : `react-doctor`, `impeccable`.
 - `check:react` : `react-doctor src --scope changed --no-telemetry` — `--scope
@@ -158,14 +170,20 @@ Approche non-bloquant → bloquant envisagée initialement :
   le volume de findings avant de fixer un seuil.
 - Skill `react-doctor` fournie avec.
 
-## Phase 5 — Composite `gate` · PR 5
+## Phase 5 — Composite `gate` · ✅ FAIT (commit `b07dfb5`)
 
-Une fois chaque brique verte individuellement :
 ```
-"gate": "pnpm run \"/^(typecheck|typecheck:comprehensive|check|check:arch|test:coverage|check:dead|check:dup|check:react)$/\""
+"gate": "pnpm run \"/^(typecheck|typecheck:comprehensive|check|check:arch|check:react|check:design|test:coverage)$/\""
 ```
-Brancher le pre-commit husky dessus. `check:design` et `test:mutation` restent
-hors du gate rapide (mutation = CI post-merge + local au close-step).
+Vérifié vert localement (exit 0). Workflow CI `.github/workflows/gate.yml` le lance
+sur chaque PR (`fetch-depth: 0` pour le diff base de react-doctor).
+
+**Écart vs plan initial** : `check:dead` (knip) et `check:dup` (jscpd) **exclus** du
+gate bloquant — ils ont des findings préexistants (ratchet) et sortent en échec ;
+ils restent en `refactor:preflight` (report-only). Le **pre-commit reste inchangé**
+(rapide, sans `test:coverage`) — le gate complet tourne en CI/pré-PR, pas à chaque
+commit. `check:design` inclus mais report-only (`|| true`) ; `test:mutation` reste
+post-merge (CI) + close-step local.
 
 ---
 
