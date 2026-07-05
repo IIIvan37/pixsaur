@@ -11,6 +11,7 @@ export { relaunch } from '@tauri-apps/plugin-process'
 export { check } from '@tauri-apps/plugin-updater'
 export * from './export-tauri'
 export * from './is-tauri'
+export * from './log-sink'
 export * from './quit-shortcut'
 export * from './tauri-file-picker'
 

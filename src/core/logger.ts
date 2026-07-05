@@ -26,6 +26,22 @@ const DEFAULT_CONFIG: LoggerConfig = {
   enableTauriLogging: false
 }
 
+/**
+ * Port: a backend log sink. The pure core forwards a formatted log line here;
+ * an impure adapter (e.g. Tauri) implements it and is injected at startup via
+ * `registerLogSink`. This inverts what used to be a `core → @/tauri` dependency
+ * (a dynamic `import('@/tauri')`) so `core` depends on nothing — see
+ * `src/tauri/log-sink.ts` for the adapter and `src/app/app.tsx` for the wiring.
+ */
+export type LogSink = (level: string, message: string) => void | Promise<void>
+
+let registeredLogSink: LogSink | null = null
+
+/** Inject the backend log sink (called once at startup by the Tauri adapter). */
+export function registerLogSink(sink: LogSink): void {
+  registeredLogSink = sink
+}
+
 class PerformanceLogger {
   private config: LoggerConfig
   private readonly timers = new Map<string, number>()
@@ -35,27 +51,26 @@ class PerformanceLogger {
   }
 
   /**
-   * Log to Tauri backend (for production debugging)
+   * Forward a log line to the registered backend sink (for production
+   * debugging). No-op unless `enableTauriLogging` is set AND an adapter has been
+   * injected via `registerLogSink` — so the pure core never reaches into `@/tauri`.
    */
-  private async logToTauri(level: string, ...args: any[]): Promise<void> {
-    // Ne rien faire si le logging Tauri n'est pas activé
+  private async logToSink(level: string, ...args: any[]): Promise<void> {
+    // Ne rien faire si le logging backend n'est pas activé ou non injecté
     if (!this.config.enableTauriLogging) return
-
-    // Vérifier si on est dans un environnement Tauri
-    if (!(globalThis as any).__TAURI__) return
+    if (!registeredLogSink) return
 
     try {
-      const { invoke } = await import('@/tauri')
       const message = `${this.config.prefix} [${level.toUpperCase()}] ${args
         .map((arg) =>
           typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
         )
         .join(' ')}`
-      await invoke('log_to_file', { message })
+      await registeredLogSink(level, message)
     } catch (error) {
-      // Silently fail if Tauri logging fails - can happen during initialization
+      // Silently fail if backend logging fails - can happen during initialization
       if (import.meta.env.DEV && this.config.enableTauriLogging) {
-        console.debug('Tauri logging failed:', error)
+        console.debug('Backend logging failed:', error)
       }
     }
   }
@@ -147,7 +162,7 @@ class PerformanceLogger {
   info(...args: any[]): void {
     if (!this.config.enabled || !this.shouldLog('info')) return
     console.info(this.config.prefix, ...args)
-    this.logToTauri('info', ...args)
+    this.logToSink('info', ...args)
     // Send to debug window if available
     sendLogToDebugWindow('info', `${this.config.prefix} ${args.join(' ')}`)
   }
@@ -158,7 +173,7 @@ class PerformanceLogger {
   warn(...args: any[]): void {
     if (!this.config.enabled || !this.shouldLog('warn')) return
     console.warn(this.config.prefix, ...args)
-    this.logToTauri('warn', ...args)
+    this.logToSink('warn', ...args)
     // Send to debug window if available
     sendLogToDebugWindow('warn', `${this.config.prefix} ${args.join(' ')}`)
   }
@@ -169,7 +184,7 @@ class PerformanceLogger {
   error(...args: any[]): void {
     if (!this.config.enabled || !this.shouldLog('error')) return
     console.error(this.config.prefix, ...args)
-    this.logToTauri('error', ...args)
+    this.logToSink('error', ...args)
     // Send to debug window if available
     sendLogToDebugWindow('error', `${this.config.prefix} ${args.join(' ')}`)
   }
