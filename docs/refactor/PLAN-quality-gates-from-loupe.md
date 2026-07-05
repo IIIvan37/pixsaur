@@ -81,7 +81,14 @@ brancher `test:mutation` dans le close-step (déjà prévu Phase 2 via le skill
 ⚠️ Le vitest-runner charge la config vitest (plugins react/lingui, happy-dom).
 Les specs des cibles doivent être purs (pas de regl/GPU) ; sinon exclure du scope.
 
-## Phase 2 — Skills workflow · PR 2 · docs only
+## Phase 2 — Skills workflow · PR 2 · ✅ FAIT
+
+Copiés/adaptés dans `.claude/skills/` (commit `72a14a7`) :
+`tdd-cycle`, `new-feature-hexa`, `quality-gate`, `react-testing-patterns`
+(réécrit pour happy-dom + `@/test-utils` `renderWithI18n`/`renderWithProviders`),
+`lingui-best-practices` (verbatim + références). `session-report` existant enrichi
+d'une étape Stryker. `new-feature-hexa` renvoie explicitement vers
+`extract-use-case` (greenfield vs strangler-fig).
 
 Copier dans `.claude/skills/` **en adaptant** `packages/core`→`src/libs`+`src/domain`,
 `packages/web`→`src`, jsdom→happy-dom :

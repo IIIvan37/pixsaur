@@ -14,8 +14,10 @@ big picture: `src/export/application/README.md` and the memory note
 
 - **Parallel effort — quality gates from `loupe`:** branch
   `chore/quality-gates-from-loupe`. Plan : `PLAN-quality-gates-from-loupe.md`.
-  **Phase 1 (Stryker mutation testing) DONE** (score 79.30 %, break 72 ; report
-  `sessions/2026-07-05-stryker-mutation-phase1.md`). Next : Phase 2 (skills).
+  **Phase 1 (Stryker) DONE** (`f7b5103`, score 79.30 %, break 72) et **Phase 2
+  (skills) DONE** (`72a14a7` : tdd-cycle, new-feature-hexa, quality-gate,
+  react-testing-patterns, lingui-best-practices + session-report enrichi). Next :
+  Phase 3 (Sheriff). Reports : `sessions/2026-07-05-*`.
 - **Branch:** `refactor/pr0-guardrails` — committed (`6c077ff`), **ahead of
   origin by 19 (unpushed — push is overdue)**.
 - **Current step:** file-layout reorg (ADR-001) — DONE (8 commits
