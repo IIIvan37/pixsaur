@@ -73,7 +73,9 @@
       "!**/build",
       "!**/.next",
       "!**/coverage",
-      "!**/.pnpm-store"
+      "!**/.pnpm-store",
+      "!**/reports",
+      "!**/.stryker-tmp"
     ],
     "ignoreUnknown": true
   },

@@ -7,10 +7,10 @@ import { Toaster } from '@/components/toaster/toaster'
 import Icon from '@/components/ui/icon'
 import { Updater } from '@/components/updater/updater'
 import { VersionDisplay } from '@/components/version-display'
-import { isDevelopment, logger } from '@/core'
+import { isDevelopment, logger, registerLogSink } from '@/core'
 
 import styles from '@/styles/app.module.css'
-import { invoke, isTauri } from '@/tauri'
+import { invoke, isTauri, tauriLogSink } from '@/tauri'
 import ImageConverter from './components/image-converter/image-converter'
 import { I18nProviderWrapper } from './i18n-provider'
 import { useAutoRegenerateRasters } from './store/raster/use-auto-regenerate-rasters'
@@ -25,6 +25,13 @@ import { useUnsavedChangesWarning } from './use-unsaved-changes-warning'
 export default function App() {
   const tauri = isTauri()
   const dev = isDevelopment()
+
+  // Inject the Tauri log sink into the core logger (dependency inversion:
+  // the pure core exposes the LogSink port, the adapter is wired here).
+  useEffect(() => {
+    if (!tauri) return
+    registerLogSink(tauriLogSink)
+  }, [tauri])
 
   // Auto-regenerate rasters when selection/parameters change
   useAutoRegenerateRasters()

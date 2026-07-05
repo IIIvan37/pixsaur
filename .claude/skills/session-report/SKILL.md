@@ -22,6 +22,16 @@ Compare the knip/jscpd numbers against the baseline in `docs/refactor/STATUS.md`
 A regression (more dead code / duplication than baseline) must be called out —
 and ideally fixed before reporting done.
 
+**Mutation testing locally (Stryker).** If the step touched the mutated scope
+(`src/domain/cpc/**` or `src/libs/pixsaur-color/src/{histogram,space,utils,metric}/**`
+— see `stryker.config.json`), run `pnpm test:mutation` and record the score in
+the Guardrail section. The CI post-merge run (`.github/workflows/mutation.yml`)
+is a backstop, not the gate — surviving mutants must be caught **before** the PR
+while the code is fresh. Skip only when the step touched no mutated file (say so).
+Never raise `thresholds.break` to hide surviving mutants — harden the tests first
+(ratchet). See `docs/refactor/PLAN-quality-gates-from-loupe.md` for the tracked
+mutation-debt backlog.
+
 ## 2. Append a dated session report
 
 - Copy `docs/refactor/sessions/_TEMPLATE.md` to

@@ -1,6 +1,11 @@
 import type { MockInstance } from 'vitest'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { adapterLogger, createLogger, logger as globalLogger } from '@/core'
+import {
+  adapterLogger,
+  createLogger,
+  logger as globalLogger,
+  registerLogSink
+} from '@/core'
 
 describe('Logger (core) behavior', () => {
   let consoleSpy: {
@@ -44,6 +49,40 @@ describe('Logger (core) behavior', () => {
   it('adapter logger should have prefix', () => {
     adapterLogger.info('adapter')
     expect(consoleSpy.info).toHaveBeenCalled()
+  })
+
+  describe('backend log sink (port)', () => {
+    it('forwards to the registered sink when backend logging is enabled', async () => {
+      const sink = vi.fn()
+      registerLogSink(sink)
+      const backendLogger = createLogger({
+        enabled: true,
+        enableTauriLogging: true,
+        prefix: '[Sink]'
+      })
+
+      backendLogger.error('boom')
+      await Promise.resolve()
+
+      expect(sink).toHaveBeenCalledWith(
+        'error',
+        expect.stringContaining('[Sink] [ERROR] boom')
+      )
+    })
+
+    it('does not forward when backend logging is disabled', async () => {
+      const sink = vi.fn()
+      registerLogSink(sink)
+      const webLogger = createLogger({
+        enabled: true,
+        enableTauriLogging: false
+      })
+
+      webLogger.error('boom')
+      await Promise.resolve()
+
+      expect(sink).not.toHaveBeenCalled()
+    })
   })
 
   describe('configure', () => {
