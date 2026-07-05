@@ -10,6 +10,7 @@
   "scripts": {
     "test": "vitest",
     "test:coverage": "vitest --coverage",
+    "test:mutation": "stryker run",
     "dev": "vite",
     "dev:netlify": "netlify dev",
     "build": "tsc -b && vite build",
@@ -68,6 +69,8 @@
     "@lingui/cli": "^5.5.1",
     "@lingui/vite-plugin": "^5.5.1",
     "@netlify/functions": "^5.0.1",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@tauri-apps/api": "^2.9.0",
     "@tauri-apps/cli": "^2.9.1",
     "@testing-library/jest-dom": "^6.6.3",

@@ -1,0 +1,44 @@
+name: Mutation testing
+
+# Deep check on the pure core (pixsaur-color + domain/cpc). Runs post-merge on
+# main only, to keep PRs on the fast gate. Run it locally at each close-step
+# (`pnpm test:mutation`) before opening a PR — the CI run is a backstop.
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        run: |
+          git clone $GITHUB_SERVER_URL/$GITHUB_REPOSITORY .
+          git checkout $GITHUB_SHA
+
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.11.0 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run mutation tests
+        run: pnpm test:mutation
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation/
+          if-no-files-found: ignore
