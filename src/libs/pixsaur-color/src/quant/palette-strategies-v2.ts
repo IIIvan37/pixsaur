@@ -1946,6 +1946,40 @@ export const selectByDitheringAware: PaletteStrategyFunction = (
 }
 
 /**
+ * Builds the extended palette: the selected colors plus every pairwise blend.
+ */
+function buildExtendedPalette(selectedColors: Vector[]): Vector[] {
+  const extended: Vector[] = [...selectedColors]
+  for (let i = 0; i < selectedColors.length; i++) {
+    for (let j = i + 1; j < selectedColors.length; j++) {
+      extended.push(blendColors(selectedColors[i], selectedColors[j]))
+    }
+  }
+  return extended
+}
+
+/**
+ * Whether a color is within coverageThreshold of any palette color.
+ * Exits as soon as a close-enough palette color is found.
+ */
+function isColorCovered(
+  color: Vector,
+  palette: Vector[],
+  coverageThreshold: number,
+  distanceCache: DistanceCache
+): boolean {
+  let minDist = Infinity
+  for (const paletteColor of palette) {
+    const dist = cachedDistance(color, paletteColor, distanceCache)
+    if (dist < minDist) {
+      minDist = dist
+      if (minDist <= coverageThreshold) return true
+    }
+  }
+  return minDist <= coverageThreshold
+}
+
+/**
  * Version directe qui prend les couleurs au lieu des indices
  */
 function calculateDitheringScoreOptimizedDirect(
@@ -1955,29 +1989,11 @@ function calculateDitheringScoreOptimizedDirect(
   coverageThreshold: number,
   distanceCache: DistanceCache
 ): number {
-  // Construire la palette étendue avec les blends
-  const extended: Vector[] = [...selectedColors]
-  for (let i = 0; i < selectedColors.length; i++) {
-    for (let j = i + 1; j < selectedColors.length; j++) {
-      extended.push(blendColors(selectedColors[i], selectedColors[j]))
-    }
-  }
+  const extended = buildExtendedPalette(selectedColors)
 
   let totalCovered = 0
-
   for (const { color, frequency } of sampledCandidates) {
-    let minDist = Infinity
-
-    for (const paletteColor of extended) {
-      const dist = cachedDistance(color, paletteColor, distanceCache)
-      if (dist < minDist) {
-        minDist = dist
-        // Early exit si déjà couvert
-        if (minDist <= coverageThreshold) break
-      }
-    }
-
-    if (minDist <= coverageThreshold) {
+    if (isColorCovered(color, extended, coverageThreshold, distanceCache)) {
       totalCovered += frequency
     }
   }
