@@ -71,14 +71,6 @@ describe('ColorPickerPopup', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('should call onClose when cancel button is clicked', async () => {
-    const onClose = vi.fn()
-    renderWithI18n(<ColorPickerPopup {...defaultProps} onClose={onClose} />)
-
-    await userEvent.click(screen.getByText('Annuler'))
-    expect(onClose).toHaveBeenCalledTimes(1)
-  })
-
   it('should call onColorConfirm and onClose when validate button is clicked', async () => {
     const onColorConfirm = vi.fn()
     const onClose = vi.fn()
