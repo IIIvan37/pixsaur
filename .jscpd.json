@@ -5,6 +5,7 @@
   "reporters": ["console"],
   "absolute": false,
   "gitignore": true,
+  "threshold": 3,
   "format": ["typescript", "tsx"],
   "ignore": [
     "**/*.spec.ts",

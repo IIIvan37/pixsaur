@@ -39,7 +39,17 @@ export default defineConfig(({ mode }) => ({
         '**/*.css',
         '**/*.glsl',
         '**/index.ts'
-      ]
+      ],
+      // Ratchet floors ~1pt below the current numbers (lines 74.0 / stmts 74.0
+      // / funcs 72.1 / branches 65.5). They fail the run on a regression but
+      // leave headroom for normal variance. Raise them as coverage improves —
+      // never lower them.
+      thresholds: {
+        lines: 73,
+        statements: 73,
+        functions: 71,
+        branches: 64
+      }
     }
   },
   resolve: {

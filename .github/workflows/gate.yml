@@ -1,10 +1,11 @@
 name: Quality gate
 
 # Fast blocking gate on every PR: typecheck (+ comprehensive), Biome & custom
-# guards, Sheriff (report-only), react-doctor (ratchet vs base), impeccable
-# (report-only) and tests with coverage. Mutation testing (Stryker) is a deeper
-# post-merge job — see mutation.yml. knip/jscpd stay ratchet (refactor:preflight),
-# not in this blocking gate.
+# guards, Sheriff (report-only), react-doctor (blocks on NEW error-severity
+# issues vs base — scripts/check-react-doctor.js), impeccable (report-only),
+# jscpd (blocks over 3% duplication) and tests with coverage (ratchet floors in
+# vitest.config.ts). Mutation testing (Stryker) is a deeper post-merge job — see
+# mutation.yml. knip stays ratchet (refactor:preflight), not in this gate.
 on:
   pull_request:
   push:
