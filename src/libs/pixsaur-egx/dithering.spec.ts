@@ -140,7 +140,7 @@ describe('applyEGXDitheringByMode', () => {
       1
     )
     expect(out).toBeInstanceOf(Uint8ClampedArray)
-    expect(out.length).toBe(width * height * 4)
+    expect(out).toHaveLength(width * height * 4)
     // Alpha is always forced to 255 by every EGX ditherer.
     for (let i = 3; i < out.length; i += 4) {
       expect(out[i]).toBe(255)
@@ -363,7 +363,7 @@ describe('applyEGXDitheringByMode', () => {
     ])
     for (const mode of ALL_MODES) {
       const out = applyEGXDitheringByMode(img, EGX2_PALETTE, config, mode, 1)
-      expect(out.length).toBe(width * height * 4)
+      expect(out).toHaveLength(width * height * 4)
       expectAllColorsInSubPalette(out, width, height, EGX2_PALETTE, config)
     }
   })
@@ -407,7 +407,7 @@ describe('applyEGXDitheringByMode', () => {
       'floydSteinberg',
       1
     )
-    expect(on.length).toBe(off.length)
+    expect(on).toHaveLength(off.length)
     expectAllColorsInSubPalette(on, 6, 4, EGX1_PALETTE, makeConfig())
     expectAllColorsInSubPalette(off, 6, 4, EGX1_PALETTE, makeConfig())
   })
@@ -428,7 +428,7 @@ describe('applyEGXDitheringByMode', () => {
       'bayer4x4',
       1
     )
-    expect(on.length).toBe(off.length)
+    expect(on).toHaveLength(off.length)
     expectAllColorsInSubPalette(on, 6, 4, EGX1_PALETTE, makeConfig())
     expectAllColorsInSubPalette(off, 6, 4, EGX1_PALETTE, makeConfig())
   })

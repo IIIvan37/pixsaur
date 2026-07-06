@@ -75,7 +75,7 @@ beforeEach(() => {
 describe('ColorPaletteView', () => {
   it('renders the correct number of slots', () => {
     renderWithStore(<ColorPaletteView {...props} />)
-    expect(screen.getAllByRole('button').length).toBe(3)
+    expect(screen.getAllByRole('button')).toHaveLength(3)
   })
 
   it('renders filled slots with color and lock state', () => {
@@ -118,8 +118,8 @@ describe('ColorPaletteView', () => {
             btn.title?.includes('Rouge') ||
             btn.title?.includes('Vert') ||
             btn.title?.includes('Bleu')
-        ).length
-    ).toBe(3)
+        )
+    ).toHaveLength(3)
   })
 
   it('opens popover when empty slot is clicked', () => {
@@ -138,8 +138,8 @@ describe('ColorPaletteView', () => {
             btn.title?.includes('Rouge') ||
             btn.title?.includes('Vert') ||
             btn.title?.includes('Bleu')
-        ).length
-    ).toBe(3)
+        )
+    ).toHaveLength(3)
   })
 
   it('calls onSetColor and closes popover when a color is selected', async () => {

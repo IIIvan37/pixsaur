@@ -47,7 +47,7 @@ describe('rgbToIndexBufferExact', () => {
 
       const result = rgbToIndexBufferExact(rgbaBuffer, palette, false)
 
-      expect(result.length).toBe(1)
+      expect(result).toHaveLength(1)
       expect(result[0]).toBe(0)
     })
 
@@ -64,7 +64,7 @@ describe('rgbToIndexBufferExact', () => {
       const result = rgbToIndexBufferExact(rgbaBuffer, palette, false)
 
       expect(result).toBeInstanceOf(Uint8Array)
-      expect(result.length).toBe(5)
+      expect(result).toHaveLength(5)
     })
   })
 
@@ -130,7 +130,7 @@ describe('rgbToIndexBufferExact', () => {
 
       const result = rgbToIndexBufferExact(rgbaBuffer, palette, false)
 
-      expect(result.length).toBe(0)
+      expect(result).toHaveLength(0)
     })
 
     it('should ignore alpha channel for matching', () => {

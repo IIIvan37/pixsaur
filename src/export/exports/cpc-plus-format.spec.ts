@@ -80,7 +80,7 @@ describe('cpc-plus-format', () => {
     it('should return little-endian bytes for black', () => {
       const bytes = rgbToCPCPlusBytes([0, 0, 0])
       expect(bytes).toBeInstanceOf(Uint8Array)
-      expect(bytes.length).toBe(2)
+      expect(bytes).toHaveLength(2)
       expect(bytes[0]).toBe(0x00) // Low byte: RRRR BBBB
       expect(bytes[1]).toBe(0x00) // High byte: 0000 GGGG
     })
@@ -109,12 +109,12 @@ describe('cpc-plus-format', () => {
   describe('paletteToCPCPlusData', () => {
     it('should convert empty palette', () => {
       const data = paletteToCPCPlusData([])
-      expect(data.length).toBe(0)
+      expect(data).toHaveLength(0)
     })
 
     it('should convert single color palette', () => {
       const data = paletteToCPCPlusData([[255, 255, 255]])
-      expect(data.length).toBe(2)
+      expect(data).toHaveLength(2)
       expect(data[0]).toBe(0xff)
       expect(data[1]).toBe(0x0f)
     })
@@ -126,7 +126,7 @@ describe('cpc-plus-format', () => {
         [255, 0, 0] // Red
       ]
       const data = paletteToCPCPlusData(palette)
-      expect(data.length).toBe(6) // 3 colors * 2 bytes
+      expect(data).toHaveLength(6) // 3 colors * 2 bytes
 
       // Black
       expect(data[0]).toBe(0x00)

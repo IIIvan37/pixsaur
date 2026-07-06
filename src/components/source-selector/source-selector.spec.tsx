@@ -20,7 +20,7 @@ describe('SourceSelectorView', () => {
   it('renders four handles', () => {
     const { container } = renderWithI18n(<SourceSelectorView {...baseProps} />)
     const handles = container.querySelectorAll('[data-handle]')
-    expect(handles.length).toBe(4)
+    expect(handles).toHaveLength(4)
   })
 
   it('calls onMouseDown when mouse is pressed', () => {

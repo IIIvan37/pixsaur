@@ -225,7 +225,7 @@ describe('combination-scoring-helpers', () => {
 
       const result = selectWithHueDiversity(candidatesWithIndex, [], [], 3, 60)
 
-      expect(result.selectedIndices.length).toBe(3)
+      expect(result.selectedIndices).toHaveLength(3)
     })
 
     it('should skip similar hues', () => {
@@ -296,7 +296,7 @@ describe('combination-scoring-helpers', () => {
         [0, 255, 0] // Green ~120°
       ]
       const hues = getPreselectedHues(colors)
-      expect(hues.length).toBe(2)
+      expect(hues).toHaveLength(2)
     })
 
     it('should ignore gray colors', () => {
@@ -305,7 +305,7 @@ describe('combination-scoring-helpers', () => {
         [255, 0, 0]
       ]
       const hues = getPreselectedHues(colors)
-      expect(hues.length).toBe(1)
+      expect(hues).toHaveLength(1)
     })
   })
 
@@ -335,7 +335,7 @@ describe('combination-scoring-helpers', () => {
 
       const result = selectFallbackColors(candidates, [], 4)
 
-      expect(result.length).toBe(4)
+      expect(result).toHaveLength(4)
     })
 
     it('should add dark color first if not preselected', () => {

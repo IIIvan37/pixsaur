@@ -306,7 +306,7 @@ describe('Mode 0 Selection Algorithm (production c244923)', () => {
       // Les deux rouges doivent être dans le même bucket (bucket 0: 0-45°)
       const bucket0 = buckets.get(0)
       expect(bucket0).toBeDefined()
-      expect(bucket0!.length).toBe(2)
+      expect(bucket0!).toHaveLength(2)
     })
 
     it('should put grayscale colors in gray bucket', () => {
@@ -328,7 +328,7 @@ describe('Mode 0 Selection Algorithm (production c244923)', () => {
 
       const buckets = createHueBuckets(colors)
 
-      expect(buckets.get('gray')!.length).toBe(3)
+      expect(buckets.get('gray')!).toHaveLength(3)
     })
   })
 

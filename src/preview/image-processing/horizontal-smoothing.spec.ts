@@ -121,7 +121,7 @@ describe('applyHorizontalSmoothing', () => {
     // Should not throw and produce valid output
     expect(result.width).toBe(3)
     expect(result.height).toBe(1)
-    expect(result.data.length).toBe(12)
+    expect(result.data).toHaveLength(12)
   })
 
   it('preserves alpha channel correctly', () => {

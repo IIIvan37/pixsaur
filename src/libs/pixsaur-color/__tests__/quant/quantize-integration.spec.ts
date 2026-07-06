@@ -395,7 +395,7 @@ describe('quantize.ts - Integration Tests', () => {
       })
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(8) // 2 pixels * 4 channels
+      expect(result).toHaveLength(8) // 2 pixels * 4 channels
     })
 
     it('should handle no dithering mode', () => {

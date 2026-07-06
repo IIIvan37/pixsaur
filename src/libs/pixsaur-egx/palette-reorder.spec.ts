@@ -91,7 +91,7 @@ describe('combinations', () => {
       [7, 4]
     ] as const) {
       const arr = Array.from({ length: n }, (_, i) => i)
-      expect(toArray(combinations(arr, k)).length).toBe(cnk(n, k))
+      expect(toArray(combinations(arr, k))).toHaveLength(cnk(n, k))
     }
   })
 
@@ -239,7 +239,7 @@ describe('optimizePaletteForEGX', () => {
       [4, 0]
     ])
     const result = optimizePaletteForEGX(palette, usage, 2, false)
-    expect(result.length).toBe(palette.length)
+    expect(result).toHaveLength(palette.length)
   })
 
   it('every output color comes from the input palette (classic)', () => {
@@ -338,7 +338,7 @@ describe('optimizePaletteForEGX', () => {
     ]
     const usage = new Map<number, number>([[0, 5]])
     const result = optimizePaletteForEGX(smallPalette, usage, 2, false)
-    expect(result.length).toBe(smallPalette.length)
+    expect(result).toHaveLength(smallPalette.length)
     // Last slot is padded black since only one index was known
     expect(result[result.length - 1]).toEqual([0, 0, 0])
   })
@@ -399,7 +399,7 @@ describe('optimizePaletteForEGX', () => {
       [3, 10]
     ])
     const result = optimizePaletteForEGX(clusteredPalette, usage, 2, true)
-    expect(result.length).toBe(clusteredPalette.length)
+    expect(result).toHaveLength(clusteredPalette.length)
     // Fallback keeps the two most-used colors and every input color survives
     const resultSet = new Set(result.map((c) => (c as number[]).join(',')))
     for (const c of clusteredPalette) {

@@ -87,7 +87,7 @@ describe('exportDskWorkspaceZip', () => {
       const zip = await JSZip.loadAsync(result)
       expect(zip.files['IMG1.scr']).toBeDefined()
       const scrData = await zip.files['IMG1.scr'].async('uint8array')
-      expect(scrData.length).toBe(16384) // SCR file size
+      expect(scrData).toHaveLength(16384) // SCR file size
     }
   })
 
@@ -162,7 +162,7 @@ describe('exportDskWorkspaceZip', () => {
 
       // Verify chunk sizes — first chunk should be the max 16KiB and second
       // should contain the remaining bytes for the linear export.
-      expect(chunk1Data.length).toBe(16 * 1024) // 16KB max chunk
+      expect(chunk1Data).toHaveLength(16 * 1024) // 16KB max chunk
       expect(chunk2Data.length).toBeGreaterThan(0) // remaining chunk must be non-empty
     }
   })

@@ -101,7 +101,7 @@ describe('applyBlueNoiseDither (direct)', () => {
     })
 
     expect(result).toBeInstanceOf(Uint8ClampedArray)
-    expect(result.length).toBe(16)
+    expect(result).toHaveLength(16)
     expect(allPixelsInPalette(result, bwPalette)).toBe(true)
     expect(hasNoNaN(result)).toBe(true)
     // every alpha channel is opaque
@@ -140,7 +140,7 @@ describe('applyBlueNoiseDither (direct)', () => {
       correction: { enabled: false }
     })
 
-    expect(result.length).toBe(8)
+    expect(result).toHaveLength(8)
     expect(allPixelsInPalette(result, bwPalette)).toBe(true)
     expect(hasNoNaN(result)).toBe(true)
   })
@@ -157,7 +157,7 @@ describe('applyBlueNoiseDither (direct)', () => {
       distFn
     })
 
-    expect(result.length).toBe(4)
+    expect(result).toHaveLength(4)
     expect(allPixelsInPalette(result, bwPalette)).toBe(true)
   })
 })
@@ -178,7 +178,7 @@ describe('applyOstromoukhovDither (direct)', () => {
     })
 
     expect(result).toBeInstanceOf(Uint8ClampedArray)
-    expect(result.length).toBe(24)
+    expect(result).toHaveLength(24)
     expect(allPixelsInPalette(result, bwPalette)).toBe(true)
     expect(hasNoNaN(result)).toBe(true)
   })
@@ -196,7 +196,7 @@ describe('applyOstromoukhovDither (direct)', () => {
       correction: { enabled: false, errorClamp: 64 }
     })
 
-    expect(result.length).toBe(8)
+    expect(result).toHaveLength(8)
     expect(allPixelsInPalette(result, bwPalette)).toBe(true)
     expect(hasNoNaN(result)).toBe(true)
   })
@@ -214,7 +214,7 @@ describe('mapAndDither — blueNoise & ostromoukhov routing', () => {
       'RGB'
     )
 
-    expect(result.length).toBe(4 * 4 * 4)
+    expect(result).toHaveLength(4 * 4 * 4)
     expect(allPixelsInPalette(result, rgbPalette)).toBe(true)
     expect(hasNoNaN(result)).toBe(true)
   })
@@ -230,7 +230,7 @@ describe('mapAndDither — blueNoise & ostromoukhov routing', () => {
       'RGB'
     )
 
-    expect(result.length).toBe(4 * 4 * 4)
+    expect(result).toHaveLength(4 * 4 * 4)
     expect(allPixelsInPalette(result, rgbPalette)).toBe(true)
     expect(hasNoNaN(result)).toBe(true)
   })
@@ -278,7 +278,7 @@ describe('mapAndDitherWithDynamicPalette — blueNoise variant', () => {
       'RGB'
     )
 
-    expect(result.length).toBe(4 * 4 * 4)
+    expect(result).toHaveLength(4 * 4 * 4)
     expect(allPixelsInPalette(result, bwPalette)).toBe(true)
     expect(hasNoNaN(result)).toBe(true)
   })
@@ -306,7 +306,7 @@ describe('mapAndDitherWithDynamicPalette — blueNoise variant', () => {
       'RGB'
     )
 
-    expect(result.length).toBe(32)
+    expect(result).toHaveLength(32)
     // Line 0: only black or red allowed.
     for (let x = 0; x < 4; x++) {
       const idx = x * 4

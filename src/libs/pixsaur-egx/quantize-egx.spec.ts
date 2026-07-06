@@ -73,7 +73,7 @@ describe('quantizeEGX', () => {
     const dims = getEGXOutputDimensions('egx1')
     expect(result.width).toBe(dims.width)
     expect(result.height).toBe(dims.height)
-    expect(result.indexBuffer.length).toBe(dims.width * dims.height)
+    expect(result.indexBuffer).toHaveLength(dims.width * dims.height)
   })
 
   it('produces the EGX2 output dimensions regardless of input size', () => {
@@ -82,7 +82,7 @@ describe('quantizeEGX', () => {
     const dims = getEGXOutputDimensions('egx2')
     expect(result.width).toBe(dims.width)
     expect(result.height).toBe(dims.height)
-    expect(result.indexBuffer.length).toBe(dims.width * dims.height)
+    expect(result.indexBuffer).toHaveLength(dims.width * dims.height)
   })
 
   it('emits one line encoding per output line', () => {
@@ -189,7 +189,7 @@ describe('quantizeEGX', () => {
     const result = quantizeEGX(input, dims.width, dims.height, egx1Config)
     expect(result.width).toBe(dims.width)
     expect(result.height).toBe(dims.height)
-    expect(result.indexBuffer.length).toBe(dims.width * dims.height)
+    expect(result.indexBuffer).toHaveLength(dims.width * dims.height)
   })
 })
 
@@ -198,7 +198,7 @@ describe('generateEGXPreview', () => {
     const input = makeBuffer(4, 2, uniform(120, 60, 30))
     const result = quantizeEGX(input, 4, 2, egx1Config)
     const preview = generateEGXPreview(result)
-    expect(preview.length).toBe(result.width * result.height * 4)
+    expect(preview).toHaveLength(result.width * result.height * 4)
     expect(preview).toBeInstanceOf(Uint8ClampedArray)
   })
 
@@ -286,7 +286,7 @@ describe('generateEGXPreviewMode0', () => {
     const result = quantizeEGX(input, 4, 2, egx1Config)
     const preview = generateEGXPreviewMode0(result)
     const outWidth = Math.floor(result.width / 2)
-    expect(preview.length).toBe(outWidth * result.height * 4)
+    expect(preview).toHaveLength(outWidth * result.height * 4)
   })
 
   it('takes every other pixel on Mode 0 lines', () => {

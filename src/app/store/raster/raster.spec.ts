@@ -358,7 +358,7 @@ describe('Raster Store', () => {
   describe('rasterOptimizationResultAtom', () => {
     it('should have null as default value', () => {
       const value = store.get(rasterOptimizationResultAtom)
-      expect(value).toBe(null)
+      expect(value).toBeNull()
     })
 
     it('should store optimization result', () => {
@@ -395,17 +395,17 @@ describe('Raster Store', () => {
       }
 
       store.set(rasterOptimizationResultAtom, result)
-      expect(store.get(rasterOptimizationResultAtom)).not.toBe(null)
+      expect(store.get(rasterOptimizationResultAtom)).not.toBeNull()
 
       store.set(clearRasterChangesAtom)
-      expect(store.get(rasterOptimizationResultAtom)).toBe(null)
+      expect(store.get(rasterOptimizationResultAtom)).toBeNull()
     })
   })
 
   describe('rasterIndexBufferAtom', () => {
     it('should return null when no optimization result exists', () => {
       const value = store.get(rasterIndexBufferAtom)
-      expect(value).toBe(null)
+      expect(value).toBeNull()
     })
 
     // Note: Testing rasterIndexBufferAtom with dithering requires mocking complex dependencies

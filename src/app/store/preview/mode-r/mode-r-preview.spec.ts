@@ -73,7 +73,7 @@ describe('Mode R Resize Functions', () => {
       const src = createTestImageData(500, 300)
       const result = resizeForModeRAuto(src, 320, 200, true)
 
-      expect(result.data.length).toBe(320 * 200 * 4)
+      expect(result.data).toHaveLength(320 * 200 * 4)
     })
   })
 
@@ -114,7 +114,7 @@ describe('Mode R Resize Functions', () => {
       const src = createTestImageData(500, 300)
       const result = resizeForModeROrigin(src, 320, 200, true)
 
-      expect(result.data.length).toBe(320 * 200 * 4)
+      expect(result.data).toHaveLength(320 * 200 * 4)
     })
 
     it('should accept center parameter false', () => {

@@ -26,7 +26,7 @@ describe('toASMData', () => {
 
       const lines = result.split('\n')
       // 1 label + 2 data lines
-      expect(lines.length).toBe(3)
+      expect(lines).toHaveLength(3)
     })
 
     it('should handle empty data', () => {
@@ -61,8 +61,8 @@ describe('toASMData', () => {
 
       expect(Array.isArray(result)).toBe(true)
       expect(
-        (result as Array<{ filename: string; content: string }>).length
-      ).toBe(2)
+        result as Array<{ filename: string; content: string }>
+      ).toHaveLength(2)
     })
 
     it('should generate correct filenames for chunks', () => {
@@ -99,7 +99,7 @@ describe('toASMData', () => {
         content: string
       }>
 
-      expect(result.length).toBe(2)
+      expect(result).toHaveLength(2)
       expect(result[1].content).toContain('Size: 16 bytes')
     })
 

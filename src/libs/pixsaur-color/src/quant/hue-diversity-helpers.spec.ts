@@ -204,7 +204,7 @@ describe('hue-diversity-helpers', () => {
 
       // First round: red1, green1, blue1
       // Second round: red2, green2
-      expect(result.length).toBe(5)
+      expect(result).toHaveLength(5)
       expect(result.map((c) => c.index)).toContain(0)
       expect(result.map((c) => c.index)).toContain(2)
       expect(result.map((c) => c.index)).toContain(4)
@@ -219,7 +219,7 @@ describe('hue-diversity-helpers', () => {
 
       const result = selectByRoundRobin(hueGroups, 2, [])
 
-      expect(result.length).toBe(2)
+      expect(result).toHaveLength(2)
     })
 
     it('should skip candidates too close to avoided colors', () => {
@@ -243,7 +243,7 @@ describe('hue-diversity-helpers', () => {
       const result = selectByRoundRobin(hueGroups, 5, [], [initial])
 
       expect(result[0].index).toBe(99)
-      expect(result.length).toBe(2)
+      expect(result).toHaveLength(2)
     })
   })
 
@@ -261,7 +261,7 @@ describe('hue-diversity-helpers', () => {
 
       const result = selectFromGroupsSequentially(categories, 10, [])
 
-      expect(result.length).toBe(3)
+      expect(result).toHaveLength(3)
       expect(result[0].index).toBe(0) // Red first
       expect(result[1].index).toBe(1) // Dark second
       expect(result[2].index).toBe(2) // Gray last
@@ -280,7 +280,7 @@ describe('hue-diversity-helpers', () => {
 
       const result = selectFromGroupsSequentially(categories, 2, [])
 
-      expect(result.length).toBe(2)
+      expect(result).toHaveLength(2)
     })
 
     it('should skip candidates too close to avoided colors', () => {
@@ -313,7 +313,7 @@ describe('hue-diversity-helpers', () => {
         [initial]
       )
 
-      expect(result.length).toBe(3)
+      expect(result).toHaveLength(3)
       expect(result.map((c) => c.index)).toContain(2) // Initial preserved
       expect(result.map((c) => c.index)).toContain(0) // Frequent added
       expect(result.map((c) => c.index)).toContain(1) // Less frequent added
@@ -325,7 +325,7 @@ describe('hue-diversity-helpers', () => {
 
       const result = fillWithMostFrequent([c1, c2], 1, [], [])
 
-      expect(result.length).toBe(1)
+      expect(result).toHaveLength(1)
     })
 
     it('should skip candidates too close to avoided colors', () => {
@@ -346,7 +346,7 @@ describe('hue-diversity-helpers', () => {
 
       const indices = result.map((c) => c.index)
       const uniqueIndices = [...new Set(indices)]
-      expect(indices.length).toBe(uniqueIndices.length)
+      expect(indices).toHaveLength(uniqueIndices.length)
     })
   })
 })

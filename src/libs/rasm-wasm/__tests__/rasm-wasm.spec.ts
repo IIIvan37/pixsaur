@@ -126,7 +126,7 @@ describe('rasm-wasm helpers', () => {
     // Both callMain invocations should have happened
     expect(mockModule.callMain).toHaveBeenCalledTimes(2)
     // The recorded timestamps should be ordered - second should be later
-    expect(calls.length).toBe(2)
+    expect(calls).toHaveLength(2)
     expect(calls[0]).toBeLessThanOrEqual(calls[1])
 
     // Dispose should wait for any queued operations to finish
@@ -217,7 +217,7 @@ describe('rasm-wasm helpers', () => {
     it('should handle Uint8Array input', () => {
       const input = new Uint8Array([1, 2, 3])
       // toUint8Array should return the same array
-      expect(input instanceof Uint8Array).toBe(true)
+      expect(input).toBeInstanceOf(Uint8Array)
     })
 
     it('should handle string input', () => {
