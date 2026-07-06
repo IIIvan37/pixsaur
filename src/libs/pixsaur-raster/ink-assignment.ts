@@ -16,11 +16,60 @@ import { colorKey } from './palette-selection'
  * @param previousPalette - The palette from the previous line
  * @returns New palette with lineColors assigned to ink indices
  */
+/** Mutable bookkeeping shared across the two assignment passes. */
+interface InkAssignmentState {
+  newPalette: Vector<'RGB'>[]
+  assignedColors: Set<string>
+  usedInks: Set<number>
+}
+
+/**
+ * First pass: keep any line color that exactly matches the previous palette in
+ * its original ink position, so unchanged colors never move.
+ */
+function assignExactMatches(
+  previousPalette: Vector<'RGB'>[],
+  lineColors: Vector<'RGB'>[],
+  state: InkAssignmentState
+): void {
+  previousPalette.forEach((prevColor, inkIndex) => {
+    const prevKey = colorKey(prevColor)
+    const match = state.assignedColors.has(prevKey)
+      ? undefined
+      : lineColors.find((lineColor) => colorKey(lineColor) === prevKey)
+    if (match) {
+      state.newPalette[inkIndex] = match
+      state.assignedColors.add(prevKey)
+      state.usedInks.add(inkIndex)
+    }
+  })
+}
+
+/** Second pass: place each not-yet-assigned line color into the first free ink. */
+function assignRemainingToFreeInks(
+  lineColors: Vector<'RGB'>[],
+  numInks: number,
+  state: InkAssignmentState
+): void {
+  for (const lineColor of lineColors) {
+    const lineKey = colorKey(lineColor)
+    if (state.assignedColors.has(lineKey)) continue
+
+    for (let inkIndex = 0; inkIndex < numInks; inkIndex++) {
+      if (!state.usedInks.has(inkIndex)) {
+        state.newPalette[inkIndex] = lineColor
+        state.assignedColors.add(lineKey)
+        state.usedInks.add(inkIndex)
+        break
+      }
+    }
+  }
+}
+
 export function assignColorsToInks(
   lineColors: Vector<'RGB'>[],
   previousPalette: Vector<'RGB'>[]
 ): Vector<'RGB'>[] {
-  const numInks = previousPalette.length
   const newPalette = previousPalette.map((c) => [...c]) as Vector<'RGB'>[]
 
   // If no colors on this line, keep previous palette
@@ -28,42 +77,14 @@ export function assignColorsToInks(
     return newPalette
   }
 
-  // Track which line colors have been assigned and which inks are used
-  const assignedColors = new Set<string>()
-  const usedInks = new Set<number>()
-
-  // First pass: exact matches - keep colors in the same ink position
-  for (let inkIndex = 0; inkIndex < numInks; inkIndex++) {
-    const prevColor = previousPalette[inkIndex]
-    const prevKey = colorKey(prevColor)
-
-    for (const lineColor of lineColors) {
-      const lineKey = colorKey(lineColor)
-      if (lineKey === prevKey && !assignedColors.has(lineKey)) {
-        // Exact match - keep in same position
-        newPalette[inkIndex] = lineColor
-        assignedColors.add(lineKey)
-        usedInks.add(inkIndex)
-        break
-      }
-    }
+  const state: InkAssignmentState = {
+    newPalette,
+    assignedColors: new Set<string>(),
+    usedInks: new Set<number>()
   }
 
-  // Second pass: assign remaining line colors to unused ink slots
-  for (const lineColor of lineColors) {
-    const lineKey = colorKey(lineColor)
-    if (assignedColors.has(lineKey)) continue
-
-    // Find first unused ink slot
-    for (let inkIndex = 0; inkIndex < numInks; inkIndex++) {
-      if (!usedInks.has(inkIndex)) {
-        newPalette[inkIndex] = lineColor
-        assignedColors.add(lineKey)
-        usedInks.add(inkIndex)
-        break
-      }
-    }
-  }
+  assignExactMatches(previousPalette, lineColors, state)
+  assignRemainingToFreeInks(lineColors, previousPalette.length, state)
 
   return newPalette
 }

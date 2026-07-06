@@ -369,6 +369,51 @@ export function optimizeLinePalettesWithIndexBuffer(
 // Helper Functions
 // ============================================================================
 
+/**
+ * Resolves the fixed (non-raster) colors for a Mode 0 CPC Plus base palette,
+ * either from the caller-provided palette or by extracting them from the image.
+ */
+function resolveMode0PlusFixedColors(
+  preprocessedImage: ImageData,
+  globalPalette: Vector<'RGB'>[],
+  numRasterSlots: number,
+  numFixedColors: number,
+  cpcClassicPalette: Vector<'RGB'>[] | undefined,
+  useProvidedPalette: boolean,
+  quantizeColor: (color: Vector<'RGB'>) => Vector<'RGB'>
+): Vector<'RGB'>[] {
+  const extractFromImage = () =>
+    extractGlobalColorsForMode0Plus(
+      preprocessedImage,
+      cpcClassicPalette,
+      numFixedColors
+    )
+
+  if (!(useProvidedPalette && globalPalette.length > 0)) {
+    return extractFromImage()
+  }
+
+  if (globalPalette.length === numFixedColors) {
+    return globalPalette.map((c) => quantizeColor(c))
+  }
+
+  if (globalPalette.length >= MODE_0_TOTAL_COLORS) {
+    return globalPalette
+      .slice(numRasterSlots, MODE_0_TOTAL_COLORS)
+      .map((c) => quantizeColor(c))
+  }
+
+  // Too few provided colors: quantize what we have, then pad from the image.
+  const globalColors = globalPalette.map((c) => quantizeColor(c))
+  if (globalColors.length < numFixedColors) {
+    const extracted = extractFromImage()
+    while (globalColors.length < numFixedColors) {
+      globalColors.push(extracted[globalColors.length] || [0, 0, 0])
+    }
+  }
+  return globalColors
+}
+
 function setupMode0PlusPalette(
   preprocessedImage: ImageData,
   globalPalette: Vector<'RGB'>[],
@@ -384,34 +429,15 @@ function setupMode0PlusPalette(
   const numRasterSlots = Math.min(maxChangesPerLine, MODE_0_RASTER_SLOTS)
   const numFixedColors = MODE_0_TOTAL_COLORS - numRasterSlots
 
-  let globalColors: Vector<'RGB'>[]
-  if (useProvidedPalette && globalPalette.length > 0) {
-    if (globalPalette.length === numFixedColors) {
-      globalColors = globalPalette.map((c) => quantizeColor(c))
-    } else if (globalPalette.length >= MODE_0_TOTAL_COLORS) {
-      globalColors = globalPalette
-        .slice(numRasterSlots, MODE_0_TOTAL_COLORS)
-        .map((c) => quantizeColor(c))
-    } else {
-      globalColors = globalPalette.map((c) => quantizeColor(c))
-      if (globalColors.length < numFixedColors) {
-        const extracted = extractGlobalColorsForMode0Plus(
-          preprocessedImage,
-          cpcClassicPalette,
-          numFixedColors
-        )
-        while (globalColors.length < numFixedColors) {
-          globalColors.push(extracted[globalColors.length] || [0, 0, 0])
-        }
-      }
-    }
-  } else {
-    globalColors = extractGlobalColorsForMode0Plus(
-      preprocessedImage,
-      cpcClassicPalette,
-      numFixedColors
-    )
-  }
+  const globalColors = resolveMode0PlusFixedColors(
+    preprocessedImage,
+    globalPalette,
+    numRasterSlots,
+    numFixedColors,
+    cpcClassicPalette,
+    useProvidedPalette,
+    quantizeColor
+  )
 
   const basePalette = new Array(MODE_0_TOTAL_COLORS) as Vector<'RGB'>[]
   for (let i = 0; i < numRasterSlots; i++) {

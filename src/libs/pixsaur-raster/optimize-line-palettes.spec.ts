@@ -784,3 +784,86 @@ describe('optimizeLinePalettesWithIndexBuffer', () => {
     }
   })
 })
+
+// On-grid colors (multiples of 17) so quantizeToCPCPlus is the identity,
+// making quantizedGlobalPalette (= the base palette) predictable.
+const onGridColor = (i: number): Vector<'RGB'> => [255, 17 * i, 0]
+const blackColor: Vector<'RGB'> = [0, 0, 0]
+
+function tinyMode0Image(): ImageData {
+  const width = 2
+  const height = 2
+  const data = new Uint8ClampedArray(width * height * 4)
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = 255
+    data[i + 3] = 255
+  }
+  return new ImageData(data, width, height)
+}
+
+describe('setupMode0PlusPalette (via optimizer, Mode 0 CPC Plus)', () => {
+  const onGrid = onGridColor
+  const black = blackColor
+  const tinyImage = tinyMode0Image
+
+  it('reserves the four raster slots as black', () => {
+    const result = optimizeLinePalettesWithIndexBuffer(tinyImage(), [], [], {
+      nColors: 16
+    })
+
+    expect(result.quantizedGlobalPalette.slice(0, 4)).toEqual([
+      black,
+      black,
+      black,
+      black
+    ])
+  })
+
+  it('keeps a full 16-color base palette', () => {
+    const result = optimizeLinePalettesWithIndexBuffer(tinyImage(), [], [], {
+      nColors: 16
+    })
+
+    expect(result.quantizedGlobalPalette).toHaveLength(16)
+  })
+
+  it('uses a provided palette of exactly numFixedColors as the fixed colors', () => {
+    const provided = Array.from({ length: 12 }, (_, i) => onGrid(i))
+
+    const result = optimizeLinePalettesWithIndexBuffer(
+      tinyImage(),
+      provided,
+      [],
+      { nColors: 16, useProvidedPalette: true }
+    )
+
+    expect(result.quantizedGlobalPalette.slice(4)).toEqual(provided)
+  })
+
+  it('drops the leading raster slots of an oversized provided palette', () => {
+    const provided = Array.from({ length: 16 }, (_, i) => onGrid(i))
+
+    const result = optimizeLinePalettesWithIndexBuffer(
+      tinyImage(),
+      provided,
+      [],
+      { nColors: 16, useProvidedPalette: true }
+    )
+
+    // numRasterSlots = 4, so fixed colors start at provided[4]
+    expect(result.quantizedGlobalPalette[4]).toEqual(onGrid(4))
+  })
+
+  it('fills fixed slots from a too-short provided palette then pads', () => {
+    const provided = [onGrid(0), onGrid(1), onGrid(2)]
+
+    const result = optimizeLinePalettesWithIndexBuffer(
+      tinyImage(),
+      provided,
+      [],
+      { nColors: 16, useProvidedPalette: true }
+    )
+
+    expect(result.quantizedGlobalPalette.slice(4, 7)).toEqual(provided)
+  })
+})
