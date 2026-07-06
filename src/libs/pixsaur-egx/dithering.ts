@@ -401,6 +401,39 @@ function applyEGXNoDithering(
   return output
 }
 
+type EGXPaletteBounds = ReturnType<typeof computeEGXPaletteBounds>
+
+/** True when a channel value sits at (or just inside) the palette gamut edge. */
+function isAtGamutBoundary(value: number, min: number, max: number): boolean {
+  return value <= min + 1 || value >= max - 1
+}
+
+/**
+ * Applies the ordered-dithering perturbation to a pixel, leaving it untouched
+ * when it sits at the palette gamut boundary on all three channels.
+ */
+function perturbForOrderedDithering(
+  sr: number,
+  sg: number,
+  sb: number,
+  threshold: number,
+  bounds: EGXPaletteBounds | null
+): [number, number, number] {
+  const skip =
+    bounds !== null &&
+    isAtGamutBoundary(sr, bounds.min[0], bounds.max[0]) &&
+    isAtGamutBoundary(sg, bounds.min[1], bounds.max[1]) &&
+    isAtGamutBoundary(sb, bounds.min[2], bounds.max[2])
+  if (skip) {
+    return [sr, sg, sb]
+  }
+  return [
+    Math.max(0, Math.min(255, sr + threshold)),
+    Math.max(0, Math.min(255, sg + threshold)),
+    Math.max(0, Math.min(255, sb + threshold))
+  ]
+}
+
 /**
  * Ordered dithering (Bayer) adapted for EGX mode
  */
@@ -465,23 +498,13 @@ function applyEGXOrderedDithering(
       const threshold = (bayerVal / divisor - 0.5) * amplitude
 
       // Skip perturbation when pixel is at palette gamut boundary
-      const sr = data[idx],
-        sg = data[idx + 1],
-        sb = data[idx + 2]
-      const skipPerturbation =
-        orderedBounds !== null &&
-        (sr <= orderedBounds.min[0] + 1 || sr >= orderedBounds.max[0] - 1) &&
-        (sg <= orderedBounds.min[1] + 1 || sg >= orderedBounds.max[1] - 1) &&
-        (sb <= orderedBounds.min[2] + 1 || sb >= orderedBounds.max[2] - 1)
-      const r = skipPerturbation
-        ? sr
-        : Math.max(0, Math.min(255, sr + threshold))
-      const g = skipPerturbation
-        ? sg
-        : Math.max(0, Math.min(255, sg + threshold))
-      const b = skipPerturbation
-        ? sb
-        : Math.max(0, Math.min(255, sb + threshold))
+      const [r, g, b] = perturbForOrderedDithering(
+        data[idx],
+        data[idx + 1],
+        data[idx + 2],
+        threshold,
+        orderedBounds
+      )
 
       const { color } = findClosestInSubset([r, g, b], palette, maxColorIndex)
 
