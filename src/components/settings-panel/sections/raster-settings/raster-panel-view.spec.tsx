@@ -199,7 +199,7 @@ describe('RasterPanelView', () => {
 
       // Check for change rows by looking for elements with lineRow class
       const changeRows = container.querySelectorAll('[class*="lineRow"]')
-      expect(changeRows.length).toBe(2)
+      expect(changeRows).toHaveLength(2)
     })
 
     it('should display line values', async () => {

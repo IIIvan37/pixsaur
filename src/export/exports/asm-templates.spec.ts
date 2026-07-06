@@ -45,7 +45,7 @@ describe('generateDataSection', () => {
 
     const lines = result.split('\n')
     // 1 label line + 2 data lines (32 / 16 = 2)
-    expect(lines.length).toBe(3)
+    expect(lines).toHaveLength(3)
     expect(lines[1]).toContain('DB')
     expect(lines[2]).toContain('DB')
   })
@@ -56,7 +56,7 @@ describe('generateDataSection', () => {
 
     const lines = result.split('\n')
     // 1 label + 3 data lines (12 / 4 = 3)
-    expect(lines.length).toBe(4)
+    expect(lines).toHaveLength(4)
   })
 
   it('should handle empty data', () => {
@@ -99,7 +99,7 @@ describe('generatePaletteSection', () => {
     // Should only have 16 values
     const dbLine = result.split('\n')[1]
     const values = dbLine.split(',')
-    expect(values.length).toBe(16)
+    expect(values).toHaveLength(16)
   })
 
   it('should handle empty palette', () => {

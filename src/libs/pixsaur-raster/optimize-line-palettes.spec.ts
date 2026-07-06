@@ -172,7 +172,7 @@ describe('extractGlobalPaletteFromImage', () => {
     const palette = extractGlobalPaletteFromImage(image, 16)
 
     // Should only have 1 color since image is solid
-    expect(palette.length).toBe(1)
+    expect(palette).toHaveLength(1)
     expect(palette[0]).toEqual([0, 0, 0])
   })
 
@@ -186,7 +186,7 @@ describe('extractGlobalPaletteFromImage', () => {
     // 100/17 ≈ 5.9 → 6*17 = 102
     // 150/17 ≈ 8.8 → 9*17 = 153
     // 200/17 ≈ 11.8 → 12*17 = 204
-    expect(palette.length).toBe(1)
+    expect(palette).toHaveLength(1)
     expect(palette[0]).toEqual([102, 153, 204])
   })
 
@@ -211,7 +211,7 @@ describe('extractGlobalPaletteFromImage', () => {
     const image = createTestImage(4, 4, pixels)
     const palette = extractGlobalPaletteFromImage(image, 4)
 
-    expect(palette.length).toBe(4)
+    expect(palette).toHaveLength(4)
   })
 })
 
@@ -301,7 +301,7 @@ describe('extractGlobalPaletteFromImage with tuning params', () => {
     // Request only 4 colors - should trigger farthest point selection
     const palette = extractGlobalPaletteFromImage(image, 4)
 
-    expect(palette.length).toBe(4)
+    expect(palette).toHaveLength(4)
   })
 
   it('should respect frequencyExponent parameter', () => {
@@ -331,8 +331,8 @@ describe('extractGlobalPaletteFromImage with tuning params', () => {
     const paletteLowFreq = extractGlobalPaletteFromImage(image, 2)
 
     // Both should have 2 colors
-    expect(paletteHighFreq.length).toBe(2)
-    expect(paletteLowFreq.length).toBe(2)
+    expect(paletteHighFreq).toHaveLength(2)
+    expect(paletteLowFreq).toHaveLength(2)
 
     // The first color (most frequent) should be red in high freq mode
     // Note: colors are quantized to CPC Plus, so [255, 0, 0] stays [255, 0, 0]
@@ -609,7 +609,7 @@ describe('optimizeLinePalettesWithIndexBuffer', () => {
     expect(result).toHaveProperty('changes')
     expect(result).toHaveProperty('indexBuffer')
     expect(result).toHaveProperty('quantizedGlobalPalette')
-    expect(result.indexBuffer.length).toBe(width * height)
+    expect(result.indexBuffer).toHaveLength(width * height)
   })
 
   it('should generate correct index buffer for single-color image', () => {

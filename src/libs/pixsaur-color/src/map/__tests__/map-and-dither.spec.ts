@@ -73,7 +73,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16) // 4 pixels * 4 channels
+      expect(result).toHaveLength(16) // 4 pixels * 4 channels
     })
 
     it('should process image with Floyd-Steinberg dithering', () => {
@@ -87,7 +87,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should process image with Bayer 2x2 dithering', () => {
@@ -101,7 +101,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should process image with Bayer 4x4 dithering', () => {
@@ -115,7 +115,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should process image with Bayer 8x8 dithering', () => {
@@ -129,7 +129,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should process image with Yliluoma 1 dithering', () => {
@@ -143,7 +143,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should process image with Yliluoma 2 dithering', () => {
@@ -157,7 +157,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should handle single pixel image', () => {
@@ -172,7 +172,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(4)
+      expect(result).toHaveLength(4)
     })
 
     it('should handle empty image', () => {
@@ -187,7 +187,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(0)
+      expect(result).toHaveLength(0)
     })
 
     it('should handle unsupported dithering mode', () => {
@@ -201,7 +201,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should work with different color spaces', () => {
@@ -215,7 +215,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
   })
 
@@ -237,7 +237,7 @@ describe('Map and Dither', () => {
       const result = applyNoDither(bufCS, 2, 2, paletteCS, paletteOut, distFn)
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
   })
 
@@ -266,7 +266,7 @@ describe('Map and Dither', () => {
       })
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(8)
+      expect(result).toHaveLength(8)
     })
   })
 
@@ -296,7 +296,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(36)
+      expect(result).toHaveLength(36)
     })
 
     it('should apply Bayer 4x4 dithering', () => {
@@ -322,7 +322,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(24)
+      expect(result).toHaveLength(24)
     })
   })
 
@@ -350,7 +350,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(8)
+      expect(result).toHaveLength(8)
     })
   })
 
@@ -378,7 +378,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(8)
+      expect(result).toHaveLength(8)
     })
   })
 
@@ -395,7 +395,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should handle very small intensity values', () => {
@@ -409,7 +409,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should handle maximum intensity values', () => {
@@ -423,7 +423,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should handle large images', () => {
@@ -445,7 +445,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(100 * 100 * 4)
+      expect(result).toHaveLength(100 * 100 * 4)
     })
   })
 
@@ -461,7 +461,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should process image with Halftone 4x4 dithering', () => {
@@ -475,7 +475,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should apply halftone pattern correctly', () => {
@@ -500,7 +500,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(64)
+      expect(result).toHaveLength(64)
     })
   })
 
@@ -523,7 +523,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should apply Bayer 2x2 with dynamic palette', () => {
@@ -544,7 +544,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should apply Bayer 4x4 with dynamic palette', () => {
@@ -567,7 +567,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should apply Bayer 8x8 with dynamic palette', () => {
@@ -595,7 +595,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should apply halftone with dynamic palette', () => {
@@ -611,7 +611,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should fallback to no dithering for unsupported modes', () => {
@@ -628,7 +628,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
     })
 
     it('should handle different palettes per line', () => {
@@ -664,7 +664,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(32)
+      expect(result).toHaveLength(32)
 
       // Line 0 pixels should be mapped to either black or red
       for (let x = 0; x < 4; x++) {
@@ -700,7 +700,7 @@ describe('Map and Dither', () => {
       )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result.length).toBe(16)
+      expect(result).toHaveLength(16)
       // Should fallback to black
       expect(result[0]).toBe(0)
       expect(result[1]).toBe(0)

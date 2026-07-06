@@ -223,7 +223,7 @@ describe('Manual Edits Integration with Exports', () => {
       const result = applyManualEditsToBuffer(buffer, edits)
 
       // DSK workspace stores multiple images, each needs complete buffer data
-      expect(result.buffer.length).toBe(result.width * result.height)
+      expect(result.buffer).toHaveLength(result.width * result.height)
     })
   })
 })

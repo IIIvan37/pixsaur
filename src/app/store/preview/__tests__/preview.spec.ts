@@ -61,7 +61,7 @@ describe('applyManualEditsToBuffer', () => {
     const result = applyManualEditsToBuffer(buffer, edits)
 
     expect(result.buffer[0]).toBe(1)
-    expect(result.buffer.length).toBe(4)
+    expect(result.buffer).toHaveLength(4)
   })
 
   it('should preserve metadata', () => {

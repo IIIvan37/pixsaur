@@ -309,7 +309,7 @@ describe('color-selection-helpers', () => {
 
       const reps = selectBucketRepresentatives(buckets, 10)
 
-      expect(reps.length).toBe(2)
+      expect(reps).toHaveLength(2)
       expect(reps[0].index).toBe(0) // Most frequent from first bucket
       expect(reps[1].index).toBe(2) // Most frequent from second bucket
     })
@@ -356,7 +356,7 @@ describe('color-selection-helpers', () => {
 
       const reps = selectBucketRepresentatives(buckets, 2)
 
-      expect(reps.length).toBe(2)
+      expect(reps).toHaveLength(2)
     })
 
     it('should skip empty buckets', () => {
@@ -382,7 +382,7 @@ describe('color-selection-helpers', () => {
 
       const reps = selectBucketRepresentatives(buckets, 10)
 
-      expect(reps.length).toBe(1)
+      expect(reps).toHaveLength(1)
       expect(reps[0].index).toBe(1)
     })
   })
@@ -436,7 +436,7 @@ describe('color-selection-helpers', () => {
       const reps = selectBucketRepresentativesWithLightness(buckets, 10)
 
       // All three buckets should be represented (no mega-family restrictions)
-      expect(reps.length).toBe(3)
+      expect(reps).toHaveLength(3)
       expect(reps.map((r) => r.index)).toContain(0)
       expect(reps.map((r) => r.index)).toContain(1)
       expect(reps.map((r) => r.index)).toContain(2)
@@ -472,7 +472,7 @@ describe('color-selection-helpers', () => {
 
       const reps = selectBucketRepresentativesWithLightness(buckets, 10)
 
-      expect(reps.length).toBe(2)
+      expect(reps).toHaveLength(2)
     })
   })
 
@@ -567,7 +567,7 @@ describe('color-selection-helpers', () => {
         simpleDistance
       )
 
-      expect(result.length).toBe(0)
+      expect(result).toHaveLength(0)
     })
   })
 

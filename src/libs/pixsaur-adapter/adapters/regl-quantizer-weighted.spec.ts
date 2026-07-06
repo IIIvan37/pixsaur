@@ -126,7 +126,7 @@ describe('ReGL Quantizer - Weighted Histogram Integration', () => {
       })
 
       expect(selectedBlueColors.length).toBeGreaterThan(0)
-      expect(result.length).toBe(config.targetColors)
+      expect(result).toHaveLength(config.targetColors)
     } finally {
       quantizer.dispose()
     }
@@ -160,12 +160,12 @@ describe('ReGL Quantizer - Weighted Histogram Integration', () => {
       // Vérifier que la quantification fonctionne
       expect(result).toBeDefined()
       expect(Array.isArray(result)).toBe(true)
-      expect(result.length).toBe(config.targetColors)
+      expect(result).toHaveLength(config.targetColors)
 
       // Chaque couleur devrait être un tableau RGB valide
       for (const color of result) {
         expect(Array.isArray(color)).toBe(true)
-        expect(color.length).toBe(3)
+        expect(color).toHaveLength(3)
         for (const component of color) {
           expect(typeof component).toBe('number')
           expect(component).toBeGreaterThanOrEqual(0)

@@ -28,7 +28,7 @@ describe('SourceSelectorView', () => {
         <SourceSelectorView {...baseProps} />
       )
       const handles = container.querySelectorAll('[data-handle]')
-      expect(handles.length).toBe(4)
+      expect(handles).toHaveLength(4)
     })
 
     it('renders handles with correct names', () => {

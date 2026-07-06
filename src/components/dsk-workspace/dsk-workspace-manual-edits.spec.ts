@@ -60,7 +60,7 @@ describe('DSK Workspace Manual Edits Integration', () => {
 
       // DSK workspace stores images that need complete metadata
       expect(finalBuffer.palette).toEqual(palette)
-      expect(finalBuffer.buffer.length).toBe(
+      expect(finalBuffer.buffer).toHaveLength(
         finalBuffer.width * finalBuffer.height
       )
     })

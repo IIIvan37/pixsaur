@@ -100,7 +100,7 @@ describe('editor-actions', () => {
       }
 
       const history = store.get(editorHistoryAtom)
-      expect(history.length).toBe(MAX_HISTORY_SIZE)
+      expect(history).toHaveLength(MAX_HISTORY_SIZE)
     })
   })
 

@@ -57,7 +57,7 @@ describe('rasm-wasm concurrency', () => {
       await Promise.all([p1, p2])
 
       // We should have two write events
-      expect(writeTimestamps.length).toBe(2)
+      expect(writeTimestamps).toHaveLength(2)
 
       // The second write should happen at least ~TEST_DELAY after the first
       const diff = writeTimestamps[1] - writeTimestamps[0]

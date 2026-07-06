@@ -154,7 +154,7 @@ describe('ReGLProcessor', () => {
       const capabilities = processor.getCapabilities()
 
       expect(capabilities.futureReGLCapable).toBe(false)
-      expect(capabilities.webglVersion).toBe(null)
+      expect(capabilities.webglVersion).toBeNull()
 
       // Restaurer
       Object.defineProperty(document, 'createElement', {
@@ -481,7 +481,7 @@ describe('ReGLProcessor', () => {
       const capabilities = processor.getCapabilities()
 
       expect(capabilities.futureReGLCapable).toBe(false)
-      expect(capabilities.webglVersion).toBe(null)
+      expect(capabilities.webglVersion).toBeNull()
       expect(capabilities.maxTextureSize).toBe(0)
 
       // Restaurer
