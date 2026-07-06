@@ -926,6 +926,56 @@ export const selectByPerceptualMax: PaletteStrategyFunction = (
   )
 }
 
+type CandidateWithLuminance = ColorCandidate & { luminance: number }
+
+/**
+ * CPC Plus: keeps only bin candidates far enough (in hue) from the already
+ * selected colors, falling back to the unfiltered bin if none qualify.
+ */
+function filterBinByHueDistance(
+  inBin: CandidateWithLuminance[],
+  candidates: ColorCandidate[],
+  result: number[],
+  minHueDistance: number
+): CandidateWithLuminance[] {
+  const selectedColors = result.map(
+    (idx) => candidates.find((c) => c.index === idx)!.converted
+  )
+  const filtered = inBin.filter((c) => {
+    const hueDist = calculateMinHueDistance(
+      c.converted,
+      selectedColors,
+      SATURATION_MIN_THRESHOLD,
+      SATURATION_LOW_THRESHOLD
+    )
+    return hueDist >= minHueDistance
+  })
+  return filtered.length > 0 ? filtered : inBin
+}
+
+/**
+ * Picks the index to keep from a non-empty bin: the most frequent candidate
+ * when prioritizing frequency, otherwise the most hue-diverse one.
+ */
+function pickFromBin(
+  inBin: CandidateWithLuminance[],
+  candidates: ColorCandidate[],
+  result: number[],
+  prioritizeFrequency: boolean
+): number {
+  if (prioritizeFrequency) {
+    return inBin[0].index
+  }
+  const selectedColors = result.map(
+    (idx) => candidates.find((c) => c.index === idx)!.converted
+  )
+  const excludedIndices = new Set(result)
+  const bestCandidate =
+    selectMostDiverseCandidate(inBin, selectedColors, excludedIndices) ||
+    inBin[0]
+  return bestCandidate.index
+}
+
 function selectByPerceptualCore(
   candidates: ColorCandidate[],
   targetColors: number,
@@ -965,38 +1015,11 @@ function selectByPerceptualCore(
 
     // Pour CPC Plus, filtrer par distance de teinte
     if (!isCPCClassic && minHueDistance > 0 && result.length > 0) {
-      const selectedColors = result.map(
-        (idx) => candidates.find((c) => c.index === idx)!.converted
-      )
-      const filtered = inBin.filter((c) => {
-        const hueDist = calculateMinHueDistance(
-          c.converted,
-          selectedColors,
-          SATURATION_MIN_THRESHOLD,
-          SATURATION_LOW_THRESHOLD
-        )
-        return hueDist >= minHueDistance
-      })
-      if (filtered.length > 0) {
-        inBin = filtered
-      }
+      inBin = filterBinByHueDistance(inBin, candidates, result, minHueDistance)
     }
 
     if (inBin.length > 0) {
-      if (prioritizeFrequency) {
-        // Balanced: prendre la plus fréquente
-        result.push(inBin[0].index)
-      } else {
-        // Max: prendre la plus diverse
-        const selectedColors = result.map(
-          (idx) => candidates.find((c) => c.index === idx)!.converted
-        )
-        const excludedIndices = new Set(result)
-        const bestCandidate =
-          selectMostDiverseCandidate(inBin, selectedColors, excludedIndices) ||
-          inBin[0]
-        result.push(bestCandidate.index)
-      }
+      result.push(pickFromBin(inBin, candidates, result, prioritizeFrequency))
     }
   }
 
@@ -1923,6 +1946,40 @@ export const selectByDitheringAware: PaletteStrategyFunction = (
 }
 
 /**
+ * Builds the extended palette: the selected colors plus every pairwise blend.
+ */
+function buildExtendedPalette(selectedColors: Vector[]): Vector[] {
+  const extended: Vector[] = [...selectedColors]
+  for (let i = 0; i < selectedColors.length; i++) {
+    for (let j = i + 1; j < selectedColors.length; j++) {
+      extended.push(blendColors(selectedColors[i], selectedColors[j]))
+    }
+  }
+  return extended
+}
+
+/**
+ * Whether a color is within coverageThreshold of any palette color.
+ * Exits as soon as a close-enough palette color is found.
+ */
+function isColorCovered(
+  color: Vector,
+  palette: Vector[],
+  coverageThreshold: number,
+  distanceCache: DistanceCache
+): boolean {
+  let minDist = Infinity
+  for (const paletteColor of palette) {
+    const dist = cachedDistance(color, paletteColor, distanceCache)
+    if (dist < minDist) {
+      minDist = dist
+      if (minDist <= coverageThreshold) return true
+    }
+  }
+  return minDist <= coverageThreshold
+}
+
+/**
  * Version directe qui prend les couleurs au lieu des indices
  */
 function calculateDitheringScoreOptimizedDirect(
@@ -1932,29 +1989,11 @@ function calculateDitheringScoreOptimizedDirect(
   coverageThreshold: number,
   distanceCache: DistanceCache
 ): number {
-  // Construire la palette étendue avec les blends
-  const extended: Vector[] = [...selectedColors]
-  for (let i = 0; i < selectedColors.length; i++) {
-    for (let j = i + 1; j < selectedColors.length; j++) {
-      extended.push(blendColors(selectedColors[i], selectedColors[j]))
-    }
-  }
+  const extended = buildExtendedPalette(selectedColors)
 
   let totalCovered = 0
-
   for (const { color, frequency } of sampledCandidates) {
-    let minDist = Infinity
-
-    for (const paletteColor of extended) {
-      const dist = cachedDistance(color, paletteColor, distanceCache)
-      if (dist < minDist) {
-        minDist = dist
-        // Early exit si déjà couvert
-        if (minDist <= coverageThreshold) break
-      }
-    }
-
-    if (minDist <= coverageThreshold) {
+    if (isColorCovered(color, extended, coverageThreshold, distanceCache)) {
       totalCovered += frequency
     }
   }

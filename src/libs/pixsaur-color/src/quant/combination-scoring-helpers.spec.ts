@@ -246,6 +246,104 @@ describe('combination-scoring-helpers', () => {
       expect(result.selectedIndices).toContain(2)
       expect(result.selectedIndices).not.toContain(1)
     })
+
+    it('should skip colors darker than the min luminance', () => {
+      const dark = createCandidate(0, [10, 10, 10])
+      const red = createCandidate(1, [255, 50, 50])
+
+      const result = selectWithHueDiversity(
+        [
+          { candidate: dark, arrayIndex: 0 },
+          { candidate: red, arrayIndex: 1 }
+        ],
+        [],
+        [],
+        5,
+        60
+      )
+
+      expect(result.selectedIndices).toEqual([1])
+    })
+
+    it('should select a bright achromatic color', () => {
+      const gray = createCandidate(0, [150, 150, 150])
+
+      const result = selectWithHueDiversity(
+        [{ candidate: gray, arrayIndex: 0 }],
+        [],
+        [],
+        5,
+        60
+      )
+
+      expect(result.selectedIndices).toEqual([0])
+    })
+
+    it('should not track a hue for achromatic colors', () => {
+      const gray = createCandidate(0, [150, 150, 150])
+
+      const result = selectWithHueDiversity(
+        [{ candidate: gray, arrayIndex: 0 }],
+        [],
+        [],
+        5,
+        60
+      )
+
+      expect(result.updatedHues).toEqual([])
+    })
+
+    it('should track the hue of a selected saturated color', () => {
+      const red = createCandidate(0, [255, 50, 50])
+
+      const result = selectWithHueDiversity(
+        [{ candidate: red, arrayIndex: 0 }],
+        [],
+        [],
+        5,
+        60
+      )
+
+      expect(result.updatedHues).toHaveLength(1)
+    })
+
+    it('should stop once neededColors is reached', () => {
+      const red = createCandidate(0, [255, 50, 50])
+      const green = createCandidate(1, [50, 255, 50])
+      const blue = createCandidate(2, [50, 50, 255])
+
+      const result = selectWithHueDiversity(
+        [
+          { candidate: red, arrayIndex: 0 },
+          { candidate: green, arrayIndex: 1 },
+          { candidate: blue, arrayIndex: 2 }
+        ],
+        [],
+        [],
+        1,
+        60
+      )
+
+      expect(result.selectedIndices).toHaveLength(1)
+    })
+
+    it('should keep the initial selection without duplicating it', () => {
+      const red = createCandidate(0, [255, 50, 50])
+      const green = createCandidate(1, [50, 255, 50])
+
+      const result = selectWithHueDiversity(
+        [
+          { candidate: red, arrayIndex: 0 },
+          { candidate: green, arrayIndex: 1 }
+        ],
+        [0],
+        [],
+        5,
+        60
+      )
+
+      expect(result.selectedIndices).toEqual([0, 1])
+    })
   })
 
   describe('findDarkestCandidateIndex', () => {

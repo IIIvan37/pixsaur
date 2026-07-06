@@ -218,6 +218,35 @@ export function isHueDiverse(
 }
 
 /**
+ * Decides whether a single candidate should be selected for hue diversity.
+ * Returns whether to select it and, when it carries a usable hue, the hue to
+ * remember so later candidates can be compared against it.
+ */
+function evaluateHueCandidate(
+  candidate: ColorCandidate,
+  hues: number[],
+  minHueDistance: number,
+  minLuminance: number
+): { select: boolean; hueToAdd: number | null } {
+  const rejected = { select: false, hueToAdd: null }
+
+  // Skip very dark colors
+  if (calculateLuminance(candidate.converted) < minLuminance) {
+    return rejected
+  }
+
+  const saturation = calculateSaturation(candidate.converted)
+  const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
+  const hasHue = saturation > MIN_SATURATION_FOR_HUE && hue >= 0
+
+  if (hasHue && !isHueDiverse(hue, hues, minHueDistance)) {
+    return rejected
+  }
+
+  return { select: true, hueToAdd: hasHue ? hue : null }
+}
+
+/**
  * Selects colors with hue diversity from sorted candidates
  * Returns the indices of selected candidates
  */
@@ -239,27 +268,17 @@ export function selectWithHueDiversity(
     if (selectedArrayIndices.length >= neededColors) break
     if (selectedArrayIndices.includes(arrayIndex)) continue
 
-    const hue = calculateHue(candidate.converted, SATURATION_LOW_THRESHOLD)
-    const saturation = calculateSaturation(candidate.converted)
-    const luminance = calculateLuminance(candidate.converted)
+    const { select, hueToAdd } = evaluateHueCandidate(
+      candidate,
+      hues,
+      minHueDistance,
+      minLuminance
+    )
+    if (!select) continue
 
-    // Skip very dark colors
-    if (luminance < minLuminance) {
-      continue
-    }
-
-    const isSaturated = saturation > MIN_SATURATION_FOR_HUE
-    let diverse = true
-
-    if (isSaturated && hue >= 0) {
-      diverse = isHueDiverse(hue, hues, minHueDistance)
-    }
-
-    if (diverse) {
-      selectedArrayIndices.push(arrayIndex)
-      if (isSaturated && hue >= 0) {
-        hues.push(hue)
-      }
+    selectedArrayIndices.push(arrayIndex)
+    if (hueToAdd !== null) {
+      hues.push(hueToAdd)
     }
   }
 
