@@ -51,7 +51,7 @@
   font-size: var(--font-size-xs);
   text-align: left;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .actions {
