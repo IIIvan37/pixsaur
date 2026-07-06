@@ -122,7 +122,7 @@ describe('ColorPaletteView', () => {
     ).toHaveLength(3)
   })
 
-  it('opens popover when empty slot is clicked', () => {
+  it('shows popover synchronously when empty slot is clicked', () => {
     renderWithStore(<ColorPaletteView {...props} />)
     fireEvent.click(
       screen.getByRole('button', { name: /Ajouter une couleur/i })
