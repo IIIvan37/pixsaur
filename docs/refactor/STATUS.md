@@ -15,6 +15,45 @@ rewrite). Jotai/React became thin adapters over pure use-cases. Rationale &
 big picture: `src/export/application/README.md` and the memory note
 `refactor-clean-archi-plan`.
 
+## Post-review remediation (August 2026 — live)
+
+> The clean-archi refactor below is finished and archived. What follows is a
+> **new, separate** effort: applying the findings of
+> `architecture-review-2026-08.md` (11 candidates, 4 waves). This section is the
+> live resume point; everything under "Where we landed" is history.
+
+- **Wave 1 — DONE** (branch `fix/distinct-mapping-explicit-channel`, 3 commits,
+  not pushed). Report: `sessions/2026-08-27-wave1-distinct-mapping-dead-code.md`.
+  - `0a487e3` candidate 2: the distinct-mapping table now travels as a value
+    (`quantizePalette` drains the ambient transport; `mapAndDither` /
+    `applyNoDither` / `dither` take it as an argument; `isDistinctMappingEnabled`
+    deleted). Fixes a real stale-state bug — the CPU fallback dithered through
+    the previous image's table whenever `ReGLQuantizer` threw for an image under
+    128×128.
+  - `2d67f4d` dead-code sweep: `exportModeRSna`, `generateSCRAsmPlus`,
+    `egxPreviewImageAtom`. Deliberately kept: `quantizeEGX` (candidate 1 adopts
+    it) and `getCapabilities` (only observation window on live WebGL detection).
+  - `b7a9b55` the review itself, recorded.
+- **Wave 2 — NEXT**: candidate 1 (EGX rendering path → one `quantizeEgx`
+  use-case, via the `extract-use-case` skill), then candidate 10 (DSK export
+  through the existing `FileSink` port).
+- **Waves 3–4**: candidates 4, 5, 6 (export orchestration), then 3, 7, 8, 9
+  (structural). Candidate 11 falls out of candidate 8 — not worth its own PR.
+
+### Ratchet baselines (lowered 2026-08-27 — may only shrink)
+
+| Detector | Baseline | Was |
+|---|---|---|
+| knip unused exports | **42** | 52 |
+| knip unused types | **19** | 19 |
+| knip unused files | 1 (intentional) | 1 |
+| jscpd clones | **37** | 39 |
+| jscpd ratio | **1.49 %** | 1.62 % |
+
+Known pre-existing noise: `pnpm check` reports ~9 biome format errors in
+`src-tauri/gen/` and `src-tauri/target/` on machines that have run a Tauri
+build. Those paths are git-ignored; the errors are not in tracked sources.
+
 ## Where we landed
 
 - **Parallel effort — quality gates from `loupe`:** branche
