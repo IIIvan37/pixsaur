@@ -68,11 +68,12 @@ big picture: `src/export/application/README.md` and the memory note
     **zero `vi.mock`**). `dsk-workspace-panel.tsx` is now a thin adapter —
     `isTauri` / `saveZipFileTauri` / `downloadFile` left the component and the
     save goes through `resolveFileSink()`.
-- **Wave 2 verified by hand 2026-08-27 (web build)**: EGX renders correctly with
-  the new linear-light resampling, smoothing behaves, and the DSK workspace
-  export works end to end. The **Tauri build is still unverified** — the desktop
-  save path (`tauriFileSink`, native dialog) is the one branch the web run never
-  exercises. Smoke-test a DSK export in `pnpm tauri:dev` before merging.
+- **Wave 2 verified by hand 2026-08-27 — web AND Tauri**: on the web build, EGX
+  renders correctly with the new linear-light resampling, smoothing behaves, and
+  the DSK workspace export works end to end. The desktop build was then smoke-
+  tested too: the Tauri app runs and the DSK export works, so the
+  `tauriFileSink` / native-dialog branch — the one path the web run never
+  exercises — is confirmed. **No manual verification is outstanding.**
 - **Wave 3 — candidate 4 DONE** (same branch, 1 commit). Report:
   `sessions/2026-08-27-wave3-standard-mode-verdict.md`.
   - `d4b1587`: new `src/domain/cpc/screen-capability.ts` (+22-test spec) —
@@ -107,6 +108,19 @@ big picture: `src/export/application/README.md` and the memory note
     its async twin, so there was no duplication left to collapse) and
     `export-sna.spec.ts`'s 5 `vi.mock` calls — now redundant rather than
     load-bearing, a cheap follow-up.
+- **Rebased onto `main` 2026-08-27** (18 commits replayed on `272c781`, which
+  brought the enforcing quality gates of #345). Two conflicts: `STATUS.md`
+  (kept main's "quality gates from loupe" record plus this branch's corrected
+  "merged in 1.13.0" bullets) and `quantize-egx.spec.ts` (deleted here; main had
+  only swapped `toBe(x.length)` for `toHaveLength` in the S5906 sweep #340).
+  Full gate green afterwards: 2481 tests, jscpd 33 clones / 1.27 %, react-doctor
+  clean.
+- **Repo cleanup 2026-08-27**: `origin` now holds `main` and this branch only —
+  25 stale branches and 2 stashes deleted, each preserved as a local `archive/*`
+  tag. Restore one with
+  `git push origin archive/<name>:refs/heads/<name>`. Worth knowing before the
+  tags are ever pruned: `archive/refactor/architecture-cleanup` carries
+  `perf(mode-r): spatial lookup table (~8× speedup)`, which never reached `main`.
 - **Wave 4 — NEXT**: candidates 3, 7, 8, 9 (structural). Start with candidate 3
   (split the processor seam that has one adapter). Candidate 11 falls out of
   candidate 8 — not worth its own PR.
@@ -128,9 +142,22 @@ drifted sync/async), which is why the review reads code and the detectors only
 guard the floor. Wave 3 moved both: 37 → 34 (candidate 5, three EGX copies → one)
 → 33 (candidate 6, the SNA twins → one).
 
-Known pre-existing noise: `pnpm check` reports ~9 biome format errors in
-`src-tauri/gen/` and `src-tauri/target/` on machines that have run a Tauri
-build. Those paths are git-ignored; the errors are not in tracked sources.
+~~Known pre-existing noise~~ — **fixed 2026-08-27**. `pnpm check` used to report
+biome format errors in `src-tauri/gen/` and `src-tauri/target/` on machines that
+had run a Tauri build (583 of them on a full build, not the ~9 first recorded).
+`biome.json` now excludes both paths, so `pnpm check` / `pnpm gate` scan 673
+files instead of 1260 and are green locally as well as in CI.
+
+**`pnpm typecheck` was a no-op** (found the same day). `tsconfig.json` is a
+solution file (`"files": []` + `references`), and `tsc --noEmit` ignores
+referenced projects — it exited 0 on a deliberately broken file. Same hole in
+`.husky/pre-commit` (`npx tsc --noEmit`) and twice in
+`scripts/typecheck-comprehensive.js` (it ran `tsc --project tsconfig.json`,
+printing a false green, and its "diagnostic checks" pass was the same bare
+`tsc --noEmit`). Only the per-project `tsconfig.app.json` pass was ever real.
+Fixed: `typecheck` and the hook now run `tsc -b --force`; the script checks
+`tsconfig.app.json` / `tsconfig.node.json` only. Verified by probe — both now
+exit non-zero on a type error.
 
 ## Where we landed
 
