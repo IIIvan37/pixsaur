@@ -48,7 +48,9 @@ export const croppedImageAtom = atom(async (get) => {
  * EGX path drives with its own high-resolution mode config.
  */
 export const resizedImageAtom = atom(async (get) => {
-  // Read all atoms synchronously (before any await) so Jotai tracks them.
+  // Config first, image after: Jotai tracks a `get` either side of an await
+  // (pinned by `__tests__/async-atom-dependencies.spec.ts`), so this ordering
+  // is for reading, not for correctness.
   const options = {
     modeConfig: get(effectiveModeConfigAtom),
     resizeMode: get(resizeModeAtom),
