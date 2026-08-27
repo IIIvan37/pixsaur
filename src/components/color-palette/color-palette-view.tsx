@@ -76,10 +76,15 @@ export const ColorPaletteView = ({
     if (openPopoverIndex !== null) setFocusedColorIdx(0)
   }, [openPopoverIndex])
 
-  // Focus the color option button when focusedColorIdx changes
+  // Focus the color option button when focusedColorIdx changes.
+  // Deferred to the next tick so the popover has mounted; cleared on unmount so
+  // the timer cannot fire against a detached button.
   useEffect(() => {
     const btn = colorOptionRefs.current[focusedColorIdx]
-    if (btn) setTimeout(() => btn.focus(), 0)
+    if (!btn) return
+
+    const timer = setTimeout(() => btn.focus(), 0)
+    return () => clearTimeout(timer)
   }, [focusedColorIdx])
 
   // When popover opens, focus the first color option
