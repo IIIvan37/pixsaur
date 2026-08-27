@@ -75,7 +75,9 @@
       "!**/coverage",
       "!**/.pnpm-store",
       "!**/reports",
-      "!**/.stryker-tmp"
+      "!**/.stryker-tmp",
+      "!**/src-tauri/target",
+      "!**/src-tauri/gen"
     ],
     "ignoreUnknown": true
   },
