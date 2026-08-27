@@ -42,7 +42,28 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 | `normalizeImage` ✅ PR9 | `normalizedImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ processed, modeConfig, resizeMode }` | `ImageData \| null` (total, no union) | _none (pure)_ |
 | `positionNormalizedImage` ✅ PR9 | `positionedNormalizedImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ normalized, modeConfig, resizeMode, exportPalette, centerImage }` | `ImageData \| null` (total, no union) | _none (pure)_ |
 | `smoothImage` ✅ PR10 | `smoothedImageAtom` orchestration in `app/store/preview/pipeline/image-pipeline.ts` | `{ resized, horizontalSmoothing, pixelMode, autoDistinctMapping, cpcHardware, modeConfig }` | `ImageData \| null` (total, no union) | _none (pure)_ |
+| `quantizeEgx` ✅ review-1 | `egxIndexBufferAtom` orchestration in `app/store/preview/egx/egx-index-buffer.ts` | `{ normalized, palette, config, dithering }` | `{ ok, indexBuffer } \| { ok:false, error }` | _none (pure)_ |
 
+> Status: `quantizeEgx` landed with candidate 1 of the August 2026 architecture
+> review (`docs/refactor/architecture-review-2026-08.md`) — `quantize-egx.ts`
+> (+ 28-test spec: a table over `(egx1|egx2) × (low|high firstLine) ×
+> (none|ostromoukhov|bayer4x4)`). It dithers the normalized image with
+> `applyEGXDitheringByMode` (`@/libs/pixsaur-egx`) and converts the result to one
+> palette index per pixel under the per-line EGX constraints: high-resolution
+> lines may only address the shared low inks, low-resolution lines are walked in
+> pairs that share one ink (an odd trailing pixel falls back to the single-pixel
+> branch). **No port** (deterministic lib functions) and **synchronous** like
+> `buildIndexBuffer`; it returns the same `IndexBuffer` shape. An empty palette is
+> an explicit `{ ok:false }` the atom maps to `null`.
+>
+> Reuse over reinvention: the lib had a *second*, unshipped EGX quantizer
+> (`pixsaur-egx/quantize-egx.ts`, 271 lines, 0 production callers, its own
+> nearest-neighbour resize and palette optimizer, no dithering and no pixel
+> pairing). The shipped behaviour is the one extracted here; the parallel module
+> and its now-orphaned helpers (`getEGXOutputDimensions`,
+> `generateLineEncodings`, `getPixelsPerByte`, `EGXQuantizationResult`,
+> `LineEncoding`) were deleted in the same change.
+>
 > Status: `smoothImage` landed in PR10 — `smooth-image.ts` (+ 6-test spec). The
 > last preview-pipeline transformation step. A pure, **synchronous** function:
 > skips smoothing when distinct-mapping is active (CPC Classic + Mode 0,

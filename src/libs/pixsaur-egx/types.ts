@@ -161,77 +161,6 @@ export interface EGXPalette {
 }
 
 // ============================================================================
-// Line Encoding Types
-// ============================================================================
-
-/**
- * Encoding information for a single line
- */
-export interface LineEncoding {
-  /** Line number (0-based) */
-  line: number
-
-  /** CPC video mode for this line (0, 1, or 2) */
-  mode: CPCVideoMode
-
-  /** Number of bytes per line in screen memory */
-  bytesPerLine: number
-
-  /** Number of pixels per byte */
-  pixelsPerByte: number
-
-  /** Maximum palette index usable for this line */
-  maxColorIndex: number
-}
-
-// ============================================================================
-// Quantization Result
-// ============================================================================
-
-/**
- * Result of EGX quantization
- *
- * Unlike Mode R which produces 2 index buffers (frame A and B),
- * EGX produces a single index buffer where each line is encoded
- * according to its mode constraints.
- */
-export interface EGXQuantizationResult {
-  /**
-   * Index buffer at the output resolution
-   * Each pixel contains an index into the palette (0-15 for EGX1, 0-3 for EGX2)
-   * Lines respect their mode constraints (high-res lines: limited indices)
-   */
-  indexBuffer: Uint8Array
-
-  /**
-   * Output width in pixels
-   * EGX1: 320px (Mode 1 resolution)
-   * EGX2: 640px (Mode 2 resolution)
-   */
-  width: number
-
-  /**
-   * Output height in pixels (typically 200)
-   */
-  height: number
-
-  /**
-   * The optimized palette with shared color constraints
-   */
-  palette: EGXPalette
-
-  /**
-   * Encoding information for each line
-   */
-  lineEncodings: LineEncoding[]
-
-  /**
-   * Total quantization error
-   */
-  totalError: number
-}
-
-// ============================================================================
 // Helper Functions
 // ============================================================================
 
@@ -286,35 +215,6 @@ export function getMaxColorIndex(mode: CPCVideoMode, type: EGXType): number {
 }
 
 /**
- * Get the number of pixels per byte for a given CPC mode
- */
-export function getPixelsPerByte(mode: CPCVideoMode): number {
-  switch (mode) {
-    case 0:
-      return 2 // 4 bits per pixel
-    case 1:
-      return 4 // 2 bits per pixel
-    case 2:
-      return 8 // 1 bit per pixel
-  }
-}
-
-/**
- * Get output dimensions for an EGX type
- */
-export function getEGXOutputDimensions(type: EGXType): {
-  width: number
-  height: number
-} {
-  switch (type) {
-    case 'egx1':
-      return { width: 320, height: 200 } // Mode 1 resolution
-    case 'egx2':
-      return { width: 640, height: 200 } // Mode 2 resolution
-  }
-}
-
-/**
  * Get the mode for a specific line based on configuration
  */
 export function getModeForLine(
@@ -331,28 +231,4 @@ export function getModeForLine(
     // Even lines: high mode, Odd lines: low mode
     return isEvenLine ? highMode : lowMode
   }
-}
-
-/**
- * Generate line encoding information for all lines
- */
-export function generateLineEncodings(
-  height: number,
-  config: EGXConfig
-): LineEncoding[] {
-  const encodings: LineEncoding[] = []
-
-  for (let y = 0; y < height; y++) {
-    const mode = getModeForLine(y, config)
-    const pixelsPerByte = getPixelsPerByte(mode)
-    encodings.push({
-      line: y,
-      mode,
-      bytesPerLine: 80, // Standard CPC line width
-      pixelsPerByte,
-      maxColorIndex: getMaxColorIndex(mode, config.type)
-    })
-  }
-
-  return encodings
 }
