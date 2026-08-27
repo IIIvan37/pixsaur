@@ -22,9 +22,11 @@ big picture: `src/export/application/README.md` and the memory note
 > `architecture-review-2026-08.md` (11 candidates, 4 waves). This section is the
 > live resume point; everything under "Where we landed" is history.
 
-- **Wave 1 — DONE** (branch `refactor/post-review-remediation` — renamed from
-  `fix/distinct-mapping-explicit-channel` on 2026-08-27, 3 commits,
-  not pushed). Report: `sessions/2026-08-27-wave1-distinct-mapping-dead-code.md`.
+- Branch: `refactor/post-review-remediation` (renamed from
+  `fix/distinct-mapping-explicit-channel` on 2026-08-27). **Pushed to `origin`
+  2026-08-27** after wave 3; not merged to `main` — no PR opened yet.
+- **Wave 1 — DONE** (3 commits). Report:
+  `sessions/2026-08-27-wave1-distinct-mapping-dead-code.md`.
   - `0a487e3` candidate 2: the distinct-mapping table now travels as a value
     (`quantizePalette` drains the ambient transport; `mapAndDither` /
     `applyNoDither` / `dither` take it as an argument; `isDistinctMappingEnabled`
