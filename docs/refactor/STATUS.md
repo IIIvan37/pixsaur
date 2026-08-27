@@ -160,11 +160,35 @@ big picture: `src/export/application/README.md` and the memory note
     change). And the raster mode picker still hides error diffusion: the lib now
     supports it, but whether it reads well on a CPC raster image is a product
     call. `dithering-modes.ts` says so instead of claiming incompatibility.
-- **Wave 4 — NEXT**: candidate 8 (one interface for the three rendering paths) —
-  the last of wave 4 and the largest blast radius. It carries a real defect: no
-  `manualPixelEdits` anywhere under `store/preview/mode-r`, so manual edits
-  silently do nothing in Mode R. Candidate 11 falls out of it — not worth its
-  own PR.
+- **Wave 4 — candidate 8 DONE — wave 4 complete** (same branch, 1 more commit).
+  Report: `sessions/2026-08-27-wave4-rendering-path.md`.
+  - `bd2e141`: the survey came first and reshaped the fix. There are **four**
+    paths (raster is not a decoration on standard) and **six** dispatch sites,
+    each with its own precedence and none agreeing — the preview counted raster
+    as active only with at least one change, the editor as soon as the flag was
+    on, so deleting every raster change left the editor on a stale buffer the
+    screen no longer showed. New pure `src/preview/application/rendering-path.ts`
+    (+19 tests): `resolveRenderingPath` picks the path,
+    `RENDERING_PATH_CAPABILITIES` **declares** what each supports (manual edits,
+    editor, single index buffer, display palette, distinct-mapping dither rule).
+    `activeRenderingPathAtom` is a leaf atom module (+8 tests, real store);
+    `effectivePreviewImageAtom` + `effectiveIndexBufferAtom` move out of the
+    raster slice into `preview/effective-rendering.ts` as exhaustive switches.
+    Five consumers read the path or its capabilities instead of the raw flags.
+    `preview-panel.spec.tsx` (which mocked `useAtomValue` and fed it values by
+    position) rewritten on a real Jotai store, 7 tests.
+  - Deliberately unchanged: the review's shared `RenderingPath` object — the four
+    surfaces have genuinely different types per path (Mode R has *two* index
+    buffers and *two* palettes), so one type would have meant `null` members and
+    casts. What the paths share is identity and capability, and that is what the
+    module carries. The dithering asymmetry is **declared, not unified** (making
+    EGX / Mode R / raster force dithering off under distinct mapping is a
+    rendering change). And Mode R still shows the standard 16 slots under its
+    preview despite `displayPalette: false` — hiding that panel is a visible UI
+    change, left as a product call.
+- **Candidate 11 (flatten the preview barrels) — the only open review item.** It
+  did not "fall out of" candidate 8 as the review predicted: the new modules
+  sidestep the barrels rather than removing them. Still rated speculative.
 
 ### Ratchet baselines (lowered 2026-08-27 — may only shrink)
 
