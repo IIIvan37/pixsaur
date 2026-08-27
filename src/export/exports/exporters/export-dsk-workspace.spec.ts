@@ -49,7 +49,7 @@ vi.mock('@/export/exports/export-scr/export-scr', () => ({
   exportSCR: mockExportSCR
 }))
 
-vi.mock('@/export', () => ({
+vi.mock('@/export/exports/cpc-plus-format', () => ({
   injectCPCPlusPaletteIntoSCR: mockInjectCPCPlusPaletteIntoSCR
 }))
 

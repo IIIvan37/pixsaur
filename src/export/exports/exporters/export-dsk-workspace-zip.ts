@@ -1,45 +1,25 @@
 import JSZip from 'jszip'
 import { dskLogger } from '@/core'
-import { injectPaletteDataIntoSCR } from '@/export/exports/cpc-format'
-import { injectCPCPlusPaletteIntoSCR } from '@/export/exports/cpc-plus-format'
+import type { CpcModeConfig } from '@/domain/cpc'
 import {
   generateClassicRasterASM,
   generatePlusRasterASM
 } from '@/export/exports/raster-format'
 import { generateDskFilenames } from '../dsk-workspace-utils'
-import { exportSCR } from '../export-scr/export-scr'
 import { generateDskReadmePdf } from '../generate-dsk-readme-pdf'
 import { toASMData } from '../to-asm-data'
 import type { DskImage } from '../types'
+import {
+  generateDskStandardScr,
+  isStandardDskMode,
+  toDskModeConfig
+} from './dsk-image-format'
 import { exportDskWorkspace } from './export-dsk-workspace'
 
 type RasmInstance = Awaited<
   ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>
 >
 type RasmModule = ReturnType<RasmInstance['getModule']>
-
-interface ModeConfig {
-  readonly mode: 0 | 1 | 2
-  readonly width: number
-  readonly height: number
-  readonly overscan: boolean
-  readonly nColors: number
-  readonly scaleX: number
-  readonly scaleY: number
-}
-
-/**
- * Check if image uses standard CPC screen mode
- */
-function isStandardMode(config: ModeConfig): boolean {
-  if (config.overscan) return false
-
-  return (
-    (config.mode === 0 && config.width === 160 && config.height === 200) ||
-    (config.mode === 1 && config.width === 320 && config.height === 200) ||
-    (config.mode === 2 && config.width === 640 && config.height === 200)
-  )
-}
 
 /**
  * Initialize RASM instance for assembly
@@ -64,32 +44,12 @@ async function initializeRasm(): Promise<{
 }
 
 /**
- * Generate standard SCR file with palette injection
- */
-function generateStandardSCR(
-  indexBuf: Uint8Array,
-  modeConfig: ModeConfig,
-  image: DskImage
-): Uint8Array {
-  const scrData = exportSCR(indexBuf, modeConfig)
-
-  if (image.cpcHardware === 'plus' && image.palettePlus) {
-    injectCPCPlusPaletteIntoSCR(scrData, image.palettePlus)
-    scrData[2034] = image.mode
-  } else {
-    injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
-  }
-
-  return scrData
-}
-
-/**
  * Process and add linear chunks to ZIP
  */
 async function processLinearChunks(
   zip: JSZip,
   indexBuf: Uint8Array,
-  modeConfig: ModeConfig,
+  modeConfig: CpcModeConfig,
   imageIndex: number,
   image: DskImage,
   rasmInstance: RasmInstance | null,
@@ -216,18 +176,10 @@ async function processImage(
   rasmModule: RasmModule | null
 ): Promise<void> {
   const indexBuf = new Uint8Array(image.scrData)
-  const modeConfig: ModeConfig = {
-    mode: image.mode,
-    width: image.width,
-    height: image.height,
-    overscan: image.overscan,
-    nColors: image.nColors,
-    scaleX: image.scaleX,
-    scaleY: image.scaleY
-  }
+  const modeConfig = toDskModeConfig(image)
 
   // Handle non-standard modes (linear format with chunks)
-  if (!isStandardMode(modeConfig)) {
+  if (!isStandardDskMode(modeConfig)) {
     await processLinearChunks(
       zip,
       indexBuf,
@@ -242,7 +194,7 @@ async function processImage(
   }
 
   // Handle standard SCR format
-  const binaryData = generateStandardSCR(indexBuf, modeConfig, image)
+  const binaryData = generateDskStandardScr(indexBuf, modeConfig, image)
 
   const dskFilenames = generateDskFilenames(
     imageIndex,

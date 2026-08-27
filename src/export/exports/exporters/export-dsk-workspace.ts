@@ -1,25 +1,21 @@
 import { dskLogger } from '@/core'
+import type { CpcModeConfig } from '@/domain/cpc'
 import {
   generateScrDskTemplate,
   generateUniversalScrLoader
 } from '@/export/exports/templates'
 import { generateDskFilenames } from '../dsk-workspace-utils'
 import type { DskImage } from '../types'
+import {
+  generateDskStandardScr,
+  isStandardDskMode,
+  toDskModeConfig
+} from './dsk-image-format'
 
 type RasmInstance = Awaited<
   ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>
 >
 type RasmModule = ReturnType<RasmInstance['getModule']>
-
-interface ModeConfig {
-  mode: 0 | 1 | 2
-  width: number
-  height: number
-  overscan: boolean
-  nColors: number
-  scaleX: number
-  scaleY: number
-}
 
 interface AddScrToDskParams {
   rasmInstance: RasmInstance
@@ -47,33 +43,11 @@ interface ProcessImageParams {
   rasmInstance: RasmInstance
   rasmModule: RasmModule
   indexBuf: Uint8Array
-  modeConfig: ModeConfig
+  modeConfig: CpcModeConfig
   image: DskImage
   imageIndex: number
   asmLabel: string
   dskFilename: string
-}
-
-/**
- * Check if image uses standard CPC screen dimensions
- */
-function isStandardMode(modeConfig: ModeConfig): boolean {
-  if (modeConfig.overscan) {
-    return false
-  }
-
-  const standardDimensions = [
-    { mode: 0, width: 160, height: 200 },
-    { mode: 1, width: 320, height: 200 },
-    { mode: 2, width: 640, height: 200 }
-  ]
-
-  return standardDimensions.some(
-    (standard) =>
-      modeConfig.mode === standard.mode &&
-      modeConfig.width === standard.width &&
-      modeConfig.height === standard.height
-  )
 }
 
 /**
@@ -208,31 +182,6 @@ async function addChunksToDsk(params: AddChunksToDskParams): Promise<void> {
 }
 
 /**
- * Generate standard SCR format with palette injection
- */
-async function generateStandardScr(
-  indexBuf: Uint8Array,
-  modeConfig: ModeConfig,
-  image: DskImage
-): Promise<Uint8Array> {
-  const { exportSCR } = await import('@/export/exports/export-scr/export-scr')
-  const scrData = exportSCR(indexBuf, modeConfig)
-
-  if (image.cpcHardware === 'plus' && image.palettePlus) {
-    const { injectCPCPlusPaletteIntoSCR } = await import('@/export')
-    injectCPCPlusPaletteIntoSCR(scrData, image.palettePlus)
-    scrData[2034] = image.mode
-  } else {
-    const { injectPaletteDataIntoSCR } = await import(
-      '@/export/exports/cpc-format'
-    )
-    injectPaletteDataIntoSCR(scrData, image.paletteFirmware, image.mode)
-  }
-
-  return scrData
-}
-
-/**
  * Process custom dimensions image with linear format
  */
 async function processCustomImage(params: ProcessImageParams): Promise<void> {
@@ -292,7 +241,7 @@ async function processStandardImage(params: ProcessImageParams): Promise<void> {
     dskFilename
   } = params
 
-  const binaryData = await generateStandardScr(indexBuf, modeConfig, image)
+  const binaryData = generateDskStandardScr(indexBuf, modeConfig, image)
 
   const filenames = generateDskFilenames(
     imageIndex,
@@ -336,17 +285,9 @@ async function processImage(
   dskLogger.info(`Processing image ${imageIndex}: ${image.name}`)
 
   const indexBuf = new Uint8Array(image.scrData)
-  const modeConfig: ModeConfig = {
-    mode: image.mode,
-    width: image.width,
-    height: image.height,
-    overscan: image.overscan,
-    nColors: image.nColors,
-    scaleX: image.scaleX,
-    scaleY: image.scaleY
-  }
+  const modeConfig = toDskModeConfig(image)
 
-  if (isStandardMode(modeConfig)) {
+  if (isStandardDskMode(modeConfig)) {
     await processStandardImage({
       rasmInstance,
       rasmModule,
