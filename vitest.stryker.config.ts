@@ -16,7 +16,8 @@ export default defineConfig({
     setupFiles: './vitest.setup.tsx',
     include: [
       'src/libs/pixsaur-color/**/*.spec.ts',
-      'src/domain/cpc/**/*.spec.ts'
+      'src/domain/cpc/**/*.spec.ts',
+      'src/preview/application/**/*.spec.ts'
     ]
   },
   resolve: {

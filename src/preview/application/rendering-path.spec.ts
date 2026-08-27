@@ -74,53 +74,47 @@ describe('renderingPathCapabilities', () => {
     ).toBe(true)
   })
 
-  it('grants manual edits to the standard path', () => {
-    expect(renderingPathCapabilities('standard').manualEdits).toBe(true)
+  // The table is a declaration, so it is pinned whole: a single flipped flag is
+  // a capability quietly gained or lost, and cherry-picking rows lets that
+  // through. Each `false` below is a real gap documented in the module.
+
+  it('grants the standard path everything', () => {
+    expect(renderingPathCapabilities('standard')).toEqual({
+      manualEdits: true,
+      editor: true,
+      indexBuffer: true,
+      displayPalette: true,
+      distinctMappingForcesNoDither: true
+    })
   })
 
-  it('grants manual edits to the raster path', () => {
-    expect(renderingPathCapabilities('raster').manualEdits).toBe(true)
+  it('denies the raster path a 16-slot palette and the distinct-mapping rule', () => {
+    expect(renderingPathCapabilities('raster')).toEqual({
+      manualEdits: true,
+      editor: true,
+      indexBuffer: true,
+      displayPalette: false,
+      distinctMappingForcesNoDither: false
+    })
   })
 
-  it('grants manual edits to the EGX path', () => {
-    expect(renderingPathCapabilities('egx').manualEdits).toBe(true)
+  it('denies the EGX path only the distinct-mapping rule', () => {
+    expect(renderingPathCapabilities('egx')).toEqual({
+      manualEdits: true,
+      editor: true,
+      indexBuffer: true,
+      displayPalette: true,
+      distinctMappingForcesNoDither: false
+    })
   })
 
-  it('denies manual edits to Mode R', () => {
-    expect(renderingPathCapabilities('mode-r').manualEdits).toBe(false)
-  })
-
-  it('denies the pixel editor to Mode R', () => {
-    expect(renderingPathCapabilities('mode-r').editor).toBe(false)
-  })
-
-  it('denies a single index buffer to Mode R', () => {
-    expect(renderingPathCapabilities('mode-r').indexBuffer).toBe(false)
-  })
-
-  it('denies a 16-slot display palette to Mode R', () => {
-    expect(renderingPathCapabilities('mode-r').displayPalette).toBe(false)
-  })
-
-  it('denies a 16-slot display palette to the raster path', () => {
-    expect(renderingPathCapabilities('raster').displayPalette).toBe(false)
-  })
-
-  it('forces dithering off under distinct mapping on the standard path', () => {
-    expect(
-      renderingPathCapabilities('standard').distinctMappingForcesNoDither
-    ).toBe(true)
-  })
-
-  it('leaves dithering untouched under distinct mapping on the EGX path', () => {
-    expect(renderingPathCapabilities('egx').distinctMappingForcesNoDither).toBe(
-      false
-    )
-  })
-
-  it('leaves dithering untouched under distinct mapping on Mode R', () => {
-    expect(
-      renderingPathCapabilities('mode-r').distinctMappingForcesNoDither
-    ).toBe(false)
+  it('denies Mode R everything that assumes a single buffer', () => {
+    expect(renderingPathCapabilities('mode-r')).toEqual({
+      manualEdits: false,
+      editor: false,
+      indexBuffer: false,
+      displayPalette: false,
+      distinctMappingForcesNoDither: false
+    })
   })
 })

@@ -52,7 +52,24 @@ script `test:mutation`, workflow `.github/workflows/mutation.yml` (post-merge
 
 **Scope de mutation actuel** (`stryker.config.json`) : `domain/cpc/**` (hors
 `mode-config.ts` non couvert par un spec unitaire et `cpc-palette.ts` 56 %) +
-`pixsaur-color/src/{histogram,space,utils,metric}/**`.
+`pixsaur-color/src/{histogram,space,utils,metric}/**` + **`preview/application/**`
+(élargi 2026-08-27)**.
+
+**Élargissement 2026-08-27 → `src/preview/application/**`.** Déclenché par une
+question simple pendant la wave 4 : « Stryker est là pour ça, non ? » — non, il
+ne l'était pas. La couche use-cases, vers laquelle tout le refactor pousse la
+logique depuis 15 PRs, était **hors périmètre** ; un test faible qui assertait
+`null` sur un pipeline vide y serait passé inaperçu. Elle est pure
+`(input, deps) => Result`, sans DOM ni natif : la cible idéale. Score global
+après élargissement **80.60 %** (run 3m15), au-dessus de `break: 72` — pas de
+ratchet à bouger. `vitest.stryker.config.ts` gagne
+`src/preview/application/**/*.spec.ts` dans son `include`.
+
+Ce que l'élargissement a immédiatement attrapé : `rendering-path.ts` sortait à
+**75 %**, 6 mutants survivants — tous des booléens de la table des capacités que
+le spec vérifiait ligne par ligne, en en oubliant six. Une table déclarative se
+pinne **entière** (`toEqual` par chemin) : score du fichier **100 %**, et le spec
+est passé de 19 tests cueillis à 12 tests exhaustifs.
 
 **Dette de mutation trackée** (à faire entrer fichier par fichier en durcissant
 les tests, puis remonter `break`) :
@@ -61,6 +78,13 @@ les tests, puis remonter `break`) :
 - `pixsaur-color/src/transform/adjust.ts` (55 %)
 - `domain/cpc/{cpc-palette.ts (56 %), mode-config.ts (0 %/non couvert)}`
 - `pixsaur-color/src/metric/find-closest.ts` (23 mutants no-cov — trou de couverture réel)
+- `preview/application/quantize-egx.ts` (**47.5 %**, 21 survivants) — la plus
+  grosse dette entrée avec l'élargissement du 2026-08-27. Le spec des 28 tests
+  (table type × première ligne × mode de dithering) vérifie la forme du buffer,
+  pas les valeurs : les contraintes par ligne EGX survivent à la mutation.
+- `preview/application/build-index-buffer.ts` (**0 %**, 13 mutants no-cov) — son
+  spec existe mais ne couvre aucun mutant sous `coverageAnalysis: perTest`, à
+  diagnostiquer avant de durcir.
 
 **Reste à faire Phase 1** : élargir le scope au fur et à mesure ; envisager de
 brancher `test:mutation` dans le close-step (déjà prévu Phase 2 via le skill
