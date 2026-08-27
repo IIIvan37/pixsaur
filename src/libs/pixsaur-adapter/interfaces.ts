@@ -38,39 +38,30 @@ export interface AdjustmentConfig {
 }
 
 /**
- * Interface pour les processors d'image supportant CPU, WebGL et ReGL
+ * Interface pour les processors d'image (CPU ou GPU/WebGL).
+ *
+ * Deux implémentations la satisfont — `CpuProcessor` et `GpuProcessor` — et
+ * `processorFactory` est le seul endroit qui choisit entre les deux.
  */
 export interface ImageProcessor {
-  /**
-   * Type d'implémentation (cpu, webgl ou regl)
-   */
-  readonly type: 'cpu' | 'webgl' | 'regl' | 'cpu-fallback'
+  /** Implémentation effectivement en service. */
+  readonly type: 'cpu' | 'gpu'
 
   /**
-   * Disponibilité du processor
-   */
-  readonly isAvailable: boolean
-
-  /**
-   * Applique les ajustements d'image (brightness, contrast, saturation, etc.)
+   * Applique les ajustements d'image (brightness, contrast, saturation, etc.).
+   *
+   * Synchrone sur les deux implémentations : le chemin GPU bloque sur
+   * `regl.read()`, donc une signature asynchrone ne cacherait la latence que
+   * de nom.
    */
   applyAdjustments(
-    imageData: ImageData,
-    adjustments: AdjustmentConfig
-  ): Promise<ImageData>
-
-  /**
-   * Version synchrone des ajustements pour compatibilité avec les atoms Jotai
-   */
-  applyAdjustmentsSync(
     imageData: ImageData,
     adjustments: AdjustmentConfig
   ): ImageData
 
   /**
-   * Quantifie une palette à partir d'un buffer d'image
-   * Signature standardisée basée sur l'usage réel dans preview.ts
-   * Colorspace fixé sur RGB pour optimisation GPU
+   * Quantifie une palette à partir d'un buffer d'image.
+   * Colorspace fixé sur RGB pour optimisation GPU.
    */
   quantizePalette(
     buffer: Uint8ClampedArray,
@@ -83,7 +74,7 @@ export interface ImageProcessor {
   ): Promise<Vector[]>
 
   /**
-   * Rendu de l'aperçu raster (palettes par ligne). GPU si disponible, sinon CPU.
+   * Rendu de l'aperçu raster (palettes par ligne).
    */
   renderRasterPreview(
     indexBuffer: Uint8Array,
@@ -100,27 +91,12 @@ export interface ImageProcessor {
 }
 
 /**
- * Factory pour créer les processors adaptés
+ * Factory pour créer le processor adapté. Elle porte à elle seule la décision
+ * GPU/CPU, y compris le fallback silencieux du mode `'auto'`.
  */
 export interface ProcessorFactory {
   /**
-   * Crée le meilleur processor disponible (ReGL en priorité, fallback CPU)
-   * @param processorType - Type de processor à utiliser ('auto', 'cpu', 'gpu')
+   * @param processorType - `'cpu'`, `'gpu'` ou `'auto'` (GPU puis fallback CPU)
    */
   createBestProcessor(processorType?: ProcessorType): Promise<ImageProcessor>
-
-  /**
-   * Crée un processor CPU spécifiquement
-   */
-  createCpuProcessor(): ImageProcessor
-
-  /**
-   * Crée un processor ReGL si disponible
-   */
-  createReGlProcessor(): Promise<ImageProcessor | null>
-
-  /**
-   * Vérifie si WebGL est disponible (nécessaire pour ReGL)
-   */
-  isWebGlAvailable(): boolean
 }

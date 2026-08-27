@@ -84,7 +84,7 @@ export const useImageAdjustement = () => {
           return
         }
 
-        const result = processor.applyAdjustmentsSync(
+        const result = processor.applyAdjustments(
           new ImageData(
             new Uint8ClampedArray(data),
             currentDownscaled.width,
