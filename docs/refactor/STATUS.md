@@ -71,10 +71,22 @@ big picture: `src/export/application/README.md` and the memory note
   export works end to end. The **Tauri build is still unverified** — the desktop
   save path (`tauriFileSink`, native dialog) is the one branch the web run never
   exercises. Smoke-test a DSK export in `pnpm tauri:dev` before merging.
-- **Wave 3 — NEXT**: candidates 4, 5, 6 (export orchestration — standard-mode
-  verdict, ASM artifact producers, the SNA production run). Start with
-  candidate 4 and check it against the new `isStandardDskMode` helper before
-  adding a second standard-mode predicate.
+- **Wave 3 — candidate 4 DONE** (same branch, 1 commit). Report:
+  `sessions/2026-08-27-wave3-standard-mode-verdict.md`.
+  - `d4b1587`: new `src/domain/cpc/screen-capability.ts` (+22-test spec) —
+    `isStandardScreen`, `isStandardEgxScreen`, `maxScreenAddress`,
+    `screenCapability` → `{ isStandard, canExportScr, canExportSna }`. The
+    `{mode 0/160, 1/320, 2/640} × 200 × !overscan` rule had **six** copies in
+    four signatures (the review found five; `export-sna.ts` hid a sixth); all
+    six now read the domain module, including the export dialog — the rule left
+    the React tree, and `export-zip`'s "must match the UI logic in
+    export-config-dialog.tsx" comment is true by construction instead of by
+    hope. `isStandardDskMode` (added the day before for candidate 10) folded in.
+  - Deliberately unchanged: `export-zip` still gates SNA only on
+    `config.content.includeSNA`. Adding a `canExportSna` gate is a behaviour
+    change, not a refactor — the dialog already prevents the case.
+- **Wave 3 — NEXT**: candidate 5 (name the ASM artifact producers), then
+  candidate 6 (collapse the SNA production run).
 - **Wave 4**: candidates 3, 7, 8, 9 (structural). Candidate 11 falls out of
   candidate 8 — not worth its own PR.
 
