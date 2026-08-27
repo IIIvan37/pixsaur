@@ -159,6 +159,16 @@ Fixed: `typecheck` and the hook now run `tsc -b --force`; the script checks
 `tsconfig.app.json` / `tsconfig.node.json` only. Verified by probe — both now
 exit non-zero on a type error.
 
+**The pre-commit hook widened every commit.** It ran `biome check . --write`
+then `git add -u`, which stages *every* modified tracked file — not just the
+ones being committed — and silently defeated `git add -p`. It now formats only
+the staged `js/jsx/ts/tsx/json/css` files and re-stages exactly those. A file
+that is staged *and* dirty in the worktree is refused with an explicit message
+rather than guessed at: formatting it would either drag the unstaged hunks into
+the commit or leave unformatted content in it. The redundant bare `tsc -b` also
+left the hook — `typecheck:comprehensive` already covers both projects with
+stricter flags, so the hook does one full typecheck instead of three.
+
 ## Where we landed
 
 - **Parallel effort — quality gates from `loupe`:** branche
