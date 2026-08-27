@@ -31,12 +31,29 @@ big picture: `src/export/application/README.md` and the memory note
     the previous image's table whenever `ReGLQuantizer` threw for an image under
     128×128.
   - `2d67f4d` dead-code sweep: `exportModeRSna`, `generateSCRAsmPlus`,
-    `egxPreviewImageAtom`. Deliberately kept: `quantizeEGX` (candidate 1 adopts
-    it) and `getCapabilities` (only observation window on live WebGL detection).
+    `egxPreviewImageAtom`. Deliberately kept: `quantizeEGX` (for candidate 1 —
+    which then **deleted** it instead, see wave 2) and `getCapabilities` (only
+    observation window on live WebGL detection).
   - `b7a9b55` the review itself, recorded.
-- **Wave 2 — NEXT**: candidate 1 (EGX rendering path → one `quantizeEgx`
-  use-case, via the `extract-use-case` skill), then candidate 10 (DSK export
-  through the existing `FileSink` port).
+- **Wave 2 — candidate 1 DONE** (same branch, 2 more commits). Report:
+  `sessions/2026-08-27-wave2-egx-one-module.md`.
+  - `a39ca30` candidate 1a: the `quantizeEgx` use-case
+    (`src/preview/application/quantize-egx.ts`, 28-test table over type ×
+    first-line × dithering mode) replaces the 80-line loop in
+    `egxIndexBufferAtom`. The lib's never-shipped `quantizeEGX` (+ preview
+    generators + the helpers only it used) is **deleted, not adopted**: it had
+    no dithering and no low-res pixel pairing, so adopting it would have been a
+    regression.
+  - `f6d31b9` candidate 1b: new shared `resizeToMode` helper
+    (`src/preview/image-processing/resize-to-mode.ts`) parameterized by the
+    target `CpcModeConfig`; `resizedImageAtom` and `egxNormalizedImageAtom` are
+    both thin adapters over it plus the `normalizeImage` /
+    `positionNormalizedImage` use-cases. **EGX now gets linear-light
+    resampling** (a real rendering change — eyeball an EGX export before
+    merging). `shouldGrayOut` absorbed into `egx-final.ts`;
+    `egx-preview-image.ts` deleted.
+- **Wave 2 — NEXT**: candidate 10 (DSK export through the existing `FileSink`
+  port), via the `extract-use-case` skill.
 - **Waves 3–4**: candidates 4, 5, 6 (export orchestration), then 3, 7, 8, 9
   (structural). Candidate 11 falls out of candidate 8 — not worth its own PR.
 
@@ -49,6 +66,10 @@ big picture: `src/export/application/README.md` and the memory note
 | knip unused files | 1 (intentional) | 1 |
 | jscpd clones | **37** | 39 |
 | jscpd ratio | **1.49 %** | 1.62 % |
+
+The jscpd *ratio* reads 1.51 % since wave 2 while the clone count stayed at 37:
+deleting ~400 lines shrinks the denominator. Judge the ratchet on the clone
+count; the ratio only moves down when a clone actually goes away.
 
 Known pre-existing noise: `pnpm check` reports ~9 biome format errors in
 `src-tauri/gen/` and `src-tauri/target/` on machines that have run a Tauri
