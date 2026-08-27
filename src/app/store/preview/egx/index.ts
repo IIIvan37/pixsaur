@@ -34,4 +34,4 @@ export { egxIndexBufferAtom, finalEgxIndexBufferAtom } from './egx-index-buffer'
 export { egxDisplayPaletteAtom, egxPaletteAtom } from './egx-palette'
 
 // Re-export preview image
-export { egxPreviewImageAtom, shouldGrayOut } from './egx-preview-image'
+export { shouldGrayOut } from './egx-preview-image'

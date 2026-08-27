@@ -22,7 +22,6 @@ export {
   generateSCRAsmClassic
 } from './export-scr'
 export {
-  exportModeRSna,
   exportSna,
   generateModeRSnaAsmSource,
   generateSnaAsmSource,

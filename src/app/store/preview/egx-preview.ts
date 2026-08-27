@@ -30,7 +30,6 @@ export {
   egxNormalizedImageAtom,
   egxPaletteAtom,
   // Preview image
-  egxPreviewImageAtom,
   finalEgxIndexBufferAtom,
   finalEgxPreviewImageAtom,
   getEGXModeConfig,
