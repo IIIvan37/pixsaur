@@ -85,9 +85,28 @@ big picture: `src/export/application/README.md` and the memory note
   - Deliberately unchanged: `export-zip` still gates SNA only on
     `config.content.includeSNA`. Adding a `canExportSna` gate is a behaviour
     change, not a refactor — the dialog already prevents the case.
-- **Wave 3 — NEXT**: candidate 5 (name the ASM artifact producers), then
-  candidate 6 (collapse the SNA production run).
-- **Wave 4**: candidates 3, 7, 8, 9 (structural). Candidate 11 falls out of
+- **Wave 3 — candidates 5 + 6 DONE — wave 3 complete** (same branch, 2 more
+  commits). Report: `sessions/2026-08-27-wave3-asm-producers.md`.
+  - `417741a` candidate 5: two named producers. `palette-asm.ts`
+    (`dbPaletteSection` / `hardwarePaletteAsm` / `plusPaletteAsm`) is read by
+    the six palette-emission sites, and the `0x54` black fallback is finally
+    asserted. `egx-asm-source.ts` (`egxAsmSource`) replaces three
+    near-identical ~60-line copies in `export-zip` and `export-cpc-playground`
+    — **`egx-templates.ts` (753 lines) is reachable from a spec for the first
+    time**. `toAsmDataString` moves the `string | Chunk[]` unwrap (×6) into
+    `to-asm-data.ts`. Dead barrel export `generateEgxAsmSource` deleted.
+  - `cb5e200` candidate 6: `sna-asm-source.ts` is the pure half
+    (`snaAsmSource → { source } | { error }`, **spec with zero `vi.mock`**) and
+    `assemble-snapshot.ts` is the only module touching RASM. `exportSna` is
+    their composition; `export-sna.ts` **434 → 202 lines**. The two SNA arms
+    `export-zip.spec.ts` could never reach (they needed a real WASM instance)
+    now have 4 tests.
+  - Deliberately unchanged: `generateModeRSnaAsmSource` (wave 1 already deleted
+    its async twin, so there was no duplication left to collapse) and
+    `export-sna.spec.ts`'s 5 `vi.mock` calls — now redundant rather than
+    load-bearing, a cheap follow-up.
+- **Wave 4 — NEXT**: candidates 3, 7, 8, 9 (structural). Start with candidate 3
+  (split the processor seam that has one adapter). Candidate 11 falls out of
   candidate 8 — not worth its own PR.
 
 ### Ratchet baselines (lowered 2026-08-27 — may only shrink)
@@ -97,15 +116,15 @@ big picture: `src/export/application/README.md` and the memory note
 | knip unused exports | **42** | 52 |
 | knip unused types | **19** | 19 |
 | knip unused files | 1 (intentional) | 1 |
-| jscpd clones | **37** | 39 |
-| jscpd ratio | **1.49 %** | 1.62 % |
+| jscpd clones | **33** | 37 |
+| jscpd ratio | **1.27 %** | 1.49 % |
 
-The jscpd *ratio* reads 1.51 % since wave 2 while the clone count stayed at 37:
-deleting ~400 lines shrinks the denominator. Judge the ratchet on the clone
-count; the ratio only moves down when a clone actually goes away. Wave 2's
-candidate 10 removed a hand-copied SCR producer without moving either number —
-jscpd never flagged it (the two copies had drifted sync/async), which is why the
-review reads code and the detectors only guard the floor.
+Judge the ratchet on the **clone count**; the ratio also moves when deletions
+shrink the denominator. Wave 2's candidate 10 removed a hand-copied SCR producer
+without moving either number — jscpd never flagged it (the two copies had
+drifted sync/async), which is why the review reads code and the detectors only
+guard the floor. Wave 3 moved both: 37 → 34 (candidate 5, three EGX copies → one)
+→ 33 (candidate 6, the SNA twins → one).
 
 Known pre-existing noise: `pnpm check` reports ~9 biome format errors in
 `src-tauri/gen/` and `src-tauri/target/` on machines that have run a Tauri
