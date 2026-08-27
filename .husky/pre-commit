@@ -17,7 +17,7 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 
 echo "🔍 Running TypeScript checks..."
-npx tsc --noEmit
+npx tsc -b --force
 
 echo "🔍 Running comprehensive TypeScript check (comprehensive) - takes longer..."
 pnpm -s typecheck:comprehensive
