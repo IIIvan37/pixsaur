@@ -18,6 +18,7 @@ import { findDarkestValidColor, replaceIgnoredSlots } from '@/domain/cpc'
 import type { ResizeMode } from '@/domain/image-processing'
 import { positionImageForAutoMode } from '@/domain/image-processing'
 import type { DitheringConfig } from '@/libs/pixsaur-color/src'
+import type { SourceColorMapping } from '@/libs/pixsaur-color/src/quant/color-mapping-cache'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { ImageDitherer } from './ports'
 
@@ -33,6 +34,13 @@ export interface DitherImageInput {
   /** Active resize mode; only `'auto'` triggers canvas positioning. */
   resizeMode: ResizeMode
   centerImage: boolean
+  /**
+   * Source-colour → palette-index mapping from `quantizePalette`, when the
+   * `distinct-mapping` strategy produced one. Present means "pin every source
+   * colour to its slot and skip dithering"; absent means normal
+   * nearest-colour mapping.
+   */
+  sourceColorMapping?: SourceColorMapping | null
 }
 
 export interface DitherImageDeps {
@@ -58,7 +66,8 @@ export function ditherImage(
     dithering,
     modeConfig,
     resizeMode,
-    centerImage
+    centerImage,
+    sourceColorMapping = null
   } = input
 
   // Replace ignored slots [-1,-1,-1] with the darkest valid color so dithering
@@ -71,7 +80,8 @@ export function ditherImage(
   const previewBuffer = deps.ditherer.dither(
     normalized,
     ditheringPalette,
-    dithering
+    dithering,
+    sourceColorMapping
   )
 
   // dither returns an RGB buffer at the normalized dimensions — no remapping.

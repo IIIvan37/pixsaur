@@ -224,9 +224,47 @@ describe('quantize.ts', () => {
           1, // height
           reducedPalette,
           dithering,
-          'RGB'
+          'RGB',
+          undefined // pas de mapping distinct-mapping
         )
         expect(result).toBe(mockResult)
+      })
+
+      it('devrait transmettre le mapping distinct-mapping à mapAndDither', () => {
+        const quantizer = createQuantizer({
+          buf: new Uint8ClampedArray([255, 0, 0, 255]),
+          basePalette: [[255, 0, 0]] as any[],
+          preselected: [] as any[],
+          quantConfig: { distanceMetric: 'euclidean' as const }
+        })
+
+        const imageData = new ImageData(
+          new Uint8ClampedArray([255, 0, 0, 255]),
+          1,
+          1
+        )
+        const reducedPalette = [[255, 0, 0]] as any[]
+        const dithering = { mode: 'floydSteinberg' as const, intensity: 0.5 }
+        const sourceColorMapping = new Map([['255,0,0', 0]])
+
+        mockMapAndDither.mockReturnValue(new Uint8ClampedArray(4))
+
+        quantizer.dither(
+          imageData,
+          reducedPalette,
+          dithering,
+          sourceColorMapping
+        )
+
+        expect(mockMapAndDither).toHaveBeenCalledWith(
+          expect.any(Uint8ClampedArray),
+          1,
+          1,
+          reducedPalette,
+          dithering,
+          'RGB',
+          sourceColorMapping
+        )
       })
     })
   })

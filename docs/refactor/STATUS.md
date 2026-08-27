@@ -1,18 +1,23 @@
-# Refactor — STATUS (canonical resume point)
+# Refactor — STATUS (archived — refactor complete)
 
-**Read this first when resuming in a new session.** It always reflects the
-current state. History lives in `docs/refactor/sessions/` (append-only,
-**local-only since 2026-06-12** — git-ignored, only `_TEMPLATE.md` is tracked;
-this file is the canonical summary for the repo).
+> **✅ DONE & MERGED.** The clean-archi / strangler-fig refactor is complete and
+> was merged into `main` (rebased — original `refactor/pr0-guardrails` SHAs were
+> rewritten) and shipped in **1.13.0**. `main` has since moved on with new feature
+> work on top. This file is now a **historical record**, not a live resume point.
+> The use-cases + ports architecture and ADR-001 file layout are the current
+> baseline; the layering guard (`check-layer-imports.js`) enforces them.
+
+History lives in `docs/refactor/sessions/` (append-only, **local-only since
+2026-06-12** — git-ignored, only `_TEMPLATE.md` is tracked).
 
 Effort: incremental strangler-fig toward **use-cases + light ports** (NOT a
-rewrite). Jotai/React become thin adapters over pure use-cases. Rationale &
+rewrite). Jotai/React became thin adapters over pure use-cases. Rationale &
 big picture: `src/export/application/README.md` and the memory note
 `refactor-clean-archi-plan`.
 
-## Where we are
+## Where we landed
 
-- **Parallel effort — quality gates from `loupe`:** branch
+- **Parallel effort — quality gates from `loupe`:** branche
   `chore/quality-gates-from-loupe`. Plan : `PLAN-quality-gates-from-loupe.md`.
   **Phase 1 (Stryker) DONE** (`f7b5103`, score 79.30 %, break 72) et **Phase 2
   (skills) DONE** (`72a14a7` : tdd-cycle, new-feature-hexa, quality-gate,
@@ -21,12 +26,14 @@ big picture: `src/export/application/README.md` and the memory note
   fuite `core→@/tauri` du logger corrigée par un port `LogSink`), **Phase 4
   (react-doctor + impeccable) DONE** (`2a8b8b8` : `check:react` ratchet +
   `check:design` report-only) et **Phase 5 (gate composite) DONE** (`b07dfb5` :
-  `pnpm gate` + CI PR). **Les 5 phases sont livrées.** Reste : ouvrir la PR de la
-  branche. Reports : `sessions/2026-07-05-*`.
-- **Branch:** `refactor/pr0-guardrails` — committed (`6c077ff`), **ahead of
-  origin by 19 (unpushed — push is overdue)**.
-- **Current step:** file-layout reorg (ADR-001) — DONE (8 commits
-  `51e0bab`…`6c077ff`). Report: `sessions/2026-06-12-file-layout-reorg.md`.
+  `pnpm gate` + CI PR). **Les 5 phases sont livrées et mergées sur `main`**
+  (#345 : coverage, jscpd et react-doctor passent en *enforce*). Reports :
+  `sessions/2026-07-05-*`.
+- **Merged into `main`** and shipped in 1.13.0. The local
+  `refactor/pr0-guardrails` branch has been deleted (content all on `main`).
+- **Last step:** file-layout reorg (ADR-001) — DONE (8 commits
+  `51e0bab`…`6c077ff`, rebased onto main). Report:
+  `sessions/2026-06-12-file-layout-reorg.md`.
   Deduped the diverged mode-0 hue-diversity selection into
   `pixsaur-color/quant/mode0-hue-diversity.ts` (two bit-for-bit presets, 599-line
   adapter helper deleted); moved `CPC_MODE_CONFIG`/mode types + hardware

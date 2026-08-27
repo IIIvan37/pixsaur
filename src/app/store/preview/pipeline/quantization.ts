@@ -148,6 +148,16 @@ const quantizedPaletteAtom = atom(async (get) => {
 })
 
 /**
+ * Source-colour → palette-index mapping produced by the `distinct-mapping`
+ * strategy, or `null`. Rides alongside the palette so `previewImageAtom` can
+ * hand it to `ditherImage` explicitly.
+ */
+export const sourceColorMappingAtom = atom(async (get) => {
+  const result = await get(quantizedPaletteAtom)
+  return result ? result.sourceColorMapping : null
+})
+
+/**
  * Raw quantized palette from the palette processor.
  * Colors are in RGB format but not yet hardware-quantized.
  */

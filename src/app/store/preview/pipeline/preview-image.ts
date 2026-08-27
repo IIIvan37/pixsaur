@@ -25,7 +25,7 @@ import {
 } from '../../config/config'
 import { smoothedImageAtom } from './image-pipeline'
 import { exportPaletteWithSlotsAtom } from './palette-export'
-import { quantizerAtom } from './quantization'
+import { quantizerAtom, sourceColorMappingAtom } from './quantization'
 
 // ============================================================================
 // NORMALIZED IMAGE
@@ -104,6 +104,7 @@ export const effectiveDitheringAtom = atom((get) => {
 export const previewImageAtom = atom(async (get) => {
   const quantizer = await get(quantizerAtom)
   const normalized = await get(normalizedImageAtom)
+  const sourceColorMapping = await get(sourceColorMappingAtom)
 
   if (!quantizer || !normalized) {
     return null
@@ -117,7 +118,8 @@ export const previewImageAtom = atom(async (get) => {
       dithering: get(effectiveDitheringAtom),
       modeConfig: get(effectiveModeConfigAtom),
       resizeMode: get(resizeModeAtom),
-      centerImage: get(centerImageAtom)
+      centerImage: get(centerImageAtom),
+      sourceColorMapping
     },
     { ditherer: quantizer }
   )

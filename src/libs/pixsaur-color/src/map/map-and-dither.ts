@@ -1,6 +1,6 @@
 import {
-  isDistinctMappingEnabled,
-  lookupColorIndex
+  lookupColorIndex,
+  type SourceColorMapping
 } from '../quant/color-mapping-cache'
 import { getBlueNoiseThresholdRGB } from './blue-noise-texture'
 
@@ -519,13 +519,14 @@ export function applyNoDither(
   height: number,
   paletteCS: Float32Array[],
   paletteOut: Uint8ClampedArray[],
-  distFn: DistanceFn
+  distFn: DistanceFn,
+  sourceColorMapping?: SourceColorMapping | null
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
 
   // Vérifier si le mode distinct-mapping est actif
-  const useDirectMapping = isDistinctMappingEnabled()
+  const useDirectMapping = !!sourceColorMapping
 
   for (let i = 0; i < width * height; i++) {
     const i3 = i * 3
@@ -540,7 +541,7 @@ export function applyNoDither(
       const r = Math.round(pixelCS[0])
       const g = Math.round(pixelCS[1])
       const b = Math.round(pixelCS[2])
-      const mappedIdx = lookupColorIndex(r, g, b)
+      const mappedIdx = lookupColorIndex(sourceColorMapping, r, g, b)
       if (mappedIdx === undefined) {
         // Fallback: chercher la couleur la plus proche
         let bestD = Infinity
@@ -1272,7 +1273,8 @@ export function mapAndDither(
   height: number,
   palette: Vector[],
   config: DitheringConfig,
-  colorSpace: ColorSpace
+  colorSpace: ColorSpace,
+  sourceColorMapping?: SourceColorMapping | null
 ): Uint8ClampedArray {
   const { mode } = config
   const N = width * height
@@ -1294,8 +1296,16 @@ export function mapAndDither(
 
   // Si distinct-mapping est actif, forcer applyNoDither (pas de dithering)
   // pour garantir le mapping 1:1 des couleurs source vers palette
-  if (isDistinctMappingEnabled()) {
-    return applyNoDither(bufCS, width, height, paletteCS, paletteOut, distFn)
+  if (sourceColorMapping) {
+    return applyNoDither(
+      bufCS,
+      width,
+      height,
+      paletteCS,
+      paletteOut,
+      distFn,
+      sourceColorMapping
+    )
   }
 
   const ditherFn = DITHER_MODES[mode]

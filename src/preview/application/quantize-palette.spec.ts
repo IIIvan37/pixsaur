@@ -1,3 +1,8 @@
+import {
+  clearColorMapping,
+  getColorMapping,
+  setColorMapping
+} from '@/libs/pixsaur-color/src/quant/color-mapping-cache'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { PaletteQuantizer } from './ports'
 import { type QuantizePaletteInput, quantizePalette } from './quantize-palette'
@@ -98,5 +103,66 @@ describe('quantizePalette', () => {
 
     const targetColors = quantizePaletteFn.mock.calls[0][2]
     expect(targetColors).toBe(16)
+  })
+})
+
+describe('quantizePalette and the distinct-mapping channel', () => {
+  afterEach(() => {
+    clearColorMapping()
+  })
+
+  it('drains the mapping the quantizer produced into its result', async () => {
+    const mapping = new Map([['255,0,0', 1]])
+    const quantizer: PaletteQuantizer = {
+      quantizePalette: vi.fn(async () => {
+        setColorMapping(mapping)
+        return [[0, 0, 0]] as Vector[]
+      })
+    }
+
+    const result = await quantizePalette(baseInput(), { quantizer })
+
+    if (!result.ok) throw new Error('expected ok')
+    expect(result.sourceColorMapping).toBe(mapping)
+  })
+
+  it('leaves the ambient transport empty so the next image cannot inherit it', async () => {
+    const quantizer: PaletteQuantizer = {
+      quantizePalette: vi.fn(async () => {
+        setColorMapping(new Map([['255,0,0', 1]]))
+        return [[0, 0, 0]] as Vector[]
+      })
+    }
+
+    await quantizePalette(baseInput(), { quantizer })
+
+    expect(getColorMapping()).toBe(null)
+  })
+
+  it('reports no mapping when the strategy produced none', async () => {
+    const { quantizer } = fakeQuantizer([[0, 0, 0]])
+
+    const result = await quantizePalette(baseInput(), { quantizer })
+
+    if (!result.ok) throw new Error('expected ok')
+    expect(result.sourceColorMapping).toBe(null)
+  })
+
+  it('does not let a previous mapping survive a quantizer failure', async () => {
+    // The regression: ReGLQuantizer throws for images under 128x128 before it
+    // ever reaches its own clear, so the CPU fallback used to dither the new
+    // image through the previous image's table.
+    setColorMapping(new Map([['255,0,0', 1]]))
+    const quantizer: PaletteQuantizer = {
+      quantizePalette: vi.fn(async () => {
+        throw new Error('Image too small or GPU unavailable')
+      })
+    }
+
+    await expect(quantizePalette(baseInput(), { quantizer })).rejects.toThrow(
+      'Image too small'
+    )
+
+    expect(getColorMapping()).toBe(null)
   })
 })
