@@ -10,7 +10,9 @@
  * ratchets down. Warnings stay advisory here — tighten later by lowering
  * BLOCKING_SEVERITY or adding a warning budget.
  *
- * Usage: node scripts/check-react-doctor.js [dir] (default: src)
+ * Usage: node scripts/check-react-doctor.js [dir] [--staged] (dir default: src)
+ *        `--staged` scans the staged files (pre-commit); without it, the scope is
+ *        everything the branch changed vs its base (CI).
  * Env:   REACT_DOCTOR_BASE  base git ref for the changed scope. Defaults to the
  *        merge-base with origin/main (then main); the run is refused outright if
  *        none resolves — see resolveBase().
@@ -22,7 +24,18 @@ import { join } from 'node:path'
 
 const BLOCKING_SEVERITY = 'error'
 const DEFAULT_BASE_BRANCH = 'main'
-const dir = process.argv[2] || 'src'
+
+const argv = process.argv.slice(2)
+/**
+ * Pre-commit mode: scan the staged files instead of the whole branch.
+ *
+ * The branch scope answers "what did this branch introduce", which is the CI
+ * question. A hook needs "what am I about to commit" — otherwise every commit
+ * re-litigates work from twenty commits ago, and pays five seconds for it
+ * instead of a tenth of one.
+ */
+const staged = argv.includes('--staged')
+const dir = argv.find((a) => !a.startsWith('--')) || 'src'
 
 /**
  * The git ref `--scope changed` diffs against.
@@ -54,18 +67,25 @@ function resolveBase() {
   process.exit(1)
 }
 
-const base = resolveBase()
+const base = staged ? null : resolveBase()
+const scopeLabel = staged ? 'staged files' : `changes vs ${base.slice(0, 12)}`
 
-const args = [
-  dir,
-  '--no-telemetry',
-  '--json',
-  '--json-compact',
-  '--scope',
-  'changed',
-  '--base',
-  base
-]
+// `--staged` is honoured ONLY when no directory positional is given: pass one
+// and react-doctor silently falls back to `mode: "full"` and reports nothing.
+// Verified by staging a deliberate violation — `react-doctor src --staged`
+// found 0, `react-doctor --staged` found it.
+const args = staged
+  ? ['--staged', '--no-telemetry', '--json', '--json-compact']
+  : [
+      dir,
+      '--no-telemetry',
+      '--json',
+      '--json-compact',
+      '--scope',
+      'changed',
+      '--base',
+      base
+    ]
 
 function resolveBin() {
   // When invoked via `pnpm check:react`, node_modules/.bin is on PATH.
@@ -93,21 +113,44 @@ try {
   process.exit(1)
 }
 
+/**
+ * Refuse a result whose scope is not the scope asked for.
+ *
+ * This exists because `--staged` is silently ignored when a directory
+ * positional is passed: react-doctor answers with `mode: "full"` and no
+ * findings, and the hook waves the commit through. So the staged run must say
+ * "staged", exactly.
+ *
+ * The base run is only checked for NOT being a full scan. react-doctor labels a
+ * scoped run "baseline" or "diff" depending on the shape of the comparison, and
+ * pinning either one would reject legitimate runs — the whole point is that the
+ * scan was scoped, not which word it used.
+ */
+const modeOk = staged ? report.mode === 'staged' : report.mode !== 'full'
+if (report.mode && !modeOk) {
+  console.error(
+    `❌ react-doctor ran in "${report.mode}" mode` +
+      (staged ? ', not "staged"' : ' — a full scan, not the requested scope') +
+      '.\n   Refusing the result: the scope asked for is not the scope scanned.'
+  )
+  process.exit(1)
+}
+
 const diagnostics = Array.isArray(report.diagnostics) ? report.diagnostics : []
 const blocking = diagnostics.filter((d) => d.severity === BLOCKING_SEVERITY)
 
 if (blocking.length === 0) {
   const warned = report.summary?.warningCount ?? 0
   console.log(
-    `✅ react-doctor: no new ${BLOCKING_SEVERITY}-severity issues vs ${base.slice(0, 12)}` +
+    `✅ react-doctor: no ${BLOCKING_SEVERITY}-severity issues in ${scopeLabel}` +
       (warned ? ` (${warned} advisory warning(s) not blocking)` : '')
   )
   process.exit(0)
 }
 
 console.error(
-  `❌ react-doctor: ${blocking.length} new ${BLOCKING_SEVERITY}-severity issue(s) ` +
-    `introduced vs ${base.slice(0, 12)}:\n`
+  `❌ react-doctor: ${blocking.length} ${BLOCKING_SEVERITY}-severity issue(s) ` +
+    `in ${scopeLabel}:\n`
 )
 for (const d of blocking) {
   const loc = d.line ? `${d.filePath}:${d.line}` : d.filePath

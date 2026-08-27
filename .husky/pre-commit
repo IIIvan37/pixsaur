@@ -52,6 +52,19 @@ else
   printf '%s\n' "$staged" | tr '\n' '\0' | xargs -0 git add
 fi
 
+echo "🔍 Running react-doctor on the staged files..."
+# Staged scope, not branch scope: the hook asks "what am I about to commit",
+# which is also what keeps it under a second. The branch-wide question belongs
+# to `pnpm gate` in CI. Skipped when nothing React-ish is staged.
+if [ -z "$staged" ]; then
+  echo "   (no js/ts/json/css file staged — skipped)"
+else
+  # Explicit `|| exit 1`: this hook runs without `set -e`, so a failing check in
+  # the middle would otherwise be reported and then ignored, the script exiting
+  # 0 on its last echo.
+  pnpm -s check:react:staged || exit 1
+fi
+
 echo "🔍 Running console usage check..."
 node scripts/check-console-usage.js
 
