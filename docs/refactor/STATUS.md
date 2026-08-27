@@ -52,10 +52,25 @@ big picture: `src/export/application/README.md` and the memory note
     resampling** (a real rendering change — eyeball an EGX export before
     merging). `shouldGrayOut` absorbed into `egx-final.ts`;
     `egx-preview-image.ts` deleted.
-- **Wave 2 — NEXT**: candidate 10 (DSK export through the existing `FileSink`
-  port), via the `extract-use-case` skill.
-- **Waves 3–4**: candidates 4, 5, 6 (export orchestration), then 3, 7, 8, 9
-  (structural). Candidate 11 falls out of candidate 8 — not worth its own PR.
+- **Wave 2 — candidate 10 DONE — wave 2 complete** (same branch, 2 more
+  commits). Report: `sessions/2026-08-27-wave2-dsk-file-sink.md`.
+  - `3233c8f` candidate 10a: new shared
+    `src/export/exports/exporters/dsk-image-format.ts` (`toDskModeConfig` →
+    `CpcModeConfig`, `isStandardDskMode`, `generateDskStandardScr`, +10-test
+    spec with real encoders). Both DSK exporters drop their private
+    `ModeConfig` clone, standard-mode test and SCR producer — including the
+    async copy whose 3 dynamic imports pulled the whole `@/export` barrel.
+  - `2850ef5` candidate 10b: new `DskWorkspaceBuilder` port + adapter and the
+    `exportDskWorkspaceToZip` use-case (`src/export/application/`, 5-test spec,
+    **zero `vi.mock`**). `dsk-workspace-panel.tsx` is now a thin adapter —
+    `isTauri` / `saveZipFileTauri` / `downloadFile` left the component and the
+    save goes through `resolveFileSink()`.
+- **Wave 3 — NEXT**: candidates 4, 5, 6 (export orchestration — standard-mode
+  verdict, ASM artifact producers, the SNA production run). Start with
+  candidate 4 and check it against the new `isStandardDskMode` helper before
+  adding a second standard-mode predicate.
+- **Wave 4**: candidates 3, 7, 8, 9 (structural). Candidate 11 falls out of
+  candidate 8 — not worth its own PR.
 
 ### Ratchet baselines (lowered 2026-08-27 — may only shrink)
 
@@ -69,7 +84,10 @@ big picture: `src/export/application/README.md` and the memory note
 
 The jscpd *ratio* reads 1.51 % since wave 2 while the clone count stayed at 37:
 deleting ~400 lines shrinks the denominator. Judge the ratchet on the clone
-count; the ratio only moves down when a clone actually goes away.
+count; the ratio only moves down when a clone actually goes away. Wave 2's
+candidate 10 removed a hand-copied SCR producer without moving either number —
+jscpd never flagged it (the two copies had drifted sync/async), which is why the
+review reads code and the detectors only guard the floor.
 
 Known pre-existing noise: `pnpm check` reports ~9 biome format errors in
 `src-tauri/gen/` and `src-tauri/target/` on machines that have run a Tauri
