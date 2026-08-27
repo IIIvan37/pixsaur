@@ -227,6 +227,21 @@ had run a Tauri build (583 of them on a full build, not the ~9 first recorded).
 `biome.json` now excludes both paths, so `pnpm check` / `pnpm gate` scan 673
 files instead of 1260 and are green locally as well as in CI.
 
+**The react-doctor gate had no base to diff against** (found 2026-08-27, when it
+blocked PR #346). `check-react-doctor.js` ran `--scope changed` and let
+react-doctor auto-detect `--base`. It guessed wrong in both directions: locally
+it resolved to the branch's own upstream, so `pnpm check:react` printed a green
+line on an empty diff without reading a file; on CI it found nothing on the
+detached PR merge ref and degraded to a full scan, blaming the PR for the repo's
+two pre-existing error-severity findings — both in files the branch never
+touched. Fixed in `d5b6fab`: the base is `$REACT_DOCTOR_BASE`, else the
+merge-base with `origin/main`, else with `main`, and the run is **refused** when
+none resolves; `gate.yml` passes the PR's base sha; both the pass and fail lines
+name the ref used. `3ba3d96` clears the two findings themselves (a `setTimeout`
+in `useEffect` with no cleanup; `createStore()` in a test provider's render
+body), so the repo is at **zero** error-severity findings. Note the gate is not
+in the pre-commit hook — `pnpm gate` is the only thing that runs it locally.
+
 **`pnpm typecheck` was a no-op** (found the same day). `tsconfig.json` is a
 solution file (`"files": []` + `references`), and `tsc --noEmit` ignores
 referenced projects — it exited 0 on a deliberately broken file. Same hole in
