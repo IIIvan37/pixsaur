@@ -1,9 +1,5 @@
 import type { DskImage } from '../types'
-import {
-  generateDskStandardScr,
-  isStandardDskMode,
-  toDskModeConfig
-} from './dsk-image-format'
+import { generateDskStandardScr, toDskModeConfig } from './dsk-image-format'
 
 function makeImage(overrides: Partial<DskImage> = {}): DskImage {
   return {
@@ -44,27 +40,6 @@ describe('toDskModeConfig', () => {
       scaleX: 2,
       scaleY: 2
     })
-  })
-})
-
-describe('isStandardDskMode', () => {
-  const cases: Array<[string, Partial<DskImage>, boolean]> = [
-    ['mode 0 at 160×200', { mode: 0, width: 160, height: 200 }, true],
-    ['mode 1 at 320×200', { mode: 1, width: 320, height: 200 }, true],
-    ['mode 2 at 640×200', { mode: 2, width: 640, height: 200 }, true],
-    ['mode 0 at 320×200', { mode: 0, width: 320, height: 200 }, false],
-    ['a custom height', { mode: 1, width: 320, height: 272 }, false],
-    [
-      'overscan at standard dimensions',
-      { mode: 0, width: 160, height: 200, overscan: true },
-      false
-    ]
-  ]
-
-  it.each(cases)('%s → %s', (_label, overrides, expected) => {
-    expect(isStandardDskMode(toDskModeConfig(makeImage(overrides)))).toBe(
-      expected
-    )
   })
 })
 

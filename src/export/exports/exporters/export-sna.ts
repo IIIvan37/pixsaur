@@ -7,7 +7,7 @@
  */
 
 import { createLogger } from '@/core'
-import type { CpcModeConfig } from '@/domain/cpc'
+import { type CpcModeConfig, isStandardScreen } from '@/domain/cpc'
 import type { CPCHardware } from '@/libs/types'
 import { firmwareToHardware } from '../cpc-format'
 import {
@@ -159,28 +159,6 @@ function generateLinearImageAsm(
 // =============================================================================
 
 /**
- * Check if mode is standard (not overscan)
- */
-function isStandardMode(modeConfig: CpcModeConfig): boolean {
-  if (modeConfig.overscan) {
-    return false
-  }
-
-  const standardDimensions = [
-    { mode: 0, width: 160, height: 200 },
-    { mode: 1, width: 320, height: 200 },
-    { mode: 2, width: 640, height: 200 }
-  ]
-
-  return standardDimensions.some(
-    (std) =>
-      modeConfig.mode === std.mode &&
-      modeConfig.width === std.width &&
-      modeConfig.height === std.height
-  )
-}
-
-/**
  * Export image as SNA snapshot
  */
 export async function exportSna(
@@ -208,7 +186,7 @@ export async function exportSna(
 
   try {
     // Determine if standard or overscan
-    const isStandard = isStandardMode(modeConfig)
+    const isStandard = isStandardScreen(modeConfig)
     const isOverscan = !isStandard
 
     // Generate template options
@@ -343,7 +321,7 @@ export function generateSnaAsmSource(options: SnaExportOptions): string | null {
   } = options
 
   try {
-    const isStandard = isStandardMode(modeConfig)
+    const isStandard = isStandardScreen(modeConfig)
     const isOverscan = !isStandard
 
     const templateOptions: SnaTemplateOptions = {

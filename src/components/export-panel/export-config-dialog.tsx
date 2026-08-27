@@ -9,16 +9,10 @@ import Button from '@/components/ui/button'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import PixsaurDialog from '@/components/ui/dialog/dialog'
 import Input from '@/components/ui/input/input'
+import { screenCapability } from '@/domain/cpc'
 import type { ExportConfig } from '@/export'
-import { DEFAULT_EXPORT_CONFIG, getPixelsPerByte } from '@/export'
+import { DEFAULT_EXPORT_CONFIG } from '@/export'
 import styles from './export-config-dialog.module.css'
-
-/**
- * Maximum SCR file size in bytes (16 KB)
- * Standard CPC screen memory is 16000 bytes (for standard modes)
- * but we allow up to 16384 bytes for custom dimensions
- */
-const MAX_SCR_SIZE_BYTES = 16384
 
 type Props = {
   open: boolean
@@ -36,33 +30,9 @@ export default function ExportConfigDialog({
   const modeConfig = useAtomValue(effectiveModeConfigAtom)
   const rasterEnabled = useAtomValue(rasterEnabledAtom)
 
-  // Calculate max CPC interleaved address for current dimensions
-  const widthInBytes = modeConfig.width / getPixelsPerByte(modeConfig.mode)
-  const maxY = modeConfig.height - 1
-  const maxScrAddress =
-    (maxY & 7) * 2048 + (maxY >> 3) * widthInBytes + (widthInBytes - 1)
-
-  // SCR export is allowed for standard modes OR custom dimensions if max address fits in 16KB
-  const isStandardMode =
-    !modeConfig.overscan &&
-    ((modeConfig.mode === 0 &&
-      modeConfig.width === 160 &&
-      modeConfig.height === 200) ||
-      (modeConfig.mode === 1 &&
-        modeConfig.width === 320 &&
-        modeConfig.height === 200) ||
-      (modeConfig.mode === 2 &&
-        modeConfig.width === 640 &&
-        modeConfig.height === 200))
-
-  // Allow SCR export for standard modes OR custom dimensions fitting in 16KB CPC screen memory
-  const canExportSCR =
-    isStandardMode ||
-    (!modeConfig.overscan && maxScrAddress < MAX_SCR_SIZE_BYTES)
-
-  // SNA export is only available for standard modes or overscan
-  const isOverscanMode = modeConfig.overscan
-  const canExportSNA = isStandardMode || isOverscanMode
+  // What this screen can produce — the same rule the exporters read.
+  const { canExportScr: canExportSCR, canExportSna: canExportSNA } =
+    screenCapability(modeConfig)
 
   // Automatically uncheck SCR and SNA if export is not allowed
   useEffect(() => {

@@ -1,5 +1,5 @@
 import JSZip from 'jszip'
-import type { CpcModeConfig } from '@/domain/cpc'
+import { type CpcModeConfig, screenCapability } from '@/domain/cpc'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCHardware } from '@/libs/types'
@@ -379,36 +379,18 @@ export async function buildExportZipBlob(
   const data = ctx?.getImageData(0, 0, canvas.width, canvas?.height)
   if (!data) return null
 
-  // Check if mode is standard (needed for SNA export)
-  const isStandardMode = isEgxMode
-    ? // EGX mode: check EGX-specific dimensions
-      (egxConfig.type === 'egx1' &&
-        effectiveWidth === 320 &&
-        effectiveHeight === 200) ||
-      (egxConfig.type === 'egx2' &&
-        effectiveWidth === 640 &&
-        effectiveHeight === 200)
-    : // Standard mode
-      !modeConfig.overscan &&
-      ((modeConfig.mode === 0 &&
-        modeConfig.width === 160 &&
-        modeConfig.height === 200) ||
-        (modeConfig.mode === 1 &&
-          modeConfig.width === 320 &&
-          modeConfig.height === 200) ||
-        (modeConfig.mode === 2 &&
-          modeConfig.width === 640 &&
-          modeConfig.height === 200))
-
-  // SCR export: allowed for standard modes OR custom dimensions fitting in 16KB
-  // Must match the UI logic in export-config-dialog.tsx
-  const pixelsPerByte = [2, 4, 8][modeConfig.mode]
-  const widthInBytes = modeConfig.width / pixelsPerByte
-  const maxY = modeConfig.height - 1
-  const maxScrAddress =
-    (maxY & 7) * 2048 + (maxY >> 3) * widthInBytes + (widthInBytes - 1)
-  const canExportSCR =
-    isStandardMode || (!modeConfig.overscan && maxScrAddress < 16384)
+  // What this screen can produce — the same rule the export dialog reads.
+  const { isStandard: isStandardMode, canExportScr: canExportSCR } =
+    screenCapability(
+      modeConfig,
+      isEgxMode
+        ? {
+            type: egxConfig.type,
+            width: effectiveWidth,
+            height: effectiveHeight
+          }
+        : null
+    )
 
   // ===== GENERATE SHARED ASM DATA (used for both ZIP files and SNA) =====
   const hasRasters = rasterChanges.length > 0

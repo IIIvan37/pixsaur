@@ -1,16 +1,12 @@
 import { dskLogger } from '@/core'
-import type { CpcModeConfig } from '@/domain/cpc'
+import { type CpcModeConfig, isStandardScreen } from '@/domain/cpc'
 import {
   generateScrDskTemplate,
   generateUniversalScrLoader
 } from '@/export/exports/templates'
 import { generateDskFilenames } from '../dsk-workspace-utils'
 import type { DskImage } from '../types'
-import {
-  generateDskStandardScr,
-  isStandardDskMode,
-  toDskModeConfig
-} from './dsk-image-format'
+import { generateDskStandardScr, toDskModeConfig } from './dsk-image-format'
 
 type RasmInstance = Awaited<
   ReturnType<typeof import('@/libs/rasm-wasm').createRasmInstance>
@@ -287,7 +283,7 @@ async function processImage(
   const indexBuf = new Uint8Array(image.scrData)
   const modeConfig = toDskModeConfig(image)
 
-  if (isStandardDskMode(modeConfig)) {
+  if (isStandardScreen(modeConfig)) {
     await processStandardImage({
       rasmInstance,
       rasmModule,

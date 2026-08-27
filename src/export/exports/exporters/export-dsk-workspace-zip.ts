@@ -1,6 +1,6 @@
 import JSZip from 'jszip'
 import { dskLogger } from '@/core'
-import type { CpcModeConfig } from '@/domain/cpc'
+import { type CpcModeConfig, isStandardScreen } from '@/domain/cpc'
 import {
   generateClassicRasterASM,
   generatePlusRasterASM
@@ -9,11 +9,7 @@ import { generateDskFilenames } from '../dsk-workspace-utils'
 import { generateDskReadmePdf } from '../generate-dsk-readme-pdf'
 import { toASMData } from '../to-asm-data'
 import type { DskImage } from '../types'
-import {
-  generateDskStandardScr,
-  isStandardDskMode,
-  toDskModeConfig
-} from './dsk-image-format'
+import { generateDskStandardScr, toDskModeConfig } from './dsk-image-format'
 import { exportDskWorkspace } from './export-dsk-workspace'
 
 type RasmInstance = Awaited<
@@ -179,7 +175,7 @@ async function processImage(
   const modeConfig = toDskModeConfig(image)
 
   // Handle non-standard modes (linear format with chunks)
-  if (!isStandardDskMode(modeConfig)) {
+  if (!isStandardScreen(modeConfig)) {
     await processLinearChunks(
       zip,
       indexBuf,

@@ -32,32 +32,6 @@ export function toDskModeConfig(image: DskImage): CpcModeConfig {
   }
 }
 
-/** Standard CPC screen dimensions per mode — anything else goes out linear. */
-const STANDARD_DIMENSIONS: ReadonlyArray<{
-  mode: 0 | 1 | 2
-  width: number
-  height: number
-}> = [
-  { mode: 0, width: 160, height: 200 },
-  { mode: 1, width: 320, height: 200 },
-  { mode: 2, width: 640, height: 200 }
-]
-
-/**
- * True when the image fits a native CPC screen (so it can ship as a plain SCR).
- * Overscan never does.
- */
-export function isStandardDskMode(modeConfig: CpcModeConfig): boolean {
-  if (modeConfig.overscan) return false
-
-  return STANDARD_DIMENSIONS.some(
-    (standard) =>
-      modeConfig.mode === standard.mode &&
-      modeConfig.width === standard.width &&
-      modeConfig.height === standard.height
-  )
-}
-
 /**
  * Encode `indexBuf` as a standard SCR and inject the image's palette — the CPC
  * Plus 16-bit palette when the image targets Plus hardware (the mode byte at
