@@ -7,25 +7,21 @@
  */
 
 import { createLogger } from '@/core'
-import { type CpcModeConfig, isStandardScreen } from '@/domain/cpc'
+import type { CpcModeConfig } from '@/domain/cpc'
 import type { CPCHardware } from '@/libs/types'
-import {
-  exportLinearAsm,
-  splitLinearIntoChunks
-} from '../export-linear-asm/export-linear.asm'
-import { exportSCR } from '../export-scr/export-scr'
+import { assembleSnapshot } from '../assemble-snapshot'
 import { hardwarePaletteAsm, plusPaletteAsm } from '../palette-asm'
 import {
+  type SnaAsmSourceInput,
+  scrImageAsm,
+  snaAsmSource
+} from '../sna-asm-source'
+import {
   assembleModeRSnaSource,
-  assembleSnaSource,
   generateModeRClassicSnaTemplate,
   generateModeRPlusSnaTemplate,
-  generateSnaTemplate,
-  type ModeRDataFiles,
-  type SnaDataFiles,
-  type SnaTemplateOptions
+  type ModeRDataFiles
 } from '../templates/sna-templates'
-import { toASMData } from '../to-asm-data'
 
 const logger = createLogger({ prefix: '[SNA Export]' })
 
@@ -33,21 +29,7 @@ const logger = createLogger({ prefix: '[SNA Export]' })
 // Types
 // =============================================================================
 
-export interface SnaExportOptions {
-  /** Index buffer containing color indices for each pixel */
-  indexBuf: Uint8Array
-  /** CPC mode configuration */
-  modeConfig: CpcModeConfig
-  /** Hardware type */
-  hardware: CPCHardware
-  /** CPC firmware palette indices (for Classic) */
-  paletteFirmware?: number[]
-  /** CPC Plus palette values (12-bit 0GRB format) */
-  palettePlus?: number[]
-  /** Raster ASM data (if rasters are enabled) */
-  rasterAsm?: string
-  /** Whether raster effects are enabled */
-  hasRasters: boolean
+export interface SnaExportOptions extends SnaAsmSourceInput {
   /** Output filename (without extension) */
   filename?: string
 }
@@ -64,64 +46,6 @@ export interface SnaExportResult {
 }
 
 // =============================================================================
-// Image Data Generation
-// =============================================================================
-
-/**
- * Generate SCR format image data ASM
- */
-function generateScrImageAsm(
-  indexBuf: Uint8Array,
-  modeConfig: CpcModeConfig,
-  label: string
-): string | null {
-  const scrData = exportSCR(indexBuf, modeConfig)
-  const asmResult = toASMData(scrData, label)
-
-  if (typeof asmResult === 'string') {
-    return asmResult
-  }
-
-  // SCR should fit in one chunk for standard mode
-  logger.warn('SCR data unexpectedly chunked')
-  return asmResult[0]?.content ?? null
-}
-
-/**
- * Generate linear format image data ASM (for overscan)
- */
-function generateLinearImageAsm(
-  indexBuf: Uint8Array,
-  modeConfig: CpcModeConfig,
-  label: string
-): { chunk0: string; chunk1?: string } | null {
-  const linearData = exportLinearAsm(indexBuf, modeConfig)
-  const chunks = splitLinearIntoChunks(linearData)
-
-  if (chunks.length === 0) {
-    return null
-  }
-
-  const results: { chunk0: string; chunk1?: string } = { chunk0: '' }
-
-  for (const chunk of chunks) {
-    const asmResult = toASMData(
-      chunk.data,
-      `${label}_linear_chunk_${chunk.index - 1}`
-    )
-    if (typeof asmResult === 'string') {
-      if (chunk.index === 1) {
-        results.chunk0 = asmResult
-      } else if (chunk.index === 2) {
-        results.chunk1 = asmResult
-      }
-    }
-  }
-
-  return results
-}
-
-// =============================================================================
 // Main Export Function
 // =============================================================================
 
@@ -131,16 +55,7 @@ function generateLinearImageAsm(
 export async function exportSna(
   options: SnaExportOptions
 ): Promise<SnaExportResult> {
-  const {
-    indexBuf,
-    modeConfig,
-    hardware,
-    paletteFirmware,
-    palettePlus,
-    rasterAsm,
-    hasRasters,
-    filename = 'pixsaur'
-  } = options
+  const { modeConfig, hardware, hasRasters, filename = 'pixsaur' } = options
 
   logger.info('Starting SNA export', {
     hardware,
@@ -152,116 +67,25 @@ export async function exportSna(
   })
 
   try {
-    // Determine if standard or overscan
-    const isStandard = isStandardScreen(modeConfig)
-    const isOverscan = !isStandard
+    const asm = snaAsmSource(options)
 
-    // Generate template options
-    const templateOptions: SnaTemplateOptions = {
-      mode: modeConfig.mode,
-      height: modeConfig.height,
-      overscan: isOverscan,
-      hasRasters,
-      hardware
+    if ('error' in asm) {
+      return { success: false, error: asm.error }
     }
 
-    // Generate template
-    const template = generateSnaTemplate(templateOptions)
+    const { source } = asm
+    logger.debug('Generated ASM source', { length: source.length })
 
-    // Generate data files
-    const dataFiles: SnaDataFiles = {
-      paletteAsm: '',
-      imageAsm: '',
-      rasterAsm: hasRasters ? rasterAsm : undefined
+    const { snapshot, error } = await assembleSnapshot(source, filename)
+
+    if (!snapshot) {
+      logger.error('RASM assembly failed', { error })
+      return { success: false, asmSource: source, error }
     }
 
-    // Generate palette ASM
-    if (hardware === 'plus') {
-      if (!palettePlus) {
-        return {
-          success: false,
-          error: 'CPC Plus palette required for Plus hardware'
-        }
-      }
-      dataFiles.paletteAsm = plusPaletteAsm(palettePlus, { label: 'Palette' })
-    } else {
-      if (!paletteFirmware) {
-        return {
-          success: false,
-          error: 'Firmware palette required for Classic hardware'
-        }
-      }
-      dataFiles.paletteAsm = hardwarePaletteAsm(paletteFirmware, {
-        label: 'Palette_Hardware'
-      })
-    }
+    logger.info('SNA export successful', { size: snapshot.length })
 
-    // Generate image data ASM
-    if (isOverscan) {
-      const linearResult = generateLinearImageAsm(
-        indexBuf,
-        modeConfig,
-        'ImageData'
-      )
-      if (!linearResult) {
-        return {
-          success: false,
-          error: 'Failed to generate linear image data'
-        }
-      }
-      dataFiles.imageAsm = linearResult.chunk0
-      dataFiles.imageAsm2 = linearResult.chunk1
-    } else {
-      const scrAsm = generateScrImageAsm(indexBuf, modeConfig, 'ImageData')
-      if (!scrAsm) {
-        return {
-          success: false,
-          error: 'Failed to generate SCR image data'
-        }
-      }
-      dataFiles.imageAsm = scrAsm
-    }
-
-    // Assemble complete ASM source
-    const asmSource = assembleSnaSource(template, dataFiles, templateOptions)
-
-    logger.debug('Generated ASM source', { length: asmSource.length })
-
-    // Assemble with RASM
-    const { createRasmInstance } = await import('@/libs/rasm-wasm')
-    const rasmInstance = await createRasmInstance()
-
-    const snapshotFile = `${filename}.sna`
-    const result = await rasmInstance.assemble(asmSource, {
-      outputFile: `${filename}.bin`,
-      exportType: 'snapshot',
-      snapshotFile
-    })
-
-    if (!result.success) {
-      logger.error('RASM assembly failed', { output: result.output })
-      return {
-        success: false,
-        asmSource,
-        error: `Assembly failed: ${result.output}`
-      }
-    }
-
-    if (!result.snapshot) {
-      return {
-        success: false,
-        asmSource,
-        error: 'No snapshot generated'
-      }
-    }
-
-    logger.info('SNA export successful', { size: result.snapshot.length })
-
-    return {
-      success: true,
-      snapshot: result.snapshot,
-      asmSource
-    }
+    return { success: true, snapshot, asmSource: source }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     logger.error('SNA export error', { error: errorMessage })
@@ -273,70 +97,14 @@ export async function exportSna(
 }
 
 /**
- * Generate only the ASM source without assembling
-/**
- * Generate only the ASM source for Mode R without assembling
- * Useful for debugging or including in ZIP exports
+ * Generate only the ASM source without assembling.
+ * Useful for debugging or including in ZIP exports.
  */
 export function generateSnaAsmSource(options: SnaExportOptions): string | null {
-  const {
-    indexBuf,
-    modeConfig,
-    hardware,
-    paletteFirmware,
-    palettePlus,
-    rasterAsm,
-    hasRasters
-  } = options
-
   try {
-    const isStandard = isStandardScreen(modeConfig)
-    const isOverscan = !isStandard
+    const asm = snaAsmSource(options)
 
-    const templateOptions: SnaTemplateOptions = {
-      mode: modeConfig.mode,
-      height: modeConfig.height,
-      overscan: isOverscan,
-      hasRasters,
-      hardware
-    }
-
-    const template = generateSnaTemplate(templateOptions)
-
-    const dataFiles: SnaDataFiles = {
-      paletteAsm: '',
-      imageAsm: '',
-      rasterAsm: hasRasters ? rasterAsm : undefined
-    }
-
-    // Generate palette ASM
-    if (hardware === 'plus') {
-      if (!palettePlus) return null
-      dataFiles.paletteAsm = plusPaletteAsm(palettePlus, { label: 'Palette' })
-    } else {
-      if (!paletteFirmware) return null
-      dataFiles.paletteAsm = hardwarePaletteAsm(paletteFirmware, {
-        label: 'Palette_Hardware'
-      })
-    }
-
-    // Generate image data ASM
-    if (isOverscan) {
-      const linearResult = generateLinearImageAsm(
-        indexBuf,
-        modeConfig,
-        'ImageData'
-      )
-      if (!linearResult) return null
-      dataFiles.imageAsm = linearResult.chunk0
-      dataFiles.imageAsm2 = linearResult.chunk1
-    } else {
-      const scrAsm = generateScrImageAsm(indexBuf, modeConfig, 'ImageData')
-      if (!scrAsm) return null
-      dataFiles.imageAsm = scrAsm
-    }
-
-    return assembleSnaSource(template, dataFiles, templateOptions)
+    return 'error' in asm ? null : asm.source
   } catch {
     return null
   }
@@ -419,11 +187,11 @@ export function generateModeRSnaAsmSource(
     }
 
     // Generate SCR image data for both frames
-    const frameAAsm = generateScrImageAsm(indexBufA, modeConfig, 'FrameA')
+    const frameAAsm = scrImageAsm(indexBufA, modeConfig, 'FrameA')
     if (!frameAAsm) return null
     dataFiles.frameAAsm = frameAAsm
 
-    const frameBAsm = generateScrImageAsm(indexBufB, modeConfig, 'FrameB')
+    const frameBAsm = scrImageAsm(indexBufB, modeConfig, 'FrameB')
     if (!frameBAsm) return null
     dataFiles.frameBAsm = frameBAsm
 

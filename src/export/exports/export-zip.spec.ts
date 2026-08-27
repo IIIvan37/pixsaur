@@ -1,9 +1,18 @@
 import JSZip from 'jszip'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CpcModeConfig } from '@/domain/cpc'
+import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import { buildExportZipBlob } from './export-zip'
 import type { ExportConfig } from './types'
+
+// The SNA arms reach RASM through `assembleSnapshot`; stub the WASM assembler
+// so they are reachable at all from a spec.
+const rasmAssemble = vi.fn()
+vi.mock('@/libs/rasm-wasm', () => ({
+  createRasmInstance: () =>
+    Promise.resolve({ assemble: (...args: unknown[]) => rasmAssemble(...args) })
+}))
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -115,6 +124,15 @@ async function entriesOf(blob: Blob | null): Promise<string[]> {
   expect(blob).not.toBeNull()
   const zip = await JSZip.loadAsync(blob as Blob)
   return Object.keys(zip.files).sort()
+}
+
+// EGX1 renders at 320x200 with mode 0/1 alternation.
+const EGX1_CONFIG: EGXConfig = {
+  type: 'egx1',
+  firstLineMode: 'low',
+  targetHardware: 'classic',
+  ditheringMode: 'none',
+  ditheringIntensity: 0
 }
 
 // Palette ASM files are emitted only when `includePalettes` is enabled.
@@ -430,6 +448,95 @@ describe('buildExportZipBlob', () => {
       const entries = await entriesOf(blob)
       expect(entries).toContain('pixsaur_data.asm')
       expect(entries).not.toContain('my_project.asm')
+    })
+  })
+
+  describe('SNA export', () => {
+    beforeEach(() => {
+      rasmAssemble.mockReset()
+      rasmAssemble.mockResolvedValue({
+        success: true,
+        snapshot: new Uint8Array([1, 2, 3])
+      })
+    })
+
+    it('adds the snapshot and its ASM source for a classic export', async () => {
+      const blob = await buildExportZipBlob({
+        indexBuf: makeIndexBuf(MODE0_STANDARD),
+        paletteFirmware: makeFirmwarePalette(),
+        canvas: makeCanvas(160, 200),
+        modeConfig: MODE0_STANDARD,
+        cpcHardware: 'classic',
+        reducedPalette: undefined,
+        config: makeConfig({ includeSNA: true }, { filename: 'my_project' })
+      })
+
+      expect(await entriesOf(blob)).toEqual(
+        expect.arrayContaining(['my_project.sna', 'my_project_sna.asm'])
+      )
+    })
+
+    it('adds the snapshot and its ASM source for an EGX export', async () => {
+      const blob = await buildExportZipBlob({
+        indexBuf: makeIndexBuf(MODE1_STANDARD),
+        paletteFirmware: makeFirmwarePalette(),
+        canvas: makeCanvas(320, 200),
+        modeConfig: MODE1_STANDARD,
+        cpcHardware: 'classic',
+        reducedPalette: undefined,
+        config: makeConfig({ includeSNA: true }, { filename: 'egx_image' }),
+        egxConfig: EGX1_CONFIG,
+        egxWidth: 320,
+        egxHeight: 200
+      })
+
+      const entries = await entriesOf(blob)
+      expect(entries).toContain('egx_image.sna')
+      expect(entries).toContain('egx_image_sna.asm')
+
+      const [source] = rasmAssemble.mock.calls[0] as [string]
+      expect(source).toContain('Palette_Hardware:')
+      expect(source).toContain('ImageData:')
+    })
+
+    it('emits the Plus palette in the EGX snapshot source', async () => {
+      await buildExportZipBlob({
+        indexBuf: makeIndexBuf(MODE1_STANDARD),
+        paletteFirmware: makeFirmwarePalette(),
+        canvas: makeCanvas(320, 200),
+        modeConfig: MODE1_STANDARD,
+        cpcHardware: 'plus',
+        reducedPalette: makeRgbPalette(),
+        config: makeConfig({ includeSNA: true }),
+        egxConfig: EGX1_CONFIG,
+        egxWidth: 320,
+        egxHeight: 200
+      })
+
+      const [source] = rasmAssemble.mock.calls[0] as [string]
+      expect(source).toContain('Palette_Plus:')
+      expect(source).toContain('DEFW')
+    })
+
+    it('omits the snapshot when RASM refuses the source', async () => {
+      rasmAssemble.mockResolvedValue({ success: false, output: 'boom' })
+
+      const blob = await buildExportZipBlob({
+        indexBuf: makeIndexBuf(MODE1_STANDARD),
+        paletteFirmware: makeFirmwarePalette(),
+        canvas: makeCanvas(320, 200),
+        modeConfig: MODE1_STANDARD,
+        cpcHardware: 'classic',
+        reducedPalette: undefined,
+        config: makeConfig({ includeSNA: true }, { filename: 'egx_image' }),
+        egxConfig: EGX1_CONFIG,
+        egxWidth: 320,
+        egxHeight: 200
+      })
+
+      const entries = await entriesOf(blob)
+      expect(entries).not.toContain('egx_image.sna')
+      expect(entries).not.toContain('egx_image_sna.asm')
     })
   })
 })

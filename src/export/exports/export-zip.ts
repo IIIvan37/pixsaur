@@ -1,8 +1,10 @@
 import JSZip from 'jszip'
+import { createLogger } from '@/core'
 import { type CpcModeConfig, screenCapability } from '@/domain/cpc'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCHardware } from '@/libs/types'
+import { assembleSnapshot } from './assemble-snapshot'
 import { paletteToCPCPlusValues } from './cpc-plus-format'
 import { egxAsmSource } from './egx-asm-source'
 import { exportEgxLinear, exportEgxSCR } from './export-scr'
@@ -22,6 +24,8 @@ import {
 } from './raster-format'
 import { toASMData } from './to-asm-data'
 import type { ExportConfig } from './types'
+
+const exportLogger = createLogger({ prefix: '[ZIP Export]' })
 
 /**
  * Generated ASM data that can be reused for both ZIP files and SNA export
@@ -183,23 +187,17 @@ async function exportEgxSnaToZip(
 
   if (!asmSource) return
 
-  // Assemble with RASM
-  const { createRasmInstance } = await import('@/libs/rasm-wasm')
-  const rasmInstance = await createRasmInstance()
-
   const filename = config.filename || 'pixsaur'
-  const result = await rasmInstance.assemble(asmSource, {
-    outputFile: `${filename}.bin`,
-    exportType: 'snapshot',
-    snapshotFile: `${filename}.sna`
-  })
+  const { snapshot, error } = await assembleSnapshot(asmSource, filename)
 
-  if (result.success && result.snapshot) {
-    zip.file(`${filename}.sna`, result.snapshot)
-
-    // Also export ASM source for debugging/modification
-    zip.file(`${filename}_sna.asm`, asmSource)
+  if (!snapshot) {
+    exportLogger.error('EGX SNA assembly failed', { error })
+    return
   }
+
+  zip.file(`${filename}.sna`, snapshot)
+  // Also export ASM source for debugging/modification
+  zip.file(`${filename}_sna.asm`, asmSource)
 }
 
 function exportRasterData(
