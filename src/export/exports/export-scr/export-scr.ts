@@ -1,4 +1,4 @@
-import type { CpcModeConfig } from '@/domain/cpc'
+import { type CpcModeConfig, screenCapability } from '@/domain/cpc'
 import { encodeByte } from '../encode-byte'
 
 export function computeCPCAddress(
@@ -16,13 +16,7 @@ export function exportSCR(
   const widthInBytes = modeConfig.width / pixelsPerByte
 
   // SCR format uses CPC interleaved screen memory layout (16KB max)
-  // Validate that the max address fits within 16384 bytes
-  const maxY = modeConfig.height - 1
-  const maxAddress =
-    (maxY & 7) * 2048 + (maxY >> 3) * widthInBytes + (widthInBytes - 1)
-  const canExportSCR = !modeConfig.overscan && maxAddress < 16384
-
-  if (!canExportSCR) {
+  if (!screenCapability(modeConfig).canExportScr) {
     throw new Error(
       'SCR export requires dimensions fitting in 16KB CPC screen memory (no overscan)'
     )

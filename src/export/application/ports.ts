@@ -16,6 +16,7 @@ import type {
   ModeRSnaExportOptions,
   SnaExportOptions
 } from '../exports/exporters/export-sna'
+import type { DskImage } from '../exports/types'
 
 /**
  * Opens a CPC Playground share URL in the user's environment.
@@ -78,4 +79,21 @@ export interface PlaygroundExporter {
   exportEgx(
     options: EgxCpcPlaygroundExportOptions
   ): Promise<CpcPlaygroundExportResult>
+}
+
+/**
+ * Builds the DSK workspace bundle: a disk image assembled from the workspace
+ * images, zipped together with its README and the per-image binaries.
+ *
+ * Wraps `../exports/exporters/export-dsk-workspace-zip.ts`, which is impure end
+ * to end (it fetches the template DSK over HTTP and drives the RASM WASM
+ * assembler), so the `exportDskWorkspaceToZip` use-case stays testable with a
+ * fake.
+ *
+ * - Web & desktop adapter: `./adapters/dsk-workspace-builder.ts`
+ *   (`dskWorkspaceBuilder`); the desktop app runs the same WASM assembler.
+ */
+export interface DskWorkspaceBuilder {
+  /** Build the workspace ZIP, or `null` when assembly failed. */
+  buildZip(images: DskImage[]): Promise<Blob | null>
 }

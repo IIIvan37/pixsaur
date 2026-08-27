@@ -96,3 +96,22 @@ describe('ditherImage', () => {
     expect(result.image.height).toBe(4)
   })
 })
+
+describe('ditherImage and the distinct-mapping channel', () => {
+  it('forwards the source colour mapping to the ditherer', () => {
+    const mapping = new Map([['255,0,0', 1]])
+    const { ditherer, ditherFn } = fakeDitherer(new Uint8ClampedArray(16))
+
+    ditherImage(baseInput({ sourceColorMapping: mapping }), { ditherer })
+
+    expect(ditherFn.mock.calls[0][3]).toBe(mapping)
+  })
+
+  it('forwards null when there is no mapping', () => {
+    const { ditherer, ditherFn } = fakeDitherer(new Uint8ClampedArray(16))
+
+    ditherImage(baseInput(), { ditherer })
+
+    expect(ditherFn.mock.calls[0][3]).toBe(null)
+  })
+})

@@ -17,7 +17,6 @@
 export * from './dithering'
 export * from './palette-optimizer'
 export * from './palette-reorder'
-export * from './quantize-egx'
 export * from './types'
 
 // Future exports:

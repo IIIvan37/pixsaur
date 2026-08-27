@@ -2,10 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-> **🔧 Refactor in progress (clean-archi / strangler-fig).** Before continuing any
-> refactor work, read **`docs/refactor/STATUS.md`** (canonical resume point) and the
-> latest report in `docs/refactor/sessions/`. Use the `/extract-use-case`,
-> `/refactor-preflight` and `/session-report` skills. Close every step with a session report.
+> **✅ Clean-archi / strangler-fig refactor complete and merged** (shipped in
+> 1.13.0). The use-cases + ports architecture and the ADR-001 file layout are now
+> the baseline — see `docs/refactor/ADR-001-file-layout.md` and the layering rules
+> below. History is archived in `docs/refactor/STATUS.md`.
 
 ## Project
 

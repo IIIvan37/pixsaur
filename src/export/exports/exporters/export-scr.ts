@@ -29,30 +29,6 @@ export function generateSCRAsmClassic(
   return getHeader(modeConfig, 'SCR', false) + asmResult
 }
 
-/**
- * Generate SCR ASM content with CPC Plus palette injection
- * This is a pure generation function that doesn't write to ZIP
- * @returns ASM content string or null if data is too large
- */
-export function generateSCRAsmPlus(
-  indexBuf: Uint8Array,
-  modeConfig: CpcModeConfig,
-  palettePlus: number[],
-  asmLabel: string
-): string | null {
-  const scr = exportSCR(indexBuf, modeConfig)
-  injectCPCPlusPaletteIntoSCR(scr, palettePlus)
-  // Inject graphics mode at offset 2034 (done after palette injection)
-  scr[2034] = modeConfig.mode
-  const asmResult = toASMData(scr, asmLabel)
-
-  if (typeof asmResult !== 'string') {
-    return null
-  }
-
-  return getHeader(modeConfig, 'SCR', true) + asmResult
-}
-
 export async function exportSCRPlus(
   zip: JSZip,
   indexBuf: Uint8Array,

@@ -1,8 +1,8 @@
 import type JSZip from 'jszip'
 import type { CpcModeConfig } from '@/domain/cpc'
 import { generatePaletteAsm } from '../asm-generator'
-import { firmwareToHardware } from '../cpc-format'
 import { cpcPlusValuesToASM } from '../cpc-plus-format'
+import { hardwarePaletteAsm } from '../palette-asm'
 import type { ExportConfig } from '../types'
 import { getHeader } from './utils'
 
@@ -18,25 +18,6 @@ export function exportPalettePlus(
   zip.file('palette_plus.asm', header + asm)
 }
 
-/**
- * Generate hardware palette ASM section
- */
-function generateHardwarePaletteAsm(
-  paletteFirmware: number[],
-  label: string
-): string {
-  const hardwarePalette = paletteFirmware
-    .slice(0, 16)
-    .map((fw) => firmwareToHardware[fw] ?? 0x54) // Default to black (0x54) if undefined
-
-  const bytes = hardwarePalette
-    .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
-    .join(',')
-
-  return `${label}:
-    DB      ${bytes}`
-}
-
 export function exportPalettesClassic(
   zip: JSZip,
   paletteFirmware: number[],
@@ -48,9 +29,8 @@ export function exportPalettesClassic(
   zip.file('palette_firmware.asm', firmwareAsm)
 
   // Export hardware palette
-  const hardwareAsm = generateHardwarePaletteAsm(
-    paletteFirmware,
-    'Palette_Hardware'
-  )
+  const hardwareAsm = hardwarePaletteAsm(paletteFirmware, {
+    label: 'Palette_Hardware'
+  })
   zip.file('palette_hardware.asm', hardwareAsm)
 }

@@ -7,13 +7,13 @@ import {
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
 import { dskImagesAtom } from '@/app/store/dsk-workspace/dsk-workspace'
+import { effectivePreviewImageAtom } from '@/app/store/preview/effective-rendering'
 import {
   exportPaletteWithSlotsAtom,
   finalPreviewIndexBufferAtom,
   IGNORED_SLOT
 } from '@/app/store/preview/preview'
 import {
-  effectivePreviewImageAtom,
   finalRasterIndexBufferAtom,
   rasterBasePaletteAtom,
   rasterChangesAtom,
@@ -23,13 +23,13 @@ import DskWorkspace from '@/components/dsk-workspace/dsk-workspace'
 import { Notification } from '@/components/ui/notification/notification'
 import { dskLogger } from '@/core'
 import {
-  downloadFile,
-  exportDskWorkspaceZip,
   paletteToCPCPlusValues,
   rgbToFirmwareIndex,
   sanitizeAmsdosFilename
 } from '@/export'
-import { isTauri, saveZipFileTauri } from '@/tauri'
+import { dskWorkspaceBuilder } from '@/export/application/adapters/dsk-workspace-builder'
+import { exportDskWorkspaceToZip } from '@/export/application/export-dsk-workspace-to-zip'
+import { resolveFileSink } from '@/export/application/file-sink'
 
 export default function DskWorkspacePanel() {
   const { _ } = useLingui()
@@ -204,29 +204,23 @@ export default function DskWorkspacePanel() {
     : undefined
 
   const handleExport = async () => {
-    if (dskImages.length === 0) return
-
     setIsExporting(true)
     try {
-      const zipBlob = await exportDskWorkspaceZip(dskImages)
-      if (zipBlob) {
-        // Check if running in Tauri (desktop) or web
-        if (isTauri()) {
-          // Use Tauri's native file dialog and save
-          const success = await saveZipFileTauri(
-            zipBlob,
-            'pixsaur-workspace.zip'
-          )
-          if (success) {
-            setNotificationMessage(_(msg`DSK workspace exported successfully!`))
-            setShowNotification(true)
-          }
-        } else {
-          // Use browser download
-          downloadFile(zipBlob, 'pixsaur-workspace.zip', 'application/zip')
-          setNotificationMessage(_(msg`DSK workspace exported successfully!`))
-          setShowNotification(true)
-        }
+      const result = await exportDskWorkspaceToZip(
+        { images: dskImages },
+        { dskWorkspaceBuilder, fileSink: resolveFileSink() }
+      )
+
+      if (result.ok) {
+        setNotificationMessage(_(msg`DSK workspace exported successfully!`))
+        setShowNotification(true)
+      } else if (
+        result.error !== 'save-cancelled' &&
+        result.error !== 'no-images'
+      ) {
+        // An empty workspace and a dismissed save dialog are user choices,
+        // not failures — stay silent on both.
+        dskLogger.error('[DSK Workspace] Export failed:', result.error)
       }
     } catch (error) {
       dskLogger.error('[DSK Workspace] Export failed:', error)

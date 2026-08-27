@@ -1,18 +1,297 @@
-# Refactor — STATUS (canonical resume point)
+# Refactor — STATUS (archived — refactor complete)
 
-**Read this first when resuming in a new session.** It always reflects the
-current state. History lives in `docs/refactor/sessions/` (append-only,
-**local-only since 2026-06-12** — git-ignored, only `_TEMPLATE.md` is tracked;
-this file is the canonical summary for the repo).
+> **✅ DONE & MERGED.** The clean-archi / strangler-fig refactor is complete and
+> was merged into `main` (rebased — original `refactor/pr0-guardrails` SHAs were
+> rewritten) and shipped in **1.13.0**. `main` has since moved on with new feature
+> work on top. This file is now a **historical record**, not a live resume point.
+> The use-cases + ports architecture and ADR-001 file layout are the current
+> baseline; the layering guard (`check-layer-imports.js`) enforces them.
+
+History lives in `docs/refactor/sessions/` (append-only, **local-only since
+2026-06-12** — git-ignored, only `_TEMPLATE.md` is tracked).
 
 Effort: incremental strangler-fig toward **use-cases + light ports** (NOT a
-rewrite). Jotai/React become thin adapters over pure use-cases. Rationale &
+rewrite). Jotai/React became thin adapters over pure use-cases. Rationale &
 big picture: `src/export/application/README.md` and the memory note
 `refactor-clean-archi-plan`.
 
-## Where we are
+## Post-review remediation (August 2026 — live)
 
-- **Parallel effort — quality gates from `loupe`:** branch
+> The clean-archi refactor below is finished and archived. What follows is a
+> **new, separate** effort: applying the findings of
+> `architecture-review-2026-08.md` (11 candidates, 4 waves). This section is the
+> live resume point; everything under "Where we landed" is history.
+
+- Branch: `refactor/post-review-remediation` (renamed from
+  `fix/distinct-mapping-explicit-channel` on 2026-08-27). **Pushed to `origin`
+  2026-08-27** after wave 3; not merged to `main` — no PR opened yet.
+- **Wave 1 — DONE** (3 commits). Report:
+  `sessions/2026-08-27-wave1-distinct-mapping-dead-code.md`.
+  - `0a487e3` candidate 2: the distinct-mapping table now travels as a value
+    (`quantizePalette` drains the ambient transport; `mapAndDither` /
+    `applyNoDither` / `dither` take it as an argument; `isDistinctMappingEnabled`
+    deleted). Fixes a real stale-state bug — the CPU fallback dithered through
+    the previous image's table whenever `ReGLQuantizer` threw for an image under
+    128×128.
+  - `2d67f4d` dead-code sweep: `exportModeRSna`, `generateSCRAsmPlus`,
+    `egxPreviewImageAtom`. Deliberately kept: `quantizeEGX` (for candidate 1 —
+    which then **deleted** it instead, see wave 2) and `getCapabilities` (only
+    observation window on live WebGL detection).
+  - `b7a9b55` the review itself, recorded.
+- **Wave 2 — candidate 1 DONE** (same branch, 2 more commits). Report:
+  `sessions/2026-08-27-wave2-egx-one-module.md`.
+  - `a39ca30` candidate 1a: the `quantizeEgx` use-case
+    (`src/preview/application/quantize-egx.ts`, 28-test table over type ×
+    first-line × dithering mode) replaces the 80-line loop in
+    `egxIndexBufferAtom`. The lib's never-shipped `quantizeEGX` (+ preview
+    generators + the helpers only it used) is **deleted, not adopted**: it had
+    no dithering and no low-res pixel pairing, so adopting it would have been a
+    regression.
+  - `f6d31b9` candidate 1b: new shared `resizeToMode` helper
+    (`src/preview/image-processing/resize-to-mode.ts`) parameterized by the
+    target `CpcModeConfig`; `resizedImageAtom` and `egxNormalizedImageAtom` are
+    both thin adapters over it plus the `normalizeImage` /
+    `positionNormalizedImage` use-cases. **EGX now gets linear-light
+    resampling** (a real rendering change — eyeball an EGX export before
+    merging). `shouldGrayOut` absorbed into `egx-final.ts`;
+    `egx-preview-image.ts` deleted.
+- **Wave 2 — candidate 10 DONE — wave 2 complete** (same branch, 2 more
+  commits). Report: `sessions/2026-08-27-wave2-dsk-file-sink.md`.
+  - `3233c8f` candidate 10a: new shared
+    `src/export/exports/exporters/dsk-image-format.ts` (`toDskModeConfig` →
+    `CpcModeConfig`, `isStandardDskMode`, `generateDskStandardScr`, +10-test
+    spec with real encoders). Both DSK exporters drop their private
+    `ModeConfig` clone, standard-mode test and SCR producer — including the
+    async copy whose 3 dynamic imports pulled the whole `@/export` barrel.
+  - `2850ef5` candidate 10b: new `DskWorkspaceBuilder` port + adapter and the
+    `exportDskWorkspaceToZip` use-case (`src/export/application/`, 5-test spec,
+    **zero `vi.mock`**). `dsk-workspace-panel.tsx` is now a thin adapter —
+    `isTauri` / `saveZipFileTauri` / `downloadFile` left the component and the
+    save goes through `resolveFileSink()`.
+- **Wave 2 verified by hand 2026-08-27 — web AND Tauri**: on the web build, EGX
+  renders correctly with the new linear-light resampling, smoothing behaves, and
+  the DSK workspace export works end to end. The desktop build was then smoke-
+  tested too: the Tauri app runs and the DSK export works, so the
+  `tauriFileSink` / native-dialog branch — the one path the web run never
+  exercises — is confirmed. **No manual verification is outstanding.**
+- **Wave 3 — candidate 4 DONE** (same branch, 1 commit). Report:
+  `sessions/2026-08-27-wave3-standard-mode-verdict.md`.
+  - `d4b1587`: new `src/domain/cpc/screen-capability.ts` (+22-test spec) —
+    `isStandardScreen`, `isStandardEgxScreen`, `maxScreenAddress`,
+    `screenCapability` → `{ isStandard, canExportScr, canExportSna }`. The
+    `{mode 0/160, 1/320, 2/640} × 200 × !overscan` rule had **six** copies in
+    four signatures (the review found five; `export-sna.ts` hid a sixth); all
+    six now read the domain module, including the export dialog — the rule left
+    the React tree, and `export-zip`'s "must match the UI logic in
+    export-config-dialog.tsx" comment is true by construction instead of by
+    hope. `isStandardDskMode` (added the day before for candidate 10) folded in.
+  - Deliberately unchanged: `export-zip` still gates SNA only on
+    `config.content.includeSNA`. Adding a `canExportSna` gate is a behaviour
+    change, not a refactor — the dialog already prevents the case.
+- **Wave 3 — candidates 5 + 6 DONE — wave 3 complete** (same branch, 2 more
+  commits). Report: `sessions/2026-08-27-wave3-asm-producers.md`.
+  - `417741a` candidate 5: two named producers. `palette-asm.ts`
+    (`dbPaletteSection` / `hardwarePaletteAsm` / `plusPaletteAsm`) is read by
+    the six palette-emission sites, and the `0x54` black fallback is finally
+    asserted. `egx-asm-source.ts` (`egxAsmSource`) replaces three
+    near-identical ~60-line copies in `export-zip` and `export-cpc-playground`
+    — **`egx-templates.ts` (753 lines) is reachable from a spec for the first
+    time**. `toAsmDataString` moves the `string | Chunk[]` unwrap (×6) into
+    `to-asm-data.ts`. Dead barrel export `generateEgxAsmSource` deleted.
+  - `cb5e200` candidate 6: `sna-asm-source.ts` is the pure half
+    (`snaAsmSource → { source } | { error }`, **spec with zero `vi.mock`**) and
+    `assemble-snapshot.ts` is the only module touching RASM. `exportSna` is
+    their composition; `export-sna.ts` **434 → 202 lines**. The two SNA arms
+    `export-zip.spec.ts` could never reach (they needed a real WASM instance)
+    now have 4 tests.
+  - Deliberately unchanged: `generateModeRSnaAsmSource` (wave 1 already deleted
+    its async twin, so there was no duplication left to collapse) and
+    `export-sna.spec.ts`'s 5 `vi.mock` calls — now redundant rather than
+    load-bearing, a cheap follow-up.
+- **Rebased onto `main` 2026-08-27** (18 commits replayed on `272c781`, which
+  brought the enforcing quality gates of #345). Two conflicts: `STATUS.md`
+  (kept main's "quality gates from loupe" record plus this branch's corrected
+  "merged in 1.13.0" bullets) and `quantize-egx.spec.ts` (deleted here; main had
+  only swapped `toBe(x.length)` for `toHaveLength` in the S5906 sweep #340).
+  Full gate green afterwards: 2481 tests, jscpd 33 clones / 1.27 %, react-doctor
+  clean.
+- **Repo cleanup 2026-08-27**: `origin` now holds `main` and this branch only —
+  25 stale branches and 2 stashes deleted, each preserved as a local `archive/*`
+  tag. Restore one with
+  `git push origin archive/<name>:refs/heads/<name>`. Worth knowing before the
+  tags are ever pruned: `archive/refactor/architecture-cleanup` carries
+  `perf(mode-r): spatial lookup table (~8× speedup)`, which never reached `main`.
+- **Wave 4 — candidates 3, 9 and the candidate 7 verdict DONE** (same branch, 3
+  more commits, not yet pushed). Report:
+  `sessions/2026-08-27-wave4-processor-seam-and-dither-entry.md`.
+  - `8092c42` candidate 3: `ReGLProcessor` split into `CpuProcessor` (pure JS,
+    no-op `dispose`) and `GpuProcessor` (needs a live regl instance, **throws
+    from its constructor**); `processorFactory` is now the only place that
+    chooses, and it destroys the orphaned regl instance instead of leaking it.
+    Interface stops lying: `applyAdjustmentsSync` deleted (both paths are
+    synchronous — the GPU one blocks on `regl.read()`), `type` narrowed to
+    `'cpu' | 'gpu'`, `isAvailable` / `getCapabilities` / the canvas probe / the
+    three `ProcessorFactory` members implemented nowhere all removed.
+    `quantizePalette`'s `options` now reach the CPU fallback. The 686-line
+    `regl-processor.spec.ts` (which `vi.mock`ed all of `pixsaur-color`, so it
+    only asserted the class forwarded to itself) is replaced by a 22-test
+    `describe.each` conformance suite over both adapters.
+  - `19126a4` candidate 9: the ditherers take a `LinePalettes = (y) =>
+    LinePalette` instead of a fixed palette pair. The standard path passes
+    `constantPalettes(...)`, raster a memoized per-line lookup, and **both run
+    the same eleven modes** — the three hand-copied dynamic twins (~190 lines)
+    are deleted along with the second switch and the second entry point's body.
+    Verified bit-for-bit: 44/44 identical `mapAndDither` outputs (11 modes × 2
+    intensities × 2 correction settings); the dynamic path differs for exactly
+    the five error-diffusion modes, which is the win. Dead
+    `switchToRasterCompatibleDitheringAtom` deleted.
+  - `948587b` candidate 7: **the review's premise does not hold.** Probed
+    against the pinned Jotai (2.12.4), a `get` issued after an `await get` is
+    tracked normally — across microtask and macrotask boundaries, after several
+    awaits, with stale edges dropped. The proposed `deriveAsync` migration
+    across 42 atoms would have been churn. What was missing is the guard:
+    `preview/__tests__/async-atom-dependencies.spec.ts` pins the property, and
+    `image-pipeline.ts`'s comment (which claimed the opposite) now points at it.
+  - Deliberately unchanged: `CpuProcessor` accepts `autoDistinctMapping` /
+    `colorDiversity` but does not act on them — the CPU quantizer applies
+    `distinct-mapping` unconditionally and `StrategyOptions` has no diversity
+    parameter, so honouring them is a rendering change, not a refactor (the UI
+    toggle is inert on the CPU path — a real inconsistency, worth its own
+    change). And the raster mode picker still hides error diffusion: the lib now
+    supports it, but whether it reads well on a CPC raster image is a product
+    call. `dithering-modes.ts` says so instead of claiming incompatibility.
+- **Wave 4 — candidate 8 DONE — wave 4 complete** (same branch, 1 more commit).
+  Report: `sessions/2026-08-27-wave4-rendering-path.md`.
+  - `bd2e141`: the survey came first and reshaped the fix. There are **four**
+    paths (raster is not a decoration on standard) and **six** dispatch sites,
+    each with its own precedence and none agreeing — the preview counted raster
+    as active only with at least one change, the editor as soon as the flag was
+    on, so deleting every raster change left the editor on a stale buffer the
+    screen no longer showed. New pure `src/preview/application/rendering-path.ts`
+    (+19 tests): `resolveRenderingPath` picks the path,
+    `RENDERING_PATH_CAPABILITIES` **declares** what each supports (manual edits,
+    editor, single index buffer, display palette, distinct-mapping dither rule).
+    `activeRenderingPathAtom` is a leaf atom module (+8 tests, real store);
+    `effectivePreviewImageAtom` + `effectiveIndexBufferAtom` move out of the
+    raster slice into `preview/effective-rendering.ts` as exhaustive switches.
+    Five consumers read the path or its capabilities instead of the raw flags.
+    `preview-panel.spec.tsx` (which mocked `useAtomValue` and fed it values by
+    position) rewritten on a real Jotai store, 7 tests.
+  - Deliberately unchanged: the review's shared `RenderingPath` object — the four
+    surfaces have genuinely different types per path (Mode R has *two* index
+    buffers and *two* palettes), so one type would have meant `null` members and
+    casts. What the paths share is identity and capability, and that is what the
+    module carries. The dithering asymmetry is **declared, not unified** (making
+    EGX / Mode R / raster force dithering off under distinct mapping is a
+    rendering change). And Mode R still shows the standard 16 slots under its
+    preview despite `displayPalette: false` — hiding that panel is a visible UI
+    change, left as a product call.
+- **Wave 4 verified by hand 2026-08-27 — web build.** The four rendering paths
+  (standard, raster with changes, raster after deleting every change, EGX, Mode R
+  blended + frames A/B) were walked in the browser: preview, canvas size, palette
+  panel and edit button correct on each. That closes the raster eyeball wave 4's
+  first report asked for. Tauri was not re-checked and does not need to be — no
+  platform-specific path was touched since wave 2's smoke test.
+- **The Mode R editor stays closed, on purpose.** Raised 2026-08-27: there is
+  still no edit button in Mode R. That is pre-existing behaviour which candidate
+  8 *declared* (`renderingPathCapabilities('mode-r').editor === false`) rather
+  than closed. Opening it is a feature, not a refactor — the editor works on one
+  index buffer + one palette and Mode R interlaces two, so it needs either an
+  edit of the blended 320 px image (each pixel routed to frame A or B by column
+  parity) or of frame A alone. Deferred deliberately.
+- **Candidate 11 (flatten the preview barrels) — the only open review item.** It
+  did not "fall out of" candidate 8 as the review predicted: the new modules
+  sidestep the barrels rather than removing them. Still rated speculative.
+
+### Ratchet baselines (lowered 2026-08-27 — may only shrink)
+
+| Detector | Baseline | Was |
+|---|---|---|
+| knip unused exports | **41** | 42 |
+| knip unused types | **18** | 19 |
+| knip unused files | 1 (intentional) | 1 |
+| jscpd clones | **29** | 33 |
+| jscpd ratio | **1.13 %** | 1.27 % |
+
+Judge the ratchet on the **clone count**; the ratio also moves when deletions
+shrink the denominator. Wave 2's candidate 10 removed a hand-copied SCR producer
+without moving either number — jscpd never flagged it (the two copies had
+drifted sync/async), which is why the review reads code and the detectors only
+guard the floor. Wave 3 moved both: 37 → 34 (candidate 5, three EGX copies → one)
+→ 33 (candidate 6, the SNA twins → one). Wave 4 took it to 29: candidate 3's
+adapter split moved it to 32, candidate 9's dithering unification to 29.
+
+~~Known pre-existing noise~~ — **fixed 2026-08-27**. `pnpm check` used to report
+biome format errors in `src-tauri/gen/` and `src-tauri/target/` on machines that
+had run a Tauri build (583 of them on a full build, not the ~9 first recorded).
+`biome.json` now excludes both paths, so `pnpm check` / `pnpm gate` scan 673
+files instead of 1260 and are green locally as well as in CI.
+
+**SonarCloud's new-code coverage gate, and what it was really measuring**
+(2026-08-27, PR #346). The only failing condition was `new_coverage` at 66.7 %
+against a threshold of 80. The dominant term was `gpu-processor.ts`: **82
+uncovered lines of 173**, counted as *new* code because candidate 3 split
+`regl-processor.ts` into two adapters — the code is moved, not written. Every
+statement in it runs against a live regl/WebGL context the headless CI does not
+have, so a unit test can only reach it through a fake regl, which asserts that
+the adapter forwards to itself: exactly what the 686-line `regl-processor.spec.ts`
+did before candidate 3 deleted it. **Decision: exclude that one file from
+`sonar.coverage.exclusions`** (coverage only — it is still analysed for bugs,
+smells and duplication), with the reason written in `sonar-project.properties`.
+`regl-quantizer.ts` is deliberately **not** excluded: its four specs cover real
+logic. Before the exclusion, 17 new tests were added where the coverage gap was
+genuine — `canvas-size.spec.ts` (12) and `effective-rendering.spec.ts` (5),
+taking the metric 66.7 → 73.3 %.
+
+**Two vacuous tests found in `resize-to-mode.spec.ts`** (2026-08-27, not yet
+fixed). Its `classic` and `auto` cases claim to exercise the legacy canvas path,
+but happy-dom returns `null` from `getContext('2d')`, so `resizeToMode` exits at
+`if (!ctx) return cropped` and the ~9 lines of that branch never run. The tests
+pass without asserting anything about the path they name. Fixing it means either
+a fake 2D context or injecting the canvas through a port like `domCanvasFactory`
+— a real change, tracked here rather than done in passing. **Third instance of
+the same family** on this branch, after `pnpm typecheck` and the react-doctor
+base: a green signal produced by code that never ran.
+
+**The react-doctor gate had no base to diff against** (found 2026-08-27, when it
+blocked PR #346). `check-react-doctor.js` ran `--scope changed` and let
+react-doctor auto-detect `--base`. It guessed wrong in both directions: locally
+it resolved to the branch's own upstream, so `pnpm check:react` printed a green
+line on an empty diff without reading a file; on CI it found nothing on the
+detached PR merge ref and degraded to a full scan, blaming the PR for the repo's
+two pre-existing error-severity findings — both in files the branch never
+touched. Fixed in `d5b6fab`: the base is `$REACT_DOCTOR_BASE`, else the
+merge-base with `origin/main`, else with `main`, and the run is **refused** when
+none resolves; `gate.yml` passes the PR's base sha; both the pass and fail lines
+name the ref used. `3ba3d96` clears the two findings themselves (a `setTimeout`
+in `useEffect` with no cleanup; `createStore()` in a test provider's render
+body), so the repo is at **zero** error-severity findings. Note the gate is not
+in the pre-commit hook — `pnpm gate` is the only thing that runs it locally.
+
+**`pnpm typecheck` was a no-op** (found the same day). `tsconfig.json` is a
+solution file (`"files": []` + `references`), and `tsc --noEmit` ignores
+referenced projects — it exited 0 on a deliberately broken file. Same hole in
+`.husky/pre-commit` (`npx tsc --noEmit`) and twice in
+`scripts/typecheck-comprehensive.js` (it ran `tsc --project tsconfig.json`,
+printing a false green, and its "diagnostic checks" pass was the same bare
+`tsc --noEmit`). Only the per-project `tsconfig.app.json` pass was ever real.
+Fixed: `typecheck` and the hook now run `tsc -b --force`; the script checks
+`tsconfig.app.json` / `tsconfig.node.json` only. Verified by probe — both now
+exit non-zero on a type error.
+
+**The pre-commit hook widened every commit.** It ran `biome check . --write`
+then `git add -u`, which stages *every* modified tracked file — not just the
+ones being committed — and silently defeated `git add -p`. It now formats only
+the staged `js/jsx/ts/tsx/json/css` files and re-stages exactly those. A file
+that is staged *and* dirty in the worktree is refused with an explicit message
+rather than guessed at: formatting it would either drag the unstaged hunks into
+the commit or leave unformatted content in it. The redundant bare `tsc -b` also
+left the hook — `typecheck:comprehensive` already covers both projects with
+stricter flags, so the hook does one full typecheck instead of three.
+
+## Where we landed
+
+- **Parallel effort — quality gates from `loupe`:** branche
   `chore/quality-gates-from-loupe`. Plan : `PLAN-quality-gates-from-loupe.md`.
   **Phase 1 (Stryker) DONE** (`f7b5103`, score 79.30 %, break 72) et **Phase 2
   (skills) DONE** (`72a14a7` : tdd-cycle, new-feature-hexa, quality-gate,
@@ -21,12 +300,14 @@ big picture: `src/export/application/README.md` and the memory note
   fuite `core→@/tauri` du logger corrigée par un port `LogSink`), **Phase 4
   (react-doctor + impeccable) DONE** (`2a8b8b8` : `check:react` ratchet +
   `check:design` report-only) et **Phase 5 (gate composite) DONE** (`b07dfb5` :
-  `pnpm gate` + CI PR). **Les 5 phases sont livrées.** Reste : ouvrir la PR de la
-  branche. Reports : `sessions/2026-07-05-*`.
-- **Branch:** `refactor/pr0-guardrails` — committed (`6c077ff`), **ahead of
-  origin by 19 (unpushed — push is overdue)**.
-- **Current step:** file-layout reorg (ADR-001) — DONE (8 commits
-  `51e0bab`…`6c077ff`). Report: `sessions/2026-06-12-file-layout-reorg.md`.
+  `pnpm gate` + CI PR). **Les 5 phases sont livrées et mergées sur `main`**
+  (#345 : coverage, jscpd et react-doctor passent en *enforce*). Reports :
+  `sessions/2026-07-05-*`.
+- **Merged into `main`** and shipped in 1.13.0. The local
+  `refactor/pr0-guardrails` branch has been deleted (content all on `main`).
+- **Last step:** file-layout reorg (ADR-001) — DONE (8 commits
+  `51e0bab`…`6c077ff`, rebased onto main). Report:
+  `sessions/2026-06-12-file-layout-reorg.md`.
   Deduped the diverged mode-0 hue-diversity selection into
   `pixsaur-color/quant/mode0-hue-diversity.ts` (two bit-for-bit presets, 599-line
   adapter helper deleted); moved `CPC_MODE_CONFIG`/mode types + hardware

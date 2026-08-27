@@ -11,7 +11,9 @@ import { existsSync } from 'node:fs'
 
 console.log('🔍 Running comprehensive TypeScript check...')
 
-const configs = ['tsconfig.json', 'tsconfig.app.json', 'tsconfig.node.json']
+// tsconfig.json est un fichier « solution » (files: [] + references) : le
+// passer à `tsc --project` ne vérifie rien et rapporte un faux vert.
+const configs = ['tsconfig.app.json', 'tsconfig.node.json']
 
 let hasErrors = false
 
@@ -51,10 +53,13 @@ console.log('\n🔬 Running diagnostic checks...')
 
 try {
   // Vérifier les imports non utilisés et autres problèmes
-  execSync('npx tsc --noEmit --noUnusedLocals --noUnusedParameters', {
-    stdio: 'pipe',
-    encoding: 'utf8'
-  })
+  execSync(
+    'npx tsc --project tsconfig.app.json --noEmit --noUnusedLocals --noUnusedParameters',
+    {
+      stdio: 'pipe',
+      encoding: 'utf8'
+    }
+  )
   console.log('✅ No unused imports or parameters')
 } catch (error) {
   console.warn('⚠️  Found unused imports/parameters:')

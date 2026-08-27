@@ -55,7 +55,6 @@ export {
   type PixelMode,
   parseCpcModeKey
 } from './mode-config'
-
 // Palette filtering
 export {
   filterByDistance,
@@ -74,6 +73,17 @@ export {
   quantizeCPC,
   toCPCPlusLevel
 } from './quantization'
+// Screen capability (what a framebuffer can produce: standard screen, SCR, SNA)
+export {
+  CPC_SCREEN_MEMORY_BYTES,
+  type EgxScreen,
+  isStandardEgxScreen,
+  isStandardScreen,
+  maxScreenAddress,
+  type ScreenCapability,
+  type ScreenGeometry,
+  screenCapability
+} from './screen-capability'
 // Slot management (locked state, empty detection)
 export {
   countLockedEmptySlots,

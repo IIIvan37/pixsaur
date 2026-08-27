@@ -37,12 +37,12 @@ export const initializeProcessorsAtom = atom(null, async (_get, set) => {
         await processorFactory.createBestProcessor(processorType)
 
       adapterLogger.info(
-        `Processor initialized: ${imageProcessor.type === 'regl' ? 'WebGL (GPU)' : 'CPU fallback'}`
+        `Processor initialized: ${imageProcessor.type === 'gpu' ? 'WebGL (GPU)' : 'CPU fallback'}`
       )
 
       // Auto mode silently falls back to CPU when WebGL is unavailable; surface
       // it so the user understands a slower path is in use.
-      if (processorType !== 'cpu' && imageProcessor.type !== 'regl') {
+      if (processorType !== 'cpu' && imageProcessor.type !== 'gpu') {
         set(pushToastAtom, 'gpu-fallback')
       }
 

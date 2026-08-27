@@ -1,6 +1,6 @@
 import {
-  isDistinctMappingEnabled,
-  lookupColorIndex
+  lookupColorIndex,
+  type SourceColorMapping
 } from '../quant/color-mapping-cache'
 import { getBlueNoiseThresholdRGB } from './blue-noise-texture'
 
@@ -93,8 +93,7 @@ interface ErrorDiffusionDitherParams {
   bufCS: Float32Array
   width: number
   height: number
-  paletteCS: Float32Array[]
-  paletteOut: Uint8ClampedArray[]
+  palettes: LinePalettes
   distFn: DistanceFn
   intensity: number
   correction: DiffusionCorrectionOptions
@@ -105,23 +104,36 @@ interface BlueNoiseDitherParams {
   bufCS: Float32Array
   width: number
   height: number
-  paletteCS: Float32Array[]
-  paletteOut: Uint8ClampedArray[]
+  palettes: LinePalettes
   intensity: number
   distFn: DistanceFn
   correction?: OrderedCorrectionOptions
 }
 
-/** Params for Bayer dithering with dynamic per-line palettes. */
-interface BayerDynamicDitherParams {
-  bufCS: Float32Array
-  width: number
-  height: number
-  getPaletteForLine: (y: number) => Vector[]
-  mode: BayerMode
-  intensity: number
-  distFn: DistanceFn
-  correction?: OrderedCorrectionOptions
+/**
+ * The palette in force for one scanline, in both the working colorspace
+ * (`paletteCS`, what distances are measured in) and RGBA output form
+ * (`paletteOut`, what gets written). Deduplicated, never empty.
+ */
+export interface LinePalette {
+  readonly paletteCS: Float32Array[]
+  readonly paletteOut: Uint8ClampedArray[]
+}
+
+/**
+ * Supplies the palette for scanline `y`.
+ *
+ * This is the one thing that separates the standard rendering path from raster
+ * mode: the standard path passes a constant (`constantPalettes`), raster passes
+ * a per-line lookup. Every ditherer asks per scanline, so both paths run the
+ * same eleven implementations — before, raster had three hand-copied twins and
+ * therefore only four modes.
+ */
+export type LinePalettes = (y: number) => LinePalette
+
+/** A `LinePalettes` that answers with the same palette on every scanline. */
+export function constantPalettes(palette: LinePalette): LinePalettes {
+  return () => palette
 }
 
 function resolveDiffusionCorrectionOptions(
@@ -184,8 +196,7 @@ function applyAtkinsonDither(
   bufCS: Float32Array,
   width: number,
   height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
+  palettes: LinePalettes,
   config: DitheringConfig,
   distFn: DistanceFn
 ): Uint8ClampedArray {
@@ -194,7 +205,6 @@ function applyAtkinsonDither(
   const pixel = new Float32Array(3)
   const errorBuf = new Float32Array(bufCS) // copy
   const correction = resolveDiffusionCorrectionOptions(config)
-  const bounds = computePaletteBounds(paletteCS)
 
   // Atkinson diffusion offsets (relative to current pixel)
   const offsets = [
@@ -212,16 +222,17 @@ function applyAtkinsonDither(
     errorBuf,
     out,
     pixel,
-    paletteCS,
-    paletteOut,
+    paletteCS: [],
+    paletteOut: [],
     distFn,
     intensity,
     offsets,
-    bounds,
+    bounds: computePaletteBounds([]),
     correction
   }
 
   for (let y = 0; y < height; y++) {
+    setLinePalette(context, palettes(y))
     for (let x = 0; x < width; x++) {
       processAtkinsonPixel(x, y, context)
     }
@@ -231,20 +242,40 @@ function applyAtkinsonDither(
 }
 
 /**
+ * Points a diffusion context at the scanline's palette. The bounds are part of
+ * the palette, not of the image, so they move with it.
+ */
+function setLinePalette(
+  context: LinePaletteHolder,
+  { paletteCS, paletteOut }: LinePalette
+): void {
+  context.paletteCS = paletteCS
+  context.paletteOut = paletteOut
+  context.bounds = computePaletteBounds(paletteCS)
+}
+
+/**
+ * The palette state an error-diffusion context carries, swapped once per
+ * scanline by {@link setLinePalette}.
+ */
+interface LinePaletteHolder {
+  paletteCS: Float32Array[]
+  paletteOut: Uint8ClampedArray[]
+  bounds: PaletteBounds
+}
+
+/**
  * Context object for Atkinson dithering to reduce parameter count
  */
-interface AtkinsonContext {
+interface AtkinsonContext extends LinePaletteHolder {
   width: number
   height: number
   errorBuf: Float32Array
   out: Uint8ClampedArray
   pixel: Float32Array
-  paletteCS: Float32Array[]
-  paletteOut: Uint8ClampedArray[]
   distFn: DistanceFn
   intensity: number
   offsets: number[][]
-  bounds: PaletteBounds
   correction: DiffusionCorrectionOptions
 }
 
@@ -327,8 +358,7 @@ export function applyYliluoma1Dither(
   bufCS: Float32Array,
   width: number,
   height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
+  palettes: LinePalettes,
   config: DitheringConfig,
   distFn: DistanceFn
 ): Uint8ClampedArray {
@@ -338,6 +368,7 @@ export function applyYliluoma1Dither(
   const pixel = new Float32Array(3)
 
   for (let y = 0; y < height; y++) {
+    const { paletteCS, paletteOut } = palettes(y)
     for (let x = 0; x < width; x++) {
       const i = y * width + x
       const o = i * 4
@@ -380,8 +411,7 @@ export function applyYliluoma2Dither(
   bufCS: Float32Array,
   width: number,
   height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
+  palettes: LinePalettes,
   config: DitheringConfig,
   distFn: DistanceFn
 ): Uint8ClampedArray {
@@ -392,6 +422,7 @@ export function applyYliluoma2Dither(
   const errorBuf = new Float32Array(width * height * 3)
 
   for (let y = 0; y < height; y++) {
+    const { paletteCS, paletteOut } = palettes(y)
     for (let x = 0; x < width; x++) {
       const i = y * width + x
       const i3 = i * 3
@@ -450,8 +481,7 @@ export function applyBayerDither(
   bufCS: Float32Array,
   width: number,
   height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
+  palettes: LinePalettes,
   bayerConfig: BayerConfig,
   distFn: DistanceFn
 ): Uint8ClampedArray {
@@ -462,12 +492,14 @@ export function applyBayerDither(
   const pixelCS = new Float32Array(3)
   const correction = resolveOrderedCorrectionOptions(config)
 
-  // Adaptive amplitude: scale by 1/sqrt(paletteSize) so larger palettes get less noise
-  const amplitude = correction.enabled
-    ? intensity * (255 / Math.sqrt(paletteCS.length))
-    : intensity * 255
-
   for (let y = 0; y < height; y++) {
+    const { paletteCS, paletteOut } = palettes(y)
+    // Adaptive amplitude: scale by 1/sqrt(paletteSize) so larger palettes get
+    // less noise. Per scanline, because raster palettes vary in size.
+    const amplitude = correction.enabled
+      ? intensity * (255 / Math.sqrt(paletteCS.length))
+      : intensity * 255
+
     for (let x = 0; x < width; x++) {
       const i = y * width + x
       const i3 = i * 3
@@ -517,61 +549,50 @@ export function applyNoDither(
   bufCS: Float32Array,
   width: number,
   height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
-  distFn: DistanceFn
+  palettes: LinePalettes,
+  distFn: DistanceFn,
+  sourceColorMapping?: SourceColorMapping | null
 ): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
 
   // Vérifier si le mode distinct-mapping est actif
-  const useDirectMapping = isDistinctMappingEnabled()
+  const useDirectMapping = !!sourceColorMapping
 
-  for (let i = 0; i < width * height; i++) {
-    const i3 = i * 3
-    pixelCS[0] = bufCS[i3]
-    pixelCS[1] = bufCS[i3 + 1]
-    pixelCS[2] = bufCS[i3 + 2]
+  for (let y = 0; y < height; y++) {
+    const { paletteCS, paletteOut } = palettes(y)
 
-    let bestI = 0
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x
+      const i3 = i * 3
+      pixelCS[0] = bufCS[i3]
+      pixelCS[1] = bufCS[i3 + 1]
+      pixelCS[2] = bufCS[i3 + 2]
 
-    // Si distinct-mapping est actif, utiliser le mapping direct
-    if (useDirectMapping) {
-      const r = Math.round(pixelCS[0])
-      const g = Math.round(pixelCS[1])
-      const b = Math.round(pixelCS[2])
-      const mappedIdx = lookupColorIndex(r, g, b)
-      if (mappedIdx === undefined) {
-        // Fallback: chercher la couleur la plus proche
-        let bestD = Infinity
-        for (let p = 0; p < paletteCS.length; p++) {
-          const d = distFn(pixelCS, paletteCS[p])
-          if (d < bestD) {
-            bestD = d
-            bestI = p
-          }
+      let bestI = 0
+
+      // Si distinct-mapping est actif, utiliser le mapping direct
+      if (useDirectMapping) {
+        const r = Math.round(pixelCS[0])
+        const g = Math.round(pixelCS[1])
+        const b = Math.round(pixelCS[2])
+        const mappedIdx = lookupColorIndex(sourceColorMapping, r, g, b)
+        if (mappedIdx === undefined) {
+          bestI = findClosestColorIndex(pixelCS, paletteCS, distFn)
+        } else {
+          bestI = mappedIdx
         }
       } else {
-        bestI = mappedIdx
+        bestI = findClosestColorIndex(pixelCS, paletteCS, distFn)
       }
-    } else {
-      // Mode standard: chercher la couleur la plus proche
-      let bestD = Infinity
-      for (let p = 0; p < paletteCS.length; p++) {
-        const d = distFn(pixelCS, paletteCS[p])
-        if (d < bestD) {
-          bestD = d
-          bestI = p
-        }
-      }
-    }
 
-    const outIdx = i * 4
-    const color = paletteOut[bestI]
-    out[outIdx + 0] = color[0]
-    out[outIdx + 1] = color[1]
-    out[outIdx + 2] = color[2]
-    out[outIdx + 3] = 255
+      const outIdx = i * 4
+      const color = paletteOut[bestI]
+      out[outIdx + 0] = color[0]
+      out[outIdx + 1] = color[1]
+      out[outIdx + 2] = color[2]
+      out[outIdx + 3] = 255
+    }
   }
 
   return out
@@ -581,20 +602,22 @@ export function applyBlueNoiseDither({
   bufCS,
   width,
   height,
-  paletteCS,
-  paletteOut,
+  palettes,
   intensity,
   distFn,
   correction = DEFAULT_ORDERED_CORRECTION
 }: BlueNoiseDitherParams): Uint8ClampedArray {
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
-  // Adaptive amplitude: scale by 1/sqrt(paletteSize) so larger palettes get less noise
-  const scale = correction.enabled
-    ? intensity * (255 / Math.sqrt(paletteCS.length))
-    : intensity * 255
 
   for (let y = 0; y < height; y++) {
+    const { paletteCS, paletteOut } = palettes(y)
+    // Adaptive amplitude: scale by 1/sqrt(paletteSize) so larger palettes get
+    // less noise. Per scanline, because raster palettes vary in size.
+    const scale = correction.enabled
+      ? intensity * (255 / Math.sqrt(paletteCS.length))
+      : intensity * 255
+
     for (let x = 0; x < width; x++) {
       const i = y * width + x
       const i3 = i * 3
@@ -662,8 +685,7 @@ export function applyOstromoukhovDither({
   bufCS,
   width,
   height,
-  paletteCS,
-  paletteOut,
+  palettes,
   distFn,
   intensity,
   correction
@@ -672,11 +694,12 @@ export function applyOstromoukhovDither({
   const pixelCS = new Float32Array(3)
   const errorBuf = new Float32Array(bufCS) // working copy
   const w3 = width * 3
-  const bounds = computePaletteBounds(paletteCS)
 
   let leftToRight = true
 
   for (let y = 0; y < height; y++) {
+    const { paletteCS, paletteOut } = palettes(y)
+    const bounds = computePaletteBounds(paletteCS)
     const xStart = leftToRight ? 0 : width - 1
     const xEnd = leftToRight ? width : -1
     const xStep = leftToRight ? 1 : -1
@@ -771,8 +794,7 @@ export function applyFloydSteinbergDither({
   bufCS,
   width,
   height,
-  paletteCS,
-  paletteOut,
+  palettes,
   distFn,
   intensity,
   correction
@@ -780,7 +802,6 @@ export function applyFloydSteinbergDither({
   const out = new Uint8ClampedArray(width * height * 4)
   const pixelCS = new Float32Array(3)
   const w3 = width * 3
-  const bounds = computePaletteBounds(paletteCS)
 
   // Floyd-Steinberg diffusion pattern: right 7/16, down-left 3/16, down 5/16, down-right 1/16
   const offsets = [3, -3 + w3, w3, 3 + w3]
@@ -793,16 +814,17 @@ export function applyFloydSteinbergDither({
     out,
     pixelCS,
     w3,
-    paletteCS,
-    paletteOut,
+    paletteCS: [],
+    paletteOut: [],
     distFn,
     offsets,
     weights,
-    bounds,
+    bounds: computePaletteBounds([]),
     correction
   }
 
   for (let y = 0; y < height; y++) {
+    setLinePalette(context, palettes(y))
     for (let x = 0; x < width; x++) {
       processFloydSteinbergPixel(x, y, context)
     }
@@ -824,19 +846,16 @@ interface BayerConfig {
 /**
  * Context object for Floyd-Steinberg dithering to reduce parameter count
  */
-interface FloydSteinbergContext {
+interface FloydSteinbergContext extends LinePaletteHolder {
   bufCS: Float32Array
   width: number
   height: number
   out: Uint8ClampedArray
   pixelCS: Float32Array
   w3: number
-  paletteCS: Float32Array[]
-  paletteOut: Uint8ClampedArray[]
   distFn: DistanceFn
   offsets: number[]
   weights: number[]
-  bounds: PaletteBounds
   correction: DiffusionCorrectionOptions
 }
 
@@ -911,128 +930,92 @@ type DitherFn = (
   bufCS: Float32Array,
   width: number,
   height: number,
-  paletteCS: Float32Array[],
-  paletteOut: Uint8ClampedArray[],
+  palettes: LinePalettes,
   config: DitheringConfig,
   distFn: DistanceFn
 ) => Uint8ClampedArray
 
 const DITHER_MODES: Record<string, DitherFn> = {
-  none: (bufCS, width, height, paletteCS, paletteOut, _config, distFn) =>
-    applyNoDither(bufCS, width, height, paletteCS, paletteOut, distFn),
+  none: (bufCS, width, height, palettes, _config, distFn) =>
+    applyNoDither(bufCS, width, height, palettes, distFn),
 
-  floydSteinberg: (
-    bufCS,
-    width,
-    height,
-    paletteCS,
-    paletteOut,
-    config,
-    distFn
-  ) =>
+  floydSteinberg: (bufCS, width, height, palettes, config, distFn) =>
     applyFloydSteinbergDither({
       bufCS,
       width,
       height,
-      paletteCS,
-      paletteOut,
+      palettes,
       distFn,
       intensity: config.intensity,
       correction: resolveDiffusionCorrectionOptions(config)
     }),
 
-  bayer2x2: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+  bayer2x2: (bufCS, width, height, palettes, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
-      paletteCS,
-      paletteOut,
+      palettes,
       { config, mode: 'bayer2x2' },
       distFn
     ),
 
-  bayer4x4: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+  bayer4x4: (bufCS, width, height, palettes, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
-      paletteCS,
-      paletteOut,
+      palettes,
       { config, mode: 'bayer4x4' },
       distFn
     ),
 
-  bayer8x8: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+  bayer8x8: (bufCS, width, height, palettes, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
-      paletteCS,
-      paletteOut,
+      palettes,
       { config, mode: 'bayer8x8' },
       distFn
     ),
 
-  ylioluma1: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
-    applyYliluoma1Dither(
-      bufCS,
-      width,
-      height,
-      paletteCS,
-      paletteOut,
-      config,
-      distFn
-    ),
+  ylioluma1: (bufCS, width, height, palettes, config, distFn) =>
+    applyYliluoma1Dither(bufCS, width, height, palettes, config, distFn),
 
-  ylioluma2: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
-    applyYliluoma2Dither(
-      bufCS,
-      width,
-      height,
-      paletteCS,
-      paletteOut,
-      config,
-      distFn
-    ),
-  atkinson: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
-    applyAtkinsonDither(
-      bufCS,
-      width,
-      height,
-      paletteCS,
-      paletteOut,
-      config,
-      distFn
-    ),
-  halftone4x4: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+  ylioluma2: (bufCS, width, height, palettes, config, distFn) =>
+    applyYliluoma2Dither(bufCS, width, height, palettes, config, distFn),
+
+  atkinson: (bufCS, width, height, palettes, config, distFn) =>
+    applyAtkinsonDither(bufCS, width, height, palettes, config, distFn),
+
+  halftone4x4: (bufCS, width, height, palettes, config, distFn) =>
     applyBayerDither(
       bufCS,
       width,
       height,
-      paletteCS,
-      paletteOut,
+      palettes,
       { config, mode: 'halftone4x4' },
       distFn
     ),
-  blueNoise: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+
+  blueNoise: (bufCS, width, height, palettes, config, distFn) =>
     applyBlueNoiseDither({
       bufCS,
       width,
       height,
-      paletteCS,
-      paletteOut,
+      palettes,
       intensity: config.intensity,
       distFn,
       correction: resolveOrderedCorrectionOptions(config)
     }),
-  ostromoukhov: (bufCS, width, height, paletteCS, paletteOut, config, distFn) =>
+
+  ostromoukhov: (bufCS, width, height, palettes, config, distFn) =>
     applyOstromoukhovDither({
       bufCS,
       width,
       height,
-      paletteCS,
-      paletteOut,
+      palettes,
       distFn,
       intensity: config.intensity,
       correction: resolveDiffusionCorrectionOptions(config)
@@ -1040,215 +1023,17 @@ const DITHER_MODES: Record<string, DitherFn> = {
 }
 
 /**
- * Apply Floyd-Steinberg dithering with dynamic per-line palettes
+ * Builds one scanline's palette: deduplicated on the rounded RGB triple, and
+ * never empty (an empty palette falls back to black, so the ditherers can
+ * index `paletteOut` unconditionally).
  */
-/**
- * Apply Bayer dithering with dynamic per-line palettes
- */
-function applyBayerDitherWithDynamicPalette({
-  bufCS,
-  width,
-  height,
-  getPaletteForLine,
-  mode,
-  intensity,
-  distFn,
-  correction = DEFAULT_ORDERED_CORRECTION
-}: BayerDynamicDitherParams): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(width * height * 4)
-  const pixel = new Float32Array(3)
-  const bayerMatrix = BAYER_MATRICES[mode]
-  const { size, matrix } = bayerMatrix
-  const maxBayer = size * size
-
-  for (let y = 0; y < height; y++) {
-    const palette = getPaletteForLine(y)
-    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
-      Array.from(v)
-    )
-
-    // Adaptive amplitude per line (palette size may vary in raster mode)
-    const amplitude = correction.enabled
-      ? intensity * (255 / Math.sqrt(paletteCS.length))
-      : intensity * 255
-
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x
-      const i3 = idx * 3
-      const i4 = idx * 4
-
-      const origR = bufCS[i3]
-      const origG = bufCS[i3 + 1]
-      const origB = bufCS[i3 + 2]
-
-      // Skip perturbation if pixel already exactly matches a palette color
-      if (correction.enabled) {
-        pixel[0] = origR
-        pixel[1] = origG
-        pixel[2] = origB
-        const exactIdx = findClosestColorIndex(pixel, paletteCS, distFn)
-        if (distFn(pixel, paletteCS[exactIdx]) < 1e-4) {
-          const color = paletteOut[exactIdx]
-          out[i4 + 0] = color[0]
-          out[i4 + 1] = color[1]
-          out[i4 + 2] = color[2]
-          out[i4 + 3] = 255
-          continue
-        }
-      }
-
-      // Get Bayer threshold
-      const bayerValue = matrix[y % size][x % size] / maxBayer - 0.5
-      const noise = bayerValue * amplitude
-
-      // Get pixel with Bayer noise, clamped to valid range
-      pixel[0] = Math.max(0, Math.min(255, origR + noise))
-      pixel[1] = Math.max(0, Math.min(255, origG + noise))
-      pixel[2] = Math.max(0, Math.min(255, origB + noise))
-
-      // Find nearest palette color for this line
-      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
-
-      // Set output color
-      const color = paletteOut[bestIndex]
-      out[i4 + 0] = color[0]
-      out[i4 + 1] = color[1]
-      out[i4 + 2] = color[2]
-      out[i4 + 3] = 255
-    }
-  }
-
-  return out
-}
-
-/**
- * Apply no dithering with dynamic per-line palettes (simple nearest color mapping)
- */
-function applyNoDitherWithDynamicPalette(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  getPaletteForLine: (y: number) => Vector[],
-  distFn: DistanceFn
-): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(width * height * 4)
-  const pixel = new Float32Array(3)
-
-  for (let y = 0; y < height; y++) {
-    const palette = getPaletteForLine(y)
-    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
-      Array.from(v)
-    )
-
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x
-      const i3 = idx * 3
-      const i4 = idx * 4
-
-      // Get pixel
-      pixel[0] = bufCS[i3]
-      pixel[1] = bufCS[i3 + 1]
-      pixel[2] = bufCS[i3 + 2]
-
-      // Find nearest palette color for this line
-      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
-
-      // Set output color
-      const color = paletteOut[bestIndex]
-      out[i4 + 0] = color[0]
-      out[i4 + 1] = color[1]
-      out[i4 + 2] = color[2]
-      out[i4 + 3] = 255
-    }
-  }
-
-  return out
-}
-
-/**
- * Apply Blue Noise dithering with dynamic per-line palettes
- */
-function applyBlueNoiseDitherWithDynamicPalette(
-  bufCS: Float32Array,
-  width: number,
-  height: number,
-  getPaletteForLine: (y: number) => Vector[],
-  intensity: number,
-  distFn: DistanceFn,
-  correction: OrderedCorrectionOptions = DEFAULT_ORDERED_CORRECTION
-): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(width * height * 4)
-  const pixel = new Float32Array(3)
-
-  for (let y = 0; y < height; y++) {
-    const palette = getPaletteForLine(y)
-    const { paletteOut, paletteCS } = buildPalette(palette, (v) =>
-      Array.from(v)
-    )
-
-    // Adaptive amplitude per line
-    const scale = correction.enabled
-      ? intensity * (255 / Math.sqrt(paletteCS.length))
-      : intensity * 255
-
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x
-      const i3 = idx * 3
-      const i4 = idx * 4
-
-      const origR = bufCS[i3]
-      const origG = bufCS[i3 + 1]
-      const origB = bufCS[i3 + 2]
-
-      // Skip perturbation if pixel already exactly matches a palette color
-      if (correction.enabled) {
-        pixel[0] = origR
-        pixel[1] = origG
-        pixel[2] = origB
-        const exactIdx = findClosestColorIndex(pixel, paletteCS, distFn)
-        if (distFn(pixel, paletteCS[exactIdx]) < 1e-4) {
-          const color = paletteOut[exactIdx]
-          out[i4 + 0] = color[0]
-          out[i4 + 1] = color[1]
-          out[i4 + 2] = color[2]
-          out[i4 + 3] = 255
-          continue
-        }
-      }
-
-      // Get decorrelated blue noise thresholds for each RGB channel
-      const [tR, tG, tB] = getBlueNoiseThresholdRGB(x, y)
-
-      // Apply per-channel dithering
-      pixel[0] = Math.max(0, Math.min(255, origR + tR * scale))
-      pixel[1] = Math.max(0, Math.min(255, origG + tG * scale))
-      pixel[2] = Math.max(0, Math.min(255, origB + tB * scale))
-
-      // Find nearest palette color for this line
-      const bestIndex = findClosestColorIndex(pixel, paletteCS, distFn)
-
-      // Set output color
-      const color = paletteOut[bestIndex]
-      out[i4 + 0] = color[0]
-      out[i4 + 1] = color[1]
-      out[i4 + 2] = color[2]
-      out[i4 + 3] = 255
-    }
-  }
-
-  return out
-}
-
-function buildPalette(
-  palette: Vector[],
-  toRGB: (v: Vector) => number[]
-): { paletteOut: Uint8ClampedArray[]; paletteCS: Float32Array[] } {
+function buildPalette(palette: Vector[]): LinePalette {
   const seen = new Set<string>()
   const paletteOut: Uint8ClampedArray[] = []
   const paletteCS: Float32Array[] = []
 
   for (const color of palette) {
-    const rgb = toRGB(color).map((v) => Math.round(v))
+    const rgb = Array.from(color).map((v) => Math.round(v))
     const key = rgb.join(',')
     if (!seen.has(key)) {
       seen.add(key)
@@ -1266,13 +1051,28 @@ function buildPalette(
   return { paletteOut, paletteCS }
 }
 
+/** Drops the alpha channel: the ditherers work on packed RGB triples. */
+function toWorkingBuffer(
+  srcData: Uint8ClampedArray,
+  pixelCount: number
+): Float32Array {
+  const bufCS = new Float32Array(pixelCount * 3)
+  for (let i = 0, j = 0; i < srcData.length; i += 4, j += 3) {
+    bufCS[j] = srcData[i]
+    bufCS[j + 1] = srcData[i + 1]
+    bufCS[j + 2] = srcData[i + 2]
+  }
+  return bufCS
+}
+
 export function mapAndDither(
   srcData: Uint8ClampedArray,
   width: number,
   height: number,
   palette: Vector[],
   config: DitheringConfig,
-  colorSpace: ColorSpace
+  colorSpace: ColorSpace,
+  sourceColorMapping?: SourceColorMapping | null
 ): Uint8ClampedArray {
   const { mode } = config
   const N = width * height
@@ -1282,41 +1082,59 @@ export function mapAndDither(
     DISTANCE_METRICS_BY_COLORSPACE[colorSpace][0]
   )
 
-  const bufCS = new Float32Array(N * 3)
-  for (let i = 0, j = 0; i < srcData.length; i += 4, j += 3) {
-    const cs = [srcData[i], srcData[i + 1], srcData[i + 2]]
-    bufCS[j] = cs[0]
-    bufCS[j + 1] = cs[1]
-    bufCS[j + 2] = cs[2]
-  }
+  const bufCS = toWorkingBuffer(srcData, N)
 
-  const { paletteOut, paletteCS } = buildPalette(palette, (v) => Array.from(v))
+  const palettes = constantPalettes(buildPalette(palette))
 
   // Si distinct-mapping est actif, forcer applyNoDither (pas de dithering)
   // pour garantir le mapping 1:1 des couleurs source vers palette
-  if (isDistinctMappingEnabled()) {
-    return applyNoDither(bufCS, width, height, paletteCS, paletteOut, distFn)
+  if (sourceColorMapping) {
+    return applyNoDither(
+      bufCS,
+      width,
+      height,
+      palettes,
+      distFn,
+      sourceColorMapping
+    )
   }
 
+  return runDither(mode, bufCS, width, height, palettes, config, distFn)
+}
+
+/**
+ * Looks the mode up in the one registry and runs it. Unknown modes produce a
+ * transparent image rather than a throw, as they always have.
+ */
+function runDither(
+  mode: DitheringConfig['mode'],
+  bufCS: Float32Array,
+  width: number,
+  height: number,
+  palettes: LinePalettes,
+  config: DitheringConfig,
+  distFn: DistanceFn
+): Uint8ClampedArray {
   const ditherFn = DITHER_MODES[mode]
-  if (ditherFn) {
-    return ditherFn(bufCS, width, height, paletteCS, paletteOut, config, distFn)
-  } else {
+  if (!ditherFn) {
     logger.warn(`Unsupported dithering mode: ${mode}`)
-    return new Uint8ClampedArray(N * 4)
+    return new Uint8ClampedArray(width * height * 4)
   }
+  return ditherFn(bufCS, width, height, palettes, config, distFn)
 }
 
 /**
  * Apply dithering with dynamic per-line palettes (for raster optimization).
  *
- * This version processes the entire image at once (allowing error diffusion between lines)
- * while using different palettes for different lines.
+ * Same eleven modes as {@link mapAndDither} — the only difference is that the
+ * palette is looked up per scanline instead of once. Error-diffusion modes are
+ * included: the residual is diffused across line boundaries as usual, it is
+ * simply quantized against whichever palette the receiving line carries.
  *
  * @param srcData - Source image data (RGBA)
  * @param width - Image width
  * @param height - Image height
- * @param getPaletteForLine - Function that returns the palette for a given line (y coordinate)
+ * @param getPaletteForLine - Returns the palette in force at line `y`
  * @param config - Dithering configuration
  * @param colorSpace - Color space for distance calculations
  * @returns RGBA image data after dithering
@@ -1329,70 +1147,35 @@ export function mapAndDitherWithDynamicPalette(
   config: DitheringConfig,
   colorSpace: ColorSpace
 ): Uint8ClampedArray {
-  const { mode } = config
-  const N = width * height
-
   const distFn = getDistanceFn(
     colorSpace,
     DISTANCE_METRICS_BY_COLORSPACE[colorSpace][0]
   )
 
-  const bufCS = new Float32Array(N * 3)
-  for (let i = 0, j = 0; i < srcData.length; i += 4, j += 3) {
-    const cs = [srcData[i], srcData[i + 1], srcData[i + 2]]
-    bufCS[j] = cs[0]
-    bufCS[j + 1] = cs[1]
-    bufCS[j + 2] = cs[2]
-  }
+  return runDither(
+    config.mode,
+    toWorkingBuffer(srcData, width * height),
+    width,
+    height,
+    perLinePalettes(getPaletteForLine),
+    config,
+    distFn
+  )
+}
 
-  // Use specialized functions for dynamic palette support
-  // Note: Only Bayer-based, Blue Noise and 'none' modes are supported with dynamic palettes (raster mode)
-  // Error diffusion modes (floydSteinberg, atkinson, ylioluma1, ylioluma2) are not compatible
-  // with raster mode because they require consistent palettes across lines for error propagation
-  switch (mode) {
-    case 'bayer2x2':
-    case 'bayer4x4':
-    case 'bayer8x8':
-    case 'halftone4x4':
-      return applyBayerDitherWithDynamicPalette({
-        bufCS,
-        width,
-        height,
-        getPaletteForLine,
-        mode,
-        intensity: config.intensity,
-        distFn,
-        correction: resolveOrderedCorrectionOptions(config)
-      })
-    case 'blueNoise':
-      return applyBlueNoiseDitherWithDynamicPalette(
-        bufCS,
-        width,
-        height,
-        getPaletteForLine,
-        config.intensity,
-        distFn,
-        resolveOrderedCorrectionOptions(config)
-      )
-    case 'none':
-      return applyNoDitherWithDynamicPalette(
-        bufCS,
-        width,
-        height,
-        getPaletteForLine,
-        distFn
-      )
-    default:
-      // Error diffusion modes are not supported with dynamic palettes
-      logger.warn(
-        `Dithering mode "${mode}" is not compatible with raster mode, falling back to no dithering`
-      )
-      return applyNoDitherWithDynamicPalette(
-        bufCS,
-        width,
-        height,
-        getPaletteForLine,
-        distFn
-      )
+/**
+ * A `LinePalettes` backed by a per-line lookup, memoized so a ditherer that
+ * asks twice for the same scanline does not rebuild it.
+ */
+function perLinePalettes(
+  getPaletteForLine: (y: number) => Vector[]
+): LinePalettes {
+  const cache = new Map<number, LinePalette>()
+  return (y) => {
+    const cached = cache.get(y)
+    if (cached) return cached
+    const built = buildPalette(getPaletteForLine(y))
+    cache.set(y, built)
+    return built
   }
 }

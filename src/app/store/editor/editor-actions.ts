@@ -1,4 +1,4 @@
-import { atom } from 'jotai'
+import { atom, type Getter } from 'jotai'
 import {
   egxEnabledAtom,
   egxTypeAtom,
@@ -8,17 +8,14 @@ import { logger } from '@/core'
 import { enterEditMode } from '@/editor/application/enter-edit-mode'
 import { paintPixels } from '@/editor/application/paint-pixels'
 import type { Clock } from '@/editor/application/ports'
+import { effectiveIndexBufferAtom } from '../preview/effective-rendering'
 import { egxConfigAtom, egxIndexBufferAtom } from '../preview/egx-preview'
 import {
   applyManualEditsAtom,
   previewIndexBufferAtom
 } from '../preview/preview'
-import {
-  effectiveIndexBufferAtom,
-  rasterChangesAtom,
-  rasterEnabledAtom,
-  rasterIndexBufferAtom
-} from '../raster/raster'
+import { activeRenderingPathAtom } from '../preview/rendering-path'
+import { rasterChangesAtom, rasterIndexBufferAtom } from '../raster/raster'
 import {
   editorCursorAtom,
   editorGridVisibleAtom,
@@ -41,6 +38,32 @@ import {
   editorPixelModeAtom,
   editorRasterChangesAtom
 } from './editor-state'
+
+/**
+ * The active path's index buffer **before** manual edits, as a plain
+ * `Uint8Array` — the "original" the editor diffs against.
+ *
+ * Returns `null` when that path has no buffer yet (or none at all, for Mode R);
+ * `enterEditMode` then falls back to the effective buffer.
+ */
+async function baseBufferForPath(get: Getter): Promise<Uint8Array | null> {
+  switch (get(activeRenderingPathAtom)) {
+    case 'mode-r':
+      return null
+    case 'egx': {
+      const egxBuffer = await get(egxIndexBufferAtom)
+      return egxBuffer ? new Uint8Array(egxBuffer.buffer) : null
+    }
+    case 'raster': {
+      const rasterBuffer = get(rasterIndexBufferAtom)
+      return rasterBuffer ? new Uint8Array(rasterBuffer.buffer) : null
+    }
+    case 'standard': {
+      const previewBuffer = await get(previewIndexBufferAtom)
+      return previewBuffer ? new Uint8Array(previewBuffer.buffer) : null
+    }
+  }
+}
 
 /** Runtime adapter for the editor's `Clock` port. */
 const systemClock: Clock = { now: () => Date.now() }
@@ -66,22 +89,12 @@ export const enterEditModeAtom = atom(null, async (get, set) => {
   }
 
   const egxEnabled = get(egxEnabledAtom)
-  const rasterEnabled = get(rasterEnabledAtom)
 
-  // Resolve the mode-specific RAW base buffer (without manual edits), awaiting
-  // only the active mode's source. The use-case applies the fallback to the
-  // effective buffer when this is null.
-  let baseBufferRaw: Uint8Array | null
-  if (egxEnabled) {
-    const egxBuffer = await get(egxIndexBufferAtom)
-    baseBufferRaw = egxBuffer ? new Uint8Array(egxBuffer.buffer) : null
-  } else if (rasterEnabled) {
-    const rasterBuffer = get(rasterIndexBufferAtom)
-    baseBufferRaw = rasterBuffer ? new Uint8Array(rasterBuffer.buffer) : null
-  } else {
-    const previewBuffer = await get(previewIndexBufferAtom)
-    baseBufferRaw = previewBuffer ? new Uint8Array(previewBuffer.buffer) : null
-  }
+  // Resolve the active path's RAW base buffer (without manual edits), awaiting
+  // only that path's source. The use-case applies the fallback to the effective
+  // buffer when this is null. Mode R never reaches here: it declares no index
+  // buffer, so `effectiveIndexBufferAtom` above already returned null.
+  const baseBufferRaw = await baseBufferForPath(get)
 
   const session = enterEditMode({
     effective,

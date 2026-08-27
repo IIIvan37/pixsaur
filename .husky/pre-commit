@@ -16,17 +16,41 @@ if ! command -v pnpm >/dev/null 2>&1; then
   fi
 fi
 
-echo "🔍 Running TypeScript checks..."
-npx tsc --noEmit
-
-echo "🔍 Running comprehensive TypeScript check (comprehensive) - takes longer..."
+# typecheck:comprehensive already builds tsconfig.app.json and
+# tsconfig.node.json with stricter flags, so a separate `tsc -b` would be a
+# third full pass for nothing.
+echo "🔍 Running comprehensive TypeScript check - takes longer..."
 pnpm -s typecheck:comprehensive
 
 echo "🔍 Running biome checks..."
-npx @biomejs/biome check . --write
+# Format only what is actually being committed. `biome check . --write`
+# followed by `git add -u` used to stage EVERY modified tracked file, which
+# silently widened commits and defeated `git add -p`.
+staged=$(git diff --cached --name-only --diff-filter=ACMR -z |
+  tr '\0' '\n' | grep -E '\.(js|jsx|ts|tsx|json|css)$' || true)
 
-# Add any files that were auto-fixed by biome
-git add -u
+if [ -z "$staged" ]; then
+  echo "   (no js/ts/json/css file staged — skipped)"
+else
+  # A file that is staged AND dirty in the worktree cannot be formatted
+  # safely: writing to it would either drag the unstaged hunks into the
+  # commit or leave unformatted content in it. Refuse instead of guessing.
+  partial=$(printf '%s\n' "$staged" | while IFS= read -r f; do
+    git diff --quiet -- "$f" || printf '%s\n' "$f"
+  done)
+
+  if [ -n "$partial" ]; then
+    echo "❌ Staged files that also have unstaged changes:"
+    printf '%s\n' "$partial" | sed 's/^/   /'
+    echo "   Stage them fully (git add <file>) or stash the rest, then retry."
+    exit 1
+  fi
+
+  printf '%s\n' "$staged" | tr '\n' '\0' |
+    xargs -0 npx @biomejs/biome check --write
+  # Re-stage ONLY the files biome may have rewritten — never `git add -u`.
+  printf '%s\n' "$staged" | tr '\n' '\0' | xargs -0 git add
+fi
 
 echo "🔍 Running console usage check..."
 node scripts/check-console-usage.js

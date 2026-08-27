@@ -57,3 +57,16 @@ function toASMDataChunkedFiles(
 
   return chunks
 }
+
+/**
+ * `toASMData` as a single ASM string.
+ *
+ * Callers that inline the data into one assembled source cannot use the
+ * chunked-file shape, so they take the first chunk. Anything past 16KB is
+ * dropped — the chunk labels would not match the template's references either.
+ */
+export function toAsmDataString(scr: Uint8Array, label?: string): string {
+  const data = toASMData(scr, label)
+
+  return typeof data === 'string' ? data : (data[0]?.content ?? '')
+}

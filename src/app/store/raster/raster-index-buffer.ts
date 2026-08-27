@@ -5,25 +5,17 @@
  * - Raw optimization result storage
  * - Dithering application
  * - Manual edits integration
- * - Effective buffer selection based on mode
  */
 
 import { atom } from 'jotai'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { applyDitheringWithRaster } from '@/libs/pixsaur-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
-import {
-  ditheringAtom,
-  effectiveModeConfigAtom,
-  egxEnabledAtom
-} from '../config/config'
-import { finalEgxIndexBufferAtom } from '../preview/egx-preview'
+import { ditheringAtom, effectiveModeConfigAtom } from '../config/config'
 import {
   applyManualEditsToBuffer,
-  finalPreviewIndexBufferAtom,
   manualPixelEditsAtom
 } from '../preview/preview'
-import { rasterEnabledAtom } from './raster-config'
 
 /**
  * Version counter that increments each time raster optimization completes.
@@ -111,39 +103,6 @@ export const finalRasterIndexBufferAtom = atom((get) => {
 
   const edits = get(manualPixelEditsAtom)
   return applyManualEditsToBuffer(rasterBuffer, edits)
-})
-
-/**
- * Effective index buffer for editing: returns the appropriate buffer based on
- * the active mode:
- * - EGX mode: returns the EGX index buffer
- * - Raster mode: returns the raster-optimized buffer
- * - Standard: returns the standard preview buffer
- * This is the buffer that should be used when entering the editor.
- */
-export const effectiveIndexBufferAtom = atom(async (get) => {
-  const egxEnabled = get(egxEnabledAtom)
-  const rasterEnabled = get(rasterEnabledAtom)
-
-  // Priority: EGX > Raster > Standard
-  if (egxEnabled) {
-    // Use EGX index buffer with manual edits applied
-    const egxBuffer = await get(finalEgxIndexBufferAtom)
-    if (egxBuffer) {
-      return egxBuffer
-    }
-  }
-
-  if (rasterEnabled) {
-    // Use raster-optimized buffer with manual edits if available
-    const rasterBuffer = get(finalRasterIndexBufferAtom)
-    if (rasterBuffer) {
-      return rasterBuffer
-    }
-  }
-
-  // Fall back to standard preview buffer (with manual edits)
-  return await get(finalPreviewIndexBufferAtom)
 })
 
 /**

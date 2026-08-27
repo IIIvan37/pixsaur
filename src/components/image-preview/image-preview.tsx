@@ -8,11 +8,11 @@ import {
   effectiveModeConfigAtom,
   smoothingAtom
 } from '@/app/store/config/config'
+import { effectivePreviewImageAtom } from '@/app/store/preview/effective-rendering'
 import {
   previewCanvasSizeAtom,
   previewCanvasWidthAtom
 } from '@/app/store/preview/preview'
-import { effectivePreviewImageAtom } from '@/app/store/raster/raster'
 import { ManualEditsWarning } from '@/components/manual-edits-warning'
 import { PreviewEditor } from '@/components/preview-editor'
 import { createCorrectedAspectCanvas } from '@/export'

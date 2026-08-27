@@ -21,7 +21,6 @@ import {
   getImageFormatInfo,
   getModeLabel,
   getPixelsPerByte,
-  isStandardMode,
   MAX_CHUNK_SIZE
 } from './dsk-workspace-utils'
 
@@ -587,32 +586,6 @@ describe('DSK Workspace Utils', () => {
       // 80 × 200 = 16000 bytes
       const result = calculateLinearSize(320, 200, 1)
       expect(result).toBe(16000)
-    })
-  })
-
-  describe('isStandardMode', () => {
-    it('should return true for Mode 0 standard (160×200)', () => {
-      expect(isStandardMode(160, 200, 0, false)).toBe(true)
-    })
-
-    it('should return true for Mode 1 standard (320×200)', () => {
-      expect(isStandardMode(320, 200, 1, false)).toBe(true)
-    })
-
-    it('should return true for Mode 2 standard (640×200)', () => {
-      expect(isStandardMode(640, 200, 2, false)).toBe(true)
-    })
-
-    it('should return false for overscan images', () => {
-      expect(isStandardMode(320, 200, 1, true)).toBe(false)
-      expect(isStandardMode(160, 200, 0, true)).toBe(false)
-      expect(isStandardMode(640, 200, 2, true)).toBe(false)
-    })
-
-    it('should return false for custom dimensions', () => {
-      expect(isStandardMode(400, 200, 1, false)).toBe(false)
-      expect(isStandardMode(320, 300, 1, false)).toBe(false)
-      expect(isStandardMode(800, 400, 2, false)).toBe(false)
     })
   })
 

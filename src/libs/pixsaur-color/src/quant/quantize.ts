@@ -7,6 +7,7 @@ import {
 } from '../metric/distance'
 import type { Vector } from '../type'
 import { countUniqueColors } from '../utils/count-unique-colors'
+import type { SourceColorMapping } from './color-mapping-cache'
 import {
   applyPaletteStrategyV2,
   type ColorCandidate,
@@ -165,7 +166,8 @@ export function createQuantizer({
     dither(
       data: ImageData,
       reducedPalette: Vector[],
-      dithering: DitheringConfig
+      dithering: DitheringConfig,
+      sourceColorMapping?: SourceColorMapping | null
     ): Uint8ClampedArray {
       return mapAndDither(
         extractBuffer(data),
@@ -173,7 +175,8 @@ export function createQuantizer({
         data.height,
         reducedPalette,
         dithering,
-        'RGB'
+        'RGB',
+        sourceColorMapping
       )
     }
   }

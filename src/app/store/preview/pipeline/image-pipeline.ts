@@ -5,14 +5,7 @@
  */
 
 import { atom } from 'jotai'
-import { logger } from '@/core'
-import {
-  applyResize,
-  getVisualRegion,
-  resampleCoverLinear,
-  resampleOriginLinear,
-  type Selection
-} from '@/preview'
+import { getVisualRegion, resizeToMode } from '@/preview'
 import { smoothImage } from '@/preview/application/smooth-image'
 import {
   autoDistinctMappingAtom,
@@ -49,81 +42,24 @@ export const croppedImageAtom = atom(async (get) => {
 // ============================================================================
 
 /**
- * Apply resize transformation based on selected mode
- * - 'auto': Smart resize with CPC aspect ratio correction
- * - 'origin': Keep original dimensions
+ * Apply resize transformation to the effective CPC mode's canvas.
+ *
+ * Thin adapter over the shared `resizeToMode` helper (`@/preview`), which the
+ * EGX path drives with its own high-resolution mode config.
  */
 export const resizedImageAtom = atom(async (get) => {
-  // Read all atoms synchronously (before any await) so Jotai tracks them.
-  const resizeMode = get(resizeModeAtom)
-  const modeConfig = get(effectiveModeConfigAtom)
-  const centerImage = get(centerImageAtom)
-  const resampleStrategy = get(resampleStrategyAtom)
+  // Config first, image after: Jotai tracks a `get` either side of an await
+  // (pinned by `__tests__/async-atom-dependencies.spec.ts`), so this ordering
+  // is for reading, not for correctness.
+  const options = {
+    modeConfig: get(effectiveModeConfigAtom),
+    resizeMode: get(resizeModeAtom),
+    centerImage: get(centerImageAtom),
+    resampleStrategy: get(resampleStrategyAtom)
+  }
   const cropped = await get(croppedImageAtom)
 
-  if (!cropped) {
-    return cropped
-  }
-
-  // Linear-light downscale (filter + decimate) instead of the gamma-space
-  // canvas drawImage path, for every pixel mode. 'classic' keeps the legacy
-  // canvas path below. 'auto' is handled later in normalizedImageAtom.
-  const useLinear = resampleStrategy !== 'classic'
-  if (useLinear && resizeMode === 'origin') {
-    return resampleOriginLinear(
-      cropped,
-      modeConfig,
-      resampleStrategy,
-      centerImage
-    )
-  }
-  if (useLinear && resizeMode === 'cover') {
-    return resampleCoverLinear(cropped, modeConfig, resampleStrategy)
-  }
-
-  // Convert ImageData to Canvas for applyResize
-  const canvas = document.createElement('canvas')
-  canvas.width = cropped.width
-  canvas.height = cropped.height
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return cropped
-
-  ctx.putImageData(cropped, 0, 0)
-
-  // Prepare relative selection (source = entire cropped canvas)
-  const relativeSelection: Selection = {
-    sx: 0,
-    sy: 0,
-    width: cropped.width,
-    height: cropped.height
-  }
-
-  try {
-    const resizedCanvas = applyResize(
-      canvas,
-      relativeSelection,
-      {
-        mode: resizeMode,
-        modeConfig
-      },
-      centerImage
-    )
-
-    const resizedCtx = resizedCanvas.getContext('2d')
-    if (!resizedCtx) {
-      return cropped
-    }
-
-    return resizedCtx.getImageData(
-      0,
-      0,
-      resizedCanvas.width,
-      resizedCanvas.height
-    )
-  } catch (error) {
-    logger.error('Resize failed:', error)
-    return cropped // Fallback to cropped image
-  }
+  return cropped ? resizeToMode(cropped, options) : cropped
 })
 
 // ============================================================================

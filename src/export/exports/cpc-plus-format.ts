@@ -9,6 +9,8 @@
  * Which gives us the 16-bit value: 0000 GGGG RRRR BBBB
  */
 
+import { plusPaletteAsm } from './palette-asm'
+
 /**
  * Converts RGB values to CPC Plus 16-bit format.
  * Format: 0000 GGGG RRRR BBBB (bits 15-12 unused, G=11-8, R=7-4, B=3-0)
@@ -98,12 +100,7 @@ export function cpcPlusValuesToASM(
   cpcValues: number[],
   labelName: string
 ): string {
-  const hexValues = cpcValues.map(
-    (value) => `#${value.toString(16).toUpperCase().padStart(4, '0')}`
-  )
-  return `${labelName}:
-    DEFW ${hexValues.join(', ')}
-`
+  return `${plusPaletteAsm(cpcValues, { label: labelName })}\n`
 }
 
 /**

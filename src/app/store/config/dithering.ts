@@ -51,26 +51,3 @@ export const setColorSpaceAtom = atom(
     set(colorSpaceAtom, payload)
   }
 )
-
-/**
- * Switch dithering to a raster-compatible mode if using error diffusion
- */
-export const switchToRasterCompatibleDitheringAtom = atom(null, (get, set) => {
-  const currentDithering = get(ditheringAtom)
-  const errorDiffusionModes = [
-    'floydSteinberg',
-    'atkinson',
-    'ylioluma1',
-    'ylioluma2'
-  ]
-
-  if (
-    currentDithering.mode !== 'none' &&
-    errorDiffusionModes.includes(currentDithering.mode)
-  ) {
-    set(ditheringAtom, {
-      mode: 'bayer2x2',
-      intensity: 0.25
-    })
-  }
-})

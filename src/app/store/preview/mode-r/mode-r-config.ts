@@ -15,7 +15,11 @@ import {
 } from '../../config/config'
 
 /**
- * Derived Mode R configuration from individual settings
+ * Derived Mode R configuration from individual settings.
+ *
+ * Reads `ditheringAtom` raw, not `effectiveDitheringAtom`: the Mode R path does
+ * not force dithering off under distinct mapping
+ * (`renderingPathCapabilities('mode-r').distinctMappingForcesNoDither`).
  */
 export const modeRConfigAtom = atom((get): ModeRConfig => {
   const antiFlickerWeight = get(modeRAntiFlickerAtom)

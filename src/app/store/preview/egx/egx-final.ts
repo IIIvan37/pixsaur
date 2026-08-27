@@ -8,7 +8,17 @@ import { atom } from 'jotai'
 import { egxEnabledAtom, egxPreviewModeAtom } from '../../config/config'
 import { egxConfigAtom } from './egx-config'
 import { finalEgxIndexBufferAtom } from './egx-index-buffer'
-import { shouldGrayOut } from './egx-preview-image'
+
+/**
+ * Whether a line must be greyed out: the preview modes `lowLines`/`highLines`
+ * show only the lines of one EGX resolution and mask the other half.
+ */
+function shouldGrayOut(previewMode: string, isLowResLine: boolean): boolean {
+  return (
+    (previewMode === 'lowLines' && !isLowResLine) ||
+    (previewMode === 'highLines' && isLowResLine)
+  )
+}
 
 /**
  * Final EGX preview ImageData with manual edits applied.

@@ -4,6 +4,7 @@ import type { Vector } from '../../type'
 import {
   applyBlueNoiseDither,
   applyOstromoukhovDither,
+  constantPalettes,
   mapAndDither,
   mapAndDitherWithDynamicPalette
 } from '../map-and-dither'
@@ -93,8 +94,10 @@ describe('applyBlueNoiseDither (direct)', () => {
       bufCS,
       width: 2,
       height: 2,
-      paletteCS: bwPaletteCS,
-      paletteOut: bwPaletteOut,
+      palettes: constantPalettes({
+        paletteCS: bwPaletteCS,
+        paletteOut: bwPaletteOut
+      }),
       intensity: 0.8,
       distFn,
       correction: { enabled: true }
@@ -117,8 +120,10 @@ describe('applyBlueNoiseDither (direct)', () => {
       bufCS,
       width: 2,
       height: 1,
-      paletteCS: bwPaletteCS,
-      paletteOut: bwPaletteOut,
+      palettes: constantPalettes({
+        paletteCS: bwPaletteCS,
+        paletteOut: bwPaletteOut
+      }),
       intensity: 1,
       distFn,
       correction: { enabled: true }
@@ -133,8 +138,10 @@ describe('applyBlueNoiseDither (direct)', () => {
       bufCS,
       width: 2,
       height: 1,
-      paletteCS: bwPaletteCS,
-      paletteOut: bwPaletteOut,
+      palettes: constantPalettes({
+        paletteCS: bwPaletteCS,
+        paletteOut: bwPaletteOut
+      }),
       intensity: 0.5,
       distFn,
       correction: { enabled: false }
@@ -151,8 +158,10 @@ describe('applyBlueNoiseDither (direct)', () => {
       bufCS,
       width: 1,
       height: 1,
-      paletteCS: bwPaletteCS,
-      paletteOut: bwPaletteOut,
+      palettes: constantPalettes({
+        paletteCS: bwPaletteCS,
+        paletteOut: bwPaletteOut
+      }),
       intensity: 0.6,
       distFn
     })
@@ -170,8 +179,10 @@ describe('applyOstromoukhovDither (direct)', () => {
       bufCS,
       width: 3,
       height: 2,
-      paletteCS: bwPaletteCS,
-      paletteOut: bwPaletteOut,
+      palettes: constantPalettes({
+        paletteCS: bwPaletteCS,
+        paletteOut: bwPaletteOut
+      }),
       distFn,
       intensity: 0.8,
       correction: { enabled: true, errorClamp: 64 }
@@ -189,8 +200,10 @@ describe('applyOstromoukhovDither (direct)', () => {
       bufCS,
       width: 2,
       height: 1,
-      paletteCS: bwPaletteCS,
-      paletteOut: bwPaletteOut,
+      palettes: constantPalettes({
+        paletteCS: bwPaletteCS,
+        paletteOut: bwPaletteOut
+      }),
       distFn,
       intensity: 1,
       correction: { enabled: false, errorClamp: 64 }

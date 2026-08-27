@@ -2,7 +2,8 @@ import { getDefaultStore } from 'jotai'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { processorTypeAtom } from '@/app/store/config/config'
 import { adapterLogger } from '@/core'
-import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
+import { CpuProcessor } from '@/libs/pixsaur-adapter/adapters/cpu-processor'
+import { GpuProcessor } from '@/libs/pixsaur-adapter/adapters/gpu-processor'
 import { processorFactory } from '@/libs/pixsaur-adapter/factory'
 import {
   disposeProcessorsAtom,
@@ -31,21 +32,24 @@ vi.mock('regl', () => ({
   }))
 }))
 
-vi.mock('@/libs/pixsaur-adapter/adapters/regl-processor', () => {
-  const MockReGLProcessor = vi.fn(function (this: any, regl?: any) {
-    this.type = regl ? 'regl' : 'cpu-fallback'
-    this.isAvailable = true
+function mockProcessor(type: 'cpu' | 'gpu') {
+  return vi.fn(function (this: any) {
+    this.type = type
     this.dispose = vi.fn()
-    this.applyAdjustments = vi.fn()
-    this.applyAdjustmentsSync = vi.fn((imageData) => imageData)
+    this.applyAdjustments = vi.fn((imageData) => imageData)
     this.quantizePalette = vi.fn()
+    this.renderRasterPreview = vi.fn()
     return this
   })
+}
 
-  return {
-    ReGLProcessor: MockReGLProcessor
-  }
-})
+vi.mock('@/libs/pixsaur-adapter/adapters/cpu-processor', () => ({
+  CpuProcessor: mockProcessor('cpu')
+}))
+
+vi.mock('@/libs/pixsaur-adapter/adapters/gpu-processor', () => ({
+  GpuProcessor: mockProcessor('gpu')
+}))
 
 describe('Processor Store Adapters', () => {
   let store: ReturnType<typeof getDefaultStore>
@@ -66,19 +70,25 @@ describe('Processor Store Adapters', () => {
   })
 
   describe('Processor Factory', () => {
-    it('should create CPU fallback processor when type is cpu', async () => {
+    it('should create a CPU processor when type is cpu', async () => {
       const processor = await processorFactory.createBestProcessor('cpu')
 
-      expect(vi.mocked(ReGLProcessor)).toHaveBeenCalledWith(undefined)
-      expect(processor.type).toBe('cpu-fallback')
-      expect(processor.isAvailable).toBe(true)
+      expect(vi.mocked(CpuProcessor)).toHaveBeenCalledTimes(1)
+      expect(processor.type).toBe('cpu')
     })
 
-    it('should create GPU processor when type is gpu', async () => {
+    it('should not touch WebGL at all when type is cpu', async () => {
+      const mockRegl = vi.mocked(await import('regl')).default
+      await processorFactory.createBestProcessor('cpu')
+
+      expect(mockRegl).not.toHaveBeenCalled()
+    })
+
+    it('should create a GPU processor when type is gpu', async () => {
       const processor = await processorFactory.createBestProcessor('gpu')
 
-      expect(vi.mocked(ReGLProcessor)).toHaveBeenCalledWith(expect.any(Object))
-      expect(processor.type).toBe('regl')
+      expect(vi.mocked(GpuProcessor)).toHaveBeenCalledWith(expect.any(Object))
+      expect(processor.type).toBe('gpu')
     })
 
     it('should fallback to CPU in auto mode when ReGL creation fails', async () => {
@@ -89,8 +99,7 @@ describe('Processor Store Adapters', () => {
 
       const processor = await processorFactory.createBestProcessor('auto')
 
-      expect(vi.mocked(ReGLProcessor)).toHaveBeenCalledWith(undefined)
-      expect(processor.type).toBe('cpu-fallback')
+      expect(processor.type).toBe('cpu')
       expect(vi.mocked(adapterLogger).warn).toHaveBeenCalled()
     })
 
@@ -104,6 +113,30 @@ describe('Processor Store Adapters', () => {
         'GPU processor requested but ReGL initialization failed'
       )
     })
+
+    it('should fallback to CPU when WebGL is there but the pipeline will not build', async () => {
+      vi.mocked(GpuProcessor).mockImplementationOnce(() => {
+        throw new Error('shader compilation failed')
+      })
+
+      const processor = await processorFactory.createBestProcessor('gpu')
+
+      expect(processor.type).toBe('cpu')
+    })
+
+    it('should release the regl instance when the GPU pipeline will not build', async () => {
+      const reglInstance = { destroy: vi.fn() }
+      vi.mocked(await import('regl')).default.mockReturnValueOnce(
+        reglInstance as any
+      )
+      vi.mocked(GpuProcessor).mockImplementationOnce(() => {
+        throw new Error('shader compilation failed')
+      })
+
+      await processorFactory.createBestProcessor('gpu')
+
+      expect(reglInstance.destroy).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('Initialize/Dispose lifecycle', () => {
@@ -112,7 +145,7 @@ describe('Processor Store Adapters', () => {
       const processor = store.get(imageProcessorAtom)
 
       expect(processor).not.toBeNull()
-      expect(vi.mocked(ReGLProcessor)).toHaveBeenCalledTimes(1)
+      expect(vi.mocked(GpuProcessor)).toHaveBeenCalledTimes(1)
       expect(vi.mocked(adapterLogger).info).toHaveBeenCalledWith(
         'Processor initialized: WebGL (GPU)'
       )
@@ -122,7 +155,7 @@ describe('Processor Store Adapters', () => {
       await store.set(initializeProcessorsAtom)
       await store.set(initializeProcessorsAtom)
 
-      expect(vi.mocked(ReGLProcessor)).toHaveBeenCalledTimes(1)
+      expect(vi.mocked(GpuProcessor)).toHaveBeenCalledTimes(1)
     })
 
     it('should dispose processor and reset atom', async () => {
@@ -145,7 +178,7 @@ describe('Processor Store Adapters', () => {
       const newProcessor = store.get(imageProcessorAtom)
       expect(oldProcessor?.dispose).toHaveBeenCalled()
       expect(newProcessor).not.toBe(oldProcessor)
-      expect(newProcessor?.type).toBe('cpu-fallback')
+      expect(newProcessor?.type).toBe('cpu')
     })
 
     it('should reinitialize through reinitializeProcessorsAtom', async () => {

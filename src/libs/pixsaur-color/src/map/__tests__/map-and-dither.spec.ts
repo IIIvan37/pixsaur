@@ -7,6 +7,7 @@ import {
   applyNoDither,
   applyYliluoma1Dither,
   applyYliluoma2Dither,
+  constantPalettes,
   mapAndDither,
   mapAndDitherWithDynamicPalette
 } from '../map-and-dither'
@@ -25,6 +26,21 @@ vi.mock('@/core', async (importOriginal) => {
     }
   }
 })
+
+/** Every mode the registry knows — both entry points must accept all of them. */
+const ALL_DITHERING_MODES = [
+  'none',
+  'floydSteinberg',
+  'bayer2x2',
+  'bayer4x4',
+  'bayer8x8',
+  'atkinson',
+  'halftone4x4',
+  'ylioluma1',
+  'ylioluma2',
+  'blueNoise',
+  'ostromoukhov'
+] as const
 
 describe('Map and Dither', () => {
   let testPalette: Vector[]
@@ -234,7 +250,13 @@ describe('Map and Dither', () => {
       ]
       const distFn = getDistanceFn('RGB', 'euclidean')
 
-      const result = applyNoDither(bufCS, 2, 2, paletteCS, paletteOut, distFn)
+      const result = applyNoDither(
+        bufCS,
+        2,
+        2,
+        constantPalettes({ paletteCS, paletteOut }),
+        distFn
+      )
 
       expect(result).toBeInstanceOf(Uint8ClampedArray)
       expect(result).toHaveLength(16)
@@ -258,8 +280,7 @@ describe('Map and Dither', () => {
         bufCS,
         width: 2,
         height: 1,
-        paletteCS,
-        paletteOut,
+        palettes: constantPalettes({ paletteCS, paletteOut }),
         distFn,
         intensity: 0.5,
         correction: { enabled: true, errorClamp: 64 }
@@ -289,8 +310,7 @@ describe('Map and Dither', () => {
         bufCS,
         3,
         3,
-        paletteCS,
-        paletteOut,
+        constantPalettes({ paletteCS, paletteOut }),
         { config: { mode: 'bayer2x2', intensity: 0.5 }, mode: 'bayer2x2' },
         distFn
       )
@@ -315,8 +335,7 @@ describe('Map and Dither', () => {
         bufCS,
         2,
         3,
-        paletteCS,
-        paletteOut,
+        constantPalettes({ paletteCS, paletteOut }),
         { config: { mode: 'bayer4x4', intensity: 0.5 }, mode: 'bayer4x4' },
         distFn
       )
@@ -343,8 +362,7 @@ describe('Map and Dither', () => {
         bufCS,
         2,
         1,
-        paletteCS,
-        paletteOut,
+        constantPalettes({ paletteCS, paletteOut }),
         { mode: 'ylioluma1', intensity: 0.5 },
         distFn
       )
@@ -371,8 +389,7 @@ describe('Map and Dither', () => {
         bufCS,
         2,
         1,
-        paletteCS,
-        paletteOut,
+        constantPalettes({ paletteCS, paletteOut }),
         { mode: 'ylioluma2', intensity: 0.5 },
         distFn
       )
@@ -614,21 +631,73 @@ describe('Map and Dither', () => {
       expect(result).toHaveLength(16)
     })
 
-    it('should fallback to no dithering for unsupported modes', () => {
-      const getPaletteForLine = (_y: number): Vector[] => testPalette
+    it.each(ALL_DITHERING_MODES)(
+      'agrees with mapAndDither when every line has the same palette (%s)',
+      (mode) => {
+        const config = { mode, intensity: 0.6 } as const
 
-      // floydSteinberg is not supported with dynamic palettes
+        const dynamic = mapAndDitherWithDynamicPalette(
+          testImageData,
+          2,
+          2,
+          () => testPalette,
+          config,
+          'RGB'
+        )
+
+        expect(Array.from(dynamic)).toEqual(
+          Array.from(
+            mapAndDither(testImageData, 2, 2, testPalette, config, 'RGB')
+          )
+        )
+      }
+    )
+
+    it('diffuses error across lines instead of falling back to no dithering', () => {
+      // A flat mid-grey against a black/white palette: nearest-colour maps every
+      // pixel identically, error diffusion cannot. Before the two entry points
+      // were unified, raster mode silently produced the flat result.
+      const grey = new Uint8ClampedArray(4 * 4 * 4).fill(128)
+      for (let i = 3; i < grey.length; i += 4) grey[i] = 255
+      const bw = (): Vector[] => [
+        [0, 0, 0],
+        [255, 255, 255]
+      ]
+
+      const diffused = mapAndDitherWithDynamicPalette(
+        grey,
+        4,
+        4,
+        bw,
+        { mode: 'floydSteinberg', intensity: 1 },
+        'RGB'
+      )
+
+      expect(Array.from(diffused)).not.toEqual(
+        Array.from(
+          mapAndDitherWithDynamicPalette(
+            grey,
+            4,
+            4,
+            bw,
+            { mode: 'none', intensity: 1 },
+            'RGB'
+          )
+        )
+      )
+    })
+
+    it('returns a blank image for an unknown mode', () => {
       const result = mapAndDitherWithDynamicPalette(
         testImageData,
         2,
         2,
-        getPaletteForLine,
-        { mode: 'floydSteinberg', intensity: 0.5 },
+        () => testPalette,
+        { mode: 'not-a-mode' as never, intensity: 0.5 },
         'RGB'
       )
 
-      expect(result).toBeInstanceOf(Uint8ClampedArray)
-      expect(result).toHaveLength(16)
+      expect(Array.from(result)).toEqual(new Array(16).fill(0))
     })
 
     it('should handle different palettes per line', () => {

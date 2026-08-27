@@ -6,6 +6,7 @@
  * Phase 2 (Future): Compression routines (ZX0, ZX1)
  */
 
+import { dbPaletteSection } from './palette-asm'
 import type { DataFormat } from './types'
 
 /**
@@ -63,15 +64,6 @@ export function generatePaletteSection(
   palette: number[],
   label: string
 ): string {
-  if (!label) {
-    label = 'Palette'
-  }
-
-  const bytes = palette
-    .slice(0, 16) // CPC has 16 color slots
-    .map((idx) => `#${idx.toString(16).padStart(2, '0').toUpperCase()}`)
-    .join(',')
-
-  return `${label}:
-    DB      ${bytes}`
+  // CPC has 16 color slots
+  return dbPaletteSection(palette.slice(0, 16), label || 'Palette')
 }

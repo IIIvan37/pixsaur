@@ -16,6 +16,11 @@ import {
   quantizeColorForHardware,
   truncatePalette
 } from '@/domain/cpc'
+import {
+  clearColorMapping,
+  getColorMapping,
+  type SourceColorMapping
+} from '@/libs/pixsaur-color/src/quant/color-mapping-cache'
 import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import type { CPCHardware } from '@/libs/types'
@@ -43,7 +48,19 @@ export interface QuantizePaletteDeps {
 }
 
 export type QuantizePaletteResult =
-  | { ok: true; rawPalette: Vector[]; rgbPalette: Vector[] }
+  | {
+      ok: true
+      rawPalette: Vector[]
+      rgbPalette: Vector[]
+      /**
+       * Source-colour → palette-index mapping when the `distinct-mapping`
+       * strategy produced one, `null` otherwise. Drained here from the ambient
+       * transport the quantizer writes to, so the dithering stage receives it
+       * as a value instead of reading global state — see
+       * `@/libs/pixsaur-color/src/quant/color-mapping-cache`.
+       */
+      sourceColorMapping: SourceColorMapping | null
+    }
   | { ok: false; error: string }
 
 /**
@@ -78,6 +95,11 @@ export async function quantizePalette(
     quantizeColorForHardware(color, cpcHardware)
   )
 
+  // Drop any mapping left by a previous image before the call: the GPU
+  // quantizer throws for images under 128x128 before reaching its own clear,
+  // and the CPU fallback would then map through the stale table.
+  clearColorMapping()
+
   const rawPalette = await deps.quantizer.quantizePalette(
     buf,
     sourceImage,
@@ -88,6 +110,10 @@ export async function quantizePalette(
     { autoDistinctMapping, colorDiversity }
   )
 
+  // Drain the transport into a value; nothing downstream reads it again.
+  const sourceColorMapping = getColorMapping()
+  clearColorMapping()
+
   // RGB palette: hardware-quantify a copy (Classic: 27 colors, Plus: 4096),
   // then truncate to the budget left after locked-empty slots.
   const rgbPalette = rawPalette.map((color) => [...color] as Vector)
@@ -97,6 +123,7 @@ export async function quantizePalette(
   return {
     ok: true,
     rawPalette,
-    rgbPalette: truncatePalette(rgbPalette, effectiveMaxColors)
+    rgbPalette: truncatePalette(rgbPalette, effectiveMaxColors),
+    sourceColorMapping
   }
 }

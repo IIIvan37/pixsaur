@@ -9,17 +9,7 @@ import { createLogger } from '@/core'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { CPCHardware } from '@/libs/types'
 import { resolvePlaygroundPort } from '../../application/playground-port'
-import { firmwareToHardware } from '../cpc-format'
-import { cpcPlusValuesToASM, paletteToCPCPlusValues } from '../cpc-plus-format'
-import { exportEgxLinear, exportEgxSCR, isEgxOverscan } from '../export-scr'
-import {
-  assembleEgxSnaSource,
-  generateEgxOverscanSnaTemplate,
-  generateEgxPlusOverscanSnaTemplate,
-  generateEgxPlusSnaTemplate,
-  generateEgxSnaTemplate
-} from '../templates'
-import { toASMData } from '../to-asm-data'
+import { egxAsmSource } from '../egx-asm-source'
 import {
   generateModeRSnaAsmSource,
   generateSnaAsmSource,
@@ -167,156 +157,6 @@ export async function exportModeRToCpcPlayground(
 }
 
 /**
- * Generate EGX ASM source code for CPC Classic
- */
-function generateEgxClassicAsmSource(
-  options: EgxCpcPlaygroundExportOptions
-): string | null {
-  const { indexBuf, width, height, egxConfig, paletteFirmware } = options
-
-  if (!paletteFirmware) {
-    return null
-  }
-
-  const overscan = isEgxOverscan(width, height, egxConfig.type)
-
-  // Generate EGX Classic template (standard or overscan)
-  const template = overscan
-    ? generateEgxOverscanSnaTemplate({ egxConfig, height })
-    : generateEgxSnaTemplate({ egxConfig, height })
-
-  // Generate palette ASM (hardware values)
-  const colorCount = egxConfig.type === 'egx1' ? 16 : 4
-  const hardwarePalette = paletteFirmware
-    .slice(0, colorCount)
-    .map((fw) => firmwareToHardware[fw] ?? 0x54)
-
-  const paletteBytes = hardwarePalette
-    .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
-    .join(',')
-
-  const paletteAsm = `Palette_Hardware:
-    DB      ${paletteBytes}`
-
-  // Generate image data ASM (SCR for standard, linear for overscan)
-  if (overscan) {
-    const linearData = exportEgxLinear(indexBuf, width, height, egxConfig)
-    // Split into two chunks for overscan
-    const halfSize = Math.floor(linearData.length / 2)
-    const chunk1 = linearData.slice(0, halfSize)
-    const chunk2 = linearData.slice(halfSize)
-
-    const imageAsmResult1 = toASMData(chunk1, 'ImageData_chunk_0')
-    const imageAsmResult2 = toASMData(chunk2, 'ImageData_chunk_1')
-
-    const imageAsm =
-      typeof imageAsmResult1 === 'string'
-        ? imageAsmResult1
-        : (imageAsmResult1[0]?.content ?? '')
-    const imageAsm2 =
-      typeof imageAsmResult2 === 'string'
-        ? imageAsmResult2
-        : (imageAsmResult2[0]?.content ?? '')
-
-    return assembleEgxSnaSource(
-      template,
-      { paletteAsm, imageAsm, imageAsm2 },
-      { overscan: true }
-    )
-  } else {
-    const egxScrData = exportEgxSCR(indexBuf, width, height, egxConfig)
-    const imageAsmResult = toASMData(egxScrData, 'ImageData')
-    const imageAsm =
-      typeof imageAsmResult === 'string'
-        ? imageAsmResult
-        : (imageAsmResult[0]?.content ?? '')
-
-    return assembleEgxSnaSource(template, { paletteAsm, imageAsm })
-  }
-}
-
-/**
- * Generate EGX ASM source code for CPC Plus
- */
-function generateEgxPlusAsmSource(
-  options: EgxCpcPlaygroundExportOptions
-): string | null {
-  const { indexBuf, width, height, egxConfig, paletteRgb } = options
-
-  if (!paletteRgb) {
-    return null
-  }
-
-  const overscan = isEgxOverscan(width, height, egxConfig.type)
-
-  // Generate EGX Plus template (standard or overscan)
-  const template = overscan
-    ? generateEgxPlusOverscanSnaTemplate({
-        egxConfig,
-        height,
-        hardware: 'plus'
-      })
-    : generateEgxPlusSnaTemplate({ egxConfig, height, hardware: 'plus' })
-
-  // Generate palette ASM (12-bit CPC Plus values)
-  const colorCount = egxConfig.type === 'egx1' ? 16 : 4
-  const paletteSlice = paletteRgb.slice(0, colorCount)
-  const cpcPlusValues = paletteToCPCPlusValues(paletteSlice)
-  const paletteAsm = cpcPlusValuesToASM(cpcPlusValues, 'Palette_Plus')
-
-  // Generate image data ASM (SCR for standard, linear for overscan)
-  if (overscan) {
-    const linearData = exportEgxLinear(indexBuf, width, height, egxConfig)
-    // Split into two chunks for overscan
-    const halfSize = Math.floor(linearData.length / 2)
-    const chunk1 = linearData.slice(0, halfSize)
-    const chunk2 = linearData.slice(halfSize)
-
-    const imageAsmResult1 = toASMData(chunk1, 'ImageData_chunk_0')
-    const imageAsmResult2 = toASMData(chunk2, 'ImageData_chunk_1')
-
-    const imageAsm =
-      typeof imageAsmResult1 === 'string'
-        ? imageAsmResult1
-        : (imageAsmResult1[0]?.content ?? '')
-    const imageAsm2 =
-      typeof imageAsmResult2 === 'string'
-        ? imageAsmResult2
-        : (imageAsmResult2[0]?.content ?? '')
-
-    return assembleEgxSnaSource(
-      template,
-      { paletteAsm, imageAsm, imageAsm2 },
-      { overscan: true }
-    )
-  } else {
-    const egxScrData = exportEgxSCR(indexBuf, width, height, egxConfig)
-    const imageAsmResult = toASMData(egxScrData, 'ImageData')
-    const imageAsm =
-      typeof imageAsmResult === 'string'
-        ? imageAsmResult
-        : (imageAsmResult[0]?.content ?? '')
-
-    return assembleEgxSnaSource(template, { paletteAsm, imageAsm })
-  }
-}
-
-/**
- * Generate EGX ASM source code (dispatches to Classic or Plus)
- */
-export function generateEgxAsmSource(
-  options: EgxCpcPlaygroundExportOptions
-): string | null {
-  const isPlus = options.hardware === 'plus'
-
-  if (isPlus) {
-    return generateEgxPlusAsmSource(options)
-  } else {
-    return generateEgxClassicAsmSource(options)
-  }
-}
-
-/**
  * Share EGX ASM code to CPC Playground and open in new tab
  * EGX uses line-by-line mode switching for enhanced graphics
  */
@@ -334,7 +174,7 @@ export async function exportEgxToCpcPlayground(
   })
 
   try {
-    const asmSource = generateEgxAsmSource(options)
+    const asmSource = egxAsmSource(options)
 
     if (!asmSource) {
       return {

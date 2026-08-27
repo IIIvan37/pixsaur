@@ -25,7 +25,7 @@ import {
 } from '../../config/config'
 import { smoothedImageAtom } from './image-pipeline'
 import { exportPaletteWithSlotsAtom } from './palette-export'
-import { quantizerAtom } from './quantization'
+import { quantizerAtom, sourceColorMappingAtom } from './quantization'
 
 // ============================================================================
 // NORMALIZED IMAGE
@@ -70,6 +70,10 @@ export const positionedNormalizedImageAtom = atom(async (get) =>
  * using per-line palettes.
  * When autoDistinctMapping is enabled (CPC Classic + Mode 0), dithering is forced to 'none'
  * to preserve exact color mapping.
+ *
+ * **Standard path only.** EGX, Mode R and the raster buffer read `ditheringAtom`
+ * raw — see `distinctMappingForcesNoDither` in
+ * `@/preview/application/rendering-path`, which declares that asymmetry.
  */
 export const effectiveDitheringAtom = atom((get) => {
   const dithering = get(ditheringAtom)
@@ -104,6 +108,7 @@ export const effectiveDitheringAtom = atom((get) => {
 export const previewImageAtom = atom(async (get) => {
   const quantizer = await get(quantizerAtom)
   const normalized = await get(normalizedImageAtom)
+  const sourceColorMapping = await get(sourceColorMappingAtom)
 
   if (!quantizer || !normalized) {
     return null
@@ -117,7 +122,8 @@ export const previewImageAtom = atom(async (get) => {
       dithering: get(effectiveDitheringAtom),
       modeConfig: get(effectiveModeConfigAtom),
       resizeMode: get(resizeModeAtom),
-      centerImage: get(centerImageAtom)
+      centerImage: get(centerImageAtom),
+      sourceColorMapping
     },
     { ditherer: quantizer }
   )

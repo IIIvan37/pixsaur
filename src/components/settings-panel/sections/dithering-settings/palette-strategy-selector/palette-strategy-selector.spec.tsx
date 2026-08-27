@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { createStore, Provider } from 'jotai'
+import { useMemo } from 'react'
 import { describe, expect, it } from 'vitest'
 import { paletteStrategyAtom, pixelModeAtom } from '@/app/store/config/config'
 import type { PaletteStrategy } from '@/app/store/config/types'
@@ -15,9 +16,14 @@ function TestProvider({
   initialStrategy?: PaletteStrategy
   pixelMode?: 0 | 1 | 2
 }) {
-  const store = createStore()
-  store.set(paletteStrategyAtom, initialStrategy)
-  store.set(pixelModeAtom, pixelMode)
+  // Built once per mount: a store created on every render would drop the atom
+  // values on the first re-render.
+  const store = useMemo(() => {
+    const created = createStore()
+    created.set(paletteStrategyAtom, initialStrategy)
+    created.set(pixelModeAtom, pixelMode)
+    return created
+  }, [initialStrategy, pixelMode])
 
   return <Provider store={store}>{children}</Provider>
 }

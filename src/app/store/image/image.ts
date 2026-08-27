@@ -63,8 +63,8 @@ export const workingImageAtom = atom(async (get) => {
     return downscaled
   }
 
-  logger.time('applyAdjustmentsSync')
-  const result = imageProcessor.applyAdjustmentsSync(downscaled, {
+  logger.time('applyAdjustments')
+  const result = imageProcessor.applyAdjustments(downscaled, {
     rgb: { r: config.red, g: config.green, b: config.blue },
     brightness: config.brightness,
     contrast: config.contrast,
@@ -86,7 +86,7 @@ export const workingImageAtom = atom(async (get) => {
     chromaKeyColor: config.chromaKeyColor,
     chromaKeyTolerance: config.chromaKeyTolerance
   })
-  logger.timeEnd('applyAdjustmentsSync')
+  logger.timeEnd('applyAdjustments')
 
   logger.timeEnd('workingImageAtom')
   return result

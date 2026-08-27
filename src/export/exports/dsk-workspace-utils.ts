@@ -1,3 +1,5 @@
+import { isStandardScreen, type PixelMode } from '@/domain/cpc'
+
 /**
  * Calculate the SCR file size
  * SCR files are always 16384 bytes (16 KB) for CPC screen memory
@@ -45,7 +47,14 @@ export function getImageFormatInfo(
   mode: number,
   overscan: boolean
 ) {
-  const isStandard = isStandardMode(width, height, mode, overscan)
+  // `mode` is untyped here for historical reasons; the domain rule answers
+  // `false` for anything that is not a real CPC mode.
+  const isStandard = isStandardScreen({
+    mode: mode as PixelMode,
+    width,
+    height,
+    overscan
+  })
   const linearSize = calculateLinearSize(width, height, mode)
   const chunkCount = calculateChunkCount(linearSize)
 
@@ -74,29 +83,6 @@ export function calculateLinearSize(
   const pixelsPerByte = getPixelsPerByte(mode)
   const widthInBytes = Math.floor(width / pixelsPerByte)
   return widthInBytes * height
-}
-
-/**
- * Check if image dimensions are standard (non-custom)
- * @param width - Image width
- * @param height - Image height
- * @param mode - CPC mode
- * @param overscan - Is overscan mode
- * @returns True if standard dimensions
- */
-export function isStandardMode(
-  width: number,
-  height: number,
-  mode: number,
-  overscan: boolean
-): boolean {
-  if (overscan) return false
-
-  return (
-    (mode === 0 && width === 160 && height === 200) ||
-    (mode === 1 && width === 320 && height === 200) ||
-    (mode === 2 && width === 640 && height === 200)
-  )
 }
 
 /**

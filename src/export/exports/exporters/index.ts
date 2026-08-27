@@ -8,10 +8,8 @@ export {
   type EgxCpcPlaygroundExportOptions,
   exportEgxToCpcPlayground,
   exportModeRToCpcPlayground,
-  exportToCpcPlayground,
-  generateEgxAsmSource
+  exportToCpcPlayground
 } from './export-cpc-playground'
-export { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
 export { exportLinearData } from './export-linear'
 export { exportPalettePlus, exportPalettesClassic } from './export-palette'
 export type { PNGExportData } from './export-png'
@@ -22,7 +20,6 @@ export {
   generateSCRAsmClassic
 } from './export-scr'
 export {
-  exportModeRSna,
   exportSna,
   generateModeRSnaAsmSource,
   generateSnaAsmSource,

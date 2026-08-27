@@ -1,155 +1,90 @@
 /**
  * EGX Image Processing
  *
- * Handles image normalization for EGX dimensions.
- * EGX1: 320×200, EGX2: 640×200 (or overscan equivalents)
+ * Normalizes the image to EGX dimensions (EGX1: 320×200, EGX2: 640×200, or the
+ * overscan equivalents) by driving the *standard* pipeline steps with the EGX
+ * mode config instead of forking them: the shared `croppedImageAtom`, the
+ * shared `resizeToMode` helper, and the `normalizeImage` /
+ * `positionNormalizedImage` use-cases. Only the smoothing step stays EGX-local,
+ * because it keys on the EGX high-resolution mode's pixel width.
  */
 
 import { atom } from 'jotai'
 import { logger } from '@/core'
 import {
   applyHorizontalSmoothing,
-  applyResize,
   getPixelWidthForMode,
-  getVisualRegionNormalized,
-  type Selection
+  resizeToMode
 } from '@/preview'
+import {
+  normalizeImage,
+  positionNormalizedImage
+} from '@/preview/application/normalize-image'
 import {
   centerImageAtom,
   egxEnabledAtom,
   horizontalSmoothingAtom,
+  resampleStrategyAtom,
   resizeModeAtom
 } from '../../config/config'
-import { selectionAtom, workingImageAtom } from '../../image/image'
-import {
-  exportPaletteWithSlotsAtom,
-  positionImageForAutoMode
-} from '../preview'
+import { croppedImageAtom, exportPaletteWithSlotsAtom } from '../preview'
 import { egxModeConfigAtom } from './egx-config'
 
 /**
  * Image resized and normalized to EGX dimensions (high-resolution mode).
- * Uses the source image (not the standard pipeline's resized image)
- * to ensure correct dimensions:
- * - EGX1: 320×200 (or overscan equivalent)
- * - EGX2: 640×200 (or overscan equivalent)
+ * Starts from the shared cropped image rather than the standard pipeline's
+ * resized one, which sits at the *base* mode's dimensions.
  */
 export const egxNormalizedImageAtom = atom(async (get) => {
   const egxEnabled = get(egxEnabledAtom)
   if (!egxEnabled) return null
 
   const egxModeConfig = get(egxModeConfigAtom)
-  const workingImage = await get(workingImageAtom)
-  const selection = get(selectionAtom)
   const resizeMode = get(resizeModeAtom)
   const centerImage = get(centerImageAtom)
+  const resampleStrategy = get(resampleStrategyAtom)
   const horizontalSmoothing = get(horizontalSmoothingAtom)
-  const palette = await get(exportPaletteWithSlotsAtom)
+  const cropped = await get(croppedImageAtom)
+  const exportPalette = await get(exportPaletteWithSlotsAtom)
 
-  if (!egxModeConfig || !workingImage || !selection) return null
+  if (!egxModeConfig || !cropped) return null
 
-  // 1. Crop the selection from the working image
-  const cropCanvas = document.createElement('canvas')
-  cropCanvas.width = selection.width
-  cropCanvas.height = selection.height
-  const cropCtx = cropCanvas.getContext('2d')
-  if (!cropCtx) return null
+  const resized = resizeToMode(cropped, {
+    modeConfig: egxModeConfig,
+    resizeMode,
+    centerImage,
+    resampleStrategy
+  })
 
-  // Put the working image on a temp canvas to extract the selection
-  const tempCanvas = document.createElement('canvas')
-  tempCanvas.width = workingImage.width
-  tempCanvas.height = workingImage.height
-  const tempCtx = tempCanvas.getContext('2d')
-  if (!tempCtx) return null
-  tempCtx.putImageData(workingImage, 0, 0)
+  let normalized = positionNormalizedImage({
+    normalized: normalizeImage({
+      processed: resized,
+      modeConfig: egxModeConfig,
+      resizeMode,
+      resampleStrategy
+    }),
+    modeConfig: egxModeConfig,
+    resizeMode,
+    exportPalette,
+    centerImage
+  })
 
-  // Extract the selection
-  cropCtx.drawImage(
-    tempCanvas,
-    selection.sx,
-    selection.sy,
-    selection.width,
-    selection.height,
-    0,
-    0,
-    selection.width,
-    selection.height
-  )
-
-  // 2. Resize based on mode
-  let resizedImageData: ImageData
-
-  if (resizeMode === 'origin' || resizeMode === 'cover') {
-    // Mode origin/cover: use applyResize which handles the pixel ratio
-    const relativeSelection: Selection = {
-      sx: 0,
-      sy: 0,
-      width: selection.width,
-      height: selection.height
-    }
-
-    let resizedCanvas: HTMLCanvasElement
-    try {
-      resizedCanvas = applyResize(
-        cropCanvas,
-        relativeSelection,
-        {
-          mode: resizeMode,
-          modeConfig: egxModeConfig
-        },
-        centerImage
-      )
-    } catch {
-      logger.warn('[EGX] Failed to resize image')
-      return null
-    }
-
-    const resizedCtx = resizedCanvas.getContext('2d')
-    if (!resizedCtx) return null
-    resizedImageData = resizedCtx.getImageData(
-      0,
-      0,
-      resizedCanvas.width,
-      resizedCanvas.height
-    )
-  } else {
-    // Mode auto: normalize to EGX dimensions using getVisualRegionNormalized
-    const croppedImageData = cropCtx.getImageData(
-      0,
-      0,
-      cropCanvas.width,
-      cropCanvas.height
-    )
-    const normalized = getVisualRegionNormalized(
-      croppedImageData,
-      egxModeConfig
-    )
-    if (!normalized) {
-      logger.warn('[EGX] Failed to normalize image')
-      return null
-    }
-
-    // Position in target dimensions (adds margins with darkest color)
-    resizedImageData = positionImageForAutoMode(
-      normalized,
-      egxModeConfig,
-      palette,
-      centerImage
-    )
+  if (!normalized) {
+    logger.warn('[EGX] Failed to normalize image')
+    return null
   }
 
-  // 3. Apply horizontal smoothing if enabled
   if (horizontalSmoothing) {
     const pixelWidth = getPixelWidthForMode(egxModeConfig.mode)
-    resizedImageData = applyHorizontalSmoothing(resizedImageData, pixelWidth)
+    normalized = applyHorizontalSmoothing(normalized, pixelWidth)
   }
 
   logger.info('[EGX] Normalized image', {
-    width: resizedImageData.width,
-    height: resizedImageData.height,
+    width: normalized.width,
+    height: normalized.height,
     targetWidth: egxModeConfig.width,
     targetHeight: egxModeConfig.height
   })
 
-  return resizedImageData
+  return normalized
 })

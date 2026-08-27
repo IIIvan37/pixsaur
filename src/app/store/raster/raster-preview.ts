@@ -1,26 +1,18 @@
 /**
  * Raster Preview Atoms
  *
- * Handles preview image generation with raster effects applied.
- * Provides the effective preview atom that selects the right preview based on mode.
+ * Handles preview image generation with raster effects applied. Selecting
+ * between the rendering paths lives in
+ * `app/store/preview/effective-rendering.ts`.
  */
 
 import { atom } from 'jotai'
 import { renderRasterPreview } from '@/raster/application/render-raster-preview'
 import { imageProcessorAtom } from '../adapters/processors'
-import {
-  effectiveModeConfigAtom,
-  egxEnabledAtom,
-  modeREnabledAtom
-} from '../config/config'
-import { finalEgxPreviewImageAtom } from '../preview/egx-preview'
-import { modeRPreviewImageAtom } from '../preview/mode-r-preview'
+import { effectiveModeConfigAtom } from '../config/config'
 import {
   exportPaletteWithSlotsAtom,
-  finalPreviewImageAtom,
-  finalPreviewIndexBufferAtom,
-  hasManualEditsAtom,
-  previewImageAtom
+  finalPreviewIndexBufferAtom
 } from '../preview/preview'
 import { rasterChangesAtom, rasterEnabledAtom } from './raster-config'
 import {
@@ -76,46 +68,4 @@ export const rasterPreviewImageAtom = atom(async (get) => {
     { indexBuffer: indexBufferData, changes, modeConfig: dims },
     deps
   )
-})
-
-/**
- * Effective preview image atom: returns the appropriate preview based on mode.
- * Priority: Mode R > EGX > Raster > Manual Edits > Standard
- * Note: Mode R, EGX and Raster are mutually exclusive
- */
-export const effectivePreviewImageAtom = atom(async (get) => {
-  // Mode R takes priority and is incompatible with rasters/EGX
-  const modeREnabled = get(modeREnabledAtom)
-  if (modeREnabled) {
-    const modeRPreview = await get(modeRPreviewImageAtom)
-    if (modeRPreview) {
-      return modeRPreview
-    }
-  }
-
-  // EGX mode (line-by-line mode alternation)
-  // Always use finalEgxPreviewImageAtom to include manual edits
-  const egxEnabled = get(egxEnabledAtom)
-  if (egxEnabled) {
-    const finalEgxPreview = await get(finalEgxPreviewImageAtom)
-    if (finalEgxPreview) {
-      return finalEgxPreview
-    }
-  }
-
-  // Force re-evaluation when raster version changes
-  get(rasterVersionAtom)
-
-  const rasterPreview = await get(rasterPreviewImageAtom)
-  if (rasterPreview) {
-    return rasterPreview
-  }
-
-  // Check if there are manual edits - if so, use final preview image
-  const hasEdits = get(hasManualEditsAtom)
-  if (hasEdits) {
-    return await get(finalPreviewImageAtom)
-  }
-
-  return await get(previewImageAtom)
 })

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { processorFactory } from '@/libs/pixsaur-adapter'
-import { ReGLProcessor } from '@/libs/pixsaur-adapter/adapters/regl-processor'
+import { CpuProcessor, processorFactory } from '@/libs/pixsaur-adapter'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { createRasterPreviewImageData } from '@/libs/pixsaur-raster/render-with-raster'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
@@ -27,10 +26,10 @@ describe('processorFactory and processor lifecycle', () => {
     vi.restoreAllMocks()
   })
 
-  it('createBestProcessor("cpu") returns a CPU-backed ReGLProcessor and dispose() is idempotent', async () => {
+  it('createBestProcessor("cpu") returns a CpuProcessor and dispose() is idempotent', async () => {
     const proc = await processorFactory.createBestProcessor('cpu')
-    expect(proc).toBeInstanceOf(ReGLProcessor)
-    expect(proc.isAvailable).toBe(true)
+    expect(proc).toBeInstanceOf(CpuProcessor)
+    expect(proc.type).toBe('cpu')
 
     // Simple smoke for raster preview equals CPU path
     const width = 2
@@ -77,12 +76,10 @@ describe('processorFactory and processor lifecycle', () => {
     const proc = await mockedFactory.createBestProcessor('auto')
     // Can't use toBeInstanceOf because the mocked module import creates a different class reference
     // Instead, verify the processor has the expected interface and behavior
-    expect(proc).toBeDefined()
-    expect(proc.isAvailable).toBe(true)
+    expect(proc.type).toBe('cpu')
     expect(typeof proc.renderRasterPreview).toBe('function')
     expect(typeof proc.dispose).toBe('function')
 
-    // Even though type is 'regl', internal ReGL is undefined → CPU path
     const width = 1
     const height = 1
     const buffer = new Uint8Array([0])
