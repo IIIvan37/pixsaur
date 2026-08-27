@@ -65,6 +65,11 @@ big picture: `src/export/application/README.md` and the memory note
     **zero `vi.mock`**). `dsk-workspace-panel.tsx` is now a thin adapter —
     `isTauri` / `saveZipFileTauri` / `downloadFile` left the component and the
     save goes through `resolveFileSink()`.
+- **Wave 2 verified by hand 2026-08-27 (web build)**: EGX renders correctly with
+  the new linear-light resampling, smoothing behaves, and the DSK workspace
+  export works end to end. The **Tauri build is still unverified** — the desktop
+  save path (`tauriFileSink`, native dialog) is the one branch the web run never
+  exercises. Smoke-test a DSK export in `pnpm tauri:dev` before merging.
 - **Wave 3 — NEXT**: candidates 4, 5, 6 (export orchestration — standard-mode
   verdict, ASM artifact producers, the SNA production run). Start with
   candidate 4 and check it against the new `isStandardDskMode` helper before
