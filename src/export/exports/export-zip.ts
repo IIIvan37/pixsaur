@@ -3,9 +3,9 @@ import { type CpcModeConfig, screenCapability } from '@/domain/cpc'
 import type { EGXConfig } from '@/libs/pixsaur-egx'
 import type { RasterChange } from '@/libs/pixsaur-raster/types'
 import type { CPCHardware } from '@/libs/types'
-import { firmwareToHardware } from './cpc-format'
-import { cpcPlusValuesToASM, paletteToCPCPlusValues } from './cpc-plus-format'
-import { exportEgxLinear, exportEgxSCR, isEgxOverscan } from './export-scr'
+import { paletteToCPCPlusValues } from './cpc-plus-format'
+import { egxAsmSource } from './egx-asm-source'
+import { exportEgxLinear, exportEgxSCR } from './export-scr'
 import type { PNGExportData } from './exporters'
 import {
   exportLinearData,
@@ -20,13 +20,6 @@ import {
   generateClassicRasterASM,
   generatePlusRasterASM
 } from './raster-format'
-import {
-  assembleEgxSnaSource,
-  generateEgxOverscanSnaTemplate,
-  generateEgxPlusOverscanSnaTemplate,
-  generateEgxPlusSnaTemplate,
-  generateEgxSnaTemplate
-} from './templates'
 import { toASMData } from './to-asm-data'
 import type { ExportConfig } from './types'
 
@@ -177,83 +170,18 @@ async function exportEgxSnaToZip(
     config
   } = params
 
-  const colorCount = egxConfig.type === 'egx1' ? 16 : 4
-  const overscan = isEgxOverscan(width, height, egxConfig.type)
-  let template: string
-  let paletteAsm: string
+  const asmSource = egxAsmSource({
+    indexBuf,
+    width,
+    height,
+    egxConfig,
+    paletteFirmware,
+    paletteRgb: reducedPalette,
+    // Plus needs the RGB palette; without it the Classic path still works.
+    hardware: isCPCPlus && reducedPalette ? 'plus' : 'classic'
+  })
 
-  if (isCPCPlus && reducedPalette) {
-    // CPC Plus: Use 12-bit palette and Plus template
-    template = overscan
-      ? generateEgxPlusOverscanSnaTemplate({
-          egxConfig,
-          height,
-          hardware: 'plus'
-        })
-      : generateEgxPlusSnaTemplate({
-          egxConfig,
-          height,
-          hardware: 'plus'
-        })
-
-    const paletteSlice = reducedPalette.slice(0, colorCount)
-    const cpcPlusValues = paletteToCPCPlusValues(paletteSlice)
-    paletteAsm = cpcPlusValuesToASM(cpcPlusValues, 'Palette_Plus')
-  } else {
-    // CPC Classic: Use hardware palette and Classic template
-    template = overscan
-      ? generateEgxOverscanSnaTemplate({ egxConfig, height })
-      : generateEgxSnaTemplate({ egxConfig, height })
-
-    const hardwarePalette = paletteFirmware
-      .slice(0, colorCount)
-      .map((fw) => firmwareToHardware[fw] ?? 0x54)
-
-    const paletteBytes = hardwarePalette
-      .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
-      .join(',')
-
-    paletteAsm = `Palette_Hardware:
-    DB      ${paletteBytes}`
-  }
-
-  let asmSource: string
-
-  // Generate image data ASM (SCR for standard, linear for overscan)
-  if (overscan) {
-    const linearData = exportEgxLinear(indexBuf, width, height, egxConfig)
-    // Split into two chunks for overscan
-    const halfSize = Math.floor(linearData.length / 2)
-    const chunk1 = linearData.slice(0, halfSize)
-    const chunk2 = linearData.slice(halfSize)
-
-    const imageAsmResult1 = toASMData(chunk1, 'ImageData_chunk_0')
-    const imageAsmResult2 = toASMData(chunk2, 'ImageData_chunk_1')
-
-    const imageAsm =
-      typeof imageAsmResult1 === 'string'
-        ? imageAsmResult1
-        : (imageAsmResult1[0]?.content ?? '')
-    const imageAsm2 =
-      typeof imageAsmResult2 === 'string'
-        ? imageAsmResult2
-        : (imageAsmResult2[0]?.content ?? '')
-
-    asmSource = assembleEgxSnaSource(
-      template,
-      { paletteAsm, imageAsm, imageAsm2 },
-      { overscan: true }
-    )
-  } else {
-    const egxScrData = exportEgxSCR(indexBuf, width, height, egxConfig)
-    const imageAsmResult = toASMData(egxScrData, 'ImageData')
-    const imageAsm =
-      typeof imageAsmResult === 'string'
-        ? imageAsmResult
-        : (imageAsmResult[0]?.content ?? '')
-
-    asmSource = assembleEgxSnaSource(template, { paletteAsm, imageAsm })
-  }
+  if (!asmSource) return
 
   // Assemble with RASM
   const { createRasmInstance } = await import('@/libs/rasm-wasm')

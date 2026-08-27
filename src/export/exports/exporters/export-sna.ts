@@ -9,12 +9,12 @@
 import { createLogger } from '@/core'
 import { type CpcModeConfig, isStandardScreen } from '@/domain/cpc'
 import type { CPCHardware } from '@/libs/types'
-import { firmwareToHardware } from '../cpc-format'
 import {
   exportLinearAsm,
   splitLinearIntoChunks
 } from '../export-linear-asm/export-linear.asm'
 import { exportSCR } from '../export-scr/export-scr'
+import { hardwarePaletteAsm, plusPaletteAsm } from '../palette-asm'
 import {
   assembleModeRSnaSource,
   assembleSnaSource,
@@ -61,39 +61,6 @@ export interface SnaExportResult {
   asmSource?: string
   /** Error message if export failed */
   error?: string
-}
-
-// =============================================================================
-// Palette Generation
-// =============================================================================
-
-/**
- * Generate hardware palette ASM for CPC Classic
- */
-function generateClassicPaletteAsm(paletteFirmware: number[]): string {
-  const hardwarePalette = paletteFirmware
-    .slice(0, 16)
-    .map((fw) => firmwareToHardware[fw] ?? 0x54)
-
-  const bytes = hardwarePalette
-    .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
-    .join(',')
-
-  return `Palette_Hardware:
-    DB      ${bytes}`
-}
-
-/**
- * Generate palette ASM for CPC Plus (DEFW format)
- */
-function generatePlusPaletteAsm(palettePlus: number[]): string {
-  const values = palettePlus
-    .slice(0, 16)
-    .map((v) => `#${v.toString(16).padStart(4, '0').toUpperCase()}`)
-    .join(', ')
-
-  return `Palette:
-    DEFW ${values}`
 }
 
 // =============================================================================
@@ -216,7 +183,7 @@ export async function exportSna(
           error: 'CPC Plus palette required for Plus hardware'
         }
       }
-      dataFiles.paletteAsm = generatePlusPaletteAsm(palettePlus)
+      dataFiles.paletteAsm = plusPaletteAsm(palettePlus, { label: 'Palette' })
     } else {
       if (!paletteFirmware) {
         return {
@@ -224,7 +191,9 @@ export async function exportSna(
           error: 'Firmware palette required for Classic hardware'
         }
       }
-      dataFiles.paletteAsm = generateClassicPaletteAsm(paletteFirmware)
+      dataFiles.paletteAsm = hardwarePaletteAsm(paletteFirmware, {
+        label: 'Palette_Hardware'
+      })
     }
 
     // Generate image data ASM
@@ -343,10 +312,12 @@ export function generateSnaAsmSource(options: SnaExportOptions): string | null {
     // Generate palette ASM
     if (hardware === 'plus') {
       if (!palettePlus) return null
-      dataFiles.paletteAsm = generatePlusPaletteAsm(palettePlus)
+      dataFiles.paletteAsm = plusPaletteAsm(palettePlus, { label: 'Palette' })
     } else {
       if (!paletteFirmware) return null
-      dataFiles.paletteAsm = generateClassicPaletteAsm(paletteFirmware)
+      dataFiles.paletteAsm = hardwarePaletteAsm(paletteFirmware, {
+        label: 'Palette_Hardware'
+      })
     }
 
     // Generate image data ASM
@@ -397,38 +368,6 @@ export interface ModeRSnaExportOptions {
 }
 
 /**
- * Generate hardware palette ASM for Mode R CPC Classic
- */
-function generateModeRClassicPaletteAsm(
-  palette: number[],
-  label: string
-): string {
-  const hardwarePalette = palette
-    .slice(0, 16)
-    .map((fw) => firmwareToHardware[fw] ?? 0x54)
-
-  const bytes = hardwarePalette
-    .map((hw) => `#${hw.toString(16).padStart(2, '0').toUpperCase()}`)
-    .join(',')
-
-  return `${label}:
-    DB      ${bytes}`
-}
-
-/**
- * Generate palette ASM for Mode R CPC Plus (DEFW format)
- */
-function generateModeRPlusPaletteAsm(palette: number[], label: string): string {
-  const values = palette
-    .slice(0, 16)
-    .map((v) => `#${v.toString(16).padStart(4, '0').toUpperCase()}`)
-    .join(', ')
-
-  return `${label}:
-    DEFW ${values}`
-}
-
-/**
  * Generate only the ASM source for Mode R without assembling
  * Useful for debugging or including in ZIP exports
  */
@@ -463,24 +402,20 @@ export function generateModeRSnaAsmSource(
     // Generate palette ASM
     if (isPlus) {
       if (!paletteAPlus || !paletteBPlus) return null
-      dataFiles.paletteAAsm = generateModeRPlusPaletteAsm(
-        paletteAPlus,
-        'ModeR_PaletteA'
-      )
-      dataFiles.paletteBAsm = generateModeRPlusPaletteAsm(
-        paletteBPlus,
-        'ModeR_PaletteB'
-      )
+      dataFiles.paletteAAsm = plusPaletteAsm(paletteAPlus, {
+        label: 'ModeR_PaletteA'
+      })
+      dataFiles.paletteBAsm = plusPaletteAsm(paletteBPlus, {
+        label: 'ModeR_PaletteB'
+      })
     } else {
       if (!paletteAFirmware || !paletteBFirmware) return null
-      dataFiles.paletteAAsm = generateModeRClassicPaletteAsm(
-        paletteAFirmware,
-        'ModeR_PaletteA_Hardware'
-      )
-      dataFiles.paletteBAsm = generateModeRClassicPaletteAsm(
-        paletteBFirmware,
-        'ModeR_PaletteB_Hardware'
-      )
+      dataFiles.paletteAAsm = hardwarePaletteAsm(paletteAFirmware, {
+        label: 'ModeR_PaletteA_Hardware'
+      })
+      dataFiles.paletteBAsm = hardwarePaletteAsm(paletteBFirmware, {
+        label: 'ModeR_PaletteB_Hardware'
+      })
     }
 
     // Generate SCR image data for both frames

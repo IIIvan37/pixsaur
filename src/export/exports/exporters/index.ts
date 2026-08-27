@@ -8,8 +8,7 @@ export {
   type EgxCpcPlaygroundExportOptions,
   exportEgxToCpcPlayground,
   exportModeRToCpcPlayground,
-  exportToCpcPlayground,
-  generateEgxAsmSource
+  exportToCpcPlayground
 } from './export-cpc-playground'
 export { exportLinearData } from './export-linear'
 export { exportPalettePlus, exportPalettesClassic } from './export-palette'
