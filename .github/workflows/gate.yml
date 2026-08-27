@@ -2,8 +2,8 @@ name: Quality gate
 
 # Fast blocking gate on every PR: typecheck (+ comprehensive), Biome & custom
 # guards, Sheriff (report-only), react-doctor (blocks on NEW error-severity
-# issues vs base — scripts/check-react-doctor.js), impeccable (report-only),
-# jscpd (blocks over 3% duplication) and tests with coverage (ratchet floors in
+# issues vs the base ref passed below — scripts/check-react-doctor.js),
+# impeccable (report-only), jscpd (blocks over 3% duplication) and tests with coverage (ratchet floors in
 # vitest.config.ts). Mutation testing (Stryker) is a deeper post-merge job — see
 # mutation.yml. knip stays ratchet (refactor:preflight), not in this gate.
 on:
@@ -42,4 +42,10 @@ jobs:
         run: pnpm install
 
       - name: Run quality gate
+        env:
+          # Never let react-doctor auto-detect its base here: the PR checkout is
+          # a detached merge ref, where detection found nothing and "changed"
+          # scope silently degraded to a full scan — reporting every
+          # pre-existing issue as introduced by the PR.
+          REACT_DOCTOR_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: pnpm gate
