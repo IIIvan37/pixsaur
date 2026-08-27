@@ -19,6 +19,7 @@ Interfaces in `ports.ts`. Reuse one of these before defining a new port.
 | `FileSink` | persist / download the produced file(s) | `adapters/web-file-sink.ts` (`webFileSink` → `downloadFile`) | `src/tauri/file-sink.ts` (`tauriFileSink` → `saveZipFileTauri`) | ✅ landed (PR2) |
 | `CanvasFactory` | create a drawing canvas (`createCanvas(w,h)`) | `adapters/dom-canvas-factory.ts` (`domCanvasFactory`) | same DOM adapter (webview) | ✅ landed (PR2) |
 | `PlaygroundExporter` | share an image (standard / Mode R / EGX) to CPC Playground | `adapters/cpc-playground-exporter.ts` (`cpcPlaygroundExporter`) | same adapter — wrapped exporters resolve `PlaygroundPort` per runtime | ✅ landed (PR3) |
+| `DskWorkspaceBuilder` | assemble the DSK workspace bundle (disk image + README + binaries) as a ZIP | `adapters/dsk-workspace-builder.ts` (`dskWorkspaceBuilder`) | same adapter — the RASM WASM assembler runs in both runtimes | ✅ landed (candidate 10) |
 
 > `PlaygroundPort` lives in `ports.ts`; the runtime adapter is selected by
 > `resolvePlaygroundPort()` in `playground-port.ts` (the impure seam). `FileSink`
@@ -35,6 +36,7 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 |----------|----------|-----------------|--------|------------|
 | `exportImageToZip` ✅ PR2 | `handleExport` in `components/export-panel/export-panel.tsx` | `{ modeConfig, cpcHardware, config }` + an `egx` **or** `standard` snapshot | `{ ok } \| { ok:false, error }` | `FileSink`, `CanvasFactory` |
 | `openImageInPlayground` ✅ PR3 | `handleOpenInPlayground` in the same component | `{ modeConfig, cpcHardware }` + a `modeR` / `egx` / `standard` snapshot (no `ExportConfig`) | `{ ok, mode } \| { ok:false, mode, error }` | `PlaygroundExporter` |
+| `exportDskWorkspaceToZip` ✅ candidate 10 | `handleExport` in `components/dsk-workspace/dsk-workspace-panel.tsx` | `{ images }` (the workspace images) | `{ ok } \| { ok:false, error:'no-images' \| 'zip-generation-failed' \| 'save-cancelled' }` | `DskWorkspaceBuilder`, `FileSink` |
 
 > Status: `exportImageToZip` landed in PR2 — `export-image-to-zip.ts` (+ spec),
 > `handleExport` is now a thin adapter, and `exportZip` was split into the pure
@@ -60,3 +62,18 @@ Both use-cases branch on render mode: **standard**, **EGX**, **Mode-R**
 three). The per-mode steps share palette conversion (+ canvas building in the
 ZIP use-case) — factor those into one helper (don't copy-paste per branch;
 `pnpm check:dup` watches this).
+
+## DSK workspace export (candidate 10)
+
+`exportDskWorkspaceToZip` closed the last export path that still branched on
+`isTauri()` in the UI: the panel called `saveZipFileTauri` / `downloadFile` by
+hand while `FileSink` — the port for exactly that decision — already had both
+adapters. The panel is now input assembly + result → notification, and the save
+path tests with two fakes and **no `vi.mock`**.
+
+The heavy half (fetching the template DSK, driving the RASM WASM assembler,
+zipping) stays in `exports/exporters/export-dsk-workspace-zip.ts` behind the
+`DskWorkspaceBuilder` port. The two exporters below it now share one SCR
+producer — `exports/exporters/dsk-image-format.ts`
+(`toDskModeConfig` / `isStandardDskMode` / `generateDskStandardScr`) — instead of
+carrying a sync and an async copy of the same standard/linear fork.

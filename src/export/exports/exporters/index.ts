@@ -11,7 +11,6 @@ export {
   exportToCpcPlayground,
   generateEgxAsmSource
 } from './export-cpc-playground'
-export { exportDskWorkspaceZip } from './export-dsk-workspace-zip'
 export { exportLinearData } from './export-linear'
 export { exportPalettePlus, exportPalettesClassic } from './export-palette'
 export type { PNGExportData } from './export-png'
