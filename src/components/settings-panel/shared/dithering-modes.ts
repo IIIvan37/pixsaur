@@ -26,7 +26,14 @@ export const ALL_DITHERING_MODES: readonly DitheringModeOption[] = [
 ] as const
 
 /**
- * Error diffusion modes (not compatible with raster mode)
+ * Error diffusion modes, which the raster mode picker hides.
+ *
+ * This is a **product choice, not a technical limit**: since the two dithering
+ * entry points were unified, `mapAndDitherWithDynamicPalette` runs all eleven
+ * modes against per-line palettes — the residual simply gets quantized against
+ * whichever palette the receiving scanline carries. Whether that reads well on
+ * a raster image is a rendering judgement; until it is made, the picker keeps
+ * offering only the ordered modes.
  */
 const ERROR_DIFFUSION_MODES: readonly DitheringMode[] = [
   'floydSteinberg',
@@ -46,7 +53,8 @@ const EGX_UNSUPPORTED_MODES: readonly DitheringMode[] = [
 ] as const
 
 /**
- * Check if a dithering mode is compatible with raster mode
+ * Whether the raster mode picker offers this dithering mode
+ * (see {@link ERROR_DIFFUSION_MODES} — a product gate, not a capability gate).
  */
 export function isRasterCompatibleMode(mode: DitheringMode): boolean {
   return !ERROR_DIFFUSION_MODES.includes(mode)
@@ -60,8 +68,8 @@ export function isEGXCompatibleMode(mode: DitheringMode): boolean {
 }
 
 /**
- * Returns dithering modes compatible with raster mode
- * (excludes error diffusion algorithms)
+ * Returns the dithering modes the raster picker offers (ordered modes only —
+ * see {@link ERROR_DIFFUSION_MODES}).
  */
 export function getRasterCompatibleModes(): readonly DitheringModeOption[] {
   return ALL_DITHERING_MODES.filter(

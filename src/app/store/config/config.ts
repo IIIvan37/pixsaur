@@ -72,8 +72,7 @@ export {
   colorSpaceAtom,
   ditheringAtom,
   setColorSpaceAtom,
-  setDitheringAtom,
-  switchToRasterCompatibleDitheringAtom
+  setDitheringAtom
 } from './dithering'
 export type { EGXFirstLineMode, EGXPreviewMode, EGXType, EgxType } from './egx'
 // EGX (base exports)
