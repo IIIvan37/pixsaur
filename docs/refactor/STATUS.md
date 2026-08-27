@@ -121,26 +121,68 @@ big picture: `src/export/application/README.md` and the memory note
   `git push origin archive/<name>:refs/heads/<name>`. Worth knowing before the
   tags are ever pruned: `archive/refactor/architecture-cleanup` carries
   `perf(mode-r): spatial lookup table (~8× speedup)`, which never reached `main`.
-- **Wave 4 — NEXT**: candidates 3, 7, 8, 9 (structural). Start with candidate 3
-  (split the processor seam that has one adapter). Candidate 11 falls out of
-  candidate 8 — not worth its own PR.
+- **Wave 4 — candidates 3, 9 and the candidate 7 verdict DONE** (same branch, 3
+  more commits, not yet pushed). Report:
+  `sessions/2026-08-27-wave4-processor-seam-and-dither-entry.md`.
+  - `8092c42` candidate 3: `ReGLProcessor` split into `CpuProcessor` (pure JS,
+    no-op `dispose`) and `GpuProcessor` (needs a live regl instance, **throws
+    from its constructor**); `processorFactory` is now the only place that
+    chooses, and it destroys the orphaned regl instance instead of leaking it.
+    Interface stops lying: `applyAdjustmentsSync` deleted (both paths are
+    synchronous — the GPU one blocks on `regl.read()`), `type` narrowed to
+    `'cpu' | 'gpu'`, `isAvailable` / `getCapabilities` / the canvas probe / the
+    three `ProcessorFactory` members implemented nowhere all removed.
+    `quantizePalette`'s `options` now reach the CPU fallback. The 686-line
+    `regl-processor.spec.ts` (which `vi.mock`ed all of `pixsaur-color`, so it
+    only asserted the class forwarded to itself) is replaced by a 22-test
+    `describe.each` conformance suite over both adapters.
+  - `19126a4` candidate 9: the ditherers take a `LinePalettes = (y) =>
+    LinePalette` instead of a fixed palette pair. The standard path passes
+    `constantPalettes(...)`, raster a memoized per-line lookup, and **both run
+    the same eleven modes** — the three hand-copied dynamic twins (~190 lines)
+    are deleted along with the second switch and the second entry point's body.
+    Verified bit-for-bit: 44/44 identical `mapAndDither` outputs (11 modes × 2
+    intensities × 2 correction settings); the dynamic path differs for exactly
+    the five error-diffusion modes, which is the win. Dead
+    `switchToRasterCompatibleDitheringAtom` deleted.
+  - `948587b` candidate 7: **the review's premise does not hold.** Probed
+    against the pinned Jotai (2.12.4), a `get` issued after an `await get` is
+    tracked normally — across microtask and macrotask boundaries, after several
+    awaits, with stale edges dropped. The proposed `deriveAsync` migration
+    across 42 atoms would have been churn. What was missing is the guard:
+    `preview/__tests__/async-atom-dependencies.spec.ts` pins the property, and
+    `image-pipeline.ts`'s comment (which claimed the opposite) now points at it.
+  - Deliberately unchanged: `CpuProcessor` accepts `autoDistinctMapping` /
+    `colorDiversity` but does not act on them — the CPU quantizer applies
+    `distinct-mapping` unconditionally and `StrategyOptions` has no diversity
+    parameter, so honouring them is a rendering change, not a refactor (the UI
+    toggle is inert on the CPU path — a real inconsistency, worth its own
+    change). And the raster mode picker still hides error diffusion: the lib now
+    supports it, but whether it reads well on a CPC raster image is a product
+    call. `dithering-modes.ts` says so instead of claiming incompatibility.
+- **Wave 4 — NEXT**: candidate 8 (one interface for the three rendering paths) —
+  the last of wave 4 and the largest blast radius. It carries a real defect: no
+  `manualPixelEdits` anywhere under `store/preview/mode-r`, so manual edits
+  silently do nothing in Mode R. Candidate 11 falls out of it — not worth its
+  own PR.
 
 ### Ratchet baselines (lowered 2026-08-27 — may only shrink)
 
 | Detector | Baseline | Was |
 |---|---|---|
-| knip unused exports | **42** | 52 |
-| knip unused types | **19** | 19 |
+| knip unused exports | **41** | 42 |
+| knip unused types | **18** | 19 |
 | knip unused files | 1 (intentional) | 1 |
-| jscpd clones | **33** | 37 |
-| jscpd ratio | **1.27 %** | 1.49 % |
+| jscpd clones | **29** | 33 |
+| jscpd ratio | **1.13 %** | 1.27 % |
 
 Judge the ratchet on the **clone count**; the ratio also moves when deletions
 shrink the denominator. Wave 2's candidate 10 removed a hand-copied SCR producer
 without moving either number — jscpd never flagged it (the two copies had
 drifted sync/async), which is why the review reads code and the detectors only
 guard the floor. Wave 3 moved both: 37 → 34 (candidate 5, three EGX copies → one)
-→ 33 (candidate 6, the SNA twins → one).
+→ 33 (candidate 6, the SNA twins → one). Wave 4 took it to 29: candidate 3's
+adapter split moved it to 32, candidate 9's dithering unification to 29.
 
 ~~Known pre-existing noise~~ — **fixed 2026-08-27**. `pnpm check` used to report
 biome format errors in `src-tauri/gen/` and `src-tauri/target/` on machines that
