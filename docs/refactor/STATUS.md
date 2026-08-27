@@ -186,6 +186,19 @@ big picture: `src/export/application/README.md` and the memory note
     rendering change). And Mode R still shows the standard 16 slots under its
     preview despite `displayPalette: false` — hiding that panel is a visible UI
     change, left as a product call.
+- **Wave 4 verified by hand 2026-08-27 — web build.** The four rendering paths
+  (standard, raster with changes, raster after deleting every change, EGX, Mode R
+  blended + frames A/B) were walked in the browser: preview, canvas size, palette
+  panel and edit button correct on each. That closes the raster eyeball wave 4's
+  first report asked for. Tauri was not re-checked and does not need to be — no
+  platform-specific path was touched since wave 2's smoke test.
+- **The Mode R editor stays closed, on purpose.** Raised 2026-08-27: there is
+  still no edit button in Mode R. That is pre-existing behaviour which candidate
+  8 *declared* (`renderingPathCapabilities('mode-r').editor === false`) rather
+  than closed. Opening it is a feature, not a refactor — the editor works on one
+  index buffer + one palette and Mode R interlaces two, so it needs either an
+  edit of the blended 320 px image (each pixel routed to frame A or B by column
+  parity) or of frame A alone. Deferred deliberately.
 - **Candidate 11 (flatten the preview barrels) — the only open review item.** It
   did not "fall out of" candidate 8 as the review predicted: the new modules
   sidestep the barrels rather than removing them. Still rated speculative.
