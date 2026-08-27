@@ -8,7 +8,6 @@
  * - egx-config.ts: Configuration and mode settings
  * - egx-image.ts: Image normalization for EGX dimensions
  * - egx-palette.ts: Palette optimization for shared colors
- * - egx-preview-image.ts: Preview image generation with dithering
  * - egx-index-buffer.ts: Index buffer for editor and export
  * - egx-final.ts: Final output with manual edits and export data
  */
@@ -32,6 +31,3 @@ export { egxIndexBufferAtom, finalEgxIndexBufferAtom } from './egx-index-buffer'
 // Re-export palette atoms
 // Note: analyzeHighResLineColors and optimizePaletteForEGX are now in @/libs/pixsaur-egx
 export { egxDisplayPaletteAtom, egxPaletteAtom } from './egx-palette'
-
-// Re-export preview image
-export { shouldGrayOut } from './egx-preview-image'

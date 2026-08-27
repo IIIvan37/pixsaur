@@ -32,6 +32,5 @@ export {
   // Preview image
   finalEgxIndexBufferAtom,
   finalEgxPreviewImageAtom,
-  getEGXModeConfig,
-  shouldGrayOut
+  getEGXModeConfig
 } from './egx'
