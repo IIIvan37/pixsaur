@@ -227,6 +227,32 @@ had run a Tauri build (583 of them on a full build, not the ~9 first recorded).
 `biome.json` now excludes both paths, so `pnpm check` / `pnpm gate` scan 673
 files instead of 1260 and are green locally as well as in CI.
 
+**SonarCloud's new-code coverage gate, and what it was really measuring**
+(2026-08-27, PR #346). The only failing condition was `new_coverage` at 66.7 %
+against a threshold of 80. The dominant term was `gpu-processor.ts`: **82
+uncovered lines of 173**, counted as *new* code because candidate 3 split
+`regl-processor.ts` into two adapters — the code is moved, not written. Every
+statement in it runs against a live regl/WebGL context the headless CI does not
+have, so a unit test can only reach it through a fake regl, which asserts that
+the adapter forwards to itself: exactly what the 686-line `regl-processor.spec.ts`
+did before candidate 3 deleted it. **Decision: exclude that one file from
+`sonar.coverage.exclusions`** (coverage only — it is still analysed for bugs,
+smells and duplication), with the reason written in `sonar-project.properties`.
+`regl-quantizer.ts` is deliberately **not** excluded: its four specs cover real
+logic. Before the exclusion, 17 new tests were added where the coverage gap was
+genuine — `canvas-size.spec.ts` (12) and `effective-rendering.spec.ts` (5),
+taking the metric 66.7 → 73.3 %.
+
+**Two vacuous tests found in `resize-to-mode.spec.ts`** (2026-08-27, not yet
+fixed). Its `classic` and `auto` cases claim to exercise the legacy canvas path,
+but happy-dom returns `null` from `getContext('2d')`, so `resizeToMode` exits at
+`if (!ctx) return cropped` and the ~9 lines of that branch never run. The tests
+pass without asserting anything about the path they name. Fixing it means either
+a fake 2D context or injecting the canvas through a port like `domCanvasFactory`
+— a real change, tracked here rather than done in passing. **Third instance of
+the same family** on this branch, after `pnpm typecheck` and the react-doctor
+base: a green signal produced by code that never ran.
+
 **The react-doctor gate had no base to diff against** (found 2026-08-27, when it
 blocked PR #346). `check-react-doctor.js` ran `--scope changed` and let
 react-doctor auto-detect `--base`. It guessed wrong in both directions: locally
