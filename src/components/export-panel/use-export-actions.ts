@@ -18,6 +18,7 @@ import {
   egxEnabledAtom,
   modeREnabledAtom
 } from '@/app/store/config/config'
+import { effectivePreviewImageAtom } from '@/app/store/preview/effective-rendering'
 import { egxExportDataAtom } from '@/app/store/preview/egx-preview'
 import { modeRExportDataAtom } from '@/app/store/preview/mode-r-preview'
 import {
@@ -25,7 +26,6 @@ import {
   finalPreviewIndexBufferAtom
 } from '@/app/store/preview/preview'
 import {
-  effectivePreviewImageAtom,
   finalRasterIndexBufferAtom,
   rasterBasePaletteAtom,
   rasterChangesAtom,

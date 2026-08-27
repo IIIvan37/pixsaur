@@ -32,7 +32,6 @@ export {
 } from './raster-config'
 // Re-export index buffer atoms
 export {
-  effectiveIndexBufferAtom,
   finalRasterIndexBufferAtom,
   hasGeneratedRastersAtom,
   rasterBasePaletteAtom,
@@ -43,10 +42,7 @@ export {
 // Re-export optimizer
 export { autoOptimizeRasterAtom } from './raster-optimizer'
 // Re-export preview atoms
-export {
-  effectivePreviewImageAtom,
-  rasterPreviewImageAtom
-} from './raster-preview'
+export { rasterPreviewImageAtom } from './raster-preview'
 
 // Re-export signature
 export { rasterInputSignatureAtom } from './raster-signature'

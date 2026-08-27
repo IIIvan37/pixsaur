@@ -1,6 +1,5 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import type React from 'react'
-import { egxEnabledAtom } from '@/app/store/config/config'
 import {
   onClearSlotAtom,
   onSetColorAtom,
@@ -8,6 +7,7 @@ import {
 } from '@/app/store/palette/palette'
 import { egxDisplayPaletteAtom } from '@/app/store/preview/egx-preview'
 import { displayPaletteAtom } from '@/app/store/preview/preview'
+import { activeRenderingPathAtom } from '@/app/store/preview/rendering-path'
 import { cpcFullPalette } from '@/domain/cpc'
 import { ColorPaletteView } from './color-palette-view'
 
@@ -23,14 +23,16 @@ import { ColorPaletteView } from './color-palette-view'
  * @returns {JSX.Element} The color palette UI.
  */
 export const ColorPalette: React.FC = () => {
-  // Check if EGX mode is enabled
-  const egxEnabled = useAtomValue(egxEnabledAtom)
+  // Which rendering path owns the palette on screen
+  const renderingPath = useAtomValue(activeRenderingPathAtom)
   // Read the standard display palette
   const standardSlots = useAtomValue(displayPaletteAtom)
   // Read the EGX display palette (reordered for high-res lines)
   const egxSlots = useAtomValue(egxDisplayPaletteAtom)
-  // Use EGX palette when EGX is enabled and palette is available
-  const slots = egxEnabled && egxSlots.length > 0 ? egxSlots : standardSlots
+  // The EGX path publishes its own slots; every other path falls back to the
+  // standard ones (so does EGX itself until its palette is ready).
+  const slots =
+    renderingPath === 'egx' && egxSlots.length > 0 ? egxSlots : standardSlots
   // Handler to toggle lock state for a slot
   const toggleLock = useSetAtom(onToggleLockAtom)
   // Handler to set a color for a slot

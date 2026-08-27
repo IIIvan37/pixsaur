@@ -18,6 +18,10 @@ import { egxPaletteAtom } from './egx-palette'
 /**
  * EGX index buffer for the preview editor: one palette index per pixel,
  * respecting the per-line EGX constraints.
+ *
+ * Reads `ditheringAtom` raw, not `effectiveDitheringAtom`: the EGX path does not
+ * force dithering off under distinct mapping
+ * (`renderingPathCapabilities('egx').distinctMappingForcesNoDither`).
  */
 export const egxIndexBufferAtom = atom(async (get) => {
   const egxEnabled = get(egxEnabledAtom)

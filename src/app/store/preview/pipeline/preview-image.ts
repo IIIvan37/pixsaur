@@ -70,6 +70,10 @@ export const positionedNormalizedImageAtom = atom(async (get) =>
  * using per-line palettes.
  * When autoDistinctMapping is enabled (CPC Classic + Mode 0), dithering is forced to 'none'
  * to preserve exact color mapping.
+ *
+ * **Standard path only.** EGX, Mode R and the raster buffer read `ditheringAtom`
+ * raw — see `distinctMappingForcesNoDither` in
+ * `@/preview/application/rendering-path`, which declares that asymmetry.
  */
 export const effectiveDitheringAtom = atom((get) => {
   const dithering = get(ditheringAtom)

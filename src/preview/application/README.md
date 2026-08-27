@@ -43,6 +43,7 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 | `positionNormalizedImage` ✅ PR9 | `positionedNormalizedImageAtom` orchestration in `app/store/preview/pipeline/preview-image.ts` | `{ normalized, modeConfig, resizeMode, exportPalette, centerImage }` | `ImageData \| null` (total, no union) | _none (pure)_ |
 | `smoothImage` ✅ PR10 | `smoothedImageAtom` orchestration in `app/store/preview/pipeline/image-pipeline.ts` | `{ resized, horizontalSmoothing, pixelMode, autoDistinctMapping, cpcHardware, modeConfig }` | `ImageData \| null` (total, no union) | _none (pure)_ |
 | `quantizeEgx` ✅ review-1 | `egxIndexBufferAtom` orchestration in `app/store/preview/egx/egx-index-buffer.ts` | `{ normalized, palette, config, dithering }` | `{ ok, indexBuffer } \| { ok:false, error }` | _none (pure)_ |
+| `resolveRenderingPath` + `renderingPathCapabilities` ✅ review-8 | the six hand-rolled priority chains over `modeREnabled` / `egxEnabled` / `rasterEnabled` (preview dispatch, editor buffer, editor base buffer, canvas size, palette panel, edit button) | `{ modeREnabled, egxEnabled, rasterEnabled, rasterChangeCount }` | `RenderingPathId` (`'mode-r' \| 'egx' \| 'raster' \| 'standard'`) + its declared `RenderingPathCapabilities` | _none (pure decision)_ |
 
 > Status: `quantizeEgx` landed with candidate 1 of the August 2026 architecture
 > review (`docs/refactor/architecture-review-2026-08.md`) — `quantize-egx.ts`
@@ -141,6 +142,23 @@ One row per extracted use-case. Signature is always `(input, deps) => Promise<Re
 > helpers and the locked-vec map were deleted as exact duplicates of those, and
 > the verbose `logger.info` traces were dropped (only the processor-missing
 > `logger.warn` survives, in the thin adapter atom).
+
+> Status: `rendering-path.ts` landed with candidate 8 of the August 2026
+> architecture review. It is not a `(input, deps) => Result` use-case but a pure
+> **decision** module, so it sits beside them: `resolveRenderingPath` answers
+> *which* of the four mutually exclusive paths renders, and
+> `RENDERING_PATH_CAPABILITIES` declares what each one supports (manual edits,
+> pixel editor, single index buffer, 16-slot display palette, and whether
+> distinct mapping forces dithering off). Every `false` in that table is a real
+> gap in today's code, documented at the row rather than left as an implicit
+> `null` deep in the atom graph — Mode R alone accounts for four of them.
+>
+> The Jotai side is `app/store/preview/rendering-path.ts` (a leaf module: only
+> primitive config atoms, so anything in the store can ask which path is active)
+> and `app/store/preview/effective-rendering.ts` (the dispatch:
+> `effectivePreviewImageAtom` and `effectiveIndexBufferAtom`, both moved out of
+> the *raster* slice where they had grown).
+
 
 ## Notes
 

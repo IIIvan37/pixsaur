@@ -7,13 +7,13 @@ import {
   effectiveModeConfigAtom
 } from '@/app/store/config/config'
 import { dskImagesAtom } from '@/app/store/dsk-workspace/dsk-workspace'
+import { effectivePreviewImageAtom } from '@/app/store/preview/effective-rendering'
 import {
   exportPaletteWithSlotsAtom,
   finalPreviewIndexBufferAtom,
   IGNORED_SLOT
 } from '@/app/store/preview/preview'
 import {
-  effectivePreviewImageAtom,
   finalRasterIndexBufferAtom,
   rasterBasePaletteAtom,
   rasterChangesAtom,
