@@ -243,6 +243,21 @@ logic. Before the exclusion, 17 new tests were added where the coverage gap was
 genuine — `canvas-size.spec.ts` (12) and `effective-rendering.spec.ts` (5),
 taking the metric 66.7 → 73.3 %.
 
+**react-doctor now runs in the pre-commit hook** (2026-08-27). It was only ever
+reachable through `pnpm gate`; the hook ran typecheck, Biome on staged files and
+the four custom guards. It now runs `check:react:staged` on the staged files —
+the scope a hook wants ("what am I about to commit", ~0.1 s) rather than the
+branch scope CI wants. Two traps found while wiring it, both by testing that the
+hook actually **rejects** a planted violation instead of assuming it: (1)
+`--staged` is honoured **only when no directory positional is passed** — with
+`src` in the arguments react-doctor silently falls back to `mode: "full"` and
+reports nothing, so the first version of the hook let the bad commit through;
+(2) the hook has no `set -e`, so a failing check mid-script would be printed and
+then ignored, the script exiting 0 on its final echo — the call is now
+`|| exit 1`. The script asserts the mode react-doctor reports back
+(`staged` / `baseline`) and refuses a result whose scope is not the one asked
+for.
+
 **Two vacuous tests found in `resize-to-mode.spec.ts`** (2026-08-27, not yet
 fixed). Its `classic` and `auto` cases claim to exercise the legacy canvas path,
 but happy-dom returns `null` from `getContext('2d')`, so `resizeToMode` exits at
