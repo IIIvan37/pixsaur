@@ -26,6 +26,7 @@
     "check:tauri-imports": "node scripts/check-tauri-imports.js",
     "check:arch": "sheriff verify src/main.tsx || true",
     "check:react": "node scripts/check-react-doctor.js src",
+    "check:react:staged": "node scripts/check-react-doctor.js src --staged",
     "check:react:full": "react-doctor src --no-telemetry",
     "check:design": "impeccable detect src || true",
     "check:dead": "knip",
