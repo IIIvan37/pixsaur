@@ -20,6 +20,26 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T6 TERMINÉE** — rendu, cinq commits :
+  1. `tileEdgeMask` (Q17 · Q27) — la partition elle-même : tout pixel adossé à
+     une couleur différente part à l'anti-aliasing, les aplats au tramage, aucun
+     pixel ne subit les deux. Un trou ne prend aucun parti, sinon la silhouette
+     d'un sprite se teinterait d'un fond sur lequel elle ne sera pas posée.
+  2. `antiAliasTile` (Q17) — seuls les pixels où la frontière **tourne** bougent.
+     Une frontière droite est un trait dessiné ; l'adoucir floute la tuile au
+     lieu de la lisser. Le côté opposé est la couleur que la majorité des voisins
+     différents portent.
+  3. `orderedDitherTile` (Q11 · Q18) — choix entre les deux pens qui encadrent la
+     couleur, selon un seuil de Bayer construit par récurrence. Le module ne
+     reçoit **aucune position de planche** : la phase locale de Q11 est
+     structurelle, pas promise.
+  4. `diffuseTile` (Q12 · Q27) — Floyd-Steinberg, accumulateur alloué par appel
+     donc jamais traversant une tuile. L'erreur qu'un pixel de contour aurait
+     poussée est abandonnée plutôt qu'étalée sur le territoire de l'AA.
+  5. Branchement dans `convertTileset` — `dither` (`none` par défaut),
+     `ditherSize`, `ditherByTile` (la surcharge de Q18) et `antiAlias` (vrai par
+     défaut).
+
 - **T5 TERMINÉE** — palette, quatre commits :
   1. `tilePaletteHistogram` (Q3 · Q15) — chaque tuile **unique** pèse 1, réparti
      sur ses propres pixels ; le nombre d'instances disparaît, les proportions
@@ -85,8 +105,19 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T6 (rendu — masque de bord, partition AA / tramage,
-  phase locale, reset de diffusion).
+- **Prochaine action** : T7 (atelier — `store/tileset/`, panneaux, commutateur
+  dans `app.tsx`, i18n). Première tranche non-pure : `react-testing-patterns`
+  s'applique, pas `tdd-cycle`. Trois dettes l'attendent — l'échelle des
+  gouttières du PNG (T3), l'exposition de `transparency: 'flatten'` (T5) et la
+  validation de la palette gelée contre le budget du mode (T5).
+- **Dette assumée dans T6 (réglage par position)** : `ditherByTile` est indexé
+  par **position dans la planche**, pas par tuile unique. Un panneau qui laisse
+  régler une tuile dédupliquée devra propager le réglage à toutes ses instances
+  via `instanceOf`, comme les édits de Q11.
+- **Dette assumée dans T6 (`ditherSize` non validé)** : une valeur autre que 2, 4
+  ou 8 donne la matrice de Bayer de la puissance de deux immédiatement
+  supérieure. Total, mais surprenant — à contraindre quand T7 exposera le
+  réglage.
 - **Dette assumée dans T5 (sous-palettes)** : Q21 — retrouver les sous-palettes
   de la source par groupement des tuiles selon leur jeu de couleurs — n'est pas
   faite. Elle ne figurait pas au contenu de la tranche, et le rapport de
@@ -397,12 +428,12 @@ tests. Une tranche = une PR.
 
 | # | Tranche | Contenu | Dépend de |
 |---|---|---|---|
-| T1 | Squelette marchant | Test d'acceptation `convertTileset` sur le cas trivial (planche 16×16, deux tuiles 8×8, mode 0, plus-proche-voisin, pas de tramage, PNG indexé). Fait naître les types de tuile, la découpe et le port d'encodage. Rien d'optimal, tout de bout en bout | — |
-| T2 | Géométrie | Table des PAR sources, ratio dérivé, tailles entières candidates, déformation résiduelle | T1 |
-| T3 | Dédup et grille | Hash de tuile, lien d'instances, suggestion de grille classée par taux de doublons | T1 |
-| T4 | Resize | Sélection exhaustive de colonnes, schéma global, condition de bord auto-détectée | T2, T3 |
-| T5 | Palette | Histogramme sur tuiles uniques, branchement des 12 stratégies, réservation, transparence, gel, rapport de collision | T4 |
-| T6 | Rendu | Masque de bord, partition AA / tramage, phase locale, reset de diffusion | T5 |
+| T1 ✅ | Squelette marchant | Test d'acceptation `convertTileset` sur le cas trivial (planche 16×16, deux tuiles 8×8, mode 0, plus-proche-voisin, pas de tramage, PNG indexé). Fait naître les types de tuile, la découpe et le port d'encodage. Rien d'optimal, tout de bout en bout | — |
+| T2 ✅ | Géométrie | Table des PAR sources, ratio dérivé, tailles entières candidates, déformation résiduelle | T1 |
+| T3 ✅ | Dédup et grille | Hash de tuile, lien d'instances, suggestion de grille classée par taux de doublons | T1 |
+| T4 ✅ | Resize | Sélection exhaustive de colonnes, schéma global, condition de bord auto-détectée | T2, T3 |
+| T5 ✅ | Palette | Histogramme sur tuiles uniques, branchement des 12 stratégies, réservation, transparence, gel, rapport de collision | T4 |
+| T6 ✅ | Rendu | Masque de bord, partition AA / tramage, phase locale, reset de diffusion | T5 |
 | T7 | Atelier | `store/tileset/`, panneaux, commutateur dans `app.tsx`, i18n | T6 |
 | T8 | Édition | `paintPixels` réutilisé, calque non destructif, propagation par dédup, undo global | T7 |
 | T9 | Durabilité | IndexedDB, export/import projet JSON | T8 |
