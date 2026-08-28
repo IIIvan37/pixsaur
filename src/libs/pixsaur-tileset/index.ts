@@ -1,3 +1,4 @@
+export { resizeTileNearest } from './src/resize-tile'
 export {
   type Sheet,
   type SlicedSheet,

@@ -38,4 +38,10 @@ describe('convertTileset', () => {
 
     expect(result.ok && result.tileset.tiles.length).toBe(2)
   })
+
+  it('sizes each destination tile to the target', () => {
+    const result = convertTileset(input)
+
+    expect(result.ok && result.tileset.tiles[0].indices.length).toBe(4 * 8)
+  })
 })

@@ -7,7 +7,7 @@
  */
 
 import type { PixelMode } from '@/domain/cpc'
-import { sliceSheet } from '@/libs/pixsaur-tileset'
+import { resizeTileNearest, sliceSheet } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 
 /** An RGBA sheet: `data` is `width * height * 4` bytes. */
@@ -61,7 +61,12 @@ export function convertTileset(
     tileset: {
       columns,
       rows,
-      tiles: tiles.map(() => ({ indices: new Uint8Array(0) }))
+      tiles: tiles.map((tile) => {
+        const resized = resizeTileNearest(tile, input.source, input.target)
+        return {
+          indices: new Uint8Array(resized.data.length / 4)
+        }
+      })
     }
   }
 }
