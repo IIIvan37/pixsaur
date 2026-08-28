@@ -1,5 +1,10 @@
 export { type AntiAliasOptions, antiAliasTile } from './src/anti-alias'
 export {
+  type DiffuseOptions,
+  type DiffusionColours,
+  diffuseTile
+} from './src/diffuse-tile'
+export {
   detectTileEdges,
   type EdgeCondition,
   type TileEdges

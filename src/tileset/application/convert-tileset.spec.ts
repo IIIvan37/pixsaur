@@ -108,6 +108,51 @@ const input: ConvertTilesetInput = {
   hardware: 'classic'
 }
 
+const BLACK: [number, number, number] = [0, 0, 0]
+const WHITE: [number, number, number] = [255, 255, 255]
+const GREY: [number, number, number] = [128, 128, 128]
+
+/** A tile the frozen palette cannot say: it sits halfway between two pens. */
+const halfway: ConvertTilesetInput = {
+  sheet: sheetOfSolidTiles(8, [BLACK, WHITE, GREY, GREY]),
+  source: { tileWidth: 8, tileHeight: 8 },
+  target: { tileWidth: 8, tileHeight: 8 },
+  mode: 2,
+  hardware: 'classic',
+  transparency: 'flatten',
+  palette: [BLACK, WHITE]
+}
+
+/** Pens the tile at `at` actually uses, deduplicated. */
+const pensUsed = (result: ReturnType<typeof convertTileset>, at: number) =>
+  result.ok ? [...new Set(result.tileset.tiles[at].indices)].sort() : []
+
+/** One 8 x 8 tile split by a 45 degree edge — a staircase, not a straight line. */
+function sheetOfDiagonal(): ConvertTilesetInput['sheet'] {
+  const data = new Uint8ClampedArray(8 * 8 * 4)
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const at = (y * 8 + x) * 4
+      if (x < y) data[at] = 255
+      else data[at + 2] = 255
+      data[at + 3] = 255
+    }
+  }
+  return { width: 8, height: 8, data }
+}
+
+const MIDDLE: [number, number, number] = [128, 0, 128]
+
+const staircase: ConvertTilesetInput = {
+  sheet: sheetOfDiagonal(),
+  source: { tileWidth: 8, tileHeight: 8 },
+  target: { tileWidth: 8, tileHeight: 8 },
+  mode: 0,
+  hardware: 'classic',
+  transparency: 'flatten',
+  palette: [RED, BLUE, MIDDLE]
+}
+
 describe('convertTileset', () => {
   it('produces one destination tile per source tile', () => {
     const result = convertTileset(input)
@@ -330,5 +375,56 @@ describe('convertTileset', () => {
     })
 
     expect(result.ok && result.tileset.palette).toEqual([RED])
+  })
+
+  it('leaves a tile flat when no dithering was asked for', () => {
+    expect(pensUsed(convertTileset(halfway), 2)).toHaveLength(1)
+  })
+
+  it('mixes two pens to say a colour the palette has not got', () => {
+    expect(
+      pensUsed(convertTileset({ ...halfway, dither: 'ordered' }), 2)
+    ).toHaveLength(2)
+  })
+
+  it('mixes two pens by diffusion as well', () => {
+    expect(
+      pensUsed(convertTileset({ ...halfway, dither: 'diffusion' }), 2)
+    ).toHaveLength(2)
+  })
+
+  it('lets one tile refuse the dithering the sheet asked for', () => {
+    const result = convertTileset({
+      ...halfway,
+      dither: 'ordered',
+      ditherByTile: { 2: 'none' }
+    })
+
+    expect(pensUsed(result, 2)).toHaveLength(1)
+  })
+
+  it('dithers two copies of a tile the same way, wherever they sit', () => {
+    const result = convertTileset({ ...halfway, dither: 'ordered' })
+
+    expect(result.ok && result.tileset.instanceOf[3]).toBe(2)
+  })
+
+  it('puts a middle pen on the steps of a staircase', () => {
+    expect(pensUsed(convertTileset(staircase), 0)).toContain(2)
+  })
+
+  it('keeps a staircase raw when the anti-aliasing is turned off', () => {
+    expect(
+      pensUsed(convertTileset({ ...staircase, antiAlias: false }), 0)
+    ).not.toContain(2)
+  })
+
+  it('never dithers a contour the anti-aliasing owns', () => {
+    const dithered = convertTileset({ ...staircase, dither: 'ordered' })
+    const plain = convertTileset(staircase)
+    const pensOf = (r: ReturnType<typeof convertTileset>) =>
+      r.ok ? [...r.tileset.tiles[0].indices] : []
+
+    expect(pensOf(dithered)).toEqual(pensOf(plain))
   })
 })
