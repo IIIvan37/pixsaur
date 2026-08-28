@@ -20,6 +20,19 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T3 TERMINÉE** — dédup et grille, trois commits :
+  1. `sliceSheet` apprend marge, espacement et offset (Q5) ; il découpe
+     désormais **les tuiles entières qui tiennent** et ne rend `null` que
+     lorsqu'aucune n'entre — le balayage de Q29 compare des grilles qui, par
+     construction, ne divisent presque jamais leur planche exactement.
+  2. `dedupeTiles` — hash FNV-1a pour grouper, égalité octet à octet pour
+     trancher ; `instanceOf` (le lien d'édition de Q11) et `unique` remontent
+     dans `ConvertedTileset`. La dédup porte sur les tuiles **converties**, pas
+     sur les sources : deux tuiles qui ne différaient qu'en deçà de la
+     résolution de la palette CPC sont devenues la même tuile.
+  3. `rankTileGrids` + le use-case `suggestTileGrid` — classement des tailles
+     plausibles (8, 16, 24, 32) au taux de doublons, marges de l'utilisateur
+     reportées sur chaque candidat.
 - **T2 TERMINÉE** — géométrie, un commit :
   `SOURCE_PIXEL_ASPECT` (table des PAR sources, Q8), `aspectDistortion`,
   `idealTileHeight` / `idealTileWidth` et `candidateTileSizes` dans
@@ -36,11 +49,24 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T3 (dédup et grille — hash de tuile, lien d'instances,
-  suggestion de grille classée par taux de doublons).
+- **Prochaine action** : T4 (resize — sélection exhaustive de colonnes, schéma
+  global, condition de bord auto-détectée).
 - **Dette assumée dans T1** : la palette est construite en ordre de première
   apparition, pas par histogramme sur tuiles uniques — c'est T5. Le resize est
   plus-proche-voisin, pas la sélection exhaustive de colonnes — c'est T4.
+- **Dette assumée dans T3** : le taux de doublons, lu **d'une taille de tuile à
+  l'autre**, favorise mécaniquement la plus petite — plus une tuile est petite,
+  plus deux d'entre elles ont de chances d'être identiques. Le critère reste
+  juste à taille fixe (c'est ce que Q29 démontre : une grille décalée d'un pixel
+  tombe à zéro), et le classement des tailles est donc une présélection que
+  l'utilisateur arbitre, pas un verdict. Le départage neutre serait un coût de
+  tilemap — `tuiles uniques x aire + un index par position`, rapporté à l'aire
+  de la planche — qui fait payer aux petites tuiles la table d'index qu'elles
+  imposent. À trancher avant que T7 n'affiche ce classement.
+- **Dette assumée dans T3 (rendu)** : le PNG reste tassé — marges et
+  espacements de la source ne sont pas restitués, alors que Q10 les demande
+  pour le diff visuel. Les restituer suppose de savoir quoi peindre dans les
+  gouttières ; la réponse est la transparence de Q16, qui arrive en T5.
 - **Dette assumée dans T2** : `suggestTileGeometry` conseille, il ne contraint
   pas — `convertTileset` accepte toujours n'importe quelle taille cible sans
   signaler la déformation. Le rapprochement se fera quand T7 câblera le panneau.
