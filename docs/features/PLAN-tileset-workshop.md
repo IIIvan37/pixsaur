@@ -20,6 +20,24 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T8 TERMINÉE** — édition, quatre commits :
+  1. `paintTileset` (Q11 · Q19 · Q31) — le calque d'édition, pur : `paintPixels`
+     est réutilisé tuile par tuile, le trait part sur **toutes les instances**
+     que la dédup a trouvées, et un pen absent de la palette est refusé — un
+     édit est un index, pas une couleur. Curseur d'annulation linéaire et
+     global, plafonné comme celui de l'atelier image.
+  2. `applyTilesetEdits` + `renderTilesetPng` — le calque est **rejoué** sur les
+     tuiles converties, jamais écrit dedans : changer un réglage reconvertit
+     depuis la source sans perdre la retouche. Le rendu PNG sort de
+     `convertTileset` pour qu'une planche éditée puisse être encodée aussi.
+  3. Atomes `store/tileset/edits.ts` et panneau de retouche — un bouton par
+     pixel, les pens de la palette gelée, Ctrl+Z / Ctrl+Y. Cliquer une collision
+     vise la tuile qu'elle nomme : le rapport de Q22 est ce qui dirige la
+     retouche, il fallait qu'il arme le pinceau.
+  4. **Dette de T6 fermée** : `ditherByTile` est exposé par tuile (Q18), écrit
+     sur toutes les instances du groupe — deux copies tramées différemment
+     casseraient la dédup sur laquelle le calque repose.
+
 - **T7 TERMINÉE** — atelier, treize commits :
   1. `store/tileset/` (Q6 · Q32 · Q34) — planche, grille, cible, options et la
      conversion dérivée, dans un espace d'atomes distinct de `store/config/`.
@@ -123,13 +141,38 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T8 (édition — `paintPixels` réutilisé, calque non
-  destructif rejoué après chaque requantification, propagation aux instances par
-  `instanceOf`, annulation linéaire globale).
-- **Dette de T6 déplacée sur T8 (réglage par position)** : `ditherByTile` est
-  indexé par **position dans la planche**, pas par tuile unique, et aucun panneau
-  ne l'expose encore. Celui qui le fera devra propager le réglage à toutes les
-  instances via `instanceOf`, comme les édits de Q11.
+- **Prochaine action** : T9 (durabilité — persistance IndexedDB du projet
+  (planche, réglages, édits, palette gelée), export/import d'un fichier projet
+  JSON. Le mécanisme de session existant ne convient pas : son repli anti-quota
+  jette l'image, donc il jetterait la planche).
+- **~~Dette de T6 (réglage par position)~~ — fermée en T8** : le panneau de
+  retouche expose `ditherByTile` pour la tuile visée et écrit le réglage sur
+  toutes ses instances.
+- **Dette assumée dans T8 (pas de tracé glissé)** : on peint pixel par pixel,
+  un clic = un trait annulable. Peindre en glissant demanderait de fusionner les
+  pixels d'un même geste en un seul trait — `paintTileset` accepte déjà une
+  liste de pixels, c'est le panneau qui ne les accumule pas. À rouvrir dès que
+  la retouche portera sur autre chose que quelques pixels d'une collision.
+- **Dette assumée dans T8 (calque et géométrie)** : le calque **tombe** quand la
+  planche, la grille de découpe, la taille de destination ou le mode changent —
+  un trait nomme un pixel d'une tuile à une position, et chacun de ces
+  changements fait pointer les trois ailleurs. Le gel de palette de Q28 protège
+  le calque de tout le reste. Garder les édits en les replaçant supposerait de
+  savoir ce qu'une position devient, ce que rien ne dit.
+- **Dette assumée dans T8 (`instanceOf` figé)** : le lien d'édition reste celui
+  que la conversion a trouvé, il n'est pas recalculé sur les tuiles éditées.
+  Deux tuiles qu'une retouche rend identiques ne fusionnent donc pas. C'est
+  volontaire — un groupe qui bouge sous le pinceau serait illisible — mais le
+  compte de tuiles uniques affiché ne tient pas compte des édits.
+- **Gotcha de T8 (PNG réencodé à chaque trait)** : `editedTilesetAtom` réencode
+  toute la planche à chaque pixel peint. Même ordre de grandeur que la
+  conversion, qui tourne déjà à chaque frappe (Q30).
+- **Piège Lingui (interpolation perdue)** : un message interpolé — `msg` passé
+  au `_` de `useLingui`, ou un `Trans` avec une valeur — rend le texte **sans la
+  valeur** quand le runtime vient de `@lingui/react` : le macro vide `values`.
+  Les libellés numérotés de l'atelier composent donc le nombre hors du
+  message. Le rapport de collision de T7 en souffrait (« Tuile  — 163.9 ») ;
+  c'est corrigé. Les panneaux raster et DSK ont le même motif, hors périmètre.
 - **Dette ouverte par T7 (`lockedPens` non exposé)** : la présélection de pens
   existe dans le use-case, le panneau palette ne l'offre pas. À câbler avec le
   sélecteur de couleurs de l'atelier image.
@@ -455,7 +498,7 @@ tests. Une tranche = une PR.
 | T5 ✅ | Palette | Histogramme sur tuiles uniques, branchement des 12 stratégies, réservation, transparence, gel, rapport de collision | T4 |
 | T6 ✅ | Rendu | Masque de bord, partition AA / tramage, phase locale, reset de diffusion | T5 |
 | T7 ✅ | Atelier | `store/tileset/`, panneaux, commutateur dans `app.tsx`, i18n | T6 |
-| T8 | Édition | `paintPixels` réutilisé, calque non destructif, propagation par dédup, undo global | T7 |
+| T8 ✅ | Édition | `paintPixels` réutilisé, calque non destructif, propagation par dédup, undo global | T7 |
 | T9 | Durabilité | IndexedDB, export/import projet JSON | T8 |
 
 T1 à T6 sont du cœur pur (`src/libs/**`, `src/domain/**`) : `tdd-cycle` s'applique, un
