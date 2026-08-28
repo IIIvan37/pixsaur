@@ -11,6 +11,7 @@ import { TilesetGeometryPanel } from './tileset-geometry-panel'
 import { TilesetGridPanel } from './tileset-grid-panel'
 import { TilesetPalettePanel } from './tileset-palette-panel'
 import { TilesetRenderPanel } from './tileset-render-panel'
+import { TilesetResultPanel } from './tileset-result-panel'
 import { TilesetSourcePanel } from './tileset-source-panel'
 import styles from './tileset-workshop.module.css'
 
@@ -22,6 +23,7 @@ export default function TilesetWorkshop() {
       <TilesetGeometryPanel />
       <TilesetPalettePanel />
       <TilesetRenderPanel />
+      <TilesetResultPanel />
     </div>
   )
 }
