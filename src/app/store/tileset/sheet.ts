@@ -8,14 +8,17 @@
  */
 
 import { atom } from 'jotai'
-import type { TilesetSheet } from '@/tileset'
+import { EMPTY_EDIT_LAYER, type TilesetSheet } from '@/tileset'
+import { tilesetEditLayerAtom } from './edit-layer'
 
 /** The imported sheet, RGBA. `null` until the user drops a file. */
 export const tilesetSheetAtom = atom<TilesetSheet | null>(null)
 
+/** Another sheet is another document: nothing painted on the last one holds. */
 export const setTilesetSheetAtom = atom(
   null,
   (_get, set, payload: TilesetSheet | null) => {
     set(tilesetSheetAtom, payload)
+    set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
   }
 )

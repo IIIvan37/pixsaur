@@ -19,6 +19,14 @@ export {
   freezeTilesetPaletteAtom,
   thawTilesetPaletteAtom
 } from './conversion'
+export { tilesetEditLayerAtom } from './edit-layer'
+export {
+  editedTilesetAtom,
+  type PaintTilesetPayload,
+  paintTilesetAtom,
+  redoTilesetEditAtom,
+  undoTilesetEditAtom
+} from './edits'
 export {
   setTilesetTargetAtom,
   sourcePlatformAtom,

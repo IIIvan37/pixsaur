@@ -11,18 +11,25 @@ import {
   type SourcePlatform,
   type TileGrid
 } from '@/libs/pixsaur-tileset'
-import { suggestTileGeometry, type TileGeometry } from '@/tileset'
+import {
+  EMPTY_EDIT_LAYER,
+  suggestTileGeometry,
+  type TileGeometry
+} from '@/tileset'
 import { tilesetModeAtom } from './config'
+import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetGridAtom } from './grid'
 
 const DEFAULT_TARGET: TileGrid = { tileWidth: 8, tileHeight: 8 }
 
 export const tilesetTargetAtom = atom<TileGrid>(DEFAULT_TARGET)
 
+/** A tile of another size holds other pixels: the edit layer goes with it. */
 export const setTilesetTargetAtom = atom(
   null,
   (get, set, payload: Partial<TileGrid>) => {
     set(tilesetTargetAtom, { ...get(tilesetTargetAtom), ...payload })
+    set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
   }
 )
 

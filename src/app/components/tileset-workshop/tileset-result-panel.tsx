@@ -3,7 +3,7 @@ import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue } from 'jotai'
 import { useEffect, useState } from 'react'
-import { convertedTilesetAtom } from '@/app/store/tileset/tileset'
+import { editedTilesetAtom } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -51,7 +51,7 @@ function usePngUrl(result: ConvertTilesetResult | null) {
  */
 export function TilesetResultPanel() {
   const { _ } = useLingui()
-  const result = useAtomValue(convertedTilesetAtom)
+  const result = useAtomValue(editedTilesetAtom)
   const url = usePngUrl(result)
 
   if (!result) return null

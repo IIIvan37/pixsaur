@@ -9,7 +9,8 @@
 import { atom } from 'jotai'
 import type { PixelMode } from '@/domain/cpc'
 import type { CPCHardware } from '@/libs/types'
-import type { ConvertTilesetInput } from '@/tileset'
+import { type ConvertTilesetInput, EMPTY_EDIT_LAYER } from '@/tileset'
+import { tilesetEditLayerAtom } from './edit-layer'
 
 export type TilesetOptions = Pick<
   ConvertTilesetInput,
@@ -54,11 +55,13 @@ export const setTilesetOptionsAtom = atom(
 
 /**
  * Changing the mode drops the frozen palette: its pens were chosen against a
- * budget the new mode does not have, and edits are stored as pen indices.
+ * budget the new mode does not have, and edits are stored as pen indices. The
+ * edit layer goes with it — pen 5 of mode 0 is not pen 5 of mode 1.
  */
 export const setTilesetModeAtom = atom(null, (get, set, payload: PixelMode) => {
   if (get(tilesetModeAtom) === payload) return
   set(tilesetModeAtom, payload)
   const { palette: _dropped, ...kept } = get(tilesetOptionsAtom)
   set(tilesetOptionsAtom, kept)
+  set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
 })

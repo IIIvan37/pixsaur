@@ -7,17 +7,24 @@
 
 import { atom } from 'jotai'
 import type { GridCandidate, SheetGrid } from '@/libs/pixsaur-tileset'
-import { suggestTileGrid } from '@/tileset'
+import { EMPTY_EDIT_LAYER, suggestTileGrid } from '@/tileset'
+import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetSheetAtom } from './sheet'
 
 const DEFAULT_GRID: SheetGrid = { tileWidth: 8, tileHeight: 8 }
 
 export const tilesetGridAtom = atom<SheetGrid>(DEFAULT_GRID)
 
+/**
+ * Cutting the sheet elsewhere drops the edit layer: a stroke is a pixel of the
+ * tile at a position, and a grid moved by one pixel makes both of those point
+ * somewhere else (Q11).
+ */
 export const setTilesetGridAtom = atom(
   null,
   (get, set, payload: Partial<SheetGrid>) => {
     set(tilesetGridAtom, { ...get(tilesetGridAtom), ...payload })
+    set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
   }
 )
 
