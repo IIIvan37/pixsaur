@@ -1,3 +1,4 @@
+export { type AntiAliasOptions, antiAliasTile } from './src/anti-alias'
 export {
   detectTileEdges,
   type EdgeCondition,
