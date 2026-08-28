@@ -39,6 +39,8 @@ docs/refactor/sessions/*
 !docs/refactor/sessions/_TEMPLATE.md
 # ...and the feature design plans (shared spec, reviewed in PR)
 !docs/features/
+# Feature session reports stay local-only, like the refactor ones
+docs/features/sessions/
 
 # AppImage build artifacts and documentation
 appimage_howto_/

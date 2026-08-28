@@ -13,6 +13,22 @@
 > Construire outside-in via le skill `new-feature-hexa`, cœur pur en `tdd-cycle`,
 > chaque tranche close par `quality-gate` et `/session-report`.
 
+## Où on en est
+
+> Point de reprise canonique de cette feature. `docs/refactor/STATUS.md` est
+> archivé et concerne un autre effort — ne pas l'utiliser ici.
+
+- **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR.
+- **T1 amorcée, non terminée.** Cycle 1 vert : `sliceSheet` + le use-case
+  `convertTileset` (pur, sync, total, sans port) + `src/tileset` enregistré dans
+  le garde de layering.
+- **Prochaine action** : trancher l'encodeur PNG (`fflate` en dépendance *vs*
+  zlib « stored blocks » sans dépendance), puis cycle 2 — resize
+  plus-proche-voisin — en TDD strict, un commit par cycle.
+- **Restant dans T1** : resize, quantification (réutiliser
+  `quantizeArrayForHardware`), encodeur PNG indexé.
+- Historique détaillé : `docs/features/sessions/` (local-only, non versionné).
+
 ## Raison d'être
 
 La sortie est un **simple PNG** : ni binaire, ni `.asm`, ni table d'index, ni DSK.
