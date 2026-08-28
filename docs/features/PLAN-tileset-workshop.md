@@ -20,6 +20,29 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T5 TERMINÉE** — palette, quatre commits :
+  1. `tilePaletteHistogram` (Q3 · Q15) — chaque tuile **unique** pèse 1, réparti
+     sur ses propres pixels ; le nombre d'instances disparaît, les proportions
+     internes à la tuile survivent. Les 12 stratégies se branchent dessus via
+     `applyPaletteStrategyV2`. La palette « premier vu » de T1 et l'erreur
+     `palette-overflow` disparaissent — une planche plus riche que le mode se
+     quantifie désormais au lieu d'échouer.
+  2. Réservation et transparence (Q16 · Q23 · Q24) — `reservedPens` sort du
+     budget de quantification ; la transparence partage ce même budget, en
+     dépensant le pen 0 en mode 0 et en aplatissant sur `background` en modes 1
+     et 2. Un pixel opaque ne peut **jamais** atteindre le pen de transparence :
+     un trou et une tuile noire opaque restent deux tuiles distinctes.
+     `pixsaur-png` apprend le chunk `tRNS`. Erreur `no-pens-left` si la
+     réservation ne laisse plus rien.
+  3. `rankTileCollisions` (Q22) — les tuiles classées par distance moyenne entre
+     la couleur demandée et le pen obtenu. Dédupliquées sur les tuiles
+     **source**, pas sur les converties : deux tuiles que la palette a fait
+     fusionner sont précisément la collision à montrer, et le jeu converti en a
+     déjà perdu une.
+  4. Gel et verrouillage (Q15 · Q26 · Q28) — une palette fournie est utilisée
+     telle quelle ; les pens verrouillés partent en présélection de la stratégie
+     et reviennent que la planche les demande ou non.
+
 - **T4 TERMINÉE** — resize, un commit :
   `detectTileEdges` (Q13 — la couture entre dernière et première ligne est
   comparée au pas moyen que la tuile fait déjà à l'intérieur d'elle-même, pas à
@@ -62,11 +85,37 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T5 (palette — histogramme sur tuiles uniques,
-  branchement des 12 stratégies, réservation, transparence, gel, rapport de
-  collision).
-- **Dette assumée dans T1** : la palette est construite en ordre de première
-  apparition, pas par histogramme sur tuiles uniques — c'est T5.
+- **Prochaine action** : T6 (rendu — masque de bord, partition AA / tramage,
+  phase locale, reset de diffusion).
+- **Dette assumée dans T5 (sous-palettes)** : Q21 — retrouver les sous-palettes
+  de la source par groupement des tuiles selon leur jeu de couleurs — n'est pas
+  faite. Elle ne figurait pas au contenu de la tranche, et le rapport de
+  collision de Q22, lui, est là : c'est lui qui dirige la retouche. À rouvrir si
+  l'atelier a besoin d'expliquer *pourquoi* une tuile collisionne, et pas
+  seulement *laquelle*.
+- **Dette assumée dans T5 (pen dépensé à vide)** : en mode 0, le pen de
+  transparence est réservé **même sur une planche entièrement opaque**. C'est
+  volontaire : le réserver au vu du contenu ferait qu'ajouter un trou plus tard
+  décalerait toute la palette, ce que le gel de Q28 rend inacceptable — les
+  édits sont des index de pen. Le prix est un pen perdu sur une planche de
+  décor. `transparency: 'flatten'` le récupère explicitement ; T7 doit exposer
+  ce choix.
+- **Dette assumée dans T5 (alpha partiel)** : un pixel est un trou sous 128
+  d'alpha, une couleur au-dessus — pas d'entre-deux. Un contour semi-transparent
+  de sprite est donc aplati sur le fond, ce qui est correct sur un fond uni et
+  faux dès que la tuile sera posée sur autre chose. Inhérent à une palette
+  indexée sans canal alpha.
+- **Dette assumée dans T5 (palette gelée non validée)** : `convertTileset`
+  accepte la palette qu'on lui donne sans vérifier qu'elle tient dans le budget
+  du mode, ni qu'elle contient bien le pen de transparence en tête. Le use-case
+  reste total — les index restent dans les bornes — mais un appelant distrait
+  produit un PNG au-delà du nombre de pens du mode. À contraindre quand T7
+  câblera le gel.
+- **Dette de T3 (rendu) reportée à T7** : le PNG reste tassé. Q16 fournit
+  maintenant de quoi peindre les gouttières, mais **à quelle échelle** les
+  restituer n'est pas tranché : marges et espacements sont en pixels *source*,
+  or la tuile a changé de taille. Les garder tels quels déforme le diff dès
+  qu'on réduit de 8 à 4. À décider face au panneau de comparaison de T7.
 - **Dette assumée dans T4 (bord)** : Q13 détecte la condition de bord **par
   tuile**, mais Q14 impose un schéma commun, qui ne peut être noté que sous une
   seule condition par axe. On tranche donc à la **majorité** des tuiles : une
