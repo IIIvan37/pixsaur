@@ -38,9 +38,25 @@ pnpm check:fix            # Biome auto-fix
 
 pnpm i18n:extract         # Extract Lingui message catalogs
 pnpm i18n:compile         # Compile catalogs (run after extract; required before build)
+
+scripts/gate.sh --filter <path>   # Quality gate, one verdict per check (logs in .gate/)
 ```
 
 Tests use Vitest with `happy-dom` and globals enabled — no per-file imports of `describe`/`it`/`expect` needed. Setup lives in `vitest.setup.tsx`.
+
+## Reading the codebase — delegate broad searches
+
+Any question that needs more than three files read, or a sweep across a
+directory or a naming convention, goes to the `Explore` subagent. Give it the
+question, take back its conclusions — the file excerpts stay in its context, not
+in the session's.
+
+Read files directly only when you already know which file and which lines you
+need. Then read the range (`offset`/`limit`), not the whole file.
+
+Why: a session that reads its way to an answer crosses 150k tokens well before
+it finishes the task, and everything read is re-billed on every later request.
+A slice that delegates its exploration does not need to be compacted at all.
 
 ## Conventions enforced by tooling
 
