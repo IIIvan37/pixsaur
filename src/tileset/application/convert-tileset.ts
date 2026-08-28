@@ -27,6 +27,7 @@ import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
   antiAliasTile,
   assembleSheet,
+  type BayerSize,
   chooseResizeScheme,
   type DiffusionColours,
   dedupeTiles,
@@ -112,7 +113,7 @@ export interface ConvertTilesetInput {
    */
   dither?: TileDither
   /** Side of the Bayer matrix used by `ordered`: 2, 4 or 8. Defaults to 4. */
-  ditherSize?: number
+  ditherSize?: BayerSize
   /**
    * Tiles that overrule the sheet-wide setting (Q18) — a sprite wants none of
    * the dithering a gradient sky wants. Keyed by position in the sheet.
@@ -479,7 +480,7 @@ interface RenderTools {
 
 interface RenderSettings {
   dither: TileDither
-  size: number | undefined
+  size: BayerSize | undefined
   antiAlias: boolean
 }
 

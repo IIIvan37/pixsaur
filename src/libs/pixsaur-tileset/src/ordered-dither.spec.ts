@@ -1,4 +1,8 @@
-import { bayerThresholds, orderedDitherTile } from './ordered-dither'
+import {
+  type BayerSize,
+  bayerThresholds,
+  orderedDitherTile
+} from './ordered-dither'
 
 const flat = { primary: [3], secondary: [5], mix: [0] }
 const halfway = { primary: [3], secondary: [5], mix: [0.5] }
@@ -56,5 +60,18 @@ describe('bayerThresholds', () => {
     expect([...bayerThresholds(4)].map((t) => t * 16 - 0.5)).toEqual([
       0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5
     ])
+  })
+})
+
+describe('BayerSize', () => {
+  it.each([2, 4, 8] as const)('builds the %i x %i matrix in full', (size) => {
+    expect(bayerThresholds(size)).toHaveLength(size * size)
+  })
+
+  it('is the three sides the workshop offers, and nothing else', () => {
+    // @ts-expect-error 5 is not a Bayer size; the union is what refuses it.
+    const off: BayerSize = 5
+
+    expect(off).toBe(5)
   })
 })

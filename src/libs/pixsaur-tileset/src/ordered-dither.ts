@@ -8,6 +8,13 @@
  * edit propagation would silently break.
  */
 
+/**
+ * The matrix sides the workshop offers. A union rather than a number: any
+ * other value used to give the matrix of the next power of two, which is total
+ * but surprising — a 5 asked for and a 8 delivered.
+ */
+export type BayerSize = 2 | 4 | 8
+
 export interface PenMix {
   /** Pen nearest the wanted colour, for each base-palette index. */
   primary: ArrayLike<number>
@@ -19,7 +26,7 @@ export interface PenMix {
 
 export interface OrderedDitherOptions {
   /** Side of the Bayer matrix: 2, 4 or 8. Defaults to 4. */
-  size?: number
+  size?: BayerSize
   /** Pixels the anti-aliasing owns; the ditherer does not touch them. */
   mask?: ArrayLike<number>
   /** A value that stands for no colour at all — the hole marker of Q16. */
@@ -71,7 +78,7 @@ const QUADRANTS = [0, 2, 3, 1]
  * image workshop offers, without a second transcription of them to keep in
  * step.
  */
-export function bayerThresholds(size: number): Float64Array {
+export function bayerThresholds(size: BayerSize): Float64Array {
   const known = cached.get(size)
   if (known) return known
 

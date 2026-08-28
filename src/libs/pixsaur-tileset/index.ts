@@ -18,6 +18,7 @@ export {
 } from './src/edge-condition'
 export { type EdgeMaskOptions, tileEdgeMask } from './src/edge-mask'
 export {
+  type BayerSize,
   bayerThresholds,
   type OrderedDitherOptions,
   orderedDitherTile,
