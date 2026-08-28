@@ -11,6 +11,7 @@ import { TilesetEditPanel } from './tileset-edit-panel'
 import { TilesetGeometryPanel } from './tileset-geometry-panel'
 import { TilesetGridPanel } from './tileset-grid-panel'
 import { TilesetPalettePanel } from './tileset-palette-panel'
+import { TilesetProjectPanel } from './tileset-project-panel'
 import { TilesetRenderPanel } from './tileset-render-panel'
 import { TilesetResultPanel } from './tileset-result-panel'
 import { TilesetSourcePanel } from './tileset-source-panel'
@@ -26,6 +27,7 @@ export default function TilesetWorkshop() {
       <TilesetRenderPanel />
       <TilesetResultPanel />
       <TilesetEditPanel />
+      <TilesetProjectPanel />
     </div>
   )
 }

@@ -283,6 +283,18 @@ msgstr "Box"
 msgid "Canaux RGB"
 msgstr "RGB Channels"
 
+#: src/app/components/tileset-workshop/tileset-project-panel.tsx:21
+msgid "Ce fichier n'est pas un projet d'atelier."
+msgstr "This file is not a workshop project."
+
+#: src/app/components/tileset-workshop/tileset-project-panel.tsx:23
+msgid "Ce projet est incomplet : la planche ne se relit pas."
+msgstr "This project is incomplete: the sheet cannot be read back."
+
+#: src/app/components/tileset-workshop/tileset-project-panel.tsx:22
+msgid "Ce projet vient d'une autre version de l'atelier."
+msgstr "This project comes from another version of the workshop."
+
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:141
 msgid "Centrage de l'image"
 msgstr "Image centering"
@@ -404,7 +416,7 @@ msgstr "Edges"
 msgid "Contraste"
 msgstr "Contrast"
 
-#: src/app/app.tsx:157
+#: src/app/app.tsx:161
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Image Converter"
 
@@ -709,6 +721,10 @@ msgstr "Export DSK"
 msgid "Exporter"
 msgstr "Export"
 
+#: src/app/components/tileset-workshop/tileset-project-panel.tsx:72
+msgid "Exporter le projet"
+msgstr "Export the project"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:178
 msgid "Exposition"
 msgstr "Exposure"
@@ -884,6 +900,10 @@ msgstr "Image too heavy (maximum {MAX_FILE_SIZE_MB} MB). Please choose a smaller
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:166
 msgid "Images retro (low-color)"
 msgstr "Retro images (low-color)"
+
+#: src/app/components/tileset-workshop/tileset-project-panel.tsx:78
+msgid "Importer un projet"
+msgstr "Import a project"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:354
 #~ msgid "Influence du nombre de lignes où la couleur apparaît (plus haut = favorise les couleurs globales)"
@@ -1450,6 +1470,10 @@ msgstr "Preview Mode"
 #: src/components/image-controls/processor-selector/processor-selector.tsx:45
 msgid "Processeur"
 msgstr "Processor"
+
+#: src/app/components/tileset-workshop/tileset-project-panel.tsx:54
+msgid "Projet"
+msgstr "Project"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:217
 msgid "Propagation d'erreur de dithering"
