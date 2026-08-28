@@ -14,7 +14,11 @@ import {
   quantizeColorForHardware
 } from '@/domain/cpc'
 import { encodeIndexedPng } from '@/libs/pixsaur-png'
-import { resizeTileNearest, sliceSheet } from '@/libs/pixsaur-tileset'
+import {
+  resizeTileNearest,
+  type SheetGrid,
+  sliceSheet
+} from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 
 /** An RGBA sheet: `data` is `width * height * 4` bytes. */
@@ -32,8 +36,8 @@ export interface TileSize {
 
 export interface ConvertTilesetInput {
   sheet: TilesetSheet
-  /** Tile size in the source sheet. */
-  source: TileSize
+  /** Where the tiles sit in the source sheet: size, margin, spacing, offset. */
+  source: SheetGrid
   /** Tile size in the destination, in CPC pixels. */
   target: TileSize
   mode: PixelMode

@@ -1,24 +1,46 @@
 import type { ConvertTilesetInput } from './convert-tileset'
 import { convertTileset } from './convert-tileset'
 
+/** Painted over every pixel a tile does not cover, so gutters stand out. */
+const GUTTER: [number, number, number] = [0, 255, 0]
+
+interface Blanks {
+  margin?: number
+  spacing?: number
+}
+
 /** Build an RGBA sheet of `columns` × 1 solid-colour tiles, `size` px each. */
 function sheetOfSolidTiles(
   size: number,
-  colours: [number, number, number][]
+  colours: [number, number, number][],
+  blanks: Blanks = {}
 ): ConvertTilesetInput['sheet'] {
-  const width = size * colours.length
-  const data = new Uint8ClampedArray(width * size * 4)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < width; x++) {
-      const [r, g, b] = colours[Math.floor(x / size)]
-      const i = (y * width + x) * 4
-      data[i] = r
-      data[i + 1] = g
-      data[i + 2] = b
-      data[i + 3] = 255
-    }
+  const margin = blanks.margin ?? 0
+  const spacing = blanks.spacing ?? 0
+  const width =
+    2 * margin + colours.length * size + (colours.length - 1) * spacing
+  const height = 2 * margin + size
+  const data = new Uint8ClampedArray(width * height * 4)
+
+  const paint = (x: number, y: number, [r, g, b]: [number, number, number]) => {
+    const i = (y * width + x) * 4
+    data[i] = r
+    data[i + 1] = g
+    data[i + 2] = b
+    data[i + 3] = 255
   }
-  return { width, height: size, data }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) paint(x, y, GUTTER)
+  }
+  colours.forEach((colour, tile) => {
+    const originX = margin + tile * (size + spacing)
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) paint(originX + x, margin + y, colour)
+    }
+  })
+
+  return { width, height, data }
 }
 
 const input: ConvertTilesetInput = {
@@ -67,6 +89,26 @@ describe('convertTileset', () => {
     const width = result.ok && new DataView(result.png.buffer).getUint32(16)
 
     expect(width).toBe(16)
+  })
+
+  it('skips the margin and spacing declared on the source grid', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(
+        8,
+        [
+          [255, 0, 0],
+          [0, 0, 255]
+        ],
+        { margin: 1, spacing: 2 }
+      ),
+      source: { tileWidth: 8, tileHeight: 8, margin: 1, spacing: 2 }
+    })
+
+    expect(result.ok && result.tileset.palette).toEqual([
+      [255, 0, 0],
+      [0, 0, 255]
+    ])
   })
 
   it('rejects a sheet needing more pens than the mode offers', () => {
