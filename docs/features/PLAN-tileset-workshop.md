@@ -18,15 +18,21 @@
 > Point de reprise canonique de cette feature. `docs/refactor/STATUS.md` est
 > archivé et concerne un autre effort — ne pas l'utiliser ici.
 
-- **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR.
-- **T1 amorcée, non terminée.** Cycle 1 vert : `sliceSheet` + le use-case
-  `convertTileset` (pur, sync, total, sans port) + `src/tileset` enregistré dans
-  le garde de layering.
-- **Prochaine action** : trancher l'encodeur PNG (`fflate` en dépendance *vs*
-  zlib « stored blocks » sans dépendance), puis cycle 2 — resize
-  plus-proche-voisin — en TDD strict, un commit par cycle.
-- **Restant dans T1** : resize, quantification (réutiliser
-  `quantizeArrayForHardware`), encodeur PNG indexé.
+- **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
+  `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T1 TERMINÉE** — 4 cycles rouge-vert, un commit chacun :
+  1. `sliceSheet` + le use-case `convertTileset` (pur, sync, total, **sans
+     port**) + `src/tileset` enregistré dans le garde de layering.
+  2. `resizeTileNearest` — échantillonnage **local à la tuile**.
+  3. Quantification contre une palette partagée, via
+     `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
+  4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
+     (Q10) et le pré-étirement (Q9).
+- **Prochaine action** : T2 (géométrie — table des PAR sources, ratio dérivé,
+  tailles candidates, déformation résiduelle).
+- **Dette assumée dans T1** : la palette est construite en ordre de première
+  apparition, pas par histogramme sur tuiles uniques — c'est T5. Le resize est
+  plus-proche-voisin, pas la sélection exhaustive de colonnes — c'est T4.
 - Historique détaillé : `docs/features/sessions/` (local-only, non versionné).
 
 ## Raison d'être
@@ -255,6 +261,12 @@ retouche manuelle qu'il dirige. Si ce rapport est mauvais, l'outil produit de la
   dans un même jeu.
 - **Ajustements par tuile.** Artistique, pas correctif — les ajustements ponctuels
   globaux sont déjà exacts.
+- **Compression réelle du PNG.** `pixsaur-png` émet des blocs zlib *stored*
+  (non compressés) plutôt que d'ajouter une dépendance deflate : le PNG est
+  valide, l'encodeur reste pur et trivialement déterministe — la garantie sur
+  laquelle repose toute la tranche (Q30). Une planche 256×256 sort à ~70 ko pour
+  un fichier téléchargé une fois. `fflate` restera ajoutable **sans changer
+  l'interface** du module. C'est un choix, pas un oubli.
 
 ## Découpe en tranches
 
