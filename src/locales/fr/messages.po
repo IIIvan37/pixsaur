@@ -81,7 +81,7 @@ msgid "Activer le lissage horizontal"
 msgstr "Activer le lissage horizontal"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:190
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:194
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptatif"
 
@@ -230,17 +230,17 @@ msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Balance vert/magenta pour corriger les dominantes de couleur"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:115
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:119
 msgid "palette.strategy.balanced-score-max.label"
 msgstr "Score Contraste Max"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:91
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:95
 msgid "palette.strategy.frequency-max.desc"
 msgstr "Équilibre fréquence (60%) et diversité (40%)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:100
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:104
 msgid "palette.strategy.balanced-score-balanced.label"
 msgstr "Score Équilibré"
 
@@ -413,7 +413,7 @@ msgid "Cover (Crop to fill)"
 msgstr "Cover (Crop to fill)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:40
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:44
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Couverture Optimale"
 
@@ -446,6 +446,7 @@ msgid "Décalage Y"
 msgstr "Décalage Y"
 
 #: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:88
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:90
 msgid "Déformation"
 msgstr "Déformation"
 
@@ -510,7 +511,7 @@ msgid "Dithering"
 msgstr "Dithering"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:55
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:59
 msgid "palette.strategy.dithering-aware.label"
 msgstr "Optimisé Tramage"
 
@@ -540,12 +541,12 @@ msgid "Diversité des couleurs"
 msgstr "Diversité des couleurs"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:160
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:164
 msgid "palette.strategy.diversity-first-balanced.label"
 msgstr "Diversité Équilibrée"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:166
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:170
 msgid "palette.strategy.diversity-first-balanced.desc"
 msgstr "Diversité dominante (90%) avec légère fréquence (10%)"
 
@@ -570,7 +571,7 @@ msgid "DSK workspace exported successfully!"
 msgstr "Workspace DSK exporté avec succès !"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:193
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:197
 msgid "palette.strategy.adaptive.desc"
 msgstr "Stratégie dynamique selon l'image"
 
@@ -645,7 +646,7 @@ msgstr "Essayer avec un exemple"
 #~ msgstr "Exec"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:25
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:29
 msgid "palette.strategy.exhaustive-contrast.label"
 msgstr "Contraste Exhaustif"
 
@@ -744,23 +745,27 @@ msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Formats supportés : PNG, JPEG, GIF, BMP, WEBP, SVG"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:70
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:74
 msgid "palette.strategy.frequency-balanced.label"
 msgstr "Fréquence Équilibrée"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:85
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:89
 msgid "palette.strategy.frequency-max.label"
 msgstr "Fréquence Contraste"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:76
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:80
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Fréquence prioritaire (80%) avec diversité modérée"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:166
 msgid "Gamma"
 msgstr "Gamma"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:125
+msgid "Geler la palette"
+msgstr "Geler la palette"
 
 #: src/components/export-panel/export-config-dialog.tsx:149
 msgid "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
@@ -964,18 +969,22 @@ msgid "Low Res Lines"
 msgstr "Low Res Lines"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:151
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:155
 msgid "palette.strategy.perceptual-max.desc"
 msgstr "Bins de luminance avec diversité prioritaire"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:136
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:140
 msgid "palette.strategy.perceptual-balanced.desc"
 msgstr "Bins de luminance avec fréquence prioritaire"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:92
 msgid "Luminosité"
 msgstr "Luminosité"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:68
+msgid "Machine CPC"
+msgstr "Machine CPC"
 
 #: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:54
 msgid "Machine source"
@@ -994,12 +1003,12 @@ msgid "Max {maxChangesPerLine} changement(s) par ligne"
 msgstr "Max {maxChangesPerLine} changement(s) par ligne"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:46
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:50
 msgid "palette.strategy.coverage-aware.desc"
 msgstr "Maximise la couverture des pixels (minimise l'erreur globale)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:181
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:185
 msgid "palette.strategy.diversity-first-max.desc"
 msgstr "Diversité maximale (100%), fréquence ignorée"
 
@@ -1011,6 +1020,7 @@ msgstr "Médian"
 msgid "Mémoire"
 msgstr "Mémoire"
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:54
 #: src/components/info-bar/info-bar.tsx:81
 msgid "Mode"
 msgstr "Mode"
@@ -1056,12 +1066,12 @@ msgid "Montez la valeur pour des images riches en teintes variées ; baissez-la 
 msgstr "Montez la valeur pour des images riches en teintes variées ; baissez-la pour mieux préserver les dégradés et nuances proches."
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:106
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:110
 msgid "palette.strategy.balanced-score-balanced.desc"
 msgstr "Multi-critères équilibrés (50% freq, 25% div, 25% lum)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:121
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:125
 msgid "palette.strategy.balanced-score-max.desc"
 msgstr "Multi-critères avec contraste (30% freq, 35% div, 35% lum)"
 
@@ -1125,7 +1135,7 @@ msgstr "Non disponible : l'image source a plus de 16 couleurs uniques ({0}+)."
 #~ msgstr "Non disponible : le mappage distinct est actif."
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:246
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:250
 msgid "palette.strategy.disabled.raster"
 msgstr "Non utilisée en mode raster (palette extraite par ligne)"
 
@@ -1199,6 +1209,7 @@ msgstr "paires"
 msgid "Paires uniques"
 msgstr "Paires uniques"
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:50
 #: src/components/preview-editor/line-palette/line-palette-view.tsx:36
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:182
 msgid "Palette"
@@ -1237,13 +1248,17 @@ msgstr "Paramètres Raster"
 msgid "Peindre au curseur"
 msgstr "Peindre au curseur"
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:95
+msgid "Pens réservés"
+msgstr "Pens réservés"
+
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:130
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:134
 msgid "palette.strategy.perceptual-balanced.label"
 msgstr "Perceptuel Équilibré"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:145
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:149
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptuel Contraste"
 
@@ -1356,7 +1371,7 @@ msgid "Propagation verticale des erreurs de quantification (lower = moins de ban
 msgstr "Propagation verticale des erreurs de quantification (lower = moins de banding)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:175
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:179
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Diversité Pure"
 
@@ -1507,7 +1522,7 @@ msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:61
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:65
 msgid "palette.strategy.dithering-aware.desc"
 msgstr "Sélectionne des couleurs qui se mélangent bien en tramage"
 
@@ -1531,6 +1546,7 @@ msgstr "Source"
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:79
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:61
 msgid "Stratégie de palette"
 msgstr "Stratégie de palette"
@@ -1559,7 +1575,7 @@ msgstr "Supprimer le changement"
 msgid "Tailles de tuile, la moins coûteuse en tête"
 msgstr "Tailles de tuile, la moins coûteuse en tête"
 
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:95
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:97
 msgid "Tailles entières, la moins déformée en tête"
 msgstr "Tailles entières, la moins déformée en tête"
 
@@ -1580,7 +1596,7 @@ msgid "Tent"
 msgstr "Tent"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:31
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:35
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Teste toutes les combinaisons, maximise le contraste (meilleure qualité)"
 
@@ -1596,13 +1612,29 @@ msgstr "Total"
 msgid "Tout supprimer"
 msgstr "Tout supprimer"
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:106
+msgid "Transparence"
+msgstr "Transparence"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:119
+msgid "Trous aplatis sur le fond"
+msgstr "Trous aplatis sur le fond"
+
 #: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:50
 msgid "Tuile de destination"
 msgstr "Tuile de destination"
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:116
+msgid "Un pen dépensé pour les trous"
+msgstr "Un pen dépensé pour les trous"
+
 #: src/components/error-boundary/error-fallback.tsx:23
 msgid "Une erreur inattendue s'est produite"
 msgstr "Une erreur inattendue s'est produite"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:132
+msgid "Une palette gelée est utilisée telle quelle : les retouches sont des index de pen, elles survivent à un changement de réglage."
+msgstr "Une palette gelée est utilisée telle quelle : les retouches sont des index de pen, elles survivent à un changement de réglage."
 
 #: src/components/updater/updater-view.tsx:61
 msgid "Update Available"

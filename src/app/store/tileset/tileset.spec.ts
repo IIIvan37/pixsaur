@@ -2,11 +2,13 @@ import { createStore } from 'jotai'
 import type { TilesetSheet } from '@/tileset'
 import {
   convertedTilesetAtom,
+  freezeTilesetPaletteAtom,
   setTilesetGridAtom,
   setTilesetModeAtom,
   setTilesetOptionsAtom,
   setTilesetSheetAtom,
   setTilesetTargetAtom,
+  thawTilesetPaletteAtom,
   tilesetGeometryAtom,
   tilesetGridAtom,
   tilesetGridSuggestionsAtom,
@@ -132,5 +134,36 @@ describe('tileset workshop atoms', () => {
     store.set(setTilesetModeAtom, 0)
 
     expect(store.get(tilesetOptionsAtom).palette).toHaveLength(1)
+  })
+
+  it('pins the palette the conversion chose when it is frozen', () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, sheetOfAlternatingTiles(4))
+
+    const chosen = store.get(convertedTilesetAtom)
+
+    store.set(freezeTilesetPaletteAtom)
+
+    expect(store.get(tilesetOptionsAtom).palette).toEqual(
+      chosen?.ok === true && chosen.tileset.palette
+    )
+  })
+
+  it('freezes nothing while there is no conversion to freeze', () => {
+    const store = createStore()
+
+    store.set(freezeTilesetPaletteAtom)
+
+    expect(store.get(tilesetOptionsAtom).palette).toBeUndefined()
+  })
+
+  it('hands the palette back to the strategy when it is thawed', () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, sheetOfAlternatingTiles(4))
+    store.set(freezeTilesetPaletteAtom)
+
+    store.set(thawTilesetPaletteAtom)
+
+    expect(store.get(tilesetOptionsAtom).palette).toBeUndefined()
   })
 })

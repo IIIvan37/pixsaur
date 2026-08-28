@@ -43,3 +43,9 @@
   gap: var(--spacing-sm);
   font-size: var(--font-size-sm);
 }
+
+.note {
+  font-size: var(--font-size-sm);
+  color: var(--color-accentHover);
+  margin: 0;
+}

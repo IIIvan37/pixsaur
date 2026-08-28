@@ -14,7 +14,11 @@ export {
   tilesetModeAtom,
   tilesetOptionsAtom
 } from './config'
-export { convertedTilesetAtom } from './conversion'
+export {
+  convertedTilesetAtom,
+  freezeTilesetPaletteAtom,
+  thawTilesetPaletteAtom
+} from './conversion'
 export {
   setTilesetTargetAtom,
   sourcePlatformAtom,

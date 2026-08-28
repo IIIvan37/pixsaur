@@ -9,6 +9,7 @@
 
 import { TilesetGeometryPanel } from './tileset-geometry-panel'
 import { TilesetGridPanel } from './tileset-grid-panel'
+import { TilesetPalettePanel } from './tileset-palette-panel'
 import { TilesetSourcePanel } from './tileset-source-panel'
 import styles from './tileset-workshop.module.css'
 
@@ -18,6 +19,7 @@ export default function TilesetWorkshop() {
       <TilesetSourcePanel />
       <TilesetGridPanel />
       <TilesetGeometryPanel />
+      <TilesetPalettePanel />
     </div>
   )
 }
