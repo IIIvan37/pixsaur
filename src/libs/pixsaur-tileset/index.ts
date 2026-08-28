@@ -3,6 +3,11 @@ export {
   SOURCE_PIXEL_ASPECT,
   type SourcePlatform
 } from './src/pixel-aspect'
+export {
+  type GridCandidate,
+  PLAUSIBLE_TILE_SIZES,
+  rankTileGrids
+} from './src/rank-grids'
 export { resizeTileNearest } from './src/resize-tile'
 export {
   type Sheet,
