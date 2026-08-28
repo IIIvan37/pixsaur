@@ -1,3 +1,4 @@
+export { idbProjectStore } from './application/adapters/idb-project-store'
 export {
   type ConvertedTile,
   type ConvertedTileset,
@@ -19,6 +20,11 @@ export {
   undoTilesetEdits
 } from './application/paint-tileset'
 export { BLACK, type Pen } from './application/pens'
+export {
+  loadTilesetProject,
+  saveTilesetProject
+} from './application/persist-tileset-project'
+export type { TilesetProjectStore } from './application/ports'
 export {
   type RenderTilesetPngInput,
   renderTilesetPng
