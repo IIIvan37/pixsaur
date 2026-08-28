@@ -1,6 +1,6 @@
 # PLAN — Atelier Tileset (conversion de tilesets vers CPC)
 
-**Date**: 2026-08-28 · **Statut**: décisions arrêtées, aucun code écrit · **Branche**: —
+**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, la découpe est close · **Branche**: `docs/tileset-workshop-plan`
 
 > Relevé de conception d'une **nouvelle feature** : un atelier convertissant une
 > planche de tuiles d'une autre machine (NES, Master System, SNES…) vers les
@@ -20,6 +20,27 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T9 TERMINÉE — la découpe T1→T9 est close.** Durabilité, quatre commits :
+  1. `tileset-project.ts` (Q31) — le document de l'atelier en un objet : la
+     planche, les deux grilles, les réglages et le calque d'édition. Deux
+     porteurs, une seule forme — IndexedDB garde l'objet tel quel (le clone
+     structuré emporte les octets), le fichier exporté porte les mêmes champs en
+     JSON avec les octets en base64. La relecture **nomme** ce qui a échoué
+     (JSON illisible, autre version, forme qui découperait faux) et un projet
+     d'une autre version est jeté, jamais migré à l'aveugle. Le type des options
+     du store vient désormais du projet : un fichier rechargé ne peut pas
+     convertir autrement que celui qui fut enregistré.
+  2. Port `TilesetProjectStore` + adapter IndexedDB — pas `localStorage` : une
+     planche fait des centaines de kilo-octets de RGBA brut. La persistance est
+     un confort, jamais une condition : un magasin absent, bloqué ou plein perd
+     l'auto-sauvegarde et l'atelier s'ouvre quand même.
+  3. Atomes `store/tileset/project.ts` + `useTilesetPersistence` — le document
+     est lu depuis les atomes feuilles et réécrit **sur eux**, jamais par les
+     setters, qui jettent le calque quand la géométrie bouge et la palette quand
+     le mode change. Une planche que l'utilisateur a déposée avant que le
+     magasin réponde gagne : c'est celle qu'il voit.
+  4. Panneau projet — export/import d'un fichier JSON. Un import refusé dit
+     **de quelle manière** il a échoué et laisse l'atelier en l'état.
 - **T8 TERMINÉE** — édition, quatre commits :
   1. `paintTileset` (Q11 · Q19 · Q31) — le calque d'édition, pur : `paintPixels`
      est réutilisé tuile par tuile, le trait part sur **toutes les instances**
@@ -499,7 +520,7 @@ tests. Une tranche = une PR.
 | T6 ✅ | Rendu | Masque de bord, partition AA / tramage, phase locale, reset de diffusion | T5 |
 | T7 ✅ | Atelier | `store/tileset/`, panneaux, commutateur dans `app.tsx`, i18n | T6 |
 | T8 ✅ | Édition | `paintPixels` réutilisé, calque non destructif, propagation par dédup, undo global | T7 |
-| T9 | Durabilité | IndexedDB, export/import projet JSON | T8 |
+| T9 ✅ | Durabilité | IndexedDB, export/import projet JSON | T8 |
 
 T1 à T6 sont du cœur pur (`src/libs/**`, `src/domain/**`) : `tdd-cycle` s'applique, un
 test rouge avant chaque ligne. T7 à T9 touchent l'app et passent par
