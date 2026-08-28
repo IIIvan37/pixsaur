@@ -13,6 +13,7 @@ import {
   type PixelMode,
   quantizeColorForHardware
 } from '@/domain/cpc'
+import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import { resizeTileNearest, sliceSheet } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 
@@ -56,7 +57,7 @@ export interface ConvertedTileset {
 }
 
 export type ConvertTilesetResult =
-  | { ok: true; tileset: ConvertedTileset }
+  | { ok: true; tileset: ConvertedTileset; png: Uint8Array }
   | { ok: false; error: 'grid-mismatch' | 'palette-overflow' }
 
 export function convertTileset(
@@ -102,5 +103,45 @@ export function convertTileset(
     converted.push({ indices })
   }
 
-  return { ok: true, tileset: { columns, rows, palette, tiles: converted } }
+  const tileset: ConvertedTileset = {
+    columns,
+    rows,
+    palette,
+    tiles: converted
+  }
+
+  return { ok: true, tileset, png: renderPng(tileset, input) }
+}
+
+/**
+ * Lays the tiles back out on the source grid (Q10) and pre-stretches CPC pixels
+ * so the file opens undistorted in any viewer (Q9).
+ */
+function renderPng(
+  tileset: ConvertedTileset,
+  input: ConvertTilesetInput
+): Uint8Array {
+  const { scaleX, scaleY } = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey]
+  const tileW = input.target.tileWidth
+  const tileH = input.target.tileHeight
+  const width = tileset.columns * tileW * scaleX
+  const height = tileset.rows * tileH * scaleY
+  const indices = new Uint8Array(width * height)
+
+  tileset.tiles.forEach((tile, at) => {
+    const originX = (at % tileset.columns) * tileW * scaleX
+    const originY = Math.floor(at / tileset.columns) * tileH * scaleY
+
+    for (let y = 0; y < tileH; y++) {
+      for (let x = 0; x < tileW; x++) {
+        const pen = tile.indices[y * tileW + x]
+        for (let dy = 0; dy < scaleY; dy++) {
+          const row = (originY + y * scaleY + dy) * width + originX + x * scaleX
+          indices.fill(pen, row, row + scaleX)
+        }
+      }
+    }
+  })
+
+  return encodeIndexedPng({ width, height, palette: tileset.palette, indices })
 }

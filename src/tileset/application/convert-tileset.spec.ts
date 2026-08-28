@@ -53,6 +53,22 @@ describe('convertTileset', () => {
     ).toEqual([255, 0, 0])
   })
 
+  it('renders the tileset as an indexed PNG', () => {
+    const result = convertTileset(input)
+
+    expect(result.ok && Array.from(result.png.subarray(0, 8))).toEqual([
+      137, 80, 78, 71, 13, 10, 26, 10
+    ])
+  })
+
+  it('pre-stretches mode 0 pixels so the PNG opens undistorted', () => {
+    const result = convertTileset(input)
+    // 2 tiles x 4 CPC px, doubled horizontally (mode 0 scaleX = 2).
+    const width = result.ok && new DataView(result.png.buffer).getUint32(16)
+
+    expect(width).toBe(16)
+  })
+
   it('rejects a sheet needing more pens than the mode offers', () => {
     const tooManyColours = sheetOfSolidTiles(8, [
       [255, 0, 0],
