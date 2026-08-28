@@ -43,9 +43,26 @@ describe('rankTileGrids', () => {
     expect(ranked).toEqual([])
   })
 
-  it('reports the duplicate rate it ranked on', () => {
+  it('reports the duplicate rate, still just as it stands at a fixed size', () => {
     const ranked = rankTileGrids(sheet, [eight])
 
     expect(ranked[0].duplicateRate).toBeCloseTo(0.5)
+  })
+
+  it('charges the unique tiles and one index per position', () => {
+    const ranked = rankTileGrids(sheet, [eight])
+
+    // 2 unique tiles of 64 px, 4 positions, over the 32 x 8 they cover.
+    expect(ranked[0].tilemapCost).toBeCloseTo((2 * 64 + 4) / (4 * 64))
+  })
+
+  it('makes the smaller tile pay the index table it imposes', () => {
+    const paired = sheetOfTiles([RAMP, FLAT, RAMP, FLAT])
+    const ranked = rankTileGrids(paired, [eight, sixteen])
+
+    const costOf = (width: number) =>
+      ranked.find((c) => c.grid.tileWidth === width)?.tilemapCost ?? 0
+
+    expect(costOf(8)).toBeGreaterThan(costOf(16))
   })
 })
