@@ -272,6 +272,44 @@ describe('convertTileset', () => {
     expect(result.ok && result.tileset.collisions.length).toBe(2)
   })
 
+  it('uses the frozen palette it was handed instead of choosing one', () => {
+    const result = convertTileset({
+      ...input,
+      palette: [
+        [0, 0, 0],
+        [255, 255, 255]
+      ]
+    })
+
+    expect(result.ok && penSet(result.tileset.palette)).toEqual([
+      '000000',
+      'ffffff'
+    ])
+  })
+
+  it('maps every colour onto the frozen palette', () => {
+    const result = convertTileset({
+      ...input,
+      palette: [
+        [0, 0, 0],
+        [255, 255, 255]
+      ]
+    })
+
+    expect(result.ok && result.tileset.tiles[0].indices[0]).toBe(1)
+  })
+
+  it('keeps a locked pen even when the sheet never uses it', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(8, [RED, BLUE, [0, 255, 0]]),
+      mode: 2,
+      lockedPens: [[255, 255, 255]]
+    })
+
+    expect(result.ok && penSet(result.tileset.palette)).toContain('ffffff')
+  })
+
   it('keeps a column nearest-neighbour would step over', () => {
     const result = convertTileset({
       ...input,

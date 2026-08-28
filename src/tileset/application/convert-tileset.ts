@@ -18,7 +18,8 @@ import {
 } from '@/domain/cpc'
 import {
   applyPaletteStrategyV2,
-  type ColorCandidate
+  type ColorCandidate,
+  convertPreselectedToIndices
 } from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
 import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
@@ -89,6 +90,19 @@ export interface ConvertTilesetInput {
    * in mode 0 and `flatten` in modes 1 and 2, where no pen can be spared.
    */
   transparency?: 'pen' | 'flatten'
+  /**
+   * A palette to use as-is instead of choosing one — the freeze of Q26 · Q28.
+   * Edits are stored as pen INDICES, so letting the palette drift after the
+   * first one would silently repaint every tile that used pen 5. Includes the
+   * transparency pen at index 0 when the mode spends one.
+   */
+  palette?: Pen[]
+  /**
+   * Pens the user pinned by hand (Q15): the strategy must return them, whether
+   * or not the sheet asks for them. Unlike `reservedPens`, these ARE
+   * quantization targets — a locked pen is a colour, not a free slot.
+   */
+  lockedPens?: Pen[]
 }
 
 /** One converted tile: palette indices, `target.tileWidth * tileHeight` long. */
@@ -181,22 +195,18 @@ export function convertTileset(
     })
   })
 
-  const chosen = selectPalette(
-    snapped,
-    basePalette,
-    holePen === null ? maxPens : maxPens - 1,
-    input
-  )
   // The transparency pen comes first and is never a quantization target: only
   // alpha can reach it, so an opaque pixel of the same colour stays distinct.
-  const palette = holePen === null ? chosen : [background, ...chosen]
-  const penOf = nearestPens(chosen, basePalette, holePen === null ? 0 : 1)
-  const errorOf = penDistances(
-    chosen,
-    basePalette,
-    penOf,
-    holePen === null ? 0 : 1
-  )
+  const offset = holePen === null ? 0 : 1
+  const palette =
+    input.palette ??
+    prependHolePen(
+      selectPalette(snapped, basePalette, maxPens - offset, input),
+      holePen === null ? null : background
+    )
+  const chosen = palette.slice(offset)
+  const penOf = nearestPens(chosen, basePalette, offset)
+  const errorOf = penDistances(chosen, basePalette, penOf, offset)
   const converted: ConvertedTile[] = snapped.map((tile) => {
     const indices = new Uint8Array(tile.length)
     for (let pixel = 0; pixel < tile.length; pixel++) {
@@ -293,6 +303,10 @@ function snapToHardware(
  * Picks the pens the whole tileset shares, from a histogram weighted one unit
  * per UNIQUE tile (Q3 · Q15) and handed to one of the 12 strategies (Q15).
  */
+function prependHolePen(chosen: Pen[], hole: Pen | null): Pen[] {
+  return hole === null ? chosen : [hole, ...chosen]
+}
+
 function penBudget(input: ConvertTilesetInput): number {
   return (
     CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors -
@@ -315,12 +329,20 @@ function selectPalette(
     converted: [...basePalette[index]] as Vector
   }))
 
+  const locked = convertPreselectedToIndices(
+    input.lockedPens ?? [],
+    basePalette
+  )
   const { selectedIndices } = applyPaletteStrategyV2(
     input.paletteStrategy ?? 'exhaustive-contrast',
     candidates,
     maxPens,
-    [],
-    { basePaletteSize: basePalette.length, basePalette }
+    locked,
+    {
+      basePaletteSize: basePalette.length,
+      basePalette,
+      preselectedColors: input.lockedPens
+    }
   )
 
   return selectedIndices
