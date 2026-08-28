@@ -43,6 +43,25 @@ function sheetOfSolidTiles(
   return { width, height, data }
 }
 
+/** A single 8 × 8 tile whose column `x` is uniformly painted `columns[x]`. */
+function sheetOfColumns(
+  columns: [number, number, number][]
+): ConvertTilesetInput['sheet'] {
+  const width = columns.length
+  const data = new Uint8ClampedArray(width * 8 * 4)
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < width; x++) {
+      const at = (y * width + x) * 4
+      ;[data[at], data[at + 1], data[at + 2]] = columns[x]
+      data[at + 3] = 255
+    }
+  }
+  return { width, height: 8, data }
+}
+
+const RED: [number, number, number] = [255, 0, 0]
+const BLUE: [number, number, number] = [0, 0, 255]
+
 const input: ConvertTilesetInput = {
   sheet: sheetOfSolidTiles(8, [
     [255, 0, 0],
@@ -138,5 +157,26 @@ describe('convertTileset', () => {
     })
 
     expect(result.ok === false && result.error).toBe('palette-overflow')
+  })
+
+  it('keeps a column nearest-neighbour would step over', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfColumns([RED, RED, RED, RED, RED, RED, RED, BLUE])
+    })
+
+    expect(
+      result.ok && result.tileset.palette[result.tileset.tiles[0].indices[3]]
+    ).toEqual(BLUE)
+  })
+
+  it('keeps nearest-neighbour available to compare against', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfColumns([RED, RED, RED, RED, RED, RED, RED, BLUE]),
+      resize: 'nearest'
+    })
+
+    expect(result.ok && result.tileset.palette).toEqual([RED])
   })
 })

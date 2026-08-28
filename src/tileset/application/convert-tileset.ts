@@ -15,10 +15,16 @@ import {
 } from '@/domain/cpc'
 import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
+  chooseResizeScheme,
   dedupeTiles,
+  detectTileEdges,
+  type EdgeCondition,
+  resizeTileByScheme,
   resizeTileNearest,
   type SheetGrid,
-  sliceSheet
+  type SourceTile,
+  sliceSheet,
+  type TileEdges
 } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 
@@ -43,6 +49,12 @@ export interface ConvertTilesetInput {
   target: TileSize
   mode: PixelMode
   hardware: CPCHardware
+  /**
+   * How pixels are dropped when the tile shrinks. `columns` is the flagship
+   * search of Q12; `nearest` is the phase-locked baseline it is compared
+   * against. Defaults to `columns`.
+   */
+  resize?: 'columns' | 'nearest'
 }
 
 /** One converted tile: palette indices, `target.tileWidth * tileHeight` long. */
@@ -76,6 +88,15 @@ export function convertTileset(
   if (!sliced) return { ok: false, error: 'grid-mismatch' }
 
   const { columns, rows, tiles } = sliced
+  const scheme =
+    input.resize === 'nearest'
+      ? null
+      : chooseResizeScheme(
+          tiles,
+          input.source,
+          input.target,
+          sheetEdges(tiles, input.source)
+        )
   const maxPens = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors
 
   // T1 builds the shared palette by first-seen order. The real strategy —
@@ -85,7 +106,9 @@ export function convertTileset(
 
   const converted: ConvertedTile[] = []
   for (const tile of tiles) {
-    const resized = resizeTileNearest(tile, input.source, input.target)
+    const resized = scheme
+      ? resizeTileByScheme(tile, input.source, input.target, scheme)
+      : resizeTileNearest(tile, input.source, input.target)
     const indices = new Uint8Array(resized.data.length / 4)
 
     for (let pixel = 0; pixel < indices.length; pixel++) {
@@ -127,6 +150,23 @@ export function convertTileset(
   }
 
   return { ok: true, tileset, png: renderPng(tileset, input) }
+}
+
+/**
+ * One edge condition per axis for the whole sheet, decided by majority (Q13).
+ * The removal scheme is shared by every tile (Q14), so it can only be scored
+ * under a single edge condition — a sheet that is mostly terrain is treated as
+ * terrain. Per-tile edges would need a per-tile cost attribution; see the plan.
+ */
+function sheetEdges(tiles: SourceTile[], grid: SheetGrid): TileEdges {
+  const verdicts = tiles.map((tile) => detectTileEdges(tile, grid))
+  const majority = (axis: keyof TileEdges): EdgeCondition =>
+    verdicts.filter((edge) => edge[axis] === 'wrap').length * 2 >=
+    verdicts.length
+      ? 'wrap'
+      : 'clamp'
+
+  return { horizontal: majority('horizontal'), vertical: majority('vertical') }
 }
 
 /**

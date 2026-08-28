@@ -1,4 +1,9 @@
 export {
+  detectTileEdges,
+  type EdgeCondition,
+  type TileEdges
+} from './src/edge-condition'
+export {
   type PixelAspect,
   SOURCE_PIXEL_ASPECT,
   type SourcePlatform
@@ -8,6 +13,11 @@ export {
   PLAUSIBLE_TILE_SIZES,
   rankTileGrids
 } from './src/rank-grids'
+export {
+  chooseResizeScheme,
+  type ResizeScheme,
+  resizeTileByScheme
+} from './src/resize-scheme'
 export { resizeTileNearest } from './src/resize-tile'
 export {
   type Sheet,
