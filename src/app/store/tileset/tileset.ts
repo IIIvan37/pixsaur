@@ -27,6 +27,8 @@ export {
   redoTilesetEditAtom,
   selectedPenAtom,
   selectedTileAtom,
+  setTileDitherAtom,
+  type TileDitherPayload,
   undoTilesetEditAtom
 } from './edits'
 export {

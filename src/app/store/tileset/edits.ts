@@ -15,9 +15,14 @@ import {
   paintTileset,
   redoTilesetEdits,
   renderTilesetPng,
+  type TileDither,
   undoTilesetEdits
 } from '@/tileset'
-import { tilesetModeAtom, tilesetOptionsAtom } from './config'
+import {
+  setTilesetOptionsAtom,
+  tilesetModeAtom,
+  tilesetOptionsAtom
+} from './config'
 import { convertedTilesetAtom } from './conversion'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetTargetAtom } from './geometry'
@@ -102,3 +107,36 @@ export const selectedTileAtom = atom(0)
 
 /** The pen the brush lays down — an index into the frozen palette (Q19). */
 export const selectedPenAtom = atom(0)
+
+export interface TileDitherPayload {
+  tile: number
+  /** `null` hands the tile back to the sheet-wide setting. */
+  dither: TileDither | null
+}
+
+/**
+ * The per-tile overrule of Q18: a sprite wants none of the dithering a gradient
+ * sky wants.
+ *
+ * `ditherByTile` is keyed by position, so the setting is written on every
+ * instance of the tile — otherwise two copies of one tile would render
+ * differently and the deduplication that carries the edits would break.
+ */
+export const setTileDitherAtom = atom(
+  null,
+  (get, set, { tile, dither }: TileDitherPayload) => {
+    const result = get(convertedTilesetAtom)
+    if (!result?.ok) return
+
+    const { instanceOf } = result.tileset
+    const group = instanceOf[tile]
+    const byTile = { ...(get(tilesetOptionsAtom).ditherByTile ?? {}) }
+    instanceOf.forEach((of, at) => {
+      if (of !== group) return
+      if (dither === null) delete byTile[at]
+      else byTile[at] = dither
+    })
+
+    set(setTilesetOptionsAtom, { ditherByTile: byTile })
+  }
+)

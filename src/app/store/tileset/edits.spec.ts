@@ -4,11 +4,13 @@ import {
   editedTilesetAtom,
   paintTilesetAtom,
   redoTilesetEditAtom,
+  setTileDitherAtom,
   setTilesetGridAtom,
   setTilesetModeAtom,
   setTilesetSheetAtom,
   setTilesetTargetAtom,
   tilesetEditLayerAtom,
+  tilesetOptionsAtom,
   undoTilesetEditAtom
 } from './tileset'
 
@@ -135,5 +137,25 @@ describe('tileset edit layer atoms', () => {
     store.set(setTilesetModeAtom, 1)
 
     expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
+  })
+
+  it('overrules the dithering on every instance of the tile', () => {
+    const store = painted()
+
+    store.set(setTileDitherAtom, { tile: 0, dither: 'ordered' })
+
+    expect(store.get(tilesetOptionsAtom).ditherByTile).toEqual({
+      0: 'ordered',
+      [COLOURS.length]: 'ordered'
+    })
+  })
+
+  it('hands the tile back to the dithering of the sheet', () => {
+    const store = painted()
+
+    store.set(setTileDitherAtom, { tile: 0, dither: 'ordered' })
+    store.set(setTileDitherAtom, { tile: 0, dither: null })
+
+    expect(store.get(tilesetOptionsAtom).ditherByTile).toEqual({})
   })
 })

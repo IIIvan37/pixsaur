@@ -165,7 +165,7 @@ msgstr "Line-by-line mode alternation. EGX1: 320×200 16 colors. EGX2: 640×200 
 msgid "Annuler"
 msgstr "Cancel"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:140
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:168
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:47
 msgid "Annuler (Ctrl+Z)"
 msgstr "Undo (Ctrl+Z)"
@@ -202,6 +202,7 @@ msgstr "Apply changes"
 msgid "Assemblez une image disque DSK multi-fichiers compatible avec les émulateurs et le matériel CPC réel."
 msgstr "Build a multi-file DSK disk image compatible with emulators and real CPC hardware."
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:119
 #: src/app/components/tileset-workshop/tileset-render-panel.tsx:63
 msgid "Aucun"
 msgstr "None"
@@ -379,6 +380,10 @@ msgstr "Color {index}: {color}"
 msgid "Combined"
 msgstr "Combined"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:118
+msgid "Comme la planche"
+msgstr "As the sheet"
+
 #: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Export Configuration"
@@ -508,6 +513,7 @@ msgstr "Unlock"
 msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
 msgstr "Maximum luminance difference allowed between alternating colors"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:122
 #: src/app/components/tileset-workshop/tileset-render-panel.tsx:66
 msgid "Diffusion d'erreur"
 msgstr "Error diffusion"
@@ -895,8 +901,8 @@ msgstr "Install Update"
 #~ msgid "Installing..."
 #~ msgstr "Installing..."
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:95
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:97
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:100
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:102
 msgid "Instances"
 msgstr "Instances"
 
@@ -1209,7 +1215,7 @@ msgstr "Similar shades (0) ◄► Distinct hues (100)"
 msgid "Ombres"
 msgstr "Shadows"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:151
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:179
 msgid "On peint un pen, jamais une couleur : les retouches sont rejouées après chaque conversion et atteignent toutes les instances de la tuile."
 msgstr "You paint a pen, never a colour: the edits are replayed after every conversion and reach every instance of the tile."
 
@@ -1233,6 +1239,7 @@ msgstr "Optimizing..."
 msgid "Options de couleur"
 msgstr "Color options"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:120
 #: src/app/components/tileset-workshop/tileset-render-panel.tsx:64
 msgid "Ordonné (Bayer)"
 msgstr "Ordered (Bayer)"
@@ -1313,7 +1320,7 @@ msgstr "Raster Parameters"
 msgid "Peindre au curseur"
 msgstr "Paint at cursor"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:110
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:138
 msgid "Pen"
 msgstr "Pen"
 
@@ -1348,7 +1355,7 @@ msgstr "Dark photo"
 msgid "Photo vive"
 msgstr "Vivid photo"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:130
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:158
 msgid "Pixel"
 msgstr "Pixel"
 
@@ -1534,7 +1541,7 @@ msgstr "Try again"
 msgid "Refaire"
 msgstr "Redo"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:146
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:174
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:57
 msgid "Refaire (Ctrl+Y)"
 msgstr "Redo (Ctrl+Y)"
@@ -1589,7 +1596,7 @@ msgstr "Doubled horizontal resolution (Mode 0 only). Uses 2 alternating images a
 msgid "Résultat"
 msgstr "Result"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:82
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:87
 msgid "Retouche"
 msgstr "Retouching"
 
@@ -1731,6 +1738,11 @@ msgstr "Remove all"
 msgid "Tramage"
 msgstr "Dithering"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:106
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:109
+msgid "Tramage de la tuile"
+msgstr "Tile dithering"
+
 #: src/app/components/tileset-workshop/tileset-palette-panel.tsx:109
 #: src/app/components/tileset-workshop/tileset-palette-panel.tsx:112
 msgid "Transparence"
@@ -1740,7 +1752,7 @@ msgstr "Transparency"
 msgid "Trous aplatis sur le fond"
 msgstr "Holes flattened onto the background"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:86
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:91
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:134
 msgid "Tuile"
 msgstr "Tile"

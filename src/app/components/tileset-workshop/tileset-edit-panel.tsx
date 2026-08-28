@@ -9,7 +9,9 @@ import {
   redoTilesetEditAtom,
   selectedPenAtom,
   selectedTileAtom,
+  setTileDitherAtom,
   tilesetEditLayerAtom,
+  tilesetOptionsAtom,
   tilesetTargetAtom,
   undoTilesetEditAtom
 } from '@/app/store/tileset/tileset'
@@ -17,7 +19,8 @@ import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
-import type { Pen } from '@/tileset'
+import { Select, SelectItem } from '@/components/ui/select'
+import type { Pen, TileDither } from '@/tileset'
 import styles from './tileset-workshop.module.css'
 
 const swatch = ([r, g, b]: Pen) => `rgb(${r} ${g} ${b})`
@@ -60,6 +63,8 @@ export function TilesetEditPanel() {
   const result = useAtomValue(editedTilesetAtom)
   const { tileWidth, tileHeight } = useAtomValue(tilesetTargetAtom)
   const layer = useAtomValue(tilesetEditLayerAtom)
+  const options = useAtomValue(tilesetOptionsAtom)
+  const setTileDither = useSetAtom(setTileDitherAtom)
   const [selected, setSelected] = useAtom(selectedTileAtom)
   const [pen, setPen] = useAtom(selectedPenAtom)
   const paint = useSetAtom(paintTilesetAtom)
@@ -96,6 +101,27 @@ export function TilesetEditPanel() {
           {' : '}
           <output aria-label={_(msg`Instances`)}>{instances}</output>
         </span>
+
+        <span className={styles.label}>
+          <Trans>Tramage de la tuile</Trans>
+        </span>
+        <Select
+          aria-label={_(msg`Tramage de la tuile`)}
+          value={options.ditherByTile?.[tile] ?? 'sheet'}
+          onValueChange={(value) =>
+            setTileDither({
+              tile,
+              dither: value === 'sheet' ? null : (value as TileDither)
+            })
+          }
+        >
+          <SelectItem value='sheet'>{_(msg`Comme la planche`)}</SelectItem>
+          <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
+          <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
+          <SelectItem value='diffusion'>
+            {_(msg`Diffusion d'erreur`)}
+          </SelectItem>
+        </Select>
       </div>
 
       <div className={styles.pens}>

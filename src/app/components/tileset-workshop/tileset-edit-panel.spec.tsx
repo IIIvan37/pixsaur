@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
   editedTilesetAtom,
+  setTileDitherAtom,
   setTilesetSheetAtom,
   tilesetEditLayerAtom
 } from '@/app/store/tileset/tileset'
@@ -117,5 +118,16 @@ describe('TilesetEditPanel', () => {
     await userEvent.keyboard('{Control>}z{/Control}')
 
     expect(store.get(tilesetEditLayerAtom).at).toBe(-1)
+  })
+
+  it('shows the dithering the tile was given', () => {
+    const store = storeWithSheet()
+    store.set(setTileDitherAtom, { tile: 0, dither: 'ordered' })
+
+    renderWithProviders(<TilesetEditPanel />, { store })
+
+    expect(
+      screen.getByRole('combobox', { name: /Tramage de la tuile/i })
+    ).toHaveTextContent(/Ordonné/i)
   })
 })

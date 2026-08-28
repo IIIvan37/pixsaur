@@ -165,7 +165,7 @@ msgstr "Zeilenweise Moduswechsel. EGX1: 320×200 16 Farben. EGX2: 640×200 4 Far
 msgid "Annuler"
 msgstr "Abbrechen"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:140
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:168
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:47
 msgid "Annuler (Ctrl+Z)"
 msgstr "Rückgängig (Strg+Z)"
@@ -202,6 +202,7 @@ msgstr "Änderungen anwenden"
 msgid "Assemblez une image disque DSK multi-fichiers compatible avec les émulateurs et le matériel CPC réel."
 msgstr "Erstellen Sie ein DSK-Disk-Image mit mehreren Dateien, kompatibel mit Emulatoren und echter CPC-Hardware."
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:119
 #: src/app/components/tileset-workshop/tileset-render-panel.tsx:63
 msgid "Aucun"
 msgstr "Keines"
@@ -379,6 +380,10 @@ msgstr "Farbe {index}: {color}"
 msgid "Combined"
 msgstr "Kombiniert"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:118
+msgid "Comme la planche"
+msgstr "Wie die Kachelkarte"
+
 #: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Exportkonfiguration"
@@ -508,6 +513,7 @@ msgstr "Entsperren"
 msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
 msgstr "Maximal erlaubte Luminanzdifferenz zwischen abwechselnden Farben"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:122
 #: src/app/components/tileset-workshop/tileset-render-panel.tsx:66
 msgid "Diffusion d'erreur"
 msgstr "Fehlerdiffusion"
@@ -895,8 +901,8 @@ msgstr "Update installieren"
 #~ msgid "Installing..."
 #~ msgstr "Wird installiert..."
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:95
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:97
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:100
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:102
 msgid "Instances"
 msgstr "Instanzen"
 
@@ -1209,7 +1215,7 @@ msgstr "Ähnliche Nuancen (0) ◄► Unterschiedliche Farbtöne (100)"
 msgid "Ombres"
 msgstr "Schatten"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:151
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:179
 msgid "On peint un pen, jamais une couleur : les retouches sont rejouées après chaque conversion et atteignent toutes les instances de la tuile."
 msgstr "Gemalt wird ein Pen, nie eine Farbe: die Retuschen werden nach jeder Konvertierung erneut angewendet und erreichen alle Instanzen der Kachel."
 
@@ -1233,6 +1239,7 @@ msgstr "Optimierung..."
 msgid "Options de couleur"
 msgstr "Farboptionen"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:120
 #: src/app/components/tileset-workshop/tileset-render-panel.tsx:64
 msgid "Ordonné (Bayer)"
 msgstr "Geordnet (Bayer)"
@@ -1313,7 +1320,7 @@ msgstr "Raster-Parameter"
 msgid "Peindre au curseur"
 msgstr "Am Cursor malen"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:110
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:138
 msgid "Pen"
 msgstr "Pen"
 
@@ -1348,7 +1355,7 @@ msgstr "Dunkles Foto"
 msgid "Photo vive"
 msgstr "Lebendiges Foto"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:130
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:158
 msgid "Pixel"
 msgstr "Pixel"
 
@@ -1534,7 +1541,7 @@ msgstr "Erneut versuchen"
 msgid "Refaire"
 msgstr "Wiederholen"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:146
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:174
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:57
 msgid "Refaire (Ctrl+Y)"
 msgstr "Wiederholen (Strg+Y)"
@@ -1589,7 +1596,7 @@ msgstr "Verdoppelte horizontale Auflösung (nur Mode 0). Verwendet 2 abwechselnd
 msgid "Résultat"
 msgstr "Ergebnis"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:82
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:87
 msgid "Retouche"
 msgstr "Retusche"
 
@@ -1731,6 +1738,11 @@ msgstr "Alle entfernen"
 msgid "Tramage"
 msgstr "Dithering"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:106
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:109
+msgid "Tramage de la tuile"
+msgstr "Kachel-Dithering"
+
 #: src/app/components/tileset-workshop/tileset-palette-panel.tsx:109
 #: src/app/components/tileset-workshop/tileset-palette-panel.tsx:112
 msgid "Transparence"
@@ -1740,7 +1752,7 @@ msgstr "Transparenz"
 msgid "Trous aplatis sur le fond"
 msgstr "Löcher auf den Hintergrund gelegt"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:86
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:91
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:134
 msgid "Tuile"
 msgstr "Kachel"
