@@ -9,23 +9,15 @@
 import { atom } from 'jotai'
 import type { PixelMode } from '@/domain/cpc'
 import type { CPCHardware } from '@/libs/types'
-import { type ConvertTilesetInput, EMPTY_EDIT_LAYER } from '@/tileset'
+import { EMPTY_EDIT_LAYER, type TilesetProjectOptions } from '@/tileset'
 import { tilesetEditLayerAtom } from './edit-layer'
 
-export type TilesetOptions = Pick<
-  ConvertTilesetInput,
-  | 'antiAlias'
-  | 'background'
-  | 'dither'
-  | 'ditherByTile'
-  | 'ditherSize'
-  | 'lockedPens'
-  | 'palette'
-  | 'paletteStrategy'
-  | 'reservedPens'
-  | 'resize'
-  | 'transparency'
->
+/**
+ * Declared by the project (`@/tileset`), not here: the panels, the use-case
+ * and the saved file must read the same object or a restored project would
+ * convert differently from the one that was saved.
+ */
+export type TilesetOptions = TilesetProjectOptions
 
 /**
  * `transparency` is left out on purpose: the use-case reads it from the mode
