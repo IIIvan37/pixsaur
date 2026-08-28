@@ -44,4 +44,28 @@ describe('convertTileset', () => {
 
     expect(result.ok && result.tileset.tiles[0].indices.length).toBe(4 * 8)
   })
+
+  it('maps a solid red tile to a CPC red pen', () => {
+    const result = convertTileset(input)
+
+    expect(
+      result.ok && result.tileset.palette[result.tileset.tiles[0].indices[0]]
+    ).toEqual([255, 0, 0])
+  })
+
+  it('rejects a sheet needing more pens than the mode offers', () => {
+    const tooManyColours = sheetOfSolidTiles(8, [
+      [255, 0, 0],
+      [0, 0, 255],
+      [0, 255, 0]
+    ])
+
+    const result = convertTileset({
+      ...input,
+      sheet: tooManyColours,
+      mode: 2
+    })
+
+    expect(result.ok === false && result.error).toBe('palette-overflow')
+  })
 })

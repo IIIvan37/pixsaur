@@ -6,7 +6,13 @@
  * computes. See `docs/features/PLAN-tileset-workshop.md`.
  */
 
-import type { PixelMode } from '@/domain/cpc'
+import {
+  CPC_MODE_CONFIG,
+  type CpcModeKey,
+  colorToKey,
+  type PixelMode,
+  quantizeColorForHardware
+} from '@/domain/cpc'
 import { resizeTileNearest, sliceSheet } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 
@@ -38,15 +44,20 @@ export interface ConvertedTile {
   indices: Uint8Array
 }
 
+/** An RGB pen, already snapped to a CPC hardware colour. */
+export type Pen = [r: number, g: number, b: number]
+
 export interface ConvertedTileset {
   columns: number
   rows: number
+  /** Shared by every tile — the CPC has one palette at a time. */
+  palette: Pen[]
   tiles: ConvertedTile[]
 }
 
 export type ConvertTilesetResult =
   | { ok: true; tileset: ConvertedTileset }
-  | { ok: false; error: 'grid-mismatch' }
+  | { ok: false; error: 'grid-mismatch' | 'palette-overflow' }
 
 export function convertTileset(
   input: ConvertTilesetInput
@@ -55,18 +66,41 @@ export function convertTileset(
   if (!sliced) return { ok: false, error: 'grid-mismatch' }
 
   const { columns, rows, tiles } = sliced
+  const maxPens = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors
 
-  return {
-    ok: true,
-    tileset: {
-      columns,
-      rows,
-      tiles: tiles.map((tile) => {
-        const resized = resizeTileNearest(tile, input.source, input.target)
-        return {
-          indices: new Uint8Array(resized.data.length / 4)
+  // T1 builds the shared palette by first-seen order. The real strategy —
+  // histogram over UNIQUE tiles, reservation, freezing — lands in T5.
+  const palette: Pen[] = []
+  const penByKey = new Map<string, number>()
+
+  const converted: ConvertedTile[] = []
+  for (const tile of tiles) {
+    const resized = resizeTileNearest(tile, input.source, input.target)
+    const indices = new Uint8Array(resized.data.length / 4)
+
+    for (let pixel = 0; pixel < indices.length; pixel++) {
+      const at = pixel * 4
+      const [r, g, b] = quantizeColorForHardware(
+        [resized.data[at], resized.data[at + 1], resized.data[at + 2]],
+        input.hardware
+      )
+      const pen: Pen = [r, g, b]
+      const key = colorToKey(pen)
+
+      let index = penByKey.get(key)
+      if (index === undefined) {
+        if (palette.length >= maxPens) {
+          return { ok: false, error: 'palette-overflow' }
         }
-      })
+        index = palette.length
+        penByKey.set(key, index)
+        palette.push(pen)
+      }
+      indices[pixel] = index
     }
+
+    converted.push({ indices })
   }
+
+  return { ok: true, tileset: { columns, rows, palette, tiles: converted } }
 }
