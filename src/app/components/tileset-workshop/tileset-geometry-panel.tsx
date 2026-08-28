@@ -50,10 +50,11 @@ export function TilesetGeometryPanel() {
       <Header title={<Trans>Tuile de destination</Trans>} />
 
       <div className={styles.fields}>
-        <label className={styles.label} htmlFor='tileset-source-platform'>
+        <span className={styles.label}>
           <Trans>Machine source</Trans>
-        </label>
+        </span>
         <Select
+          aria-label={_(msg`Machine source`)}
           value={platform}
           onValueChange={(value) => setPlatform(value as SourcePlatform)}
         >

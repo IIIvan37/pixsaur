@@ -50,10 +50,11 @@ export function TilesetPalettePanel() {
       <Header title={<Trans>Palette</Trans>} />
 
       <div className={styles.fields}>
-        <label className={styles.label} htmlFor='tileset-mode'>
+        <span className={styles.label}>
           <Trans>Mode</Trans>
-        </label>
+        </span>
         <Select
+          aria-label={_(msg`Mode`)}
           value={String(mode)}
           onValueChange={(value) => setMode(Number(value) as PixelMode)}
         >
@@ -64,10 +65,11 @@ export function TilesetPalettePanel() {
           ))}
         </Select>
 
-        <label className={styles.label} htmlFor='tileset-hardware'>
+        <span className={styles.label}>
           <Trans>Machine CPC</Trans>
-        </label>
+        </span>
         <Select
+          aria-label={_(msg`Machine CPC`)}
           value={hardware}
           onValueChange={(value) => setHardware(value as CPCHardware)}
         >
@@ -75,10 +77,11 @@ export function TilesetPalettePanel() {
           <SelectItem value='plus'>CPC Plus</SelectItem>
         </Select>
 
-        <label className={styles.label} htmlFor='tileset-strategy'>
+        <span className={styles.label}>
           <Trans>Stratégie de palette</Trans>
-        </label>
+        </span>
         <Select
+          aria-label={_(msg`Stratégie de palette`)}
           value={options.paletteStrategy ?? 'exhaustive-contrast'}
           onValueChange={(value) =>
             setOptions({ paletteStrategy: value as PaletteStrategy })
@@ -102,10 +105,11 @@ export function TilesetPalettePanel() {
           }
         />
 
-        <label className={styles.label} htmlFor='tileset-transparency'>
+        <span className={styles.label}>
           <Trans>Transparence</Trans>
-        </label>
+        </span>
         <Select
+          aria-label={_(msg`Transparence`)}
           value={options.transparency ?? (spendable ? 'pen' : 'flatten')}
           onValueChange={(value) =>
             setOptions({ transparency: value as 'pen' | 'flatten' })

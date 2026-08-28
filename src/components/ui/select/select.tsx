@@ -9,13 +9,16 @@ type Props = {
   readonly onValueChange: (value: string) => void
   readonly children: ReactNode
   readonly disabled?: boolean
+  /** Accessible name of the trigger — a visible label cannot reach it. */
+  readonly 'aria-label'?: string
 }
 
 export function Select({
   value,
   onValueChange,
   children,
-  disabled = false
+  disabled = false,
+  'aria-label': ariaLabel
 }: Props) {
   return (
     <RadixSelect.Root
@@ -23,7 +26,7 @@ export function Select({
       onValueChange={onValueChange}
       disabled={disabled}
     >
-      <RadixSelect.Trigger className={styles.trigger}>
+      <RadixSelect.Trigger className={styles.trigger} aria-label={ariaLabel}>
         <RadixSelect.Value />
         <RadixSelect.Icon className={styles.icon}>
           <ChevronDownIcon />

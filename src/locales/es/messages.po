@@ -105,6 +105,10 @@ msgstr "Añadir imagen actual"
 #~ msgid "Adjustments, Source & Preview"
 #~ msgstr "Ajustes, Fuente y Vista previa"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:87
+msgid "Adoucir les escaliers"
+msgstr "Suavizar las escaleras"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:243
 msgid "Adoucit l'image avec un flou gaussien (0 = off, 1 = maximum)"
 msgstr "Suaviza la imagen con desenfoque gaussiano (0 = apagado, 1 = máximo)"
@@ -192,6 +196,10 @@ msgstr "Aplicar cambios"
 #: src/components/settings-panel/tabs/dsk-tab.tsx:20
 msgid "Assemblez une image disque DSK multi-fichiers compatible avec les émulateurs et le matériel CPC réel."
 msgstr "Crea una imagen de disco DSK multiarchivo compatible con emuladores y hardware CPC real."
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:61
+msgid "Aucun"
+msgstr "Ninguno"
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:369
 msgid "Aucun changement raster défini."
@@ -343,6 +351,10 @@ msgstr "Coeficiente de Error Horizontal"
 msgid "Coefficient d'erreur verticale"
 msgstr "Coeficiente de Error Vertical"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:49
+msgid "Colonnes choisies une à une"
+msgstr "Columnas elegidas una a una"
+
 #: src/components/dsk-workspace/dsk-workspace.tsx:187
 #~ msgid "Color {i}: {color}"
 #~ msgstr "Color {i}: {color}"
@@ -483,6 +495,10 @@ msgstr "Desbloquear"
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:155
 msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
 msgstr "Diferencia de luminancia máxima permitida entre colores alternados"
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:64
+msgid "Diffusion d'erreur"
+msgstr "Difusión de error"
 
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:195
 msgid "Dimension Preset"
@@ -998,6 +1014,10 @@ msgstr "Mapeo de colores automático"
 msgid "Marge"
 msgstr "Margen"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:69
+msgid "Matrice de Bayer"
+msgstr "Matriz de Bayer"
+
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:363
 msgid "Max {maxChangesPerLine} changement(s) par ligne"
 msgstr "Máx. {maxChangesPerLine} cambio(s) por línea"
@@ -1172,6 +1192,10 @@ msgstr "Optimizando..."
 msgid "Options de couleur"
 msgstr "Opciones de color"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:62
+msgid "Ordonné (Bayer)"
+msgstr "Ordenado (Bayer)"
+
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:82
 msgid "Origin (No Scale)"
 msgstr "Original (sin escala)"
@@ -1302,6 +1326,10 @@ msgstr "Más bajo = más variedad, más alto = más coherencia entre líneas"
 msgid "Plus haut = préférence pour les couleurs similaires aux lignes précédentes"
 msgstr "Más alto = preferencia por colores similares a las líneas anteriores"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:51
+msgid "Plus proche voisin"
+msgstr "Vecino más cercano"
+
 #: src/components/export-panel/export-config-dialog.tsx:97
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (vista previa)"
@@ -1407,9 +1435,21 @@ msgstr "Rasters Generados"
 msgid "Recharger la page"
 msgstr "Recargar la página"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:97
+msgid "Recherche approchée : la planche dépasse le budget exhaustif, les lignes ont été retirées une à une."
+msgstr "Búsqueda aproximada: la lámina supera el presupuesto exhaustivo, las líneas se quitaron una a una."
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:102
+msgid "Recherche exhaustive : toutes les combinaisons de lignes ont été évaluées."
+msgstr "Búsqueda exhaustiva: se evaluaron todas las combinaciones de líneas."
+
 #: src/components/source-selector/source-selector-view.tsx:112
 #~ msgid "Redimensionner"
 #~ msgstr "Redimensionar"
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:40
+msgid "Réduction"
+msgstr "Reducción"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:209
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche"
@@ -1467,6 +1507,10 @@ msgstr "Restablecer al valor predeterminado"
 #: src/components/dsk-workspace/dsk-workspace.tsx:85
 msgid "Remove image from workspace"
 msgstr "Eliminar imagen del espacio de trabajo"
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:36
+msgid "Rendu"
+msgstr "Render"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:231
 msgid "Renforce les contours pour une image plus nette (0 = off, 1 = fort)"
@@ -1611,6 +1655,10 @@ msgstr "Total"
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:407
 msgid "Tout supprimer"
 msgstr "Eliminar todo"
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:55
+msgid "Tramage"
+msgstr "Tramado"
 
 #: src/app/components/tileset-workshop/tileset-palette-panel.tsx:106
 msgid "Transparence"
