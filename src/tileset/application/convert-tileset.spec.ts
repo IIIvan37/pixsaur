@@ -111,6 +111,19 @@ describe('convertTileset', () => {
     ])
   })
 
+  it('links a repeated tile back to its first occurrence', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(8, [
+        [255, 0, 0],
+        [0, 0, 255],
+        [255, 0, 0]
+      ])
+    })
+
+    expect(result.ok && result.tileset.instanceOf).toEqual([0, 1, 0])
+  })
+
   it('rejects a sheet needing more pens than the mode offers', () => {
     const tooManyColours = sheetOfSolidTiles(8, [
       [255, 0, 0],

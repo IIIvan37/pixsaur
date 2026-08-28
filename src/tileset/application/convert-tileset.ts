@@ -15,6 +15,7 @@ import {
 } from '@/domain/cpc'
 import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
+  dedupeTiles,
   resizeTileNearest,
   type SheetGrid,
   sliceSheet
@@ -58,6 +59,10 @@ export interface ConvertedTileset {
   /** Shared by every tile — the CPC has one palette at a time. */
   palette: Pen[]
   tiles: ConvertedTile[]
+  /** For each tile, the tile it is an instance of — the edit link of Q11. */
+  instanceOf: number[]
+  /** Positions of the distinct tiles, in order of first appearance. */
+  unique: number[]
 }
 
 export type ConvertTilesetResult =
@@ -107,11 +112,18 @@ export function convertTileset(
     converted.push({ indices })
   }
 
+  // Deduplicating the CONVERTED tiles, not the source ones: two source tiles
+  // that only differed below the CPC palette's resolution have become the same
+  // tile, and editing one must reach the other (Q11).
+  const { instanceOf, unique } = dedupeTiles(converted.map((t) => t.indices))
+
   const tileset: ConvertedTileset = {
     columns,
     rows,
     palette,
-    tiles: converted
+    tiles: converted,
+    instanceOf,
+    unique
   }
 
   return { ok: true, tileset, png: renderPng(tileset, input) }

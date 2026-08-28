@@ -13,6 +13,12 @@ export {
   type TileGrid
 } from './src/slice-sheet'
 export {
+  dedupeTiles,
+  duplicateRate,
+  type TileBytes,
+  type TileDedup
+} from './src/tile-dedup'
+export {
   aspectDistortion,
   candidateTileSizes,
   idealTileHeight,
