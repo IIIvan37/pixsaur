@@ -20,16 +20,41 @@ export interface ColourWeight {
   frequency: number
 }
 
+function countedPixels(tile: TileBytes, ignore?: number): number {
+  if (ignore === undefined) return tile.length
+
+  let counted = 0
+  for (let pixel = 0; pixel < tile.length; pixel++) {
+    if (tile[pixel] !== ignore) counted++
+  }
+  return counted
+}
+
+export interface HistogramOptions {
+  /** A colour that competes for no pen — the transparency marker of Q16. */
+  ignore?: number
+}
+
 export function tilePaletteHistogram(
-  tiles: readonly TileBytes[]
+  tiles: readonly TileBytes[],
+  { ignore }: HistogramOptions = {}
 ): ColourWeight[] {
   const { unique } = dedupeTiles(tiles)
+  // A tile holding nothing but holes carries no colour, so it must not take a
+  // share of the total either — otherwise a sheet's blank tiles would dilute
+  // the weights of the ones that do hold something.
+  const counting = unique
+    .map((at) => ({
+      tile: tiles[at],
+      counted: countedPixels(tiles[at], ignore)
+    }))
+    .filter(({ counted }) => counted > 0)
   const weights = new Map<number, number>()
 
-  for (const at of unique) {
-    const tile = tiles[at]
-    const share = 1 / (tile.length * unique.length)
+  for (const { tile, counted } of counting) {
+    const share = 1 / (counted * counting.length)
     for (let pixel = 0; pixel < tile.length; pixel++) {
+      if (tile[pixel] === ignore) continue
       weights.set(tile[pixel], (weights.get(tile[pixel]) ?? 0) + share)
     }
   }

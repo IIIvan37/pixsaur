@@ -1,6 +1,12 @@
-import { vectorToHex } from '@/domain/cpc'
+import { cpcPalette, vectorToHex } from '@/domain/cpc'
 import type { ConvertTilesetInput, Pen } from './convert-tileset'
 import { convertTileset } from './convert-tileset'
+
+/** Whether the PNG carries a chunk of that name. */
+const hasChunk = (png: Uint8Array, name: string) =>
+  [...png].some((_, at) =>
+    name.split('').every((letter, o) => png[at + o] === letter.charCodeAt(0))
+  )
 
 /** The pens a palette holds, order-free — the strategy owns the order now. */
 const penSet = (palette: Pen[]) => palette.map(vectorToHex).sort()
@@ -57,6 +63,31 @@ function sheetOfColumns(
     for (let x = 0; x < width; x++) {
       const at = (y * width + x) * 4
       ;[data[at], data[at + 1], data[at + 2]] = columns[x]
+      data[at + 3] = 255
+    }
+  }
+  return { width, height: 8, data }
+}
+
+/** One 8 x 8 tile, white but fully transparent — alpha must decide, not RGB. */
+function transparentSheet(): ConvertTilesetInput['sheet'] {
+  const data = new Uint8ClampedArray(8 * 8 * 4).fill(255)
+  for (let pixel = 0; pixel < 8 * 8; pixel++) data[pixel * 4 + 3] = 0
+  return { width: 8, height: 8, data }
+}
+
+/**
+ * Three 8 x 8 tiles: a fully transparent hole, an OPAQUE black tile, a red one.
+ * The hole flattens onto the same black — so only a dedicated pen can tell the
+ * first two apart.
+ */
+function sheetWithHole(): ConvertTilesetInput['sheet'] {
+  const width = 24
+  const data = new Uint8ClampedArray(width * 8 * 4)
+  for (let y = 0; y < 8; y++) {
+    for (let x = 8; x < width; x++) {
+      const at = (y * width + x) * 4
+      if (x >= 16) data[at] = 255
       data[at + 3] = 255
     }
   }
@@ -125,7 +156,8 @@ describe('convertTileset', () => {
         ],
         { margin: 1, spacing: 2 }
       ),
-      source: { tileWidth: 8, tileHeight: 8, margin: 1, spacing: 2 }
+      source: { tileWidth: 8, tileHeight: 8, margin: 1, spacing: 2 },
+      transparency: 'flatten'
     })
 
     expect(result.ok && penSet(result.tileset.palette)).toEqual([
@@ -163,6 +195,56 @@ describe('convertTileset', () => {
     expect(result.ok && result.tileset.palette.length).toBe(2)
   })
 
+  it('keeps free the pens the sprites asked to have reserved', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(8, cpcPalette as [number, number, number][]),
+      reservedPens: 4
+    })
+
+    expect(result.ok && result.tileset.palette.length).toBe(12)
+  })
+
+  it('refuses a reservation that leaves the tileset no pen at all', () => {
+    const result = convertTileset({ ...input, mode: 1, reservedPens: 4 })
+
+    expect(result.ok === false && result.error).toBe('no-pens-left')
+  })
+
+  it('flattens a transparent pixel onto the background in mode 1', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: transparentSheet(),
+      mode: 1
+    })
+
+    expect(result.ok && penSet(result.tileset.palette)).toEqual(['000000'])
+  })
+
+  it('spends a pen on transparency in mode 0', () => {
+    const result = convertTileset({ ...input, sheet: sheetWithHole() })
+
+    expect(result.ok && result.tileset.transparentPen).toBe(0)
+  })
+
+  it('tells a hole apart from an opaque tile of the same colour', () => {
+    const result = convertTileset({ ...input, sheet: sheetWithHole() })
+
+    expect(result.ok && result.tileset.instanceOf).toEqual([0, 1, 2])
+  })
+
+  it('never sends an opaque pixel to the transparency pen', () => {
+    const result = convertTileset({ ...input, sheet: sheetWithHole() })
+
+    expect(result.ok && result.tileset.tiles[1].indices[0]).not.toBe(0)
+  })
+
+  it('marks the transparency pen transparent in the PNG', () => {
+    const result = convertTileset({ ...input, sheet: sheetWithHole() })
+
+    expect(result.ok && hasChunk(result.png, 'tRNS')).toBe(true)
+  })
+
   it('keeps a column nearest-neighbour would step over', () => {
     const result = convertTileset({
       ...input,
@@ -178,7 +260,8 @@ describe('convertTileset', () => {
     const result = convertTileset({
       ...input,
       sheet: sheetOfColumns([RED, RED, RED, RED, RED, RED, RED, BLUE]),
-      resize: 'nearest'
+      resize: 'nearest',
+      transparency: 'flatten'
     })
 
     expect(result.ok && result.tileset.palette).toEqual([RED])

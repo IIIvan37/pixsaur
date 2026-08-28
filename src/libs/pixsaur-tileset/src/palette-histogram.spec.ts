@@ -42,4 +42,22 @@ describe('tilePaletteHistogram', () => {
   it('lists the heaviest colour first', () => {
     expect(tilePaletteHistogram([[1, 2, 2, 2]])[0].index).toBe(2)
   })
+
+  it('leaves an ignored colour out of the weights', () => {
+    expect(tilePaletteHistogram([[1, 1, 9, 9]], { ignore: 9 })).toEqual([
+      { index: 1, frequency: 1 }
+    ])
+  })
+
+  it('drops a tile made only of the ignored colour', () => {
+    expect(
+      tilePaletteHistogram(
+        [
+          [9, 9],
+          [1, 1]
+        ],
+        { ignore: 9 }
+      )
+    ).toEqual([{ index: 1, frequency: 1 }])
+  })
 })

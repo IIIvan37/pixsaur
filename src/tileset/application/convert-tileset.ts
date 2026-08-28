@@ -70,6 +70,23 @@ export interface ConvertTilesetInput {
    * `exhaustive-contrast`, the same default the image workshop carries.
    */
   paletteStrategy?: PaletteStrategy
+  /**
+   * Pens to keep out of the quantization, so the sprites can have them (Q23).
+   * Reserved by COUNT, not by colour — which is what makes it a mode 0
+   * feature: mode 1 has 4 pens, mode 2 has 2, and neither can spare any.
+   */
+  reservedPens?: number
+  /**
+   * The colour a transparent pixel is composited over before quantization
+   * (Q16). Defaults to black.
+   */
+  background?: Pen
+  /**
+   * What becomes of an alpha channel (Q16). `pen` spends one of the mode's
+   * pens on a hole, `flatten` composites over `background`. Defaults to `pen`
+   * in mode 0 and `flatten` in modes 1 and 2, where no pen can be spared.
+   */
+  transparency?: 'pen' | 'flatten'
 }
 
 /** One converted tile: palette indices, `target.tileWidth * tileHeight` long. */
@@ -79,6 +96,26 @@ export interface ConvertedTile {
 
 /** An RGB pen, already snapped to a CPC hardware colour. */
 export type Pen = [r: number, g: number, b: number]
+
+const BLACK: Pen = [0, 0, 0]
+
+/** A hole always takes the first pen — the one CPC sprite routines test. */
+const TRANSPARENT_PEN = 0
+
+/**
+ * Marks a pixel as a hole while it travels as a base-palette index. Safely out
+ * of range: the widest base palette, CPC Plus, stops at 4095.
+ */
+const HOLE = 0xffff
+
+/** Below this, a pixel is a hole rather than a colour to composite. */
+const OPACITY_THRESHOLD = 128
+
+function spendsPenOnHoles(input: ConvertTilesetInput): boolean {
+  return (
+    (input.transparency ?? (input.mode === 0 ? 'pen' : 'flatten')) === 'pen'
+  )
+}
 
 export interface ConvertedTileset {
   columns: number
@@ -90,15 +127,20 @@ export interface ConvertedTileset {
   instanceOf: number[]
   /** Positions of the distinct tiles, in order of first appearance. */
   unique: number[]
+  /** The pen standing for a hole, or `null` when alpha was flattened (Q16). */
+  transparentPen: number | null
 }
 
 export type ConvertTilesetResult =
   | { ok: true; tileset: ConvertedTileset; png: Uint8Array }
-  | { ok: false; error: 'grid-mismatch' }
+  | { ok: false; error: 'grid-mismatch' | 'no-pens-left' }
 
 export function convertTileset(
   input: ConvertTilesetInput
 ): ConvertTilesetResult {
+  const maxPens = penBudget(input)
+  if (maxPens < 1) return { ok: false, error: 'no-pens-left' }
+
   const sliced = sliceSheet(input.sheet, input.source)
   if (!sliced) return { ok: false, error: 'grid-mismatch' }
 
@@ -119,19 +161,33 @@ export function convertTileset(
   const baseIndexByKey = new Map(
     basePalette.map((colour, index) => [colorToKey(colour), index])
   )
+  const background = input.background ?? BLACK
+  const holePen = spendsPenOnHoles(input) ? TRANSPARENT_PEN : null
   const snapped = tiles.map((tile) => {
     const resized = scheme
       ? resizeTileByScheme(tile, input.source, input.target, scheme)
       : resizeTileNearest(tile, input.source, input.target)
-    return snapToHardware(resized.data, baseIndexByKey, input.hardware)
+    return snapToHardware(resized.data, baseIndexByKey, input.hardware, {
+      background,
+      marksHoles: holePen !== null
+    })
   })
 
-  const palette = selectPalette(snapped, basePalette, input)
-  const penOf = nearestPens(palette, basePalette)
+  const chosen = selectPalette(
+    snapped,
+    basePalette,
+    holePen === null ? maxPens : maxPens - 1,
+    input
+  )
+  // The transparency pen comes first and is never a quantization target: only
+  // alpha can reach it, so an opaque pixel of the same colour stays distinct.
+  const palette = holePen === null ? chosen : [background, ...chosen]
+  const penOf = nearestPens(chosen, basePalette, holePen === null ? 0 : 1)
   const converted: ConvertedTile[] = snapped.map((tile) => {
     const indices = new Uint8Array(tile.length)
     for (let pixel = 0; pixel < tile.length; pixel++) {
-      indices[pixel] = penOf[tile[pixel]]
+      indices[pixel] =
+        tile[pixel] === HOLE ? TRANSPARENT_PEN : penOf[tile[pixel]]
     }
     return { indices }
   })
@@ -147,7 +203,8 @@ export function convertTileset(
     palette,
     tiles: converted,
     instanceOf,
-    unique
+    unique,
+    transparentPen: holePen
   }
 
   return { ok: true, tileset, png: renderPng(tileset, input) }
@@ -181,15 +238,23 @@ type SnappedTile = Uint16Array
 function snapToHardware(
   data: Uint8ClampedArray,
   indexByKey: ReadonlyMap<string, number>,
-  hardware: CPCHardware
+  hardware: CPCHardware,
+  alpha: { background: Pen; marksHoles: boolean }
 ): SnappedTile {
   const snapped = new Uint16Array(data.length / 4)
 
   for (let pixel = 0; pixel < snapped.length; pixel++) {
     const at = pixel * 4
-    const key = colorToKey(
-      quantizeColorForHardware([data[at], data[at + 1], data[at + 2]], hardware)
-    )
+    if (alpha.marksHoles && data[at + 3] < OPACITY_THRESHOLD) {
+      snapped[pixel] = HOLE
+      continue
+    }
+
+    const opacity = data[at + 3] / 255
+    const flattened = alpha.background.map(
+      (behind, channel) => data[at + channel] * opacity + behind * (1 - opacity)
+    ) as Vector
+    const key = colorToKey(quantizeColorForHardware(flattened, hardware))
     const index = indexByKey.get(key)
     invariant(
       index !== undefined,
@@ -205,20 +270,27 @@ function snapToHardware(
  * Picks the pens the whole tileset shares, from a histogram weighted one unit
  * per UNIQUE tile (Q3 · Q15) and handed to one of the 12 strategies (Q15).
  */
+function penBudget(input: ConvertTilesetInput): number {
+  return (
+    CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors -
+    (input.reservedPens ?? 0)
+  )
+}
+
 function selectPalette(
   snapped: readonly SnappedTile[],
   basePalette: Vector[],
+  maxPens: number,
   input: ConvertTilesetInput
 ): Pen[] {
-  const maxPens = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors
-  const candidates: ColorCandidate[] = tilePaletteHistogram(snapped).map(
-    ({ index, frequency }) => ({
-      index,
-      frequency,
-      color: [...basePalette[index]] as Vector,
-      converted: [...basePalette[index]] as Vector
-    })
-  )
+  const candidates: ColorCandidate[] = tilePaletteHistogram(snapped, {
+    ignore: HOLE
+  }).map(({ index, frequency }) => ({
+    index,
+    frequency,
+    color: [...basePalette[index]] as Vector,
+    converted: [...basePalette[index]] as Vector
+  }))
 
   const { selectedIndices } = applyPaletteStrategyV2(
     input.paletteStrategy ?? 'exhaustive-contrast',
@@ -238,20 +310,24 @@ function selectPalette(
  * over the base palette rather than per pixel — the same colour always lands on
  * the same pen, which is what keeps deduplication exact (Q30).
  */
-function nearestPens(palette: Pen[], basePalette: Vector[]): Uint8Array {
+function nearestPens(
+  chosen: Pen[],
+  basePalette: Vector[],
+  offset: number
+): Uint8Array {
   const penOf = new Uint8Array(basePalette.length)
 
   basePalette.forEach((colour, index) => {
     let best = 0
     let bestDistance = Number.POSITIVE_INFINITY
-    palette.forEach((pen, at) => {
+    chosen.forEach((pen, at) => {
       const distance = perceptualDistance(colour, pen)
       if (distance < bestDistance) {
         bestDistance = distance
         best = at
       }
     })
-    penOf[index] = best
+    penOf[index] = best + offset
   })
 
   return penOf
@@ -287,5 +363,11 @@ function renderPng(
     }
   })
 
-  return encodeIndexedPng({ width, height, palette: tileset.palette, indices })
+  return encodeIndexedPng({
+    width,
+    height,
+    palette: tileset.palette,
+    indices,
+    transparentIndex: tileset.transparentPen ?? undefined
+  })
 }

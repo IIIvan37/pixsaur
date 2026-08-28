@@ -79,4 +79,11 @@ describe('encodeIndexedPng', () => {
 
     expect(Array.from(raw)).toEqual([0, 0, 1, 0, 1, 0])
   })
+
+  it('marks the named pen transparent in tRNS', () => {
+    const png = encodeIndexedPng({ ...image, transparentIndex: 0 })
+    const trns = readChunks(png).find((chunk) => chunk.type === 'tRNS')
+
+    expect(trns && Array.from(trns.data)).toEqual([0])
+  })
 })

@@ -21,6 +21,12 @@ export interface IndexedImage {
   palette: [r: number, g: number, b: number][]
   /** One byte per pixel, row-major, `width * height` long. */
   indices: Uint8Array
+  /**
+   * A pen to declare fully transparent, through a `tRNS` chunk. Every earlier
+   * pen is left opaque, so this is only worth naming for a low index — pen 0
+   * for the tileset workshop, where a hole is the first pen (Q16).
+   */
+  transparentIndex?: number
 }
 
 const CRC_TABLE = (() => {
@@ -118,10 +124,25 @@ export function encodeIndexedPng(image: IndexedImage): Uint8Array {
     plte.set([r, g, b], index * 3)
   })
 
+  // tRNS lists alpha per pen and may stop early: the pens it does not reach
+  // are opaque. So one entry is enough to punch a hole at pen 0.
+  const trns =
+    image.transparentIndex === undefined
+      ? []
+      : chunk(
+          'tRNS',
+          new Uint8Array(image.transparentIndex + 1).fill(
+            255,
+            0,
+            image.transparentIndex
+          )
+        )
+
   return new Uint8Array([
     ...SIGNATURE,
     ...chunk('IHDR', ihdr),
     ...chunk('PLTE', plte),
+    ...trns,
     ...chunk('IDAT', new Uint8Array(zlibStored(toScanlines(image)))),
     ...chunk('IEND', new Uint8Array(0))
   ])
