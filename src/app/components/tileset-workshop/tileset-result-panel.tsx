@@ -1,9 +1,12 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useState } from 'react'
-import { editedTilesetAtom } from '@/app/store/tileset/tileset'
+import {
+  editedTilesetAtom,
+  selectedTileAtom
+} from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
@@ -52,6 +55,7 @@ function usePngUrl(result: ConvertTilesetResult | null) {
 export function TilesetResultPanel() {
   const { _ } = useLingui()
   const result = useAtomValue(editedTilesetAtom)
+  const select = useSetAtom(selectedTileAtom)
   const url = usePngUrl(result)
 
   if (!result) return null
@@ -122,8 +126,14 @@ export function TilesetResultPanel() {
           <ul className={styles.candidates}>
             {worst.map((collision) => (
               <li key={collision.tile}>
-                <Trans>Tuile {collision.tile}</Trans>
-                {` — ${collision.error.toFixed(1)}`}
+                {/* The report is what directs the retouching: reading it must
+                    be enough to aim the brush. */}
+                <Button onClick={() => select(collision.tile)}>
+                  {/* The number stays outside the message: the Lingui macro
+                      drops the values of an interpolated one here. */}
+                  <Trans>Tuile</Trans>
+                  {` ${collision.tile} — ${collision.error.toFixed(1)}`}
+                </Button>
               </li>
             ))}
           </ul>

@@ -7,6 +7,7 @@
  * See `docs/features/PLAN-tileset-workshop.md`.
  */
 
+import { TilesetEditPanel } from './tileset-edit-panel'
 import { TilesetGeometryPanel } from './tileset-geometry-panel'
 import { TilesetGridPanel } from './tileset-grid-panel'
 import { TilesetPalettePanel } from './tileset-palette-panel'
@@ -24,6 +25,7 @@ export default function TilesetWorkshop() {
       <TilesetPalettePanel />
       <TilesetRenderPanel />
       <TilesetResultPanel />
+      <TilesetEditPanel />
     </div>
   )
 }

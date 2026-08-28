@@ -59,7 +59,7 @@ function pngOf(store: ReturnType<typeof createStore>): Uint8Array {
 }
 
 describe('tileset edit layer atoms', () => {
-  it('ne peint rien tant qu aucune planche n est entrée', () => {
+  it('paints nothing while no sheet is imported', () => {
     const store = createStore()
 
     store.set(paintTilesetAtom, { tile: 0, pixels: [{ x: 0, y: 0 }], pen: 3 })
@@ -67,19 +67,19 @@ describe('tileset edit layer atoms', () => {
     expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
   })
 
-  it('montre le pen peint dans la planche convertie', () => {
+  it('shows the painted pen in the converted sheet', () => {
     expect(penAt(painted(), 0)).toBe(3)
   })
 
-  it('propage le trait aux instances de la tuile', () => {
+  it('carries the stroke to the instances of the tile', () => {
     expect(penAt(painted(), COLOURS.length)).toBe(3)
   })
 
-  it('laisse les autres tuiles intactes', () => {
+  it('leaves the other tiles untouched', () => {
     expect(penAt(painted(), 1)).not.toBe(3)
   })
 
-  it('rend un PNG qui porte le trait', () => {
+  it('encodes a PNG that carries the stroke', () => {
     const store = painted()
     const edited = pngOf(store)
 
@@ -88,7 +88,7 @@ describe('tileset edit layer atoms', () => {
     expect(edited).not.toEqual(pngOf(store))
   })
 
-  it('annule le dernier trait', () => {
+  it('undoes the last stroke', () => {
     const store = painted()
 
     store.set(undoTilesetEditAtom)
@@ -96,7 +96,7 @@ describe('tileset edit layer atoms', () => {
     expect(penAt(store, 0)).not.toBe(3)
   })
 
-  it('rétablit le trait annulé', () => {
+  it('redoes the undone stroke', () => {
     const store = painted()
 
     store.set(undoTilesetEditAtom)
@@ -105,7 +105,7 @@ describe('tileset edit layer atoms', () => {
     expect(penAt(store, 0)).toBe(3)
   })
 
-  it('oublie les édits quand la grille de découpe change', () => {
+  it('forgets the edits when the cutting grid moves', () => {
     const store = painted()
 
     store.set(setTilesetGridAtom, { margin: 1 })
@@ -113,7 +113,7 @@ describe('tileset edit layer atoms', () => {
     expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
   })
 
-  it('oublie les édits quand la tuile de destination change', () => {
+  it('forgets the edits when the destination tile changes', () => {
     const store = painted()
 
     store.set(setTilesetTargetAtom, { tileWidth: 4 })
@@ -121,7 +121,7 @@ describe('tileset edit layer atoms', () => {
     expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
   })
 
-  it('oublie les édits quand une nouvelle planche entre', () => {
+  it('forgets the edits when another sheet is imported', () => {
     const store = painted()
 
     store.set(setTilesetSheetAtom, sheetOfRepeatedColours())
@@ -129,7 +129,7 @@ describe('tileset edit layer atoms', () => {
     expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
   })
 
-  it('oublie les édits quand le mode change', () => {
+  it('forgets the edits when the mode changes', () => {
     const store = painted()
 
     store.set(setTilesetModeAtom, 1)

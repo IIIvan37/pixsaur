@@ -165,6 +165,7 @@ msgstr "Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs. EGX2: 6
 msgid "Annuler"
 msgstr "Annuler"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:140
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:47
 msgid "Annuler (Ctrl+Z)"
 msgstr "Annuler (Ctrl+Z)"
@@ -221,11 +222,11 @@ msgstr "Aucune image traitée"
 #~ msgid "Aucune plage raster définie."
 #~ msgstr "Aucune plage raster définie."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:19
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:22
 msgid "Aucune tuile entière n'entre dans la grille déclarée."
 msgstr "Aucune tuile entière n'entre dans la grille déclarée."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:119
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:123
 msgid "Aucune tuile ne perd de couleur."
 msgstr "Aucune tuile ne perd de couleur."
 
@@ -657,7 +658,7 @@ msgstr "Encre précédente"
 msgid "Encre suivante"
 msgstr "Encre suivante"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:110
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:114
 msgid "Enregistrer le PNG"
 msgstr "Enregistrer le PNG"
 
@@ -859,7 +860,7 @@ msgstr "High Res Lines"
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Palette CPC standard uniquement. Le support de la palette Plus arrive bientôt."
 
-#: src/app/components/workshop-tabs/workshop-tabs.tsx:32
+#: src/app/components/workshop-tabs/workshop-tabs.tsx:37
 msgid "Image"
 msgstr "Image"
 
@@ -895,6 +896,11 @@ msgstr "Installer la mise à jour"
 #~ msgid "Installing..."
 #~ msgstr "Installation..."
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:95
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:97
+msgid "Instances"
+msgstr "Instances"
+
 #: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:129
 msgid "Intensité"
 msgstr "Intensité"
@@ -907,15 +913,15 @@ msgstr "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgid "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
 msgstr "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:21
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:24
 msgid "La palette gelée dépasse ce que le mode peut tenir."
 msgstr "La palette gelée dépasse ce que le mode peut tenir."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:22
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:25
 msgid "La palette gelée ne commence pas par le pen de transparence."
 msgstr "La palette gelée ne commence pas par le pen de transparence."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:20
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:23
 msgid "La réservation ne laisse aucun pen au tileset."
 msgstr "La réservation ne laisse aucun pen au tileset."
 
@@ -1204,6 +1210,10 @@ msgstr "Nuances similaires (0) ◄► Teintes distinctes (100)"
 msgid "Ombres"
 msgstr "Ombres"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:151
+msgid "On peint un pen, jamais une couleur : les retouches sont rejouées après chaque conversion et atteignent toutes les instances de la tuile."
+msgstr "On peint un pen, jamais une couleur : les retouches sont rejouées après chaque conversion et atteignent toutes les instances de la tuile."
+
 #: src/components/export-panel/export-panel-view.tsx:43
 msgid "Open in CPC Playground"
 msgstr "Ouvrir dans CPC Playground"
@@ -1304,8 +1314,12 @@ msgstr "Paramètres Raster"
 msgid "Peindre au curseur"
 msgstr "Peindre au curseur"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:93
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:95
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:110
+msgid "Pen"
+msgstr "Pen"
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:97
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:99
 msgid "Pens"
 msgstr "Pens"
 
@@ -1335,11 +1349,15 @@ msgstr "Photo sombre"
 msgid "Photo vive"
 msgstr "Photo vive"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:130
+msgid "Pixel"
+msgstr "Pixel"
+
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:153
 msgid "Pixel Mode"
 msgstr "Mode pixel"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:82
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:86
 msgid "Planche convertie"
 msgstr "Planche convertie"
 
@@ -1517,6 +1535,7 @@ msgstr "Réessayer"
 msgid "Refaire"
 msgstr "Refaire"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:146
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:57
 msgid "Refaire (Ctrl+Y)"
 msgstr "Refaire (Ctrl+Y)"
@@ -1566,10 +1585,14 @@ msgstr "Resize"
 msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 msgstr "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:62
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:76
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:66
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:80
 msgid "Résultat"
 msgstr "Résultat"
+
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:82
+msgid "Retouche"
+msgstr "Retouche"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:122
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
@@ -1692,7 +1715,7 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Teste toutes les combinaisons, maximise le contraste (meilleure qualité)"
 
-#: src/app/components/workshop-tabs/workshop-tabs.tsx:35
+#: src/app/components/workshop-tabs/workshop-tabs.tsx:40
 msgid "Tileset"
 msgstr "Tileset"
 
@@ -1718,21 +1741,21 @@ msgstr "Transparence"
 msgid "Trous aplatis sur le fond"
 msgstr "Trous aplatis sur le fond"
 
-#. placeholder {0}: collision.tile
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:125
-msgid "Tuile {0}"
-msgstr "Tuile {0}"
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:86
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:134
+msgid "Tuile"
+msgstr "Tuile"
 
 #: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:50
 msgid "Tuile de destination"
 msgstr "Tuile de destination"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:115
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:119
 msgid "Tuiles les plus malmenées par la palette"
 msgstr "Tuiles les plus malmenées par la palette"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:87
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:89
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:91
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:93
 msgid "Tuiles uniques"
 msgstr "Tuiles uniques"
 

@@ -45,7 +45,7 @@ function layerOf(count: number, at: number): TilesetEditLayer {
 }
 
 describe('paintTileset', () => {
-  it('propage la peinture à toutes les instances de la tuile', () => {
+  it('paints every instance of the tile at once', () => {
     const tileset = tilesetOf(
       [
         [0, 0, 0, 0],
@@ -70,7 +70,7 @@ describe('paintTileset', () => {
     expect(layer.strokes[0].tiles).toEqual([0, 2])
   })
 
-  it('ne retient rien quand le pen est déjà celui du pixel', () => {
+  it('records nothing when the pixel already holds the pen', () => {
     const tileset = tilesetOf([[1, 1, 1, 1]], [0])
 
     const layer = paintTileset(
@@ -88,7 +88,7 @@ describe('paintTileset', () => {
     expect(layer).toBe(EMPTY_EDIT_LAYER)
   })
 
-  it('refuse un pen que la palette gelée ne porte pas', () => {
+  it('refuses a pen the frozen palette has not got', () => {
     const tileset = tilesetOf([[0, 0, 0, 0]], [0])
 
     const layer = paintTileset(
@@ -106,7 +106,7 @@ describe('paintTileset', () => {
     expect(layer).toBe(EMPTY_EDIT_LAYER)
   })
 
-  it('abandonne les édits rétablissables quand on repeint', () => {
+  it('drops the redoable strokes as soon as one is painted', () => {
     const tileset = tilesetOf([[0, 0, 0, 0]], [0])
 
     const layer = paintTileset(
@@ -124,7 +124,7 @@ describe('paintTileset', () => {
     expect(layer.strokes).toHaveLength(2)
   })
 
-  it("plafonne la pile d'annulation", () => {
+  it('caps the undo stack', () => {
     const tileset = tilesetOf([[0, 0, 0, 0]], [0])
 
     const layer = paintTileset(
@@ -144,11 +144,11 @@ describe('paintTileset', () => {
 })
 
 describe('undoTilesetEdits', () => {
-  it("recule le curseur d'un cran", () => {
+  it('steps the cursor back one action', () => {
     expect(undoTilesetEdits(layerOf(2, 1)).at).toBe(0)
   })
 
-  it('ne recule pas en deçà du premier édit', () => {
+  it('stops stepping back at the first stroke', () => {
     const layer = layerOf(2, -1)
 
     expect(undoTilesetEdits(layer)).toBe(layer)
@@ -156,11 +156,11 @@ describe('undoTilesetEdits', () => {
 })
 
 describe('redoTilesetEdits', () => {
-  it("avance le curseur d'un cran", () => {
+  it('steps the cursor forward one action', () => {
     expect(redoTilesetEdits(layerOf(2, 0)).at).toBe(1)
   })
 
-  it('ne rétablit rien au sommet de la pile', () => {
+  it('redoes nothing at the top of the stack', () => {
     const layer = layerOf(2, 1)
 
     expect(redoTilesetEdits(layer)).toBe(layer)
@@ -189,25 +189,25 @@ describe('applyTilesetEdits', () => {
     { clock }
   )
 
-  it('rejoue le trait sur toutes les instances de la tuile', () => {
+  it('replays the stroke on every instance of the tile', () => {
     const edited = applyTilesetEdits(tileset, painted, SHAPE)
 
     expect([...edited.tiles[2].indices]).toEqual([0, 2, 0, 0])
   })
 
-  it('laisse les tuiles hors du groupe intactes', () => {
+  it('leaves the tiles outside the group untouched', () => {
     const edited = applyTilesetEdits(tileset, painted, SHAPE)
 
     expect([...edited.tiles[1].indices]).toEqual([1, 1, 1, 1])
   })
 
-  it('ne rejoue rien au-delà du curseur', () => {
+  it('replays nothing past the cursor', () => {
     const edited = applyTilesetEdits(tileset, undoTilesetEdits(painted), SHAPE)
 
     expect([...edited.tiles[0].indices]).toEqual([0, 0, 0, 0])
   })
 
-  it('rend la planche elle-même quand aucun édit ne tient', () => {
+  it('hands back the sheet itself when no stroke holds', () => {
     expect(applyTilesetEdits(tileset, EMPTY_EDIT_LAYER, SHAPE)).toBe(tileset)
   })
 })

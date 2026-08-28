@@ -91,3 +91,14 @@ export const undoTilesetEditAtom = atom(null, (get, set) => {
 export const redoTilesetEditAtom = atom(null, (get, set) => {
   set(tilesetEditLayerAtom, redoTilesetEdits(get(tilesetEditLayerAtom)))
 })
+
+/**
+ * The tile the retouching panel is aimed at, by position in the sheet.
+ *
+ * A position and not a unique tile: the collision report of Q22 names
+ * positions, and it is what points the user at the tile worth retouching.
+ */
+export const selectedTileAtom = atom(0)
+
+/** The pen the brush lays down — an index into the frozen palette (Q19). */
+export const selectedPenAtom = atom(0)

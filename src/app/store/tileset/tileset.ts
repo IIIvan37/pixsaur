@@ -25,6 +25,8 @@ export {
   type PaintTilesetPayload,
   paintTilesetAtom,
   redoTilesetEditAtom,
+  selectedPenAtom,
+  selectedTileAtom,
   undoTilesetEditAtom
 } from './edits'
 export {
