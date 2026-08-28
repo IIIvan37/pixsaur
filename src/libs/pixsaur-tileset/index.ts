@@ -3,6 +3,7 @@ export {
   type EdgeCondition,
   type TileEdges
 } from './src/edge-condition'
+export { type EdgeMaskOptions, tileEdgeMask } from './src/edge-mask'
 export {
   type ColourWeight,
   tilePaletteHistogram
