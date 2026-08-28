@@ -32,7 +32,7 @@ msgstr "{0} Bild(er) bereit zum Exportieren"
 
 #. placeholder {0}: candidate.uniqueTiles
 #. placeholder {1}: percent(candidate.duplicateRate)
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:73
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:81
 msgid "{0} tuiles uniques, {1} de doublons"
 msgstr "{0} einzigartige Kacheln, {1} Duplikate"
 
@@ -109,7 +109,7 @@ msgstr "Aktuelles Bild hinzufügen"
 #~ msgid "Adjustments, Source & Preview"
 #~ msgstr "Anpassungen, Quelle & Vorschau"
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:89
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:99
 msgid "Adoucir les escaliers"
 msgstr "Treppen glätten"
 
@@ -165,7 +165,7 @@ msgstr "Zeilenweise Moduswechsel. EGX1: 320×200 16 Farben. EGX2: 640×200 4 Far
 msgid "Annuler"
 msgstr "Abbrechen"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:168
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:178
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:47
 msgid "Annuler (Ctrl+Z)"
 msgstr "Rückgängig (Strg+Z)"
@@ -202,8 +202,8 @@ msgstr "Änderungen anwenden"
 msgid "Assemblez une image disque DSK multi-fichiers compatible avec les émulateurs et le matériel CPC réel."
 msgstr "Erstellen Sie ein DSK-Disk-Image mit mehreren Dateien, kompatibel mit Emulatoren und echter CPC-Hardware."
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:119
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:62
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:124
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:69
 msgid "Aucun"
 msgstr "Keines"
 
@@ -227,7 +227,7 @@ msgstr "Kein verarbeitetes Bild"
 msgid "Aucune tuile entière n'entre dans la grille déclarée."
 msgstr "Keine ganze Kachel passt in das angegebene Raster."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:123
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:124
 msgid "Aucune tuile ne perd de couleur."
 msgstr "Keine Kachel verliert eine Farbe."
 
@@ -376,7 +376,7 @@ msgstr "Horizontaler Fehlerkoeffizient"
 msgid "Coefficient d'erreur verticale"
 msgstr "Vertikaler Fehlerkoeffizient"
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:49
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:50
 msgid "Colonnes choisies une à une"
 msgstr "Spalten einzeln gewählt"
 
@@ -392,7 +392,7 @@ msgstr "Farbe {index}: {color}"
 msgid "Combined"
 msgstr "Kombiniert"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:118
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:123
 msgid "Comme la planche"
 msgstr "Wie die Kachelkarte"
 
@@ -478,16 +478,16 @@ msgstr "Rauschunterdrückung mit Kantenschutz (0 = aus, 1-3 = Stärke)"
 #~ msgid "Début"
 #~ msgstr "Start"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:47
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:55
 msgid "Décalage X"
 msgstr "Versatz X"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:48
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:56
 msgid "Décalage Y"
 msgstr "Versatz Y"
 
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:88
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:90
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:92
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:94
 msgid "Déformation"
 msgstr "Verzerrung"
 
@@ -516,7 +516,7 @@ msgstr "Erkennt automatisch Bilder mit wenigen Farben (C64, ZX Spectrum usw.) un
 msgid "Détection des contours (0 = off, 1 = contours uniquement)"
 msgstr "Kantenerkennung (0 = aus, 1 = nur Kanten)"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:74
+#: src/components/color-palette/color-grid/color-grid-view.tsx:75
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
 msgstr "Entsperren"
@@ -525,8 +525,8 @@ msgstr "Entsperren"
 msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
 msgstr "Maximal erlaubte Luminanzdifferenz zwischen abwechselnden Farben"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:122
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:65
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:127
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:72
 msgid "Diffusion d'erreur"
 msgstr "Fehlerdiffusion"
 
@@ -675,7 +675,7 @@ msgstr "Vorherige Tinte"
 msgid "Encre suivante"
 msgstr "Nächste Tinte"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:114
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:115
 msgid "Enregistrer le PNG"
 msgstr "PNG speichern"
 
@@ -683,7 +683,7 @@ msgstr "PNG speichern"
 #~ msgid "Error reading file: {0}"
 #~ msgstr "Fehler beim Lesen der Datei: {0}"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:46
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:54
 msgid "Espacement"
 msgstr "Abstand"
 
@@ -821,7 +821,7 @@ msgstr "Frequenzpriorität (80%) mit mäßiger Vielfalt"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:128
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:140
 msgid "Geler la palette"
 msgstr "Palette einfrieren"
 
@@ -869,11 +869,11 @@ msgstr "Lichter"
 msgid "Hauteur"
 msgstr "Höhe"
 
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:77
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:81
 msgid "Hauteur cible"
 msgstr "Zielhöhe"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:44
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:50
 msgid "Hauteur de tuile"
 msgstr "Kachelhöhe"
 
@@ -929,8 +929,8 @@ msgstr "Update installieren"
 #~ msgid "Installing..."
 #~ msgstr "Wird installiert..."
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:100
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:102
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:104
 msgid "Instances"
 msgstr "Instanzen"
 
@@ -974,11 +974,11 @@ msgstr "Lanczos-2"
 msgid "Largeur"
 msgstr "Breite"
 
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:68
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:71
 msgid "Largeur cible"
 msgstr "Zielbreite"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:43
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:45
 msgid "Largeur de tuile"
 msgstr "Kachelbreite"
 
@@ -1065,13 +1065,13 @@ msgstr "Luminanz-Bins mit Frequenzpriorität"
 msgid "Luminosité"
 msgstr "Helligkeit"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:68
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:71
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:72
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:75
 msgid "Machine CPC"
 msgstr "CPC-Maschine"
 
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:53
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:56
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:54
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:57
 msgid "Machine source"
 msgstr "Quellmaschine"
 
@@ -1079,12 +1079,12 @@ msgstr "Quellmaschine"
 msgid "Mapping distinct automatique"
 msgstr "Automatische Farbzuordnung"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:45
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:53
 msgid "Marge"
 msgstr "Rand"
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:70
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:73
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:79
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:82
 msgid "Matrice de Bayer"
 msgstr "Bayer-Matrix"
 
@@ -1112,8 +1112,8 @@ msgstr "Speicher"
 
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:26
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:28
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:53
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:56
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:55
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:58
 #: src/components/info-bar/info-bar.tsx:81
 msgid "Mode"
 msgstr "Modus"
@@ -1245,7 +1245,7 @@ msgstr "Ähnliche Nuancen (0) ◄► Unterschiedliche Farbtöne (100)"
 msgid "Ombres"
 msgstr "Schatten"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:179
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:189
 msgid "On peint un pen, jamais une couleur : les retouches sont rejouées après chaque conversion et atteignent toutes les instances de la tuile."
 msgstr "Gemalt wird ein Pen, nie eine Farbe: die Retuschen werden nach jeder Konvertierung erneut angewendet und erreichen alle Instanzen der Kachel."
 
@@ -1269,12 +1269,12 @@ msgstr "Öffnen..."
 msgid "Optimisation..."
 msgstr "Optimierung..."
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:39
+#: src/components/color-palette/color-grid/color-grid-view.tsx:40
 msgid "Options de couleur"
 msgstr "Farboptionen"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:120
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:63
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:125
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:70
 msgid "Ordonné (Bayer)"
 msgstr "Geordnet (Bayer)"
 
@@ -1315,12 +1315,16 @@ msgstr "Paare"
 msgid "Paires uniques"
 msgstr "Einzigartige Paare"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:49
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:50
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:41
 #: src/components/preview-editor/line-palette/line-palette-view.tsx:36
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:182
 msgid "Palette"
 msgstr "Palette"
+
+#: src/app/components/tileset-workshop/tileset-color-palette.tsx:39
+msgid "Palette du tileset"
+msgstr "Tileset-Palette"
 
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:93
 #~ msgid "Palette Selection"
@@ -1355,18 +1359,18 @@ msgstr "Raster-Parameter"
 msgid "Peindre au curseur"
 msgstr "Am Cursor malen"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:138
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:144
 msgid "Pen"
 msgstr "Pen"
 
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:49
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:51
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:97
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:99
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:98
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:100
 msgid "Pens"
 msgstr "Stifte"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:97
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:105
 msgid "Pens réservés"
 msgstr "Reservierte Stifte"
 
@@ -1392,7 +1396,7 @@ msgstr "Dunkles Foto"
 msgid "Photo vive"
 msgstr "Lebendiges Foto"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:158
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:167
 msgid "Pixel"
 msgstr "Pixel"
 
@@ -1400,7 +1404,7 @@ msgstr "Pixel"
 msgid "Pixel Mode"
 msgstr "Pixelmodus"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:86
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:87
 msgid "Planche convertie"
 msgstr "Konvertiertes Blatt"
 
@@ -1428,7 +1432,7 @@ msgstr "Niedriger = mehr Vielfalt, höher = mehr Kohärenz zwischen Zeilen"
 msgid "Plus haut = préférence pour les couleurs similaires aux lignes précédentes"
 msgstr "Höher = Präferenz für ähnliche Farben zu vorherigen Zeilen"
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:51
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:53
 msgid "Plus proche voisin"
 msgstr "Nächster Nachbar"
 
@@ -1541,11 +1545,11 @@ msgstr "Generierte Raster"
 msgid "Recharger la page"
 msgstr "Seite neu laden"
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:99
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:109
 msgid "Recherche approchée : la planche dépasse le budget exhaustif, les lignes ont été retirées une à une."
 msgstr "Näherungssuche: Das Blatt übersteigt das Budget, die Zeilen wurden einzeln entfernt."
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:104
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:114
 msgid "Recherche exhaustive : toutes les combinaisons de lignes ont été évaluées."
 msgstr "Vollständige Suche: Jede Kombination von Zeilen wurde bewertet."
 
@@ -1553,8 +1557,8 @@ msgstr "Vollständige Suche: Jede Kombination von Zeilen wurde bewertet."
 #~ msgid "Redimensionner"
 #~ msgstr "Größe ändern"
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:39
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:42
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:40
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:43
 msgid "Réduction"
 msgstr "Verkleinerung"
 
@@ -1582,7 +1586,7 @@ msgstr "Erneut versuchen"
 msgid "Refaire"
 msgstr "Wiederholen"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:174
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:184
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:57
 msgid "Refaire (Ctrl+Y)"
 msgstr "Wiederholen (Strg+Y)"
@@ -1642,8 +1646,8 @@ msgstr "Größe ändern"
 msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 msgstr "Verdoppelte horizontale Auflösung (nur Mode 0). Verwendet 2 abwechselnde Bilder bei 50Hz."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:66
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:80
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:67
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:81
 msgid "Résultat"
 msgstr "Ergebnis"
 
@@ -1717,8 +1721,8 @@ msgstr "Quelle"
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: Standard-CPC-Abmessungen. Overscan: Nutzt den gesamten anzeigbaren Bereich. Custom: Benutzerdefinierte Abmessungen."
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:80
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:83
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:86
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:89
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:61
 msgid "Stratégie de palette"
 msgstr "Palettenstrategie"
@@ -1743,11 +1747,11 @@ msgstr "Unterstützt CPC Classic und CPC Plus Formate. Der Lader erkennt automat
 msgid "Supprimer le changement"
 msgstr "Änderung entfernen"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:54
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:62
 msgid "Tailles de tuile, la moins coûteuse en tête"
 msgstr "Kachelgrößen, günstigste zuerst"
 
-#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:97
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:101
 msgid "Tailles entières, la moins déformée en tête"
 msgstr "Ganze Größen, am wenigsten verzerrt zuerst"
 
@@ -1784,27 +1788,27 @@ msgstr "Gesamt"
 msgid "Tout supprimer"
 msgstr "Alle entfernen"
 
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:55
-#: src/app/components/tileset-workshop/tileset-render-panel.tsx:58
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:60
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:63
 msgid "Tramage"
 msgstr "Dithering"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:106
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:109
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:111
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:114
 msgid "Tramage de la tuile"
 msgstr "Kachel-Dithering"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:108
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:111
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:117
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:120
 msgid "Transparence"
 msgstr "Transparenz"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:122
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:131
 msgid "Trous aplatis sur le fond"
 msgstr "Löcher auf den Hintergrund gelegt"
 
-#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:91
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:134
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:92
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:135
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
 msgid "Tuile"
 msgstr "Kachel"
@@ -1813,26 +1817,30 @@ msgstr "Kachel"
 msgid "Tuile de destination"
 msgstr "Zielkachel"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:119
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:120
 msgid "Tuiles les plus malmenées par la palette"
 msgstr "Von der Palette am schlechtesten behandelte Kacheln"
 
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:35
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:41
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:91
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:93
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:92
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:94
 msgid "Tuiles uniques"
 msgstr "Einzigartige Kacheln"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:119
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:128
 msgid "Un pen dépensé pour les trous"
 msgstr "Ein Stift für die Löcher"
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:26
+msgid "Un pen épinglé n'a pas de place dans ce mode."
+msgstr "Ein angehefteter Pen hat in diesem Modus keinen Platz."
 
 #: src/components/error-boundary/error-fallback.tsx:23
 msgid "Une erreur inattendue s'est produite"
 msgstr "Ein unerwarteter Fehler ist aufgetreten"
 
-#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:135
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:147
 msgid "Une palette gelée est utilisée telle quelle : les retouches sont des index de pen, elles survivent à un changement de réglage."
 msgstr "Eine eingefrorene Palette wird unverändert benutzt: Korrekturen sind Stiftindizes und überstehen eine Änderung der Einstellungen."
 
@@ -1869,7 +1877,7 @@ msgstr "Benutzerdefinierte Labels verwenden"
 msgid "Valider"
 msgstr "Bestätigen"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:76
+#: src/components/color-palette/color-grid/color-grid-view.tsx:77
 msgid "Verrouiller"
 msgstr "Sperren"
 
@@ -1890,8 +1898,8 @@ msgstr "Grün"
 msgid "Vibrance"
 msgstr "Lebendigkeit"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:87
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:117
+#: src/components/color-palette/color-grid/color-grid-view.tsx:89
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:118
 msgid "Vider"
 msgstr "Leeren"
 

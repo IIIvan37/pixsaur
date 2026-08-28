@@ -43,6 +43,12 @@ export {
   tilesetGridSuggestionsAtom
 } from './grid'
 export {
+  type SetTilesetPenPayload,
+  setTilesetPenAtom,
+  tilesetPaletteSlotsAtom,
+  toggleTilesetPenLockAtom
+} from './palette'
+export {
   captureTilesetProjectAtom,
   restoreTilesetProjectAtom
 } from './project'

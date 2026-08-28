@@ -33,6 +33,18 @@ function storeWithSheet() {
 }
 
 describe('TilesetPalettePanel', () => {
+  it('shows no palette grid before a sheet is converted', () => {
+    renderWithProviders(<TilesetPalettePanel />, { store: createStore() })
+
+    expect(screen.queryByLabelText(/Palette du tileset/)).toBeNull()
+  })
+
+  it('shows the converted palette pen by pen', () => {
+    renderWithProviders(<TilesetPalettePanel />, { store: storeWithSheet() })
+
+    expect(screen.getByLabelText(/Palette du tileset/)).toBeVisible()
+  })
+
   it('keeps no pen reserved until the user asks for one', () => {
     renderWithProviders(<TilesetPalettePanel />)
 

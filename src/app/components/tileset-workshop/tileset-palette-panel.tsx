@@ -19,6 +19,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import type { PixelMode } from '@/domain/cpc'
 import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { CPCHardware } from '@/libs/types'
+import { TilesetColorPalette } from './tileset-color-palette'
 import styles from './tileset-workshop.module.css'
 
 const MODES: PixelMode[] = [0, 1, 2]
@@ -132,6 +133,8 @@ export function TilesetPalettePanel() {
           </Select>
         </div>
       </div>
+
+      <TilesetColorPalette />
 
       <Checkbox
         label={_(msg`Geler la palette`)}
