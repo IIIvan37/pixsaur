@@ -47,3 +47,4 @@ export {
   restoreTilesetProjectAtom
 } from './project'
 export { setTilesetSheetAtom, tilesetSheetAtom } from './sheet'
+export { tilesetSettingsOpenAtom } from './ui'

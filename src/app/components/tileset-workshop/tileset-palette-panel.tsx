@@ -15,7 +15,6 @@ import { getPaletteStrategies } from '@/components/settings-panel/sections/dithe
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
-import { Panel } from '@/components/ui/layout/panel/panel'
 import { Select, SelectItem } from '@/components/ui/select'
 import type { PixelMode } from '@/domain/cpc'
 import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
@@ -46,55 +45,62 @@ export function TilesetPalettePanel() {
   const spendable = mode === 0
 
   return (
-    <Panel>
+    <section className={styles.tab}>
       <Header title={<Trans>Palette</Trans>} />
 
       <div className={styles.fields}>
-        <span className={styles.label}>
-          <Trans>Mode</Trans>
-        </span>
-        <Select
-          aria-label={_(msg`Mode`)}
-          value={String(mode)}
-          onValueChange={(value) => setMode(Number(value) as PixelMode)}
-        >
-          {MODES.map((key) => (
-            <SelectItem key={key} value={String(key)}>
-              {`Mode ${key}`}
-            </SelectItem>
-          ))}
-        </Select>
+        <div className={styles.field}>
+          <span className={styles.label}>
+            <Trans>Mode</Trans>
+          </span>
+          <Select
+            aria-label={_(msg`Mode`)}
+            value={String(mode)}
+            onValueChange={(value) => setMode(Number(value) as PixelMode)}
+          >
+            {MODES.map((key) => (
+              <SelectItem key={key} value={String(key)}>
+                {`Mode ${key}`}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
 
-        <span className={styles.label}>
-          <Trans>Machine CPC</Trans>
-        </span>
-        <Select
-          aria-label={_(msg`Machine CPC`)}
-          value={hardware}
-          onValueChange={(value) => setHardware(value as CPCHardware)}
-        >
-          <SelectItem value='classic'>CPC</SelectItem>
-          <SelectItem value='plus'>CPC Plus</SelectItem>
-        </Select>
+        <div className={styles.field}>
+          <span className={styles.label}>
+            <Trans>Machine CPC</Trans>
+          </span>
+          <Select
+            aria-label={_(msg`Machine CPC`)}
+            value={hardware}
+            onValueChange={(value) => setHardware(value as CPCHardware)}
+          >
+            <SelectItem value='classic'>CPC</SelectItem>
+            <SelectItem value='plus'>CPC Plus</SelectItem>
+          </Select>
+        </div>
 
-        <span className={styles.label}>
-          <Trans>Stratégie de palette</Trans>
-        </span>
-        <Select
-          aria-label={_(msg`Stratégie de palette`)}
-          value={options.paletteStrategy ?? 'exhaustive-contrast'}
-          onValueChange={(value) =>
-            setOptions({ paletteStrategy: value as PaletteStrategy })
-          }
-        >
-          {getPaletteStrategies(_).map((strategy) => (
-            <SelectItem key={strategy.value} value={strategy.value}>
-              {strategy.label}
-            </SelectItem>
-          ))}
-        </Select>
+        <div className={`${styles.field} ${styles.fieldWide}`}>
+          <span className={styles.label}>
+            <Trans>Stratégie de palette</Trans>
+          </span>
+          <Select
+            aria-label={_(msg`Stratégie de palette`)}
+            value={options.paletteStrategy ?? 'exhaustive-contrast'}
+            onValueChange={(value) =>
+              setOptions({ paletteStrategy: value as PaletteStrategy })
+            }
+          >
+            {getPaletteStrategies(_).map((strategy) => (
+              <SelectItem key={strategy.value} value={strategy.value}>
+                {strategy.label}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
 
         <Input
+          compact
           label={_(msg`Pens réservés`)}
           type='number'
           min={0}
@@ -105,24 +111,26 @@ export function TilesetPalettePanel() {
           }
         />
 
-        <span className={styles.label}>
-          <Trans>Transparence</Trans>
-        </span>
-        <Select
-          aria-label={_(msg`Transparence`)}
-          value={options.transparency ?? (spendable ? 'pen' : 'flatten')}
-          onValueChange={(value) =>
-            setOptions({ transparency: value as 'pen' | 'flatten' })
-          }
-          disabled={!spendable}
-        >
-          <SelectItem value='pen'>
-            {_(msg`Un pen dépensé pour les trous`)}
-          </SelectItem>
-          <SelectItem value='flatten'>
-            {_(msg`Trous aplatis sur le fond`)}
-          </SelectItem>
-        </Select>
+        <div className={styles.field}>
+          <span className={styles.label}>
+            <Trans>Transparence</Trans>
+          </span>
+          <Select
+            aria-label={_(msg`Transparence`)}
+            value={options.transparency ?? (spendable ? 'pen' : 'flatten')}
+            onValueChange={(value) =>
+              setOptions({ transparency: value as 'pen' | 'flatten' })
+            }
+            disabled={!spendable}
+          >
+            <SelectItem value='pen'>
+              {_(msg`Un pen dépensé pour les trous`)}
+            </SelectItem>
+            <SelectItem value='flatten'>
+              {_(msg`Trous aplatis sur le fond`)}
+            </SelectItem>
+          </Select>
+        </div>
       </div>
 
       <Checkbox
@@ -138,6 +146,6 @@ export function TilesetPalettePanel() {
           index de pen, elles survivent à un changement de réglage.
         </Trans>
       </p>
-    </Panel>
+    </section>
   )
 }

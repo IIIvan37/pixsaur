@@ -13,7 +13,7 @@ import {
   type TilesetProject,
   type TilesetSheet
 } from '@/tileset'
-import { TilesetProjectPanel } from './tileset-project-panel'
+import { TilesetProjectActions } from './tileset-project-actions'
 
 const sink = vi.hoisted(() => ({ save: vi.fn(async () => true) }))
 
@@ -53,9 +53,9 @@ beforeEach(() => {
   sink.save.mockClear()
 })
 
-describe('TilesetProjectPanel', () => {
+describe('TilesetProjectActions', () => {
   it('has nothing to export before a sheet is imported', () => {
-    renderWithProviders(<TilesetProjectPanel />, { store: createStore() })
+    renderWithProviders(<TilesetProjectActions />, { store: createStore() })
 
     expect(screen.getByRole('button', { name: /Exporter/ })).toBeDisabled()
   })
@@ -63,7 +63,7 @@ describe('TilesetProjectPanel', () => {
   it('exports the project as a file', async () => {
     const store = createStore()
     store.set(setTilesetSheetAtom, sheetOfOneTile())
-    renderWithProviders(<TilesetProjectPanel />, { store })
+    renderWithProviders(<TilesetProjectActions />, { store })
 
     await userEvent.click(screen.getByRole('button', { name: /Exporter/ }))
 
@@ -75,7 +75,7 @@ describe('TilesetProjectPanel', () => {
 
   it('puts an imported project back in the workshop', async () => {
     const store = createStore()
-    renderWithProviders(<TilesetProjectPanel />, { store })
+    renderWithProviders(<TilesetProjectActions />, { store })
 
     await userEvent.upload(
       screen.getByLabelText(/Importer/),
@@ -87,7 +87,7 @@ describe('TilesetProjectPanel', () => {
 
   it('says so when the file is not a project', async () => {
     const store = createStore()
-    renderWithProviders(<TilesetProjectPanel />, { store })
+    renderWithProviders(<TilesetProjectActions />, { store })
 
     await userEvent.upload(screen.getByLabelText(/Importer/), fileOf('nope'))
 
@@ -96,7 +96,7 @@ describe('TilesetProjectPanel', () => {
 
   it('leaves the workshop untouched when the file is refused', async () => {
     const store = createStore()
-    renderWithProviders(<TilesetProjectPanel />, { store })
+    renderWithProviders(<TilesetProjectActions />, { store })
 
     await userEvent.upload(screen.getByLabelText(/Importer/), fileOf('nope'))
 
@@ -106,7 +106,7 @@ describe('TilesetProjectPanel', () => {
 
   it('says so when the project comes from another version', async () => {
     const store = createStore()
-    renderWithProviders(<TilesetProjectPanel />, { store })
+    renderWithProviders(<TilesetProjectActions />, { store })
     const written = JSON.parse(serializeTilesetProject(projectOf()))
     written.version = TILESET_PROJECT_VERSION + 1
 

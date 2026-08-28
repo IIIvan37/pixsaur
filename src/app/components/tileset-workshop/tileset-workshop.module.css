@@ -1,24 +1,175 @@
 .workshop {
-  /* Au-dessus du voile CRT, comme le contenu de l'atelier image. */
+  position: relative;
+}
+
+/* La carte de l'atelier image, aux mêmes valeurs : c'est elle qui pose les
+   panneaux sur une surface et les tient au-dessus du voile CRT. */
+.card {
   position: relative;
   z-index: 10;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-md);
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
+/* Barre d'action : les gestes rares à gauche, le relevé chiffré à droite. */
+.actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  padding: 0.5rem 0;
+  flex-shrink: 0;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  gap: 1rem;
+  width: 100%;
+}
+
+.column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (max-width: 1200px) {
+  .workspace {
+    flex-wrap: wrap;
+  }
+
+  /* La colonne du résultat passe pleine largeur sous le dock et la planche. */
+  .workspace > .column:last-child {
+    flex-basis: 100%;
+    order: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .workspace {
+    flex-direction: column;
+  }
+
+  .card {
+    padding: var(--spacing-sm);
+  }
+}
+
+/* Le contenu d'un onglet du dock — même respiration que ceux de l'atelier
+   image, sans la carte du `Panel` : le dock est déjà la carte. */
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 0.875rem;
+  width: 100%;
+}
+
+.infoBar {
+  /* Poussé à droite de la barre d'action, comme le relevé de l'atelier image. */
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.infoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.infoLabel {
+  color: var(--color-accentHover);
+  font-weight: 500;
+}
+
+.infoValue {
+  color: var(--color-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* L'entrée fichier reste dans le DOM — le libellé est sa seule prise, et les
+   deux ne font qu'un contrôle pour un lecteur d'écran. */
+.fileButton {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-accentActive);
+  border-radius: var(--radius-md);
+  color: var(--color-accent);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.fileButton:hover {
+  color: var(--color-foreground);
+}
+
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.refusal {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-warning, #f59e0b);
+}
+
+/* Une grille de champs. Chaque libellé est posé au-dessus de son contrôle et
+   forme une case avec lui : alignés par le bas comme des frères de rang, ils se
+   lisaient sur une même ligne sans dire à quoi ils se rapportaient. */
 .fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--spacing-sm) var(--spacing-md);
+  align-items: start;
+  width: 100%;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+/* Une rangée de boutons n'est pas une grille de champs : ils gardent leur
+   largeur au lieu d'être étirés sur une colonne. */
+.buttons {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-sm);
-  align-items: flex-end;
 }
 
 .label {
   display: block;
   font-size: var(--font-size-sm);
   color: var(--color-foreground);
+  font-family: var(--font-family);
 }
 
 .subtitle {
@@ -96,4 +247,23 @@
 .pixel:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
+}
+
+.tileScroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Une liste d'options longues tient mal sur une demi-largeur : elle prend la
+   rangée entière. */
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+/* Un chiffre lu, pas saisi : la hauteur d'un champ, sans sa bordure. */
+.reading {
+  padding: var(--spacing-xs) 0;
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent);
 }

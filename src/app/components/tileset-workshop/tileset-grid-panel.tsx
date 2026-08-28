@@ -10,7 +10,6 @@ import {
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
-import { Panel } from '@/components/ui/layout/panel/panel'
 import styles from './tileset-workshop.module.css'
 
 /** Percentage, no decimals — the ranking is a shortlist, not a measurement. */
@@ -37,16 +36,24 @@ export function TilesetGridPanel() {
   })
 
   return (
-    <Panel>
+    <section className={styles.tab}>
       <Header title={<Trans>Grille source</Trans>} />
 
       <div className={styles.fields}>
-        <Input label={_(msg`Largeur de tuile`)} {...number('tileWidth')} />
-        <Input label={_(msg`Hauteur de tuile`)} {...number('tileHeight')} />
-        <Input label={_(msg`Marge`)} {...number('margin')} />
-        <Input label={_(msg`Espacement`)} {...number('spacing')} />
-        <Input label={_(msg`Décalage X`)} {...number('offsetX')} />
-        <Input label={_(msg`Décalage Y`)} {...number('offsetY')} />
+        <Input
+          compact
+          label={_(msg`Largeur de tuile`)}
+          {...number('tileWidth')}
+        />
+        <Input
+          compact
+          label={_(msg`Hauteur de tuile`)}
+          {...number('tileHeight')}
+        />
+        <Input compact label={_(msg`Marge`)} {...number('margin')} />
+        <Input compact label={_(msg`Espacement`)} {...number('spacing')} />
+        <Input compact label={_(msg`Décalage X`)} {...number('offsetX')} />
+        <Input compact label={_(msg`Décalage Y`)} {...number('offsetY')} />
       </div>
 
       {suggestions.length > 0 && (
@@ -81,6 +88,6 @@ export function TilesetGridPanel() {
           </ul>
         </section>
       )}
-    </Panel>
+    </section>
   )
 }

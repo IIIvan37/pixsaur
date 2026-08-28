@@ -88,6 +88,7 @@ export function TilesetEditPanel() {
 
       <div className={styles.fields}>
         <Input
+          compact
           label={_(msg`Tuile`)}
           type='number'
           min={0}
@@ -96,32 +97,37 @@ export function TilesetEditPanel() {
           onChange={(event) => setSelected(Number(event.target.value))}
         />
 
-        <span className={styles.label}>
-          <Trans>Instances</Trans>
-          {' : '}
-          <output aria-label={_(msg`Instances`)}>{instances}</output>
-        </span>
+        <div className={styles.field}>
+          <span className={styles.label}>
+            <Trans>Instances</Trans>
+          </span>
+          <output className={styles.reading} aria-label={_(msg`Instances`)}>
+            {instances}
+          </output>
+        </div>
 
-        <span className={styles.label}>
-          <Trans>Tramage de la tuile</Trans>
-        </span>
-        <Select
-          aria-label={_(msg`Tramage de la tuile`)}
-          value={options.ditherByTile?.[tile] ?? 'sheet'}
-          onValueChange={(value) =>
-            setTileDither({
-              tile,
-              dither: value === 'sheet' ? null : (value as TileDither)
-            })
-          }
-        >
-          <SelectItem value='sheet'>{_(msg`Comme la planche`)}</SelectItem>
-          <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
-          <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
-          <SelectItem value='diffusion'>
-            {_(msg`Diffusion d'erreur`)}
-          </SelectItem>
-        </Select>
+        <div className={styles.field}>
+          <span className={styles.label}>
+            <Trans>Tramage de la tuile</Trans>
+          </span>
+          <Select
+            aria-label={_(msg`Tramage de la tuile`)}
+            value={options.ditherByTile?.[tile] ?? 'sheet'}
+            onValueChange={(value) =>
+              setTileDither({
+                tile,
+                dither: value === 'sheet' ? null : (value as TileDither)
+              })
+            }
+          >
+            <SelectItem value='sheet'>{_(msg`Comme la planche`)}</SelectItem>
+            <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
+            <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
+            <SelectItem value='diffusion'>
+              {_(msg`Diffusion d'erreur`)}
+            </SelectItem>
+          </Select>
+        </div>
       </div>
 
       <div className={styles.pens}>
@@ -143,27 +149,31 @@ export function TilesetEditPanel() {
         ))}
       </div>
 
-      <div
-        className={styles.tile}
-        style={{ gridTemplateColumns: `repeat(${tileWidth}, 1fr)` }}
-      >
-        {Array.from({ length: tileWidth * tileHeight }, (_unused, at) => {
-          const x = at % tileWidth
-          const y = Math.floor(at / tileWidth)
-          return (
-            <button
-              key={`pixel-${x}-${y}`}
-              type='button'
-              className={styles.pixel}
-              aria-label={`${_(msg`Pixel`)} ${x}, ${y}`}
-              style={{ background: swatch(tileset.palette[indices[at]]) }}
-              onClick={() => paint({ tile, pixels: [{ x, y }], pen })}
-            />
-          )
-        })}
+      {/* A 32 px tile is 32 rem of buttons — wider than the column it sits in
+          on a laptop, so the grid scrolls rather than pushing the layout. */}
+      <div className={styles.tileScroll}>
+        <div
+          className={styles.tile}
+          style={{ gridTemplateColumns: `repeat(${tileWidth}, 1fr)` }}
+        >
+          {Array.from({ length: tileWidth * tileHeight }, (_unused, at) => {
+            const x = at % tileWidth
+            const y = Math.floor(at / tileWidth)
+            return (
+              <button
+                key={`pixel-${x}-${y}`}
+                type='button'
+                className={styles.pixel}
+                aria-label={`${_(msg`Pixel`)} ${x}, ${y}`}
+                style={{ background: swatch(tileset.palette[indices[at]]) }}
+                onClick={() => paint({ tile, pixels: [{ x, y }], pen })}
+              />
+            )
+          })}
+        </div>
       </div>
 
-      <div className={styles.fields}>
+      <div className={styles.buttons}>
         <Button disabled={layer.at < 0} onClick={() => undo()}>
           <Trans>Annuler (Ctrl+Z)</Trans>
         </Button>

@@ -11,7 +11,6 @@ import {
 import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
-import { Panel } from '@/components/ui/layout/panel/panel'
 import { Select, SelectItem } from '@/components/ui/select'
 import {
   SOURCE_PIXEL_ASPECT,
@@ -46,26 +45,29 @@ export function TilesetGeometryPanel() {
   const geometry = useAtomValue(tilesetGeometryAtom)
 
   return (
-    <Panel>
+    <section className={styles.tab}>
       <Header title={<Trans>Tuile de destination</Trans>} />
 
       <div className={styles.fields}>
-        <span className={styles.label}>
-          <Trans>Machine source</Trans>
-        </span>
-        <Select
-          aria-label={_(msg`Machine source`)}
-          value={platform}
-          onValueChange={(value) => setPlatform(value as SourcePlatform)}
-        >
-          {Object.keys(SOURCE_PIXEL_ASPECT).map((key) => (
-            <SelectItem key={key} value={key}>
-              {PLATFORM_LABELS[key as SourcePlatform]}
-            </SelectItem>
-          ))}
-        </Select>
+        <div className={styles.field}>
+          <span className={styles.label}>
+            <Trans>Machine source</Trans>
+          </span>
+          <Select
+            aria-label={_(msg`Machine source`)}
+            value={platform}
+            onValueChange={(value) => setPlatform(value as SourcePlatform)}
+          >
+            {Object.keys(SOURCE_PIXEL_ASPECT).map((key) => (
+              <SelectItem key={key} value={key}>
+                {PLATFORM_LABELS[key as SourcePlatform]}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
 
         <Input
+          compact
           label={_(msg`Largeur cible`)}
           type='number'
           min={1}
@@ -75,6 +77,7 @@ export function TilesetGeometryPanel() {
           }
         />
         <Input
+          compact
           label={_(msg`Hauteur cible`)}
           type='number'
           min={1}
@@ -116,6 +119,6 @@ export function TilesetGeometryPanel() {
           ))}
         </ul>
       </section>
-    </Panel>
+    </section>
   )
 }

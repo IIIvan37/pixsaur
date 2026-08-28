@@ -8,8 +8,6 @@ import {
   restoreTilesetProjectAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
-import { Header } from '@/components/ui/layout/header/header'
-import { Panel } from '@/components/ui/layout/panel/panel'
 import { logger } from '@/core'
 import { resolveFileSink } from '@/export/application/file-sink'
 import { parseTilesetProject, serializeTilesetProject } from '@/tileset'
@@ -24,13 +22,14 @@ const REFUSALS = {
 }
 
 /**
- * The project as a file the user owns (Q31).
+ * The project as a file the user owns (Q31), in the action bar.
  *
  * The workshop already remembers itself in the browser; this is the copy that
  * survives a cleared cache, another machine, or a hand-off — and the only one
- * the user can put somewhere they trust.
+ * the user can put somewhere they trust. It sits with the other rare actions
+ * rather than in a panel of its own: it is opened twice a session, not tuned.
  */
-export function TilesetProjectPanel() {
+export function TilesetProjectActions() {
   const { _ } = useLingui()
   const project = useAtomValue(captureTilesetProjectAtom)
   const restore = useSetAtom(restoreTilesetProjectAtom)
@@ -51,10 +50,9 @@ export function TilesetProjectPanel() {
   )
 
   return (
-    <Panel>
-      <Header title={<Trans>Projet</Trans>} />
-
+    <>
       <Button
+        variant='secondary'
         disabled={!project}
         onClick={() => {
           if (!project) return
@@ -74,12 +72,15 @@ export function TilesetProjectPanel() {
       </Button>
 
       {/* A plain file input rather than a drop zone: a project is picked once,
-          and the same control serves the keyboard. */}
-      <label className={styles.note} htmlFor={importId}>
+          and the same control serves the keyboard. The input is hidden, not
+          removed — the label is its only affordance, and both are one control
+          to a screen reader. */}
+      <label className={styles.fileButton} htmlFor={importId}>
         <Trans>Importer un projet</Trans>
       </label>
       <input
         id={importId}
+        className={styles.fileInput}
         type='file'
         accept='application/json,.json'
         onChange={(event) => {
@@ -90,7 +91,11 @@ export function TilesetProjectPanel() {
         }}
       />
 
-      {refusal && <p role='alert'>{refusal}</p>}
-    </Panel>
+      {refusal && (
+        <p className={styles.refusal} role='alert'>
+          {refusal}
+        </p>
+      )}
+    </>
   )
 }
