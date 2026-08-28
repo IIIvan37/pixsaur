@@ -42,4 +42,8 @@ export {
   tilesetGridAtom,
   tilesetGridSuggestionsAtom
 } from './grid'
+export {
+  captureTilesetProjectAtom,
+  restoreTilesetProjectAtom
+} from './project'
 export { setTilesetSheetAtom, tilesetSheetAtom } from './sheet'

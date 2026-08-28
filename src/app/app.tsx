@@ -14,6 +14,7 @@ import WorkshopTabs from './components/workshop-tabs/workshop-tabs'
 import { I18nProviderWrapper } from './i18n-provider'
 import { useAutoRegenerateRasters } from './store/raster/use-auto-regenerate-rasters'
 import { useSessionPersistence } from './store/session/use-session-persistence'
+import { useTilesetPersistence } from './store/tileset/use-tileset-persistence'
 import { useUnsavedChangesWarning } from './use-unsaved-changes-warning'
 
 /**
@@ -37,6 +38,9 @@ export default function App() {
 
   // Auto-restore the previous session and auto-save changes
   useSessionPersistence()
+
+  // Same for the tileset workshop, which keeps its own document (Q31)
+  useTilesetPersistence()
 
   // Warn before leaving the page while unsaved manual edits exist
   useUnsavedChangesWarning()
