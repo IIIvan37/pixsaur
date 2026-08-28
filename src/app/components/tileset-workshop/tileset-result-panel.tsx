@@ -22,7 +22,8 @@ const FAILURES = {
   'grid-mismatch': msg`Aucune tuile entière n'entre dans la grille déclarée.`,
   'no-pens-left': msg`La réservation ne laisse aucun pen au tileset.`,
   'palette-too-wide': msg`La palette gelée dépasse ce que le mode peut tenir.`,
-  'palette-missing-hole': msg`La palette gelée ne commence pas par le pen de transparence.`
+  'palette-missing-hole': msg`La palette gelée ne commence pas par le pen de transparence.`,
+  'locked-pen-out-of-range': msg`Un pen épinglé n'a pas de place dans ce mode.`
 }
 
 /** Blob URL of the PNG, released as soon as another conversion replaces it. */

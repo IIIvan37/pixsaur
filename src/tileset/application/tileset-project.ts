@@ -22,8 +22,13 @@ import type {
 } from './convert-tileset'
 import type { TilesetEditLayer } from './paint-tileset'
 
-/** Bump when the stored shape stops reading back. */
-export const TILESET_PROJECT_VERSION = 1
+/**
+ * Bump when the stored shape stops reading back.
+ *
+ * 2 — `lockedPens` became a map of position to colour: a pin now carries the
+ * index it holds, and a v1 file's array would be read as a map keyed 0, 1, 2…
+ */
+export const TILESET_PROJECT_VERSION = 2
 
 /**
  * What the conversion is asked to do, beyond the sheet and the two grids.

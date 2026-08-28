@@ -128,11 +128,16 @@ export interface ConvertTilesetInput {
    */
   antiAlias?: boolean
   /**
-   * Pens the user pinned by hand (Q15): the strategy must return them, whether
-   * or not the sheet asks for them. Unlike `reservedPens`, these ARE
+   * Pens the user pinned by hand (Q15), keyed by the position they hold in the
+   * palette: the strategy must return them, whether or not the sheet asks for
+   * them, and they come back at that index. Unlike `reservedPens`, these ARE
    * quantization targets — a locked pen is a colour, not a free slot.
+   *
+   * The index is part of the promise, not a detail: a retouch is stored as a
+   * pen index (Q19 · Q28), so a lock that moved the pens around it would
+   * repaint every stroke already laid.
    */
-  lockedPens?: Pen[]
+  lockedPens?: Record<number, Pen>
 }
 
 /** One converted tile: palette indices, `target.tileWidth * tileHeight` long. */
@@ -196,6 +201,7 @@ export type ConvertTilesetResult =
         | 'no-pens-left'
         | 'palette-too-wide'
         | 'palette-missing-hole'
+        | 'locked-pen-out-of-range'
     }
 
 export function convertTileset(
@@ -206,6 +212,13 @@ export function convertTileset(
 
   const frozen = checkFrozenPalette(input, maxPens)
   if (frozen) return frozen
+
+  // The transparency pen comes first and is never a quantization target: only
+  // alpha can reach it, so an opaque pixel of the same colour stays distinct.
+  const offset = spendsPenOnHoles(input) ? 1 : 0
+
+  const pinned = checkLockedPens(input, maxPens, offset)
+  if (pinned) return pinned
 
   const sliced = sliceSheet(input.sheet, input.source)
   if (!sliced) return { ok: false, error: 'grid-mismatch' }
@@ -228,7 +241,7 @@ export function convertTileset(
     basePalette.map((colour, index) => [colorToKey(colour), index])
   )
   const background = input.background ?? BLACK
-  const holePen = spendsPenOnHoles(input) ? TRANSPARENT_PEN : null
+  const holePen = offset === 0 ? null : TRANSPARENT_PEN
   const snapped = tiles.map((tile) => {
     const resized = scheme
       ? resizeTileByScheme(tile, input.source, input.target, scheme)
@@ -239,13 +252,14 @@ export function convertTileset(
     })
   })
 
-  // The transparency pen comes first and is never a quantization target: only
-  // alpha can reach it, so an opaque pixel of the same colour stays distinct.
-  const offset = holePen === null ? 0 : 1
   const palette =
     input.palette ??
     prependHolePen(
-      selectPalette(snapped, basePalette, maxPens - offset, input),
+      placeLockedPens(
+        selectPalette(snapped, basePalette, maxPens - offset, input),
+        lockedByChosenIndex(input, offset),
+        background
+      ),
       holePen === null ? null : background
     )
   const chosen = palette.slice(offset)
@@ -391,6 +405,80 @@ function checkFrozenPalette(
   return leads ? null : { ok: false, error: 'palette-missing-hole' }
 }
 
+/**
+ * A pinned pen must name a position the palette actually has: past the mode's
+ * budget there is no register to hold it, and on the hole there is one the
+ * conversion owns. Refused rather than moved — moving it is exactly what
+ * pinning exists to prevent.
+ */
+function checkLockedPens(
+  input: ConvertTilesetInput,
+  maxPens: number,
+  offset: number
+): { ok: false; error: 'locked-pen-out-of-range' } | null {
+  const locked = input.lockedPens
+  if (!locked) return null
+
+  const positions = Object.keys(locked).map(Number)
+  const room = maxPens - offset
+  const placeable =
+    positions.length <= room &&
+    positions.every(
+      (at) => Number.isInteger(at) && at >= offset && at < maxPens
+    )
+
+  return placeable ? null : { ok: false, error: 'locked-pen-out-of-range' }
+}
+
+/** Pinned pens, keyed by their position among the pens the strategy chooses. */
+function lockedByChosenIndex(
+  input: ConvertTilesetInput,
+  offset: number
+): Map<number, Pen> {
+  return new Map(
+    Object.entries(input.lockedPens ?? {}).map(([at, pen]) => [
+      Number(at) - offset,
+      pen
+    ])
+  )
+}
+
+const samePen = (a: Pen, b: Pen) => a.every((channel, at) => channel === b[at])
+
+/**
+ * Puts each pinned pen where it was pinned and fills around it, in the order
+ * the strategy returned. A position the sheet left unfilled below a pin is
+ * painted the background: no pixel points at it, so only the hardware register
+ * sees it, and the pins above it keep their index.
+ */
+function placeLockedPens(
+  selected: Pen[],
+  locked: Map<number, Pen>,
+  filler: Pen
+): Pen[] {
+  if (locked.size === 0) return selected
+
+  const free = [...selected]
+  for (const pen of locked.values()) {
+    const at = free.findIndex((candidate) => samePen(candidate, pen))
+    if (at >= 0) free.splice(at, 1)
+  }
+
+  const highest = Math.max(...locked.keys())
+  const size = Math.max(highest + 1, locked.size + free.length)
+  const placed: Pen[] = new Array(size)
+  for (const [at, pen] of locked) placed[at] = pen
+
+  let cursor = 0
+  for (const pen of free) {
+    while (cursor < size && placed[cursor] !== undefined) cursor++
+    if (cursor >= size) break
+    placed[cursor] = pen
+  }
+
+  return [...placed].map((pen) => pen ?? filler)
+}
+
 function penBudget(input: ConvertTilesetInput): number {
   return (
     CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors -
@@ -413,10 +501,8 @@ function selectPalette(
     converted: [...basePalette[index]] as Vector
   }))
 
-  const locked = convertPreselectedToIndices(
-    input.lockedPens ?? [],
-    basePalette
-  )
+  const pinned = Object.values(input.lockedPens ?? {})
+  const locked = convertPreselectedToIndices(pinned, basePalette)
   const { selectedIndices } = applyPaletteStrategyV2(
     input.paletteStrategy ?? 'exhaustive-contrast',
     candidates,
@@ -425,7 +511,7 @@ function selectPalette(
     {
       basePaletteSize: basePalette.length,
       basePalette,
-      preselectedColors: input.lockedPens
+      preselectedColors: pinned
     }
   )
 

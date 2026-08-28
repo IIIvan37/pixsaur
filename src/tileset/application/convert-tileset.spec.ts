@@ -429,10 +429,64 @@ describe('convertTileset', () => {
       ...input,
       sheet: sheetOfSolidTiles(8, [RED, BLUE, [0, 255, 0]]),
       mode: 2,
-      lockedPens: [[255, 255, 255]]
+      lockedPens: { 1: WHITE }
     })
 
     expect(result.ok && penSet(result.tileset.palette)).toContain('ffffff')
+  })
+
+  it('puts a locked pen at the index it was pinned to', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(8, [RED, BLUE, [0, 255, 0]]),
+      transparency: 'flatten',
+      lockedPens: { 3: WHITE }
+    })
+
+    expect(result.ok && result.tileset.palette[3]).toEqual(WHITE)
+  })
+
+  it('leaves the pens around a locked one to the strategy', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(8, [RED, BLUE, [0, 255, 0]]),
+      transparency: 'flatten',
+      lockedPens: { 3: WHITE }
+    })
+
+    expect(result.ok && penSet(result.tileset.palette)).toContain('ff0000')
+  })
+
+  it('refuses a pen pinned past what the mode holds', () => {
+    const result = convertTileset({
+      ...input,
+      mode: 2,
+      lockedPens: { 5: WHITE }
+    })
+
+    expect(!result.ok && result.error).toBe('locked-pen-out-of-range')
+  })
+
+  it('refuses a pen pinned on the hole', () => {
+    const result = convertTileset({
+      ...input,
+      transparency: 'pen',
+      lockedPens: { 0: WHITE }
+    })
+
+    expect(!result.ok && result.error).toBe('locked-pen-out-of-range')
+  })
+
+  it('refuses more locked pens than the palette can hold', () => {
+    const result = convertTileset({
+      ...input,
+      mode: 2,
+      transparency: 'flatten',
+      reservedPens: 1,
+      lockedPens: { 0: WHITE, 1: BLACK }
+    })
+
+    expect(!result.ok && result.error).toBe('locked-pen-out-of-range')
   })
 
   it('keeps a column nearest-neighbour would step over', () => {
