@@ -38,21 +38,29 @@ export function renderWithJotai(
 }
 
 /**
- * Custom render function that wraps components with both I18n and Jotai providers
+ * Custom render function that wraps components with both I18n and Jotai providers.
+ *
+ * Pass `store` when the test has to seed an atom before rendering; the store is
+ * returned either way, so a test never has to rebuild the providers by hand.
  */
 export function renderWithProviders(
   ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
+  options?: Omit<RenderOptions, 'wrapper'> & {
+    store?: ReturnType<typeof createStore>
+  }
 ) {
-  const store = createStore()
-  return render(ui, {
-    wrapper: ({ children }) => (
-      <JotaiProvider store={store}>
-        <I18nProvider i18n={i18n}>{children}</I18nProvider>
-      </JotaiProvider>
-    ),
-    ...options
-  })
+  const { store = createStore(), ...renderOptions } = options ?? {}
+  return {
+    store,
+    ...render(ui, {
+      wrapper: ({ children }) => (
+        <JotaiProvider store={store}>
+          <I18nProvider i18n={i18n}>{children}</I18nProvider>
+        </JotaiProvider>
+      ),
+      ...renderOptions
+    })
+  }
 }
 
 /** Mock global.Image for image-loading tests in jsdom */

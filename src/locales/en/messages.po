@@ -26,6 +26,12 @@ msgstr "{0} image(s) ready to export"
 #~ msgid "{0} remaining"
 #~ msgstr "{0} remaining"
 
+#. placeholder {0}: candidate.uniqueTiles
+#. placeholder {1}: percent(candidate.duplicateRate)
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:74
+msgid "{0} tuiles uniques, {1} de doublons"
+msgstr "{0} unique tiles, {1} duplicates"
+
 #: src/components/manual-edits-warning/manual-edits-warning.tsx:44
 msgid "{editCount} pixel(s) modifié(s) manuellement. Modifier les paramètres peut affecter ces modifications."
 msgstr "{editCount} pixel(s) manually edited. Changing settings may affect these modifications."
@@ -430,6 +436,18 @@ msgstr "Denoising that preserves edges (0 = off, 1-3 = strength)"
 #~ msgid "Début"
 #~ msgstr "Start"
 
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:48
+msgid "Décalage X"
+msgstr "Offset X"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:49
+msgid "Décalage Y"
+msgstr "Offset Y"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:88
+msgid "Déformation"
+msgstr "Distortion"
+
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:146
 msgid "Delta luminance max"
 msgstr "Max luminance delta"
@@ -613,6 +631,10 @@ msgstr "Next ink"
 #~ msgid "Error reading file: {0}"
 #~ msgstr "Error reading file: {0}"
 
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:47
+msgid "Espacement"
+msgstr "Spacing"
+
 #: src/components/image-upload/image-upload-view.tsx:313
 msgid "Essayer avec un exemple"
 msgstr "Try a sample"
@@ -759,6 +781,10 @@ msgstr "Drag & drop an image here"
 msgid "Grille (H)"
 msgstr "Grid (H)"
 
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:41
+msgid "Grille source"
+msgstr "Source grid"
+
 #: src/components/settings-panel/settings-panel.tsx:49
 msgid "Hardware"
 msgstr "Hardware"
@@ -774,6 +800,14 @@ msgstr "Highlights"
 #: src/components/settings-panel/sections/hardware-settings/custom-dimensions-input/custom-dimensions-input-view.tsx:57
 msgid "Hauteur"
 msgstr "Height"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:77
+msgid "Hauteur cible"
+msgstr "Target height"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:45
+msgid "Hauteur de tuile"
+msgstr "Tile height"
 
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:108
 msgid "High Res first"
@@ -850,6 +884,14 @@ msgstr "Lanczos-2"
 #: src/components/settings-panel/sections/hardware-settings/custom-dimensions-input/custom-dimensions-input-view.tsx:43
 msgid "Largeur"
 msgstr "Width"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:68
+msgid "Largeur cible"
+msgstr "Target width"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:44
+msgid "Largeur de tuile"
+msgstr "Tile width"
 
 #: src/components/updater/updater-view.tsx:102
 msgid "Later"
@@ -934,9 +976,17 @@ msgstr "Luminance bins with frequency priority"
 msgid "Luminosité"
 msgstr "Brightness"
 
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:54
+msgid "Machine source"
+msgstr "Source machine"
+
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:198
 msgid "Mapping distinct automatique"
 msgstr "Automatic distinct mapping"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:46
+msgid "Marge"
+msgstr "Margin"
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:363
 msgid "Max {maxChangesPerLine} changement(s) par ligne"
@@ -1504,6 +1554,14 @@ msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects 
 msgid "Supprimer le changement"
 msgstr "Remove change"
 
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:55
+msgid "Tailles de tuile, la moins coûteuse en tête"
+msgstr "Tile sizes, cheapest first"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:95
+msgid "Tailles entières, la moins déformée en tête"
+msgstr "Whole sizes, least distorted first"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:120
 msgid "Teinte"
 msgstr "Hue"
@@ -1536,6 +1594,10 @@ msgstr "Total"
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:407
 msgid "Tout supprimer"
 msgstr "Remove all"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:50
+msgid "Tuile de destination"
+msgstr "Destination tile"
 
 #: src/components/error-boundary/error-fallback.tsx:23
 msgid "Une erreur inattendue s'est produite"

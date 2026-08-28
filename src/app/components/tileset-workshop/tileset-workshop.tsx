@@ -7,8 +7,17 @@
  * See `docs/features/PLAN-tileset-workshop.md`.
  */
 
+import { TilesetGeometryPanel } from './tileset-geometry-panel'
+import { TilesetGridPanel } from './tileset-grid-panel'
 import { TilesetSourcePanel } from './tileset-source-panel'
+import styles from './tileset-workshop.module.css'
 
 export default function TilesetWorkshop() {
-  return <TilesetSourcePanel />
+  return (
+    <div className={styles.workshop}>
+      <TilesetSourcePanel />
+      <TilesetGridPanel />
+      <TilesetGeometryPanel />
+    </div>
+  )
 }
