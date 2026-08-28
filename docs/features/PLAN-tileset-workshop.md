@@ -20,6 +20,24 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T7 TERMINÉE** — atelier, treize commits :
+  1. `store/tileset/` (Q6 · Q32 · Q34) — planche, grille, cible, options et la
+     conversion dérivée, dans un espace d'atomes distinct de `store/config/`.
+     Les réglages tiennent dans **un seul objet** typé sur `ConvertTilesetInput`,
+     pour que panneaux et use-case ne divergent pas. Changer de mode jette la
+     palette gelée.
+  2. Commutateur `Image | Tileset` — il **remplace** le contenu, il ne le double
+     pas. La planche entre à sa taille propre : la réduire avant découpe ferait
+     sortir deux tuiles identiques différentes.
+  3. Cinq panneaux — source, grille, tuile de destination, palette, rendu,
+     résultat. Le rapport de collision (Q22) filtre les tuiles qui n'ont rien
+     perdu ; les quatre échecs du use-case s'affichent en clair.
+  4. **Quatre dettes fermées** : classement des grilles au coût de tilemap (T3),
+     gouttières rendues au PNG à l'échelle de la tuile (T3), palette gelée
+     validée contre le budget du mode (T5), `ditherSize` contraint par le type
+     `BayerSize` (T6). Et la recherche de resize dit maintenant si elle fut
+     exhaustive ou approchée (T4).
+
 - **T6 TERMINÉE** — rendu, cinq commits :
   1. `tileEdgeMask` (Q17 · Q27) — la partition elle-même : tout pixel adossé à
      une couleur différente part à l'anti-aliasing, les aplats au tramage, aucun
@@ -105,19 +123,20 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T7 (atelier — `store/tileset/`, panneaux, commutateur
-  dans `app.tsx`, i18n). Première tranche non-pure : `react-testing-patterns`
-  s'applique, pas `tdd-cycle`. Trois dettes l'attendent — l'échelle des
-  gouttières du PNG (T3), l'exposition de `transparency: 'flatten'` (T5) et la
-  validation de la palette gelée contre le budget du mode (T5).
-- **Dette assumée dans T6 (réglage par position)** : `ditherByTile` est indexé
-  par **position dans la planche**, pas par tuile unique. Un panneau qui laisse
-  régler une tuile dédupliquée devra propager le réglage à toutes ses instances
-  via `instanceOf`, comme les édits de Q11.
-- **Dette assumée dans T6 (`ditherSize` non validé)** : une valeur autre que 2, 4
-  ou 8 donne la matrice de Bayer de la puissance de deux immédiatement
-  supérieure. Total, mais surprenant — à contraindre quand T7 exposera le
-  réglage.
+- **Prochaine action** : T8 (édition — `paintPixels` réutilisé, calque non
+  destructif rejoué après chaque requantification, propagation aux instances par
+  `instanceOf`, annulation linéaire globale).
+- **Dette de T6 déplacée sur T8 (réglage par position)** : `ditherByTile` est
+  indexé par **position dans la planche**, pas par tuile unique, et aucun panneau
+  ne l'expose encore. Celui qui le fera devra propager le réglage à toutes les
+  instances via `instanceOf`, comme les édits de Q11.
+- **Dette ouverte par T7 (`lockedPens` non exposé)** : la présélection de pens
+  existe dans le use-case, le panneau palette ne l'offre pas. À câbler avec le
+  sélecteur de couleurs de l'atelier image.
+- **Gotcha de T7 (recalcul total)** : la conversion tourne dans un atome dérivé
+  **synchrone**. Chaque frappe dans un champ relance `convertTileset` sur toute
+  la planche, et `tilesetGridSuggestionsAtom` reclasse toutes les tailles. Tenu
+  sur une planche 256×256 (Q30), non mesuré au-delà.
 - **Dette assumée dans T5 (sous-palettes)** : Q21 — retrouver les sous-palettes
   de la source par groupement des tuiles selon leur jeu de couleurs — n'est pas
   faite. Elle ne figurait pas au contenu de la tranche, et le rapport de
@@ -129,24 +148,23 @@
   volontaire : le réserver au vu du contenu ferait qu'ajouter un trou plus tard
   décalerait toute la palette, ce que le gel de Q28 rend inacceptable — les
   édits sont des index de pen. Le prix est un pen perdu sur une planche de
-  décor. `transparency: 'flatten'` le récupère explicitement ; T7 doit exposer
-  ce choix.
+  décor. `transparency: 'flatten'` le récupère explicitement, et **le panneau
+  palette de T7 expose ce choix** — fermé hors mode 0, où l'arithmétique de Q16
+  ne laisse rien à dépenser.
 - **Dette assumée dans T5 (alpha partiel)** : un pixel est un trou sous 128
   d'alpha, une couleur au-dessus — pas d'entre-deux. Un contour semi-transparent
   de sprite est donc aplati sur le fond, ce qui est correct sur un fond uni et
   faux dès que la tuile sera posée sur autre chose. Inhérent à une palette
   indexée sans canal alpha.
-- **Dette assumée dans T5 (palette gelée non validée)** : `convertTileset`
-  accepte la palette qu'on lui donne sans vérifier qu'elle tient dans le budget
-  du mode, ni qu'elle contient bien le pen de transparence en tête. Le use-case
-  reste total — les index restent dans les bornes — mais un appelant distrait
-  produit un PNG au-delà du nombre de pens du mode. À contraindre quand T7
-  câblera le gel.
-- **Dette de T3 (rendu) reportée à T7** : le PNG reste tassé. Q16 fournit
-  maintenant de quoi peindre les gouttières, mais **à quelle échelle** les
-  restituer n'est pas tranché : marges et espacements sont en pixels *source*,
-  or la tuile a changé de taille. Les garder tels quels déforme le diff dès
-  qu'on réduit de 8 à 4. À décider face au panneau de comparaison de T7.
+- **~~Dette de T5 (palette gelée non validée)~~ — fermée en T7** :
+  `convertTileset` refuse désormais une palette plus large que le budget du mode
+  (`palette-too-wide`) ou dont la tête n'est pas le pen de transparence
+  (`palette-missing-hole`). Refusée plutôt que rognée : rogner déplacerait les
+  index de pen, donc repeindrait les édits que le gel existe pour protéger.
+- **~~Dette de T3 (rendu)~~ — fermée en T7** : le PNG restitue marges et
+  espacements **à l'échelle de la tuile**, arrondis au demi-pixel supérieur pour
+  qu'une gouttière de 1 px survive à une réduction de moitié. Pas de case à
+  cocher : une planche sans gouttière source sort tassée comme avant.
 - **Dette assumée dans T4 (bord)** : Q13 détecte la condition de bord **par
   tuile**, mais Q14 impose un schéma commun, qui ne peut être noté que sous une
   seule condition par axe. On tranche donc à la **majorité** des tuiles : une
@@ -160,9 +178,9 @@
   une de 32 réduite de moitié en fait 600 millions), la recherche bascule sur
   une **suppression gloutonne** ligne à ligne. Le glouton garde la propriété
   clé (une ligne dupliquée est gratuite, donc partie la première) mais n'est
-  plus optimal. Rien ne le signale encore à l'utilisateur : T7 doit afficher
-  quelle recherche a tourné, sinon un résultat approché se lit comme un
-  résultat exhaustif.
+  plus optimal. **Signalé depuis T7** : `ConvertedTileset.resizeSearch` dit
+  `exhaustive`, `greedy` ou `grown` par axe, et le panneau de rendu l'affiche —
+  un résultat approché ne se lit plus comme un résultat exhaustif.
 - **Dette assumée dans T4 (fusion)** : le schéma **supprime** des lignes, il
   n'en fusionne aucune, alors que Q12 dit « supprimer ou fusionner ». C'est
   volontaire — sur du pixel art, moyenner est toujours destructeur — mais un
@@ -176,7 +194,9 @@
   l'utilisateur arbitre, pas un verdict. Le départage neutre serait un coût de
   tilemap — `tuiles uniques x aire + un index par position`, rapporté à l'aire
   de la planche — qui fait payer aux petites tuiles la table d'index qu'elles
-  imposent. À trancher avant que T7 n'affiche ce classement.
+  imposent. **Tranché en T7** : c'est ce coût qui classe désormais, rapporté à
+  l'aire que la grille couvre — sinon une grille qui déborde paraîtrait bon
+  marché pour avoir laissé tomber une partie de la planche.
 - **Dette assumée dans T3 (rendu)** : le PNG reste tassé — marges et
   espacements de la source ne sont pas restitués, alors que Q10 les demande
   pour le diff visuel. Les restituer suppose de savoir quoi peindre dans les
@@ -434,7 +454,7 @@ tests. Une tranche = une PR.
 | T4 ✅ | Resize | Sélection exhaustive de colonnes, schéma global, condition de bord auto-détectée | T2, T3 |
 | T5 ✅ | Palette | Histogramme sur tuiles uniques, branchement des 12 stratégies, réservation, transparence, gel, rapport de collision | T4 |
 | T6 ✅ | Rendu | Masque de bord, partition AA / tramage, phase locale, reset de diffusion | T5 |
-| T7 | Atelier | `store/tileset/`, panneaux, commutateur dans `app.tsx`, i18n | T6 |
+| T7 ✅ | Atelier | `store/tileset/`, panneaux, commutateur dans `app.tsx`, i18n | T6 |
 | T8 | Édition | `paintPixels` réutilisé, calque non destructif, propagation par dédup, undo global | T7 |
 | T9 | Durabilité | IndexedDB, export/import projet JSON | T8 |
 
