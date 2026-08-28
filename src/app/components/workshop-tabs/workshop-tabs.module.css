@@ -1,0 +1,28 @@
+/* Le commutateur d'atelier (Q6) : il remplace tout le contenu, il ne le
+   double pas — d'où une barre d'onglets sobre, posée au-dessus. */
+.tabs {
+  display: block;
+}
+
+.tabs > [role="tablist"] {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tabs [role="tab"] {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-foreground);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.tabs [role="tab"][data-state="active"] {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}

@@ -18,7 +18,7 @@ msgstr ""
 #~ msgstr "{0} (usada)"
 
 #. placeholder {0}: images.length
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:171
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:166
 msgid "{0} image(s) ready to export"
 msgstr "{0} imagen(es) lista(s) para exportar"
 
@@ -30,7 +30,7 @@ msgstr "{0} imagen(es) lista(s) para exportar"
 msgid "{editCount} pixel(s) modifié(s) manuellement. Modifier les paramètres peut affecter ces modifications."
 msgstr "{editCount} píxel(es) editado(s) manualmente. Cambiar los ajustes puede afectar estas modificaciones."
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:173
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:168
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} restante"
 
@@ -143,7 +143,7 @@ msgstr "Ajusta el equilibrio entre fidelidad a colores frecuentes y variedad de 
 msgid "Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs. EGX2: 640×200 4 couleurs."
 msgstr "Alternancia de modos línea por línea. EGX1: 320×200 16 colores. EGX2: 640×200 4 colores."
 
-#: src/components/export-panel/export-config-dialog.tsx:135
+#: src/components/export-panel/export-config-dialog.tsx:105
 #: src/components/preview-editor/help-button/help-button.tsx:23
 #: src/components/preview-editor/preview-editor-view.tsx:61
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
@@ -167,7 +167,7 @@ msgstr "Cancelar y cerrar"
 msgid "Anti-flicker"
 msgstr "Anti-parpadeo"
 
-#: src/app/components/preview-panel.tsx:32
+#: src/app/components/preview-panel.tsx:34
 msgid "Aperçu"
 msgstr "Vista previa"
 
@@ -279,6 +279,10 @@ msgstr "Cambios Raster"
 msgid "Changer d'image"
 msgstr "Cambiar imagen"
 
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:27
+msgid "Changer de planche"
+msgstr "Cambiar de lámina"
+
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:188
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:183
 msgid "Chargement..."
@@ -345,7 +349,7 @@ msgstr "Color {index}: {color}"
 msgid "Combined"
 msgstr "Combinado"
 
-#: src/components/export-panel/export-config-dialog.tsx:128
+#: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Configuración de la exportación"
 
@@ -353,7 +357,7 @@ msgstr "Configuración de la exportación"
 msgid "Configuration du Dithering"
 msgstr "Configuración de Dithering"
 
-#: src/components/export-panel/export-config-dialog.tsx:145
+#: src/components/export-panel/export-config-dialog.tsx:115
 msgid "Contenu du ZIP"
 msgstr "Contenido del ZIP"
 
@@ -365,7 +369,7 @@ msgstr "Bordes"
 msgid "Contraste"
 msgstr "Contraste"
 
-#: src/app/app.tsx:151
+#: src/app/app.tsx:157
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Convertidor de imágenes Amstrad CPC"
 
@@ -465,6 +469,7 @@ msgstr "Diferencia de luminancia máxima permitida entre colores alternados"
 msgid "Dimension Preset"
 msgstr "Preset de Dimensiones"
 
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:32
 #: src/components/info-bar/info-bar.tsx:113
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:183
 msgid "Dimensions"
@@ -542,8 +547,7 @@ msgstr "Descargando..."
 msgid "DSK Workspace"
 msgstr "Workspace DSK"
 
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:221
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:227
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:215
 msgid "DSK workspace exported successfully!"
 msgstr "¡Workspace DSK exportado con éxito!"
 
@@ -552,7 +556,7 @@ msgstr "¡Workspace DSK exportado con éxito!"
 msgid "palette.strategy.adaptive.desc"
 msgstr "Estrategia dinámica según la imagen"
 
-#: src/app/components/preview-panel.tsx:34
+#: src/app/components/preview-panel.tsx:36
 msgid "Éditer"
 msgstr "Editar"
 
@@ -572,7 +576,7 @@ msgstr "Efectos Raster"
 msgid "EGX Mode"
 msgstr "Modo EGX"
 
-#: src/components/export-panel/use-export-actions.ts:268
+#: src/components/export-panel/use-export-actions.ts:267
 msgid "EGX opened in CPC Playground!"
 msgstr "¡EGX abierto en CPC Playground!"
 
@@ -627,7 +631,7 @@ msgstr "Contraste Exhaustivo"
 #~ msgid "Export"
 #~ msgstr "Exportar"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:168
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:163
 msgid "Export DSK"
 msgstr "Exportar DSK"
 
@@ -639,7 +643,7 @@ msgstr "Exportar DSK"
 #~ msgid "Export your converted images to various formats compatible with CPC emulators and real hardware."
 #~ msgstr "Exporte sus imágenes convertidas a varios formatos compatibles con emuladores CPC y hardware real."
 
-#: src/components/export-panel/export-config-dialog.tsx:138
+#: src/components/export-panel/export-config-dialog.tsx:108
 #: src/components/export-panel/export-panel-view.tsx:30
 msgid "Exporter"
 msgstr "Exportar"
@@ -660,7 +664,7 @@ msgstr "Extracción de paleta base"
 #~ msgid "Failed to open EGX in CPC Playground: {0}"
 #~ msgstr "Error al abrir EGX en CPC Playground: {0}"
 
-#: src/components/export-panel/use-export-actions.ts:283
+#: src/components/export-panel/use-export-actions.ts:282
 msgid "Failed to open EGX in CPC Playground: {error}"
 msgstr "No se pudo abrir EGX en CPC Playground: {error}"
 
@@ -669,7 +673,7 @@ msgstr "No se pudo abrir EGX en CPC Playground: {error}"
 msgid "Failed to open in CPC Playground: {0}"
 msgstr "Error al abrir en CPC Playground: {0}"
 
-#: src/components/export-panel/use-export-actions.ts:285
+#: src/components/export-panel/use-export-actions.ts:284
 msgid "Failed to open in CPC Playground: {error}"
 msgstr "No se pudo abrir en CPC Playground: {error}"
 
@@ -677,7 +681,7 @@ msgstr "No se pudo abrir en CPC Playground: {error}"
 #~ msgid "Failed to open Mode R in CPC Playground: {0}"
 #~ msgstr "Error al abrir Mode R en CPC Playground: {0}"
 
-#: src/components/export-panel/use-export-actions.ts:281
+#: src/components/export-panel/use-export-actions.ts:280
 msgid "Failed to open Mode R in CPC Playground: {error}"
 msgstr "No se pudo abrir Mode R en CPC Playground: {error}"
 
@@ -736,7 +740,7 @@ msgstr "Prioridad de frecuencia (80%) con diversidad moderada"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/export-panel/export-config-dialog.tsx:179
+#: src/components/export-panel/export-config-dialog.tsx:149
 msgid "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
 msgstr "Genera un archivo snapshot (.SNA) con código de visualización integrado"
 
@@ -784,6 +788,10 @@ msgstr "Líneas Alta Res"
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Solo paleta CPC estándar. El soporte de la paleta Plus llegará pronto."
 
+#: src/app/components/workshop-tabs/workshop-tabs.tsx:32
+msgid "Image"
+msgstr "Imagen"
+
 #: src/app/components/source-section.tsx:72
 msgid "Image source"
 msgstr "Imagen de origen"
@@ -828,11 +836,11 @@ msgstr "Intensidad de color (0 = blanco y negro, 2 = muy saturado)"
 msgid "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
 msgstr "La aplicación encontró un problema. Puede volver a intentarlo; si persiste, recargue la página."
 
-#: src/components/export-panel/export-config-dialog.tsx:229
+#: src/components/export-panel/export-config-dialog.tsx:199
 msgid "Label de la palette"
 msgstr "Etiqueta de la paleta"
 
-#: src/components/export-panel/export-config-dialog.tsx:221
+#: src/components/export-panel/export-config-dialog.tsx:191
 msgid "Label des données"
 msgstr "Etiqueta de los datos"
 
@@ -856,7 +864,7 @@ msgstr "Más tarde"
 #~ msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 #~ msgstr "El formato SCR requiere dimensiones estándar (160x200, 320x200 o 640x200)"
 
-#: src/components/export-panel/export-config-dialog.tsx:157
+#: src/components/export-panel/export-config-dialog.tsx:127
 msgid "Le format SCR nécessite des dimensions tenant dans 16 Ko de mémoire écran CPC (sans overscan)"
 msgstr "El formato SCR requiere dimensiones que quepan en 16 KB de memoria de pantalla CPC (sin overscan)"
 
@@ -864,7 +872,7 @@ msgstr "El formato SCR requiere dimensiones que quepan en 16 KB de memoria de pa
 #~ msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
 #~ msgstr "El formato SCR requiere tamaño <= 16 KB (tamaño actual: {0} KB)"
 
-#: src/components/export-panel/export-config-dialog.tsx:182
+#: src/components/export-panel/export-config-dialog.tsx:152
 msgid "Le format SNA n'est disponible que pour les tailles standard ou overscan"
 msgstr "El formato SNA solo está disponible para tamaños estándar u overscan"
 
@@ -889,7 +897,7 @@ msgstr "Línea 0 en modo baja resolución (más colores)"
 msgid "Ligne 0 en mode haute résolution (plus de détails)"
 msgstr "Línea 0 en modo alta resolución (más detalles)"
 
-#: src/components/export-panel/export-config-dialog.tsx:164
+#: src/components/export-panel/export-config-dialog.tsx:134
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (secuencial)"
 
@@ -977,7 +985,7 @@ msgstr "Modo de redimensionamiento"
 msgid "Mode R"
 msgstr "Mode R"
 
-#: src/components/export-panel/use-export-actions.ts:266
+#: src/components/export-panel/use-export-actions.ts:265
 msgid "Mode R opened in CPC Playground!"
 msgstr "¡Mode R abierto en CPC Playground!"
 
@@ -1039,11 +1047,11 @@ msgstr "Neutro"
 msgid "No image to add"
 msgstr "No hay imagen para añadir"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:180
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:175
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "Aún no hay imágenes en el espacio de trabajo. Añada imágenes convertidas para crear su archivo DSK."
 
-#: src/components/export-panel/export-config-dialog.tsx:239
+#: src/components/export-panel/export-config-dialog.tsx:209
 msgid "Nom du fichier ZIP"
 msgstr "Nombre del archivo ZIP"
 
@@ -1088,7 +1096,7 @@ msgstr "Sombras"
 msgid "Open in CPC Playground"
 msgstr "Abrir en CPC Playground"
 
-#: src/components/export-panel/use-export-actions.ts:270
+#: src/components/export-panel/use-export-actions.ts:269
 msgid "Opened in CPC Playground!"
 msgstr "¡Abierto en CPC Playground!"
 
@@ -1154,7 +1162,7 @@ msgstr "Paleta"
 msgid "Palettes"
 msgstr "Paletas"
 
-#: src/components/export-panel/export-config-dialog.tsx:169
+#: src/components/export-panel/export-config-dialog.tsx:139
 msgid "Palettes (firmware/hardware)"
 msgstr "Paletas (firmware/hardware)"
 
@@ -1205,6 +1213,14 @@ msgstr "Foto vívida"
 msgid "Pixel Mode"
 msgstr "Modo de píxel"
 
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:32
+#~ msgid "Planche de {0} x {1} pixels"
+#~ msgstr "Lámina de {0} x {1} píxeles"
+
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:26
+msgid "Planche source"
+msgstr "Lámina de origen"
+
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:264
 #~ msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
 #~ msgstr "Más bajo = más cambios de paleta, más alto = más estabilidad"
@@ -1225,11 +1241,11 @@ msgstr "Más alto = preferencia por colores similares a las líneas anteriores"
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (vista previa)"
 
-#: src/components/export-panel/export-config-dialog.tsx:196
+#: src/components/export-panel/export-config-dialog.tsx:166
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (relación de aspecto CPC correcta)"
 
-#: src/components/export-panel/export-config-dialog.tsx:189
+#: src/components/export-panel/export-config-dialog.tsx:159
 msgid "PNG (pixels carrés)"
 msgstr "PNG (píxeles cuadrados)"
 
@@ -1314,7 +1330,7 @@ msgstr "Raster"
 msgid "Rasters"
 msgstr "Rasters"
 
-#: src/components/export-panel/export-config-dialog.tsx:204
+#: src/components/export-panel/export-config-dialog.tsx:174
 msgid "Rasters (données ASM)"
 msgstr "Rasters (datos ASM)"
 
@@ -1416,7 +1432,7 @@ msgstr "Saturación"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturación inteligente que realza colores apagados sin sobresaturar"
 
-#: src/components/export-panel/export-config-dialog.tsx:151
+#: src/components/export-panel/export-config-dialog.tsx:121
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (formato CPC entrelazado)"
 
@@ -1436,7 +1452,7 @@ msgstr "Selección"
 msgid "Sélectionnez l'algorithme de dithering et ajustez les paramètres pour optimiser le rendu final."
 msgstr "Seleccione el algoritmo de dithering y ajuste los parámetros para optimizar el renderizado final."
 
-#: src/components/export-panel/export-config-dialog.tsx:130
+#: src/components/export-panel/export-config-dialog.tsx:100
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Seleccione los archivos a incluir en el archivo ZIP"
 
@@ -1453,7 +1469,7 @@ msgstr "Configuración"
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simula pasos fotográficos (-3 a +3, ±1 = doble/mitad de luz)"
 
-#: src/components/export-panel/export-config-dialog.tsx:174
+#: src/components/export-panel/export-config-dialog.tsx:144
 msgid "SNA (snapshot exécutable)"
 msgstr "SNA (snapshot ejecutable)"
 
@@ -1510,6 +1526,10 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Prueba todas las combinaciones, maximiza contraste (mejor calidad)"
 
+#: src/app/components/workshop-tabs/workshop-tabs.tsx:35
+msgid "Tileset"
+msgstr "Tileset"
+
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:63
 msgid "Total"
 msgstr "Total"
@@ -1546,7 +1566,7 @@ msgstr "Usa una paleta diferente para cada frame (más colores, más parpadeo)"
 #~ msgid "utilisée"
 #~ msgstr "usada"
 
-#: src/components/export-panel/export-config-dialog.tsx:214
+#: src/components/export-panel/export-config-dialog.tsx:184
 msgid "Utiliser des labels personnalisés"
 msgstr "Usar etiquetas personalizadas"
 

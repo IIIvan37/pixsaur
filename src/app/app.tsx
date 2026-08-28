@@ -1,6 +1,5 @@
 import { Trans } from '@lingui/react/macro'
 import { useEffect } from 'react'
-import { ErrorBoundary } from '@/components/error-boundary'
 import { LanguageSelector } from '@/components/language-selector'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { Toaster } from '@/components/toaster/toaster'
@@ -11,7 +10,7 @@ import { isDevelopment, logger, registerLogSink } from '@/core'
 
 import styles from '@/styles/app.module.css'
 import { invoke, isTauri, tauriLogSink } from '@/tauri'
-import ImageConverter from './components/image-converter/image-converter'
+import WorkshopTabs from './components/workshop-tabs/workshop-tabs'
 import { I18nProviderWrapper } from './i18n-provider'
 import { useAutoRegenerateRasters } from './store/raster/use-auto-regenerate-rasters'
 import { useSessionPersistence } from './store/session/use-session-persistence'
@@ -186,9 +185,7 @@ export default function App() {
               </div>
             </header>
 
-            <ErrorBoundary>
-              <ImageConverter />
-            </ErrorBoundary>
+            <WorkshopTabs />
 
             <footer className={styles.footer}></footer>
           </div>
