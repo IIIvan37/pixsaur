@@ -20,6 +20,14 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T2 TERMINÉE** — géométrie, un commit :
+  `SOURCE_PIXEL_ASPECT` (table des PAR sources, Q8), `aspectDistortion`,
+  `idealTileHeight` / `idealTileWidth` et `candidateTileSizes` dans
+  `pixsaur-tileset` (CPC-libre, le pixel destination arrive en paramètre) ; le
+  use-case `suggestTileGeometry` résout le mode CPC via `CPC_MODE_CONFIG`
+  (`scaleX`/`scaleY`, pas les PAR physiques) et assemble le tout pour le panneau
+  de T7. Départages des candidats : |déformation| puis proximité à la demande —
+  une taille déjà parfaite n'est jamais dissuadée d'elle-même.
 - **T1 TERMINÉE** — 4 cycles rouge-vert, un commit chacun :
   1. `sliceSheet` + le use-case `convertTileset` (pur, sync, total, **sans
      port**) + `src/tileset` enregistré dans le garde de layering.
@@ -28,11 +36,16 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T2 (géométrie — table des PAR sources, ratio dérivé,
-  tailles candidates, déformation résiduelle).
+- **Prochaine action** : T3 (dédup et grille — hash de tuile, lien d'instances,
+  suggestion de grille classée par taux de doublons).
 - **Dette assumée dans T1** : la palette est construite en ordre de première
   apparition, pas par histogramme sur tuiles uniques — c'est T5. Le resize est
   plus-proche-voisin, pas la sélection exhaustive de colonnes — c'est T4.
+- **Dette assumée dans T2** : `suggestTileGeometry` conseille, il ne contraint
+  pas — `convertTileset` accepte toujours n'importe quelle taille cible sans
+  signaler la déformation. Le rapprochement se fera quand T7 câblera le panneau.
+  Le voisinage de recherche des candidats est fixé à ±2 par défaut ; c'est un
+  paramètre, pas une constante gravée.
 - Historique détaillé : `docs/features/sessions/` (local-only, non versionné).
 
 ## Raison d'être
