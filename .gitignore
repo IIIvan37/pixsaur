@@ -98,3 +98,4 @@ coverage.json
 
 # RASM WebAssembly build artifacts (built automatically by CI/CD)
 public/wasm/
+.gate/

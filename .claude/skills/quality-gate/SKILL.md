@@ -1,9 +1,26 @@
 ---
 name: quality-gate
 description: Run the pixsaur quality guardrails (typecheck + comprehensive typecheck + biome & custom guards + tests with coverage + knip dead-code + jscpd duplication + Stryker on the pure core) and report. Use before declaring any change done, before a commit, or before opening a PR. Unlike a greenfield gate, pixsaur is a mature codebase mid-refactor — some detectors are ratcheted (report-only baseline), not zero-tolerance. Know which is which before you act.
+model: sonnet
 ---
 
 # Quality gate (pixsaur)
+
+## Run it with `scripts/gate.sh`
+
+```bash
+scripts/gate.sh --filter <path-pattern>     # add --skip-tests to iterate fast
+```
+
+One line per check instead of the raw logs: knip lists ~69 baseline findings,
+jscpd 29 clones and vitest 229 files, and reading all of that into the session
+costs more than the gate itself. The script keeps the full logs under `.gate/`
+(git-ignored) and prints only the verdicts, the test counts, and the findings
+matching `--filter` — pass the paths your change touched, since **a new finding
+under your own paths** is the only part that is yours. Open a log only when a
+line says FAIL.
+
+Run the commands below by hand only to investigate what the script reported.
 
 All guardrails, one pass. Pixsaur is a **mature codebase in a strangler-fig
 refactor**, so the posture differs from the greenfield template: some checks are
