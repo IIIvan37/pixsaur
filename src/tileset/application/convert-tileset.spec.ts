@@ -231,6 +231,18 @@ describe('convertTileset', () => {
     expect(width).toBe(22)
   })
 
+  it('says which resize search actually ran', () => {
+    const result = convertTileset(input)
+
+    expect(result.ok && result.tileset.resizeSearch?.columns).toBe('exhaustive')
+  })
+
+  it('says nothing about a search the nearest-neighbour resize never ran', () => {
+    const result = convertTileset({ ...input, resize: 'nearest' })
+
+    expect(result.ok && result.tileset.resizeSearch).toBeNull()
+  })
+
   it('links a repeated tile back to its first occurrence', () => {
     const result = convertTileset({
       ...input,

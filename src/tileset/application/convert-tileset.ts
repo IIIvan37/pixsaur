@@ -25,6 +25,7 @@ import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-na
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
+  type AxisSearch,
   antiAliasTile,
   assembleSheet,
   type BayerSize,
@@ -182,6 +183,12 @@ export interface ConvertedTileset {
    * retouching reads.
    */
   collisions: TileCollision[]
+  /**
+   * Which search each axis of the resize ran, or `null` when the tiles were
+   * resampled by nearest neighbour. Reported so an approximation past the
+   * budget never reads as an exhaustive answer.
+   */
+  resizeSearch: { columns: AxisSearch; rows: AxisSearch } | null
 }
 
 export type ConvertTilesetResult =
@@ -276,6 +283,7 @@ export function convertTileset(
     instanceOf,
     unique,
     transparentPen: holePen,
+    resizeSearch: scheme?.search ?? null,
     collisions: rankTileCollisions(
       snapped,
       // Deduplicated BEFORE the palette, not after: two source tiles that the

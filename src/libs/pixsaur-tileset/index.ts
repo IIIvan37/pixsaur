@@ -39,6 +39,7 @@ export {
   rankTileGrids
 } from './src/rank-grids'
 export {
+  type AxisSearch,
   chooseResizeScheme,
   type ResizeScheme,
   resizeTileByScheme

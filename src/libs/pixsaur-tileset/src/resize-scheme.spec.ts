@@ -103,3 +103,47 @@ describe('chooseResizeScheme', () => {
     ).toEqual(distinct)
   }, 2000)
 })
+
+describe('which search the scheme ran', () => {
+  it('searches every candidate when the axis is small enough', () => {
+    const tile = tileOfColumns([0, 10, 20, 30, 40, 50, 60, 70])
+
+    const scheme = chooseResizeScheme(
+      [tile],
+      eight,
+      { tileWidth: 7, tileHeight: 8 },
+      CLAMPED
+    )
+
+    expect(scheme.search.columns).toBe('exhaustive')
+  })
+
+  it('falls back to dropping one line at a time past the budget', () => {
+    const wide = { tileWidth: 64, tileHeight: 8 }
+    const tile = tileOfColumns(
+      Array.from({ length: 64 }, (_, x) => (x * 4) % 256)
+    )
+
+    const scheme = chooseResizeScheme(
+      [tile],
+      wide,
+      { tileWidth: 32, tileHeight: 8 },
+      CLAMPED
+    )
+
+    expect(scheme.search.columns).toBe('greedy')
+  })
+
+  it('searches nothing on an axis it only has to grow', () => {
+    const tile = tileOfColumns([0, 10, 20, 30, 40, 50, 60, 70])
+
+    const scheme = chooseResizeScheme(
+      [tile],
+      eight,
+      { tileWidth: 16, tileHeight: 8 },
+      CLAMPED
+    )
+
+    expect(scheme.search.columns).toBe('grown')
+  })
+})

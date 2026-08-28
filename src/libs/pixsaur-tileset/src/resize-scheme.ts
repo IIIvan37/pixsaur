@@ -23,9 +23,23 @@ import { columnOffsets, lineDistance, rowOffsets } from './tile-lines'
  * Which source line each destination line takes. One entry per destination
  * pixel, so growing an axis simply repeats an index.
  */
+/**
+ * How an axis got its answer. Reported because an approximation must not read
+ * as an exhaustive one: past the budget the search is greedy, and the user is
+ * entitled to know which of the two produced the tiles they are looking at.
+ */
+export type AxisSearch = 'exhaustive' | 'greedy' | 'grown'
+
 export interface ResizeScheme {
   columns: number[]
   rows: number[]
+  search: { columns: AxisSearch; rows: AxisSearch }
+}
+
+/** One axis's answer, and which search produced it. */
+interface AxisChoice {
+  kept: number[]
+  search: AxisSearch
 }
 
 /** Summed distance between every pair of source lines, over all tiles. */
@@ -134,18 +148,21 @@ function chooseAxis(
   keep: number,
   edge: EdgeCondition,
   offsetsAt: (index: number) => number[]
-): number[] {
+): AxisChoice {
   // Growing an axis is not a choice: there is nothing to select away, only
   // source lines to repeat. Nearest-neighbour invents no pixel.
   if (keep >= count) {
-    return Array.from({ length: keep }, (_, index) =>
-      Math.floor((index * count) / keep)
-    )
+    return {
+      kept: Array.from({ length: keep }, (_, index) =>
+        Math.floor((index * count) / keep)
+      ),
+      search: 'grown'
+    }
   }
 
   const matrix = distanceMatrix(tiles, count, offsetsAt)
   if (candidateCount(count, keep) > EXHAUSTIVE_BUDGET) {
-    return greedyAxis(matrix, keep, edge)
+    return { kept: greedyAxis(matrix, keep, edge), search: 'greedy' }
   }
 
   let best: number[] = []
@@ -158,7 +175,7 @@ function chooseAxis(
     }
   }
 
-  return best
+  return { kept: best, search: 'exhaustive' }
 }
 
 /**
@@ -197,21 +214,25 @@ export function chooseResizeScheme(
   to: TileGrid,
   edges: TileEdges
 ): ResizeScheme {
+  const columns = chooseAxis(
+    tiles,
+    from.tileWidth,
+    to.tileWidth,
+    edges.horizontal,
+    (x) => columnOffsets(x, from)
+  )
+  const rows = chooseAxis(
+    tiles,
+    from.tileHeight,
+    to.tileHeight,
+    edges.vertical,
+    (y) => rowOffsets(y, from)
+  )
+
   return {
-    columns: chooseAxis(
-      tiles,
-      from.tileWidth,
-      to.tileWidth,
-      edges.horizontal,
-      (x) => columnOffsets(x, from)
-    ),
-    rows: chooseAxis(
-      tiles,
-      from.tileHeight,
-      to.tileHeight,
-      edges.vertical,
-      (y) => rowOffsets(y, from)
-    )
+    columns: columns.kept,
+    rows: rows.kept,
+    search: { columns: columns.search, rows: rows.search }
   }
 }
 
@@ -219,7 +240,9 @@ export function resizeTileByScheme(
   tile: SourceTile,
   from: TileGrid,
   to: TileGrid,
-  scheme: ResizeScheme
+  // Only the lines it keeps: which search found them is for the caller to
+  // report, not for the resize to carry around.
+  scheme: Pick<ResizeScheme, 'columns' | 'rows'>
 ): SourceTile {
   const data = new Uint8ClampedArray(to.tileWidth * to.tileHeight * 4)
 
