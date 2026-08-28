@@ -5,6 +5,12 @@
 }
 
 .tabs > [role="tablist"] {
+  /* Au-dessus du voile CRT : posé en `fixed; inset: 0; z-index: 0` par
+     l'atelier image, il couvre toute la fenêtre, onglets compris. Sans
+     contexte d'empilement, la barre passerait dessous et se lirait comme
+     inactive. */
+  position: relative;
+  z-index: 20;
   display: flex;
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
@@ -20,6 +26,10 @@
   font-family: inherit;
   font-size: var(--font-size-sm);
   cursor: pointer;
+}
+
+.tabs [role="tab"]:hover {
+  color: var(--color-accentHover);
 }
 
 .tabs [role="tab"][data-state="active"] {
