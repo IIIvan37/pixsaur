@@ -7,6 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > the baseline — see `docs/refactor/ADR-001-file-layout.md` and the layering rules
 > below. History is archived in `docs/refactor/STATUS.md`.
 
+> **🧩 Feature under construction — Tileset workshop.** Converting tilesets from
+> other machines to CPC constraints. 35 design decisions are settled and sliced
+> into 9 PRs (T1→T9); the canonical plan is
+> `docs/features/PLAN-tileset-workshop.md` — read it before touching
+> `src/tileset/`. Build outside-in with the `new-feature-hexa` skill, pure core
+> under `tdd-cycle`, and close every slice with `quality-gate` + `/session-report`.
+
 ## Project
 
 Pixsaur converts modern images into authentic Amstrad CPC graphics (palette quantization, dithering, CPC-native export formats). It ships as both a web app (Vite) and a desktop app (Tauri 2 / Rust). Frontend is React 19 + TypeScript with Jotai for state. Image processing runs on the GPU (ReGL/WebGL) with an automatic CPU fallback.
