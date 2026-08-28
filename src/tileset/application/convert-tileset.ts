@@ -26,6 +26,7 @@ import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
   antiAliasTile,
+  assembleSheet,
   chooseResizeScheme,
   type DiffusionColours,
   dedupeTiles,
@@ -39,6 +40,7 @@ import {
   resizeTileNearest,
   type SheetGrid,
   type SourceTile,
+  scaleSheetGutters,
   sliceSheet,
   type TileCollision,
   type TileEdges,
@@ -596,26 +598,17 @@ function renderPng(
   input: ConvertTilesetInput
 ): Uint8Array {
   const { scaleX, scaleY } = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey]
-  const tileW = input.target.tileWidth
-  const tileH = input.target.tileHeight
-  const width = tileset.columns * tileW * scaleX
-  const height = tileset.rows * tileH * scaleY
-  const indices = new Uint8Array(width * height)
-
-  tileset.tiles.forEach((tile, at) => {
-    const originX = (at % tileset.columns) * tileW * scaleX
-    const originY = Math.floor(at / tileset.columns) * tileH * scaleY
-
-    for (let y = 0; y < tileH; y++) {
-      for (let x = 0; x < tileW; x++) {
-        const pen = tile.indices[y * tileW + x]
-        for (let dy = 0; dy < scaleY; dy++) {
-          const row = (originY + y * scaleY + dy) * width + originX + x * scaleX
-          indices.fill(pen, row, row + scaleX)
-        }
-      }
+  const { width, height, indices } = assembleSheet(
+    tileset.tiles.map((tile) => tile.indices),
+    {
+      columns: tileset.columns,
+      rows: tileset.rows,
+      tile: input.target,
+      gutters: scaleSheetGutters(input.source, input.target),
+      stretch: { x: scaleX, y: scaleY },
+      fill: gutterPen(tileset, input)
     }
-  })
+  )
 
   return encodeIndexedPng({
     width,
@@ -624,4 +617,29 @@ function renderPng(
     indices,
     transparentIndex: tileset.transparentPen ?? undefined
   })
+}
+
+/**
+ * What the blanks between the tiles are painted with: the hole pen when the
+ * mode spends one, and otherwise the pen nearest the background — which is
+ * what flattening a hole means in modes 1 and 2 (Q16).
+ */
+function gutterPen(
+  tileset: ConvertedTileset,
+  input: ConvertTilesetInput
+): number {
+  if (tileset.transparentPen !== null) return tileset.transparentPen
+
+  const background = input.background ?? BLACK
+  let best = 0
+  let shortest = Number.POSITIVE_INFINITY
+  tileset.palette.forEach((pen, at) => {
+    const distance = perceptualDistance(pen as Vector, background as Vector)
+    if (distance < shortest) {
+      shortest = distance
+      best = at
+    }
+  })
+
+  return best
 }

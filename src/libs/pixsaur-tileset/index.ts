@@ -1,5 +1,12 @@
 export { type AntiAliasOptions, antiAliasTile } from './src/anti-alias'
 export {
+  type AssembledSheet,
+  type AssembleSheetOptions,
+  assembleSheet,
+  type SheetGutters,
+  scaleSheetGutters
+} from './src/assemble-sheet'
+export {
   type DiffuseOptions,
   type DiffusionColours,
   diffuseTile

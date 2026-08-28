@@ -211,6 +211,26 @@ describe('convertTileset', () => {
     ])
   })
 
+  it('gives the PNG back the gutters the source sheet declared', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(
+        8,
+        [
+          [255, 0, 0],
+          [0, 0, 255]
+        ],
+        { margin: 1, spacing: 2 }
+      ),
+      source: { tileWidth: 8, tileHeight: 8, margin: 1, spacing: 2 },
+      transparency: 'flatten'
+    })
+    // Halved with the tile: 1 + 4 + 1 + 4 + 1 CPC px, doubled by mode 0.
+    const width = result.ok && new DataView(result.png.buffer).getUint32(16)
+
+    expect(width).toBe(22)
+  })
+
   it('links a repeated tile back to its first occurrence', () => {
     const result = convertTileset({
       ...input,
