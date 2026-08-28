@@ -23,11 +23,9 @@ import {
 } from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
 import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
   type AxisSearch,
   antiAliasTile,
-  assembleSheet,
   type BayerSize,
   chooseResizeScheme,
   type DiffusionColours,
@@ -42,7 +40,6 @@ import {
   resizeTileNearest,
   type SheetGrid,
   type SourceTile,
-  scaleSheetGutters,
   sliceSheet,
   type TileCollision,
   type TileEdges,
@@ -50,6 +47,10 @@ import {
   tilePaletteHistogram
 } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
+import { BLACK, type Pen } from './pens'
+import { renderTilesetPng } from './render-tileset-png'
+
+export type { Pen } from './pens'
 
 /** An RGBA sheet: `data` is `width * height * 4` bytes. */
 export interface TilesetSheet {
@@ -141,11 +142,6 @@ export interface ConvertedTile {
 
 /** What a tile does with a colour the palette has not got (Q18). */
 export type TileDither = 'none' | 'ordered' | 'diffusion'
-
-/** An RGB pen, already snapped to a CPC hardware colour. */
-export type Pen = [r: number, g: number, b: number]
-
-const BLACK: Pen = [0, 0, 0]
 
 /** A hole always takes the first pen — the one CPC sprite routines test. */
 const TRANSPARENT_PEN = 0
@@ -295,7 +291,16 @@ export function convertTileset(
     )
   }
 
-  return { ok: true, tileset, png: renderPng(tileset, input) }
+  return {
+    ok: true,
+    tileset,
+    png: renderTilesetPng(tileset, {
+      source: input.source,
+      target: input.target,
+      mode: input.mode,
+      background: input.background
+    })
+  }
 }
 
 /**
@@ -630,59 +635,4 @@ function blender(
     invariant(index !== undefined, 'blended colour is off the hardware palette')
     return index
   }
-}
-
-/**
- * Lays the tiles back out on the source grid (Q10) and pre-stretches CPC pixels
- * so the file opens undistorted in any viewer (Q9).
- */
-function renderPng(
-  tileset: ConvertedTileset,
-  input: ConvertTilesetInput
-): Uint8Array {
-  const { scaleX, scaleY } = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey]
-  const { width, height, indices } = assembleSheet(
-    tileset.tiles.map((tile) => tile.indices),
-    {
-      columns: tileset.columns,
-      rows: tileset.rows,
-      tile: input.target,
-      gutters: scaleSheetGutters(input.source, input.target),
-      stretch: { x: scaleX, y: scaleY },
-      fill: gutterPen(tileset, input)
-    }
-  )
-
-  return encodeIndexedPng({
-    width,
-    height,
-    palette: tileset.palette,
-    indices,
-    transparentIndex: tileset.transparentPen ?? undefined
-  })
-}
-
-/**
- * What the blanks between the tiles are painted with: the hole pen when the
- * mode spends one, and otherwise the pen nearest the background — which is
- * what flattening a hole means in modes 1 and 2 (Q16).
- */
-function gutterPen(
-  tileset: ConvertedTileset,
-  input: ConvertTilesetInput
-): number {
-  if (tileset.transparentPen !== null) return tileset.transparentPen
-
-  const background = input.background ?? BLACK
-  let best = 0
-  let shortest = Number.POSITIVE_INFINITY
-  tileset.palette.forEach((pen, at) => {
-    const distance = perceptualDistance(pen as Vector, background as Vector)
-    if (distance < shortest) {
-      shortest = distance
-      best = at
-    }
-  })
-
-  return best
 }
