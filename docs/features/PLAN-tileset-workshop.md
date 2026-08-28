@@ -1,6 +1,6 @@
 # PLAN — Atelier Tileset (conversion de tilesets vers CPC)
 
-**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, la découpe est close · **Branche**: `docs/tileset-workshop-plan`
+**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, la découpe est close · **Branche**: `feat/tileset-workshop`
 
 > Relevé de conception d'une **nouvelle feature** : un atelier convertissant une
 > planche de tuiles d'une autre machine (NES, Master System, SNES…) vers les
@@ -18,8 +18,26 @@
 > Point de reprise canonique de cette feature. `docs/refactor/STATUS.md` est
 > archivé et concerne un autre effort — ne pas l'utiliser ici.
 
-- **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
-  `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **Branche** : `feat/tileset-workshop` — poussée sur `origin`, pas encore de PR.
+  Renommée depuis `docs/tileset-workshop-plan`, dont le nom disait `docs/` alors
+  qu'elle portait 60 commits de code.
+- **Après T9, trois passes d'atelier** (28/08/2026) :
+  1. **Agencement** — l'atelier reprend la grammaire de l'atelier image : une
+     carte, une barre d'action, un dock de réglages à 408 px et deux colonnes
+     qui poussent. Les huit panneaux tenaient dans un seul `flex-wrap` sans
+     base, donc l'ordre à l'écran suivait la largeur du contenu. Le dock est
+     désormais une coquille partagée (`ui/layout/settings-dock`), les deux
+     ateliers la remplissent.
+  2. **Champs** — un libellé est posé au-dessus de son contrôle, plus à côté ;
+     variante `compact` de `Input` pour aligner le champ sur le `Select` ; les
+     flèches natives des champs numériques sont retirées, le navigateur les
+     dessinait hors du thème.
+  3. **Palette éditable** — la grille de l'atelier image, un slot par pen du
+     **mode** (16 en mode 0, pas seulement les pens choisis). Un pen épinglé
+     porte son index : `lockedPens` est passé de `Pen[]` à
+     `Record<number, Pen>`, et une position hors budget ou sur le pen de
+     transparence est refusée (`locked-pen-out-of-range`). Le fichier projet
+     passe en **version 2**. Ferme la dette T7 sur `lockedPens`.
 - **T9 TERMINÉE — la découpe T1→T9 est close.** Durabilité, quatre commits :
   1. `tileset-project.ts` (Q31) — le document de l'atelier en un objet : la
      planche, les deux grilles, les réglages et le calque d'édition. Deux
@@ -194,9 +212,9 @@
   Les libellés numérotés de l'atelier composent donc le nombre hors du
   message. Le rapport de collision de T7 en souffrait (« Tuile  — 163.9 ») ;
   c'est corrigé. Les panneaux raster et DSK ont le même motif, hors périmètre.
-- **Dette ouverte par T7 (`lockedPens` non exposé)** : la présélection de pens
-  existe dans le use-case, le panneau palette ne l'offre pas. À câbler avec le
-  sélecteur de couleurs de l'atelier image.
+- **~~Dette ouverte par T7 (`lockedPens` non exposé)~~ — fermée le 28/08/2026** :
+  le panneau palette porte la grille de l'atelier image, et une épingle porte
+  désormais son index de pen (voir « trois passes d'atelier » plus haut).
 - **Gotcha de T7 (recalcul total)** : la conversion tourne dans un atome dérivé
   **synchrone**. Chaque frappe dans un champ relance `convertTileset` sur toute
   la planche, et `tilesetGridSuggestionsAtom` reclasse toutes les tailles. Tenu
