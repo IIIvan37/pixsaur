@@ -15,8 +15,8 @@ export interface ColorPickerPopupProps {
   readonly onColorConfirm: (color: Vector) => void
   /** Callback to toggle lock */
   readonly onToggleLock: () => void
-  /** Callback to clear the slot and lock it */
-  readonly onClearSlot: () => void
+  /** Callback to clear the slot and lock it. Omit where a slot is never empty. */
+  readonly onClearSlot?: () => void
   /** Callback to close the popup */
   readonly onClose: () => void
 }
@@ -109,13 +109,15 @@ export function ColorPickerPopup({
             </Button>
           )}
           {/* Bouton pour vider le slot et le verrouiller */}
-          <Button
-            className={styles.actionButton}
-            variant='secondary'
-            onClick={onClearSlot}
-          >
-            <Trans>Vider</Trans>
-          </Button>
+          {onClearSlot && (
+            <Button
+              className={styles.actionButton}
+              variant='secondary'
+              onClick={onClearSlot}
+            >
+              <Trans>Vider</Trans>
+            </Button>
+          )}
         </div>
       </div>
     </div>
