@@ -185,13 +185,23 @@ export interface ConvertedTileset {
 
 export type ConvertTilesetResult =
   | { ok: true; tileset: ConvertedTileset; png: Uint8Array }
-  | { ok: false; error: 'grid-mismatch' | 'no-pens-left' }
+  | {
+      ok: false
+      error:
+        | 'grid-mismatch'
+        | 'no-pens-left'
+        | 'palette-too-wide'
+        | 'palette-missing-hole'
+    }
 
 export function convertTileset(
   input: ConvertTilesetInput
 ): ConvertTilesetResult {
   const maxPens = penBudget(input)
   if (maxPens < 1) return { ok: false, error: 'no-pens-left' }
+
+  const frozen = checkFrozenPalette(input, maxPens)
+  if (frozen) return frozen
 
   const sliced = sliceSheet(input.sheet, input.source)
   if (!sliced) return { ok: false, error: 'grid-mismatch' }
@@ -341,6 +351,30 @@ function snapToHardware(
  */
 function prependHolePen(chosen: Pen[], hole: Pen | null): Pen[] {
   return hole === null ? chosen : [hole, ...chosen]
+}
+
+/**
+ * A frozen palette is used as-is (Q26 · Q28), so it is the one thing the
+ * use-case cannot recompute out of a mistake: too many pens and the PNG goes
+ * past what the mode can show, no hole at the head and every edit stored as
+ * pen 0 repaints itself. Both are refused rather than silently corrected.
+ */
+function checkFrozenPalette(
+  input: ConvertTilesetInput,
+  maxPens: number
+): { ok: false; error: 'palette-too-wide' | 'palette-missing-hole' } | null {
+  const palette = input.palette
+  if (!palette) return null
+
+  if (palette.length > maxPens) return { ok: false, error: 'palette-too-wide' }
+
+  if (!spendsPenOnHoles(input)) return null
+
+  const background = input.background ?? BLACK
+  const head = palette[TRANSPARENT_PEN]
+  const leads = head?.every((channel, at) => channel === background[at])
+
+  return leads ? null : { ok: false, error: 'palette-missing-hole' }
 }
 
 function penBudget(input: ConvertTilesetInput): number {

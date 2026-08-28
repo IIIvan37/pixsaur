@@ -276,6 +276,54 @@ describe('convertTileset', () => {
     expect(result.ok === false && result.error).toBe('no-pens-left')
   })
 
+  it('refuses a frozen palette wider than the mode can hold', () => {
+    const result = convertTileset({
+      ...input,
+      mode: 1,
+      transparency: 'flatten',
+      palette: cpcPalette.slice(0, 5) as [number, number, number][]
+    })
+
+    expect(result.ok === false && result.error).toBe('palette-too-wide')
+  })
+
+  it('refuses a frozen palette wider than the reservation left it', () => {
+    const result = convertTileset({
+      ...input,
+      transparency: 'flatten',
+      reservedPens: 8,
+      palette: cpcPalette.slice(0, 12) as [number, number, number][]
+    })
+
+    expect(result.ok === false && result.error).toBe('palette-too-wide')
+  })
+
+  it('refuses a frozen palette whose head is not the hole pen', () => {
+    const result = convertTileset({
+      ...input,
+      transparency: 'pen',
+      palette: [
+        [255, 0, 0],
+        [0, 0, 0]
+      ]
+    })
+
+    expect(result.ok === false && result.error).toBe('palette-missing-hole')
+  })
+
+  it('takes a frozen palette that does lead with the hole pen', () => {
+    const result = convertTileset({
+      ...input,
+      transparency: 'pen',
+      palette: [
+        [0, 0, 0],
+        [255, 0, 0]
+      ]
+    })
+
+    expect(result.ok).toBe(true)
+  })
+
   it('flattens a transparent pixel onto the background in mode 1', () => {
     const result = convertTileset({
       ...input,
