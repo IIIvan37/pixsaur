@@ -8,6 +8,7 @@
 
 import { Trans } from '@lingui/react/macro'
 import { useAtom } from 'jotai'
+import CrtEffect from '@/components/crt-effect'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -27,6 +28,10 @@ export default function WorkshopTabs() {
       onValueChange={(value) => setWorkshop(value as Workshop)}
       className={styles.tabs}
     >
+      {/* Le voile CRT couvre les deux ateliers : il appartient à la fenêtre,
+          pas à l'atelier image qui le portait jusqu'ici. */}
+      <CrtEffect />
+
       <TabsList aria-label='Atelier'>
         <TabsTrigger value='image'>
           <Trans>Image</Trans>

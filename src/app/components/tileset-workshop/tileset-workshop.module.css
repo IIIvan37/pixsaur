@@ -1,4 +1,7 @@
 .workshop {
+  /* Au-dessus du voile CRT, comme le contenu de l'atelier image. */
+  position: relative;
+  z-index: 10;
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-md);
