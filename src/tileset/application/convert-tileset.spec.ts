@@ -1,5 +1,9 @@
-import type { ConvertTilesetInput } from './convert-tileset'
+import { vectorToHex } from '@/domain/cpc'
+import type { ConvertTilesetInput, Pen } from './convert-tileset'
 import { convertTileset } from './convert-tileset'
+
+/** The pens a palette holds, order-free — the strategy owns the order now. */
+const penSet = (palette: Pen[]) => palette.map(vectorToHex).sort()
 
 /** Painted over every pixel a tile does not cover, so gutters stand out. */
 const GUTTER: [number, number, number] = [0, 255, 0]
@@ -124,9 +128,9 @@ describe('convertTileset', () => {
       source: { tileWidth: 8, tileHeight: 8, margin: 1, spacing: 2 }
     })
 
-    expect(result.ok && result.tileset.palette).toEqual([
-      [255, 0, 0],
-      [0, 0, 255]
+    expect(result.ok && penSet(result.tileset.palette)).toEqual([
+      '0000ff',
+      'ff0000'
     ])
   })
 
@@ -143,7 +147,7 @@ describe('convertTileset', () => {
     expect(result.ok && result.tileset.instanceOf).toEqual([0, 1, 0])
   })
 
-  it('rejects a sheet needing more pens than the mode offers', () => {
+  it('quantizes a sheet richer than the mode instead of rejecting it', () => {
     const tooManyColours = sheetOfSolidTiles(8, [
       [255, 0, 0],
       [0, 0, 255],
@@ -156,7 +160,7 @@ describe('convertTileset', () => {
       mode: 2
     })
 
-    expect(result.ok === false && result.error).toBe('palette-overflow')
+    expect(result.ok && result.tileset.palette.length).toBe(2)
   })
 
   it('keeps a column nearest-neighbour would step over', () => {

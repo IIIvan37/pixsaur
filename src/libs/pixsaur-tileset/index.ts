@@ -4,6 +4,10 @@ export {
   type TileEdges
 } from './src/edge-condition'
 export {
+  type ColourWeight,
+  tilePaletteHistogram
+} from './src/palette-histogram'
+export {
   type PixelAspect,
   SOURCE_PIXEL_ASPECT,
   type SourcePlatform

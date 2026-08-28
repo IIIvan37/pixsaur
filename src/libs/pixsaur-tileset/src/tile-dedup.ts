@@ -9,8 +9,9 @@
  * `docs/features/PLAN-tileset-workshop.md`.
  */
 
-/** A tile as raw bytes: RGBA before conversion, palette indices after. */
-export type TileBytes = Uint8Array | Uint8ClampedArray
+/** A tile as a flat run of numbers: RGBA bytes before conversion, palette
+ * indices after — up to 4095 on Plus, so not always byte-sized. */
+export type TileBytes = ArrayLike<number>
 
 export interface TileDedup {
   /** For each tile, the position of the tile it is an instance of. */

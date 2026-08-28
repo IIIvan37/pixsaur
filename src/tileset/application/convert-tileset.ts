@@ -6,13 +6,22 @@
  * computes. See `docs/features/PLAN-tileset-workshop.md`.
  */
 
+import { invariant } from '@/core'
 import {
   CPC_MODE_CONFIG,
   type CpcModeKey,
   colorToKey,
+  getPaletteForHardware,
   type PixelMode,
+  perceptualDistance,
   quantizeColorForHardware
 } from '@/domain/cpc'
+import {
+  applyPaletteStrategyV2,
+  type ColorCandidate
+} from '@/libs/pixsaur-color/src/quant/palette-strategies-v2'
+import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
+import type { Vector } from '@/libs/pixsaur-color/src/type'
 import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
   chooseResizeScheme,
@@ -24,7 +33,8 @@ import {
   type SheetGrid,
   type SourceTile,
   sliceSheet,
-  type TileEdges
+  type TileEdges,
+  tilePaletteHistogram
 } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 
@@ -55,6 +65,11 @@ export interface ConvertTilesetInput {
    * against. Defaults to `columns`.
    */
   resize?: 'columns' | 'nearest'
+  /**
+   * Which of the 12 palette strategies picks the shared pens (Q15). Defaults to
+   * `exhaustive-contrast`, the same default the image workshop carries.
+   */
+  paletteStrategy?: PaletteStrategy
 }
 
 /** One converted tile: palette indices, `target.tileWidth * tileHeight` long. */
@@ -79,7 +94,7 @@ export interface ConvertedTileset {
 
 export type ConvertTilesetResult =
   | { ok: true; tileset: ConvertedTileset; png: Uint8Array }
-  | { ok: false; error: 'grid-mismatch' | 'palette-overflow' }
+  | { ok: false; error: 'grid-mismatch' }
 
 export function convertTileset(
   input: ConvertTilesetInput
@@ -97,43 +112,29 @@ export function convertTileset(
           input.target,
           sheetEdges(tiles, input.source)
         )
-  const maxPens = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors
 
-  // T1 builds the shared palette by first-seen order. The real strategy —
-  // histogram over UNIQUE tiles, reservation, freezing — lands in T5.
-  const palette: Pen[] = []
-  const penByKey = new Map<string, number>()
-
-  const converted: ConvertedTile[] = []
-  for (const tile of tiles) {
+  // Every pixel first lands on a hardware colour; the palette is then chosen
+  // among those, not among the source's own colours (Q26 — after resize).
+  const basePalette = getPaletteForHardware(input.hardware)
+  const baseIndexByKey = new Map(
+    basePalette.map((colour, index) => [colorToKey(colour), index])
+  )
+  const snapped = tiles.map((tile) => {
     const resized = scheme
       ? resizeTileByScheme(tile, input.source, input.target, scheme)
       : resizeTileNearest(tile, input.source, input.target)
-    const indices = new Uint8Array(resized.data.length / 4)
+    return snapToHardware(resized.data, baseIndexByKey, input.hardware)
+  })
 
-    for (let pixel = 0; pixel < indices.length; pixel++) {
-      const at = pixel * 4
-      const [r, g, b] = quantizeColorForHardware(
-        [resized.data[at], resized.data[at + 1], resized.data[at + 2]],
-        input.hardware
-      )
-      const pen: Pen = [r, g, b]
-      const key = colorToKey(pen)
-
-      let index = penByKey.get(key)
-      if (index === undefined) {
-        if (palette.length >= maxPens) {
-          return { ok: false, error: 'palette-overflow' }
-        }
-        index = palette.length
-        penByKey.set(key, index)
-        palette.push(pen)
-      }
-      indices[pixel] = index
+  const palette = selectPalette(snapped, basePalette, input)
+  const penOf = nearestPens(palette, basePalette)
+  const converted: ConvertedTile[] = snapped.map((tile) => {
+    const indices = new Uint8Array(tile.length)
+    for (let pixel = 0; pixel < tile.length; pixel++) {
+      indices[pixel] = penOf[tile[pixel]]
     }
-
-    converted.push({ indices })
-  }
+    return { indices }
+  })
 
   // Deduplicating the CONVERTED tiles, not the source ones: two source tiles
   // that only differed below the CPC palette's resolution have become the same
@@ -167,6 +168,93 @@ function sheetEdges(tiles: SourceTile[], grid: SheetGrid): TileEdges {
       : 'clamp'
 
   return { horizontal: majority('horizontal'), vertical: majority('vertical') }
+}
+
+/** Base-palette index of every pixel, once snapped to the hardware. */
+type SnappedTile = Uint16Array
+
+/**
+ * Snaps each pixel to the hardware colour space and reports its position in the
+ * base palette. The snap is componentwise, so the result always exists there —
+ * 27 colours on classic, 4096 on Plus.
+ */
+function snapToHardware(
+  data: Uint8ClampedArray,
+  indexByKey: ReadonlyMap<string, number>,
+  hardware: CPCHardware
+): SnappedTile {
+  const snapped = new Uint16Array(data.length / 4)
+
+  for (let pixel = 0; pixel < snapped.length; pixel++) {
+    const at = pixel * 4
+    const key = colorToKey(
+      quantizeColorForHardware([data[at], data[at + 1], data[at + 2]], hardware)
+    )
+    const index = indexByKey.get(key)
+    invariant(
+      index !== undefined,
+      `snapped colour ${key} is off the hardware palette`
+    )
+    snapped[pixel] = index
+  }
+
+  return snapped
+}
+
+/**
+ * Picks the pens the whole tileset shares, from a histogram weighted one unit
+ * per UNIQUE tile (Q3 · Q15) and handed to one of the 12 strategies (Q15).
+ */
+function selectPalette(
+  snapped: readonly SnappedTile[],
+  basePalette: Vector[],
+  input: ConvertTilesetInput
+): Pen[] {
+  const maxPens = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors
+  const candidates: ColorCandidate[] = tilePaletteHistogram(snapped).map(
+    ({ index, frequency }) => ({
+      index,
+      frequency,
+      color: [...basePalette[index]] as Vector,
+      converted: [...basePalette[index]] as Vector
+    })
+  )
+
+  const { selectedIndices } = applyPaletteStrategyV2(
+    input.paletteStrategy ?? 'exhaustive-contrast',
+    candidates,
+    maxPens,
+    [],
+    { basePaletteSize: basePalette.length, basePalette }
+  )
+
+  return selectedIndices
+    .slice(0, maxPens)
+    .map((index) => [...basePalette[index]] as Pen)
+}
+
+/**
+ * For each base-palette colour, the pen standing closest to it. Computed once
+ * over the base palette rather than per pixel — the same colour always lands on
+ * the same pen, which is what keeps deduplication exact (Q30).
+ */
+function nearestPens(palette: Pen[], basePalette: Vector[]): Uint8Array {
+  const penOf = new Uint8Array(basePalette.length)
+
+  basePalette.forEach((colour, index) => {
+    let best = 0
+    let bestDistance = Number.POSITIVE_INFINITY
+    palette.forEach((pen, at) => {
+      const distance = perceptualDistance(colour, pen)
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = at
+      }
+    })
+    penOf[index] = best
+  })
+
+  return penOf
 }
 
 /**
