@@ -30,6 +30,12 @@ describe('diffuseTile', () => {
     ).toBe(7)
   })
 
+  it('drops the error a contour would have taken', () => {
+    expect([
+      ...diffuseTile([0, 0, 0, 0], 4, 1, ramp(5), { mask: [0, 1, 0, 0] })
+    ]).toEqual([1, 1, 1, 0])
+  })
+
   it('starts the next tile with an empty accumulator', () => {
     const first = [...diffuseTile([0, 0, 0, 0], 4, 1, ramp(5))]
     expect([...diffuseTile([0, 0, 0, 0], 4, 1, ramp(5))]).toEqual(first)
