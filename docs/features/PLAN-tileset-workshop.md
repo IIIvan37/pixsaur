@@ -20,6 +20,19 @@
 
 - **Branche** : `docs/tileset-workshop-plan` — non poussée, pas de PR. Le nom dit
   `docs/` alors qu'elle porte du code : à renommer si elle devient la PR de T1.
+- **T4 TERMINÉE** — resize, un commit :
+  `detectTileEdges` (Q13 — la couture entre dernière et première ligne est
+  comparée au pas moyen que la tuile fait déjà à l'intérieur d'elle-même, pas à
+  un seuil absolu), `chooseResizeScheme` / `resizeTileByScheme` (Q12 · Q14 — la
+  sélection exhaustive des colonnes et lignes survivantes, notée **contre toutes
+  les tuiles à la fois** pour que le schéma soit commun au tileset), et le
+  branchement dans `convertTileset` avec `resize: 'columns' | 'nearest'` —
+  `columns` par défaut, `nearest` gardé comme référence de comparaison.
+  Modèle de coût : chaque ligne source est représentée par la ligne survivante
+  la plus proche, et le candidat paie la distance entre les deux. Une ligne
+  dupliquée ne coûte donc rien à supprimer — c'est la propriété sur laquelle
+  toute l'approche repose.
+
 - **T3 TERMINÉE** — dédup et grille, trois commits :
   1. `sliceSheet` apprend marge, espacement et offset (Q5) ; il découpe
      désormais **les tuiles entières qui tiennent** et ne rend `null` que
@@ -49,11 +62,32 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T4 (resize — sélection exhaustive de colonnes, schéma
-  global, condition de bord auto-détectée).
+- **Prochaine action** : T5 (palette — histogramme sur tuiles uniques,
+  branchement des 12 stratégies, réservation, transparence, gel, rapport de
+  collision).
 - **Dette assumée dans T1** : la palette est construite en ordre de première
-  apparition, pas par histogramme sur tuiles uniques — c'est T5. Le resize est
-  plus-proche-voisin, pas la sélection exhaustive de colonnes — c'est T4.
+  apparition, pas par histogramme sur tuiles uniques — c'est T5.
+- **Dette assumée dans T4 (bord)** : Q13 détecte la condition de bord **par
+  tuile**, mais Q14 impose un schéma commun, qui ne peut être noté que sous une
+  seule condition par axe. On tranche donc à la **majorité** des tuiles : une
+  planche majoritairement terrain est traitée en terrain. Le compromis exact
+  serait d'attribuer le coût tuile par tuile — le jeu de lignes gardées reste
+  global, seule la ligne représentante change — ce qui coûte une matrice de
+  distances par tuile. À rouvrir si les coutures se voient sur les sprites d'une
+  planche mixte.
+- **Dette assumée dans T4 (budget)** : au-delà de `EXHAUSTIVE_BUDGET`
+  (200 000 candidats — une tuile de 8 en fait 56, une de 16 quelques milliers,
+  une de 32 réduite de moitié en fait 600 millions), la recherche bascule sur
+  une **suppression gloutonne** ligne à ligne. Le glouton garde la propriété
+  clé (une ligne dupliquée est gratuite, donc partie la première) mais n'est
+  plus optimal. Rien ne le signale encore à l'utilisateur : T7 doit afficher
+  quelle recherche a tourné, sinon un résultat approché se lit comme un
+  résultat exhaustif.
+- **Dette assumée dans T4 (fusion)** : le schéma **supprime** des lignes, il
+  n'en fusionne aucune, alors que Q12 dit « supprimer ou fusionner ». C'est
+  volontaire — sur du pixel art, moyenner est toujours destructeur — mais un
+  dégradé source lisse y perdra. À rouvrir si les tests sur planche réelle le
+  demandent.
 - **Dette assumée dans T3** : le taux de doublons, lu **d'une taille de tuile à
   l'autre**, favorise mécaniquement la plus petite — plus une tuile est petite,
   plus deux d'entre elles ont de chances d'être identiques. Le critère reste
