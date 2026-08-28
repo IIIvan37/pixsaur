@@ -32,6 +32,10 @@ export {
   type TileGrid
 } from './src/slice-sheet'
 export {
+  rankTileCollisions,
+  type TileCollision
+} from './src/tile-collisions'
+export {
   dedupeTiles,
   duplicateRate,
   type TileBytes,

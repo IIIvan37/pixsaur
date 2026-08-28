@@ -245,6 +245,33 @@ describe('convertTileset', () => {
     expect(result.ok && hasChunk(result.png, 'tRNS')).toBe(true)
   })
 
+  it('blames no tile when every colour got a pen of its own', () => {
+    const result = convertTileset(input)
+
+    expect(result.ok && result.tileset.collisions.map((c) => c.error)).toEqual([
+      0, 0
+    ])
+  })
+
+  it('blames the tiles a short palette hurt', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(8, [RED, BLUE, [0, 255, 0]]),
+      mode: 2
+    })
+
+    expect(result.ok && result.tileset.collisions[0].error).toBeGreaterThan(0)
+  })
+
+  it('ranks only the distinct tiles, since editing one reaches them all', () => {
+    const result = convertTileset({
+      ...input,
+      sheet: sheetOfSolidTiles(8, [RED, BLUE, RED])
+    })
+
+    expect(result.ok && result.tileset.collisions.length).toBe(2)
+  })
+
   it('keeps a column nearest-neighbour would step over', () => {
     const result = convertTileset({
       ...input,

@@ -28,11 +28,13 @@ import {
   dedupeTiles,
   detectTileEdges,
   type EdgeCondition,
+  rankTileCollisions,
   resizeTileByScheme,
   resizeTileNearest,
   type SheetGrid,
   type SourceTile,
   sliceSheet,
+  type TileCollision,
   type TileEdges,
   tilePaletteHistogram
 } from '@/libs/pixsaur-tileset'
@@ -129,6 +131,12 @@ export interface ConvertedTileset {
   unique: number[]
   /** The pen standing for a hole, or `null` when alpha was flattened (Q16). */
   transparentPen: number | null
+  /**
+   * The tiles the source held apart, worst first, by how far the shared palette
+   * pushed them from the colours they asked for (Q22). What the manual
+   * retouching reads.
+   */
+  collisions: TileCollision[]
 }
 
 export type ConvertTilesetResult =
@@ -183,6 +191,12 @@ export function convertTileset(
   // alpha can reach it, so an opaque pixel of the same colour stays distinct.
   const palette = holePen === null ? chosen : [background, ...chosen]
   const penOf = nearestPens(chosen, basePalette, holePen === null ? 0 : 1)
+  const errorOf = penDistances(
+    chosen,
+    basePalette,
+    penOf,
+    holePen === null ? 0 : 1
+  )
   const converted: ConvertedTile[] = snapped.map((tile) => {
     const indices = new Uint8Array(tile.length)
     for (let pixel = 0; pixel < tile.length; pixel++) {
@@ -204,7 +218,16 @@ export function convertTileset(
     tiles: converted,
     instanceOf,
     unique,
-    transparentPen: holePen
+    transparentPen: holePen,
+    collisions: rankTileCollisions(
+      snapped,
+      // Deduplicated BEFORE the palette, not after: two source tiles that the
+      // shared palette collapsed into one are exactly the collision the report
+      // exists to surface, and the converted `unique` no longer holds both.
+      dedupeTiles(snapped).unique,
+      errorOf,
+      { ignore: HOLE }
+    )
   }
 
   return { ok: true, tileset, png: renderPng(tileset, input) }
@@ -331,6 +354,26 @@ function nearestPens(
   })
 
   return penOf
+}
+
+/**
+ * How far each base-palette colour had to travel to reach the pen it was given.
+ * Same shape as `nearestPens`, so the collision report of Q22 costs one lookup
+ * per pixel — the distances are already computed to pick the pens.
+ */
+function penDistances(
+  chosen: Pen[],
+  basePalette: Vector[],
+  penOf: Uint8Array,
+  offset: number
+): Float64Array {
+  const errorOf = new Float64Array(basePalette.length)
+
+  basePalette.forEach((colour, index) => {
+    errorOf[index] = perceptualDistance(colour, chosen[penOf[index] - offset])
+  })
+
+  return errorOf
 }
 
 /**
