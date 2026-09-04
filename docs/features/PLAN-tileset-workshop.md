@@ -21,6 +21,12 @@
 - **Branche** : `feat/tileset-workshop` — poussée sur `origin`, pas encore de PR.
   Renommée depuis `docs/tileset-workshop-plan`, dont le nom disait `docs/` alors
   qu'elle portait 60 commits de code.
+- **Revue d'architecture (04/09/2026)** —
+  [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
+  9 candidats de deepening sur `src/tileset`, `pixsaur-tileset`, `store/tileset` et
+  les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise. Rien
+  n'est implémenté ; Q20 ci-dessous en est sorti.
+
 - **Q20 rouvert (04/09/2026) — le PNG sort en truecolor.** L'aval est `img2cpc`,
   qui découpe la planche en data CPC et **rapporte chaque couleur à la couleur CPC
   la plus proche** : l'indexé ne lui apporte rien. Le report est
