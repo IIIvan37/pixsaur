@@ -21,6 +21,24 @@
 - **Branche** : `feat/tileset-workshop` — poussée sur `origin`, pas encore de PR.
   Renommée depuis `docs/tileset-workshop-plan`, dont le nom disait `docs/` alors
   qu'elle portait 60 commits de code.
+- **Q20 rouvert (04/09/2026) — le PNG sort en truecolor.** L'aval est `img2cpc`,
+  qui découpe la planche en data CPC et **rapporte chaque couleur à la couleur CPC
+  la plus proche** : l'indexé ne lui apporte rien. Le report est
+  l'identité, puisque chaque pen sort déjà de `snapToHardware`. La prémisse de Q20
+  n'était pas fausse, c'est l'exigence qui a changé. **Décision prise, code à
+  écrire** — rien n'est encore supprimé dans `src/`.
+  - `pixsaur-png` est à supprimer — 238 lignes, encodeur et spec. Le test de
+    suppression est net : la complexité s'en va, elle ne se déplace pas.
+  - Le déterminisme que l'encodeur revendiquait ne portait rien : la dédup tourne
+    sur les index de tuiles, en amont de tout encodage, et **rien ne relit un PNG**
+    (aucun décodeur dans le dépôt). Le lien d'édition de Q11 est intact.
+  - `renderTilesetPng` devient un dessin canvas + `toBlob`, donc passe par le port
+    `CanvasFactory` que `src/export` a déjà — un second adapter, la couture devient
+    réelle.
+  - L'aperçu cesse de passer par un blob PNG : il se dessine au canvas comme celui
+    de l'atelier image. Chaque pixel peint encodait la planche deux fois.
+  - Q9 (pré-étirement) et Q10 (grille source conservée) ne bougent pas.
+
 - **Après T9, trois passes d'atelier** (28/08/2026) :
   1. **Agencement** — l'atelier reprend la grammaire de l'atelier image : une
      carte, une barre d'action, un dock de réglages à 408 px et deux colonnes
@@ -431,9 +449,9 @@ La réservation est donc, en pratique, une fonctionnalité de **mode 0**.
 
 ### Sortie
 
-- **Q20 · Q9 · Q10 — PNG indexé, pré-étiré, grille conservée.** *Indexé*, palette CPC
-  embarquée : c'est ce qui atteste que le fichier est un asset CPC valide et pas une
-  image qui y ressemble. *Pré-étiré* par défaut (un pixel mode 0 devient deux pixels
+- **Q20 · Q9 · Q10 — PNG truecolor, pré-étiré, grille conservée.** *Truecolor* depuis
+  le 04/09/2026 : ~~indexé, palette CPC embarquée~~ — voir « Q20 rouvert » dans *Où on
+  en est*. *Pré-étiré* par défaut (un pixel mode 0 devient deux pixels
   PNG), parce qu'un PNG qui a l'air faux quand on l'ouvre est un PNG qu'on croit cassé ;
   agrandissement entier optionnel, export en géométrie native en case à cocher. *Grille
   source conservée*, marges et espacements compris, pour permettre le diff visuel
@@ -516,12 +534,15 @@ retouche manuelle qu'il dirige. Si ce rapport est mauvais, l'outil produit de la
   dans un même jeu.
 - **Ajustements par tuile.** Artistique, pas correctif — les ajustements ponctuels
   globaux sont déjà exacts.
-- **Compression réelle du PNG.** `pixsaur-png` émet des blocs zlib *stored*
+- **~~Compression réelle du PNG.~~ Sans objet depuis Q20 rouvert (04/09/2026)** :
+  le canvas produira le PNG et le navigateur le déflatera ; la dette part avec
+  l'encodeur maison. Ce qui suit est le raisonnement d'origine, gardé pour mémoire.
+  ~~`pixsaur-png` émet des blocs zlib *stored*
   (non compressés) plutôt que d'ajouter une dépendance deflate : le PNG est
   valide, l'encodeur reste pur et trivialement déterministe — la garantie sur
   laquelle repose toute la tranche (Q30). Une planche 256×256 sort à ~70 ko pour
   un fichier téléchargé une fois. `fflate` restera ajoutable **sans changer
-  l'interface** du module. C'est un choix, pas un oubli.
+  l'interface** du module. C'est un choix, pas un oubli.~~
 
 ## Découpe en tranches
 
