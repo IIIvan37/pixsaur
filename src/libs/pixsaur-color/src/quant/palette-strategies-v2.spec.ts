@@ -2303,4 +2303,44 @@ describe('palette-strategies-v2', () => {
       // The strategy will pick alternatives to avoid duplication
     })
   })
+  // Un mode 0 demande jusqu'à 15 pens : plus que le plafond de candidats que
+  // les stratégies combinatoires s'imposent pour ne pas exploser. Le plafond ne
+  // doit jamais descendre sous ce qui est demandé, sinon kCombinations ne
+  // produit aucune combinaison et la stratégie rend une palette vide.
+  describe('targetColors above the combinatorial candidate cap', () => {
+    const createManyCandidates = (count: number): ColorCandidate[] =>
+      Array.from({ length: count }, (_, i) => {
+        const color = [
+          (i * 37) % 256,
+          (i * 91) % 256,
+          (i * 149) % 256
+        ] as Vector
+        return { index: i, frequency: count - i, color, converted: color }
+      })
+
+    it('should fill the palette with exhaustive-contrast', () => {
+      const result = selectByExhaustiveContrast(createManyCandidates(26), 15)
+      expect(result.selectedIndices).toHaveLength(15)
+    })
+
+    it('should fill the palette with coverage-aware', () => {
+      const result = selectByCoverageAware(createManyCandidates(26), 15)
+      expect(result.selectedIndices).toHaveLength(15)
+    })
+
+    it('should fill the palette with dithering-aware', () => {
+      const result = selectByDitheringAware(createManyCandidates(26), 15)
+      expect(result.selectedIndices).toHaveLength(15)
+    })
+
+    it('should never return an empty palette, whatever the strategy', () => {
+      const candidates = createManyCandidates(26)
+      const empty = AVAILABLE_STRATEGIES.filter(
+        (strategy) =>
+          applyPaletteStrategyV2(strategy, candidates, 15).selectedIndices
+            .length === 0
+      )
+      expect(empty).toEqual([])
+    })
+  })
 })

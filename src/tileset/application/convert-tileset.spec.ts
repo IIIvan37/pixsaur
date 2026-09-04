@@ -1,4 +1,5 @@
 import { cpcPalette, vectorToHex } from '@/domain/cpc'
+import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { ConvertTilesetInput, Pen } from './convert-tileset'
 import { convertTileset } from './convert-tileset'
 
@@ -153,7 +154,56 @@ const staircase: ConvertTilesetInput = {
   palette: [RED, BLUE, MIDDLE]
 }
 
+/** The twelve strategies the user can pick — exhaustive by construction. */
+const PALETTE_STRATEGIES = Object.keys({
+  'exhaustive-contrast': true,
+  'coverage-aware': true,
+  'dithering-aware': true,
+  'frequency-balanced': true,
+  'frequency-max': true,
+  'balanced-score-balanced': true,
+  'balanced-score-max': true,
+  'perceptual-balanced': true,
+  'perceptual-max': true,
+  'diversity-first-balanced': true,
+  'diversity-first-max': true,
+  adaptive: true
+} satisfies Record<PaletteStrategy, true>) as PaletteStrategy[]
+
+/**
+ * One solid tile per hardware colour: the palette has more candidates than a
+ * mode 0 has pens, so the strategy has to actually choose. Every fixture above
+ * carries a handful of colours and takes the "not enough candidates" shortcut.
+ */
+const richSheet: ConvertTilesetInput = {
+  sheet: sheetOfSolidTiles(
+    8,
+    cpcPalette.map((colour) => [...colour] as [number, number, number])
+  ),
+  source: { tileWidth: 8, tileHeight: 8 },
+  target: { tileWidth: 8, tileHeight: 8 },
+  mode: 0,
+  hardware: 'classic'
+}
+
 describe('convertTileset', () => {
+  // Une planche plus riche que le mode demandait 15 pens à une stratégie
+  // combinatoire, qui plafonnait ses candidats à 12 et rendait une palette
+  // vide — la conversion plantait sur `chosen[...]` indéfini.
+  it('fills the palette when the sheet is richer than the mode', () => {
+    const result = convertTileset(richSheet)
+
+    expect(result.ok && result.tileset.palette.length).toBe(16)
+  })
+
+  it('converts a sheet richer than the mode with every strategy', () => {
+    const failed = PALETTE_STRATEGIES.filter(
+      (paletteStrategy) => !convertTileset({ ...richSheet, paletteStrategy }).ok
+    )
+
+    expect(failed).toEqual([])
+  })
+
   it('produces one destination tile per source tile', () => {
     const result = convertTileset(input)
 
