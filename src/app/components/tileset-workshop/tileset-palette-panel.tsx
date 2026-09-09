@@ -19,6 +19,7 @@ import { Select, SelectItem } from '@/components/ui/select'
 import type { PixelMode } from '@/domain/cpc'
 import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-names'
 import type { CPCHardware } from '@/libs/types'
+import { hasPensToSpare, transparencyOf } from '@/tileset'
 import { TilesetColorPalette } from './tileset-color-palette'
 import styles from './tileset-workshop.module.css'
 
@@ -41,9 +42,9 @@ export function TilesetPalettePanel() {
   const freeze = useSetAtom(freezeTilesetPaletteAtom)
   const thaw = useSetAtom(thawTilesetPaletteAtom)
 
-  // Modes 1 and 2 have 4 and 2 pens: nothing to reserve, nothing to spend on a
-  // hole. Q16 — the arithmetic, not a preference.
-  const spendable = mode === 0
+  // Nothing to reserve and nothing to spend on a hole outside mode 0 — Q16 and
+  // Q23 are arithmetic, and `@/tileset` owns it.
+  const spendable = hasPensToSpare(mode)
 
   return (
     <section className={styles.tab}>
@@ -118,7 +119,7 @@ export function TilesetPalettePanel() {
           </span>
           <Select
             aria-label={_(msg`Transparence`)}
-            value={options.transparency ?? (spendable ? 'pen' : 'flatten')}
+            value={transparencyOf({ mode, ...options })}
             onValueChange={(value) =>
               setOptions({ transparency: value as 'pen' | 'flatten' })
             }

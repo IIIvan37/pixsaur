@@ -8,8 +8,6 @@
 
 import { invariant } from '@/core'
 import {
-  CPC_MODE_CONFIG,
-  type CpcModeKey,
   colorToKey,
   getPaletteForHardware,
   type PixelMode,
@@ -47,6 +45,13 @@ import {
   tilePaletteHistogram
 } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
+import {
+  HOLE_PEN,
+  holePen,
+  penBudget,
+  pinnablePen,
+  spendsPenOnHoles
+} from './pen-budget'
 import { BLACK, type Pen } from './pens'
 
 export type { Pen } from './pens'
@@ -147,9 +152,6 @@ export interface ConvertedTile {
 /** What a tile does with a colour the palette has not got (Q18). */
 export type TileDither = 'none' | 'ordered' | 'diffusion'
 
-/** A hole always takes the first pen — the one CPC sprite routines test. */
-const TRANSPARENT_PEN = 0
-
 /**
  * Marks a pixel as a hole while it travels as a base-palette index. Safely out
  * of range: the widest base palette, CPC Plus, stops at 4095.
@@ -158,12 +160,6 @@ const HOLE = 0xffff
 
 /** Below this, a pixel is a hole rather than a colour to composite. */
 const OPACITY_THRESHOLD = 128
-
-function spendsPenOnHoles(input: ConvertTilesetInput): boolean {
-  return (
-    (input.transparency ?? (input.mode === 0 ? 'pen' : 'flatten')) === 'pen'
-  )
-}
 
 export interface ConvertedTileset {
   columns: number
@@ -240,14 +236,14 @@ export function convertTileset(
     basePalette.map((colour, index) => [colorToKey(colour), index])
   )
   const background = input.background ?? BLACK
-  const holePen = offset === 0 ? null : TRANSPARENT_PEN
+  const hole = holePen(input)
   const snapped = tiles.map((tile) => {
     const resized = scheme
       ? resizeTileByScheme(tile, input.source, input.target, scheme)
       : resizeTileNearest(tile, input.source, input.target)
     return snapToHardware(resized.data, baseIndexByKey, input.hardware, {
       background,
-      marksHoles: holePen !== null
+      marksHoles: hole !== null
     })
   })
 
@@ -259,7 +255,7 @@ export function convertTileset(
         lockedByChosenIndex(input, offset),
         background
       ),
-      holePen === null ? null : background
+      hole === null ? null : background
     )
   const chosen = palette.slice(offset)
   const penOf = nearestPens(chosen, basePalette, offset)
@@ -291,7 +287,7 @@ export function convertTileset(
     tiles: converted,
     instanceOf,
     unique,
-    transparentPen: holePen,
+    transparentPen: hole,
     resizeSearch: scheme?.search ?? null,
     collisions: rankTileCollisions(
       snapped,
@@ -389,7 +385,7 @@ function checkFrozenPalette(
   if (!spendsPenOnHoles(input)) return null
 
   const background = input.background ?? BLACK
-  const head = palette[TRANSPARENT_PEN]
+  const head = palette[HOLE_PEN]
   const leads = head?.every((channel, at) => channel === background[at])
 
   return leads ? null : { ok: false, error: 'palette-missing-hole' }
@@ -412,10 +408,7 @@ function checkLockedPens(
   const positions = Object.keys(locked).map(Number)
   const room = maxPens - offset
   const placeable =
-    positions.length <= room &&
-    positions.every(
-      (at) => Number.isInteger(at) && at >= offset && at < maxPens
-    )
+    positions.length <= room && positions.every((at) => pinnablePen(at, input))
 
   return placeable ? null : { ok: false, error: 'locked-pen-out-of-range' }
 }
@@ -467,13 +460,6 @@ function placeLockedPens(
   }
 
   return [...placed].map((pen) => pen ?? filler)
-}
-
-function penBudget(input: ConvertTilesetInput): number {
-  return (
-    CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey].nColors -
-    (input.reservedPens ?? 0)
-  )
 }
 
 function selectPalette(
@@ -598,7 +584,7 @@ function renderTile(
     return diffuseTile(smoothed, width, height, tools.colours, {
       mask,
       ignore: HOLE,
-      holePen: TRANSPARENT_PEN
+      holePen: HOLE_PEN
     })
   }
 
@@ -609,7 +595,7 @@ function renderTile(
     width,
     height,
     settings.dither === 'none' ? { ...tools.mix, mix: tools.flat } : tools.mix,
-    { size: settings.size, mask, ignore: HOLE, holePen: TRANSPARENT_PEN }
+    { size: settings.size, mask, ignore: HOLE, holePen: HOLE_PEN }
   )
 }
 

@@ -140,6 +140,8 @@ describe('tileset edit layer atoms', () => {
     expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
   })
 
+  // The fan-out itself is tested on the use-case; what this asserts is that
+  // the atom hands it the `instanceOf` the conversion produced.
   it('overrules the dithering on every instance of the tile', () => {
     const store = painted()
 
@@ -149,14 +151,5 @@ describe('tileset edit layer atoms', () => {
       0: 'ordered',
       [COLOURS.length]: 'ordered'
     })
-  })
-
-  it('hands the tile back to the dithering of the sheet', () => {
-    const store = painted()
-
-    store.set(setTileDitherAtom, { tile: 0, dither: 'ordered' })
-    store.set(setTileDitherAtom, { tile: 0, dither: null })
-
-    expect(store.get(tilesetOptionsAtom).ditherByTile).toEqual({})
   })
 })

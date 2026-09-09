@@ -1,10 +1,6 @@
 import { createStore } from 'jotai'
 import type { Pen, TilesetSheet } from '@/tileset'
-import {
-  setTilesetModeAtom,
-  setTilesetOptionsAtom,
-  tilesetOptionsAtom
-} from './config'
+import { setTilesetOptionsAtom, tilesetOptionsAtom } from './config'
 import {
   setTilesetPenAtom,
   tilesetPaletteSlotsAtom,
@@ -37,53 +33,23 @@ function storeWithSheet() {
   return store
 }
 
-describe('tilesetPaletteSlotsAtom', () => {
+/**
+ * What the palette rules decide is tested on the use-case
+ * (`src/tileset/application/tileset-options.spec.ts`). What is left here is
+ * the wiring: the conversion feeds the slots, and a write reaches the options.
+ */
+describe('tileset palette atoms', () => {
   it('shows nothing before a sheet is converted', () => {
     expect(createStore().get(tilesetPaletteSlotsAtom)).toEqual([])
   })
 
-  it('shows one slot per pen the mode holds, not per pen the sheet needed', () => {
+  it('shows the pens the conversion chose', () => {
     const store = storeWithSheet()
 
-    expect(store.get(tilesetPaletteSlotsAtom)).toHaveLength(16)
+    expect(store.get(tilesetPaletteSlotsAtom)[1].color).not.toBeNull()
   })
 
-  it('shows four slots in mode 1', () => {
-    const store = storeWithSheet()
-    store.set(setTilesetModeAtom, 1)
-
-    expect(store.get(tilesetPaletteSlotsAtom)).toHaveLength(4)
-  })
-
-  it('leaves a slot the conversion did not fill empty', () => {
-    const store = storeWithSheet()
-
-    expect(store.get(tilesetPaletteSlotsAtom)[15].color).toBeNull()
-  })
-
-  it('marks a reserved pen as locked', () => {
-    const store = storeWithSheet()
-    store.set(setTilesetOptionsAtom, { reservedPens: 4 })
-
-    expect(store.get(tilesetPaletteSlotsAtom)[12].locked).toBe(true)
-  })
-
-  it('marks the transparency pen as locked', () => {
-    const store = storeWithSheet()
-
-    expect(store.get(tilesetPaletteSlotsAtom)[0].locked).toBe(true)
-  })
-
-  it('marks a pinned pen as locked', () => {
-    const store = storeWithSheet()
-    store.set(setTilesetOptionsAtom, { lockedPens: { 2: WHITE } })
-
-    expect(store.get(tilesetPaletteSlotsAtom)[2].locked).toBe(true)
-  })
-})
-
-describe('setTilesetPenAtom', () => {
-  it('pins the colour at the index it was dropped on', () => {
+  it('carries a dropped colour to the options', () => {
     const store = storeWithSheet()
 
     store.set(setTilesetPenAtom, { index: 2, color: WHITE })
@@ -91,49 +57,6 @@ describe('setTilesetPenAtom', () => {
     expect(store.get(tilesetOptionsAtom).lockedPens?.[2]).toEqual(WHITE)
   })
 
-  it('writes the background when the pen is the hole', () => {
-    const store = storeWithSheet()
-
-    store.set(setTilesetPenAtom, { index: 0, color: WHITE })
-
-    expect(store.get(tilesetOptionsAtom).background).toEqual(WHITE)
-  })
-
-  it('leaves the hole unpinned when its colour changes', () => {
-    const store = storeWithSheet()
-
-    store.set(setTilesetPenAtom, { index: 0, color: WHITE })
-
-    expect(store.get(tilesetOptionsAtom).lockedPens).toBeUndefined()
-  })
-
-  it('writes into a frozen palette rather than pinning', () => {
-    const store = storeWithSheet()
-    store.set(setTilesetOptionsAtom, {
-      palette: [
-        [0, 0, 0],
-        [255, 0, 0]
-      ]
-    })
-
-    store.set(setTilesetPenAtom, { index: 1, color: WHITE })
-
-    expect(store.get(tilesetOptionsAtom).palette?.[1]).toEqual(WHITE)
-  })
-})
-
-describe('setTilesetPenAtom, on a reserved pen', () => {
-  it('leaves a pen the sprites were promised alone', () => {
-    const store = storeWithSheet()
-    store.set(setTilesetOptionsAtom, { reservedPens: 4 })
-
-    store.set(setTilesetPenAtom, { index: 13, color: WHITE })
-
-    expect(store.get(tilesetOptionsAtom).lockedPens).toBeUndefined()
-  })
-})
-
-describe('toggleTilesetPenLockAtom', () => {
   it('pins the pen the conversion gave that index', () => {
     const store = storeWithSheet()
     const pen = store.get(tilesetPaletteSlotsAtom)[2].color
@@ -143,20 +66,13 @@ describe('toggleTilesetPenLockAtom', () => {
     expect(store.get(tilesetOptionsAtom).lockedPens?.[2]).toEqual(pen)
   })
 
-  it('hands a pinned pen back to the strategy', () => {
+  it('leaves the options alone when the write is refused', () => {
     const store = storeWithSheet()
-    store.set(setTilesetOptionsAtom, { lockedPens: { 2: WHITE } })
+    store.set(setTilesetOptionsAtom, { reservedPens: 4 })
+    const options = store.get(tilesetOptionsAtom)
 
-    store.set(toggleTilesetPenLockAtom, 2)
+    store.set(setTilesetPenAtom, { index: 13, color: WHITE })
 
-    expect(store.get(tilesetOptionsAtom).lockedPens?.[2]).toBeUndefined()
-  })
-
-  it('refuses to pin the hole', () => {
-    const store = storeWithSheet()
-
-    store.set(toggleTilesetPenLockAtom, 0)
-
-    expect(store.get(tilesetOptionsAtom).lockedPens).toBeUndefined()
+    expect(store.get(tilesetOptionsAtom)).toBe(options)
   })
 })

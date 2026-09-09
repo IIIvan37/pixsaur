@@ -15,15 +15,12 @@ import {
   paintTileset,
   redoTilesetEdits,
   renderTilesetSheet,
+  setTileDither,
   type TileDither,
   type TilesetSheet,
   undoTilesetEdits
 } from '@/tileset'
-import {
-  setTilesetOptionsAtom,
-  tilesetModeAtom,
-  tilesetOptionsAtom
-} from './config'
+import { tilesetModeAtom, tilesetOptionsAtom } from './config'
 import { convertedTilesetAtom } from './conversion'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetTargetAtom } from './geometry'
@@ -120,12 +117,8 @@ export interface TileDitherPayload {
 }
 
 /**
- * The per-tile overrule of Q18: a sprite wants none of the dithering a gradient
- * sky wants.
- *
- * `ditherByTile` is keyed by position, so the setting is written on every
- * instance of the tile — otherwise two copies of one tile would render
- * differently and the deduplication that carries the edits would break.
+ * The per-tile overrule of Q18 — the fan-out to every instance of the tile is
+ * decided in `@/tileset`; the atom only hands it the conversion.
  */
 export const setTileDitherAtom = atom(
   null,
@@ -133,15 +126,14 @@ export const setTileDitherAtom = atom(
     const result = get(convertedTilesetAtom)
     if (!result?.ok) return
 
-    const { instanceOf } = result.tileset
-    const group = instanceOf[tile]
-    const byTile = { ...(get(tilesetOptionsAtom).ditherByTile ?? {}) }
-    instanceOf.forEach((of, at) => {
-      if (of !== group) return
-      if (dither === null) delete byTile[at]
-      else byTile[at] = dither
-    })
-
-    set(setTilesetOptionsAtom, { ditherByTile: byTile })
+    set(
+      tilesetOptionsAtom,
+      setTileDither({
+        options: get(tilesetOptionsAtom),
+        instanceOf: result.tileset.instanceOf,
+        tile,
+        dither
+      })
+    )
   }
 )

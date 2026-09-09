@@ -19,6 +19,7 @@ export {
   type TilesetEditLayer,
   undoTilesetEdits
 } from './application/paint-tileset'
+export { hasPensToSpare, transparencyOf } from './application/pen-budget'
 export { BLACK, type Pen } from './application/pens'
 export {
   loadTilesetProject,
@@ -46,6 +47,15 @@ export {
   type SuggestTileGridInput,
   suggestTileGrid
 } from './application/suggest-tile-grid'
+export {
+  type ConvertedPalette,
+  dropPen,
+  freezePalette,
+  setTileDither,
+  thawPalette,
+  tilesetPaletteSlots,
+  togglePenLock
+} from './application/tileset-options'
 export {
   type ParseTilesetProjectResult,
   parseTilesetProject,

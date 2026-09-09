@@ -9,7 +9,11 @@
 import { atom } from 'jotai'
 import type { PixelMode } from '@/domain/cpc'
 import type { CPCHardware } from '@/libs/types'
-import { EMPTY_EDIT_LAYER, type TilesetProjectOptions } from '@/tileset'
+import {
+  EMPTY_EDIT_LAYER,
+  type TilesetProjectOptions,
+  thawPalette
+} from '@/tileset'
 import { tilesetEditLayerAtom } from './edit-layer'
 
 /**
@@ -53,7 +57,6 @@ export const setTilesetOptionsAtom = atom(
 export const setTilesetModeAtom = atom(null, (get, set, payload: PixelMode) => {
   if (get(tilesetModeAtom) === payload) return
   set(tilesetModeAtom, payload)
-  const { palette: _dropped, ...kept } = get(tilesetOptionsAtom)
-  set(tilesetOptionsAtom, kept)
+  set(tilesetOptionsAtom, thawPalette(get(tilesetOptionsAtom)))
   set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
 })

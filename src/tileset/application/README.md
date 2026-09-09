@@ -42,6 +42,17 @@ a second consumer here:
 | `loadTilesetProject` / `saveTilesetProject` | the store, the project | the project or `null` · `true` / `false` | `TilesetProjectStore` |
 | `exportTilesetProjectFile` | `{ project, filename? }` — defaults to `TILESET_PROJECT_FILENAME` | `{ ok } \| { ok:false, error:'save-failed' }` | `FileSink` |
 | `importTilesetProjectFile` | `{ file }` (the picked `Blob`) | `ParseTilesetProjectResult` + `'unreadable-file'` | none — a `Blob` is a value, a fake is one line |
+| `tilesetPaletteSlots` / `dropPen` / `togglePenLock` / `freezePalette` / `thawPalette` / `setTileDither` (`tileset-options.ts`) | the mode, the options, and what the conversion produced | the options the panel should write — **unchanged, by reference, when the edit is refused** | none |
+
+`pen-budget.ts` is not a use-case either: it is the arithmetic of Q16 · Q23 —
+how many pens the mode holds, how many the sprites were promised, which pen the
+holes take, and whether a given pen is the user's to pin. `convertTileset`, the
+palette panel and `tileset-options.ts` all ask it rather than each doing the sum:
+two answers disagreeing is a pin the panel accepts and the conversion refuses.
+
+`tileset-options.ts` is where the palette panel's decisions live. A refusal
+comes back as the very object that was passed in, so the atom that calls one has
+nothing left to decide — Jotai skips a write of the same reference.
 
 `tileset-project.ts` is not a use-case: it is the document itself (Q31) — one
 shape, two carriers. IndexedDB keeps the object as it is (the structured clone

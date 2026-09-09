@@ -7,7 +7,12 @@
  */
 
 import { atom } from 'jotai'
-import { type ConvertTilesetResult, convertTileset } from '@/tileset'
+import {
+  type ConvertTilesetResult,
+  convertTileset,
+  freezePalette,
+  thawPalette
+} from '@/tileset'
 import {
   tilesetHardwareAtom,
   tilesetModeAtom,
@@ -43,14 +48,13 @@ export const freezeTilesetPaletteAtom = atom(null, (get, set) => {
   const result = get(convertedTilesetAtom)
   if (!result?.ok) return
 
-  set(tilesetOptionsAtom, {
-    ...get(tilesetOptionsAtom),
-    palette: result.tileset.palette
-  })
+  set(
+    tilesetOptionsAtom,
+    freezePalette(get(tilesetOptionsAtom), result.tileset.palette)
+  )
 })
 
 /** Hands the palette back to the strategy, whatever the sheet now asks for. */
 export const thawTilesetPaletteAtom = atom(null, (get, set) => {
-  const { palette: _thawed, ...kept } = get(tilesetOptionsAtom)
-  set(tilesetOptionsAtom, kept)
+  set(tilesetOptionsAtom, thawPalette(get(tilesetOptionsAtom)))
 })
