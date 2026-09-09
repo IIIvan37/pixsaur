@@ -1,9 +1,14 @@
 /**
- * The sheet as a PNG (Q9 · Q10 · Q20).
+ * The sheet as RGBA pixels (Q9 · Q10 · Q20).
  *
  * Its own module because the conversion is not the only thing that produces a
- * sheet: the edit layer repaints tiles, and the file has to follow. Indexed,
+ * sheet: the edit layer repaints tiles, and the view has to follow. Truecolor,
  * pre-stretched, source grid kept.
+ *
+ * Truecolor and not indexed (Q20 reopened): the consumer downstream is
+ * `img2cpc`, which snaps every colour to the nearest CPC one, so pen indices
+ * buy it nothing — and every pen already comes out of `snapToHardware`, which
+ * makes the round-trip the identity.
  */
 
 import {
@@ -13,17 +18,20 @@ import {
   perceptualDistance
 } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import { encodeIndexedPng } from '@/libs/pixsaur-png'
 import {
   assembleSheet,
   type SheetGrid,
   scaleSheetGutters
 } from '@/libs/pixsaur-tileset'
-import type { ConvertedTileset, TileSize } from './convert-tileset'
+import type {
+  ConvertedTileset,
+  TileSize,
+  TilesetSheet
+} from './convert-tileset'
 import { BLACK, type Pen } from './pens'
 
-export interface RenderTilesetPngInput {
-  /** Where the tiles sat in the source sheet — the grid the PNG restores. */
+export interface RenderTilesetSheetInput {
+  /** Where the tiles sat in the source sheet — the grid the render restores. */
   source: SheetGrid
   target: TileSize
   mode: PixelMode
@@ -33,12 +41,15 @@ export interface RenderTilesetPngInput {
 
 /**
  * Lays the tiles back out on the source grid (Q10) and pre-stretches CPC pixels
- * so the file opens undistorted in any viewer (Q9).
+ * so the sheet shows undistorted wherever it is drawn (Q9).
+ *
+ * Comes back in the same shape a source sheet goes in: an RGBA buffer a canvas
+ * takes as is, through `putImageData`.
  */
-export function renderTilesetPng(
+export function renderTilesetSheet(
   tileset: ConvertedTileset,
-  input: RenderTilesetPngInput
-): Uint8Array {
+  input: RenderTilesetSheetInput
+): TilesetSheet {
   const { scaleX, scaleY } = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey]
   const { width, height, indices } = assembleSheet(
     tileset.tiles.map((tile) => tile.indices),
@@ -52,13 +63,17 @@ export function renderTilesetPng(
     }
   )
 
-  return encodeIndexedPng({
-    width,
-    height,
-    palette: tileset.palette,
-    indices,
-    transparentIndex: tileset.transparentPen ?? undefined
+  const data = new Uint8ClampedArray(width * height * 4)
+  indices.forEach((pen, at) => {
+    const [red, green, blue] = tileset.palette[pen]
+    data[at * 4] = red
+    data[at * 4 + 1] = green
+    data[at * 4 + 2] = blue
+    // Alpha 0 is what carries the hole now that no palette chunk can (Q16).
+    data[at * 4 + 3] = pen === tileset.transparentPen ? 0 : 255
   })
+
+  return { width, height, data }
 }
 
 /**

@@ -25,6 +25,7 @@ export {
   type PaintTilesetPayload,
   paintTilesetAtom,
   redoTilesetEditAtom,
+  renderedTilesetSheetAtom,
   selectedPenAtom,
   selectedTileAtom,
   setTileDitherAtom,

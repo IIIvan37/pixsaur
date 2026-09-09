@@ -48,7 +48,6 @@ import {
 } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 import { BLACK, type Pen } from './pens'
-import { renderTilesetPng } from './render-tileset-png'
 
 export type { Pen } from './pens'
 
@@ -193,7 +192,7 @@ export interface ConvertedTileset {
 }
 
 export type ConvertTilesetResult =
-  | { ok: true; tileset: ConvertedTileset; png: Uint8Array }
+  | { ok: true; tileset: ConvertedTileset }
   | {
       ok: false
       error:
@@ -305,16 +304,7 @@ export function convertTileset(
     )
   }
 
-  return {
-    ok: true,
-    tileset,
-    png: renderTilesetPng(tileset, {
-      source: input.source,
-      target: input.target,
-      mode: input.mode,
-      background: input.background
-    })
-  }
+  return { ok: true, tileset }
 }
 
 /**

@@ -75,6 +75,16 @@ describe('TilesetResultPanel', () => {
     expect(screen.getByLabelText(/Tuiles uniques/i)).toHaveTextContent('2 / 2')
   })
 
+  // The sheet is drawn, not encoded: the preview is a canvas the workshop
+  // paints, and nothing reads a PNG back (Q20).
+  it('shows the converted sheet', () => {
+    renderWithProviders(<TilesetResultPanel />, { store: storeWithSheet() })
+
+    expect(
+      screen.getByRole('img', { name: /Planche convertie/i })
+    ).toBeVisible()
+  })
+
   it('hands the PNG to the file sink when the user saves it', async () => {
     renderWithProviders(<TilesetResultPanel />, { store: storeWithSheet() })
 

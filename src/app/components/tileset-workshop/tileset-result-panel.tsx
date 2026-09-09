@@ -2,17 +2,19 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import {
   editedTilesetAtom,
+  renderedTilesetSheetAtom,
   selectedTileAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
 import { logger } from '@/core'
+import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
 import { resolveFileSink } from '@/export/application/file-sink'
-import type { ConvertTilesetResult } from '@/tileset'
+import { saveTilesetSheet, type TilesetSheet } from '@/tileset'
 import styles from './tileset-workshop.module.css'
 
 /** How many collisions are worth reading before the list stops informing. */
@@ -26,24 +28,25 @@ const FAILURES = {
   'locked-pen-out-of-range': msg`Un pen épinglé n'a pas de place dans ce mode.`
 }
 
-/** Blob URL of the PNG, released as soon as another conversion replaces it. */
-function usePngUrl(result: ConvertTilesetResult | null) {
-  const png = result?.ok ? result.png : null
-  const [url, setUrl] = useState<string | null>(null)
+/**
+ * Draws the sheet on the canvas, as the image workshop does — no encoding is
+ * needed to look at pixels (Q20).
+ */
+function useSheetCanvas(sheet: TilesetSheet | null) {
+  const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
-    if (!png) {
-      setUrl(null)
-      return
-    }
+    const canvas = ref.current
+    if (!canvas || !sheet) return
 
-    const blob = new Blob([png as BlobPart], { type: 'image/png' })
-    const created = URL.createObjectURL(blob)
-    setUrl(created)
-    return () => URL.revokeObjectURL(created)
-  }, [png])
+    canvas.width = sheet.width
+    canvas.height = sheet.height
+    canvas
+      .getContext('2d')
+      ?.putImageData(new ImageData(sheet.data, sheet.width, sheet.height), 0, 0)
+  }, [sheet])
 
-  return url
+  return ref
 }
 
 /**
@@ -56,8 +59,9 @@ function usePngUrl(result: ConvertTilesetResult | null) {
 export function TilesetResultPanel() {
   const { _ } = useLingui()
   const result = useAtomValue(editedTilesetAtom)
+  const sheet = useAtomValue(renderedTilesetSheetAtom)
   const select = useSetAtom(selectedTileAtom)
-  const url = usePngUrl(result)
+  const canvas = useSheetCanvas(sheet)
 
   if (!result) return null
 
@@ -70,7 +74,7 @@ export function TilesetResultPanel() {
     )
   }
 
-  const { tileset, png } = result
+  const { tileset } = result
   // A tile that lost nothing is not a collision, however it ranks.
   const worst = tileset.collisions
     .filter((collision) => collision.error > 0)
@@ -80,11 +84,12 @@ export function TilesetResultPanel() {
     <Panel>
       <Header title={<Trans>Résultat</Trans>} />
 
-      {url && (
-        <img
+      {sheet && (
+        <canvas
+          ref={canvas}
           className={styles.preview}
-          src={url}
-          alt={_(msg`Planche convertie`)}
+          role='img'
+          aria-label={_(msg`Planche convertie`)}
         />
       )}
 
@@ -101,16 +106,25 @@ export function TilesetResultPanel() {
       </p>
 
       <Button
-        onClick={() =>
-          resolveFileSink()
-            .save(
-              new Blob([png as BlobPart], { type: 'image/png' }),
-              'tileset.png'
-            )
+        disabled={!sheet}
+        onClick={() => {
+          if (!sheet) return
+          saveTilesetSheet(
+            { sheet, filename: 'tileset.png' },
+            {
+              canvasFactory: domCanvasFactory,
+              fileSink: resolveFileSink()
+            }
+          )
+            .then((saved) => {
+              if (!saved.ok) {
+                logger.error('[TILESET] Failed to save the sheet:', saved.error)
+              }
+            })
             .catch((error) =>
               logger.error('[TILESET] Failed to save the sheet:', error)
             )
-        }
+        }}
       >
         <Trans>Enregistrer le PNG</Trans>
       </Button>

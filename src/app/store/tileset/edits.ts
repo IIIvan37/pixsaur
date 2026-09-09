@@ -14,8 +14,9 @@ import {
   type ConvertTilesetResult,
   paintTileset,
   redoTilesetEdits,
-  renderTilesetPng,
+  renderTilesetSheet,
   type TileDither,
+  type TilesetSheet,
   undoTilesetEdits
 } from '@/tileset'
 import {
@@ -30,34 +31,38 @@ import { tilesetGridAtom } from './grid'
 
 const systemClock: Clock = { now: () => Date.now() }
 
-/**
- * The sheet as the workshop shows it: converted, then the layer laid over it.
- *
- * The PNG is encoded again on every stroke — the same order of work as the
- * conversion the sheet already runs on each keystroke (Q30).
- */
+/** The sheet as the workshop shows it: converted, then the layer laid over it. */
 export const editedTilesetAtom = atom<ConvertTilesetResult | null>((get) => {
   const result = get(convertedTilesetAtom)
   if (!result?.ok) return result
 
-  const target = get(tilesetTargetAtom)
   const tileset = applyTilesetEdits(
     result.tileset,
     get(tilesetEditLayerAtom),
-    target
+    get(tilesetTargetAtom)
   )
   if (tileset === result.tileset) return result
 
-  return {
-    ok: true,
-    tileset,
-    png: renderTilesetPng(tileset, {
-      source: get(tilesetGridAtom),
-      target,
-      mode: get(tilesetModeAtom),
-      background: get(tilesetOptionsAtom).background
-    })
-  }
+  return { ok: true, tileset }
+})
+
+/**
+ * The same sheet as RGBA pixels — what the canvas draws and what the export
+ * encodes (Q20).
+ *
+ * Derived rather than rendered in the view: a stroke redraws the sheet once,
+ * and the export reads the very pixels the workshop is showing.
+ */
+export const renderedTilesetSheetAtom = atom<TilesetSheet | null>((get) => {
+  const result = get(editedTilesetAtom)
+  if (!result?.ok) return null
+
+  return renderTilesetSheet(result.tileset, {
+    source: get(tilesetGridAtom),
+    target: get(tilesetTargetAtom),
+    mode: get(tilesetModeAtom),
+    background: get(tilesetOptionsAtom).background
+  })
 })
 
 export interface PaintTilesetPayload {

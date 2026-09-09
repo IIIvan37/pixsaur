@@ -4,6 +4,7 @@ import {
   editedTilesetAtom,
   paintTilesetAtom,
   redoTilesetEditAtom,
+  renderedTilesetSheetAtom,
   setTileDitherAtom,
   setTilesetGridAtom,
   setTilesetModeAtom,
@@ -53,11 +54,11 @@ function penAt(store: ReturnType<typeof createStore>, tile: number): number {
   return result.tileset.tiles[tile].indices[0]
 }
 
-/** The PNG of the sheet as the workshop shows it. */
-function pngOf(store: ReturnType<typeof createStore>): Uint8Array {
-  const result = store.get(editedTilesetAtom)
-  if (!result?.ok) throw new Error('the conversion failed')
-  return result.png
+/** The pixels of the sheet as the workshop shows it. */
+function pixelsOf(store: ReturnType<typeof createStore>): Uint8ClampedArray {
+  const sheet = store.get(renderedTilesetSheetAtom)
+  if (!sheet) throw new Error('the conversion failed')
+  return sheet.data
 }
 
 describe('tileset edit layer atoms', () => {
@@ -81,13 +82,13 @@ describe('tileset edit layer atoms', () => {
     expect(penAt(painted(), 1)).not.toBe(3)
   })
 
-  it('encodes a PNG that carries the stroke', () => {
+  it('redraws the sheet so it carries the stroke', () => {
     const store = painted()
-    const edited = pngOf(store)
+    const edited = pixelsOf(store)
 
     store.set(undoTilesetEditAtom)
 
-    expect(edited).not.toEqual(pngOf(store))
+    expect(edited).not.toEqual(pixelsOf(store))
   })
 
   it('undoes the last stroke', () => {

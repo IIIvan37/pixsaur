@@ -3,12 +3,6 @@ import type { PaletteStrategy } from '@/libs/pixsaur-color/src/quant/strategy-na
 import type { ConvertTilesetInput, Pen } from './convert-tileset'
 import { convertTileset } from './convert-tileset'
 
-/** Whether the PNG carries a chunk of that name. */
-const hasChunk = (png: Uint8Array, name: string) =>
-  [...png].some((_, at) =>
-    name.split('').every((letter, o) => png[at + o] === letter.charCodeAt(0))
-  )
-
 /** The pens a palette holds, order-free — the strategy owns the order now. */
 const penSet = (palette: Pen[]) => palette.map(vectorToHex).sort()
 
@@ -224,22 +218,6 @@ describe('convertTileset', () => {
     ).toEqual([255, 0, 0])
   })
 
-  it('renders the tileset as an indexed PNG', () => {
-    const result = convertTileset(input)
-
-    expect(result.ok && Array.from(result.png.subarray(0, 8))).toEqual([
-      137, 80, 78, 71, 13, 10, 26, 10
-    ])
-  })
-
-  it('pre-stretches mode 0 pixels so the PNG opens undistorted', () => {
-    const result = convertTileset(input)
-    // 2 tiles x 4 CPC px, doubled horizontally (mode 0 scaleX = 2).
-    const width = result.ok && new DataView(result.png.buffer).getUint32(16)
-
-    expect(width).toBe(16)
-  })
-
   it('skips the margin and spacing declared on the source grid', () => {
     const result = convertTileset({
       ...input,
@@ -259,26 +237,6 @@ describe('convertTileset', () => {
       '0000ff',
       'ff0000'
     ])
-  })
-
-  it('gives the PNG back the gutters the source sheet declared', () => {
-    const result = convertTileset({
-      ...input,
-      sheet: sheetOfSolidTiles(
-        8,
-        [
-          [255, 0, 0],
-          [0, 0, 255]
-        ],
-        { margin: 1, spacing: 2 }
-      ),
-      source: { tileWidth: 8, tileHeight: 8, margin: 1, spacing: 2 },
-      transparency: 'flatten'
-    })
-    // Halved with the tile: 1 + 4 + 1 + 4 + 1 CPC px, doubled by mode 0.
-    const width = result.ok && new DataView(result.png.buffer).getUint32(16)
-
-    expect(width).toBe(22)
   })
 
   it('says which resize search actually ran', () => {
@@ -412,12 +370,6 @@ describe('convertTileset', () => {
     const result = convertTileset({ ...input, sheet: sheetWithHole() })
 
     expect(result.ok && result.tileset.tiles[1].indices[0]).not.toBe(0)
-  })
-
-  it('marks the transparency pen transparent in the PNG', () => {
-    const result = convertTileset({ ...input, sheet: sheetWithHole() })
-
-    expect(result.ok && hasChunk(result.png, 'tRNS')).toBe(true)
   })
 
   it('blames no tile when every colour got a pen of its own', () => {

@@ -26,9 +26,15 @@ export {
 } from './application/persist-tileset-project'
 export type { TilesetProjectStore } from './application/ports'
 export {
-  type RenderTilesetPngInput,
-  renderTilesetPng
-} from './application/render-tileset-png'
+  type RenderTilesetSheetInput,
+  renderTilesetSheet
+} from './application/render-tileset-sheet'
+export {
+  type SaveTilesetSheetDeps,
+  type SaveTilesetSheetInput,
+  type SaveTilesetSheetResult,
+  saveTilesetSheet
+} from './application/save-tileset-sheet'
 export {
   type SuggestTileGeometryInput,
   suggestTileGeometry,
