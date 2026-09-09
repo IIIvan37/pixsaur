@@ -47,7 +47,14 @@ re-litigate them, with one exception recorded below.
 
 ---
 
-## 1 · Move the palette decisions out of the write functions
+## ~~1 · Move the palette decisions out of the write functions~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** Two modules carry what the write functions used to
+decide: `pen-budget.ts` (how many pens the mode holds, how many the sprites were
+promised, which pen the holes take, whether a given pen is the user's to pin) and
+`tileset-options.ts` (the six decisions, as functions of the options and of what
+the conversion produced). What follows is the review as written; the outcome is
+recorded at the end of the section.
 
 **Strength**: Strong · **Dependency category**: in-process
 
@@ -90,6 +97,28 @@ one implementation.
 The genuinely store-shaped assertions worth keeping as store tests are the
 edit-layer invalidation edges (`edits.spec.ts:110-140`) and the capture/restore
 round-trip (`project.spec.ts:127-133`) — those are about wiring.
+
+**Landed 09/09/2026.** The three duplicated rules have one implementation each,
+in `src/tileset/application/pen-budget.ts`: `penBudget`, `pinnablePen` (the lock
+/ reserved / hole rule the conversion's `checkLockedPens` now calls too),
+`transparencyOf` and `hasPensToSpare` — the panel asks rather than writing
+`mode === 0` a third time. `convert-tileset.ts` dropped its private `penBudget`
+and `spendsPenOnHoles`, and its `TRANSPARENT_PEN` became the shared `HOLE_PEN`.
+
+The six decisions are pure functions in
+`src/tileset/application/tileset-options.ts`: `tilesetPaletteSlots`, `dropPen`,
+`togglePenLock`, `freezePalette`, `thawPalette` and `setTileDither`. **A refusal
+returns the options unchanged, by reference** — so the atom has nothing left to
+decide, Jotai skips a write of the same reference, and the store copy of
+`penBudget` that existed only to pre-empt the use-case is gone. The mode-change
+invalidation at `config.ts` turned out to be `thawPalette` under another name and
+now calls it.
+
+42 pure tests replaced what used to need a real `convertTileset` through
+`storeWithSheet()`: `palette.spec.ts` went from 15 assertions to 5 (the wiring —
+the conversion feeds the slots, a write reaches the options, a refusal leaves
+them identical), `edits.spec.ts` kept one of the two dither tests, the one that
+proves the atom hands the use-case the conversion's `instanceOf`.
 
 ---
 
@@ -476,9 +505,14 @@ joined `saveTilesetSheet`; the panels keep one `useCallback` each.
 **Done 09/09/2026.** The contract is on the type and the sweep proves the
 fifteen honour it.
 
-Next, **[candidate 1](#1--move-the-palette-decisions-out-of-the-write-functions)**,
-the only remaining correctness risk: the pen budget and the lock rule each have
-two implementations that can drift, and nothing compares them.
+~~**[Candidate 1 — move the palette decisions out of the write functions](#1--move-the-palette-decisions-out-of-the-write-functions--done-09092026).**~~
+**Done 09/09/2026.** The pen budget, the lock rule and the transparency default
+each have one implementation now, in `pen-budget.ts`; the six decisions are pure
+functions in `tileset-options.ts`. **No correctness risk is left open in this
+review** — what remains is depth and locality.
+
+Next, **[candidate 6](#6--assemble-the-conversion-input-once)**: cheap, now that
+wave 1 removed the second assembly site at `edits.ts:54`.
 
 ## Suggested sequencing
 
@@ -487,7 +521,7 @@ two implementations that can drift, and nothing compares them.
 | ~~1~~ | ~~3~~ | **Done 09/09/2026** — `pixsaur-png` deleted, double encode gone, `CanvasFactory` port landed |
 | ~~2~~ | ~~4~~ | **Done 09/09/2026** — project file in and out are use-cases, both filenames left the JSX |
 | ~~3~~ | ~~9~~ | **Done 09/09/2026** — postcondition on the type, sweep asserts the length, the consumer's slice went |
-| 4 | 1 | `extract-use-case` — the correctness risk |
+| ~~4~~ | ~~1~~ | **Done 09/09/2026** — one pen budget, one lock rule, six decisions out of the atoms |
 | 5 | 6 | Cheap once 3 removed the second assembly site |
 | 6 | 2 + 5 | Pen tables and pen space, one pass — `tdd-cycle`, pure core |
 | 7 | 7, 8 | Barrel trim, then shared chrome |
@@ -509,7 +543,8 @@ is the record.
 3. Pick a candidate from the sequencing table. Slices touching the pure core
    (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
    existing atom or component into a use-case go through `extract-use-case`.
-4. Waves 1, 2 and 3 (candidates 3, 4 and 9) landed on 09/09/2026. Everything
-   else in this review is still unimplemented; **wave 4 (candidate 1, the
-   palette decisions inside the write functions) is next** — the only remaining
-   correctness risk, and an `extract-use-case` slice.
+4. Waves 1 to 4 (candidates 3, 4, 9 and 1) landed on 09/09/2026, and with
+   candidate 1 the last correctness risk of this review is closed. Everything
+   else is still unimplemented; **wave 5 (candidate 6, assembling the conversion
+   input once) is next** — cheap, and it also retires the two structural twins
+   `TilesetSheet`/`Sheet` and `TileSize`/`TileGrid`.

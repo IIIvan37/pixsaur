@@ -1,6 +1,6 @@
 # PLAN — Atelier Tileset (conversion de tilesets vers CPC)
 
-**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-2 closes · **Branche**: `feat/tileset-workshop`
+**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-4 closes · **Branche**: `feat/tileset-workshop`
 
 > Relevé de conception d'une **nouvelle feature** : un atelier convertissant une
 > planche de tuiles d'une autre machine (NES, Master System, SNES…) vers les
@@ -25,8 +25,36 @@
   [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
   9 candidats de deepening sur `src/tileset`, `pixsaur-tileset`, `store/tileset` et
   les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise.
-  **Vagues 1, 2 et 3 closes** (candidats 3, 4 et 9, 09/09/2026) ; les six autres
-  candidats attendent. Q20 ci-dessous est sorti de cette revue.
+  **Vagues 1 à 4 closes** (candidats 3, 4, 9 et 1, 09/09/2026) ; les cinq autres
+  candidats attendent, et plus aucun ne porte de risque de correction. Q20
+  ci-dessous est sorti de cette revue.
+
+- **Vague 4 de la revue d'architecture (candidat 1), close le 09/09/2026 — les
+  décisions de palette sortent des fonctions d'écriture.** Trois règles avaient
+  deux ou trois implémentations libres de diverger, et six décisions vivaient
+  dans des write functions Jotai, où la seule façon de tester une règle était de
+  faire tourner une conversion entière.
+  - `src/tileset/application/pen-budget.ts` porte désormais l'arithmétique de
+    Q16 · Q23 : `penBudget`, `pinnablePen` (la règle verrou / réservé / trou, que
+    le `checkLockedPens` de la conversion appelle aussi), `transparencyOf` et
+    `hasPensToSpare`. Le panneau demande au lieu d'écrire `mode === 0` une
+    troisième fois ; `convert-tileset` perd ses copies privées et son
+    `TRANSPARENT_PEN` devient le `HOLE_PEN` partagé.
+  - `src/tileset/application/tileset-options.ts` porte les six décisions :
+    `tilesetPaletteSlots`, `dropPen`, `togglePenLock`, `freezePalette`,
+    `thawPalette`, `setTileDither`. **Un refus rend les options inchangées, par
+    référence** — l'atome n'a plus rien à décider, Jotai ignore une écriture de
+    la même référence, et la copie de `penBudget` qui vivait dans le store pour
+    devancer le use-case disparaît.
+  - L'invalidation au changement de mode (`config.ts`) était `thawPalette` sous
+    un autre nom ; elle l'appelle.
+  - 42 tests purs remplacent ce qui demandait une vraie conversion :
+    `palette.spec.ts` passe de 15 assertions à 5 (le câblage), `edits.spec.ts`
+    garde celui des deux tests de dither qui prouve que l'atome transmet le
+    `instanceOf` de la conversion.
+  - **Prochaine vague : 5 (candidat 6)** — assembler l'entrée de conversion une
+    seule fois, et retirer les jumeaux structurels `TilesetSheet`/`Sheet` et
+    `TileSize`/`TileGrid`.
 
 - **Vague 3 de la revue d'architecture (candidat 9), close le 09/09/2026 — une
   stratégie de palette dit ce qu'elle rend.** `PaletteStrategyFunction` prenait
@@ -48,9 +76,7 @@
     sa preuve, pas un correctif.
   - `convert-tileset` perd son `.slice(0, maxPens)` : le contrat borne la
     longueur, la découpe était une supposition que l'appelant ne fait plus.
-  - **Prochaine vague : 4 (candidat 1)** — sortir les décisions de palette des
-    fonctions d'écriture, le seul risque de correction qui reste. Tranche
-    `extract-use-case`.
+  - Vague 4 (candidat 1) a suivi ; voir le point ci-dessus.
 
 - **Vague 2 de la revue d'architecture (candidat 4), close le 09/09/2026 — les
   exports fichier passent par le port `FileSink`.** L'export PNG, la
@@ -259,8 +285,8 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : vague 3 de la revue d'architecture — candidat 9,
-  déclarer ce qu'une stratégie de palette doit à son appelant.
+- **Prochaine action** : vague 5 de la revue d'architecture — candidat 6,
+  assembler l'entrée de conversion une seule fois.
 - **~~Dette de T6 (réglage par position)~~ — fermée en T8** : le panneau de
   retouche expose `ditherByTile` pour la tuile visée et écrit le réglage sur
   toutes ses instances.
