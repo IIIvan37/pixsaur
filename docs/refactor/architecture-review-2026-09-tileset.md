@@ -419,9 +419,10 @@ never ran.
 - **`convert-tileset.ts:329`** — the `sheetEdges` majority tie-break
   (`* 2 >= verdicts.length`) is never asserted; every fixture is decisively wrap
   or clamp.
-- **No `src/tileset/application/README.md`.** Every other feature has one
-  (`export`, `preview`, `palette`, `raster`, `editor`) and it is where the port
-  and use-case registry lives. The tileset registry exists only inside the PLAN.
+- ~~**No `src/tileset/application/README.md`.**~~ **Seeded with wave 2
+  (09/09/2026)** — ports, use-cases, and what a panel may still do. Every other
+  feature has one (`export`, `preview`, `palette`, `raster`, `editor`); the
+  tileset registry used to exist only inside the PLAN.
 - **The `TilesetProjectStore` port has one adapter and two independently written
   inline fakes** (`persist-tileset-project.spec.ts:27-34`,
   `use-tileset-persistence.spec.tsx:41-42`). A shared fake would make the second
@@ -454,6 +455,11 @@ than reshaping one, and the product question that held it back was answered:
 encoding went with them, and the export landed on the `CanvasFactory` port that
 already existed.
 
+~~**[Candidate 4 — route the file exports through the `FileSink` port](#4--route-the-file-exports-through-the-filesink-port).**~~
+**Done 09/09/2026.** `exportTilesetProjectFile` and `importTilesetProjectFile`
+joined `saveTilesetSheet`; the panels keep one `useCallback` each.
+`src/tileset/application/README.md`, missing since T1, was seeded with it.
+
 Then **[candidate 1](#1--move-the-palette-decisions-out-of-the-write-functions)**,
 the only remaining correctness risk: the pen budget and the lock rule each have
 two implementations that can drift, and nothing compares them.
@@ -463,7 +469,7 @@ two implementations that can drift, and nothing compares them.
 | Wave | Candidates | Note |
 | --- | --- | --- |
 | ~~1~~ | ~~3~~ | **Done 09/09/2026** — `pixsaur-png` deleted, double encode gone, `CanvasFactory` port landed |
-| 2 | 4 | Same port work, independent of 3's internals |
+| ~~2~~ | ~~4~~ | **Done 09/09/2026** — project file in and out are use-cases, both filenames left the JSX |
 | 3 | 9 | Finish the strategy contract; the protecting half shipped in `d89d2d9` |
 | 4 | 1 | `extract-use-case` — the correctness risk |
 | 5 | 6 | Cheap once 3 removed the second assembly site |
@@ -487,5 +493,6 @@ is the record.
 3. Pick a candidate from the sequencing table. Slices touching the pure core
    (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
    existing atom or component into a use-case go through `extract-use-case`.
-4. Wave 1 (candidate 3) landed on 09/09/2026. Everything else in this review is
-   still unimplemented; wave 2 (candidate 4, the `FileSink` port) is next.
+4. Waves 1 and 2 (candidates 3 and 4) landed on 09/09/2026. Everything else in
+   this review is still unimplemented; wave 3 (candidate 9, the strategy
+   contract) is next.

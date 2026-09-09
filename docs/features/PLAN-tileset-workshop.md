@@ -1,6 +1,6 @@
 # PLAN — Atelier Tileset (conversion de tilesets vers CPC)
 
-**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, la découpe est close · **Branche**: `feat/tileset-workshop`
+**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-2 closes · **Branche**: `feat/tileset-workshop`
 
 > Relevé de conception d'une **nouvelle feature** : un atelier convertissant une
 > planche de tuiles d'une autre machine (NES, Master System, SNES…) vers les
@@ -24,8 +24,33 @@
 - **Revue d'architecture (04/09/2026)** —
   [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
   9 candidats de deepening sur `src/tileset`, `pixsaur-tileset`, `store/tileset` et
-  les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise. Rien
-  n'est implémenté ; Q20 ci-dessous en est sorti.
+  les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise.
+  **Vagues 1 et 2 closes** (candidats 3 et 4, 09/09/2026) ; les sept autres
+  candidats attendent. Q20 ci-dessous est sorti de cette revue.
+
+- **Vague 2 de la revue d'architecture (candidat 4), close le 09/09/2026 — les
+  exports fichier passent par le port `FileSink`.** L'export PNG, la
+  sérialisation-puis-sauvegarde du projet et sa lecture-puis-restauration
+  vivaient dans un `onClick` : le nom du fichier, le type MIME et les refus sont
+  des décisions, et une décision écrite en JSX ne se teste qu'en rendant un
+  panneau et en `vi.mock`-ant un module.
+  - `exportTilesetProjectFile` et `importTilesetProjectFile` rejoignent
+    `saveTilesetSheet` dans `src/tileset/application`. L'écriture passe par le
+    port `FileSink` que `src/export` déclare déjà — un seul chemin pour le web
+    et le desktop.
+  - La lecture ne demande **aucun port** : un `Blob` est une valeur que le
+    navigateur remet, le faux tient en une ligne. Un fichier que le navigateur
+    refuse de lire se nomme désormais (`unreadable-file`) au lieu de passer pour
+    du JSON invalide — quatrième refus, traduit dans les quatre langues.
+  - Les deux noms de fichier deviennent des constantes à côté de leur use-case
+    (`TILESET_PROJECT_FILENAME`, `TILESET_SHEET_FILENAME`) : les panneaux ne les
+    choisissent plus. Chacun garde un `useCallback` : assembler l'entrée,
+    résoudre le sink du jour, dire ce qu'un refus fut.
+  - **`src/tileset/application/README.md` semé** — le registre des ports et des
+    use-cases que toutes les autres features ont, et que la revue signalait
+    manquant. Il dit aussi ce qu'un panneau a encore le droit de faire.
+  - **Prochaine vague : 3 (candidat 9)** — finir le contrat de stratégie de
+    palette ; la moitié protectrice a été livrée en `d89d2d9`.
 
 - **Q20 rouvert (04/09/2026), livré (09/09/2026) — le PNG sort en truecolor.**
   L'aval est `img2cpc`, qui découpe la planche en data CPC et **rapporte chaque
@@ -211,10 +236,8 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : T9 (durabilité — persistance IndexedDB du projet
-  (planche, réglages, édits, palette gelée), export/import d'un fichier projet
-  JSON. Le mécanisme de session existant ne convient pas : son repli anti-quota
-  jette l'image, donc il jetterait la planche).
+- **Prochaine action** : vague 3 de la revue d'architecture — candidat 9,
+  déclarer ce qu'une stratégie de palette doit à son appelant.
 - **~~Dette de T6 (réglage par position)~~ — fermée en T8** : le panneau de
   retouche expose `ditherByTile` pour la tuile visée et écrit le réglage sur
   toutes ses instances.
