@@ -9,9 +9,10 @@ import {
 } from '@/app/store/tileset/tileset'
 import Checkbox from '@/components/ui/checkbox/checkbox'
 import { Header } from '@/components/ui/layout/header/header'
-import { Select, SelectItem } from '@/components/ui/select'
+import { SelectItem } from '@/components/ui/select'
 import type { BayerSize } from '@/libs/pixsaur-tileset'
 import type { TileDither } from '@/tileset'
+import { LabelledSelect } from './tileset-labelled-select'
 import styles from './tileset-workshop.module.css'
 
 const BAYER_SIZES: BayerSize[] = [2, 4, 8]
@@ -35,64 +36,46 @@ export function TilesetRenderPanel() {
       <Header title={<Trans>Rendu</Trans>} />
 
       <div className={styles.fields}>
-        <div className={`${styles.field} ${styles.fieldWide}`}>
-          <span className={styles.label}>
-            <Trans>Réduction</Trans>
-          </span>
-          <Select
-            aria-label={_(msg`Réduction`)}
-            value={options.resize ?? 'columns'}
-            onValueChange={(value) =>
-              setOptions({ resize: value as 'columns' | 'nearest' })
-            }
-          >
-            <SelectItem value='columns'>
-              {_(msg`Colonnes choisies une à une`)}
-            </SelectItem>
-            <SelectItem value='nearest'>
-              {_(msg`Plus proche voisin`)}
-            </SelectItem>
-          </Select>
-        </div>
+        <LabelledSelect
+          wide
+          label={_(msg`Réduction`)}
+          value={options.resize ?? 'columns'}
+          onValueChange={(value) =>
+            setOptions({ resize: value as 'columns' | 'nearest' })
+          }
+        >
+          <SelectItem value='columns'>
+            {_(msg`Colonnes choisies une à une`)}
+          </SelectItem>
+          <SelectItem value='nearest'>{_(msg`Plus proche voisin`)}</SelectItem>
+        </LabelledSelect>
 
-        <div className={styles.field}>
-          <span className={styles.label}>
-            <Trans>Tramage</Trans>
-          </span>
-          <Select
-            aria-label={_(msg`Tramage`)}
-            value={options.dither ?? 'none'}
-            onValueChange={(value) =>
-              setOptions({ dither: value as TileDither })
-            }
-          >
-            <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
-            <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
-            <SelectItem value='diffusion'>
-              {_(msg`Diffusion d'erreur`)}
-            </SelectItem>
-          </Select>
-        </div>
+        <LabelledSelect
+          label={_(msg`Tramage`)}
+          value={options.dither ?? 'none'}
+          onValueChange={(value) => setOptions({ dither: value as TileDither })}
+        >
+          <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
+          <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
+          <SelectItem value='diffusion'>
+            {_(msg`Diffusion d'erreur`)}
+          </SelectItem>
+        </LabelledSelect>
 
-        <div className={styles.field}>
-          <span className={styles.label}>
-            <Trans>Matrice de Bayer</Trans>
-          </span>
-          <Select
-            aria-label={_(msg`Matrice de Bayer`)}
-            value={String(options.ditherSize ?? 4)}
-            onValueChange={(value) =>
-              setOptions({ ditherSize: Number(value) as BayerSize })
-            }
-            disabled={options.dither !== 'ordered'}
-          >
-            {BAYER_SIZES.map((size) => (
-              <SelectItem key={size} value={String(size)}>
-                {`${size} x ${size}`}
-              </SelectItem>
-            ))}
-          </Select>
-        </div>
+        <LabelledSelect
+          label={_(msg`Matrice de Bayer`)}
+          value={String(options.ditherSize ?? 4)}
+          onValueChange={(value) =>
+            setOptions({ ditherSize: Number(value) as BayerSize })
+          }
+          disabled={options.dither !== 'ordered'}
+        >
+          {BAYER_SIZES.map((size) => (
+            <SelectItem key={size} value={String(size)}>
+              {`${size} x ${size}`}
+            </SelectItem>
+          ))}
+        </LabelledSelect>
       </div>
 
       <Checkbox

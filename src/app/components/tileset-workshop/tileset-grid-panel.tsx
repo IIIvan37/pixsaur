@@ -7,9 +7,9 @@ import {
   tilesetGridAtom,
   tilesetGridSuggestionsAtom
 } from '@/app/store/tileset/tileset'
-import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
+import { TileSuggestions } from './tileset-suggestions'
 import styles from './tileset-workshop.module.css'
 
 /** Percentage, no decimals — the ranking is a shortlist, not a measurement. */
@@ -57,36 +57,22 @@ export function TilesetGridPanel() {
       </div>
 
       {suggestions.length > 0 && (
-        <section className={styles.suggestions}>
-          <h2 className={styles.subtitle}>
-            <Trans>Tailles de tuile, la moins coûteuse en tête</Trans>
-          </h2>
-          <ul className={styles.candidates}>
-            {suggestions.map((candidate) => (
-              <li
-                key={`${candidate.grid.tileWidth}x${candidate.grid.tileHeight}`}
-              >
-                <Button
-                  variant='secondary'
-                  onClick={() =>
-                    setGrid({
-                      tileWidth: candidate.grid.tileWidth,
-                      tileHeight: candidate.grid.tileHeight
-                    })
-                  }
-                >
-                  {`${candidate.grid.tileWidth} x ${candidate.grid.tileHeight}`}
-                </Button>
-                <span>
-                  <Trans>
-                    {candidate.uniqueTiles} tuiles uniques,{' '}
-                    {percent(candidate.duplicateRate)} de doublons
-                  </Trans>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <TileSuggestions
+          title={<Trans>Tailles de tuile, la moins coûteuse en tête</Trans>}
+          suggestions={suggestions.map((candidate) => ({
+            size: {
+              tileWidth: candidate.grid.tileWidth,
+              tileHeight: candidate.grid.tileHeight
+            },
+            note: (
+              <Trans>
+                {candidate.uniqueTiles} tuiles uniques,{' '}
+                {percent(candidate.duplicateRate)} de doublons
+              </Trans>
+            )
+          }))}
+          onPick={setGrid}
+        />
       )}
     </section>
   )

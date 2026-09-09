@@ -8,14 +8,15 @@ import {
   tilesetGeometryAtom,
   tilesetTargetAtom
 } from '@/app/store/tileset/tileset'
-import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
-import { Select, SelectItem } from '@/components/ui/select'
+import { SelectItem } from '@/components/ui/select'
 import {
   SOURCE_PIXEL_ASPECT,
   type SourcePlatform
 } from '@/libs/pixsaur-tileset'
+import { LabelledSelect } from './tileset-labelled-select'
+import { TileSuggestions } from './tileset-suggestions'
 import styles from './tileset-workshop.module.css'
 
 const PLATFORM_LABELS: Record<SourcePlatform, string> = {
@@ -49,22 +50,17 @@ export function TilesetGeometryPanel() {
       <Header title={<Trans>Tuile de destination</Trans>} />
 
       <div className={styles.fields}>
-        <div className={styles.field}>
-          <span className={styles.label}>
-            <Trans>Machine source</Trans>
-          </span>
-          <Select
-            aria-label={_(msg`Machine source`)}
-            value={platform}
-            onValueChange={(value) => setPlatform(value as SourcePlatform)}
-          >
-            {Object.keys(SOURCE_PIXEL_ASPECT).map((key) => (
-              <SelectItem key={key} value={key}>
-                {PLATFORM_LABELS[key as SourcePlatform]}
-              </SelectItem>
-            ))}
-          </Select>
-        </div>
+        <LabelledSelect
+          label={_(msg`Machine source`)}
+          value={platform}
+          onValueChange={(value) => setPlatform(value as SourcePlatform)}
+        >
+          {Object.keys(SOURCE_PIXEL_ASPECT).map((key) => (
+            <SelectItem key={key} value={key}>
+              {PLATFORM_LABELS[key as SourcePlatform]}
+            </SelectItem>
+          ))}
+        </LabelledSelect>
 
         <Input
           compact
@@ -96,29 +92,14 @@ export function TilesetGeometryPanel() {
         </output>
       </p>
 
-      <section className={styles.suggestions}>
-        <h2 className={styles.subtitle}>
-          <Trans>Tailles entières, la moins déformée en tête</Trans>
-        </h2>
-        <ul className={styles.candidates}>
-          {geometry.candidates.map((candidate) => (
-            <li key={`${candidate.tileWidth}x${candidate.tileHeight}`}>
-              <Button
-                variant='secondary'
-                onClick={() =>
-                  setTarget({
-                    tileWidth: candidate.tileWidth,
-                    tileHeight: candidate.tileHeight
-                  })
-                }
-              >
-                {`${candidate.tileWidth} x ${candidate.tileHeight}`}
-              </Button>
-              <span>{signedPercent(candidate.distortion)}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <TileSuggestions
+        title={<Trans>Tailles entières, la moins déformée en tête</Trans>}
+        suggestions={geometry.candidates.map((candidate) => ({
+          size: candidate,
+          note: signedPercent(candidate.distortion)
+        }))}
+        onPick={setTarget}
+      />
     </section>
   )
 }
