@@ -9,6 +9,7 @@
 import { atom } from 'jotai'
 import type { Point } from '@/editor/application/paint-pixels'
 import type { Clock } from '@/editor/application/ports'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import {
   applyTilesetEdits,
   type ConvertTilesetResult,
@@ -17,14 +18,12 @@ import {
   renderTilesetSheet,
   setTileDither,
   type TileDither,
-  type TilesetSheet,
   undoTilesetEdits
 } from '@/tileset'
-import { tilesetModeAtom, tilesetOptionsAtom } from './config'
-import { convertedTilesetAtom } from './conversion'
+import { tilesetOptionsAtom } from './config'
+import { convertedTilesetAtom, tilesetConversionInputAtom } from './conversion'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetTargetAtom } from './geometry'
-import { tilesetGridAtom } from './grid'
 
 const systemClock: Clock = { now: () => Date.now() }
 
@@ -50,16 +49,12 @@ export const editedTilesetAtom = atom<ConvertTilesetResult | null>((get) => {
  * Derived rather than rendered in the view: a stroke redraws the sheet once,
  * and the export reads the very pixels the workshop is showing.
  */
-export const renderedTilesetSheetAtom = atom<TilesetSheet | null>((get) => {
+export const renderedTilesetSheetAtom = atom<Sheet | null>((get) => {
   const result = get(editedTilesetAtom)
-  if (!result?.ok) return null
+  const input = get(tilesetConversionInputAtom)
+  if (!result?.ok || !input) return null
 
-  return renderTilesetSheet(result.tileset, {
-    source: get(tilesetGridAtom),
-    target: get(tilesetTargetAtom),
-    mode: get(tilesetModeAtom),
-    background: get(tilesetOptionsAtom).background
-  })
+  return renderTilesetSheet(result.tileset, input)
 })
 
 export interface PaintTilesetPayload {

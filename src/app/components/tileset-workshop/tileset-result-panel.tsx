@@ -14,7 +14,8 @@ import { Panel } from '@/components/ui/layout/panel/panel'
 import { logger } from '@/core'
 import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
 import { resolveFileSink } from '@/export/application/file-sink'
-import { saveTilesetSheet, type TilesetSheet } from '@/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
+import { saveTilesetSheet } from '@/tileset'
 import styles from './tileset-workshop.module.css'
 
 /** How many collisions are worth reading before the list stops informing. */
@@ -32,7 +33,7 @@ const FAILURES = {
  * Draws the sheet on the canvas, as the image workshop does — no encoding is
  * needed to look at pixels (Q20).
  */
-function useSheetCanvas(sheet: TilesetSheet | null) {
+function useSheetCanvas(sheet: Sheet | null) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {

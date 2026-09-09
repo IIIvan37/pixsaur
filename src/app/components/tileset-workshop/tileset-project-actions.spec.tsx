@@ -6,12 +6,12 @@ import {
   tilesetGridAtom,
   tilesetSheetAtom
 } from '@/app/store/tileset/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
 import {
   serializeTilesetProject,
   TILESET_PROJECT_VERSION,
-  type TilesetProject,
-  type TilesetSheet
+  type TilesetProject
 } from '@/tileset'
 import { TilesetProjectActions } from './tileset-project-actions'
 
@@ -22,7 +22,7 @@ vi.mock('@/export/application/file-sink', () => ({
 }))
 
 /** One solid 8 x 8 tile. */
-function sheetOfOneTile(): TilesetSheet {
+function sheetOfOneTile(): Sheet {
   return {
     width: 8,
     height: 8,

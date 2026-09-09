@@ -14,27 +14,28 @@
 import {
   CPC_MODE_CONFIG,
   type CpcModeKey,
-  type PixelMode,
   perceptualDistance
 } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
   assembleSheet,
-  type SheetGrid,
+  type Sheet,
   scaleSheetGutters
 } from '@/libs/pixsaur-tileset'
 import type {
   ConvertedTileset,
-  TileSize,
-  TilesetSheet
+  TilesetConversionSubject
 } from './convert-tileset'
 import { BLACK, type Pen } from './pens'
 
-export interface RenderTilesetSheetInput {
-  /** Where the tiles sat in the source sheet — the grid the render restores. */
-  source: SheetGrid
-  target: TileSize
-  mode: PixelMode
+/**
+ * The slice of the conversion the render needs — taken from the subject, so a
+ * field renamed there stops compiling here instead of drifting.
+ */
+export type RenderTilesetSheetInput = Pick<
+  TilesetConversionSubject,
+  'source' | 'target' | 'mode'
+> & {
   /** What a hole was composited over; defaults to black (Q16). */
   background?: Pen
 }
@@ -49,7 +50,7 @@ export interface RenderTilesetSheetInput {
 export function renderTilesetSheet(
   tileset: ConvertedTileset,
   input: RenderTilesetSheetInput
-): TilesetSheet {
+): Sheet {
   const { scaleX, scaleY } = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey]
   const { width, height, indices } = assembleSheet(
     tileset.tiles.map((tile) => tile.indices),

@@ -7,9 +7,9 @@
  * them.
  */
 
-import type { TilesetSheet } from '@/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 
-export function sheetFromImage(img: HTMLImageElement): TilesetSheet {
+export function sheetFromImage(img: HTMLImageElement): Sheet {
   const width = img.naturalWidth || img.width
   const height = img.naturalHeight || img.height
 

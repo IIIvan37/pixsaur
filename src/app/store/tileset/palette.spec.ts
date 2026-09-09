@@ -1,5 +1,6 @@
 import { createStore } from 'jotai'
-import type { Pen, TilesetSheet } from '@/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
+import type { Pen } from '@/tileset'
 import { setTilesetOptionsAtom, tilesetOptionsAtom } from './config'
 import {
   setTilesetPenAtom,
@@ -11,7 +12,7 @@ import { setTilesetSheetAtom } from './sheet'
 const WHITE: Pen = [255, 255, 255]
 
 /** Two solid 8 × 8 tiles, red then blue — enough for a palette to exist. */
-function sheetOfTwoTiles(): TilesetSheet {
+function sheetOfTwoTiles(): Sheet {
   const width = 16
   const height = 8
   const data = new Uint8ClampedArray(width * height * 4)

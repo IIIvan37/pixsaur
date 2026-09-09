@@ -12,16 +12,16 @@ import {
   type GridCandidate,
   PLAUSIBLE_TILE_SIZES,
   rankTileGrids,
+  type Sheet,
   type SheetGrid,
   type TileGrid
 } from '@/libs/pixsaur-tileset'
-import type { TilesetSheet } from './convert-tileset'
 
 /** The blanks of a grid — everything but the tile size itself. */
 export type GridBlanks = Omit<SheetGrid, 'tileWidth' | 'tileHeight'>
 
 export interface SuggestTileGridInput {
-  sheet: TilesetSheet
+  sheet: Sheet
   /** What the user declared around the tiles; kept for every candidate size. */
   blanks?: GridBlanks
   /** Tile sizes to try — the usual tileset divisors by default. */

@@ -11,7 +11,8 @@
 import { type Point, paintPixels } from '@/editor/application/paint-pixels'
 import type { Clock } from '@/editor/application/ports'
 import { MAX_HISTORY_SIZE, type PixelEdit } from '@/editor/application/types'
-import type { ConvertedTileset, TileSize } from './convert-tileset'
+import type { TileGrid } from '@/libs/pixsaur-tileset'
+import type { ConvertedTileset } from './convert-tileset'
 
 /**
  * One undoable action: the pixels it painted, and every tile position it
@@ -41,7 +42,7 @@ export const EMPTY_EDIT_LAYER: TilesetEditLayer = { strokes: [], at: -1 }
 export interface PaintTilesetInput {
   /** The tileset as it is shown — the layer already replayed over it. */
   tileset: ConvertedTileset
-  shape: TileSize
+  shape: TileGrid
   layer: TilesetEditLayer
   /** Position of the tile being painted, in the sheet. */
   tile: number
@@ -137,7 +138,7 @@ export function redoTilesetEdits(layer: TilesetEditLayer): TilesetEditLayer {
 export function applyTilesetEdits(
   tileset: ConvertedTileset,
   layer: TilesetEditLayer,
-  shape: TileSize
+  shape: TileGrid
 ): ConvertedTileset {
   const strokes = layer.strokes.slice(0, layer.at + 1)
   if (strokes.length === 0) return tileset

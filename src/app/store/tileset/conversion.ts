@@ -8,9 +8,11 @@
 
 import { atom } from 'jotai'
 import {
+  type ConvertTilesetInput,
   type ConvertTilesetResult,
   convertTileset,
   freezePalette,
+  type TilesetConversionSubject,
   thawPalette
 } from '@/tileset'
 import {
@@ -22,19 +24,43 @@ import { tilesetTargetAtom } from './geometry'
 import { tilesetGridAtom } from './grid'
 import { tilesetSheetAtom } from './sheet'
 
+/**
+ * What is converted and where it lands, read off the leaf atoms once.
+ *
+ * The conversion, the render and the saved project all want these five
+ * fields; assembled here, a sixth one is added in one place instead of three.
+ * `null` until a sheet is imported — there is nothing to convert before.
+ */
+export const tilesetConversionSubjectAtom =
+  atom<TilesetConversionSubject | null>((get) => {
+    const sheet = get(tilesetSheetAtom)
+    if (!sheet) return null
+
+    return {
+      sheet,
+      source: get(tilesetGridAtom),
+      target: get(tilesetTargetAtom),
+      mode: get(tilesetModeAtom),
+      hardware: get(tilesetHardwareAtom)
+    }
+  })
+
+/** The subject plus the tuning — exactly what `convertTileset` is called with. */
+export const tilesetConversionInputAtom = atom<ConvertTilesetInput | null>(
+  (get) => {
+    const subject = get(tilesetConversionSubjectAtom)
+    if (!subject) return null
+
+    return { ...subject, ...get(tilesetOptionsAtom) }
+  }
+)
+
 /** `null` until a sheet is imported — there is nothing to convert before. */
 export const convertedTilesetAtom = atom<ConvertTilesetResult | null>((get) => {
-  const sheet = get(tilesetSheetAtom)
-  if (!sheet) return null
+  const input = get(tilesetConversionInputAtom)
+  if (!input) return null
 
-  return convertTileset({
-    sheet,
-    source: get(tilesetGridAtom),
-    target: get(tilesetTargetAtom),
-    mode: get(tilesetModeAtom),
-    hardware: get(tilesetHardwareAtom),
-    ...get(tilesetOptionsAtom)
-  })
+  return convertTileset(input)
 })
 
 /**

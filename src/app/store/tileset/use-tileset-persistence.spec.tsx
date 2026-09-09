@@ -2,22 +2,22 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { createStore, Provider } from 'jotai'
 import type { ReactNode } from 'react'
 import { vi } from 'vitest'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import {
   TILESET_PROJECT_VERSION,
   type TilesetProject,
-  type TilesetProjectStore,
-  type TilesetSheet
+  type TilesetProjectStore
 } from '@/tileset'
 import { setTilesetSheetAtom, tilesetSheetAtom } from './tileset'
 import { useTilesetPersistence } from './use-tileset-persistence'
 
-const SAVED_SHEET: TilesetSheet = {
+const SAVED_SHEET: Sheet = {
   width: 1,
   height: 1,
   data: Uint8ClampedArray.from([1, 1, 1, 255])
 }
 
-const OTHER_SHEET: TilesetSheet = {
+const OTHER_SHEET: Sheet = {
   width: 1,
   height: 1,
   data: Uint8ClampedArray.from([2, 2, 2, 255])

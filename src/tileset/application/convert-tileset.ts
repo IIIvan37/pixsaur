@@ -36,11 +36,13 @@ import {
   rankTileCollisions,
   resizeTileByScheme,
   resizeTileNearest,
+  type Sheet,
   type SheetGrid,
   type SourceTile,
   sliceSheet,
   type TileCollision,
   type TileEdges,
+  type TileGrid,
   tileEdgeMask,
   tilePaletteHistogram
 } from '@/libs/pixsaur-tileset'
@@ -56,27 +58,24 @@ import { BLACK, type Pen } from './pens'
 
 export type { Pen } from './pens'
 
-/** An RGBA sheet: `data` is `width * height * 4` bytes. */
-export interface TilesetSheet {
-  width: number
-  height: number
-  data: Uint8ClampedArray
-}
-
-/** Tile dimensions, in pixels of the space they belong to. */
-export interface TileSize {
-  tileWidth: number
-  tileHeight: number
-}
-
-export interface ConvertTilesetInput {
-  sheet: TilesetSheet
+/**
+ * What is converted and where it lands — everything but the tuning.
+ *
+ * The same five fields are the backbone of a saved project, so both shapes
+ * extend this one: a field added here reaches the conversion and the document
+ * together.
+ */
+export interface TilesetConversionSubject {
+  sheet: Sheet
   /** Where the tiles sit in the source sheet: size, margin, spacing, offset. */
   source: SheetGrid
   /** Tile size in the destination, in CPC pixels. */
-  target: TileSize
+  target: TileGrid
   mode: PixelMode
   hardware: CPCHardware
+}
+
+export interface ConvertTilesetInput extends TilesetConversionSubject {
   /**
    * How pixels are dropped when the tile shrinks. `columns` is the flagship
    * search of Q12; `nearest` is the phase-locked baseline it is compared
@@ -550,7 +549,7 @@ interface RenderTools {
   flat: Float64Array
   colours: DiffusionColours
   blend: (sides: readonly number[]) => number
-  shape: TileSize
+  shape: TileGrid
 }
 
 interface RenderSettings {

@@ -1,5 +1,6 @@
 import { createStore } from 'jotai'
-import type { TilesetProject, TilesetSheet } from '@/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
+import type { TilesetProject } from '@/tileset'
 import { TILESET_PROJECT_VERSION } from '@/tileset'
 import { captureTilesetProjectAtom, restoreTilesetProjectAtom } from './project'
 import {
@@ -13,7 +14,7 @@ import {
   tilesetSheetAtom
 } from './tileset'
 
-const SHEET: TilesetSheet = {
+const SHEET: Sheet = {
   width: 1,
   height: 1,
   data: Uint8ClampedArray.from([9, 9, 9, 255])

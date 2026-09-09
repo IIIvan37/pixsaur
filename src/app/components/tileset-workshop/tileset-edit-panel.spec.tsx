@@ -7,8 +7,8 @@ import {
   setTilesetSheetAtom,
   tilesetEditLayerAtom
 } from '@/app/store/tileset/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
-import type { TilesetSheet } from '@/tileset'
 import { TilesetEditPanel } from './tileset-edit-panel'
 
 /** Four colours over eight solid 8 x 8 tiles: every tile has one twin. */
@@ -19,7 +19,7 @@ const COLOURS: [number, number, number][] = [
   [0, 255, 0]
 ]
 
-function sheetOfRepeatedColours(): TilesetSheet {
+function sheetOfRepeatedColours(): Sheet {
   const width = 2 * COLOURS.length * 8
   const data = new Uint8ClampedArray(width * 8 * 4)
   for (let y = 0; y < 8; y++) {

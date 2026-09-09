@@ -1,8 +1,8 @@
 import type { CanvasFactory, FileSink } from '@/export/application/ports'
-import type { TilesetSheet } from './convert-tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import { saveTilesetSheet } from './save-tileset-sheet'
 
-const sheet: TilesetSheet = {
+const sheet: Sheet = {
   width: 2,
   height: 1,
   data: new Uint8ClampedArray(2 * 1 * 4)

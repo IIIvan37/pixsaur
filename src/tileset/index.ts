@@ -6,8 +6,7 @@ export {
   type ConvertTilesetResult,
   convertTileset,
   type TileDither,
-  type TileSize,
-  type TilesetSheet
+  type TilesetConversionSubject
 } from './application/convert-tileset'
 export {
   applyTilesetEdits,

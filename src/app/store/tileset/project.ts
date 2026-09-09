@@ -13,6 +13,7 @@ import {
   tilesetModeAtom,
   tilesetOptionsAtom
 } from './config'
+import { tilesetConversionSubjectAtom } from './conversion'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { sourcePlatformAtom, tilesetTargetAtom } from './geometry'
 import { tilesetGridAtom } from './grid'
@@ -20,16 +21,12 @@ import { tilesetSheetAtom } from './sheet'
 
 /** `null` until a sheet is imported: there is no document to save before. */
 export const captureTilesetProjectAtom = atom<TilesetProject | null>((get) => {
-  const sheet = get(tilesetSheetAtom)
-  if (!sheet) return null
+  const subject = get(tilesetConversionSubjectAtom)
+  if (!subject) return null
 
   return {
     version: TILESET_PROJECT_VERSION,
-    sheet,
-    source: get(tilesetGridAtom),
-    target: get(tilesetTargetAtom),
-    mode: get(tilesetModeAtom),
-    hardware: get(tilesetHardwareAtom),
+    ...subject,
     sourcePlatform: get(sourcePlatformAtom),
     options: get(tilesetOptionsAtom),
     edits: get(tilesetEditLayerAtom)

@@ -6,12 +6,12 @@ import {
   setTilesetSheetAtom,
   tilesetOptionsAtom
 } from '@/app/store/tileset/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
-import type { TilesetSheet } from '@/tileset'
 import { TilesetPalettePanel } from './tileset-palette-panel'
 
 /** Two solid 8 x 8 tiles, black and white — enough to choose pens over. */
-function sheetOfTwoTiles(): TilesetSheet {
+function sheetOfTwoTiles(): Sheet {
   const data = new Uint8ClampedArray(16 * 8 * 4)
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 16; x++) {

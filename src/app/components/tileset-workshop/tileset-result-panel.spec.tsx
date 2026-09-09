@@ -8,8 +8,8 @@ import {
   setTilesetOptionsAtom,
   setTilesetSheetAtom
 } from '@/app/store/tileset/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
-import type { TilesetSheet } from '@/tileset'
 import { TilesetResultPanel } from './tileset-result-panel'
 
 const sink = vi.hoisted(() => ({ save: vi.fn(async () => true) }))
@@ -19,7 +19,7 @@ vi.mock('@/export/application/file-sink', () => ({
 }))
 
 /** Two solid 8 x 8 tiles, one white and one black. */
-function sheetOfTwoTiles(): TilesetSheet {
+function sheetOfTwoTiles(): Sheet {
   const data = new Uint8ClampedArray(16 * 8 * 4)
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 16; x++) {
@@ -34,7 +34,7 @@ function sheetOfTwoTiles(): TilesetSheet {
 }
 
 /** Four solid 8 x 8 tiles, one per colour — more than mode 2 can hold. */
-function sheetOfFourColours(): TilesetSheet {
+function sheetOfFourColours(): Sheet {
   const colours = [
     [0, 0, 0],
     [255, 255, 255],

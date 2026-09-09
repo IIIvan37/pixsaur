@@ -2,12 +2,12 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import { setTilesetSheetAtom } from '@/app/store/tileset/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
-import type { TilesetSheet } from '@/tileset'
 import { TilesetGridPanel } from './tileset-grid-panel'
 
 /** A `size` x `size` sheet of solid 8 px squares, every other one repeated. */
-function sheetOfAlternatingTiles(size: number): TilesetSheet {
+function sheetOfAlternatingTiles(size: number): Sheet {
   const data = new Uint8ClampedArray(size * size * 4)
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {

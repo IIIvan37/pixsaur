@@ -12,13 +12,10 @@
  * project that cannot be converted at all.
  */
 
-import type { PixelMode } from '@/domain/cpc'
-import type { SheetGrid, SourcePlatform } from '@/libs/pixsaur-tileset'
-import type { CPCHardware } from '@/libs/types'
+import type { Sheet, SourcePlatform } from '@/libs/pixsaur-tileset'
 import type {
   ConvertTilesetInput,
-  TileSize,
-  TilesetSheet
+  TilesetConversionSubject
 } from './convert-tileset'
 import type { TilesetEditLayer } from './paint-tileset'
 
@@ -50,15 +47,8 @@ export type TilesetProjectOptions = Pick<
   | 'transparency'
 >
 
-export interface TilesetProject {
+export interface TilesetProject extends TilesetConversionSubject {
   version: number
-  sheet: TilesetSheet
-  /** Where the tiles sit in the source sheet. */
-  source: SheetGrid
-  /** Tile size in the destination, in CPC pixels. */
-  target: TileSize
-  mode: PixelMode
-  hardware: CPCHardware
   /** The machine the sheet comes from — its pixel shape, nothing else. */
   sourcePlatform: SourcePlatform
   options: TilesetProjectOptions
@@ -133,7 +123,7 @@ function hasProjectShape(value: unknown): value is Record<string, unknown> {
 }
 
 /** A sheet whose bytes do not fill its size would slice into other tiles. */
-function fillsItsSize(sheet: TilesetSheet): boolean {
+function fillsItsSize(sheet: Sheet): boolean {
   return sheet.data.length === sheet.width * sheet.height * 4
 }
 
@@ -156,7 +146,7 @@ export function parseTilesetProject(text: string): ParseTilesetProjectResult {
     return { ok: false, error: 'malformed' }
   }
 
-  const sheet: TilesetSheet = {
+  const sheet: Sheet = {
     width: stored.width,
     height: stored.height,
     data: fromBase64((written.sheet as { data: string }).data)

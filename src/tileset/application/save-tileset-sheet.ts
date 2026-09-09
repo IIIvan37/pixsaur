@@ -10,14 +10,14 @@
  */
 
 import type { CanvasFactory, FileSink } from '@/export/application/ports'
-import type { TilesetSheet } from './convert-tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 
 /** The name the workshop gives the sheet it hands over. */
 export const TILESET_SHEET_FILENAME = 'tileset.png'
 
 export interface SaveTilesetSheetInput {
   /** The rendered sheet, as `renderTilesetSheet` hands it over. */
-  sheet: TilesetSheet
+  sheet: Sheet
   /** Defaults to {@link TILESET_SHEET_FILENAME}. */
   filename?: string
 }

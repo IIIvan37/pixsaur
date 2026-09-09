@@ -1,5 +1,5 @@
 import { createStore } from 'jotai'
-import type { TilesetSheet } from '@/tileset'
+import type { Sheet } from '@/libs/pixsaur-tileset'
 import {
   convertedTilesetAtom,
   freezeTilesetPaletteAtom,
@@ -17,7 +17,7 @@ import {
 } from './tileset'
 
 /** A sheet of `count` solid 8 x 8 tiles in a row, every other one repeated. */
-function sheetOfAlternatingTiles(count: number): TilesetSheet {
+function sheetOfAlternatingTiles(count: number): Sheet {
   const width = count * 8
   const data = new Uint8ClampedArray(width * 8 * 4)
   for (let y = 0; y < 8; y++) {
