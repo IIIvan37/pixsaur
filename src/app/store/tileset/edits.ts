@@ -7,8 +7,8 @@
  */
 
 import { atom } from 'jotai'
+import { systemClock } from '@/editor/adapters/system-clock'
 import type { Point } from '@/editor/application/paint-pixels'
-import type { Clock } from '@/editor/application/ports'
 import type { Sheet } from '@/libs/pixsaur-tileset'
 import {
   applyTilesetEdits,
@@ -24,8 +24,6 @@ import { tilesetOptionsAtom } from './config'
 import { convertedTilesetAtom, tilesetConversionInputAtom } from './conversion'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetTargetAtom } from './geometry'
-
-const systemClock: Clock = { now: () => Date.now() }
 
 /** The sheet as the workshop shows it: converted, then the layer laid over it. */
 export const editedTilesetAtom = atom<ConvertTilesetResult | null>((get) => {
