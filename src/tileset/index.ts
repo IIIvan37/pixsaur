@@ -37,10 +37,6 @@ export {
   TILESET_SHEET_FILENAME
 } from './application/save-tileset-sheet'
 export {
-  type SuggestTileGeometryInput,
-  suggestTileGeometry
-} from './application/suggest-tile-geometry'
-export {
   type ConvertedPalette,
   dropPen,
   freezePalette,

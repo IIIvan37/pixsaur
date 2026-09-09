@@ -35,7 +35,6 @@ a second consumer here:
 |----------|-----------------|--------|------------|
 | `convertTileset` | sheet, source grid, target tile, mode, hardware, render options | `{ ok, tileset } \| { ok:false, error }` (5 named refusals) | none — pure, sync, total |
 | `suggestTileGeometry` | source platform, mode, asked-for tile size | candidate tile sizes ranked by aspect distortion | none |
-| `suggestTileGrid` | sheet, user margins | plausible grids ranked by tilemap cost | none |
 | `paintTileset` / `undoTilesetEdits` / `redoTilesetEdits` / `applyTilesetEdits` | edit layer + the pixels a stroke names | a new edit layer, or the converted tiles replayed | none |
 | `renderTilesetSheet` | converted tileset + the source grid | RGBA pixels in the shape of a source sheet | none |
 | `saveTilesetSheet` | `{ sheet, filename? }` — defaults to `TILESET_SHEET_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` | `CanvasFactory`, `FileSink` |

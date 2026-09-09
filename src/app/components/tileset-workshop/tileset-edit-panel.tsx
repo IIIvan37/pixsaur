@@ -19,8 +19,9 @@ import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
-import { Select, SelectItem } from '@/components/ui/select'
+import { SelectItem } from '@/components/ui/select'
 import type { Pen, TileDither } from '@/tileset'
+import { LabelledSelect } from './tileset-labelled-select'
 import styles from './tileset-workshop.module.css'
 
 const swatch = ([r, g, b]: Pen) => `rgb(${r} ${g} ${b})`
@@ -106,28 +107,23 @@ export function TilesetEditPanel() {
           </output>
         </div>
 
-        <div className={styles.field}>
-          <span className={styles.label}>
-            <Trans>Tramage de la tuile</Trans>
-          </span>
-          <Select
-            aria-label={_(msg`Tramage de la tuile`)}
-            value={options.ditherByTile?.[tile] ?? 'sheet'}
-            onValueChange={(value) =>
-              setTileDither({
-                tile,
-                dither: value === 'sheet' ? null : (value as TileDither)
-              })
-            }
-          >
-            <SelectItem value='sheet'>{_(msg`Comme la planche`)}</SelectItem>
-            <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
-            <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
-            <SelectItem value='diffusion'>
-              {_(msg`Diffusion d'erreur`)}
-            </SelectItem>
-          </Select>
-        </div>
+        <LabelledSelect
+          label={_(msg`Tramage de la tuile`)}
+          value={options.ditherByTile?.[tile] ?? 'sheet'}
+          onValueChange={(value) =>
+            setTileDither({
+              tile,
+              dither: value === 'sheet' ? null : (value as TileDither)
+            })
+          }
+        >
+          <SelectItem value='sheet'>{_(msg`Comme la planche`)}</SelectItem>
+          <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
+          <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
+          <SelectItem value='diffusion'>
+            {_(msg`Diffusion d'erreur`)}
+          </SelectItem>
+        </LabelledSelect>
       </div>
 
       <div className={styles.pens}>

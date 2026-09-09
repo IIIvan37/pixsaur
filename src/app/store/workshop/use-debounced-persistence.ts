@@ -30,18 +30,18 @@ export interface DebouncedPersistence<T> {
   restore: WritableAtom<any, [T], any>
   storage: WorkshopStorage<T>
   /**
-   * What counts as the user's work, for a workshop whose captured state is
-   * never `null` on its own. Left out, whatever was saved is put back — which
-   * is what an empty screen wants. Must be stable across renders.
+   * Whether a workshop the user has already filled must survive the restore.
+   * A workshop whose capture is never `null` — the image session, which always
+   * has settings to report — leaves it off and takes back what was saved.
    */
-  hasContent?: (state: T | null) => boolean
+  keepLiveState?: boolean
 }
 
 export function useDebouncedPersistence<T>({
   capture,
   restore,
   storage,
-  hasContent
+  keepLiveState
 }: DebouncedPersistence<T>): void {
   const state = useAtomValue(capture)
   const put = useSetAtom(restore)
@@ -52,25 +52,32 @@ export function useDebouncedPersistence<T>({
   const stateRef = useRef(state)
   stateRef.current = state
 
+  // Neither is a reason to read storage again: the load runs once, on mount.
+  const storageRef = useRef(storage)
+  storageRef.current = storage
+  const keepRef = useRef(keepLiveState)
+  keepRef.current = keepLiveState
+
   useEffect(() => {
     let cancelled = false
-    void Promise.resolve(storage.load()).then((saved) => {
+    void Promise.resolve(storageRef.current.load()).then((saved) => {
       if (cancelled) return
-      if (saved !== null && !hasContent?.(stateRef.current)) put(saved)
+      const theirs = keepRef.current && stateRef.current !== null
+      if (saved !== null && !theirs) put(saved)
       setHydrated(true)
     })
     return () => {
       cancelled = true
     }
-  }, [put, storage, hasContent])
+  }, [put])
 
   // Saved on change, debounced. Held back until the restore has run, so the
   // empty workshop never overwrites what was saved.
   useEffect(() => {
     if (!hydrated || state === null) return
     const handle = setTimeout(() => {
-      void storage.save(state)
+      void storageRef.current.save(state)
     }, PERSIST_DEBOUNCE_MS)
     return () => clearTimeout(handle)
-  }, [hydrated, state, storage])
+  }, [hydrated, state])
 }

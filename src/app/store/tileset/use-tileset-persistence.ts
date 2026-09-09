@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useDebouncedPersistence } from '@/app/store/workshop/use-debounced-persistence'
 import {
   idbProjectStore,
@@ -8,9 +7,6 @@ import {
   type TilesetProjectStore
 } from '@/tileset'
 import { captureTilesetProjectAtom, restoreTilesetProjectAtom } from './project'
-
-/** A workshop with no sheet in it is not work to keep (Q31). */
-const opened = (project: TilesetProject | null) => project !== null
 
 /**
  * Reopens the tileset workshop where the user left it, and saves it as they
@@ -22,18 +18,14 @@ const opened = (project: TilesetProject | null) => project !== null
 export function useTilesetPersistence(
   store: TilesetProjectStore = idbProjectStore
 ) {
-  const storage = useMemo(
-    () => ({
-      load: () => loadTilesetProject(store),
-      save: (project: TilesetProject) => saveTilesetProject(store, project)
-    }),
-    [store]
-  )
-
   useDebouncedPersistence({
     capture: captureTilesetProjectAtom,
     restore: restoreTilesetProjectAtom,
-    storage,
-    hasContent: opened
+    storage: {
+      load: () => loadTilesetProject(store),
+      save: (project: TilesetProject) => saveTilesetProject(store, project)
+    },
+    // A sheet the user imported before the load landed is not overwritten.
+    keepLiveState: true
   })
 }

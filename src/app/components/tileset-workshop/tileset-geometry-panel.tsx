@@ -95,7 +95,10 @@ export function TilesetGeometryPanel() {
       <TileSuggestions
         title={<Trans>Tailles entières, la moins déformée en tête</Trans>}
         suggestions={geometry.candidates.map((candidate) => ({
-          size: candidate,
+          size: {
+            tileWidth: candidate.tileWidth,
+            tileHeight: candidate.tileHeight
+          },
           note: signedPercent(candidate.distortion)
         }))}
         onPick={setTarget}

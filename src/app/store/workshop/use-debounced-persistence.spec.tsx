@@ -15,8 +15,6 @@ function wrapperOf(atoms: ReturnType<typeof createStore>) {
   )
 }
 
-const filled = (state: string | null) => state !== null
-
 describe('useDebouncedPersistence', () => {
   it('reopens the workshop on what was saved', async () => {
     const atoms = createStore()
@@ -44,12 +42,34 @@ describe('useDebouncedPersistence', () => {
           capture: stateAtom,
           restore: restoreAtom,
           storage: { load: () => 'saved', save: () => {} },
-          hasContent: filled
+          keepLiveState: true
         }),
       { wrapper: wrapperOf(atoms) }
     )
 
     await waitFor(() => expect(atoms.get(stateAtom)).toBe('theirs'))
+  })
+
+  // The image session's own shape: its capture is never null, so it takes back
+  // what was saved rather than protecting the default it starts on.
+  it('takes back what was saved when the workshop is never empty', async () => {
+    const atoms = createStore()
+    const neverEmpty = atom('default')
+    const putBack = atom(null, (_get, set, saved: string) =>
+      set(neverEmpty, saved)
+    )
+
+    renderHook(
+      () =>
+        useDebouncedPersistence({
+          capture: neverEmpty,
+          restore: putBack,
+          storage: { load: () => 'saved', save: () => {} }
+        }),
+      { wrapper: wrapperOf(atoms) }
+    )
+
+    await waitFor(() => expect(atoms.get(neverEmpty)).toBe('saved'))
   })
 
   it('writes a change back once the user pauses', async () => {

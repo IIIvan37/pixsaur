@@ -51,6 +51,7 @@ export {
   type CpcModeConfig,
   type CpcModeKey,
   type CustomDimensions,
+  cpcPixelAspect,
   type DimensionPreset,
   type PixelMode,
   parseCpcModeKey

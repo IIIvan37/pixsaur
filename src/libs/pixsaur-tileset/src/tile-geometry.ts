@@ -10,23 +10,23 @@
 import type { PixelAspect } from './pixel-aspect'
 import type { TileGrid } from './slice-sheet'
 
-/** A tile size together with the shape of the pixels it is made of. */
-interface TileShape {
-  tile: TileGrid
-  pixel: PixelAspect
-}
-
-/** Physical width divided by physical height of the whole tile. */
-function physicalAspect({ tile, pixel }: TileShape): number {
+/** Physical width divided by physical height of a whole tile. */
+function physicalAspect(tile: TileGrid, pixel: PixelAspect): number {
   return (tile.tileWidth * pixel.x) / (tile.tileHeight * pixel.y)
 }
 
 /**
- * Signed relative width error of `target` against `source`: `+1` means the
- * destination tile is twice as wide, relative to its height, as the source was.
+ * Signed relative width error of a destination tile against a source aspect:
+ * `+1` means it is twice as wide, relative to its height, as the source was.
+ * The source arrives already reduced to its aspect — every candidate of a
+ * search shares it, and recomputing it per candidate says nothing new.
  */
-function aspectDistortion(source: TileShape, target: TileShape): number {
-  return physicalAspect(target) / physicalAspect(source) - 1
+function distortionFrom(
+  sourceAspect: number,
+  tile: TileGrid,
+  pixel: PixelAspect
+): number {
+  return physicalAspect(tile, pixel) / sourceAspect - 1
 }
 
 /** An integer destination size, with the distortion it leaves behind. */
@@ -43,12 +43,12 @@ const DEFAULT_NEIGHBOURHOOD = 2
  * request is never talked out of itself.
  */
 function candidateTileSizes(
-  source: TileShape,
+  sourceAspect: number,
   targetPixel: PixelAspect,
-  around: TileGrid,
-  radius: number = DEFAULT_NEIGHBOURHOOD
+  around: TileGrid
 ): TileSizeCandidate[] {
   const candidates: TileSizeCandidate[] = []
+  const radius = DEFAULT_NEIGHBOURHOOD
 
   for (
     let tileWidth = Math.max(1, around.tileWidth - radius);
@@ -63,10 +63,11 @@ function candidateTileSizes(
       candidates.push({
         tileWidth,
         tileHeight,
-        distortion: aspectDistortion(source, {
-          tile: { tileWidth, tileHeight },
-          pixel: targetPixel
-        })
+        distortion: distortionFrom(
+          sourceAspect,
+          { tileWidth, tileHeight },
+          targetPixel
+        )
       })
     }
   }
@@ -113,13 +114,12 @@ export function measureTileGeometry({
   targetPixel,
   target
 }: TileGeometryQuery): TileGeometry {
-  const shape: TileShape = { tile: source, pixel: sourcePixel }
-  const aspect = physicalAspect(shape)
+  const aspect = physicalAspect(source, sourcePixel)
 
   return {
-    distortion: aspectDistortion(shape, { tile: target, pixel: targetPixel }),
+    distortion: distortionFrom(aspect, target, targetPixel),
     idealHeight: (target.tileWidth * targetPixel.x) / (aspect * targetPixel.y),
     idealWidth: (aspect * target.tileHeight * targetPixel.y) / targetPixel.x,
-    candidates: candidateTileSizes(shape, targetPixel, target)
+    candidates: candidateTileSizes(aspect, targetPixel, target)
   }
 }
