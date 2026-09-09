@@ -31,6 +31,9 @@ export interface SheetGrid extends TileGrid {
   offsetY?: number
 }
 
+/** The blanks of a grid — everything the user declares but the tile size. */
+export type GridBlanks = Omit<SheetGrid, 'tileWidth' | 'tileHeight'>
+
 /** One source tile, RGBA, `tileWidth * tileHeight * 4` bytes. */
 export interface SourceTile {
   data: Uint8ClampedArray

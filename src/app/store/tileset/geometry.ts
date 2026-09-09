@@ -9,13 +9,10 @@ import { atom } from 'jotai'
 import {
   SOURCE_PIXEL_ASPECT,
   type SourcePlatform,
+  type TileGeometry,
   type TileGrid
 } from '@/libs/pixsaur-tileset'
-import {
-  EMPTY_EDIT_LAYER,
-  suggestTileGeometry,
-  type TileGeometry
-} from '@/tileset'
+import { EMPTY_EDIT_LAYER, suggestTileGeometry } from '@/tileset'
 import { tilesetModeAtom } from './config'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetGridAtom } from './grid'

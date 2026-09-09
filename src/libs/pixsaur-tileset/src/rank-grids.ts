@@ -15,6 +15,7 @@
  */
 
 import {
+  type GridBlanks,
   type Sheet,
   type SheetGrid,
   sliceSheet,
@@ -23,7 +24,7 @@ import {
 import { dedupeTiles, duplicateRate } from './tile-dedup'
 
 /** The tile sizes worth trying on an unknown sheet, before the user says. */
-export const PLAUSIBLE_TILE_SIZES: readonly TileGrid[] = [8, 16, 24, 32].map(
+const PLAUSIBLE_TILE_SIZES: readonly TileGrid[] = [8, 16, 24, 32].map(
   (size) => ({ tileWidth: size, tileHeight: size })
 )
 
@@ -50,17 +51,27 @@ function tileArea({ grid }: GridCandidate): number {
   return grid.tileWidth * grid.tileHeight
 }
 
+export interface GridSearch {
+  sheet: Sheet
+  /** What the user declared around the tiles; kept for every candidate size. */
+  blanks?: GridBlanks
+  /** Tile sizes to try — the usual tileset divisors by default. */
+  sizes?: readonly TileGrid[]
+}
+
 /**
  * Score every grid that slices `sheet`, cheapest tilemap first. Grids no whole
  * tile fits are dropped rather than ranked last — they are not answers.
  */
-export function rankTileGrids(
-  sheet: Sheet,
-  grids: readonly SheetGrid[]
-): GridCandidate[] {
+export function rankTileGrids({
+  sheet,
+  blanks,
+  sizes = PLAUSIBLE_TILE_SIZES
+}: GridSearch): GridCandidate[] {
   const candidates: GridCandidate[] = []
 
-  for (const grid of grids) {
+  for (const size of sizes) {
+    const grid: SheetGrid = { ...blanks, ...size }
     const sliced = sliceSheet(sheet, grid)
     if (!sliced) continue
 

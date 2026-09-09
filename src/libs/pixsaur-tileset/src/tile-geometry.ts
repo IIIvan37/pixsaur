@@ -11,7 +11,7 @@ import type { PixelAspect } from './pixel-aspect'
 import type { TileGrid } from './slice-sheet'
 
 /** A tile size together with the shape of the pixels it is made of. */
-export interface TileShape {
+interface TileShape {
   tile: TileGrid
   pixel: PixelAspect
 }
@@ -22,32 +22,10 @@ function physicalAspect({ tile, pixel }: TileShape): number {
 }
 
 /**
- * The exact destination height that preserves the source shape at
- * `tileWidth` — generally fractional, which is why a residual distortion
- * remains once the user rounds it to whole CPC pixels.
- */
-export function idealTileHeight(
-  source: TileShape,
-  targetPixel: PixelAspect,
-  tileWidth: number
-): number {
-  return (tileWidth * targetPixel.x) / (physicalAspect(source) * targetPixel.y)
-}
-
-/** The mirror of {@link idealTileHeight}, for a height the user pinned. */
-export function idealTileWidth(
-  source: TileShape,
-  targetPixel: PixelAspect,
-  tileHeight: number
-): number {
-  return (physicalAspect(source) * tileHeight * targetPixel.y) / targetPixel.x
-}
-
-/**
  * Signed relative width error of `target` against `source`: `+1` means the
  * destination tile is twice as wide, relative to its height, as the source was.
  */
-export function aspectDistortion(source: TileShape, target: TileShape): number {
+function aspectDistortion(source: TileShape, target: TileShape): number {
   return physicalAspect(target) / physicalAspect(source) - 1
 }
 
@@ -64,7 +42,7 @@ const DEFAULT_NEIGHBOURHOOD = 2
  * to the size closest to what the user asked for, so an already-perfect
  * request is never talked out of itself.
  */
-export function candidateTileSizes(
+function candidateTileSizes(
   source: TileShape,
   targetPixel: PixelAspect,
   around: TileGrid,
@@ -100,4 +78,48 @@ export function candidateTileSizes(
     (a, b) =>
       Math.abs(a.distortion) - Math.abs(b.distortion) || drift(a) - drift(b)
   )
+}
+
+export interface TileGeometryQuery {
+  /** Tile size in the source sheet. */
+  source: TileGrid
+  /** Shape of a source pixel — a `SOURCE_PIXEL_ASPECT` preset or free entry. */
+  sourcePixel: PixelAspect
+  /** Shape of a destination pixel. */
+  targetPixel: PixelAspect
+  /** The destination size asked for, in whole destination pixels. */
+  target: TileGrid
+}
+
+export interface TileGeometry {
+  /** Signed: `+0.09` means the chosen size is 9 % too wide for the source shape. */
+  distortion: number
+  /**
+   * The exact destination height that preserves the source shape at the
+   * requested width — generally fractional, which is why a residual distortion
+   * remains once the user rounds it to whole pixels.
+   */
+  idealHeight: number
+  /** The mirror of {@link TileGeometry.idealHeight}, for a pinned height. */
+  idealWidth: number
+  /** Whole-pixel sizes near the request, least distorted first. */
+  candidates: TileSizeCandidate[]
+}
+
+/** Everything the destination size is worth knowing about, measured at once. */
+export function measureTileGeometry({
+  source,
+  sourcePixel,
+  targetPixel,
+  target
+}: TileGeometryQuery): TileGeometry {
+  const shape: TileShape = { tile: source, pixel: sourcePixel }
+  const aspect = physicalAspect(shape)
+
+  return {
+    distortion: aspectDistortion(shape, { tile: target, pixel: targetPixel }),
+    idealHeight: (target.tileWidth * targetPixel.x) / (aspect * targetPixel.y),
+    idealWidth: (aspect * target.tileHeight * targetPixel.y) / targetPixel.x,
+    candidates: candidateTileSizes(shape, targetPixel, target)
+  }
 }

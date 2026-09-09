@@ -6,8 +6,12 @@
  */
 
 import { atom } from 'jotai'
-import type { GridCandidate, SheetGrid } from '@/libs/pixsaur-tileset'
-import { EMPTY_EDIT_LAYER, suggestTileGrid } from '@/tileset'
+import {
+  type GridCandidate,
+  rankTileGrids,
+  type SheetGrid
+} from '@/libs/pixsaur-tileset'
+import { EMPTY_EDIT_LAYER } from '@/tileset'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetSheetAtom } from './sheet'
 
@@ -37,5 +41,5 @@ export const tilesetGridSuggestionsAtom = atom<GridCandidate[]>((get) => {
   if (!sheet) return []
 
   const { tileWidth: _w, tileHeight: _h, ...blanks } = get(tilesetGridAtom)
-  return suggestTileGrid({ sheet, blanks })
+  return rankTileGrids({ sheet, blanks })
 })

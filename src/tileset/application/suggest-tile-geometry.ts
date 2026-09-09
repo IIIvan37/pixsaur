@@ -2,20 +2,19 @@
  * Advises on the destination tile size (T2 — geometry).
  *
  * The user declares the destination size in whole CPC pixels; the ideal ratio is
- * derived and the residual distortion reported (Q1 · Q7). The CPC pixel shape
- * comes from `CPC_MODE_CONFIG` (`scaleX`/`scaleY`), NOT the physical 4:3 aspect —
- * consistency with the rest of the app. See `docs/features/PLAN-tileset-workshop.md`.
+ * derived and the residual distortion reported (Q1 · Q7). This use-case's whole
+ * job is to say what a CPC pixel of `mode` is shaped like: `CPC_MODE_CONFIG`
+ * (`scaleX`/`scaleY`), NOT the physical 4:3 aspect — consistency with the rest
+ * of the app. The measuring itself is the lib's.
+ * See `docs/features/PLAN-tileset-workshop.md`.
  */
 
 import { CPC_MODE_CONFIG, type CpcModeKey, type PixelMode } from '@/domain/cpc'
 import {
-  aspectDistortion,
-  candidateTileSizes,
-  idealTileHeight,
-  idealTileWidth,
+  measureTileGeometry,
   type PixelAspect,
-  type TileGrid,
-  type TileSizeCandidate
+  type TileGeometry,
+  type TileGrid
 } from '@/libs/pixsaur-tileset'
 
 export interface SuggestTileGeometryInput {
@@ -28,32 +27,14 @@ export interface SuggestTileGeometryInput {
   target: TileGrid
 }
 
-export interface TileGeometry {
-  /** Signed: `+0.09` means the chosen size is 9 % too wide for the source shape. */
-  distortion: number
-  /** Exact — and generally fractional — height for the width the user chose. */
-  idealHeight: number
-  /** The mirror of {@link TileGeometry.idealHeight}, for a pinned height. */
-  idealWidth: number
-  /** Whole-pixel sizes near the request, least distorted first. */
-  candidates: TileSizeCandidate[]
-}
+export function suggestTileGeometry({
+  mode,
+  ...tiles
+}: SuggestTileGeometryInput): TileGeometry {
+  const { scaleX, scaleY } = CPC_MODE_CONFIG[`${mode}` as CpcModeKey]
 
-export function suggestTileGeometry(
-  input: SuggestTileGeometryInput
-): TileGeometry {
-  const { scaleX, scaleY } = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey]
-  const cpcPixel: PixelAspect = { x: scaleX, y: scaleY }
-
-  const source = { tile: input.source, pixel: input.sourcePixel }
-
-  return {
-    distortion: aspectDistortion(source, {
-      tile: input.target,
-      pixel: cpcPixel
-    }),
-    idealHeight: idealTileHeight(source, cpcPixel, input.target.tileWidth),
-    idealWidth: idealTileWidth(source, cpcPixel, input.target.tileHeight),
-    candidates: candidateTileSizes(source, cpcPixel, input.target)
-  }
+  return measureTileGeometry({
+    ...tiles,
+    targetPixel: { x: scaleX, y: scaleY }
+  })
 }

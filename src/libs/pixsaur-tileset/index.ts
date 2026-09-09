@@ -19,7 +19,6 @@ export {
 export { type EdgeMaskOptions, tileEdgeMask } from './src/edge-mask'
 export {
   type BayerSize,
-  bayerThresholds,
   type OrderedDitherOptions,
   orderedDitherTile,
   type PenMix
@@ -47,7 +46,7 @@ export {
 } from './src/pixel-aspect'
 export {
   type GridCandidate,
-  PLAUSIBLE_TILE_SIZES,
+  type GridSearch,
   rankTileGrids
 } from './src/rank-grids'
 export {
@@ -58,6 +57,7 @@ export {
 } from './src/resize-scheme'
 export { resizeTileNearest } from './src/resize-tile'
 export {
+  type GridBlanks,
   type Sheet,
   type SheetGrid,
   type SlicedSheet,
@@ -69,17 +69,10 @@ export {
   rankTileCollisions,
   type TileCollision
 } from './src/tile-collisions'
+export { dedupeTiles, type TileBytes, type TileDedup } from './src/tile-dedup'
 export {
-  dedupeTiles,
-  duplicateRate,
-  type TileBytes,
-  type TileDedup
-} from './src/tile-dedup'
-export {
-  aspectDistortion,
-  candidateTileSizes,
-  idealTileHeight,
-  idealTileWidth,
-  type TileShape,
+  measureTileGeometry,
+  type TileGeometry,
+  type TileGeometryQuery,
   type TileSizeCandidate
 } from './src/tile-geometry'

@@ -38,14 +38,8 @@ export {
 } from './application/save-tileset-sheet'
 export {
   type SuggestTileGeometryInput,
-  suggestTileGeometry,
-  type TileGeometry
+  suggestTileGeometry
 } from './application/suggest-tile-geometry'
-export {
-  type GridBlanks,
-  type SuggestTileGridInput,
-  suggestTileGrid
-} from './application/suggest-tile-grid'
 export {
   type ConvertedPalette,
   dropPen,
