@@ -25,9 +25,41 @@
   [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
   9 candidats de deepening sur `src/tileset`, `pixsaur-tileset`, `store/tileset` et
   les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise.
-  **Vagues 1 à 6 closes** (candidats 3, 4, 9, 1, 6, puis 2 et 5, 09/09/2026) ;
-  restent les candidats 7 et 8, et plus aucun ne porte de risque de correction.
-  Q20 ci-dessous est sorti de cette revue.
+  **Les 9 candidats sont livrés** (vagues 1 à 7, 09/09/2026) : 3, 4, 9, 1, 6,
+  puis 2 et 5, puis 7 et 8. La revue est close. Q20 ci-dessous en est sorti.
+
+- **Vague 7 de la revue d'architecture (candidats 7 + 8), close le 09/09/2026 —
+  le barrel élagué, puis le chrome des deux ateliers mutualisé.** Dernière
+  vague : la revue est close.
+  - **Neuf exports superficiels quittent le barrel `pixsaur-tileset`.** La
+    chaîne `rankTileGrids ← suggestTileGrid ← atome` devient un seul saut :
+    `rankTileGrids({ sheet, blanks, sizes })` pose lui-même ses tailles par
+    défaut, et le use-case `suggest-tile-grid.ts` est supprimé. Les quatre
+    formules de géométrie (`aspectDistortion`, `idealTileHeight`,
+    `idealTileWidth`, `candidateTileSizes`) deviennent `measureTileGeometry` :
+    **les maths restent dans la lib** — la revue proposait de les inliner dans
+    le use-case, ce qu'ADR-001 interdit — et `suggestTileGeometry` se réduit à
+    son vrai métier, dire la forme d'un pixel CPC dans ce mode.
+    `duplicateRate` et `bayerThresholds` redeviennent internes à leur module.
+  - **Un seul debounce et une seule horloge pour les deux ateliers.**
+    `useDebouncedPersistence` (`store/workshop/`) est l'algorithme écrit deux
+    fois : charger une fois, retenir les sauvegardes jusqu'à ce que ça arrive,
+    réécrire 800 ms après le dernier changement. Chaque atelier passe toujours
+    ses propres capture, restore et stockage — **les deux espaces d'atomes de
+    Q6 · Q32 · Q34 restent séparés**. Le prédicat `hasContent` est la seule
+    manette : absent, ce qui a été sauvé est remis en place ; présent, ce que
+    l'utilisateur a à l'écran n'est jamais écrasé. `systemClock` devient un
+    adaptateur à côté de son port (`editor/adapters/`) au lieu d'être écrit
+    deux fois.
+  - **`LabelledSelect` et `TileSuggestions`** remplacent le triptyque
+    libellé/contrôle épelé à sept réglages — qui écrivait son libellé deux
+    fois, une pour l'œil et une pour le lecteur d'écran, libres de diverger —
+    et la liste de tailles dessinée à la main dans les panneaux géométrie et
+    grille.
+  - Aucun changement de comportement : les 56 tests de composants et les 2913
+    tests passent sans retouche, les 454 messages Lingui sont intacts (seules
+    les références de source bougent). `quality-gate` vert, knip et jscpd au
+    niveau de référence.
 
 - **Vague 6 de la revue d'architecture (candidats 2 + 5), close le 09/09/2026 —
   les tables de pens et l'espace de pens ont un module chacun.** Les 268 lignes
@@ -53,8 +85,6 @@
     500 lignes.
   - Aucun changement de comportement : les 43 tests de conversion passent sans
     retouche. `quality-gate` vert, knip et jscpd au niveau de référence.
-  - **Prochaine vague : 7 (candidats 7 et 8)** — élagage du barrel, puis
-    mutualisation du chrome des deux ateliers.
 
 - **Vague 5 de la revue d'architecture (candidat 6), close le 09/09/2026 —
   l'entrée de conversion est assemblée une seule fois.** Le quintuplet

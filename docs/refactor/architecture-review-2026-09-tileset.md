@@ -32,8 +32,8 @@ re-litigate them, with one exception recorded below.
 | 4 | [Route the file exports through the FileSink port](#4--route-the-file-exports-through-the-filesink-port) | **Strong** |
 | 5 | ~~[Name the pen space](#5--name-the-pen-space--done-09092026)~~ | **Done 09/09/2026** |
 | 6 | ~~[Assemble the conversion input once](#6--assemble-the-conversion-input-once--done-09092026)~~ | **Done 09/09/2026** |
-| 7 | [Collapse the grid-suggestion chain](#7--collapse-the-grid-suggestion-chain) | Worth exploring |
-| 8 | [Share the workshop chrome, not the state](#8--share-the-workshop-chrome-not-the-state) | Speculative |
+| 7 | ~~[Collapse the grid-suggestion chain](#7--collapse-the-grid-suggestion-chain--done-09092026)~~ | **Done 09/09/2026** |
+| 8 | ~~[Share the workshop chrome, not the state](#8--share-the-workshop-chrome-not-the-state--done-09092026)~~ | **Done 09/09/2026** |
 | 9 | [Declare what a palette strategy owes its caller](#9--declare-what-a-palette-strategy-owes-its-caller) | Worth exploring |
 
 ## Decisions already taken during the review
@@ -393,7 +393,12 @@ Cheap once candidate 3 has removed the second assembly at `edits.ts:54`.
 
 ---
 
-## 7 · Collapse the grid-suggestion chain
+## ~~7 · Collapse the grid-suggestion chain~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** Nine exports left the barrel, not six: the grid chain
+collapsed to one hop, and the geometry formulas folded into one
+`measureTileGeometry`. What follows is the review as written; the outcome is
+recorded at the end of the section.
 
 **Strength**: Worth exploring · **Dependency category**: in-process
 
@@ -429,9 +434,39 @@ deleted. Deletion test: complexity shrinks.
 **Keep**: `candidateTileSizes` (36 lines with a real sort and tie-break) earns
 its export.
 
+### Outcome — 09/09/2026
+
+Nine exports left, not six, and the geometry half was solved differently from
+what the review proposed.
+
+- **The grid chain is one hop.** `rankTileGrids({ sheet, blanks, sizes })` puts
+  its own `PLAUSIBLE_TILE_SIZES` default in and spreads the blanks over each
+  size; `suggest-tile-grid.ts` and its spec are deleted, and
+  `tilesetGridSuggestionsAtom` calls the lib directly. `GridBlanks` moved next
+  to `SheetGrid`, where it always belonged. The Q29 offset case is now two
+  calls comparing duplicate rates — a more direct assertion of Q29 than the
+  old "the aligned grid sorts first" was.
+- **The geometry formulas fold into `measureTileGeometry`, not into the
+  use-case.** The review said to inline the three expressions into
+  `suggestTileGeometry`. That would have moved `physicalAspect` arithmetic into
+  `src/tileset/application/`, which ADR-001's decision tree sends to `libs`.
+  One lib function returning `{ distortion, idealHeight, idealWidth,
+  candidates }` gets the same barrel shrink, keeps the maths where the ADR puts
+  it, and leaves `suggestTileGeometry` with its real job: turning a CPC mode
+  into a pixel aspect. `TileShape`, `aspectDistortion` and `candidateTileSizes`
+  are module-internal now — `candidateTileSizes` earns its keep inside the
+  module, as the review said, just not on the barrel.
+- The two specs stopped overlapping: `tile-geometry.spec.ts` tests the maths
+  against explicit pixel aspects, `suggest-tile-geometry.spec.ts` tests only
+  what the use-case adds.
+
 ---
 
-## 8 · Share the workshop chrome, not the state
+## ~~8 · Share the workshop chrome, not the state~~ — done 09/09/2026
+
+**DONE — 09/09/2026,** in three of its six pieces. What follows is the review as
+written; the outcome, and what was deliberately left alone, is recorded at the
+end of the section.
 
 **Strength**: Speculative · **Dependency category**: in-process
 
@@ -473,6 +508,41 @@ it intact; merging `cpcMode` or the capture atoms would not.
 
 **Wins**. One debounce, two workshops. Two CSS blocks become one. Leverage across
 both workshops. Lowest risk, lowest payoff of the nine.
+
+### Outcome — 09/09/2026
+
+Three of the six pieces landed; three were judged not worth the regression risk
+they carry.
+
+**Shared.**
+
+- `useDebouncedPersistence` (`store/workshop/`) is the algorithm that was
+  written twice. The two halves differed more than the review suggested — the
+  session's storage is synchronous `localStorage`, the tileset's asynchronous
+  IndexedDB — so the hook takes a `WorkshopStorage<T>` whose either half may
+  answer synchronously. One optional predicate, `hasContent`, carries the whole
+  difference in behaviour: absent, whatever was saved is put back and every
+  change is written; present, what is on screen is never overwritten. Getting
+  that default backwards would have stopped the image session restoring at all,
+  which nothing tested — the hook now has its own spec covering both readings.
+- `systemClock` is an adapter next to its port (`editor/adapters/`).
+- `LabelledSelect` and `TileSuggestions` (both in the tileset workshop, on its
+  own stylesheet) replace the seven-times triad and the two hand-drawn
+  candidate lists. The triad wrote its label twice per field, once for the eye
+  and once for `aria-label`; it is written once now.
+
+**Left alone, deliberately.**
+
+- **`WorkshopLayout` and one `InfoBar`.** The two info bars are not one
+  component with two data sources: the image one reads eight atoms inline, uses
+  separators and two value variants and a `Suspense` boundary; the tileset one
+  is three label-value pairs. Only the markup idiom is shared, and merging two
+  workshops' chrome CSS buys a shell in exchange for a visual regression risk
+  across both workshops that no test would catch. The review's own verdict on
+  candidate 8 — lowest payoff of the nine — argues against spending it here.
+- **The `.field` / `.label` rules stay in `tileset-workshop.module.css`.**
+  Non-select fields (the edit panel) use them too, so lifting them to a shared
+  module would have duplicated the CSS rather than removed it.
 
 ---
 
@@ -599,9 +669,18 @@ document; the structural twins were deleted rather than aliased.
 seen twice. The use-case dropped to orchestration, the colour maths is testable
 on its own, and the offset stopped being a number.
 
-Next, **[candidates 7 and 8](#7--collapse-the-grid-suggestion-chain)**: the
-barrel trim, then the workshop chrome. Both are the lowest-payoff cards of the
-nine — the review is nearly spent.
+~~**[Candidates 7 and 8 — the barrel trim and the workshop
+chrome](#7--collapse-the-grid-suggestion-chain--done-09092026).**~~
+**Done 09/09/2026,** and with them the review is spent. Candidate 7 shed nine
+exports rather than six, folding the geometry maths into one lib function
+instead of inlining it into the use-case as proposed — ADR-001 puts that maths
+in `libs`. Candidate 8 landed in three of its six pieces: the shared
+persistence, the shared clock and the two repeated bits of panel markup. The
+layout and info-bar merge was left alone; each candidate's Outcome section says
+why.
+
+**Nothing is left of this review.** A fresh session picks the feature up from
+the PLAN, not from here.
 
 ## Suggested sequencing
 
@@ -613,7 +692,7 @@ nine — the review is nearly spent.
 | ~~4~~ | ~~1~~ | **Done 09/09/2026** — one pen budget, one lock rule, six decisions out of the atoms |
 | ~~5~~ | ~~6~~ | **Done 09/09/2026** — one subject atom, and the structural twins deleted |
 | ~~6~~ | ~~2 + 5~~ | **Done 09/09/2026** — one argmin, the offset gone from six signatures, `HOLE_PEN` declared once |
-| 7 | 7, 8 | Barrel trim, then shared chrome |
+| ~~7~~ | ~~7, 8~~ | **Done 09/09/2026** — nine exports off the barrel, one debounce and one clock for both workshops |
 
 Close every slice with `quality-gate`.
 
@@ -632,9 +711,7 @@ is the record.
 3. Pick a candidate from the sequencing table. Slices touching the pure core
    (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
    existing atom or component into a use-case go through `extract-use-case`.
-4. Waves 1 to 6 (candidates 3, 4, 9, 1, 6, then 2 and 5) landed on 09/09/2026,
-   and with candidate 1 the last correctness risk of this review is closed.
-   **Wave 7 (candidates 7 and 8) is what is left**: trim the six shallow exports
-   off the `pixsaur-tileset` barrel, then share the workshop chrome — the
-   debounced persistence, the layout, the info bar, the clock — between the two
-   workshops without touching the two atom spaces of Q6 · Q32 · Q34.
+4. All seven waves landed on 09/09/2026 and **nothing of this review is left to
+   do**. Read it for what was decided and, in each candidate's Outcome section,
+   for where the delivered shape departs from the proposed one. The feature's
+   resume point is the PLAN.
