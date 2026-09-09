@@ -1,6 +1,6 @@
 # PLAN — Atelier Tileset (conversion de tilesets vers CPC)
 
-**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-4 closes · **Branche**: `feat/tileset-workshop`
+**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-5 closes · **Branche**: `feat/tileset-workshop`
 
 > Relevé de conception d'une **nouvelle feature** : un atelier convertissant une
 > planche de tuiles d'une autre machine (NES, Master System, SNES…) vers les
@@ -25,9 +25,37 @@
   [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
   9 candidats de deepening sur `src/tileset`, `pixsaur-tileset`, `store/tileset` et
   les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise.
-  **Vagues 1 à 4 closes** (candidats 3, 4, 9 et 1, 09/09/2026) ; les cinq autres
-  candidats attendent, et plus aucun ne porte de risque de correction. Q20
-  ci-dessous est sorti de cette revue.
+  **Vagues 1 à 5 closes** (candidats 3, 4, 9, 1 et 6, 09/09/2026) ; les quatre
+  autres candidats attendent, et plus aucun ne porte de risque de correction.
+  Q20 ci-dessous est sorti de cette revue.
+
+- **Vague 5 de la revue d'architecture (candidat 6), close le 09/09/2026 —
+  l'entrée de conversion est assemblée une seule fois.** Le quintuplet
+  `(sheet, source, target, mode, hardware)` était épelé dans trois fichiers sans
+  rapport, et deux concepts portaient deux noms qui ne type-checkaient ensemble
+  que par structure.
+  - `TilesetConversionSubject` (`convert-tileset.ts`) nomme ce qui est converti
+    et où ça atterrit. `ConvertTilesetInput` l'étend avec les réglages,
+    `TilesetProject` avec la version, la plateforme source, les options et le
+    calque. `RenderTilesetSheetInput` en est un `Pick` : un champ renommé sur le
+    sujet casse la compilation du rendu au lieu de diverger en silence.
+  - `tilesetConversionSubjectAtom` et `tilesetConversionInputAtom`
+    (`store/tileset/conversion.ts`) sont l'unique site d'assemblage. La
+    conversion reçoit l'entrée telle quelle, `renderedTilesetSheetAtom` lit le
+    même objet au lieu de relire quatre atomes feuilles, et
+    `captureTilesetProjectAtom` étale le sujet. Le côté restauration continue
+    d'écrire les atomes feuilles : un document remis en place doit court-circuiter
+    les setters, comme son commentaire le dit déjà.
+  - Les jumeaux sont **supprimés**, pas aliasés : `TilesetSheet` et `TileSize`
+    n'existent plus et `@/tileset` cesse de les exporter. 23 fichiers — surtout
+    des specs — nomment `Sheet` et `TileGrid` depuis `@/libs/pixsaur-tileset`,
+    ce que le garde de layering autorise et qui rend visible que la lib est bien
+    propriétaire de ces types.
+  - Aucun changement de comportement, aucun test nouveau : les 338 tests tileset
+    passaient avant et passent après. `quality-gate` vert, knip et jscpd au
+    niveau de référence.
+  - **Prochaine vague : 6 (candidats 2 + 5)** — les tables de pens et l'espace
+    de pens, en une passe, sous `tdd-cycle`.
 
 - **Vague 4 de la revue d'architecture (candidat 1), close le 09/09/2026 — les
   décisions de palette sortent des fonctions d'écriture.** Trois règles avaient
@@ -52,9 +80,7 @@
     `palette.spec.ts` passe de 15 assertions à 5 (le câblage), `edits.spec.ts`
     garde celui des deux tests de dither qui prouve que l'atome transmet le
     `instanceOf` de la conversion.
-  - **Prochaine vague : 5 (candidat 6)** — assembler l'entrée de conversion une
-    seule fois, et retirer les jumeaux structurels `TilesetSheet`/`Sheet` et
-    `TileSize`/`TileGrid`.
+  - Vague 5 (candidat 6) a suivi ; voir le point ci-dessus.
 
 - **Vague 3 de la revue d'architecture (candidat 9), close le 09/09/2026 — une
   stratégie de palette dit ce qu'elle rend.** `PaletteStrategyFunction` prenait
@@ -285,8 +311,8 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : vague 5 de la revue d'architecture — candidat 6,
-  assembler l'entrée de conversion une seule fois.
+- **Prochaine action** : vague 6 de la revue d'architecture — candidats 2 et 5,
+  les tables de pens et l'espace de pens en une passe.
 - **~~Dette de T6 (réglage par position)~~ — fermée en T8** : le panneau de
   retouche expose `ditherByTile` pour la tuile visée et écrit le réglage sur
   toutes ses instances.

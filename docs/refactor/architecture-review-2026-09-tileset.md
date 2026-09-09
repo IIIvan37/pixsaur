@@ -31,7 +31,7 @@ re-litigate them, with one exception recorded below.
 | 3 | [Delete the PNG encoder, draw on a canvas](#3--delete-the-png-encoder-draw-on-a-canvas) | **Strong** — top |
 | 4 | [Route the file exports through the FileSink port](#4--route-the-file-exports-through-the-filesink-port) | **Strong** |
 | 5 | [Name the pen space](#5--name-the-pen-space) | Worth exploring |
-| 6 | [Assemble the conversion input once](#6--assemble-the-conversion-input-once) | Worth exploring |
+| 6 | ~~[Assemble the conversion input once](#6--assemble-the-conversion-input-once--done-09092026)~~ | **Done 09/09/2026** |
 | 7 | [Collapse the grid-suggestion chain](#7--collapse-the-grid-suggestion-chain) | Worth exploring |
 | 8 | [Share the workshop chrome, not the state](#8--share-the-workshop-chrome-not-the-state) | Speculative |
 | 9 | [Declare what a palette strategy owes its caller](#9--declare-what-a-palette-strategy-owes-its-caller) | Worth exploring |
@@ -277,7 +277,13 @@ Do it in the same pass as candidate 2.
 
 ---
 
-## 6 · Assemble the conversion input once
+## ~~6 · Assemble the conversion input once~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** `tilesetConversionSubjectAtom` reads the five fields off
+the leaf atoms once; the conversion, the render and the captured project all
+descend from it. The twins are gone: `TilesetSheet` and `TileSize` were deleted
+and every caller now names the lib's `Sheet` and `TileGrid`. What follows is the
+review as written; the outcome is recorded at the end of the section.
 
 **Strength**: Worth exploring · **Dependency category**: in-process
 
@@ -311,6 +317,26 @@ in favour of the lib's `Sheet` and `TileGrid`.
 one assembly site.
 
 Cheap once candidate 3 has removed the second assembly at `edits.ts:54`.
+
+### Outcome — 09/09/2026
+
+- `TilesetConversionSubject` (`convert-tileset.ts`) names the five fields the
+  conversion and the document share. `ConvertTilesetInput` extends it with the
+  tuning; `TilesetProject` extends it with the version, the source platform, the
+  options and the edit layer. `RenderTilesetSheetInput` is a `Pick` of it, so a
+  field renamed on the subject stops the render compiling instead of drifting.
+- `tilesetConversionSubjectAtom` and `tilesetConversionInputAtom`
+  (`store/tileset/conversion.ts`) are the single assembly. `convertedTilesetAtom`
+  passes the input straight through; `renderedTilesetSheetAtom` reads the same
+  object instead of re-reading four leaf atoms; `captureTilesetProjectAtom`
+  spreads the subject. The restore side keeps writing the leaf atoms — a
+  document put back must bypass the setters, as its own comment says.
+- The twins are deleted, not aliased: `TilesetSheet` and `TileSize` no longer
+  exist, and `@/tileset` stops exporting them. 23 files — mostly specs — name
+  `Sheet` and `TileGrid` from `@/libs/pixsaur-tileset` directly, which the
+  layering guard allows and which makes the lib's ownership visible.
+- No behaviour change and no new test: the 338 tileset tests passed before and
+  after. `quality-gate` green, knip and jscpd at baseline.
 
 ---
 
@@ -511,8 +537,12 @@ each have one implementation now, in `pen-budget.ts`; the six decisions are pure
 functions in `tileset-options.ts`. **No correctness risk is left open in this
 review** — what remains is depth and locality.
 
-Next, **[candidate 6](#6--assemble-the-conversion-input-once)**: cheap, now that
-wave 1 removed the second assembly site at `edits.ts:54`.
+~~**[Candidate 6 — assemble the conversion input once](#6--assemble-the-conversion-input-once--done-09092026).**~~
+**Done 09/09/2026.** One subject atom feeds the conversion, the render and the
+document; the structural twins were deleted rather than aliased.
+
+Next, **[candidates 2 and 5](#2--give-the-pen-tables-a-module-of-their-own)** in
+one pass: the pen tables and the pen space are the same subject seen twice.
 
 ## Suggested sequencing
 
@@ -522,7 +552,7 @@ wave 1 removed the second assembly site at `edits.ts:54`.
 | ~~2~~ | ~~4~~ | **Done 09/09/2026** — project file in and out are use-cases, both filenames left the JSX |
 | ~~3~~ | ~~9~~ | **Done 09/09/2026** — postcondition on the type, sweep asserts the length, the consumer's slice went |
 | ~~4~~ | ~~1~~ | **Done 09/09/2026** — one pen budget, one lock rule, six decisions out of the atoms |
-| 5 | 6 | Cheap once 3 removed the second assembly site |
+| ~~5~~ | ~~6~~ | **Done 09/09/2026** — one subject atom, and the structural twins deleted |
 | 6 | 2 + 5 | Pen tables and pen space, one pass — `tdd-cycle`, pure core |
 | 7 | 7, 8 | Barrel trim, then shared chrome |
 
@@ -543,8 +573,8 @@ is the record.
 3. Pick a candidate from the sequencing table. Slices touching the pure core
    (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
    existing atom or component into a use-case go through `extract-use-case`.
-4. Waves 1 to 4 (candidates 3, 4, 9 and 1) landed on 09/09/2026, and with
+4. Waves 1 to 5 (candidates 3, 4, 9, 1 and 6) landed on 09/09/2026, and with
    candidate 1 the last correctness risk of this review is closed. Everything
-   else is still unimplemented; **wave 5 (candidate 6, assembling the conversion
-   input once) is next** — cheap, and it also retires the two structural twins
-   `TilesetSheet`/`Sheet` and `TileSize`/`TileGrid`.
+   else is still unimplemented; **wave 6 (candidates 2 and 5, the pen tables and
+   the pen space) is next** — one pass through the pure core, under
+   `tdd-cycle`.
