@@ -133,6 +133,11 @@ Pairs naturally with candidate 5 — do them in one pass.
 
 ## 3 · Delete the PNG encoder, draw on a canvas
 
+**DONE — 09/09/2026.** `pixsaur-png` is gone; `renderTilesetSheet` returns RGBA
+pixels, `saveTilesetSheet` writes the file through `CanvasFactory` + `FileSink`,
+and `renderedTilesetSheetAtom` feeds the canvas the panel draws. What follows is
+the review as written.
+
 **Strength**: Strong · **Dependency category**: ports & adapters ·
 **Reopens Q20** (already recorded in the PLAN)
 
@@ -442,11 +447,12 @@ never ran.
 
 ## Top recommendation
 
-**[Candidate 3 — delete the PNG encoder, draw on a canvas](#3--delete-the-png-encoder-draw-on-a-canvas).**
-It is the only candidate that *deletes* a module rather than reshaping one, and
-the product question that held it back is answered: `img2cpc` wants the palette
-and a truecolor PNG. 238 lines go, the per-stroke encoding goes with them, and
-the export lands on the `CanvasFactory` port that already exists.
+~~**[Candidate 3 — delete the PNG encoder, draw on a canvas](#3--delete-the-png-encoder-draw-on-a-canvas).**~~
+**Done 09/09/2026.** It was the only candidate that *deleted* a module rather
+than reshaping one, and the product question that held it back was answered:
+`img2cpc` wants the palette and a truecolor PNG. 238 lines went, the per-stroke
+encoding went with them, and the export landed on the `CanvasFactory` port that
+already existed.
 
 Then **[candidate 1](#1--move-the-palette-decisions-out-of-the-write-functions)**,
 the only remaining correctness risk: the pen budget and the lock rule each have
@@ -456,7 +462,7 @@ two implementations that can drift, and nothing compares them.
 
 | Wave | Candidates | Note |
 | --- | --- | --- |
-| 1 | 3 | Deletes `pixsaur-png`, removes the double encode, lands the `CanvasFactory` port |
+| ~~1~~ | ~~3~~ | **Done 09/09/2026** — `pixsaur-png` deleted, double encode gone, `CanvasFactory` port landed |
 | 2 | 4 | Same port work, independent of 3's internals |
 | 3 | 9 | Finish the strategy contract; the protecting half shipped in `d89d2d9` |
 | 4 | 1 | `extract-use-case` — the correctness risk |
@@ -481,5 +487,5 @@ is the record.
 3. Pick a candidate from the sequencing table. Slices touching the pure core
    (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
    existing atom or component into a use-case go through `extract-use-case`.
-4. Nothing in this review has been implemented. The only change landed so far is
-   the Q20 record in the PLAN (`5a1633a`).
+4. Wave 1 (candidate 3) landed on 09/09/2026. Everything else in this review is
+   still unimplemented; wave 2 (candidate 4, the `FileSink` port) is next.

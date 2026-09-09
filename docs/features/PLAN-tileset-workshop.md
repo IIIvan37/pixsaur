@@ -27,22 +27,29 @@
   les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise. Rien
   n'est implémenté ; Q20 ci-dessous en est sorti.
 
-- **Q20 rouvert (04/09/2026) — le PNG sort en truecolor.** L'aval est `img2cpc`,
-  qui découpe la planche en data CPC et **rapporte chaque couleur à la couleur CPC
-  la plus proche** : l'indexé ne lui apporte rien. Le report est
-  l'identité, puisque chaque pen sort déjà de `snapToHardware`. La prémisse de Q20
-  n'était pas fausse, c'est l'exigence qui a changé. **Décision prise, code à
-  écrire** — rien n'est encore supprimé dans `src/`.
-  - `pixsaur-png` est à supprimer — 238 lignes, encodeur et spec. Le test de
-    suppression est net : la complexité s'en va, elle ne se déplace pas.
+- **Q20 rouvert (04/09/2026), livré (09/09/2026) — le PNG sort en truecolor.**
+  L'aval est `img2cpc`, qui découpe la planche en data CPC et **rapporte chaque
+  couleur à la couleur CPC la plus proche** : l'indexé ne lui apporte rien. Le
+  report est l'identité, puisque chaque pen sort déjà de `snapToHardware`. La
+  prémisse de Q20 n'était pas fausse, c'est l'exigence qui a changé. **Vague 1 de
+  la revue d'architecture, close.**
+  - `pixsaur-png` supprimé — 238 lignes, encodeur et spec. Le test de suppression
+    a tenu : la complexité s'en va, elle ne se déplace pas. La dette « vrai
+    deflate » part avec.
   - Le déterminisme que l'encodeur revendiquait ne portait rien : la dédup tourne
     sur les index de tuiles, en amont de tout encodage, et **rien ne relit un PNG**
     (aucun décodeur dans le dépôt). Le lien d'édition de Q11 est intact.
-  - `renderTilesetPng` devient un dessin canvas + `toBlob`, donc passe par le port
-    `CanvasFactory` que `src/export` a déjà — un second adapter, la couture devient
-    réelle.
-  - L'aperçu cesse de passer par un blob PNG : il se dessine au canvas comme celui
-    de l'atelier image. Chaque pixel peint encodait la planche deux fois.
+  - `renderTilesetPng` devient `renderTilesetSheet` et rend des pixels RGBA, dans
+    la forme même d'une planche source (`TilesetSheet`) : un buffer que le canvas
+    prend tel quel. Le trou est porté par l'alpha 0, plus par un chunk `tRNS`.
+  - L'écriture du fichier est un use-case à part, `saveTilesetSheet`, qui passe
+    par les ports `CanvasFactory` et `FileSink` que `src/export` a déjà — un
+    second consommateur, la couture devient réelle.
+  - L'aperçu cesse de passer par un blob PNG : `renderedTilesetSheetAtom` rend la
+    planche une fois, le panneau la dessine au canvas. Chaque pixel peint
+    encodait la planche deux fois.
+  - `convertTileset` ne rend plus que `ConvertedTileset` : la conversion ne
+    connaît plus de format de fichier.
   - Q9 (pré-étirement) et Q10 (grille source conservée) ne bougent pas.
 
 - **Après T9, trois passes d'atelier** (28/08/2026) :
