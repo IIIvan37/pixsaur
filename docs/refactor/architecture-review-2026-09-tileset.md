@@ -368,7 +368,7 @@ both workshops. Lowest risk, lowest payoff of the nine.
 
 ---
 
-## 9 · Declare what a palette strategy owes its caller
+## ~~9 · Declare what a palette strategy owes its caller~~ — done 09/09/2026
 
 **Strength**: Worth exploring · **Dependency category**: in-process
 
@@ -399,6 +399,18 @@ what the sweep would tell you.
 **Wins**. Leverage: fifteen implementations, one contract. A sixteenth strategy
 inherits the guard. ~20 consumers stop guessing. Locality: the cap rule has one
 home.
+
+**Landed 09/09/2026 (`78905c2`)**. The postcondition is written on
+`PaletteStrategyFunction`: the returned palette holds
+`min(targetColors, candidates.length)` indices, never fewer, never empty. The
+sweep asserts that length instead of "not empty", over three shapes — candidates
+above the ask, candidates below it, and a third the strategies would be tempted
+to collapse: twenty-six candidates carrying three distinct colours still fill
+fifteen pens. **All fifteen strategies already honoured it** — probed across
+`n = 0..20`, `k = 0..16`, with duplicates and with preselected pens, zero
+violations — so the wave wrote the contract and the proof, not a fix.
+`convert-tileset.ts` dropped its `.slice(0, maxPens)`: the contract bounds the
+length, so the cut was a guess the caller no longer makes.
 
 ---
 
@@ -460,7 +472,11 @@ already existed.
 joined `saveTilesetSheet`; the panels keep one `useCallback` each.
 `src/tileset/application/README.md`, missing since T1, was seeded with it.
 
-Then **[candidate 1](#1--move-the-palette-decisions-out-of-the-write-functions)**,
+~~**[Candidate 9 — declare what a palette strategy owes its caller](#9--declare-what-a-palette-strategy-owes-its-caller--done-09092026).**~~
+**Done 09/09/2026.** The contract is on the type and the sweep proves the
+fifteen honour it.
+
+Next, **[candidate 1](#1--move-the-palette-decisions-out-of-the-write-functions)**,
 the only remaining correctness risk: the pen budget and the lock rule each have
 two implementations that can drift, and nothing compares them.
 
@@ -470,7 +486,7 @@ two implementations that can drift, and nothing compares them.
 | --- | --- | --- |
 | ~~1~~ | ~~3~~ | **Done 09/09/2026** — `pixsaur-png` deleted, double encode gone, `CanvasFactory` port landed |
 | ~~2~~ | ~~4~~ | **Done 09/09/2026** — project file in and out are use-cases, both filenames left the JSX |
-| 3 | 9 | Finish the strategy contract; the protecting half shipped in `d89d2d9` |
+| ~~3~~ | ~~9~~ | **Done 09/09/2026** — postcondition on the type, sweep asserts the length, the consumer's slice went |
 | 4 | 1 | `extract-use-case` — the correctness risk |
 | 5 | 6 | Cheap once 3 removed the second assembly site |
 | 6 | 2 + 5 | Pen tables and pen space, one pass — `tdd-cycle`, pure core |
@@ -493,6 +509,7 @@ is the record.
 3. Pick a candidate from the sequencing table. Slices touching the pure core
    (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
    existing atom or component into a use-case go through `extract-use-case`.
-4. Waves 1 and 2 (candidates 3 and 4) landed on 09/09/2026. Everything else in
-   this review is still unimplemented; wave 3 (candidate 9, the strategy
-   contract) is next.
+4. Waves 1, 2 and 3 (candidates 3, 4 and 9) landed on 09/09/2026. Everything
+   else in this review is still unimplemented; **wave 4 (candidate 1, the
+   palette decisions inside the write functions) is next** — the only remaining
+   correctness risk, and an `extract-use-case` slice.

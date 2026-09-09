@@ -25,8 +25,32 @@
   [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
   9 candidats de deepening sur `src/tileset`, `pixsaur-tileset`, `store/tileset` et
   les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise.
-  **Vagues 1 et 2 closes** (candidats 3 et 4, 09/09/2026) ; les sept autres
+  **Vagues 1, 2 et 3 closes** (candidats 3, 4 et 9, 09/09/2026) ; les six autres
   candidats attendent. Q20 ci-dessous est sorti de cette revue.
+
+- **Vague 3 de la revue d'architecture (candidat 9), close le 09/09/2026 — une
+  stratégie de palette dit ce qu'elle rend.** `PaletteStrategyFunction` prenait
+  `targetColors` et ne disait rien du retour : quinze implémentations
+  décidaient chacune, une vingtaine de fichiers découpaient le résultat sur
+  parole. `d89d2d9` est ce que ça coûte — trois stratégies combinatoires
+  plafonnaient leurs candidats sous les pens demandés, la palette revenait vide,
+  la conversion tileset la déréférençait.
+  - La postcondition est écrite **sur le type** :
+    `selectedIndices.length === min(targetColors, candidates.length)` — jamais
+    moins, jamais vide.
+  - Le sweep sur `AVAILABLE_STRATEGIES` exige désormais cette longueur au lieu
+    de « pas vide », sur trois formes : plus de candidats que demandé, moins
+    que demandé, et celle qu'une stratégie serait tentée d'effondrer — vingt-six
+    candidats ne portant que trois couleurs distinctes remplissent quand même
+    quinze pens.
+  - **Les quinze l'honoraient déjà** (sondé sur `n = 0..20`, `k = 0..16`, avec
+    doublons et pens épinglés : zéro violation). La vague a écrit le contrat et
+    sa preuve, pas un correctif.
+  - `convert-tileset` perd son `.slice(0, maxPens)` : le contrat borne la
+    longueur, la découpe était une supposition que l'appelant ne fait plus.
+  - **Prochaine vague : 4 (candidat 1)** — sortir les décisions de palette des
+    fonctions d'écriture, le seul risque de correction qui reste. Tranche
+    `extract-use-case`.
 
 - **Vague 2 de la revue d'architecture (candidat 4), close le 09/09/2026 — les
   exports fichier passent par le port `FileSink`.** L'export PNG, la
@@ -49,8 +73,7 @@
   - **`src/tileset/application/README.md` semé** — le registre des ports et des
     use-cases que toutes les autres features ont, et que la revue signalait
     manquant. Il dit aussi ce qu'un panneau a encore le droit de faire.
-  - **Prochaine vague : 3 (candidat 9)** — finir le contrat de stratégie de
-    palette ; la moitié protectrice a été livrée en `d89d2d9`.
+  - Vague 3 (candidat 9) a suivi ; voir le point ci-dessus.
 
 - **Q20 rouvert (04/09/2026), livré (09/09/2026) — le PNG sort en truecolor.**
   L'aval est `img2cpc`, qui découpe la planche en data CPC et **rapporte chaque
