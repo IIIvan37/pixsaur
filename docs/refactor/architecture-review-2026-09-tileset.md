@@ -27,10 +27,10 @@ re-litigate them, with one exception recorded below.
 | # | Candidate | Strength |
 | --- | --- | --- |
 | 1 | [Move the palette decisions out of the write functions](#1--move-the-palette-decisions-out-of-the-write-functions) | **Strong** |
-| 2 | [Give the pen tables a module of their own](#2--give-the-pen-tables-a-module-of-their-own) | **Strong** |
+| 2 | ~~[Give the pen tables a module of their own](#2--give-the-pen-tables-a-module-of-their-own--done-09092026)~~ | **Done 09/09/2026** |
 | 3 | [Delete the PNG encoder, draw on a canvas](#3--delete-the-png-encoder-draw-on-a-canvas) | **Strong** — top |
 | 4 | [Route the file exports through the FileSink port](#4--route-the-file-exports-through-the-filesink-port) | **Strong** |
-| 5 | [Name the pen space](#5--name-the-pen-space) | Worth exploring |
+| 5 | ~~[Name the pen space](#5--name-the-pen-space--done-09092026)~~ | **Done 09/09/2026** |
 | 6 | ~~[Assemble the conversion input once](#6--assemble-the-conversion-input-once--done-09092026)~~ | **Done 09/09/2026** |
 | 7 | [Collapse the grid-suggestion chain](#7--collapse-the-grid-suggestion-chain) | Worth exploring |
 | 8 | [Share the workshop chrome, not the state](#8--share-the-workshop-chrome-not-the-state) | Speculative |
@@ -122,7 +122,12 @@ proves the atom hands the use-case the conversion's `instanceOf`.
 
 ---
 
-## 2 · Give the pen tables a module of their own
+## ~~2 · Give the pen tables a module of their own~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** `penTables` computes the four lookups in one pass, in the
+lib, with the metric supplied by the caller; `hardware-colours.ts` holds the
+CPC-aware half. What follows is the review as written; the outcome is recorded
+at the end of the section.
 
 **Strength**: Strong · **Dependency category**: in-process
 
@@ -157,6 +162,29 @@ apart.
 drops to orchestration. Locality: the colour maths sits in one file.
 
 Pairs naturally with candidate 5 — do them in one pass.
+
+### Outcome — 09/09/2026
+
+- `src/libs/pixsaur-tileset/src/pen-tables.ts` — `penTables({ wanted, chosen,
+  distance, space })` returns `{ error, mix, diffusion }`. One `twoNearest`
+  helper replaces the three argmin loops: the primary pen, the runner-up and the
+  distance all come out of a single pass over the colours a pixel can ask for.
+  The lib knows no more about the CPC than before — the metric and the colours
+  are parameters, and `PenColour` is `readonly number[]`.
+- **The mix ratio is assertable now.** `pen-tables.spec.ts` is 14 tests, one
+  assertion each: the halfway split, the quarter, the clamp outside the segment,
+  two pens painting the same colour, the lone pen mixed with itself, the tie kept
+  in strategy order, and the three diffusion lookups. It used to be one
+  `dither: 'ordered'` fixture asserting "uses 2 pens".
+- `src/tileset/application/hardware-colours.ts` — `hardwareColours(hardware)`
+  returns `{ palette, snap, blend }`. `snapToHardware` and `blender` lived 350
+  lines apart and each rebuilt the key-to-index map; it is built once, and the
+  two `invariant` calls share one `indexOf`. `SnappedTile` and `HOLE` moved with
+  them — the out-of-range marker is a hardware fact.
+- `convert-tileset.ts` went from 699 to 500 lines and no longer imports
+  `colorToKey`, `getPaletteForHardware`, `quantizeColorForHardware` or
+  `invariant`.
+- No behaviour change: the 43 conversion tests pass untouched.
 
 ---
 
@@ -242,7 +270,11 @@ Lands on the same port work as candidate 3 — sequence them together.
 
 ---
 
-## 5 · Name the pen space
+## ~~5 · Name the pen space~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** `penSpace` is a value in the lib, the offset is gone from
+six signatures, and `HOLE_PEN` has one declaration. What follows is the review as
+written; the outcome is recorded at the end of the section.
 
 **Strength**: Worth exploring · **Dependency category**: in-process
 
@@ -274,6 +306,27 @@ isHole(i) }`. Callers ask it questions instead of doing arithmetic.
 Locality: one place to get it wrong.
 
 Do it in the same pass as candidate 2.
+
+### Outcome — 09/09/2026
+
+- `src/libs/pixsaur-tileset/src/pen-space.ts` — `penSpace(holePen: number |
+  null)` returns `{ holePen, toChosen, toPalette, isHole }`. It is built from the
+  hole pen itself rather than a boolean, so the bit never has to be
+  reconstructed. `pen-budget.ts` exposes `penSpaceOf(spending)`, which is where
+  the mode's default transparency is already known.
+- The `offset: number` parameter is gone from every signature. `nearestPens`,
+  `penDistances`, `penMix` and `diffusionColours` no longer exist;
+  `checkLockedPens` lost both its arithmetic parameters to the new
+  `chosenPens(spending)` in `pen-budget.ts`; `lockedByChosenIndex` and
+  `pinnablePen` ask the space.
+- `HOLE_PEN` has **one** declaration, in the lib, and both ditherers default to
+  it instead of writing `holePen = 0` each. `convert-tileset.ts` stopped passing
+  it at either call site.
+- `HoleMarking` (`ignore?`) and `HoleWriting` (`ignore?` + `holePen?`) replace
+  the six copies of the same option interface: `AntiAliasOptions`,
+  `EdgeMaskOptions`, `HistogramOptions` and `CollisionOptions` extend the first,
+  `OrderedDitherOptions` and `DiffuseOptions` the second.
+- `pen-space.spec.ts` is 9 tests, one assertion each, over both branches.
 
 ---
 
@@ -541,8 +594,14 @@ review** — what remains is depth and locality.
 **Done 09/09/2026.** One subject atom feeds the conversion, the render and the
 document; the structural twins were deleted rather than aliased.
 
-Next, **[candidates 2 and 5](#2--give-the-pen-tables-a-module-of-their-own)** in
-one pass: the pen tables and the pen space are the same subject seen twice.
+~~**[Candidates 2 and 5 — the pen tables and the pen space](#2--give-the-pen-tables-a-module-of-their-own--done-09092026).**~~
+**Done 09/09/2026,** in one pass, as the review asked: they were the same subject
+seen twice. The use-case dropped to orchestration, the colour maths is testable
+on its own, and the offset stopped being a number.
+
+Next, **[candidates 7 and 8](#7--collapse-the-grid-suggestion-chain)**: the
+barrel trim, then the workshop chrome. Both are the lowest-payoff cards of the
+nine — the review is nearly spent.
 
 ## Suggested sequencing
 
@@ -553,7 +612,7 @@ one pass: the pen tables and the pen space are the same subject seen twice.
 | ~~3~~ | ~~9~~ | **Done 09/09/2026** — postcondition on the type, sweep asserts the length, the consumer's slice went |
 | ~~4~~ | ~~1~~ | **Done 09/09/2026** — one pen budget, one lock rule, six decisions out of the atoms |
 | ~~5~~ | ~~6~~ | **Done 09/09/2026** — one subject atom, and the structural twins deleted |
-| 6 | 2 + 5 | Pen tables and pen space, one pass — `tdd-cycle`, pure core |
+| ~~6~~ | ~~2 + 5~~ | **Done 09/09/2026** — one argmin, the offset gone from six signatures, `HOLE_PEN` declared once |
 | 7 | 7, 8 | Barrel trim, then shared chrome |
 
 Close every slice with `quality-gate`.
@@ -573,8 +632,9 @@ is the record.
 3. Pick a candidate from the sequencing table. Slices touching the pure core
    (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
    existing atom or component into a use-case go through `extract-use-case`.
-4. Waves 1 to 5 (candidates 3, 4, 9, 1 and 6) landed on 09/09/2026, and with
-   candidate 1 the last correctness risk of this review is closed. Everything
-   else is still unimplemented; **wave 6 (candidates 2 and 5, the pen tables and
-   the pen space) is next** — one pass through the pure core, under
-   `tdd-cycle`.
+4. Waves 1 to 6 (candidates 3, 4, 9, 1, 6, then 2 and 5) landed on 09/09/2026,
+   and with candidate 1 the last correctness risk of this review is closed.
+   **Wave 7 (candidates 7 and 8) is what is left**: trim the six shallow exports
+   off the `pixsaur-tileset` barrel, then share the workshop chrome — the
+   debounced persistence, the layout, the info bar, the clock — between the two
+   workshops without touching the two atom spaces of Q6 · Q32 · Q34.

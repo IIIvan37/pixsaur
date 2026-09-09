@@ -1,6 +1,6 @@
 # PLAN — Atelier Tileset (conversion de tilesets vers CPC)
 
-**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-5 closes · **Branche**: `feat/tileset-workshop`
+**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-6 closes · **Branche**: `feat/tileset-workshop`
 
 > Relevé de conception d'une **nouvelle feature** : un atelier convertissant une
 > planche de tuiles d'une autre machine (NES, Master System, SNES…) vers les
@@ -25,9 +25,36 @@
   [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
   9 candidats de deepening sur `src/tileset`, `pixsaur-tileset`, `store/tileset` et
   les panneaux, avec fichiers, lignes, ordre d'attaque et point de reprise.
-  **Vagues 1 à 5 closes** (candidats 3, 4, 9, 1 et 6, 09/09/2026) ; les quatre
-  autres candidats attendent, et plus aucun ne porte de risque de correction.
+  **Vagues 1 à 6 closes** (candidats 3, 4, 9, 1, 6, puis 2 et 5, 09/09/2026) ;
+  restent les candidats 7 et 8, et plus aucun ne porte de risque de correction.
   Q20 ci-dessous est sorti de cette revue.
+
+- **Vague 6 de la revue d'architecture (candidats 2 + 5), close le 09/09/2026 —
+  les tables de pens et l'espace de pens ont un module chacun.** Les 268 lignes
+  de maths colorimétriques de `convert-tileset.ts` n'étaient atteignables que par
+  `convertTileset(input)` tout entier ; la boucle d'argmin sur `chosen` y était
+  écrite trois fois, et le snap matériel deux fois.
+  - `penTables` (`pixsaur-tileset/src/pen-tables.ts`) calcule les quatre
+    lookups — pen le plus proche, erreur, mélange ordonné, diffusion — en **une
+    passe**. La métrique et les couleurs viennent de l'appelant, donc la lib
+    continue de ne rien savoir du CPC. **Le ratio de mélange devient
+    assertable** : 14 tests là où il n'y avait qu'un « utilise 2 pens » sur une
+    fixture.
+  - `penSpace` (`pixsaur-tileset/src/pen-space.ts`) nomme le bit qui voyageait
+    en `offset: number` dans six signatures, et possède `HOLE_PEN`, que les deux
+    ditherers déclaraient chacun de leur côté. Ses `HoleMarking` / `HoleWriting`
+    remplacent six interfaces d'options identiques portant le même commentaire.
+  - `hardware-colours.ts` garde la moitié CPC-consciente dans la couche
+    application : `snapToHardware` et `blender`, qui vivaient 350 lignes
+    l'une de l'autre, sont un seul module et la table clé→index n'est construite
+    qu'une fois.
+  - `pen-budget.ts` gagne `penSpaceOf` et `chosenPens` ; `checkLockedPens` perd
+    ses deux paramètres arithmétiques et `convert-tileset.ts` passe de 699 à
+    500 lignes.
+  - Aucun changement de comportement : les 43 tests de conversion passent sans
+    retouche. `quality-gate` vert, knip et jscpd au niveau de référence.
+  - **Prochaine vague : 7 (candidats 7 et 8)** — élagage du barrel, puis
+    mutualisation du chrome des deux ateliers.
 
 - **Vague 5 de la revue d'architecture (candidat 6), close le 09/09/2026 —
   l'entrée de conversion est assemblée une seule fois.** Le quintuplet
@@ -54,8 +81,7 @@
   - Aucun changement de comportement, aucun test nouveau : les 338 tests tileset
     passaient avant et passent après. `quality-gate` vert, knip et jscpd au
     niveau de référence.
-  - **Prochaine vague : 6 (candidats 2 + 5)** — les tables de pens et l'espace
-    de pens, en une passe, sous `tdd-cycle`.
+  - Vague 6 (candidats 2 + 5) a suivi ; voir le point ci-dessus.
 
 - **Vague 4 de la revue d'architecture (candidat 1), close le 09/09/2026 — les
   décisions de palette sortent des fonctions d'écriture.** Trois règles avaient
@@ -311,8 +337,8 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : vague 6 de la revue d'architecture — candidats 2 et 5,
-  les tables de pens et l'espace de pens en une passe.
+- **Prochaine action** : vague 7 de la revue d'architecture — candidats 7 et 8,
+  l'élagage du barrel puis le chrome partagé entre les deux ateliers.
 - **~~Dette de T6 (réglage par position)~~ — fermée en T8** : le panneau de
   retouche expose `ditherByTile` pour la tuile visée et écrit le réglage sur
   toutes ses instances.
