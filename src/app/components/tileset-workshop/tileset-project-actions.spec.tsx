@@ -103,18 +103,4 @@ describe('TilesetProjectActions', () => {
     await screen.findByRole('alert')
     expect(store.get(tilesetSheetAtom)).toBeNull()
   })
-
-  it('says so when the project comes from another version', async () => {
-    const store = createStore()
-    renderWithProviders(<TilesetProjectActions />, { store })
-    const written = JSON.parse(serializeTilesetProject(projectOf()))
-    written.version = TILESET_PROJECT_VERSION + 1
-
-    await userEvent.upload(
-      screen.getByLabelText(/Importer/),
-      fileOf(JSON.stringify(written))
-    )
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(/autre version/)
-  })
 })

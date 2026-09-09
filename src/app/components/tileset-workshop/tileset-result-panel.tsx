@@ -2,7 +2,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   editedTilesetAtom,
   renderedTilesetSheetAtom,
@@ -63,6 +63,18 @@ export function TilesetResultPanel() {
   const select = useSetAtom(selectedTileAtom)
   const canvas = useSheetCanvas(sheet)
 
+  const handleSave = useCallback(async () => {
+    if (!sheet) return
+
+    const saved = await saveTilesetSheet(
+      { sheet },
+      { canvasFactory: domCanvasFactory, fileSink: resolveFileSink() }
+    )
+    if (!saved.ok) {
+      logger.error('[TILESET] Failed to save the sheet:', saved.error)
+    }
+  }, [sheet])
+
   if (!result) return null
 
   if (!result.ok) {
@@ -105,27 +117,7 @@ export function TilesetResultPanel() {
         <output aria-label={_(msg`Pens`)}>{tileset.palette.length}</output>
       </p>
 
-      <Button
-        disabled={!sheet}
-        onClick={() => {
-          if (!sheet) return
-          saveTilesetSheet(
-            { sheet, filename: 'tileset.png' },
-            {
-              canvasFactory: domCanvasFactory,
-              fileSink: resolveFileSink()
-            }
-          )
-            .then((saved) => {
-              if (!saved.ok) {
-                logger.error('[TILESET] Failed to save the sheet:', saved.error)
-              }
-            })
-            .catch((error) =>
-              logger.error('[TILESET] Failed to save the sheet:', error)
-            )
-        }}
-      >
+      <Button disabled={!sheet} onClick={() => void handleSave()}>
         <Trans>Enregistrer le PNG</Trans>
       </Button>
 

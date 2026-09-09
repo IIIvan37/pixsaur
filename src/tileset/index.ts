@@ -33,7 +33,8 @@ export {
   type SaveTilesetSheetDeps,
   type SaveTilesetSheetInput,
   type SaveTilesetSheetResult,
-  saveTilesetSheet
+  saveTilesetSheet,
+  TILESET_SHEET_FILENAME
 } from './application/save-tileset-sheet'
 export {
   type SuggestTileGeometryInput,
@@ -54,3 +55,10 @@ export {
   type TilesetProject,
   type TilesetProjectOptions
 } from './application/tileset-project'
+export {
+  type ExportTilesetProjectFileResult,
+  exportTilesetProjectFile,
+  type ImportTilesetProjectFileResult,
+  importTilesetProjectFile,
+  TILESET_PROJECT_FILENAME
+} from './application/tileset-project-file'

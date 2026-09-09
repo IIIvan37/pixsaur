@@ -10,12 +10,11 @@ import {
 import Button from '@/components/ui/button'
 import { logger } from '@/core'
 import { resolveFileSink } from '@/export/application/file-sink'
-import { parseTilesetProject, serializeTilesetProject } from '@/tileset'
+import { exportTilesetProjectFile, importTilesetProjectFile } from '@/tileset'
 import styles from './tileset-workshop.module.css'
 
-const PROJECT_FILENAME = 'tileset-project.json'
-
 const REFUSALS = {
+  'unreadable-file': msg`Ce fichier ne se laisse pas lire.`,
   'invalid-json': msg`Ce fichier n'est pas un projet d'atelier.`,
   'unsupported-version': msg`Ce projet vient d'une autre version de l'atelier.`,
   malformed: msg`Ce projet est incomplet : la planche ne se relit pas.`
@@ -28,6 +27,9 @@ const REFUSALS = {
  * survives a cleared cache, another machine, or a hand-off — and the only one
  * the user can put somewhere they trust. It sits with the other rare actions
  * rather than in a panel of its own: it is opened twice a session, not tuned.
+ *
+ * Both directions are `@/tileset` use-cases; this panel assembles the input,
+ * injects the sink of the day, and says what a refusal was.
  */
 export function TilesetProjectActions() {
   const { _ } = useLingui()
@@ -36,9 +38,21 @@ export function TilesetProjectActions() {
   const [refusal, setRefusal] = useState<string | null>(null)
   const importId = useId()
 
+  const handleExport = useCallback(async () => {
+    if (!project) return
+
+    const saved = await exportTilesetProjectFile(
+      { project },
+      { fileSink: resolveFileSink() }
+    )
+    if (!saved.ok) {
+      logger.error('[TILESET] Failed to save the project:', saved.error)
+    }
+  }, [project])
+
   const handleImport = useCallback(
     async (file: File) => {
-      const parsed = parseTilesetProject(await file.text())
+      const parsed = await importTilesetProjectFile({ file })
       if (!parsed.ok) {
         setRefusal(_(REFUSALS[parsed.error]))
         return
@@ -54,19 +68,7 @@ export function TilesetProjectActions() {
       <Button
         variant='secondary'
         disabled={!project}
-        onClick={() => {
-          if (!project) return
-          resolveFileSink()
-            .save(
-              new Blob([serializeTilesetProject(project)], {
-                type: 'application/json'
-              }),
-              PROJECT_FILENAME
-            )
-            .catch((error) =>
-              logger.error('[TILESET] Failed to save the project:', error)
-            )
-        }}
+        onClick={() => void handleExport()}
       >
         <Trans>Exporter le projet</Trans>
       </Button>

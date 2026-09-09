@@ -12,10 +12,14 @@
 import type { CanvasFactory, FileSink } from '@/export/application/ports'
 import type { TilesetSheet } from './convert-tileset'
 
+/** The name the workshop gives the sheet it hands over. */
+export const TILESET_SHEET_FILENAME = 'tileset.png'
+
 export interface SaveTilesetSheetInput {
   /** The rendered sheet, as `renderTilesetSheet` hands it over. */
   sheet: TilesetSheet
-  filename: string
+  /** Defaults to {@link TILESET_SHEET_FILENAME}. */
+  filename?: string
 }
 
 export interface SaveTilesetSheetDeps {
@@ -28,7 +32,7 @@ export type SaveTilesetSheetResult =
   | { ok: false; error: 'no-canvas-context' | 'encode-failed' }
 
 export async function saveTilesetSheet(
-  { sheet, filename }: SaveTilesetSheetInput,
+  { sheet, filename = TILESET_SHEET_FILENAME }: SaveTilesetSheetInput,
   { canvasFactory, fileSink }: SaveTilesetSheetDeps
 ): Promise<SaveTilesetSheetResult> {
   const canvas = canvasFactory.createCanvas(sheet.width, sheet.height)
