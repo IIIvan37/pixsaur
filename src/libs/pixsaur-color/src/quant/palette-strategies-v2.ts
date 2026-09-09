@@ -117,7 +117,20 @@ export interface StrategyOptions {
 }
 
 /**
- * Interface commune pour toutes les fonctions de stratégie de palette
+ * Interface commune pour toutes les fonctions de stratégie de palette.
+ *
+ * Postcondition, honorée par les quinze stratégies et tenue par le sweep sur
+ * `AVAILABLE_STRATEGIES` (`palette-strategies-v2.spec.ts`) :
+ * `selectedIndices.length === Math.min(targetColors, candidates.length)`.
+ *
+ * Autrement dit : la palette rendue porte exactement les pens demandés, ou
+ * tous les candidats quand ils sont moins nombreux — jamais moins, jamais
+ * vide. Les doublons de couleur comptent pour des candidats : une planche qui
+ * répète trois couleurs sur vingt-six candidats remplit quand même quinze
+ * pens. Une vingtaine d'appelants découpent ce résultat sans le vérifier ;
+ * c'est ce que cette ligne leur promet, et une seizième stratégie la doit
+ * aussi. Voir `combinatorialCap` pour le piège qui a coûté la promesse une
+ * fois.
  */
 export type PaletteStrategyFunction = (
   candidates: ColorCandidate[],

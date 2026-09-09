@@ -505,9 +505,9 @@ function selectPalette(
     }
   )
 
-  return selectedIndices
-    .slice(0, maxPens)
-    .map((index) => [...basePalette[index]] as Pen)
+  // Pas de découpe : `PaletteStrategyFunction` promet au plus `maxPens`
+  // indices, et au moins autant que les candidats en permettent.
+  return selectedIndices.map((index) => [...basePalette[index]] as Pen)
 }
 
 /**
