@@ -4,10 +4,9 @@
  * a contour destroys the line; anti-aliasing a flat area invents a gradient.
  */
 
-export interface EdgeMaskOptions {
-  /** A value that stands for no colour at all — the hole marker of Q16. */
-  ignore?: number
-}
+import type { HoleMarking } from './pen-space'
+
+export interface EdgeMaskOptions extends HoleMarking {}
 
 /**
  * Marks every pixel that sits against a different colour. Works on whatever

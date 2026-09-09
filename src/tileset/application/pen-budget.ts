@@ -8,6 +8,7 @@
  */
 
 import { CPC_MODE_CONFIG, type CpcModeKey, type PixelMode } from '@/domain/cpc'
+import { HOLE_PEN, type PenSpace, penSpace } from '@/libs/pixsaur-tileset'
 
 /** What becomes of an alpha channel (Q16). */
 export type Transparency = 'pen' | 'flatten'
@@ -24,9 +25,6 @@ export interface PenSpending {
   reservedPens?: number
   transparency?: Transparency
 }
-
-/** A hole always takes the first pen — the one CPC sprite routines test. */
-export const HOLE_PEN = 0
 
 /** How many pens the mode holds — 16, 4 or 2. */
 export function penCount(mode: PixelMode): number {
@@ -61,9 +59,22 @@ export function holePen(spending: PenSpending): number | null {
   return spendsPenOnHoles(spending) ? HOLE_PEN : null
 }
 
+/** Where the pens of that mode sit, once the hole has taken one (Q16). */
+export function penSpaceOf(spending: PenSpending): PenSpace {
+  return penSpace(holePen(spending))
+}
+
 /** How many pens the tileset may spend: the rest belong to the sprites (Q23). */
 export function penBudget({ mode, reservedPens }: PenSpending): number {
   return penCount(mode) - (reservedPens ?? 0)
+}
+
+/**
+ * How many pens the palette strategy gets to pick: the budget, less the one a
+ * hole takes. The hole's colour is the conversion's, not the strategy's.
+ */
+export function chosenPens(spending: PenSpending): number {
+  return penSpaceOf(spending).toChosen(penBudget(spending))
 }
 
 /**
@@ -76,7 +87,8 @@ export function penBudget({ mode, reservedPens }: PenSpending): number {
 export function pinnablePen(index: number, spending: PenSpending): boolean {
   return (
     Number.isInteger(index) &&
-    index >= (spendsPenOnHoles(spending) ? 1 : 0) &&
+    !penSpaceOf(spending).isHole(index) &&
+    index >= 0 &&
     index < penBudget(spending)
   )
 }

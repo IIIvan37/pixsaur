@@ -29,6 +29,18 @@ export {
   tilePaletteHistogram
 } from './src/palette-histogram'
 export {
+  HOLE_PEN,
+  type HoleMarking,
+  type HoleWriting,
+  type PenSpace,
+  penSpace
+} from './src/pen-space'
+export {
+  type PenColour,
+  type PenTables,
+  penTables
+} from './src/pen-tables'
+export {
   type PixelAspect,
   SOURCE_PIXEL_ASPECT,
   type SourcePlatform

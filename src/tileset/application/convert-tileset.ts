@@ -6,14 +6,7 @@
  * computes. See `docs/features/PLAN-tileset-workshop.md`.
  */
 
-import { invariant } from '@/core'
-import {
-  colorToKey,
-  getPaletteForHardware,
-  type PixelMode,
-  perceptualDistance,
-  quantizeColorForHardware
-} from '@/domain/cpc'
+import { type PixelMode, perceptualDistance } from '@/domain/cpc'
 import {
   applyPaletteStrategyV2,
   type ColorCandidate,
@@ -31,8 +24,11 @@ import {
   detectTileEdges,
   diffuseTile,
   type EdgeCondition,
+  HOLE_PEN,
   orderedDitherTile,
   type PenMix,
+  type PenSpace,
+  penTables,
   rankTileCollisions,
   resizeTileByScheme,
   resizeTileNearest,
@@ -47,10 +43,11 @@ import {
   tilePaletteHistogram
 } from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
+import { HOLE, hardwareColours, type SnappedTile } from './hardware-colours'
 import {
-  HOLE_PEN,
-  holePen,
+  chosenPens,
   penBudget,
+  penSpaceOf,
   pinnablePen,
   spendsPenOnHoles
 } from './pen-budget'
@@ -151,15 +148,6 @@ export interface ConvertedTile {
 /** What a tile does with a colour the palette has not got (Q18). */
 export type TileDither = 'none' | 'ordered' | 'diffusion'
 
-/**
- * Marks a pixel as a hole while it travels as a base-palette index. Safely out
- * of range: the widest base palette, CPC Plus, stops at 4095.
- */
-const HOLE = 0xffff
-
-/** Below this, a pixel is a hole rather than a colour to composite. */
-const OPACITY_THRESHOLD = 128
-
 export interface ConvertedTileset {
   columns: number
   rows: number
@@ -209,9 +197,9 @@ export function convertTileset(
 
   // The transparency pen comes first and is never a quantization target: only
   // alpha can reach it, so an opaque pixel of the same colour stays distinct.
-  const offset = spendsPenOnHoles(input) ? 1 : 0
+  const space = penSpaceOf(input)
 
-  const pinned = checkLockedPens(input, maxPens, offset)
+  const pinned = checkLockedPens(input)
   if (pinned) return pinned
 
   const sliced = sliceSheet(input.sheet, input.source)
@@ -230,19 +218,15 @@ export function convertTileset(
 
   // Every pixel first lands on a hardware colour; the palette is then chosen
   // among those, not among the source's own colours (Q26 — after resize).
-  const basePalette = getPaletteForHardware(input.hardware)
-  const baseIndexByKey = new Map(
-    basePalette.map((colour, index) => [colorToKey(colour), index])
-  )
+  const colours = hardwareColours(input.hardware)
   const background = input.background ?? BLACK
-  const hole = holePen(input)
   const snapped = tiles.map((tile) => {
     const resized = scheme
       ? resizeTileByScheme(tile, input.source, input.target, scheme)
       : resizeTileNearest(tile, input.source, input.target)
-    return snapToHardware(resized.data, baseIndexByKey, input.hardware, {
+    return colours.snap(resized.data, {
       background,
-      marksHoles: hole !== null
+      marksHoles: space.holePen !== null
     })
   })
 
@@ -250,20 +234,29 @@ export function convertTileset(
     input.palette ??
     prependHolePen(
       placeLockedPens(
-        selectPalette(snapped, basePalette, maxPens - offset, input),
-        lockedByChosenIndex(input, offset),
+        selectPalette(snapped, colours.palette, chosenPens(input), input),
+        lockedByChosenIndex(input, space),
         background
       ),
-      hole === null ? null : background
+      space.holePen === null ? null : background
     )
-  const chosen = palette.slice(offset)
-  const penOf = nearestPens(chosen, basePalette, offset)
-  const errorOf = penDistances(chosen, basePalette, penOf, offset)
+  // Copied out of the hardware palette once: a colour may arrive as a typed
+  // array, and the diffusion ditherer needs a plain list it can add a residual
+  // to without rounding it back.
+  const wanted = colours.palette.map((colour) => [...colour])
+  const tables = penTables({
+    wanted,
+    // Everything from the first pen the strategy chose — past the hole, if the
+    // mode spent one on it.
+    chosen: palette.slice(space.toPalette(0)),
+    distance: (a, b) => perceptualDistance(a as Vector, b as Vector),
+    space
+  })
   const render = {
-    mix: penMix(chosen, basePalette, penOf, offset),
-    flat: new Float64Array(basePalette.length),
-    colours: diffusionColours(chosen, basePalette, offset),
-    blend: blender(basePalette, baseIndexByKey, input.hardware),
+    mix: tables.mix,
+    flat: new Float64Array(wanted.length),
+    colours: tables.diffusion,
+    blend: colours.blend,
     shape: input.target
   }
   const converted: ConvertedTile[] = snapped.map((tile, at) => ({
@@ -286,7 +279,7 @@ export function convertTileset(
     tiles: converted,
     instanceOf,
     unique,
-    transparentPen: hole,
+    transparentPen: space.holePen,
     resizeSearch: scheme?.search ?? null,
     collisions: rankTileCollisions(
       snapped,
@@ -294,7 +287,7 @@ export function convertTileset(
       // shared palette collapsed into one are exactly the collision the report
       // exists to surface, and the converted `unique` no longer holds both.
       dedupeTiles(snapped).unique,
-      errorOf,
+      tables.error,
       { ignore: HOLE }
     )
   }
@@ -317,45 +310,6 @@ function sheetEdges(tiles: SourceTile[], grid: SheetGrid): TileEdges {
       : 'clamp'
 
   return { horizontal: majority('horizontal'), vertical: majority('vertical') }
-}
-
-/** Base-palette index of every pixel, once snapped to the hardware. */
-type SnappedTile = Uint16Array
-
-/**
- * Snaps each pixel to the hardware colour space and reports its position in the
- * base palette. The snap is componentwise, so the result always exists there —
- * 27 colours on classic, 4096 on Plus.
- */
-function snapToHardware(
-  data: Uint8ClampedArray,
-  indexByKey: ReadonlyMap<string, number>,
-  hardware: CPCHardware,
-  alpha: { background: Pen; marksHoles: boolean }
-): SnappedTile {
-  const snapped = new Uint16Array(data.length / 4)
-
-  for (let pixel = 0; pixel < snapped.length; pixel++) {
-    const at = pixel * 4
-    if (alpha.marksHoles && data[at + 3] < OPACITY_THRESHOLD) {
-      snapped[pixel] = HOLE
-      continue
-    }
-
-    const opacity = data[at + 3] / 255
-    const flattened = alpha.background.map(
-      (behind, channel) => data[at + channel] * opacity + behind * (1 - opacity)
-    ) as Vector
-    const key = colorToKey(quantizeColorForHardware(flattened, hardware))
-    const index = indexByKey.get(key)
-    invariant(
-      index !== undefined,
-      `snapped colour ${key} is off the hardware palette`
-    )
-    snapped[pixel] = index
-  }
-
-  return snapped
 }
 
 /**
@@ -397,17 +351,15 @@ function checkFrozenPalette(
  * pinning exists to prevent.
  */
 function checkLockedPens(
-  input: ConvertTilesetInput,
-  maxPens: number,
-  offset: number
+  input: ConvertTilesetInput
 ): { ok: false; error: 'locked-pen-out-of-range' } | null {
   const locked = input.lockedPens
   if (!locked) return null
 
   const positions = Object.keys(locked).map(Number)
-  const room = maxPens - offset
   const placeable =
-    positions.length <= room && positions.every((at) => pinnablePen(at, input))
+    positions.length <= chosenPens(input) &&
+    positions.every((at) => pinnablePen(at, input))
 
   return placeable ? null : { ok: false, error: 'locked-pen-out-of-range' }
 }
@@ -415,11 +367,11 @@ function checkLockedPens(
 /** Pinned pens, keyed by their position among the pens the strategy chooses. */
 function lockedByChosenIndex(
   input: ConvertTilesetInput,
-  offset: number
+  space: PenSpace
 ): Map<number, Pen> {
   return new Map(
     Object.entries(input.lockedPens ?? {}).map(([at, pen]) => [
-      Number(at) - offset,
+      space.toChosen(Number(at)),
       pen
     ])
   )
@@ -495,54 +447,6 @@ function selectPalette(
   return selectedIndices.map((index) => [...basePalette[index]] as Pen)
 }
 
-/**
- * For each base-palette colour, the pen standing closest to it. Computed once
- * over the base palette rather than per pixel — the same colour always lands on
- * the same pen, which is what keeps deduplication exact (Q30).
- */
-function nearestPens(
-  chosen: Pen[],
-  basePalette: Vector[],
-  offset: number
-): Uint8Array {
-  const penOf = new Uint8Array(basePalette.length)
-
-  basePalette.forEach((colour, index) => {
-    let best = 0
-    let bestDistance = Number.POSITIVE_INFINITY
-    chosen.forEach((pen, at) => {
-      const distance = perceptualDistance(colour, pen)
-      if (distance < bestDistance) {
-        bestDistance = distance
-        best = at
-      }
-    })
-    penOf[index] = best + offset
-  })
-
-  return penOf
-}
-
-/**
- * How far each base-palette colour had to travel to reach the pen it was given.
- * Same shape as `nearestPens`, so the collision report of Q22 costs one lookup
- * per pixel — the distances are already computed to pick the pens.
- */
-function penDistances(
-  chosen: Pen[],
-  basePalette: Vector[],
-  penOf: Uint8Array,
-  offset: number
-): Float64Array {
-  const errorOf = new Float64Array(basePalette.length)
-
-  basePalette.forEach((colour, index) => {
-    errorOf[index] = perceptualDistance(colour, chosen[penOf[index] - offset])
-  })
-
-  return errorOf
-}
-
 interface RenderTools {
   mix: PenMix
   /** A mix of zero everywhere — what `dither: 'none'` reads. */
@@ -582,8 +486,7 @@ function renderTile(
   if (settings.dither === 'diffusion') {
     return diffuseTile(smoothed, width, height, tools.colours, {
       mask,
-      ignore: HOLE,
-      holePen: HOLE_PEN
+      ignore: HOLE
     })
   }
 
@@ -594,106 +497,6 @@ function renderTile(
     width,
     height,
     settings.dither === 'none' ? { ...tools.mix, mix: tools.flat } : tools.mix,
-    { size: settings.size, mask, ignore: HOLE, holePen: HOLE_PEN }
+    { size: settings.size, mask, ignore: HOLE }
   )
-}
-
-/**
- * For each base-palette colour, the two pens it sits between and how far along
- * it sits — what the ordered ditherer needs to mix them (Q18).
- *
- * The nearest pen is picked with the perceptual metric the rest of the pipeline
- * uses; the ratio is a plain RGB projection onto the segment joining the two
- * pens, because that is the axis the mixture actually travels on screen.
- */
-function penMix(
-  chosen: Pen[],
-  basePalette: Vector[],
-  penOf: Uint8Array,
-  offset: number
-): PenMix {
-  const secondary = new Uint8Array(basePalette.length)
-  const mix = new Float64Array(basePalette.length)
-
-  basePalette.forEach((colour, index) => {
-    const primary = penOf[index] - offset
-    let second = primary
-    let bestDistance = Number.POSITIVE_INFINITY
-    chosen.forEach((pen, at) => {
-      if (at === primary) return
-      const distance = perceptualDistance(colour, pen)
-      if (distance < bestDistance) {
-        bestDistance = distance
-        second = at
-      }
-    })
-    secondary[index] = second + offset
-    mix[index] = ratioBetween(colour, chosen[primary], chosen[second])
-  })
-
-  return { primary: penOf, secondary, mix }
-}
-
-/** How far `colour` sits from `from` towards `to`, clamped to the segment. */
-function ratioBetween(colour: Vector, from: Pen, to: Pen): number {
-  const span = to.map((c, channel) => c - from[channel])
-  const squared = span.reduce((sum, c) => sum + c * c, 0)
-  if (squared === 0) return 0
-  const along = span.reduce(
-    (sum, c, channel) => sum + c * (colour[channel] - from[channel]),
-    0
-  )
-  return Math.min(1, Math.max(0, along / squared))
-}
-
-/** The three colour lookups the error-diffusion ditherer asks for. */
-function diffusionColours(
-  chosen: Pen[],
-  basePalette: Vector[],
-  offset: number
-): DiffusionColours {
-  // Copied out of the base palette once: `Vector` may be a typed array, and
-  // the ditherer needs a plain list it can add its residual to.
-  const wanted = basePalette.map((colour) => [...colour])
-
-  return {
-    wanted: (index) => wanted[index],
-    painted: (pen) => chosen[pen - offset],
-    nearest: (colour) => {
-      let best = 0
-      let bestDistance = Number.POSITIVE_INFINITY
-      chosen.forEach((pen, at) => {
-        const distance = perceptualDistance(colour as Vector, pen)
-        if (distance < bestDistance) {
-          bestDistance = distance
-          best = at
-        }
-      })
-      return best + offset
-    }
-  }
-}
-
-/**
- * Averages the two sides of a staircase step and snaps the result back onto the
- * hardware, so the anti-aliasing stays inside the base palette every other pass
- * works in.
- */
-function blender(
-  basePalette: Vector[],
-  indexByKey: ReadonlyMap<string, number>,
-  hardware: CPCHardware
-): (sides: readonly number[]) => number {
-  return (sides) => {
-    const mixed = [0, 1, 2].map(
-      (channel) =>
-        sides.reduce((sum, side) => sum + basePalette[side][channel], 0) /
-        sides.length
-    ) as Vector
-    const index = indexByKey.get(
-      colorToKey(quantizeColorForHardware(mixed, hardware))
-    )
-    invariant(index !== undefined, 'blended colour is off the hardware palette')
-    return index
-  }
 }

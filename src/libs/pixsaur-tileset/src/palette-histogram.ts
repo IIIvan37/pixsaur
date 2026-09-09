@@ -30,10 +30,9 @@ function countedPixels(tile: TileBytes, ignore?: number): number {
   return counted
 }
 
-export interface HistogramOptions {
-  /** A colour that competes for no pen — the transparency marker of Q16. */
-  ignore?: number
-}
+import type { HoleMarking } from './pen-space'
+
+export interface HistogramOptions extends HoleMarking {}
 
 export function tilePaletteHistogram(
   tiles: readonly TileBytes[],

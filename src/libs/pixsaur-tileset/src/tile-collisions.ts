@@ -1,3 +1,4 @@
+import type { HoleMarking } from './pen-space'
 import type { TileBytes } from './tile-dedup'
 
 /** How far one tile ended up from the colours it asked for. */
@@ -8,10 +9,7 @@ export interface TileCollision {
   error: number
 }
 
-export interface CollisionOptions {
-  /** A colour that carries no error — the transparency marker of Q16. */
-  ignore?: number
-}
+export interface CollisionOptions extends HoleMarking {}
 
 export function rankTileCollisions(
   tiles: readonly TileBytes[],

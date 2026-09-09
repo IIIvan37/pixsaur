@@ -54,6 +54,12 @@ two answers disagreeing is a pin the panel accepts and the conversion refuses.
 comes back as the very object that was passed in, so the atom that calls one has
 nothing left to decide — Jotai skips a write of the same reference.
 
+`hardware-colours.ts` is the CPC colour space as the conversion works in it:
+snapping a tile's pixels onto it, and blending two of its colours back into it.
+It stays in the application layer because `src/libs/**` must not know what a CPC
+is; the pen lookup tables built on top of it are the lib's `penTables`, which
+takes the metric as a parameter and so knows nothing of the hardware.
+
 `tileset-project.ts` is not a use-case: it is the document itself (Q31) — one
 shape, two carriers. IndexedDB keeps the object as it is (the structured clone
 carries the bytes); the exported file carries the same fields as JSON with the

@@ -8,6 +8,8 @@
  * edit propagation would silently break.
  */
 
+import { HOLE_PEN, type HoleWriting } from './pen-space'
+
 /**
  * The matrix sides the workshop offers. A union rather than a number: any
  * other value used to give the matrix of the next power of two, which is total
@@ -24,15 +26,11 @@ export interface PenMix {
   mix: ArrayLike<number>
 }
 
-export interface OrderedDitherOptions {
+export interface OrderedDitherOptions extends HoleWriting {
   /** Side of the Bayer matrix: 2, 4 or 8. Defaults to 4. */
   size?: BayerSize
   /** Pixels the anti-aliasing owns; the ditherer does not touch them. */
   mask?: ArrayLike<number>
-  /** A value that stands for no colour at all — the hole marker of Q16. */
-  ignore?: number
-  /** Pen a hole is written as. Defaults to 0, the pen sprite routines test. */
-  holePen?: number
 }
 
 const DEFAULT_SIZE = 4
@@ -42,7 +40,7 @@ export function orderedDitherTile(
   width: number,
   height: number,
   pens: PenMix,
-  { size, mask, ignore, holePen = 0 }: OrderedDitherOptions = {}
+  { size, mask, ignore, holePen = HOLE_PEN }: OrderedDitherOptions = {}
 ): Uint8Array {
   const thresholds = bayerThresholds(size ?? DEFAULT_SIZE)
   const side = Math.round(Math.sqrt(thresholds.length))

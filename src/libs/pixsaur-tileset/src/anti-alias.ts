@@ -7,10 +7,9 @@
  * softening it would blur the tile instead of smoothing it.
  */
 
-export interface AntiAliasOptions {
-  /** A value that stands for no colour at all — the hole marker of Q16. */
-  ignore?: number
-}
+import type { HoleMarking } from './pen-space'
+
+export interface AntiAliasOptions extends HoleMarking {}
 
 /**
  * Averages the two sides of every staircase step.

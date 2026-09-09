@@ -12,6 +12,8 @@
  * anti-aliasing owns.
  */
 
+import { HOLE_PEN, type HoleWriting } from './pen-space'
+
 export interface DiffusionColours {
   /** The colour a base-palette index asks for. */
   wanted: (index: number) => readonly number[]
@@ -21,13 +23,9 @@ export interface DiffusionColours {
   painted: (pen: number) => readonly number[]
 }
 
-export interface DiffuseOptions {
+export interface DiffuseOptions extends HoleWriting {
   /** Pixels the anti-aliasing owns; they neither take nor give any error. */
   mask?: ArrayLike<number>
-  /** A value that stands for no colour at all — the hole marker of Q16. */
-  ignore?: number
-  /** Pen a hole is written as. Defaults to 0, the pen sprite routines test. */
-  holePen?: number
 }
 
 /** Right, down-left, down, down-right — the Floyd-Steinberg neighbourhood. */
@@ -43,7 +41,7 @@ export function diffuseTile(
   width: number,
   height: number,
   colours: DiffusionColours,
-  { mask, ignore, holePen = 0 }: DiffuseOptions = {}
+  { mask, ignore, holePen = HOLE_PEN }: DiffuseOptions = {}
 ): Uint8Array {
   const pens = new Uint8Array(width * height)
   const carried: number[][] = []
