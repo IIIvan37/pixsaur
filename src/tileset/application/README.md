@@ -40,7 +40,7 @@ a second consumer here:
 | `renderTileAtlas` | the pens, the tiles, a column count, target, mode | RGBA pixels, tiles edge to edge — what Tiled reads (M-Q20) | none |
 | `saveTilesetSheet` | `{ sheet, filename? }` — defaults to `TILESET_SHEET_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` | `CanvasFactory`, `FileSink` |
 | `exportTilesetTiled` | edited tileset, target, mode, hardware, `map?`, `filename?` — defaults to `TILED_ARCHIVE_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` — one ZIP holding the TSX and its PNG, plus the TMX when a map is given | `CanvasFactory`, `FileSink` |
-| `mapTileset` | edited tileset, map options (budget) | the cells, the distinct tiles in order of first appearance, the grid, `overBudget` (M-Q7 · M-Q18) | none |
+| `mapTileset` | edited tileset, map options (budget, `emptyTile`) | the cells (`EMPTY_CELL` for the empty tile), the distinct tiles in order of first appearance, the grid, `overBudget`, `emptyTile` (M-Q7 · M-Q13 · M-Q18) | none |
 | `inspectSheet` | the source sheet | `{ scale, filtered }` — the whole factor to undo, and whether the image carries more than `FILTERED_COLOURS` colours (M-Q19) | none |
 | `suggestMapOffset` | the source sheet, the grid | the offset with the smallest share of unique tiles, or `null` when the grid already sits on it (M-Q4) | none |
 | `loadTilesetProject` / `saveTilesetProject` | the store, the project | the project or `null` · `true` / `false` | `TilesetProjectStore` |

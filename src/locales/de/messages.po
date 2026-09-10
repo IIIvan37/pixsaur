@@ -235,6 +235,10 @@ msgstr "Keine ganze Kachel passt in das angegebene Raster."
 msgid "Aucune tuile ne perd de couleur."
 msgstr "Keine Kachel verliert eine Farbe."
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:174
+msgid "Aucune tuile vide"
+msgstr "Keine leere Kachel"
+
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:68
 msgid "Auto (Smart CPC adapt)"
 msgstr "Auto (intelligente CPC-Anpassung)"
@@ -291,11 +295,15 @@ msgstr "Kachelbudget"
 msgid "Canaux RGB"
 msgstr "RGB-Kanäle"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:131
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
 msgid "Case survolée"
 msgstr "Überfahrene Zelle"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:137
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:140
+msgid "Case vide"
+msgstr "Leere Zelle"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
 msgid "cases"
 msgstr "Zellen"
 
@@ -416,7 +424,7 @@ msgstr "Kombiniert"
 msgid "Comme la planche"
 msgstr "Wie die Kachelkarte"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:106
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:110
 msgid "Comparer avec la source"
 msgstr "Mit der Quelle vergleichen"
 
@@ -1122,15 +1130,15 @@ msgid "Machine source"
 msgstr "Quellmaschine"
 
 #: src/app/components/tileset-workshop/tileset-grid-panel.tsx:60
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:93
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:97
 msgid "Map"
 msgstr "Karte"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:114
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
 msgid "Map convertie"
 msgstr "Konvertierte Karte"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:114
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
 #: src/app/components/tileset-workshop/tileset-source-panel.tsx:35
 msgid "Map source"
 msgstr "Quellkarte"
@@ -1811,7 +1819,7 @@ msgstr "Unterstützt CPC Classic und CPC Plus Formate. Der Lader erkennt automat
 msgid "Supprimer le changement"
 msgstr "Änderung entfernen"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:129
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:133
 msgid "Survolez une case pour voir où sa tuile revient."
 msgstr "Fahren Sie über eine Zelle, um zu sehen, wo ihre Kachel wiederkehrt."
 
@@ -1844,12 +1852,12 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Testet alle Kombinationen, maximiert Kontrast (beste Qualität)"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:96
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:100
 #: src/app/components/workshop-tabs/workshop-tabs.tsx:40
 msgid "Tileset"
 msgstr "Tileset"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:184
 msgid "Tileset de la map"
 msgstr "Tileset der Karte"
 
@@ -1878,7 +1886,7 @@ msgid "Trous aplatis sur le fond"
 msgstr "Löcher auf den Hintergrund gelegt"
 
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:93
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:143
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:164
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
 msgid "Tuile"
@@ -1887,6 +1895,10 @@ msgstr "Kachel"
 #: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:50
 msgid "Tuile de destination"
 msgstr "Zielkachel"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:167
+msgid "Tuile vide automatique"
+msgstr "Automatische leere Kachel"
 
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:125
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:127
@@ -1983,7 +1995,11 @@ msgstr "Lebendigkeit"
 msgid "Vider"
 msgstr "Leeren"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:91
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:160
+msgid "Vider la tuile de la case sélectionnée"
+msgstr "Kachel der ausgewählten Zelle leeren"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:95
 msgid "Vues de la map"
 msgstr "Kartenansichten"
 

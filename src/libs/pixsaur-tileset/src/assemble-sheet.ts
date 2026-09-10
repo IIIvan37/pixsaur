@@ -77,8 +77,12 @@ function extent(
   return (leading + count * size + (count - 1) * gap + trailing) * stretch
 }
 
+/**
+ * A `null` tile is a place left to the fill — an empty cell of a map, which
+ * Tiled draws as nothing.
+ */
 export function assembleSheet(
-  tiles: readonly Uint8Array[],
+  tiles: readonly (Uint8Array | null)[],
   options: AssembleSheetOptions
 ): AssembledSheet {
   const { columns, rows, tile, gutters, stretch, fill } = options
@@ -102,6 +106,8 @@ export function assembleSheet(
   const indices = new Uint8Array(width * height).fill(fill)
 
   tiles.forEach((pens, at) => {
+    if (!pens) return
+
     const column = at % columns
     const row = Math.floor(at / columns)
     const originX =

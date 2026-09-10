@@ -76,8 +76,8 @@ export type RenderTileAtlasInput = Pick<
   TilesetConversionSubject,
   'target' | 'mode'
 > & {
-  /** The tiles to lay out, in reading order. */
-  tiles: readonly Uint8Array[]
+  /** The tiles to lay out, in reading order; `null` leaves its place blank. */
+  tiles: readonly (Uint8Array | null)[]
   columns: number
   /** What a hole was composited over; defaults to black (Q16). */
   background?: Pen
@@ -107,7 +107,9 @@ export function renderTileAtlas(
   return paint(
     assembleSheet(input.tiles, {
       columns: input.columns,
-      rows: Math.ceil(input.tiles.length / input.columns),
+      // One row at least: a map whose every cell is empty still needs an
+      // image the canvas can encode.
+      rows: Math.max(1, Math.ceil(input.tiles.length / input.columns)),
       tile: input.target,
       gutters: NO_GUTTERS,
       stretch: stretchOf(input.mode),

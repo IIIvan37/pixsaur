@@ -1,18 +1,20 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useMemo, useState } from 'react'
 import {
   renderedTilesetAtlasAtom,
   renderedTilesetMapAtom,
   selectedTileAtom,
+  setTilesetMapOptionsAtom,
   tilesetMapAtom,
+  tilesetMapOptionsAtom,
   tilesetMapSourceAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { TilesetMap } from '@/tileset'
+import { EMPTY_CELL, type TilesetMap } from '@/tileset'
 import { cellAt } from './map-cell-at'
 import styles from './tileset-workshop.module.css'
 import { useSheetCanvas } from './use-sheet-canvas'
@@ -60,7 +62,9 @@ export function TilesetMapView() {
   const result = useAtomValue(renderedTilesetMapAtom)
   const source = useAtomValue(tilesetMapSourceAtom)
   const atlas = useAtomValue(renderedTilesetAtlasAtom)
-  const select = useSetAtom(selectedTileAtom)
+  const [selected, select] = useAtom(selectedTileAtom)
+  const { emptyTile = 'auto' } = useAtomValue(tilesetMapOptionsAtom)
+  const setMapOptions = useSetAtom(setTilesetMapOptionsAtom)
   const [comparing, setComparing] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
 
@@ -132,12 +136,44 @@ export function TilesetMapView() {
               {/* The numbers stay outside the messages: the Lingui macro
                   drops the values of an interpolated one here. GID of the
                   tile, as Tiled numbers it. */}
-              <Trans>Tuile</Trans>
-              {` ${tile + 1} · ${sharing.length} `}
+              {tile === EMPTY_CELL ? (
+                <Trans>Case vide</Trans>
+              ) : (
+                <>
+                  <Trans>Tuile</Trans>
+                  {` ${tile + 1}`}
+                </>
+              )}
+              {` · ${sharing.length} `}
               <Trans>cases</Trans>
             </output>
           )}
         </p>
+
+        {/* M-Q13: the tile Tiled writes as GID 0 — drawn nowhere, counted
+            nowhere. */}
+        <div className={styles.buttons}>
+          <Button
+            variant='secondary'
+            onClick={() => setMapOptions({ emptyTile: selected })}
+          >
+            <Trans>Vider la tuile de la case sélectionnée</Trans>
+          </Button>
+          <Button
+            variant='secondary'
+            aria-pressed={emptyTile === 'auto'}
+            onClick={() => setMapOptions({ emptyTile: 'auto' })}
+          >
+            <Trans>Tuile vide automatique</Trans>
+          </Button>
+          <Button
+            variant='secondary'
+            aria-pressed={emptyTile === null}
+            onClick={() => setMapOptions({ emptyTile: null })}
+          >
+            <Trans>Aucune tuile vide</Trans>
+          </Button>
+        </div>
       </TabsContent>
 
       <TabsContent value='tileset'>

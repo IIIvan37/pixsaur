@@ -28,7 +28,7 @@ import type {
 import { type EncodeSheetPngResult, encodeSheetPng } from './encode-sheet-png'
 import type { Pen } from './pens'
 import { renderTileAtlas } from './render-tileset-sheet'
-import { mapAtlasColumns, type TilesetMap } from './tileset-map'
+import { EMPTY_CELL, mapAtlasColumns, type TilesetMap } from './tileset-map'
 
 /** The name the workshop gives the archive it hands over. */
 export const TILED_ARCHIVE_FILENAME = 'tileset-tiled.zip'
@@ -41,7 +41,8 @@ const TILESET_IMAGE = 'tileset.png'
 const TILESET_DOCUMENT = 'tileset.tsx'
 const MAP_DOCUMENT = 'map.tmx'
 
-/** GID 0 is Tiled's cell with no tile; the tileset starts right after. */
+/** GID 0 is Tiled's cell with no tile (M-Q13); the tileset starts after. */
+const NO_TILE_GID = 0
 const FIRST_GID = 1
 
 export type ExportTilesetTiledInput = Pick<
@@ -120,7 +121,9 @@ export async function exportTilesetTiled(
               tileset: { firstGid: FIRST_GID, source: TILESET_DOCUMENT },
               layer: {
                 name: 'map',
-                gids: map.cells.map((tile) => tile + FIRST_GID)
+                gids: map.cells.map((tile) =>
+                  tile === EMPTY_CELL ? NO_TILE_GID : tile + FIRST_GID
+                )
               }
             })
           }

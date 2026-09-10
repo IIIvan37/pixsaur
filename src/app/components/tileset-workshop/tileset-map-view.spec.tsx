@@ -4,10 +4,13 @@ import { createStore } from 'jotai'
 import {
   selectedTileAtom,
   setTilesetLayoutAtom,
-  setTilesetSheetAtom
+  setTilesetMapOptionsAtom,
+  setTilesetSheetAtom,
+  tilesetMapAtom
 } from '@/app/store/tileset/tileset'
 import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
+import { EMPTY_CELL } from '@/tileset'
 import { TilesetMapView } from './tileset-map-view'
 
 /** A map of one row: a white cell, a black one, a white one again. */
@@ -88,6 +91,51 @@ describe('TilesetMapView', () => {
     expect(screen.getByLabelText(/Case survolée/i)).toHaveTextContent(
       'Tuile 1 · 2 cases'
     )
+  })
+
+  // M-Q13: the user names the tile that becomes Tiled's GID 0.
+  it('empties the tile of the cell the user picked', async () => {
+    layOutMap()
+    const store = storeWithMap()
+    renderWithProviders(<TilesetMapView />, { store })
+    fireEvent.click(screen.getByRole('img', { name: /Map convertie/i }), {
+      clientX: 12,
+      clientY: 4
+    })
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Vider la tuile de la case/i })
+    )
+
+    expect(store.get(tilesetMapAtom)?.cells).toEqual([0, EMPTY_CELL, 0])
+  })
+
+  it('says a cell under the pointer is empty', async () => {
+    layOutMap()
+    const store = storeWithMap()
+    store.set(setTilesetMapOptionsAtom, { emptyTile: 1 })
+    renderWithProviders(<TilesetMapView />, { store })
+
+    fireEvent.mouseMove(screen.getByRole('img', { name: /Map convertie/i }), {
+      clientX: 12,
+      clientY: 4
+    })
+
+    expect(screen.getByLabelText(/Case survolée/i)).toHaveTextContent(
+      /Case vide/
+    )
+  })
+
+  it('leaves every cell a tile when the user asks for no empty tile', async () => {
+    const store = storeWithMap()
+    store.set(setTilesetMapOptionsAtom, { emptyTile: 1 })
+    renderWithProviders(<TilesetMapView />, { store })
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Aucune tuile vide/i })
+    )
+
+    expect(store.get(tilesetMapAtom)?.cells).toEqual([0, 1, 0])
   })
 
   it('aims the retouching at the cell the user clicks', () => {

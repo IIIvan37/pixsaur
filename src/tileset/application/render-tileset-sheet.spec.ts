@@ -103,6 +103,18 @@ describe('renderTileAtlas', () => {
 
   // Tiled has one margin for both axes: an atlas with no gutter at all is the
   // only layout it always describes exactly.
+  // A map whose every cell is empty still hands the canvas a size to encode.
+  it('keeps one row for an atlas with no tile', () => {
+    expect(
+      renderTileAtlas(tilesetOfTwoTiles(), {
+        tiles: [],
+        columns: 1,
+        target: { tileWidth: 2, tileHeight: 2 },
+        mode: 0
+      }).height
+    ).toBe(2)
+  })
+
   it('leaves no gutter between two tiles', () => {
     expect(pixelAt(atlas(tilesetOfTwoTiles(), 2), 4, 0)).toEqual([
       0, 0, 255, 255

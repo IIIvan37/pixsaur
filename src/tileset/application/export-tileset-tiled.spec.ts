@@ -258,4 +258,23 @@ describe('exportTilesetTiled, map layout', () => {
       '<data encoding="csv">\n1,2,1\n</data>'
     )
   })
+
+  // M-Q13: GID 0 is Tiled's cell with no tile.
+  it('writes GID 0 in the cells of the empty tile', async () => {
+    const tileset = tilesetOfPens([0, 1, 0])
+    const map = mapTileset(tileset, { budget: 256, emptyTile: 1 })
+
+    expect(
+      await entryOf('map.tmx', { tileset, hardware: 'plus', map })
+    ).toContain('<data encoding="csv">\n1,0,1\n</data>')
+  })
+
+  it('keeps the empty tile out of the atlas', async () => {
+    const tileset = tilesetOfPens([0, 1, 0])
+    const map = mapTileset(tileset, { budget: 256, emptyTile: 1 })
+
+    expect(
+      await entryOf('tileset.tsx', { tileset, hardware: 'plus', map })
+    ).toContain('tilecount="1"')
+  })
 })

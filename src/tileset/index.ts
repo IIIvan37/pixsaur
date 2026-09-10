@@ -53,6 +53,8 @@ export {
 export { suggestMapOffset } from './application/suggest-map-offset'
 export {
   DEFAULT_TILESET_MAP_OPTIONS,
+  EMPTY_CELL,
+  type EmptyTileChoice,
   mapAtlasColumns,
   mapTileset,
   type TilesetLayout,

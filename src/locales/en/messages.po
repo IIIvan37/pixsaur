@@ -235,6 +235,10 @@ msgstr "No whole tile fits the grid that was declared."
 msgid "Aucune tuile ne perd de couleur."
 msgstr "No tile loses a colour."
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:174
+msgid "Aucune tuile vide"
+msgstr "No empty tile"
+
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:68
 msgid "Auto (Smart CPC adapt)"
 msgstr "Auto (Smart CPC adapt)"
@@ -291,11 +295,15 @@ msgstr "Tile budget"
 msgid "Canaux RGB"
 msgstr "RGB Channels"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:131
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
 msgid "Case survolée"
 msgstr "Hovered cell"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:137
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:140
+msgid "Case vide"
+msgstr "Empty cell"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
 msgid "cases"
 msgstr "cells"
 
@@ -416,7 +424,7 @@ msgstr "Combined"
 msgid "Comme la planche"
 msgstr "As the sheet"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:106
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:110
 msgid "Comparer avec la source"
 msgstr "Compare with the source"
 
@@ -1122,15 +1130,15 @@ msgid "Machine source"
 msgstr "Source machine"
 
 #: src/app/components/tileset-workshop/tileset-grid-panel.tsx:60
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:93
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:97
 msgid "Map"
 msgstr "Map"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:114
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
 msgid "Map convertie"
 msgstr "Converted map"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:114
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
 #: src/app/components/tileset-workshop/tileset-source-panel.tsx:35
 msgid "Map source"
 msgstr "Source map"
@@ -1811,7 +1819,7 @@ msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects 
 msgid "Supprimer le changement"
 msgstr "Remove change"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:129
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:133
 msgid "Survolez une case pour voir où sa tuile revient."
 msgstr "Hover a cell to see where its tile comes back."
 
@@ -1844,12 +1852,12 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Tests all combinations, maximizes contrast (best quality)"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:96
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:100
 #: src/app/components/workshop-tabs/workshop-tabs.tsx:40
 msgid "Tileset"
 msgstr "Tileset"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:184
 msgid "Tileset de la map"
 msgstr "Map tileset"
 
@@ -1878,7 +1886,7 @@ msgid "Trous aplatis sur le fond"
 msgstr "Holes flattened onto the background"
 
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:93
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:143
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:164
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
 msgid "Tuile"
@@ -1887,6 +1895,10 @@ msgstr "Tile"
 #: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:50
 msgid "Tuile de destination"
 msgstr "Destination tile"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:167
+msgid "Tuile vide automatique"
+msgstr "Automatic empty tile"
 
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:125
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:127
@@ -1983,7 +1995,11 @@ msgstr "Vibrance"
 msgid "Vider"
 msgstr "Clear"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:91
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:160
+msgid "Vider la tuile de la case sélectionnée"
+msgstr "Empty the tile of the selected cell"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:95
 msgid "Vues de la map"
 msgstr "Map views"
 

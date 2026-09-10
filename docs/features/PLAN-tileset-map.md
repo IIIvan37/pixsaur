@@ -35,7 +35,12 @@
   réduction dans le panneau source, dans les deux dispositions.
   `inspectSheet` soupçonne un filtre au-delà de 512 couleurs
   (`FILTERED_COLOURS`) et le dit sous forme de doute.
-- **Prochaine action** : M5.
+- **M5 livrée** : la tuile vide. `TilesetMapOptions.emptyTile` vaut `auto`
+  (la tuile faite uniquement de trous), une position de case, ou `null`. Un
+  champ absent se lit `auto`, donc un projet v3 déjà écrit reste valide.
+  `mapTileset` marque ses cases `EMPTY_CELL`, la retire de l'atlas et du
+  budget. L'export écrit le GID 0. La vue dessine la case vide sans tuile.
+- **Prochaine action** : M6.
 
 ## Constat de départ
 

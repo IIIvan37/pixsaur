@@ -12,6 +12,7 @@ import {
 import {
   type ConvertedTileset,
   DEFAULT_TILESET_MAP_OPTIONS,
+  EMPTY_CELL,
   mapAtlasColumns,
   mapTileset,
   renderTileAtlas,
@@ -89,7 +90,7 @@ function renderMapTiles(
   pick: (
     map: TilesetMap,
     tiles: ConvertedTileset['tiles']
-  ) => { tiles: Uint8Array[]; columns: number }
+  ) => { tiles: (Uint8Array | null)[]; columns: number }
 ): Sheet | null {
   const map = get(tilesetMapAtom)
   const result = get(editedTilesetAtom)
@@ -110,7 +111,10 @@ function renderMapTiles(
  */
 export const renderedTilesetMapAtom = atom<Sheet | null>((get) =>
   renderMapTiles(get, (map, tiles) => ({
-    tiles: map.cells.map((tile) => tiles[map.tiles[tile]].indices),
+    // An empty cell is drawn as nothing, the way Tiled shows GID 0.
+    tiles: map.cells.map((tile) =>
+      tile === EMPTY_CELL ? null : tiles[map.tiles[tile]].indices
+    ),
     columns: map.columns
   }))
 )

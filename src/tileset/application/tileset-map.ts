@@ -13,10 +13,22 @@ import type { ConvertedTileset } from './convert-tileset'
 /** How the source is read: a sheet of tiles, or the image of a map (M-Q1). */
 export type TilesetLayout = 'sheet' | 'map'
 
+/**
+ * Which tile becomes Tiled's GID 0, a cell with no tile (M-Q13): `auto` — the
+ * tile made of holes only, if the map has one; a cell position — the tile
+ * that cell shows; `null` — none.
+ */
+export type EmptyTileChoice = 'auto' | number | null
+
 export interface TilesetMapOptions {
   /** How many tiles the map may keep before the workshop warns (M-Q7). */
   budget: number
+  /** Absent reads as `auto`, so a project saved before M-Q13 needs nothing. */
+  emptyTile?: EmptyTileChoice
 }
+
+/** What an empty cell holds in `cells`, in place of a tile index. */
+export const EMPTY_CELL = -1
 
 /** 256 — what a map whose cells are one byte each can index. */
 export const DEFAULT_TILESET_MAP_OPTIONS: TilesetMapOptions = { budget: 256 }
@@ -36,8 +48,41 @@ export interface TilesetMap extends TileMap {
   /** Size of the map, in cells — the source grid. */
   columns: number
   rows: number
-  /** Whether the map keeps more tiles than its budget. */
+  /**
+   * Whether the map keeps more tiles than its budget. The empty tile is not
+   * one of them: it is written nowhere.
+   */
   overBudget: boolean
+  /** The cell the empty tile first appears in, or `null` when none is. */
+  emptyTile: number | null
+}
+
+/** Index in `map.tiles` of the tile to empty, or `null`. */
+function emptyTileOf(
+  tileset: ConvertedTileset,
+  map: TileMap,
+  choice: EmptyTileChoice
+): number | null {
+  if (choice === null) return null
+
+  if (choice === 'auto') {
+    const hole = tileset.transparentPen
+    if (hole === null) return null
+    const found = map.tiles.findIndex((cell) =>
+      tileset.tiles[cell].indices.every((pen) => pen === hole)
+    )
+    return found >= 0 ? found : null
+  }
+
+  return map.cells[choice] ?? null
+}
+
+/** The cells once the empty tile is taken out and the rest closes the gap. */
+function withoutTile(cells: readonly number[], empty: number): number[] {
+  return cells.map((tile) => {
+    if (tile === empty) return EMPTY_CELL
+    return tile > empty ? tile - 1 : tile
+  })
 }
 
 export function mapTileset(
@@ -48,11 +93,17 @@ export function mapTileset(
   // replayed after the conversion, and a stroke can make two tiles identical
   // or tell two copies apart (M-Q18).
   const map = buildTileMap(tileset.tiles.map((tile) => tile.indices))
+  const empty = emptyTileOf(tileset, map, options.emptyTile ?? 'auto')
+
+  const tiles =
+    empty === null ? map.tiles : map.tiles.filter((_, tile) => tile !== empty)
 
   return {
-    ...map,
+    cells: empty === null ? map.cells : withoutTile(map.cells, empty),
+    tiles,
+    emptyTile: empty === null ? null : map.tiles[empty],
     columns: tileset.columns,
     rows: tileset.rows,
-    overBudget: map.tiles.length > options.budget
+    overBudget: tiles.length > options.budget
   }
 }
