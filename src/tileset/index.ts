@@ -33,7 +33,9 @@ export {
 } from './application/persist-tileset-project'
 export type { TilesetProjectStore } from './application/ports'
 export {
+  type RenderTileAtlasInput,
   type RenderTilesetSheetInput,
+  renderTileAtlas,
   renderTilesetSheet
 } from './application/render-tileset-sheet'
 export {
@@ -45,6 +47,7 @@ export {
 } from './application/save-tileset-sheet'
 export {
   DEFAULT_TILESET_MAP_OPTIONS,
+  mapAtlasColumns,
   mapTileset,
   type TilesetLayout,
   type TilesetMap,

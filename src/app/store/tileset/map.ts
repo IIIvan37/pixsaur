@@ -3,16 +3,22 @@
  * the map keeps (M-Q1 · M-Q7). See `docs/features/PLAN-tileset-map.md`.
  */
 
-import { atom } from 'jotai'
+import { atom, type Getter } from 'jotai'
+import { cropSheet, type Sheet } from '@/libs/pixsaur-tileset'
 import {
+  type ConvertedTileset,
   DEFAULT_TILESET_MAP_OPTIONS,
+  mapAtlasColumns,
   mapTileset,
+  renderTileAtlas,
   type TilesetLayout,
   type TilesetMap,
   type TilesetMapOptions
 } from '@/tileset'
+import { tilesetConversionInputAtom } from './conversion'
 import { editedTilesetAtom } from './edits'
 import { setTilesetGridAtom, tilesetGridAtom } from './grid'
+import { tilesetSheetAtom } from './sheet'
 
 export const tilesetLayoutAtom = atom<TilesetLayout>('sheet')
 
@@ -53,4 +59,67 @@ export const tilesetMapAtom = atom<TilesetMap | null>((get) => {
   if (!result?.ok) return null
 
   return mapTileset(result.tileset, get(tilesetMapOptionsAtom))
+})
+
+/**
+ * Lays tiles of the map out edge to edge, the way the export does. `pick`
+ * says which tiles, in which order, on how many columns.
+ */
+function renderMapTiles(
+  get: Getter,
+  pick: (
+    map: TilesetMap,
+    tiles: ConvertedTileset['tiles']
+  ) => { tiles: Uint8Array[]; columns: number }
+): Sheet | null {
+  const map = get(tilesetMapAtom)
+  const result = get(editedTilesetAtom)
+  const input = get(tilesetConversionInputAtom)
+  if (!map || !result?.ok || !input) return null
+
+  return renderTileAtlas(result.tileset, {
+    ...pick(map, result.tileset.tiles),
+    target: input.target,
+    mode: input.mode,
+    background: input.background
+  })
+}
+
+/**
+ * The map rebuilt from its cells (M-Q16) — each cell drawn with the tile the
+ * map says it shows, so what the view shows is what the TMX will say.
+ */
+export const renderedTilesetMapAtom = atom<Sheet | null>((get) =>
+  renderMapTiles(get, (map, tiles) => ({
+    tiles: map.cells.map((tile) => tiles[map.tiles[tile]].indices),
+    columns: map.columns
+  }))
+)
+
+/** The distinct tiles of the map, as the Tiled export lays them out. */
+export const renderedTilesetAtlasAtom = atom<Sheet | null>((get) =>
+  renderMapTiles(get, (map, tiles) => ({
+    tiles: map.tiles.map((cell) => tiles[cell].indices),
+    columns: mapAtlasColumns(map.tiles.length)
+  }))
+)
+
+/**
+ * The source, cut down to the cells the grid covers — what the view compares
+ * the result with, cell for cell (M-Q16).
+ */
+export const tilesetMapSourceAtom = atom<Sheet | null>((get) => {
+  const map = get(tilesetMapAtom)
+  const sheet = get(tilesetSheetAtom)
+  if (!map || !sheet) return null
+
+  const grid = get(tilesetGridAtom)
+  const margin = grid.margin ?? 0
+  const spacing = grid.spacing ?? 0
+  return cropSheet(sheet, {
+    x: margin + (grid.offsetX ?? 0),
+    y: margin + (grid.offsetY ?? 0),
+    width: map.columns * (grid.tileWidth + spacing) - spacing,
+    height: map.rows * (grid.tileHeight + spacing) - spacing
+  })
 })

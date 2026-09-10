@@ -223,11 +223,11 @@ msgstr "Ninguna imagen procesada"
 #~ msgid "Aucune plage raster définie."
 #~ msgstr "No hay rangos raster definidos."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:28
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:29
 msgid "Aucune tuile entière n'entre dans la grille déclarée."
 msgstr "Ninguna tesela entera cabe en la rejilla declarada."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:169
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:153
 msgid "Aucune tuile ne perd de couleur."
 msgstr "Ninguna tesela pierde color."
 
@@ -286,6 +286,14 @@ msgstr "Presupuesto de teselas"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:38
 msgid "Canaux RGB"
 msgstr "Canales RGB"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:129
+msgid "Case survolée"
+msgstr "Celda señalada"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
+msgid "cases"
+msgstr "celdas"
 
 #: src/app/components/tileset-workshop/tileset-project-actions.tsx:18
 msgid "Ce fichier n'est pas un projet d'atelier."
@@ -404,6 +412,10 @@ msgstr "Combinado"
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:120
 msgid "Comme la planche"
 msgstr "Como la lámina"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:106
+msgid "Comparer avec la source"
+msgstr "Comparar con el origen"
 
 #: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
@@ -684,7 +696,7 @@ msgstr "Tinta anterior"
 msgid "Encre suivante"
 msgstr "Tinta siguiente"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:156
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:140
 msgid "Enregistrer le PNG"
 msgstr "Guardar el PNG"
 
@@ -734,7 +746,7 @@ msgstr "Exportar"
 msgid "Exporter le projet"
 msgstr "Exportar el proyecto"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:159
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:143
 msgid "Exporter pour Tiled"
 msgstr "Exportar para Tiled"
 
@@ -959,19 +971,19 @@ msgstr "Intensidad de color (0 = blanco y negro, 2 = muy saturado)"
 msgid "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
 msgstr "La aplicación encontró un problema. Puede volver a intentarlo; si persiste, recargue la página."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:150
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:134
 msgid "La map garde plus de tuiles que son budget."
 msgstr "El mapa conserva más teselas que su presupuesto."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:30
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:31
 msgid "La palette gelée dépasse ce que le mode peut tenir."
 msgstr "La paleta congelada supera lo que el modo puede contener."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:31
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:32
 msgid "La palette gelée ne commence pas par le pen de transparence."
 msgstr "La paleta congelada no empieza por la pluma de transparencia."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:29
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:30
 msgid "La réservation ne laisse aucun pen au tileset."
 msgstr "La reserva no deja ninguna pluma al tileset."
 
@@ -1091,9 +1103,15 @@ msgid "Machine source"
 msgstr "Máquina de origen"
 
 #: src/app/components/tileset-workshop/tileset-grid-panel.tsx:57
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:93
 msgid "Map"
 msgstr "Mapa"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:114
+msgid "Map convertie"
+msgstr "Mapa convertido"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:114
 #: src/app/components/tileset-workshop/tileset-source-panel.tsx:30
 msgid "Map source"
 msgstr "Mapa de origen"
@@ -1386,8 +1404,8 @@ msgstr "Pen"
 
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:49
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:51
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:134
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:136
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:118
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:120
 msgid "Pens"
 msgstr "Plumas"
 
@@ -1429,7 +1447,7 @@ msgstr "Modo de píxel"
 msgid "Planche"
 msgstr "Lámina"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:123
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:106
 msgid "Planche convertie"
 msgstr "Lámina convertida"
 
@@ -1670,8 +1688,8 @@ msgstr "Redimensionar"
 msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 msgstr "Resolución horizontal duplicada (solo Mode 0). Usa 2 imágenes alternadas a 50Hz."
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:102
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:116
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:82
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:96
 msgid "Résultat"
 msgstr "Resultado"
 
@@ -1770,6 +1788,10 @@ msgstr "Soporta los formatos CPC Classic y CPC Plus. El cargador detecta automá
 msgid "Supprimer le changement"
 msgstr "Eliminar cambio"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:127
+msgid "Survolez une case pour voir où sa tuile revient."
+msgstr "Pase sobre una celda para ver dónde vuelve su tesela."
+
 #: src/app/components/tileset-workshop/tileset-grid-panel.tsx:94
 msgid "Tailles de tuile, la moins coûteuse en tête"
 msgstr "Tamaños de tesela, el más barato primero"
@@ -1799,9 +1821,14 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Prueba todas las combinaciones, maximiza contraste (mejor calidad)"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:96
 #: src/app/components/workshop-tabs/workshop-tabs.tsx:40
 msgid "Tileset"
 msgstr "Tileset"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:146
+msgid "Tileset de la map"
+msgstr "Tileset del mapa"
 
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:63
 msgid "Total"
@@ -1828,7 +1855,8 @@ msgid "Trous aplatis sur le fond"
 msgstr "Huecos aplanados sobre el fondo"
 
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:93
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:180
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:133
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:164
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
 msgid "Tuile"
 msgstr "Tesela"
@@ -1837,19 +1865,19 @@ msgstr "Tesela"
 msgid "Tuile de destination"
 msgstr "Tesela de destino"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:141
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:143
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:125
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:127
 msgid "Tuiles de la map"
 msgstr "Teselas del mapa"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:165
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:149
 msgid "Tuiles les plus malmenées par la palette"
 msgstr "Teselas peor tratadas por la paleta"
 
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:35
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:41
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:128
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:130
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:112
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:114
 msgid "Tuiles uniques"
 msgstr "Teselas únicas"
 
@@ -1857,7 +1885,7 @@ msgstr "Teselas únicas"
 msgid "Un pen dépensé pour les trous"
 msgstr "Una pluma gastada en los huecos"
 
-#: src/app/components/tileset-workshop/tileset-result-panel.tsx:32
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:33
 msgid "Un pen épinglé n'a pas de place dans ce mode."
 msgstr "Un pen fijado no cabe en este modo."
 
@@ -1927,6 +1955,10 @@ msgstr "Intensidad"
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:118
 msgid "Vider"
 msgstr "Vaciar"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:91
+msgid "Vues de la map"
+msgstr "Vistas del mapa"
 
 #: src/components/source-selector/source-selector-view.tsx:79
 msgid "Zone de sélection"

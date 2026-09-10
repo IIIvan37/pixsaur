@@ -21,6 +21,17 @@ export interface TilesetMapOptions {
 /** 256 — what a map whose cells are one byte each can index. */
 export const DEFAULT_TILESET_MAP_OPTIONS: TilesetMapOptions = { budget: 256 }
 
+/** How wide the atlas of a map is, in tiles (M-Q12). */
+const ATLAS_COLUMNS = 16
+
+/**
+ * The column count of the atlas a map's tiles are laid out on: 16, or fewer
+ * when the map keeps fewer tiles — never zero, which no image can be cut on.
+ */
+export function mapAtlasColumns(tileCount: number): number {
+  return Math.max(1, Math.min(ATLAS_COLUMNS, tileCount))
+}
+
 export interface TilesetMap extends TileMap {
   /** Size of the map, in cells — the source grid. */
   columns: number

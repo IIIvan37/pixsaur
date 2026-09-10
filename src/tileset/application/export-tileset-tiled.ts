@@ -28,7 +28,7 @@ import type {
 import { type EncodeSheetPngResult, encodeSheetPng } from './encode-sheet-png'
 import type { Pen } from './pens'
 import { renderTileAtlas } from './render-tileset-sheet'
-import type { TilesetMap } from './tileset-map'
+import { mapAtlasColumns, type TilesetMap } from './tileset-map'
 
 /** The name the workshop gives the archive it hands over. */
 export const TILED_ARCHIVE_FILENAME = 'tileset-tiled.zip'
@@ -40,9 +40,6 @@ export const TILED_ARCHIVE_FILENAME = 'tileset-tiled.zip'
 const TILESET_IMAGE = 'tileset.png'
 const TILESET_DOCUMENT = 'tileset.tsx'
 const MAP_DOCUMENT = 'map.tmx'
-
-/** How wide the atlas of a map is, in tiles (M-Q12). */
-const ATLAS_COLUMNS = 16
 
 /** GID 0 is Tiled's cell with no tile; the tileset starts right after. */
 const FIRST_GID = 1
@@ -85,7 +82,7 @@ export async function exportTilesetTiled(
   const tiles = map
     ? map.tiles.map((cell) => tileset.tiles[cell].indices)
     : tileset.tiles.map((tile) => tile.indices)
-  const columns = map ? Math.min(ATLAS_COLUMNS, tiles.length) : tileset.columns
+  const columns = map ? mapAtlasColumns(tiles.length) : tileset.columns
 
   const atlas = renderTileAtlas(tileset, {
     tiles,

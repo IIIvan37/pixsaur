@@ -25,7 +25,11 @@
 - **M2 livrée** : la disposition map (`mapTileset`, `buildTileMap`, writer
   TMX, sélecteur et budget dans le panneau de grille, compteur et alerte dans
   le panneau de résultat, projet v3 avec migration de la v2).
-- **Prochaine action** : M3.
+- **M3 livrée** : la vue map (`TilesetMapView`). Deux onglets, Map et
+  Tileset. Le survol marque les cases de la même tuile sur un canvas d'un
+  pixel par case. Un clic vise la tuile pour la retouche. La comparaison
+  montre la source rognée à la grille (`cropSheet`).
+- **Prochaine action** : M4.
 
 ## Constat de départ
 

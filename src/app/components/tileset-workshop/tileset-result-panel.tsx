@@ -2,7 +2,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback } from 'react'
 import {
   editedTilesetAtom,
   renderedTilesetSheetAtom,
@@ -17,9 +17,10 @@ import { Panel } from '@/components/ui/layout/panel/panel'
 import { logger } from '@/core'
 import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
 import { resolveFileSink } from '@/export/application/file-sink'
-import type { Sheet } from '@/libs/pixsaur-tileset'
 import { exportTilesetTiled, saveTilesetSheet } from '@/tileset'
+import { TilesetMapView } from './tileset-map-view'
 import styles from './tileset-workshop.module.css'
+import { useSheetCanvas } from './use-sheet-canvas'
 
 /** How many collisions are worth reading before the list stops informing. */
 const WORST_SHOWN = 8
@@ -30,27 +31,6 @@ const FAILURES = {
   'palette-too-wide': msg`La palette gelée dépasse ce que le mode peut tenir.`,
   'palette-missing-hole': msg`La palette gelée ne commence pas par le pen de transparence.`,
   'locked-pen-out-of-range': msg`Un pen épinglé n'a pas de place dans ce mode.`
-}
-
-/**
- * Draws the sheet on the canvas, as the image workshop does — no encoding is
- * needed to look at pixels (Q20).
- */
-function useSheetCanvas(sheet: Sheet | null) {
-  const ref = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = ref.current
-    if (!canvas || !sheet) return
-
-    canvas.width = sheet.width
-    canvas.height = sheet.height
-    canvas
-      .getContext('2d')
-      ?.putImageData(new ImageData(sheet.data, sheet.width, sheet.height), 0, 0)
-  }, [sheet])
-
-  return ref
 }
 
 /**
@@ -115,13 +95,17 @@ export function TilesetResultPanel() {
     <Panel>
       <Header title={<Trans>Résultat</Trans>} />
 
-      {sheet && (
-        <canvas
-          ref={canvas}
-          className={styles.preview}
-          role='img'
-          aria-label={_(msg`Planche convertie`)}
-        />
+      {map ? (
+        <TilesetMapView />
+      ) : (
+        sheet && (
+          <canvas
+            ref={canvas}
+            className={styles.preview}
+            role='img'
+            aria-label={_(msg`Planche convertie`)}
+          />
+        )
       )}
 
       <p>
@@ -151,7 +135,7 @@ export function TilesetResultPanel() {
         </p>
       )}
 
-      <div className={styles.actions}>
+      <div className={styles.buttons}>
         <Button disabled={!sheet} onClick={() => void handleSave()}>
           <Trans>Enregistrer le PNG</Trans>
         </Button>

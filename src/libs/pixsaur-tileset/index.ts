@@ -6,6 +6,7 @@ export {
   type SheetGutters,
   scaleSheetGutters
 } from './src/assemble-sheet'
+export { cropSheet, type SheetRegion } from './src/crop-sheet'
 export {
   type DiffuseOptions,
   type DiffusionColours,
