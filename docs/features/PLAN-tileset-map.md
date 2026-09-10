@@ -40,7 +40,15 @@
   champ absent se lit `auto`, donc un projet v3 déjà écrit reste valide.
   `mapTileset` marque ses cases `EMPTY_CELL`, la retire de l'atlas et du
   budget. L'export écrit le GID 0. La vue dessine la case vide sans tuile.
-- **Prochaine action** : M6.
+- **M6 livrée** : la fusion des quasi-doublons. `mergeNearTiles` (lib) est
+  glouton : de la tuile la plus montrée à la moins montrée, chacune rejoint
+  la plus proche des tuiles gardées sous le seuil, ou elle est gardée. Une
+  tuile absorbée n'absorbe rien, donc aucune chaîne ne dérive. L'écart est la
+  somme des distances perceptuelles des pixels qui diffèrent. La vue map
+  expose le seuil, la liste des fusions (les plus lointaines en tête) et
+  « Garder à part ». Un clic sur une case fusionnée vise la tuile qui reste.
+- **Découpe close** : M1 à M6 livrées. Prochaine action : la PR vers `main`,
+  puis une vérification à l'œil sur une vraie capture, hors du dépôt.
 
 ## Constat de départ
 

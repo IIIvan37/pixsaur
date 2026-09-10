@@ -25,6 +25,11 @@ export {
   type IntegerScale
 } from './src/integer-scale'
 export {
+  type MergeNearTilesInput,
+  mergeNearTiles,
+  type TileMerge
+} from './src/merge-near-tiles'
+export {
   type BayerSize,
   type OrderedDitherOptions,
   orderedDitherTile,

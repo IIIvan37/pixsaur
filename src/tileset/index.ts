@@ -59,7 +59,8 @@ export {
   mapTileset,
   type TilesetLayout,
   type TilesetMap,
-  type TilesetMapOptions
+  type TilesetMapOptions,
+  type TilesetMerge
 } from './application/tileset-map'
 export {
   type ConvertedPalette,

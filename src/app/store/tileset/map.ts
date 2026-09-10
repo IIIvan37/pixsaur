@@ -19,7 +19,8 @@ import {
   suggestMapOffset,
   type TilesetLayout,
   type TilesetMap,
-  type TilesetMapOptions
+  type TilesetMapOptions,
+  type TilesetMerge
 } from '@/tileset'
 import { tilesetConversionInputAtom } from './conversion'
 import { editedTilesetAtom } from './edits'
@@ -54,6 +55,21 @@ export const setTilesetMapOptionsAtom = atom(
   null,
   (get, set, payload: Partial<TilesetMapOptions>) => {
     set(tilesetMapOptionsAtom, { ...get(tilesetMapOptionsAtom), ...payload })
+  }
+)
+
+/** Keeps the two tiles of a merge apart, whatever the threshold (M-Q15). */
+export const excludeTilesetMergeAtom = atom(
+  null,
+  (get, set, { absorbed, survivor }: TilesetMerge) => {
+    const options = get(tilesetMapOptionsAtom)
+    set(tilesetMapOptionsAtom, {
+      ...options,
+      mergeExclusions: [
+        ...(options.mergeExclusions ?? []),
+        [absorbed, survivor]
+      ]
+    })
   }
 )
 

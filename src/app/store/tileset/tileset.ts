@@ -45,6 +45,7 @@ export {
   tilesetGridSuggestionsAtom
 } from './grid'
 export {
+  excludeTilesetMergeAtom,
   renderedTilesetAtlasAtom,
   renderedTilesetMapAtom,
   setTilesetLayoutAtom,

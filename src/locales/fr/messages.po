@@ -235,7 +235,7 @@ msgstr "Aucune tuile entière n'entre dans la grille déclarée."
 msgid "Aucune tuile ne perd de couleur."
 msgstr "Aucune tuile ne perd de couleur."
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:174
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:192
 msgid "Aucune tuile vide"
 msgstr "Aucune tuile vide"
 
@@ -295,15 +295,15 @@ msgstr "Budget de tuiles"
 msgid "Canaux RGB"
 msgstr "Canaux RGB"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:153
 msgid "Case survolée"
 msgstr "Case survolée"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:140
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:158
 msgid "Case vide"
 msgstr "Case vide"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:166
 msgid "cases"
 msgstr "cases"
 
@@ -425,7 +425,7 @@ msgstr "Combined"
 msgid "Comme la planche"
 msgstr "Comme la planche"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:110
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:128
 msgid "Comparer avec la source"
 msgstr "Comparer avec la source"
 
@@ -662,6 +662,10 @@ msgstr "Workspace DSK exporté avec succès !"
 msgid "palette.strategy.adaptive.desc"
 msgstr "Stratégie dynamique selon l'image"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:224
+msgid "écart"
+msgstr "écart"
+
 #: src/app/components/preview-panel.tsx:36
 msgid "Éditer"
 msgstr "Éditer"
@@ -862,9 +866,17 @@ msgstr "Fréquence Contraste"
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Fréquence prioritaire (80%) avec diversité modérée"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:213
+msgid "Fusions, les plus lointaines en tête"
+msgstr "Fusions, les plus lointaines en tête"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:166
 msgid "Gamma"
 msgstr "Gamma"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:228
+msgid "Garder à part"
+msgstr "Garder à part"
 
 #: src/app/components/tileset-workshop/tileset-palette-panel.tsx:123
 msgid "Geler la palette"
@@ -1131,15 +1143,15 @@ msgid "Machine source"
 msgstr "Machine source"
 
 #: src/app/components/tileset-workshop/tileset-grid-panel.tsx:60
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:97
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:115
 msgid "Map"
 msgstr "Map"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:136
 msgid "Map convertie"
 msgstr "Map convertie"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:136
 #: src/app/components/tileset-workshop/tileset-source-panel.tsx:35
 msgid "Map source"
 msgstr "Map source"
@@ -1779,6 +1791,10 @@ msgstr "Sélectionne des couleurs qui se mélangent bien en tramage"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:201
+msgid "Seuil de fusion"
+msgstr "Seuil de fusion"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:180
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
@@ -1820,7 +1836,7 @@ msgstr "Supporte les formats CPC Classic et CPC Plus. Le loader détecte automat
 msgid "Supprimer le changement"
 msgstr "Supprimer le changement"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:133
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:151
 msgid "Survolez une case pour voir où sa tuile revient."
 msgstr "Survolez une case pour voir où sa tuile revient."
 
@@ -1853,12 +1869,12 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Teste toutes les combinaisons, maximise le contraste (meilleure qualité)"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:100
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
 #: src/app/components/workshop-tabs/workshop-tabs.tsx:40
 msgid "Tileset"
 msgstr "Tileset"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:184
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:242
 msgid "Tileset de la map"
 msgstr "Tileset de la map"
 
@@ -1887,7 +1903,7 @@ msgid "Trous aplatis sur le fond"
 msgstr "Trous aplatis sur le fond"
 
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:93
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:143
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:161
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:164
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
 msgid "Tuile"
@@ -1897,7 +1913,7 @@ msgstr "Tuile"
 msgid "Tuile de destination"
 msgstr "Tuile de destination"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:167
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:185
 msgid "Tuile vide automatique"
 msgstr "Tuile vide automatique"
 
@@ -1996,11 +2012,11 @@ msgstr "Vibrance"
 msgid "Vider"
 msgstr "Vider"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:160
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:178
 msgid "Vider la tuile de la case sélectionnée"
 msgstr "Vider la tuile de la case sélectionnée"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:95
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:113
 msgid "Vues de la map"
 msgstr "Vues de la map"
 

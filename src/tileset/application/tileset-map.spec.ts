@@ -25,6 +25,59 @@ function tilesetOf(
   }
 }
 
+/** Past any distance two tiles of this palette can have. */
+const ANY = 1e9
+
+describe('mapTileset, merges', () => {
+  it('merges nothing while no threshold is set', () => {
+    expect(mapTileset(tilesetOf([0, 0, 1]), { budget: 256 }).cells).toEqual([
+      0, 0, 1
+    ])
+  })
+
+  // M-Q18: the merge draws nothing; it points cells at another tile.
+  it('points the cells of a near tile at the more frequent one', () => {
+    expect(
+      mapTileset(tilesetOf([0, 0, 1]), { budget: 256, mergeThreshold: ANY })
+        .cells
+    ).toEqual([0, 0, 0])
+  })
+
+  it('names each merge by the cells its two tiles first appear in', () => {
+    expect(
+      mapTileset(tilesetOf([0, 0, 1]), { budget: 256, mergeThreshold: ANY })
+        .merges
+    ).toEqual([{ absorbed: 2, survivor: 0, distance: expect.any(Number) }])
+  })
+
+  it('keeps apart the tiles the user excluded', () => {
+    expect(
+      mapTileset(tilesetOf([0, 0, 1]), {
+        budget: 256,
+        mergeThreshold: ANY,
+        mergeExclusions: [[2, 0]]
+      }).cells
+    ).toEqual([0, 0, 1])
+  })
+
+  it('merges no tile into the empty one', () => {
+    expect(
+      mapTileset(tilesetOf([0, 1, 2]), {
+        budget: 256,
+        emptyTile: 0,
+        mergeThreshold: ANY
+      }).cells
+    ).toEqual([EMPTY_CELL, 0, 0])
+  })
+
+  it('counts the budget once the merges are made', () => {
+    expect(
+      mapTileset(tilesetOf([0, 1, 2]), { budget: 1, mergeThreshold: ANY })
+        .overBudget
+    ).toBe(false)
+  })
+})
+
 describe('mapTileset, empty tile', () => {
   it('leaves every cell a tile while none is to be empty', () => {
     expect(

@@ -4,6 +4,7 @@ import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useMemo, useState } from 'react'
 import {
+  excludeTilesetMergeAtom,
   renderedTilesetAtlasAtom,
   renderedTilesetMapAtom,
   selectedTileAtom,
@@ -13,6 +14,7 @@ import {
   tilesetMapSourceAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
+import Input from '@/components/ui/input/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EMPTY_CELL, type TilesetMap } from '@/tileset'
 import { cellAt } from './map-cell-at'
@@ -21,6 +23,19 @@ import { useSheetCanvas } from './use-sheet-canvas'
 
 /** See-through, so the tile under the mark stays readable. */
 const HIGHLIGHT = 'rgba(255, 196, 0, 0.5)'
+
+/** How many merges are worth reading before the list stops informing. */
+const MERGES_SHOWN = 12
+
+/**
+ * The cell whose tile a click aims the retouching at: the first cell of the
+ * tile the clicked cell shows — the tile that stays when it was merged
+ * (M-Q18) — or the cell itself when it is empty.
+ */
+function tileCellOf(map: TilesetMap, cell: number): number {
+  const tile = map.cells[cell]
+  return tile === EMPTY_CELL ? cell : map.tiles[tile]
+}
 
 /**
  * Marks the given cells on a canvas of one pixel per cell. The page stretches
@@ -63,8 +78,11 @@ export function TilesetMapView() {
   const source = useAtomValue(tilesetMapSourceAtom)
   const atlas = useAtomValue(renderedTilesetAtlasAtom)
   const [selected, select] = useAtom(selectedTileAtom)
-  const { emptyTile = 'auto' } = useAtomValue(tilesetMapOptionsAtom)
+  const { emptyTile = 'auto', mergeThreshold = 0 } = useAtomValue(
+    tilesetMapOptionsAtom
+  )
   const setMapOptions = useSetAtom(setTilesetMapOptionsAtom)
+  const exclude = useSetAtom(excludeTilesetMergeAtom)
   const [comparing, setComparing] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
 
@@ -120,7 +138,7 @@ export function TilesetMapView() {
             onMouseLeave={() => setHovered(null)}
             onClick={(event) => {
               const cell = cellUnder(event)
-              if (cell !== null) select(cell)
+              if (cell !== null) select(tileCellOf(map, cell))
             }}
           />
           {/* Decoration with no fallback content, so assistive technology
@@ -174,6 +192,46 @@ export function TilesetMapView() {
             <Trans>Aucune tuile vide</Trans>
           </Button>
         </div>
+
+        {/* M-Q14 · M-Q15: a threshold preselects the merges, the user takes
+            back the ones that matter — a door, a trap. */}
+        <div className={styles.fields}>
+          <Input
+            compact
+            label={_(msg`Seuil de fusion`)}
+            type='number'
+            min={0}
+            value={String(mergeThreshold)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setMapOptions({ mergeThreshold: Number(event.target.value) })
+            }
+          />
+        </div>
+        {map.merges.length > 0 && (
+          <section className={styles.suggestions}>
+            <h2 className={styles.subtitle}>
+              <Trans>Fusions, les plus lointaines en tête</Trans>
+            </h2>
+            <ul className={styles.candidates}>
+              {[...map.merges]
+                .sort((a, b) => b.distance - a.distance)
+                .slice(0, MERGES_SHOWN)
+                .map((merge) => (
+                  <li key={`${merge.absorbed}:${merge.survivor}`}>
+                    {/* Cells numbered from 1, like the map's GIDs. */}
+                    <span>
+                      {`#${merge.absorbed + 1} → #${merge.survivor + 1} · `}
+                      <Trans>écart</Trans>
+                      {` ${Math.round(merge.distance)}`}
+                    </span>
+                    <Button variant='secondary' onClick={() => exclude(merge)}>
+                      <Trans>Garder à part</Trans>
+                    </Button>
+                  </li>
+                ))}
+            </ul>
+          </section>
+        )}
       </TabsContent>
 
       <TabsContent value='tileset'>

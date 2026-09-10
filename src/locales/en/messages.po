@@ -235,7 +235,7 @@ msgstr "No whole tile fits the grid that was declared."
 msgid "Aucune tuile ne perd de couleur."
 msgstr "No tile loses a colour."
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:174
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:192
 msgid "Aucune tuile vide"
 msgstr "No empty tile"
 
@@ -295,15 +295,15 @@ msgstr "Tile budget"
 msgid "Canaux RGB"
 msgstr "RGB Channels"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:153
 msgid "Case survolée"
 msgstr "Hovered cell"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:140
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:158
 msgid "Case vide"
 msgstr "Empty cell"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:166
 msgid "cases"
 msgstr "cells"
 
@@ -424,7 +424,7 @@ msgstr "Combined"
 msgid "Comme la planche"
 msgstr "As the sheet"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:110
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:128
 msgid "Comparer avec la source"
 msgstr "Compare with the source"
 
@@ -661,6 +661,10 @@ msgstr "DSK workspace exported successfully!"
 msgid "palette.strategy.adaptive.desc"
 msgstr "Dynamic strategy based on image"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:224
+msgid "écart"
+msgstr "gap"
+
 #: src/app/components/preview-panel.tsx:36
 msgid "Éditer"
 msgstr "Edit"
@@ -861,9 +865,17 @@ msgstr "Frequency Contrast"
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Frequency priority (80%) with moderate diversity"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:213
+msgid "Fusions, les plus lointaines en tête"
+msgstr "Merges, the widest first"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:166
 msgid "Gamma"
 msgstr "Gamma"
+
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:228
+msgid "Garder à part"
+msgstr "Keep apart"
 
 #: src/app/components/tileset-workshop/tileset-palette-panel.tsx:123
 msgid "Geler la palette"
@@ -1130,15 +1142,15 @@ msgid "Machine source"
 msgstr "Source machine"
 
 #: src/app/components/tileset-workshop/tileset-grid-panel.tsx:60
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:97
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:115
 msgid "Map"
 msgstr "Map"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:136
 msgid "Map convertie"
 msgstr "Converted map"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:136
 #: src/app/components/tileset-workshop/tileset-source-panel.tsx:35
 msgid "Map source"
 msgstr "Source map"
@@ -1778,6 +1790,10 @@ msgstr "Selects colors that blend well in dithering"
 msgid "Settings"
 msgstr "Settings"
 
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:201
+msgid "Seuil de fusion"
+msgstr "Merge threshold"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:180
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
@@ -1819,7 +1835,7 @@ msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects 
 msgid "Supprimer le changement"
 msgstr "Remove change"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:133
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:151
 msgid "Survolez une case pour voir où sa tuile revient."
 msgstr "Hover a cell to see where its tile comes back."
 
@@ -1852,12 +1868,12 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Tests all combinations, maximizes contrast (best quality)"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:100
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:118
 #: src/app/components/workshop-tabs/workshop-tabs.tsx:40
 msgid "Tileset"
 msgstr "Tileset"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:184
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:242
 msgid "Tileset de la map"
 msgstr "Map tileset"
 
@@ -1886,7 +1902,7 @@ msgid "Trous aplatis sur le fond"
 msgstr "Holes flattened onto the background"
 
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:93
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:143
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:161
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:164
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
 msgid "Tuile"
@@ -1896,7 +1912,7 @@ msgstr "Tile"
 msgid "Tuile de destination"
 msgstr "Destination tile"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:167
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:185
 msgid "Tuile vide automatique"
 msgstr "Automatic empty tile"
 
@@ -1995,11 +2011,11 @@ msgstr "Vibrance"
 msgid "Vider"
 msgstr "Clear"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:160
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:178
 msgid "Vider la tuile de la case sélectionnée"
 msgstr "Empty the tile of the selected cell"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:95
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:113
 msgid "Vues de la map"
 msgstr "Map views"
 

@@ -138,6 +138,43 @@ describe('TilesetMapView', () => {
     expect(store.get(tilesetMapAtom)?.cells).toEqual([0, 1, 0])
   })
 
+  // M-Q15: a threshold picks the merges.
+  it('merges near tiles once the user sets a threshold', async () => {
+    const store = storeWithMap()
+    renderWithProviders(<TilesetMapView />, { store })
+
+    await userEvent.type(screen.getByLabelText(/Seuil de fusion/i), '9999999')
+
+    expect(store.get(tilesetMapAtom)?.cells).toEqual([0, 0, 0])
+  })
+
+  it('keeps a merge apart when the user excludes it', async () => {
+    const store = storeWithMap()
+    store.set(setTilesetMapOptionsAtom, { mergeThreshold: 9999999 })
+    renderWithProviders(<TilesetMapView />, { store })
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Garder à part/i })
+    )
+
+    expect(store.get(tilesetMapAtom)?.cells).toEqual([0, 1, 0])
+  })
+
+  // M-Q18: a stroke on a merged cell changes the tile that stays.
+  it('aims the retouching at the tile a merged cell shows', () => {
+    layOutMap()
+    const store = storeWithMap()
+    store.set(setTilesetMapOptionsAtom, { mergeThreshold: 9999999 })
+    renderWithProviders(<TilesetMapView />, { store })
+
+    fireEvent.click(screen.getByRole('img', { name: /Map convertie/i }), {
+      clientX: 12,
+      clientY: 4
+    })
+
+    expect(store.get(selectedTileAtom)).toBe(0)
+  })
+
   it('aims the retouching at the cell the user clicks', () => {
     layOutMap()
     const store = storeWithMap()
