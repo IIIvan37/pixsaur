@@ -20,7 +20,12 @@
 
 - **Branche** : `feat/tileset-map`, créée depuis `main` après le merge de la
   PR #348. Une seule PR vers `main` à la fin (M-Q24).
-- **Prochaine action** : M1.
+- **M1 livrée** : l'export Tiled de la planche (`exportTilesetTiled`, writer
+  TSX, helper `zipFiles`, `renderTileAtlas`).
+- **M2 livrée** : la disposition map (`mapTileset`, `buildTileMap`, writer
+  TMX, sélecteur et budget dans le panneau de grille, compteur et alerte dans
+  le panneau de résultat, projet v3 avec migration de la v2).
+- **Prochaine action** : M3.
 
 ## Constat de départ
 

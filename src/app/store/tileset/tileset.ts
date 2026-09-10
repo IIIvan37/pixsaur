@@ -45,6 +45,13 @@ export {
   tilesetGridSuggestionsAtom
 } from './grid'
 export {
+  setTilesetLayoutAtom,
+  setTilesetMapOptionsAtom,
+  tilesetLayoutAtom,
+  tilesetMapAtom,
+  tilesetMapOptionsAtom
+} from './map'
+export {
   type SetTilesetPenPayload,
   setTilesetPenAtom,
   tilesetPaletteSlotsAtom,

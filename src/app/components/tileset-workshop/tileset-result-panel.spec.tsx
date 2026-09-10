@@ -4,6 +4,8 @@ import { createStore } from 'jotai'
 import {
   selectedTileAtom,
   setTilesetGridAtom,
+  setTilesetLayoutAtom,
+  setTilesetMapOptionsAtom,
   setTilesetModeAtom,
   setTilesetOptionsAtom,
   setTilesetSheetAtom
@@ -109,6 +111,33 @@ describe('TilesetResultPanel', () => {
         'tileset-tiled.zip'
       )
     )
+  })
+
+  it('counts the tiles the map keeps against its budget', () => {
+    const store = storeWithSheet()
+    store.set(setTilesetLayoutAtom, 'map')
+
+    renderWithProviders(<TilesetResultPanel />, { store })
+
+    expect(screen.getByLabelText(/Tuiles de la map/i)).toHaveTextContent(
+      '2 / 256'
+    )
+  })
+
+  it('warns when the map keeps more tiles than its budget', () => {
+    const store = storeWithSheet()
+    store.set(setTilesetLayoutAtom, 'map')
+    store.set(setTilesetMapOptionsAtom, { budget: 1 })
+
+    renderWithProviders(<TilesetResultPanel />, { store })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/budget/i)
+  })
+
+  it('counts no map while the source is a sheet', () => {
+    renderWithProviders(<TilesetResultPanel />, { store: storeWithSheet() })
+
+    expect(screen.queryByLabelText(/Tuiles de la map/i)).toBeNull()
   })
 
   it('says so when the grid fits no whole tile', () => {

@@ -17,6 +17,7 @@ import { tilesetConversionSubjectAtom } from './conversion'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { sourcePlatformAtom, tilesetTargetAtom } from './geometry'
 import { tilesetGridAtom } from './grid'
+import { tilesetLayoutAtom, tilesetMapOptionsAtom } from './map'
 import { tilesetSheetAtom } from './sheet'
 
 /** `null` until a sheet is imported: there is no document to save before. */
@@ -29,7 +30,9 @@ export const captureTilesetProjectAtom = atom<TilesetProject | null>((get) => {
     ...subject,
     sourcePlatform: get(sourcePlatformAtom),
     options: get(tilesetOptionsAtom),
-    edits: get(tilesetEditLayerAtom)
+    edits: get(tilesetEditLayerAtom),
+    layout: get(tilesetLayoutAtom),
+    map: get(tilesetMapOptionsAtom)
   }
 })
 
@@ -52,6 +55,8 @@ export const restoreTilesetProjectAtom = atom(
     set(tilesetHardwareAtom, project.hardware)
     set(sourcePlatformAtom, project.sourcePlatform)
     set(tilesetOptionsAtom, project.options)
+    set(tilesetLayoutAtom, project.layout)
+    set(tilesetMapOptionsAtom, project.map)
     set(tilesetEditLayerAtom, project.edits)
   }
 )

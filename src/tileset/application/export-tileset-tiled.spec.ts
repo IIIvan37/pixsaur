@@ -6,6 +6,7 @@ import {
   exportTilesetTiled
 } from './export-tileset-tiled'
 import type { Pen } from './pens'
+import { mapTileset } from './tileset-map'
 
 const WHITE: Pen = [255, 255, 255]
 const BLACK: Pen = [0, 0, 0]
@@ -162,5 +163,99 @@ describe('exportTilesetTiled', () => {
     })
 
     expect(result).toEqual({ ok: false, error: 'no-canvas-context' })
+  })
+})
+
+/** Tiles of 4 x 2 CPC pixels on one row, one pen each — a map of one line. */
+function tilesetOfPens(pens: number[]): ConvertedTileset {
+  const colours = Math.max(...pens) + 1
+  return {
+    columns: pens.length,
+    rows: 1,
+    palette: Array.from({ length: colours }, (_, at): Pen => [at * 10, 0, 0]),
+    tiles: pens.map((pen) => ({ indices: new Uint8Array(8).fill(pen) })),
+    instanceOf: pens.map((_, at) => at),
+    unique: pens.map((_, at) => at),
+    transparentPen: null,
+    collisions: [],
+    resizeSearch: null
+  }
+}
+
+/** The input of a map export — Plus, so any colour is a hardware one. */
+function mapOf(pens: number[]): Partial<ExportTilesetTiledInput> {
+  const tileset = tilesetOfPens(pens)
+  return {
+    tileset,
+    hardware: 'plus',
+    map: mapTileset(tileset, { budget: 256 })
+  }
+}
+
+async function entryOf(
+  name: string,
+  overrides: Partial<ExportTilesetTiledInput>
+) {
+  const { blob } = await exported(overrides)
+  return readEntry(blob, name)
+}
+
+/** Twenty tiles, all distinct — past one row of the atlas. */
+const TWENTY = Array.from({ length: 20 }, (_, at) => at)
+
+describe('exportTilesetTiled, map layout', () => {
+  it('packs the map next to its tileset', async () => {
+    const { blob } = await exported(mapOf([0, 1, 0]))
+    const zip = await JSZip.loadAsync(blob as Blob)
+
+    expect(Object.keys(zip.files).sort()).toEqual([
+      'map.tmx',
+      'tileset.png',
+      'tileset.tsx'
+    ])
+  })
+
+  it('counts only the tiles the map keeps', async () => {
+    expect(await entryOf('tileset.tsx', mapOf([0, 1, 0]))).toContain(
+      'tilecount="2"'
+    )
+  })
+
+  it('lays the atlas on as many columns as it has tiles, below 16', async () => {
+    expect(await entryOf('tileset.tsx', mapOf([0, 1, 0]))).toContain(
+      'columns="2"'
+    )
+  })
+
+  // M-Q12: 16 columns, whatever the width of the map.
+  it('wraps the atlas at 16 columns', async () => {
+    expect(await entryOf('tileset.tsx', mapOf(TWENTY))).toContain(
+      'columns="16"'
+    )
+  })
+
+  it('draws the atlas on as many rows as the tiles need', async () => {
+    const { canvasFactory } = await exported(mapOf(TWENTY))
+
+    // 16 tiles of 8 stretched pixels across, 2 rows of 2 pixels down.
+    expect(canvasFactory.createCanvas).toHaveBeenCalledWith(128, 4)
+  })
+
+  it('points the map at the tileset next to it', async () => {
+    expect(await entryOf('map.tmx', mapOf([0, 1, 0]))).toContain(
+      '<tileset firstgid="1" source="tileset.tsx"/>'
+    )
+  })
+
+  it('sizes the map in cells of the source grid', async () => {
+    expect(await entryOf('map.tmx', mapOf([0, 1, 0]))).toContain(
+      'width="3" height="1" tilewidth="8" tileheight="2"'
+    )
+  })
+
+  it('numbers each cell by its tile, from the first GID', async () => {
+    expect(await entryOf('map.tmx', mapOf([0, 1, 0]))).toContain(
+      '<data encoding="csv">\n1,2,1\n</data>'
+    )
   })
 })

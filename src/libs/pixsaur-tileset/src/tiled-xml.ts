@@ -32,6 +32,18 @@ export interface TiledTilesetDocument {
   properties?: readonly TiledProperty[]
 }
 
+/** An orthogonal map of one tile layer over one external tileset. */
+export interface TiledMapDocument {
+  /** Size of the map, in cells. */
+  width: number
+  height: number
+  tileWidth: number
+  tileHeight: number
+  tileset: { firstGid: number; source: string }
+  /** One GID per cell, in reading order. GID 0 is a cell with no tile. */
+  layer: { name: string; gids: readonly number[] }
+}
+
 /** The format version the documents declare. */
 const TILED_FORMAT = '1.10'
 
@@ -97,6 +109,48 @@ export function writeTiledTileset(tileset: TiledTilesetDocument): string {
       ['height', image.height]
     ])}/>`,
     '</tileset>'
+  ]
+
+  return `${XML_DECLARATION}${lines.join('\n')}\n`
+}
+
+/** The TMX document of a map whose tileset lives in its own file. */
+export function writeTiledMap(map: TiledMapDocument): string {
+  const { width, height, layer } = map
+  // Tiled writes the CSV one row of the map per line, every row but the last
+  // ending on a comma.
+  const rows = Array.from({ length: height }, (_, row) =>
+    layer.gids.slice(row * width, (row + 1) * width).join(',')
+  )
+
+  const lines = [
+    `<map${attributes([
+      ['version', TILED_FORMAT],
+      ['orientation', 'orthogonal'],
+      ['renderorder', 'right-down'],
+      ['width', width],
+      ['height', height],
+      ['tilewidth', map.tileWidth],
+      ['tileheight', map.tileHeight],
+      ['infinite', 0],
+      ['nextlayerid', 2],
+      ['nextobjectid', 1]
+    ])}>`,
+    ` <tileset${attributes([
+      ['firstgid', map.tileset.firstGid],
+      ['source', map.tileset.source]
+    ])}/>`,
+    ` <layer${attributes([
+      ['id', 1],
+      ['name', layer.name],
+      ['width', width],
+      ['height', height]
+    ])}>`,
+    '  <data encoding="csv">',
+    rows.join(',\n'),
+    '</data>',
+    ' </layer>',
+    '</map>'
   ]
 
   return `${XML_DECLARATION}${lines.join('\n')}\n`

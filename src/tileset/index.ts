@@ -44,6 +44,13 @@ export {
   TILESET_SHEET_FILENAME
 } from './application/save-tileset-sheet'
 export {
+  DEFAULT_TILESET_MAP_OPTIONS,
+  mapTileset,
+  type TilesetLayout,
+  type TilesetMap,
+  type TilesetMapOptions
+} from './application/tileset-map'
+export {
   type ConvertedPalette,
   dropPen,
   freezePalette,

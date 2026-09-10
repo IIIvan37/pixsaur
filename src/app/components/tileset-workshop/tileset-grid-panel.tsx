@@ -4,11 +4,17 @@ import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
 import {
   setTilesetGridAtom,
+  setTilesetLayoutAtom,
+  setTilesetMapOptionsAtom,
   tilesetGridAtom,
-  tilesetGridSuggestionsAtom
+  tilesetGridSuggestionsAtom,
+  tilesetLayoutAtom,
+  tilesetMapOptionsAtom
 } from '@/app/store/tileset/tileset'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
+import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
+import type { TilesetLayout } from '@/tileset'
 import { TileSuggestions } from './tileset-suggestions'
 import styles from './tileset-workshop.module.css'
 
@@ -26,6 +32,10 @@ export function TilesetGridPanel() {
   const grid = useAtomValue(tilesetGridAtom)
   const setGrid = useSetAtom(setTilesetGridAtom)
   const suggestions = useAtomValue(tilesetGridSuggestionsAtom)
+  const layout = useAtomValue(tilesetLayoutAtom)
+  const setLayout = useSetAtom(setTilesetLayoutAtom)
+  const mapOptions = useAtomValue(tilesetMapOptionsAtom)
+  const setMapOptions = useSetAtom(setTilesetMapOptionsAtom)
 
   const number = (key: keyof typeof grid) => ({
     type: 'number',
@@ -38,6 +48,17 @@ export function TilesetGridPanel() {
   return (
     <section className={styles.tab}>
       <Header title={<Trans>Grille source</Trans>} />
+
+      {/* A sheet keeps every tile where it sits; a map keeps each distinct
+          tile once and remembers which cell shows it (M-Q1). */}
+      <ToggleButtonGroup<TilesetLayout>
+        options={[
+          { value: 'sheet', label: _(msg`Planche`) },
+          { value: 'map', label: _(msg`Map`) }
+        ]}
+        value={layout}
+        onChange={setLayout}
+      />
 
       <div className={styles.fields}>
         <Input
@@ -54,6 +75,18 @@ export function TilesetGridPanel() {
         <Input compact label={_(msg`Espacement`)} {...number('spacing')} />
         <Input compact label={_(msg`Décalage X`)} {...number('offsetX')} />
         <Input compact label={_(msg`Décalage Y`)} {...number('offsetY')} />
+        {layout === 'map' && (
+          <Input
+            compact
+            label={_(msg`Budget de tuiles`)}
+            type='number'
+            min={1}
+            value={String(mapOptions.budget)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+              setMapOptions({ budget: Number(event.target.value) })
+            }
+          />
+        )}
       </div>
 
       {suggestions.length > 0 && (

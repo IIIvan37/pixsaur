@@ -39,7 +39,8 @@ a second consumer here:
 | `renderTilesetSheet` | converted tileset + the source grid | RGBA pixels in the shape of a source sheet | none |
 | `renderTileAtlas` | the pens, the tiles, a column count, target, mode | RGBA pixels, tiles edge to edge — what Tiled reads (M-Q20) | none |
 | `saveTilesetSheet` | `{ sheet, filename? }` — defaults to `TILESET_SHEET_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` | `CanvasFactory`, `FileSink` |
-| `exportTilesetTiled` | edited tileset, target, mode, hardware, `filename?` — defaults to `TILED_ARCHIVE_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` — one ZIP holding the TSX and its PNG | `CanvasFactory`, `FileSink` |
+| `exportTilesetTiled` | edited tileset, target, mode, hardware, `map?`, `filename?` — defaults to `TILED_ARCHIVE_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` — one ZIP holding the TSX and its PNG, plus the TMX when a map is given | `CanvasFactory`, `FileSink` |
+| `mapTileset` | edited tileset, map options (budget) | the cells, the distinct tiles in order of first appearance, the grid, `overBudget` (M-Q7 · M-Q18) | none |
 | `loadTilesetProject` / `saveTilesetProject` | the store, the project | the project or `null` · `true` / `false` | `TilesetProjectStore` |
 | `exportTilesetProjectFile` | `{ project, filename? }` — defaults to `TILESET_PROJECT_FILENAME` | `{ ok } \| { ok:false, error:'save-failed' }` | `FileSink` |
 | `importTilesetProjectFile` | `{ file }` (the picked `Blob`) | `ParseTilesetProjectResult` + `'unreadable-file'` | none — a `Blob` is a value, a fake is one line |
@@ -69,8 +70,9 @@ takes the metric as a parameter and so knows nothing of the hardware.
 `tileset-project.ts` is not a use-case: it is the document itself (Q31) — one
 shape, two carriers. IndexedDB keeps the object as it is (the structured clone
 carries the bytes); the exported file carries the same fields as JSON with the
-bytes in base64. `parseTilesetProject` **names** what failed and a project from
-another version is dropped, never migrated blind.
+bytes in base64. `parseTilesetProject` **names** what failed. A version 2
+project is migrated to version 3 as a sheet, because that is its only reading
+(M-Q21). A project from any other version is dropped, never migrated blind.
 
 ## What the panels may still do
 

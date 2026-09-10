@@ -3,6 +3,7 @@ import { useAtomValue, useSetAtom } from 'jotai'
 import { useCallback } from 'react'
 import {
   setTilesetSheetAtom,
+  tilesetLayoutAtom,
   tilesetSheetAtom
 } from '@/app/store/tileset/tileset'
 import { ImageUpload } from '@/components/image-upload/image-upload'
@@ -14,6 +15,7 @@ import { sheetFromImage } from './sheet-from-image'
 export function TilesetSourcePanel() {
   const sheet = useAtomValue(tilesetSheetAtom)
   const setSheet = useSetAtom(setTilesetSheetAtom)
+  const layout = useAtomValue(tilesetLayoutAtom)
 
   const handleLoaded = useCallback(
     (img: HTMLImageElement) => setSheet(sheetFromImage(img)),
@@ -23,7 +25,13 @@ export function TilesetSourcePanel() {
   return (
     <Panel>
       <Header
-        title={<Trans>Planche source</Trans>}
+        title={
+          layout === 'map' ? (
+            <Trans>Map source</Trans>
+          ) : (
+            <Trans>Planche source</Trans>
+          )
+        }
         actionLabel={sheet ? <Trans>Changer de planche</Trans> : undefined}
         action={sheet ? () => setSheet(null) : undefined}
       />

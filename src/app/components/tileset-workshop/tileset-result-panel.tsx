@@ -7,7 +7,9 @@ import {
   editedTilesetAtom,
   renderedTilesetSheetAtom,
   selectedTileAtom,
-  tilesetConversionInputAtom
+  tilesetConversionInputAtom,
+  tilesetMapAtom,
+  tilesetMapOptionsAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { Header } from '@/components/ui/layout/header/header'
@@ -63,6 +65,8 @@ export function TilesetResultPanel() {
   const result = useAtomValue(editedTilesetAtom)
   const sheet = useAtomValue(renderedTilesetSheetAtom)
   const input = useAtomValue(tilesetConversionInputAtom)
+  const map = useAtomValue(tilesetMapAtom)
+  const { budget } = useAtomValue(tilesetMapOptionsAtom)
   const select = useSetAtom(selectedTileAtom)
   const canvas = useSheetCanvas(sheet)
 
@@ -82,13 +86,13 @@ export function TilesetResultPanel() {
     if (!result?.ok || !input) return
 
     const exported = await exportTilesetTiled(
-      { ...input, tileset: result.tileset },
+      { ...input, tileset: result.tileset, map: map ?? undefined },
       { canvasFactory: domCanvasFactory, fileSink: resolveFileSink() }
     )
     if (!exported.ok) {
       logger.error('[TILESET] Failed to export for Tiled:', exported.error)
     }
-  }, [result, input])
+  }, [result, input, map])
 
   if (!result) return null
 
@@ -131,6 +135,21 @@ export function TilesetResultPanel() {
         {' : '}
         <output aria-label={_(msg`Pens`)}>{tileset.palette.length}</output>
       </p>
+
+      {map && (
+        <p>
+          <Trans>Tuiles de la map</Trans>
+          {' : '}
+          <output aria-label={_(msg`Tuiles de la map`)}>
+            {`${map.tiles.length} / ${budget}`}
+          </output>
+        </p>
+      )}
+      {map?.overBudget && (
+        <p role='alert'>
+          <Trans>La map garde plus de tuiles que son budget.</Trans>
+        </p>
+      )}
 
       <div className={styles.actions}>
         <Button disabled={!sheet} onClick={() => void handleSave()}>

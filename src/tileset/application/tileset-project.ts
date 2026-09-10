@@ -18,14 +18,25 @@ import type {
   TilesetConversionSubject
 } from './convert-tileset'
 import type { TilesetEditLayer } from './paint-tileset'
+import {
+  DEFAULT_TILESET_MAP_OPTIONS,
+  type TilesetLayout,
+  type TilesetMapOptions
+} from './tileset-map'
 
 /**
  * Bump when the stored shape stops reading back.
  *
  * 2 — `lockedPens` became a map of position to colour: a pin now carries the
  * index it holds, and a v1 file's array would be read as a map keyed 0, 1, 2…
+ *
+ * 3 — the layout and the map options (M-Q21). A version 2 project still reads:
+ * it was a sheet, with no map to speak of.
  */
-export const TILESET_PROJECT_VERSION = 2
+export const TILESET_PROJECT_VERSION = 3
+
+/** The one older version whose projects are migrated rather than dropped. */
+const MIGRATED_VERSION = 2
 
 /**
  * What the conversion is asked to do, beyond the sheet and the two grids.
@@ -53,6 +64,24 @@ export interface TilesetProject extends TilesetConversionSubject {
   sourcePlatform: SourcePlatform
   options: TilesetProjectOptions
   edits: TilesetEditLayer
+  layout: TilesetLayout
+  map: TilesetMapOptions
+}
+
+/**
+ * Brings a version 2 project up to the current shape. Every field it lacks
+ * has one reading only — a version 2 project was a sheet — so the migration
+ * guesses nothing. Any other version passes through untouched, to be refused.
+ */
+function migrate(value: Record<string, unknown>): Record<string, unknown> {
+  if (value.version !== MIGRATED_VERSION) return value
+
+  return {
+    ...value,
+    version: TILESET_PROJECT_VERSION,
+    layout: 'sheet',
+    map: DEFAULT_TILESET_MAP_OPTIONS
+  }
 }
 
 export type ParseTilesetProjectResult =
@@ -118,7 +147,10 @@ function hasProjectShape(value: unknown): value is Record<string, unknown> {
     isRecord(value.options) &&
     isRecord(value.edits) &&
     Array.isArray(value.edits.strokes) &&
-    typeof value.edits.at === 'number'
+    typeof value.edits.at === 'number' &&
+    (value.layout === 'sheet' || value.layout === 'map') &&
+    isRecord(value.map) &&
+    typeof value.map.budget === 'number'
   )
 }
 
@@ -135,6 +167,7 @@ export function parseTilesetProject(text: string): ParseTilesetProjectResult {
   } catch {
     return { ok: false, error: 'invalid-json' }
   }
+  if (isRecord(written)) written = migrate(written)
 
   if (isRecord(written) && written.version !== TILESET_PROJECT_VERSION) {
     return { ok: false, error: 'unsupported-version' }
@@ -162,12 +195,15 @@ export function parseTilesetProject(text: string): ParseTilesetProjectResult {
 /**
  * Read back what the browser store handed over. The bytes came through the
  * structured clone as they were, so only the shape and the version are in
- * question — a project of another version is dropped, never migrated blind.
+ * question. A version 2 project is migrated; one of any other version is
+ * dropped, never migrated blind.
  */
 export function readStoredTilesetProject(
-  value: unknown
+  stored: unknown
 ): TilesetProject | null {
-  if (!isRecord(value) || value.version !== TILESET_PROJECT_VERSION) return null
+  if (!isRecord(stored)) return null
+  const value = migrate(stored)
+  if (value.version !== TILESET_PROJECT_VERSION) return null
   if (!hasProjectShape(value)) return null
 
   const project = value as unknown as TilesetProject

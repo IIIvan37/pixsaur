@@ -76,9 +76,12 @@ export {
   type TileGeometryQuery,
   type TileSizeCandidate
 } from './src/tile-geometry'
+export { buildTileMap, type TileMap } from './src/tile-map'
 export {
   type TiledImage,
+  type TiledMapDocument,
   type TiledProperty,
   type TiledTilesetDocument,
+  writeTiledMap,
   writeTiledTileset
 } from './src/tiled-xml'

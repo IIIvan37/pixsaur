@@ -5,10 +5,14 @@ import { TILESET_PROJECT_VERSION } from '@/tileset'
 import { captureTilesetProjectAtom, restoreTilesetProjectAtom } from './project'
 import {
   setTilesetGridAtom,
+  setTilesetLayoutAtom,
+  setTilesetMapOptionsAtom,
   setTilesetOptionsAtom,
   setTilesetSheetAtom,
   tilesetEditLayerAtom,
   tilesetGridAtom,
+  tilesetLayoutAtom,
+  tilesetMapOptionsAtom,
   tilesetModeAtom,
   tilesetOptionsAtom,
   tilesetSheetAtom
@@ -37,9 +41,47 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
     sourcePlatform: 'snes',
     options: { resize: 'nearest', palette: [[0, 0, 0]] },
     edits: { strokes: [STROKE], at: 0 },
+    layout: 'map',
+    map: { budget: 64 },
     ...overrides
   }
 }
+
+describe('layout and map options', () => {
+  it('carries the layout the source is read with', () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, SHEET)
+
+    store.set(setTilesetLayoutAtom, 'map')
+
+    expect(store.get(captureTilesetProjectAtom)?.layout).toBe('map')
+  })
+
+  it('carries the map options', () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, SHEET)
+
+    store.set(setTilesetMapOptionsAtom, { budget: 32 })
+
+    expect(store.get(captureTilesetProjectAtom)?.map).toEqual({ budget: 32 })
+  })
+
+  it('puts the layout back', () => {
+    const store = createStore()
+
+    store.set(restoreTilesetProjectAtom, projectOf())
+
+    expect(store.get(tilesetLayoutAtom)).toBe('map')
+  })
+
+  it('puts the map options back', () => {
+    const store = createStore()
+
+    store.set(restoreTilesetProjectAtom, projectOf())
+
+    expect(store.get(tilesetMapOptionsAtom)).toEqual({ budget: 64 })
+  })
+})
 
 describe('captureTilesetProjectAtom', () => {
   it('has nothing to save before a sheet is imported', () => {

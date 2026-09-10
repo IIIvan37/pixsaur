@@ -15,7 +15,11 @@ import { CPC_MODE_CONFIG, type CpcModeKey, cpcFullPalette } from '@/domain/cpc'
 import type { CanvasFactory, FileSink } from '@/export/application/ports'
 import { rgbToCPCPlus } from '@/export/exports/cpc-plus-format'
 import { zipFiles } from '@/export/exports/zip-files'
-import { type TiledProperty, writeTiledTileset } from '@/libs/pixsaur-tileset'
+import {
+  type TiledProperty,
+  writeTiledMap,
+  writeTiledTileset
+} from '@/libs/pixsaur-tileset'
 import type { CPCHardware } from '@/libs/types'
 import type {
   ConvertedTileset,
@@ -24,13 +28,24 @@ import type {
 import { type EncodeSheetPngResult, encodeSheetPng } from './encode-sheet-png'
 import type { Pen } from './pens'
 import { renderTileAtlas } from './render-tileset-sheet'
+import type { TilesetMap } from './tileset-map'
 
 /** The name the workshop gives the archive it hands over. */
 export const TILED_ARCHIVE_FILENAME = 'tileset-tiled.zip'
 
-/** Names inside the archive — the TSX refers to the PNG by this path. */
+/**
+ * Names inside the archive — the TMX refers to the TSX, and the TSX to the
+ * PNG, by these paths.
+ */
 const TILESET_IMAGE = 'tileset.png'
 const TILESET_DOCUMENT = 'tileset.tsx'
+const MAP_DOCUMENT = 'map.tmx'
+
+/** How wide the atlas of a map is, in tiles (M-Q12). */
+const ATLAS_COLUMNS = 16
+
+/** GID 0 is Tiled's cell with no tile; the tileset starts right after. */
+const FIRST_GID = 1
 
 export type ExportTilesetTiledInput = Pick<
   TilesetConversionSubject,
@@ -40,6 +55,11 @@ export type ExportTilesetTiledInput = Pick<
   tileset: ConvertedTileset
   /** What a hole was composited over; defaults to black (Q16). */
   background?: Pen
+  /**
+   * The map the tileset was read as, in the map layout (M-Q1). Absent, the
+   * source is a sheet and the archive holds no map.
+   */
+  map?: TilesetMap
   /** Defaults to {@link TILED_ARCHIVE_FILENAME}. */
   filename?: string
 }
@@ -57,13 +77,19 @@ export async function exportTilesetTiled(
   input: ExportTilesetTiledInput,
   { canvasFactory, fileSink }: ExportTilesetTiledDeps
 ): Promise<ExportTilesetTiledResult> {
-  const { tileset, target, mode } = input
+  const { tileset, target, mode, map } = input
 
-  // Every tile, in the order and on the columns of the source sheet: the GID
-  // of a tile is then its position in the sheet (M-Q20).
+  // A sheet keeps every tile, in the order and on the columns of the source:
+  // the GID of a tile is then its position in the sheet (M-Q20). A map keeps
+  // each distinct tile once, in order of first appearance (M-Q12).
+  const tiles = map
+    ? map.tiles.map((cell) => tileset.tiles[cell].indices)
+    : tileset.tiles.map((tile) => tile.indices)
+  const columns = map ? Math.min(ATLAS_COLUMNS, tiles.length) : tileset.columns
+
   const atlas = renderTileAtlas(tileset, {
-    tiles: tileset.tiles.map((tile) => tile.indices),
-    columns: tileset.columns,
+    tiles,
+    columns,
     target,
     mode,
     background: input.background
@@ -72,18 +98,38 @@ export async function exportTilesetTiled(
   if (!encoded.ok) return encoded
 
   const { scaleX, scaleY } = CPC_MODE_CONFIG[`${mode}` as CpcModeKey]
-  const document = writeTiledTileset({
+  const tileWidth = target.tileWidth * scaleX
+  const tileHeight = target.tileHeight * scaleY
+  const tilesetDocument = writeTiledTileset({
     name: 'tileset',
-    tileWidth: target.tileWidth * scaleX,
-    tileHeight: target.tileHeight * scaleY,
-    tileCount: tileset.tiles.length,
-    columns: tileset.columns,
+    tileWidth,
+    tileHeight,
+    tileCount: tiles.length,
+    columns,
     image: { source: TILESET_IMAGE, width: atlas.width, height: atlas.height },
     properties: cpcProperties(input, { scaleX, scaleY })
   })
 
   const archive = await zipFiles([
-    { name: TILESET_DOCUMENT, content: document },
+    ...(map
+      ? [
+          {
+            name: MAP_DOCUMENT,
+            content: writeTiledMap({
+              width: map.columns,
+              height: map.rows,
+              tileWidth,
+              tileHeight,
+              tileset: { firstGid: FIRST_GID, source: TILESET_DOCUMENT },
+              layer: {
+                name: 'map',
+                gids: map.cells.map((tile) => tile + FIRST_GID)
+              }
+            })
+          }
+        ]
+      : []),
+    { name: TILESET_DOCUMENT, content: tilesetDocument },
     { name: TILESET_IMAGE, content: encoded.png }
   ])
 
