@@ -5,9 +5,9 @@ import {
   pixelModeAtom
 } from '@/app/store/config/config'
 import { logger } from '@/core'
+import { systemClock } from '@/editor/adapters/system-clock'
 import { enterEditMode } from '@/editor/application/enter-edit-mode'
 import { paintPixels } from '@/editor/application/paint-pixels'
-import type { Clock } from '@/editor/application/ports'
 import { effectiveIndexBufferAtom } from '../preview/effective-rendering'
 import { egxConfigAtom, egxIndexBufferAtom } from '../preview/egx-preview'
 import {
@@ -64,9 +64,6 @@ async function baseBufferForPath(get: Getter): Promise<Uint8Array | null> {
     }
   }
 }
-
-/** Runtime adapter for the editor's `Clock` port. */
-const systemClock: Clock = { now: () => Date.now() }
 
 // ============================================================================
 // Actions de l'éditeur

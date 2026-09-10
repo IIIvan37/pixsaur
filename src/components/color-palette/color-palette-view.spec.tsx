@@ -3,7 +3,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { createStore, Provider } from 'jotai'
 import { beforeEach, describe, it, vi } from 'vitest'
-import { cpcHardwareAtom } from '@/app/store/config/config'
 import { renderWithJotai } from '@/test-utils'
 import {
   ColorPaletteView,
@@ -68,7 +67,8 @@ beforeEach(() => {
     onToggleLock,
     onSetColor,
     onClearSlot,
-    fullPalette: mockPalette
+    fullPalette: mockPalette,
+    hardware: 'classic'
   }
 })
 
@@ -233,11 +233,10 @@ describe('ColorPaletteView', () => {
   describe('CPC Plus mode', () => {
     it('renders ColorPickerPopup for CPC Plus mode when slot has color', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, 'plus')
 
       render(
         <Provider store={store}>
-          <ColorPaletteView {...props} />
+          <ColorPaletteView {...props} hardware='plus' />
         </Provider>
       )
 
@@ -253,11 +252,10 @@ describe('ColorPaletteView', () => {
 
     it('renders ColorPickerPopup for CPC Plus mode when slot is empty', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, 'plus')
 
       render(
         <Provider store={store}>
-          <ColorPaletteView {...props} />
+          <ColorPaletteView {...props} hardware='plus' />
         </Provider>
       )
 
@@ -275,11 +273,10 @@ describe('ColorPaletteView', () => {
   describe('Classic mode', () => {
     it('renders ColorGridView for Classic mode', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, 'classic')
 
       render(
         <Provider store={store}>
-          <ColorPaletteView {...props} />
+          <ColorPaletteView {...props} hardware='classic' />
         </Provider>
       )
 
@@ -298,11 +295,10 @@ describe('ColorPaletteView', () => {
   describe('Classic mode', () => {
     it('renders ColorGridView for Classic mode', () => {
       const store = createStore()
-      store.set(cpcHardwareAtom, 'classic')
 
       render(
         <Provider store={store}>
-          <ColorPaletteView {...props} />
+          <ColorPaletteView {...props} hardware='classic' />
         </Provider>
       )
 

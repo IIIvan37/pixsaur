@@ -1,6 +1,7 @@
 ---
 name: session-report
 description: Close a refactor step with a resumable session report. Use at the end of every step/PR of the clean-archi refactor so a fresh session can pick up exactly where this one left off. Updates the canonical docs/refactor/STATUS.md and appends a dated report under docs/refactor/sessions/.
+model: sonnet
 ---
 
 # Session report (close a refactor step)

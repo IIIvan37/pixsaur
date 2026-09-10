@@ -117,7 +117,20 @@ export interface StrategyOptions {
 }
 
 /**
- * Interface commune pour toutes les fonctions de stratégie de palette
+ * Interface commune pour toutes les fonctions de stratégie de palette.
+ *
+ * Postcondition, honorée par les quinze stratégies et tenue par le sweep sur
+ * `AVAILABLE_STRATEGIES` (`palette-strategies-v2.spec.ts`) :
+ * `selectedIndices.length === Math.min(targetColors, candidates.length)`.
+ *
+ * Autrement dit : la palette rendue porte exactement les pens demandés, ou
+ * tous les candidats quand ils sont moins nombreux — jamais moins, jamais
+ * vide. Les doublons de couleur comptent pour des candidats : une planche qui
+ * répète trois couleurs sur vingt-six candidats remplit quand même quinze
+ * pens. Une vingtaine d'appelants découpent ce résultat sans le vérifier ;
+ * c'est ce que cette ligne leur promet, et une seizième stratégie la doit
+ * aussi. Voir `combinatorialCap` pour le piège qui a coûté la promesse une
+ * fois.
  */
 export type PaletteStrategyFunction = (
   candidates: ColorCandidate[],
@@ -1410,6 +1423,16 @@ function findBestCombinationV2(
 }
 
 /**
+ * Plafond de candidats d'une recherche combinatoire, jamais sous le nombre de
+ * pens demandés : `kCombinationsV2(n, k)` ne rend aucune combinaison quand
+ * `k > n`, et la stratégie renverrait une palette vide. Un mode 0 qui demande
+ * 15 pens passe au-dessus des plafonds fixés ici — l'atelier tileset le fait.
+ */
+function combinatorialCap(cap: number, needed: number): number {
+  return Math.max(cap, needed)
+}
+
+/**
  * exhaustive-contrast : Recherche exhaustive de la meilleure combinaison
  *
  * Algorithme :
@@ -1481,9 +1504,10 @@ export const selectByExhaustiveContrast: PaletteStrategyFunction = (
   // C(12, 4) = 495 combinaisons - acceptable
   // C(16, 4) = 1820 combinaisons - limite acceptable pour CPC Plus
   // C(20, 4) = 4845 combinaisons - trop lent
-  const maxCandidates = isCPCClassic
-    ? MAX_CANDIDATES_CLASSIC
-    : MAX_CANDIDATES_PLUS
+  const maxCandidates = combinatorialCap(
+    isCPCClassic ? MAX_CANDIDATES_CLASSIC : MAX_CANDIDATES_PLUS,
+    needed
+  )
 
   // Pour CPC Plus, on veut plus de couleurs sombres et claires pour maximiser le contraste
   const darkCount = isCPCClassic ? DARK_COUNT_CLASSIC : DARK_COUNT_PLUS
@@ -1670,7 +1694,7 @@ export const selectByCoverageAware: PaletteStrategyFunction = (
   // Limiter les candidats pour la recherche exhaustive
   // Déterminer si on est en CPC Classic ou Plus
   const isCPCClassic = isCPCClassicPalette(options, candidates.length)
-  const MAX_CANDIDATES = isCPCClassic ? 14 : 16
+  const MAX_CANDIDATES = combinatorialCap(isCPCClassic ? 14 : 16, needed)
 
   if (remainingCandidates.length > MAX_CANDIDATES) {
     if (isCPCClassic) {
@@ -1874,7 +1898,7 @@ export const selectByDitheringAware: PaletteStrategyFunction = (
   const coverageThreshold = isCPCClassic ? 50 : 40
 
   // Limiter les candidats avec diversité de teinte
-  const MAX_CANDIDATES = isCPCClassic ? 12 : 14
+  const MAX_CANDIDATES = combinatorialCap(isCPCClassic ? 12 : 14, needed)
   if (remainingCandidates.length > MAX_CANDIDATES) {
     remainingCandidates = filterCandidatesWithHueDiversity(
       remainingCandidates,

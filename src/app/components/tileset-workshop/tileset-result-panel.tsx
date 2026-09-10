@@ -1,0 +1,152 @@
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react'
+import { Trans } from '@lingui/react/macro'
+import { useAtomValue, useSetAtom } from 'jotai'
+import { useCallback, useEffect, useRef } from 'react'
+import {
+  editedTilesetAtom,
+  renderedTilesetSheetAtom,
+  selectedTileAtom
+} from '@/app/store/tileset/tileset'
+import Button from '@/components/ui/button'
+import { Header } from '@/components/ui/layout/header/header'
+import { Panel } from '@/components/ui/layout/panel/panel'
+import { logger } from '@/core'
+import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
+import { resolveFileSink } from '@/export/application/file-sink'
+import type { Sheet } from '@/libs/pixsaur-tileset'
+import { saveTilesetSheet } from '@/tileset'
+import styles from './tileset-workshop.module.css'
+
+/** How many collisions are worth reading before the list stops informing. */
+const WORST_SHOWN = 8
+
+const FAILURES = {
+  'grid-mismatch': msg`Aucune tuile entière n'entre dans la grille déclarée.`,
+  'no-pens-left': msg`La réservation ne laisse aucun pen au tileset.`,
+  'palette-too-wide': msg`La palette gelée dépasse ce que le mode peut tenir.`,
+  'palette-missing-hole': msg`La palette gelée ne commence pas par le pen de transparence.`,
+  'locked-pen-out-of-range': msg`Un pen épinglé n'a pas de place dans ce mode.`
+}
+
+/**
+ * Draws the sheet on the canvas, as the image workshop does — no encoding is
+ * needed to look at pixels (Q20).
+ */
+function useSheetCanvas(sheet: Sheet | null) {
+  const ref = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas || !sheet) return
+
+    canvas.width = sheet.width
+    canvas.height = sheet.height
+    canvas
+      .getContext('2d')
+      ?.putImageData(new ImageData(sheet.data, sheet.width, sheet.height), 0, 0)
+  }, [sheet])
+
+  return ref
+}
+
+/**
+ * What the conversion produced: the sheet itself, and the tiles the shared
+ * palette pushed furthest from the colours they asked for (Q20 · Q22).
+ *
+ * The collision report is what directs the manual retouching, and the whole
+ * tool rests on it: a NES sheet carries ~25 colours, a mode 0 offers 16.
+ */
+export function TilesetResultPanel() {
+  const { _ } = useLingui()
+  const result = useAtomValue(editedTilesetAtom)
+  const sheet = useAtomValue(renderedTilesetSheetAtom)
+  const select = useSetAtom(selectedTileAtom)
+  const canvas = useSheetCanvas(sheet)
+
+  const handleSave = useCallback(async () => {
+    if (!sheet) return
+
+    const saved = await saveTilesetSheet(
+      { sheet },
+      { canvasFactory: domCanvasFactory, fileSink: resolveFileSink() }
+    )
+    if (!saved.ok) {
+      logger.error('[TILESET] Failed to save the sheet:', saved.error)
+    }
+  }, [sheet])
+
+  if (!result) return null
+
+  if (!result.ok) {
+    return (
+      <Panel>
+        <Header title={<Trans>Résultat</Trans>} />
+        <p role='alert'>{_(FAILURES[result.error])}</p>
+      </Panel>
+    )
+  }
+
+  const { tileset } = result
+  // A tile that lost nothing is not a collision, however it ranks.
+  const worst = tileset.collisions
+    .filter((collision) => collision.error > 0)
+    .slice(0, WORST_SHOWN)
+
+  return (
+    <Panel>
+      <Header title={<Trans>Résultat</Trans>} />
+
+      {sheet && (
+        <canvas
+          ref={canvas}
+          className={styles.preview}
+          role='img'
+          aria-label={_(msg`Planche convertie`)}
+        />
+      )}
+
+      <p>
+        <Trans>Tuiles uniques</Trans>
+        {' : '}
+        <output aria-label={_(msg`Tuiles uniques`)}>
+          {`${tileset.unique.length} / ${tileset.tiles.length}`}
+        </output>
+        {' · '}
+        <Trans>Pens</Trans>
+        {' : '}
+        <output aria-label={_(msg`Pens`)}>{tileset.palette.length}</output>
+      </p>
+
+      <Button disabled={!sheet} onClick={() => void handleSave()}>
+        <Trans>Enregistrer le PNG</Trans>
+      </Button>
+
+      <section className={styles.suggestions}>
+        <h2 className={styles.subtitle}>
+          <Trans>Tuiles les plus malmenées par la palette</Trans>
+        </h2>
+        {worst.length === 0 ? (
+          <p className={styles.note}>
+            <Trans>Aucune tuile ne perd de couleur.</Trans>
+          </p>
+        ) : (
+          <ul className={styles.candidates}>
+            {worst.map((collision) => (
+              <li key={collision.tile}>
+                {/* The report is what directs the retouching: reading it must
+                    be enough to aim the brush. */}
+                <Button onClick={() => select(collision.tile)}>
+                  {/* The number stays outside the message: the Lingui macro
+                      drops the values of an interpolated one here. */}
+                  <Trans>Tuile</Trans>
+                  {` ${collision.tile} — ${collision.error.toFixed(1)}`}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </Panel>
+  )
+}

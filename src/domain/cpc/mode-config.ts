@@ -143,3 +143,16 @@ export function parseCpcModeKey(modeKey: CpcModeKey): {
     dimensionPreset: isOverscan ? 'overscan' : 'standard'
   }
 }
+
+/**
+ * The shape of a CPC pixel in `mode`, as a width-to-height ratio.
+ *
+ * Read from `scaleX`/`scaleY`, NOT from the physical 4:3 aspect of the screen:
+ * consistency with the rest of the app, which reasons in the same units. A
+ * mode 0 pixel is twice as wide as it is tall, a mode 1 one is square, and a
+ * mode 2 one is twice as tall as it is wide.
+ */
+export function cpcPixelAspect(mode: PixelMode): { x: number; y: number } {
+  const { scaleX, scaleY } = CPC_MODE_CONFIG[`${mode}` as CpcModeKey]
+  return { x: scaleX, y: scaleY }
+}

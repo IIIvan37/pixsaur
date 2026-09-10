@@ -2303,4 +2303,75 @@ describe('palette-strategies-v2', () => {
       // The strategy will pick alternatives to avoid duplication
     })
   })
+  // Ce qu'une stratégie doit à son appelant : une palette de la longueur
+  // demandée, ou de tout ce que les candidats permettent quand ils sont moins
+  // nombreux. Une vingtaine de fichiers consomment ce résultat et le découpent
+  // sans le vérifier — la règle vit ici, une fois, pas chez chacun d'eux.
+  //
+  // Un mode 0 demande jusqu'à 15 pens : plus que le plafond de candidats que
+  // les stratégies combinatoires s'imposent pour ne pas exploser. Le plafond ne
+  // doit jamais descendre sous ce qui est demandé, sinon kCombinations ne
+  // produit aucune combinaison et la stratégie rend une palette vide.
+  describe('palette length contract', () => {
+    // `distinct` couleurs différentes réparties sur `count` candidats : une
+    // planche répète ses couleurs, la longueur rendue compte les candidats.
+    const createManyCandidates = (
+      count: number,
+      distinct = count
+    ): ColorCandidate[] =>
+      Array.from({ length: count }, (_, i) => {
+        const d = i % distinct
+        const color = [
+          (d * 37) % 256,
+          (d * 91) % 256,
+          (d * 149) % 256
+        ] as Vector
+        return { index: i, frequency: count - i, color, converted: color }
+      })
+
+    it('should fill the palette with exhaustive-contrast', () => {
+      const result = selectByExhaustiveContrast(createManyCandidates(26), 15)
+      expect(result.selectedIndices).toHaveLength(15)
+    })
+
+    it('should fill the palette with coverage-aware', () => {
+      const result = selectByCoverageAware(createManyCandidates(26), 15)
+      expect(result.selectedIndices).toHaveLength(15)
+    })
+
+    it('should fill the palette with dithering-aware', () => {
+      const result = selectByDitheringAware(createManyCandidates(26), 15)
+      expect(result.selectedIndices).toHaveLength(15)
+    })
+
+    it('should return exactly the pens asked for, whatever the strategy', () => {
+      const candidates = createManyCandidates(26)
+      const violators = AVAILABLE_STRATEGIES.filter(
+        (strategy) =>
+          applyPaletteStrategyV2(strategy, candidates, 15).selectedIndices
+            .length !== 15
+      )
+      expect(violators).toEqual([])
+    })
+
+    it('should return every candidate when they are fewer than asked for', () => {
+      const candidates = createManyCandidates(3)
+      const violators = AVAILABLE_STRATEGIES.filter(
+        (strategy) =>
+          applyPaletteStrategyV2(strategy, candidates, 15).selectedIndices
+            .length !== 3
+      )
+      expect(violators).toEqual([])
+    })
+
+    it('should count candidates, not the distinct colours among them', () => {
+      const candidates = createManyCandidates(26, 3)
+      const violators = AVAILABLE_STRATEGIES.filter(
+        (strategy) =>
+          applyPaletteStrategyV2(strategy, candidates, 15).selectedIndices
+            .length !== 15
+      )
+      expect(violators).toEqual([])
+    })
+  })
 })

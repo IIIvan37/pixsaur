@@ -1,6 +1,5 @@
 import { Trans } from '@lingui/react/macro'
 import { useEffect } from 'react'
-import { ErrorBoundary } from '@/components/error-boundary'
 import { LanguageSelector } from '@/components/language-selector'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { Toaster } from '@/components/toaster/toaster'
@@ -11,10 +10,11 @@ import { isDevelopment, logger, registerLogSink } from '@/core'
 
 import styles from '@/styles/app.module.css'
 import { invoke, isTauri, tauriLogSink } from '@/tauri'
-import ImageConverter from './components/image-converter/image-converter'
+import WorkshopTabs from './components/workshop-tabs/workshop-tabs'
 import { I18nProviderWrapper } from './i18n-provider'
 import { useAutoRegenerateRasters } from './store/raster/use-auto-regenerate-rasters'
 import { useSessionPersistence } from './store/session/use-session-persistence'
+import { useTilesetPersistence } from './store/tileset/use-tileset-persistence'
 import { useUnsavedChangesWarning } from './use-unsaved-changes-warning'
 
 /**
@@ -38,6 +38,9 @@ export default function App() {
 
   // Auto-restore the previous session and auto-save changes
   useSessionPersistence()
+
+  // Same for the tileset workshop, which keeps its own document (Q31)
+  useTilesetPersistence()
 
   // Warn before leaving the page while unsaved manual edits exist
   useUnsavedChangesWarning()
@@ -186,9 +189,7 @@ export default function App() {
               </div>
             </header>
 
-            <ErrorBoundary>
-              <ImageConverter />
-            </ErrorBoundary>
+            <WorkshopTabs />
 
             <footer className={styles.footer}></footer>
           </div>

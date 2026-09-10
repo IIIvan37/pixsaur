@@ -1,5 +1,6 @@
 import { useAtomValue, useSetAtom } from 'jotai'
 import type React from 'react'
+import { cpcHardwareAtom } from '@/app/store/config/config'
 import {
   onClearSlotAtom,
   onSetColorAtom,
@@ -42,6 +43,7 @@ export const ColorPalette: React.FC = () => {
 
   // Get the full CPC palette for color selection
   const fullPalette = cpcFullPalette
+  const hardware = useAtomValue(cpcHardwareAtom)
 
   return (
     <ColorPaletteView
@@ -50,6 +52,7 @@ export const ColorPalette: React.FC = () => {
       onSetColor={setColor}
       onClearSlot={clearSlot}
       fullPalette={fullPalette}
+      hardware={hardware}
     />
   )
 }

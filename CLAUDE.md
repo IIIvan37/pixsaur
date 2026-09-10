@@ -7,6 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > the baseline — see `docs/refactor/ADR-001-file-layout.md` and the layering rules
 > below. History is archived in `docs/refactor/STATUS.md`.
 
+> **🧩 Feature under construction — Tileset workshop.** Converting tilesets from
+> other machines to CPC constraints. 35 design decisions are settled and sliced
+> into 9 PRs (T1→T9); the canonical plan is
+> `docs/features/PLAN-tileset-workshop.md` — read it before touching
+> `src/tileset/`. Build outside-in with the `new-feature-hexa` skill, pure core
+> under `tdd-cycle`, and close every slice with `quality-gate` + `/session-report`.
+
 ## Project
 
 Pixsaur converts modern images into authentic Amstrad CPC graphics (palette quantization, dithering, CPC-native export formats). It ships as both a web app (Vite) and a desktop app (Tauri 2 / Rust). Frontend is React 19 + TypeScript with Jotai for state. Image processing runs on the GPU (ReGL/WebGL) with an automatic CPU fallback.
@@ -31,9 +38,25 @@ pnpm check:fix            # Biome auto-fix
 
 pnpm i18n:extract         # Extract Lingui message catalogs
 pnpm i18n:compile         # Compile catalogs (run after extract; required before build)
+
+scripts/gate.sh --filter <path>   # Quality gate, one verdict per check (logs in .gate/)
 ```
 
 Tests use Vitest with `happy-dom` and globals enabled — no per-file imports of `describe`/`it`/`expect` needed. Setup lives in `vitest.setup.tsx`.
+
+## Reading the codebase — delegate broad searches
+
+Any question that needs more than three files read, or a sweep across a
+directory or a naming convention, goes to the `Explore` subagent. Give it the
+question, take back its conclusions — the file excerpts stay in its context, not
+in the session's.
+
+Read files directly only when you already know which file and which lines you
+need. Then read the range (`offset`/`limit`), not the whole file.
+
+Why: a session that reads its way to an answer crosses 150k tokens well before
+it finishes the task, and everything read is re-billed on every later request.
+A slice that delegates its exploration does not need to be compacted at all.
 
 ## Conventions enforced by tooling
 

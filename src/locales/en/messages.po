@@ -18,7 +18,7 @@ msgstr ""
 #~ msgstr "{0} (used)"
 
 #. placeholder {0}: images.length
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:171
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:166
 msgid "{0} image(s) ready to export"
 msgstr "{0} image(s) ready to export"
 
@@ -26,11 +26,21 @@ msgstr "{0} image(s) ready to export"
 #~ msgid "{0} remaining"
 #~ msgstr "{0} remaining"
 
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:84
+#~ msgid "{0} tuiles uniques sur {1}, {2} pens"
+#~ msgstr "{0} unique tiles out of {1}, {2} pens"
+
+#. placeholder {0}: candidate.uniqueTiles
+#. placeholder {1}: percent(candidate.duplicateRate)
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:68
+msgid "{0} tuiles uniques, {1} de doublons"
+msgstr "{0} unique tiles, {1} duplicates"
+
 #: src/components/manual-edits-warning/manual-edits-warning.tsx:44
 msgid "{editCount} pixel(s) modifié(s) manuellement. Modifier les paramètres peut affecter ces modifications."
 msgstr "{editCount} pixel(s) manually edited. Changing settings may affect these modifications."
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:173
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:168
 msgid "{remainingSpace} remaining"
 msgstr "{remainingSpace} remaining"
 
@@ -75,7 +85,7 @@ msgid "Activer le lissage horizontal"
 msgstr "Enable horizontal smoothing"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:190
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:194
 msgid "palette.strategy.adaptive.label"
 msgstr "Adaptive"
 
@@ -98,6 +108,10 @@ msgstr "Add Current Image"
 #: src/app/components/main-content/main-content.tsx:12
 #~ msgid "Adjustments, Source & Preview"
 #~ msgstr "Adjustments, Source & Preview"
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:82
+msgid "Adoucir les escaliers"
+msgstr "Soften the staircases"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:243
 msgid "Adoucit l'image avec un flou gaussien (0 = off, 1 = maximum)"
@@ -143,7 +157,7 @@ msgstr "Adjust the balance between fidelity to frequent colors and hue variety (
 msgid "Alternance de modes ligne par ligne. EGX1: 320×200 16 couleurs. EGX2: 640×200 4 couleurs."
 msgstr "Line-by-line mode alternation. EGX1: 320×200 16 colors. EGX2: 640×200 4 colors."
 
-#: src/components/export-panel/export-config-dialog.tsx:135
+#: src/components/export-panel/export-config-dialog.tsx:105
 #: src/components/preview-editor/help-button/help-button.tsx:23
 #: src/components/preview-editor/preview-editor-view.tsx:61
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:91
@@ -151,6 +165,7 @@ msgstr "Line-by-line mode alternation. EGX1: 320×200 16 colors. EGX2: 640×200 
 msgid "Annuler"
 msgstr "Cancel"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:178
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:47
 msgid "Annuler (Ctrl+Z)"
 msgstr "Undo (Ctrl+Z)"
@@ -167,7 +182,7 @@ msgstr "Cancel and close"
 msgid "Anti-flicker"
 msgstr "Anti-flicker"
 
-#: src/app/components/preview-panel.tsx:32
+#: src/app/components/preview-panel.tsx:34
 msgid "Aperçu"
 msgstr "Preview"
 
@@ -187,6 +202,11 @@ msgstr "Apply changes"
 msgid "Assemblez une image disque DSK multi-fichiers compatible avec les émulateurs et le matériel CPC réel."
 msgstr "Build a multi-file DSK disk image compatible with emulators and real CPC hardware."
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:124
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:58
+msgid "Aucun"
+msgstr "None"
+
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:369
 msgid "Aucun changement raster défini."
 msgstr "No raster changes defined."
@@ -202,6 +222,14 @@ msgstr "No processed image"
 #: src/components/raster-panel/raster-panel-view.tsx:333
 #~ msgid "Aucune plage raster définie."
 #~ msgstr "No raster ranges defined."
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:25
+msgid "Aucune tuile entière n'entre dans la grille déclarée."
+msgstr "No whole tile fits the grid that was declared."
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:131
+msgid "Aucune tuile ne perd de couleur."
+msgstr "No tile loses a colour."
 
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:68
 msgid "Auto (Smart CPC adapt)"
@@ -224,17 +252,17 @@ msgid "Balance vert/magenta pour corriger les dominantes de couleur"
 msgstr "Balance vert/magenta pour corriger les dominantes de couleur"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:115
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:119
 msgid "palette.strategy.balanced-score-max.label"
 msgstr "Balanced Contrast Max"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:91
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:95
 msgid "palette.strategy.frequency-max.desc"
 msgstr "Balanced frequency (60%) and diversity (40%)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:100
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:104
 msgid "palette.strategy.balanced-score-balanced.label"
 msgstr "Balanced Score"
 
@@ -254,6 +282,22 @@ msgstr "Box"
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:38
 msgid "Canaux RGB"
 msgstr "RGB Channels"
+
+#: src/app/components/tileset-workshop/tileset-project-actions.tsx:18
+msgid "Ce fichier n'est pas un projet d'atelier."
+msgstr "This file is not a workshop project."
+
+#: src/app/components/tileset-workshop/tileset-project-actions.tsx:17
+msgid "Ce fichier ne se laisse pas lire."
+msgstr "This file cannot be read."
+
+#: src/app/components/tileset-workshop/tileset-project-actions.tsx:20
+msgid "Ce projet est incomplet : la planche ne se relit pas."
+msgstr "This project is incomplete: the sheet cannot be read back."
+
+#: src/app/components/tileset-workshop/tileset-project-actions.tsx:19
+msgid "Ce projet vient d'une autre version de l'atelier."
+msgstr "This project comes from another version of the workshop."
 
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:141
 msgid "Centrage de l'image"
@@ -278,6 +322,10 @@ msgstr "Raster Changes"
 #: src/app/components/source-section.tsx:73
 msgid "Changer d'image"
 msgstr "Change image"
+
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:27
+msgid "Changer de planche"
+msgstr "Change sheet"
 
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:188
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:183
@@ -332,6 +380,10 @@ msgstr "Horizontal Error Coefficient"
 msgid "Coefficient d'erreur verticale"
 msgstr "Vertical Error Coefficient"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:48
+msgid "Colonnes choisies une à une"
+msgstr "Columns picked one by one"
+
 #: src/components/dsk-workspace/dsk-workspace.tsx:187
 #~ msgid "Color {i}: {color}"
 #~ msgstr "Color {i}: {color}"
@@ -344,7 +396,11 @@ msgstr "Color {index}: {color}"
 msgid "Combined"
 msgstr "Combined"
 
-#: src/components/export-panel/export-config-dialog.tsx:128
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:123
+msgid "Comme la planche"
+msgstr "As the sheet"
+
+#: src/components/export-panel/export-config-dialog.tsx:98
 msgid "Configuration de l'export"
 msgstr "Export Configuration"
 
@@ -352,7 +408,7 @@ msgstr "Export Configuration"
 msgid "Configuration du Dithering"
 msgstr "Dithering Configuration"
 
-#: src/components/export-panel/export-config-dialog.tsx:145
+#: src/components/export-panel/export-config-dialog.tsx:115
 msgid "Contenu du ZIP"
 msgstr "ZIP Contents"
 
@@ -364,7 +420,7 @@ msgstr "Edges"
 msgid "Contraste"
 msgstr "Contrast"
 
-#: src/app/app.tsx:151
+#: src/app/app.tsx:161
 msgid "Convertisseur d'images Amstrad CPC"
 msgstr "Amstrad CPC Image Converter"
 
@@ -402,7 +458,7 @@ msgid "Cover (Crop to fill)"
 msgstr "Cover (Crop to fill)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:40
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:44
 msgid "palette.strategy.coverage-aware.label"
 msgstr "Coverage Aware"
 
@@ -425,6 +481,19 @@ msgstr "Denoising that preserves edges (0 = off, 1-3 = strength)"
 #: src/components/raster-panel/raster-panel-view.tsx:315
 #~ msgid "Début"
 #~ msgstr "Start"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:55
+msgid "Décalage X"
+msgstr "Offset X"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:56
+msgid "Décalage Y"
+msgstr "Offset Y"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:88
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:90
+msgid "Déformation"
+msgstr "Distortion"
 
 #: src/components/settings-panel/sections/hardware-settings/mode-r-settings.tsx:146
 msgid "Delta luminance max"
@@ -451,7 +520,7 @@ msgstr "Automatically detects images with few colors (C64, ZX Spectrum, etc.) an
 msgid "Détection des contours (0 = off, 1 = contours uniquement)"
 msgstr "Edge detection (0 = off, 1 = edges only)"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:74
+#: src/components/color-palette/color-grid/color-grid-view.tsx:75
 #: src/components/ui/color-picker-popup/color-picker-popup.tsx:108
 msgid "Déverrouiller"
 msgstr "Unlock"
@@ -460,16 +529,22 @@ msgstr "Unlock"
 msgid "Différence de luminance maximale autorisée entre les couleurs alternées"
 msgstr "Maximum luminance difference allowed between alternating colors"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:127
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:61
+msgid "Diffusion d'erreur"
+msgstr "Error diffusion"
+
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:195
 msgid "Dimension Preset"
 msgstr "Dimension Preset"
 
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:32
 #: src/components/info-bar/info-bar.tsx:113
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:183
 msgid "Dimensions"
 msgstr "Dimensions"
 
-#: src/components/settings-panel/settings-panel.tsx:67
+#: src/components/settings-panel/settings-panel.tsx:57
 msgid "Disque"
 msgstr "Disk"
 
@@ -481,12 +556,12 @@ msgstr "Disk"
 msgid "Distance de continuité"
 msgstr "Continuity Distance"
 
-#: src/components/settings-panel/settings-panel.tsx:55
+#: src/components/settings-panel/settings-panel.tsx:45
 msgid "Dithering"
 msgstr "Dithering"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:55
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:59
 msgid "palette.strategy.dithering-aware.label"
 msgstr "Dithering Aware"
 
@@ -516,12 +591,12 @@ msgid "Diversité des couleurs"
 msgstr "Color Diversity"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:160
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:164
 msgid "palette.strategy.diversity-first-balanced.label"
 msgstr "Diversity Balanced"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:166
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:170
 msgid "palette.strategy.diversity-first-balanced.desc"
 msgstr "Dominant diversity (90%) with slight frequency (10%)"
 
@@ -541,17 +616,16 @@ msgstr "Downloading..."
 msgid "DSK Workspace"
 msgstr "DSK Workspace"
 
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:221
-#: src/components/dsk-workspace/dsk-workspace-panel.tsx:227
+#: src/components/dsk-workspace/dsk-workspace-panel.tsx:215
 msgid "DSK workspace exported successfully!"
 msgstr "DSK workspace exported successfully!"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:193
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:197
 msgid "palette.strategy.adaptive.desc"
 msgstr "Dynamic strategy based on image"
 
-#: src/app/components/preview-panel.tsx:34
+#: src/app/components/preview-panel.tsx:36
 msgid "Éditer"
 msgstr "Edit"
 
@@ -571,7 +645,7 @@ msgstr "Raster Effects"
 msgid "EGX Mode"
 msgstr "EGX Mode"
 
-#: src/components/export-panel/use-export-actions.ts:268
+#: src/components/export-panel/use-export-actions.ts:267
 msgid "EGX opened in CPC Playground!"
 msgstr "EGX opened in CPC Playground!"
 
@@ -605,9 +679,17 @@ msgstr "Previous ink"
 msgid "Encre suivante"
 msgstr "Next ink"
 
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:122
+msgid "Enregistrer le PNG"
+msgstr "Save the PNG"
+
 #: src/components/export-panel/dsk-files-manager.tsx:65
 #~ msgid "Error reading file: {0}"
 #~ msgstr "Error reading file: {0}"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:54
+msgid "Espacement"
+msgstr "Spacing"
 
 #: src/components/image-upload/image-upload-view.tsx:313
 msgid "Essayer avec un exemple"
@@ -618,7 +700,7 @@ msgstr "Try a sample"
 #~ msgstr "Exec"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:25
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:29
 msgid "palette.strategy.exhaustive-contrast.label"
 msgstr "Exhaustive Contrast"
 
@@ -626,7 +708,7 @@ msgstr "Exhaustive Contrast"
 #~ msgid "Export"
 #~ msgstr "Export"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:168
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:163
 msgid "Export DSK"
 msgstr "Export DSK"
 
@@ -638,10 +720,14 @@ msgstr "Export DSK"
 #~ msgid "Export your converted images to various formats compatible with CPC emulators and real hardware."
 #~ msgstr "Export your converted images to various formats compatible with CPC emulators and real hardware."
 
-#: src/components/export-panel/export-config-dialog.tsx:138
+#: src/components/export-panel/export-config-dialog.tsx:108
 #: src/components/export-panel/export-panel-view.tsx:30
 msgid "Exporter"
 msgstr "Export"
+
+#: src/app/components/tileset-workshop/tileset-project-actions.tsx:73
+msgid "Exporter le projet"
+msgstr "Export the project"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:178
 msgid "Exposition"
@@ -659,7 +745,7 @@ msgstr "Base palette extraction"
 #~ msgid "Failed to open EGX in CPC Playground: {0}"
 #~ msgstr "Failed to open EGX in CPC Playground: {0}"
 
-#: src/components/export-panel/use-export-actions.ts:283
+#: src/components/export-panel/use-export-actions.ts:282
 msgid "Failed to open EGX in CPC Playground: {error}"
 msgstr "Failed to open EGX in CPC Playground: {error}"
 
@@ -668,7 +754,7 @@ msgstr "Failed to open EGX in CPC Playground: {error}"
 msgid "Failed to open in CPC Playground: {0}"
 msgstr "Failed to open in CPC Playground: {0}"
 
-#: src/components/export-panel/use-export-actions.ts:285
+#: src/components/export-panel/use-export-actions.ts:284
 msgid "Failed to open in CPC Playground: {error}"
 msgstr "Failed to open in CPC Playground: {error}"
 
@@ -676,12 +762,16 @@ msgstr "Failed to open in CPC Playground: {error}"
 #~ msgid "Failed to open Mode R in CPC Playground: {0}"
 #~ msgstr "Failed to open Mode R in CPC Playground: {0}"
 
-#: src/components/export-panel/use-export-actions.ts:281
+#: src/components/export-panel/use-export-actions.ts:280
 msgid "Failed to open Mode R in CPC Playground: {error}"
 msgstr "Failed to open Mode R in CPC Playground: {error}"
 
-#: src/components/settings-panel/settings-panel.tsx:107
+#: src/components/settings-panel/settings-panel.tsx:74
 msgid "Fermer les paramètres"
+msgstr "Close settings"
+
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:64
+msgid "Fermer les réglages"
 msgstr "Close settings"
 
 #: src/components/export-panel/dsk-files-manager.tsx:39
@@ -717,17 +807,17 @@ msgid "Formats supportés: PNG, JPEG, GIF, BMP, WEBP, SVG"
 msgstr "Supported formats: PNG, JPEG, GIF, BMP, WEBP, SVG"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:70
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:74
 msgid "palette.strategy.frequency-balanced.label"
 msgstr "Frequency Balanced"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:85
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:89
 msgid "palette.strategy.frequency-max.label"
 msgstr "Frequency Contrast"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:76
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:80
 msgid "palette.strategy.frequency-balanced.desc"
 msgstr "Frequency priority (80%) with moderate diversity"
 
@@ -735,7 +825,11 @@ msgstr "Frequency priority (80%) with moderate diversity"
 msgid "Gamma"
 msgstr "Gamma"
 
-#: src/components/export-panel/export-config-dialog.tsx:179
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:123
+msgid "Geler la palette"
+msgstr "Freeze the palette"
+
+#: src/components/export-panel/export-config-dialog.tsx:149
 msgid "Génère un fichier snapshot (.SNA) avec le code d'affichage intégré"
 msgstr "Generates a snapshot file (.SNA) with integrated display code"
 
@@ -751,11 +845,19 @@ msgstr "Manage ink changes per line (automatically generated or manual)"
 msgid "Glissez & déposez une image ici"
 msgstr "Drag & drop an image here"
 
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:29
+msgid "Grille"
+msgstr "Grid"
+
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:89
 msgid "Grille (H)"
 msgstr "Grid (H)"
 
-#: src/components/settings-panel/settings-panel.tsx:49
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:40
+msgid "Grille source"
+msgstr "Source grid"
+
+#: src/components/settings-panel/settings-panel.tsx:39
 msgid "Hardware"
 msgstr "Hardware"
 
@@ -771,6 +873,14 @@ msgstr "Highlights"
 msgid "Hauteur"
 msgstr "Height"
 
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:77
+msgid "Hauteur cible"
+msgstr "Target height"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:50
+msgid "Hauteur de tuile"
+msgstr "Tile height"
+
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:108
 msgid "High Res first"
 msgstr "High Res first"
@@ -782,6 +892,10 @@ msgstr "High Res Lines"
 #: src/components/dsk-workspace/dsk-workspace.tsx:77
 #~ msgid "ℹ️ Standard CPC palette only. Plus palette support coming soon."
 #~ msgstr "ℹ️ Standard CPC palette only. Plus palette support coming soon."
+
+#: src/app/components/workshop-tabs/workshop-tabs.tsx:37
+msgid "Image"
+msgstr "Image"
 
 #: src/app/components/source-section.tsx:72
 msgid "Image source"
@@ -799,6 +913,10 @@ msgstr "Image too heavy (maximum {MAX_FILE_SIZE_MB} MB). Please choose a smaller
 msgid "Images retro (low-color)"
 msgstr "Retro images (low-color)"
 
+#: src/app/components/tileset-workshop/tileset-project-actions.tsx:81
+msgid "Importer un projet"
+msgstr "Import a project"
+
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:354
 #~ msgid "Influence du nombre de lignes où la couleur apparaît (plus haut = favorise les couleurs globales)"
 #~ msgstr "Influence of number of lines where the color appears (higher = favors global colors)"
@@ -815,6 +933,11 @@ msgstr "Install Update"
 #~ msgid "Installing..."
 #~ msgstr "Installing..."
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:102
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:104
+msgid "Instances"
+msgstr "Instances"
+
 #: src/components/settings-panel/sections/dithering-settings/dithering-controls.tsx:129
 msgid "Intensité"
 msgstr "Intensity"
@@ -827,11 +950,23 @@ msgstr "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgid "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
 msgstr "The application ran into a problem. You can try again; if it persists, reload the page."
 
-#: src/components/export-panel/export-config-dialog.tsx:229
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:27
+msgid "La palette gelée dépasse ce que le mode peut tenir."
+msgstr "The frozen palette is wider than the mode can hold."
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:28
+msgid "La palette gelée ne commence pas par le pen de transparence."
+msgstr "The frozen palette does not lead with the transparency pen."
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:26
+msgid "La réservation ne laisse aucun pen au tileset."
+msgstr "The reservation leaves the tileset no pen at all."
+
+#: src/components/export-panel/export-config-dialog.tsx:199
 msgid "Label de la palette"
 msgstr "Palette Label"
 
-#: src/components/export-panel/export-config-dialog.tsx:221
+#: src/components/export-panel/export-config-dialog.tsx:191
 msgid "Label des données"
 msgstr "Data Label"
 
@@ -842,6 +977,14 @@ msgstr "Lanczos-2"
 #: src/components/settings-panel/sections/hardware-settings/custom-dimensions-input/custom-dimensions-input-view.tsx:43
 msgid "Largeur"
 msgstr "Width"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:67
+msgid "Largeur cible"
+msgstr "Target width"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:45
+msgid "Largeur de tuile"
+msgstr "Tile width"
 
 #: src/components/updater/updater-view.tsx:102
 msgid "Later"
@@ -855,7 +998,7 @@ msgstr "Later"
 #~ msgid "Le format SCR nécessite des dimensions standard (160x200, 320x200 ou 640x200)"
 #~ msgstr "SCR format requires standard dimensions (160x200, 320x200 or 640x200)"
 
-#: src/components/export-panel/export-config-dialog.tsx:157
+#: src/components/export-panel/export-config-dialog.tsx:127
 msgid "Le format SCR nécessite des dimensions tenant dans 16 Ko de mémoire écran CPC (sans overscan)"
 msgstr "SCR format requires dimensions fitting within 16 KB of CPC screen memory (without overscan)"
 
@@ -863,7 +1006,7 @@ msgstr "SCR format requires dimensions fitting within 16 KB of CPC screen memory
 #~ msgid "Le format SCR nécessite une taille <= 16 Ko (taille actuelle: {0} Ko)"
 #~ msgstr "SCR format requires size <= 16 KB (current size: {0} KB)"
 
-#: src/components/export-panel/export-config-dialog.tsx:182
+#: src/components/export-panel/export-config-dialog.tsx:152
 msgid "Le format SNA n'est disponible que pour les tailles standard ou overscan"
 msgstr "SNA format is only available for standard or overscan sizes"
 
@@ -888,7 +1031,7 @@ msgstr "Line 0 in low resolution mode (more colors)"
 msgid "Ligne 0 en mode haute résolution (plus de détails)"
 msgstr "Line 0 in high resolution mode (more details)"
 
-#: src/components/export-panel/export-config-dialog.tsx:164
+#: src/components/export-panel/export-config-dialog.tsx:134
 msgid "Linear ASM (séquentiel)"
 msgstr "Linear ASM (sequential)"
 
@@ -913,12 +1056,12 @@ msgid "Low Res Lines"
 msgstr "Low Res Lines"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:151
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:155
 msgid "palette.strategy.perceptual-max.desc"
 msgstr "Luminance bins with diversity priority"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:136
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:140
 msgid "palette.strategy.perceptual-balanced.desc"
 msgstr "Luminance bins with frequency priority"
 
@@ -926,21 +1069,37 @@ msgstr "Luminance bins with frequency priority"
 msgid "Luminosité"
 msgstr "Brightness"
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:68
+msgid "Machine CPC"
+msgstr "CPC machine"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:54
+msgid "Machine source"
+msgstr "Source machine"
+
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:198
 msgid "Mapping distinct automatique"
 msgstr "Automatic distinct mapping"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:53
+msgid "Marge"
+msgstr "Margin"
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:66
+msgid "Matrice de Bayer"
+msgstr "Bayer matrix"
 
 #: src/components/settings-panel/sections/raster-settings/raster-panel-view.tsx:363
 msgid "Max {maxChangesPerLine} changement(s) par ligne"
 msgstr "Max {maxChangesPerLine} change(s) per line"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:46
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:50
 msgid "palette.strategy.coverage-aware.desc"
 msgstr "Maximizes pixel coverage (minimizes global error)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:181
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:185
 msgid "palette.strategy.diversity-first-max.desc"
 msgstr "Maximum diversity (100%), frequency ignored"
 
@@ -952,6 +1111,9 @@ msgstr "Median"
 msgid "Mémoire"
 msgstr "Memory"
 
+#: src/app/components/tileset-workshop/tileset-info-bar.tsx:26
+#: src/app/components/tileset-workshop/tileset-info-bar.tsx:28
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:56
 #: src/components/info-bar/info-bar.tsx:81
 msgid "Mode"
 msgstr "Mode"
@@ -976,7 +1138,7 @@ msgstr "Resize mode"
 msgid "Mode R"
 msgstr "Mode R"
 
-#: src/components/export-panel/use-export-actions.ts:266
+#: src/components/export-panel/use-export-actions.ts:265
 msgid "Mode R opened in CPC Playground!"
 msgstr "Mode R opened in CPC Playground!"
 
@@ -997,12 +1159,12 @@ msgid "Montez la valeur pour des images riches en teintes variées ; baissez-la 
 msgstr "Increase the value for images rich in varied hues; lower it to better preserve gradients and close shades."
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:106
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:110
 msgid "palette.strategy.balanced-score-balanced.desc"
 msgstr "Multi-criteria balanced (50% freq, 25% div, 25% lum)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:121
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:125
 msgid "palette.strategy.balanced-score-max.desc"
 msgstr "Multi-criteria with contrast (30% freq, 35% div, 35% lum)"
 
@@ -1038,11 +1200,11 @@ msgstr "Neutral"
 msgid "No image to add"
 msgstr "No image to add"
 
-#: src/components/dsk-workspace/dsk-workspace-view.tsx:180
+#: src/components/dsk-workspace/dsk-workspace-view.tsx:175
 msgid "No images in workspace yet. Add converted images to build your DSK file."
 msgstr "No images in workspace yet. Add converted images to build your DSK file."
 
-#: src/components/export-panel/export-config-dialog.tsx:239
+#: src/components/export-panel/export-config-dialog.tsx:209
 msgid "Nom du fichier ZIP"
 msgstr "ZIP File Name"
 
@@ -1066,7 +1228,7 @@ msgstr "Not available: source image has more than 16 unique colors ({0}+)."
 #~ msgstr "Not available: distinct mapping is active."
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:246
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:250
 msgid "palette.strategy.disabled.raster"
 msgstr "Disabled (raster mode)"
 
@@ -1083,11 +1245,19 @@ msgstr "Similar shades (0) ◄► Distinct hues (100)"
 msgid "Ombres"
 msgstr "Shadows"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:189
+msgid "On peint un pen, jamais une couleur : les retouches sont rejouées après chaque conversion et atteignent toutes les instances de la tuile."
+msgstr "You paint a pen, never a colour: the edits are replayed after every conversion and reach every instance of the tile."
+
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:63
+msgid "Onglets de réglages du tileset"
+msgstr "Tileset settings tabs"
+
 #: src/components/export-panel/export-panel-view.tsx:43
 msgid "Open in CPC Playground"
 msgstr "Open in CPC Playground"
 
-#: src/components/export-panel/use-export-actions.ts:270
+#: src/components/export-panel/use-export-actions.ts:269
 msgid "Opened in CPC Playground!"
 msgstr "Opened in CPC Playground!"
 
@@ -1099,9 +1269,14 @@ msgstr "Opening..."
 msgid "Optimisation..."
 msgstr "Optimizing..."
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:39
+#: src/components/color-palette/color-grid/color-grid-view.tsx:40
 msgid "Options de couleur"
 msgstr "Color options"
+
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:125
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:59
+msgid "Ordonné (Bayer)"
+msgstr "Ordered (Bayer)"
 
 #: src/components/settings-panel/sections/resize-settings/resize-settings-view.tsx:82
 msgid "Origin (No Scale)"
@@ -1140,10 +1315,16 @@ msgstr "pairs"
 msgid "Paires uniques"
 msgstr "Unique pairs"
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:52
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:41
 #: src/components/preview-editor/line-palette/line-palette-view.tsx:36
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:182
 msgid "Palette"
 msgstr "Palette"
+
+#: src/app/components/tileset-workshop/tileset-color-palette.tsx:39
+msgid "Palette du tileset"
+msgstr "Tileset palette"
 
 #: src/components/settings-panel/sections/raster-settings/raster-tuning-panel.tsx:93
 #~ msgid "Palette Selection"
@@ -1153,11 +1334,11 @@ msgstr "Palette"
 msgid "Palettes"
 msgstr "Palettes"
 
-#: src/components/export-panel/export-config-dialog.tsx:169
+#: src/components/export-panel/export-config-dialog.tsx:139
 msgid "Palettes (firmware/hardware)"
 msgstr "Palettes (firmware/hardware)"
 
-#: src/components/settings-panel/settings-panel.tsx:98
+#: src/components/settings-panel/settings-panel.tsx:72
 msgid "Panneau des paramètres"
 msgstr "Settings panel"
 
@@ -1178,13 +1359,28 @@ msgstr "Raster Parameters"
 msgid "Peindre au curseur"
 msgstr "Paint at cursor"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:144
+msgid "Pen"
+msgstr "Pen"
+
+#: src/app/components/tileset-workshop/tileset-info-bar.tsx:49
+#: src/app/components/tileset-workshop/tileset-info-bar.tsx:51
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:116
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:118
+msgid "Pens"
+msgstr "Pens"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:93
+msgid "Pens réservés"
+msgstr "Reserved pens"
+
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:130
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:134
 msgid "palette.strategy.perceptual-balanced.label"
 msgstr "Perceptual Balanced"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:145
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:149
 msgid "palette.strategy.perceptual-max.label"
 msgstr "Perceptual Contrast"
 
@@ -1200,9 +1396,25 @@ msgstr "Dark photo"
 msgid "Photo vive"
 msgstr "Vivid photo"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:167
+msgid "Pixel"
+msgstr "Pixel"
+
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:153
 msgid "Pixel Mode"
 msgstr "Pixel Mode"
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:105
+msgid "Planche convertie"
+msgstr "Converted sheet"
+
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:32
+#~ msgid "Planche de {0} x {1} pixels"
+#~ msgstr "Sheet of {0} x {1} pixels"
+
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:26
+msgid "Planche source"
+msgstr "Source sheet"
 
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:264
 #~ msgid "Plus bas = plus de changements de palette, plus haut = plus de stabilité"
@@ -1220,15 +1432,19 @@ msgstr "Lower = more variety, higher = more coherence between lines"
 msgid "Plus haut = préférence pour les couleurs similaires aux lignes précédentes"
 msgstr "Higher = preference for colors similar to previous lines"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:50
+msgid "Plus proche voisin"
+msgstr "Nearest neighbour"
+
 #: src/components/export-panel/export-config-dialog.tsx:97
 #~ msgid "PNG (aperçu)"
 #~ msgstr "PNG (preview)"
 
-#: src/components/export-panel/export-config-dialog.tsx:196
+#: src/components/export-panel/export-config-dialog.tsx:166
 msgid "PNG (aspect ratio CPC correct)"
 msgstr "PNG (correct CPC aspect ratio)"
 
-#: src/components/export-panel/export-config-dialog.tsx:189
+#: src/components/export-panel/export-config-dialog.tsx:159
 msgid "PNG (pixels carrés)"
 msgstr "PNG (square pixels)"
 
@@ -1276,6 +1492,10 @@ msgstr "Preview Mode"
 msgid "Processeur"
 msgstr "Processor"
 
+#: src/app/components/tileset-workshop/tileset-project-panel.tsx:54
+#~ msgid "Projet"
+#~ msgstr "Project"
+
 #: src/components/settings-panel/sections/raster-settings/raster-settings-view.tsx:217
 msgid "Propagation d'erreur de dithering"
 msgstr "Dithering Error Propagation"
@@ -1289,7 +1509,7 @@ msgid "Propagation verticale des erreurs de quantification (lower = moins de ban
 msgstr "Vertical propagation of quantization errors (lower = less banding)"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:175
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:179
 msgid "palette.strategy.diversity-first-max.label"
 msgstr "Pure Diversity"
 
@@ -1297,7 +1517,7 @@ msgstr "Pure Diversity"
 msgid "Raccourcis clavier"
 msgstr "Keyboard shortcuts"
 
-#: src/components/settings-panel/settings-panel.tsx:61
+#: src/components/settings-panel/settings-panel.tsx:51
 msgid "Raster"
 msgstr "Raster"
 
@@ -1313,7 +1533,7 @@ msgstr "Raster"
 msgid "Rasters"
 msgstr "Rasters"
 
-#: src/components/export-panel/export-config-dialog.tsx:204
+#: src/components/export-panel/export-config-dialog.tsx:174
 msgid "Rasters (données ASM)"
 msgstr "Rasters (ASM data)"
 
@@ -1325,9 +1545,21 @@ msgstr "Generated Rasters"
 msgid "Recharger la page"
 msgstr "Reload the page"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:92
+msgid "Recherche approchée : la planche dépasse le budget exhaustif, les lignes ont été retirées une à une."
+msgstr "Approximate search: the sheet is past the exhaustive budget, so lines were dropped one at a time."
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:97
+msgid "Recherche exhaustive : toutes les combinaisons de lignes ont été évaluées."
+msgstr "Exhaustive search: every combination of lines was scored."
+
 #: src/components/source-selector/source-selector-view.tsx:112
 #~ msgid "Redimensionner"
 #~ msgstr "Resize"
+
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:41
+msgid "Réduction"
+msgstr "Shrinking"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:209
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche"
@@ -1353,9 +1585,19 @@ msgstr "Try again"
 msgid "Refaire"
 msgstr "Redo"
 
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:184
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:57
 msgid "Refaire (Ctrl+Y)"
 msgstr "Redo (Ctrl+Y)"
+
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:61
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:82
+msgid "Réglages"
+msgstr "Settings"
+
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:62
+msgid "Réglages du tileset"
+msgstr "Tileset settings"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:312
 msgid "Réinitialiser"
@@ -1386,17 +1628,31 @@ msgstr "Reset to default value"
 msgid "Remove image from workspace"
 msgstr "Remove image from workspace"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:36
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:47
+msgid "Rendu"
+msgstr "Rendering"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:231
 msgid "Renforce les contours pour une image plus nette (0 = off, 1 = fort)"
 msgstr "Sharpens edges for a crisper image (0 = off, 1 = strong)"
 
-#: src/components/settings-panel/settings-panel.tsx:43
+#: src/components/settings-panel/settings-panel.tsx:33
 msgid "Resize"
 msgstr "Resize"
 
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:106
 msgid "Résolution horizontale doublée (Mode 0 uniquement). Utilise 2 images alternées à 50Hz."
 msgstr "Doubled horizontal resolution (Mode 0 only). Uses 2 alternating images at 50Hz."
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:84
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:98
+msgid "Résultat"
+msgstr "Result"
+
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:87
+msgid "Retouche"
+msgstr "Retouching"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:122
 msgid "Rotation des couleurs sur le cercle chromatique (-180° à +180°)"
@@ -1415,7 +1671,7 @@ msgstr "Saturation"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 
-#: src/components/export-panel/export-config-dialog.tsx:151
+#: src/components/export-panel/export-config-dialog.tsx:121
 msgid "SCR ASM (format CPC entrelacé)"
 msgstr "SCR ASM (interlaced CPC format)"
 
@@ -1435,16 +1691,16 @@ msgstr "Selection"
 msgid "Sélectionnez l'algorithme de dithering et ajustez les paramètres pour optimiser le rendu final."
 msgstr "Select the dithering algorithm and adjust parameters to optimize the final rendering."
 
-#: src/components/export-panel/export-config-dialog.tsx:130
+#: src/components/export-panel/export-config-dialog.tsx:100
 msgid "Sélectionnez les fichiers à inclure dans l'archive ZIP"
 msgstr "Select files to include in ZIP archive"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:61
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:65
 msgid "palette.strategy.dithering-aware.desc"
 msgstr "Selects colors that blend well in dithering"
 
-#: src/components/settings-panel/settings-panel.tsx:101
+#: src/components/settings-panel/settings-panel.tsx:71
 msgid "Settings"
 msgstr "Settings"
 
@@ -1452,11 +1708,11 @@ msgstr "Settings"
 msgid "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 msgstr "Simule les stops photographiques (-3 à +3, ±1 = double/moitié de lumière)"
 
-#: src/components/export-panel/export-config-dialog.tsx:174
+#: src/components/export-panel/export-config-dialog.tsx:144
 msgid "SNA (snapshot exécutable)"
 msgstr "SNA (executable snapshot)"
 
-#: src/components/settings-panel/settings-panel.tsx:37
+#: src/components/settings-panel/settings-panel.tsx:27
 msgid "Source"
 msgstr "Source"
 
@@ -1464,6 +1720,7 @@ msgstr "Source"
 msgid "Standard: dimensions CPC standards. Overscan: utilise toute la zone affichable. Custom: dimensions personnalisées."
 msgstr "Standard: standard CPC dimensions. Overscan: uses full displayable area. Custom: custom dimensions."
 
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:78
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:61
 msgid "Stratégie de palette"
 msgstr "Palette Strategy"
@@ -1488,6 +1745,14 @@ msgstr "Supports both CPC Classic and CPC Plus formats. The loader auto-detects 
 msgid "Supprimer le changement"
 msgstr "Remove change"
 
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:61
+msgid "Tailles de tuile, la moins coûteuse en tête"
+msgstr "Tile sizes, cheapest first"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:96
+msgid "Tailles entières, la moins déformée en tête"
+msgstr "Whole sizes, least distorted first"
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:120
 msgid "Teinte"
 msgstr "Hue"
@@ -1505,9 +1770,13 @@ msgid "Tent"
 msgstr "Tent"
 
 #. js-lingui-explicit-id
-#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:31
+#: src/components/settings-panel/sections/dithering-settings/palette-strategy-selector/palette-strategy-selector.tsx:35
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Tests all combinations, maximizes contrast (best quality)"
+
+#: src/app/components/workshop-tabs/workshop-tabs.tsx:40
+msgid "Tileset"
+msgstr "Tileset"
 
 #: src/components/settings-panel/sections/hardware-settings/egx-settings.tsx:63
 msgid "Total"
@@ -1517,9 +1786,59 @@ msgstr "Total"
 msgid "Tout supprimer"
 msgstr "Remove all"
 
+#: src/app/components/tileset-workshop/tileset-render-panel.tsx:54
+msgid "Tramage"
+msgstr "Dithering"
+
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:111
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:114
+msgid "Tramage de la tuile"
+msgstr "Tile dithering"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:104
+msgid "Transparence"
+msgstr "Transparency"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:115
+msgid "Trous aplatis sur le fond"
+msgstr "Holes flattened onto the background"
+
+#: src/app/components/tileset-workshop/tileset-edit-panel.tsx:92
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:142
+#: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
+msgid "Tuile"
+msgstr "Tile"
+
+#: src/app/components/tileset-workshop/tileset-geometry-panel.tsx:50
+msgid "Tuile de destination"
+msgstr "Destination tile"
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:127
+msgid "Tuiles les plus malmenées par la palette"
+msgstr "Tiles the palette treated worst"
+
+#: src/app/components/tileset-workshop/tileset-info-bar.tsx:35
+#: src/app/components/tileset-workshop/tileset-info-bar.tsx:41
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:110
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:112
+msgid "Tuiles uniques"
+msgstr "Unique tiles"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:112
+msgid "Un pen dépensé pour les trous"
+msgstr "One pen spent on holes"
+
+#: src/app/components/tileset-workshop/tileset-result-panel.tsx:29
+msgid "Un pen épinglé n'a pas de place dans ce mode."
+msgstr "A pinned pen has no room in this mode."
+
 #: src/components/error-boundary/error-fallback.tsx:23
 msgid "Une erreur inattendue s'est produite"
 msgstr "An unexpected error occurred"
+
+#: src/app/components/tileset-workshop/tileset-palette-panel.tsx:130
+msgid "Une palette gelée est utilisée telle quelle : les retouches sont des index de pen, elles survivent à un changement de réglage."
+msgstr "A frozen palette is used as it stands: edits are pen indices, so they outlive a change of setting."
 
 #: src/components/updater/updater-view.tsx:61
 msgid "Update Available"
@@ -1545,7 +1864,7 @@ msgstr "Uses a different palette for each frame (more colors, more flicker)"
 #~ msgid "utilisée"
 #~ msgstr "utilisée"
 
-#: src/components/export-panel/export-config-dialog.tsx:214
+#: src/components/export-panel/export-config-dialog.tsx:184
 msgid "Utiliser des labels personnalisés"
 msgstr "Use custom labels"
 
@@ -1554,7 +1873,7 @@ msgstr "Use custom labels"
 msgid "Valider"
 msgstr "Confirm"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:76
+#: src/components/color-palette/color-grid/color-grid-view.tsx:77
 msgid "Verrouiller"
 msgstr "Lock"
 
@@ -1575,8 +1894,8 @@ msgstr "Green"
 msgid "Vibrance"
 msgstr "Vibrance"
 
-#: src/components/color-palette/color-grid/color-grid-view.tsx:87
-#: src/components/ui/color-picker-popup/color-picker-popup.tsx:117
+#: src/components/color-palette/color-grid/color-grid-view.tsx:89
+#: src/components/ui/color-picker-popup/color-picker-popup.tsx:118
 msgid "Vider"
 msgstr "Clear"
 

@@ -65,3 +65,36 @@
   color: var(--color-error, #ff0000);
   font-family: var(--font-mono);
 }
+
+/* Les flèches natives d'un champ numérique sont dessinées par le navigateur :
+   ni la police ni les couleurs du thème ne les atteignent. Les flèches du
+   clavier incrémentent toujours. */
+.input[type="number"] {
+  appearance: textfield;
+  font-variant-numeric: tabular-nums;
+}
+
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* Variante compacte — un champ parmi six dans un panneau de 408 px. */
+.compactGroup {
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.compactLabel {
+  font-size: var(--font-size-sm);
+  text-shadow: none;
+}
+
+.compactInput {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-width: 1px;
+  font-size: var(--font-size-sm);
+  width: 100%;
+  min-width: 0;
+}

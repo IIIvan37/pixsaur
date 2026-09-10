@@ -13,7 +13,8 @@ export type ColorGridViewProps = {
   readonly focusedColorIndex: number
   readonly onColorSelect: (color: CPCColor, slotIndex: number) => void
   readonly onToggleLock: (index: number) => void
-  readonly onClearSlot: (index: number) => void
+  /** Omit where a slot is never empty — the button is then not offered. */
+  readonly onClearSlot?: (index: number) => void
   readonly colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>
   readonly optionRefs: React.RefObject<(HTMLButtonElement | null)[]>
   readonly onClose: () => void
@@ -76,16 +77,18 @@ export function ColorGridView({
               <Trans>Verrouiller</Trans>
             )}
           </Button>
-          <Button
-            className={styles.actionButton}
-            variant='secondary'
-            onClick={() => {
-              onClearSlot(slotIndex)
-              onClose()
-            }}
-          >
-            <Trans>Vider</Trans>
-          </Button>
+          {onClearSlot && (
+            <Button
+              className={styles.actionButton}
+              variant='secondary'
+              onClick={() => {
+                onClearSlot(slotIndex)
+                onClose()
+              }}
+            >
+              <Trans>Vider</Trans>
+            </Button>
+          )}
         </div>
       )}
     </div>

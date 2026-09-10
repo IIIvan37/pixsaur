@@ -1,14 +1,12 @@
 // ColorPaletteView: Main palette UI component
 // Handles popover logic, slot mapping, focus management, and accessibility
 
-import { useAtomValue } from 'jotai'
 import { useEffect, useRef, useState } from 'react'
-import { cpcHardwareAtom } from '@/app/store/config/config'
 import type { PaletteSlot } from '@/app/store/palette/types'
 import { ColorPickerPopup } from '@/components/ui/color-picker-popup'
 import PixsaurPopover from '@/components/ui/popover'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { CPCColor } from '@/libs/types'
+import type { CPCColor, CPCHardware } from '@/libs/types'
 import animStyles from '@/styles/animations.module.css'
 import { ColorGridView } from './color-grid/color-grid-view'
 import styles from './color-palette.module.css'
@@ -35,15 +33,21 @@ function vectorToCPCColor(vector: Vector, index: number): CPCColor {
  * @property slots - Array of palette slots
  * @property onToggleLock - Callback to toggle lock state for a slot
  * @property onSetColor - Callback to set color for a slot
- * @property onClearSlot - Callback to clear a slot and lock it
+ * @property onClearSlot - Callback to clear a slot and lock it. Omit where a
+ *   slot is never empty; the button is then not offered.
  * @property fullPalette - Array of all available colors
+ * @property hardware - Which CPC picks the colours: the classic 27-colour grid
+ *   or the Plus RGB sliders. A prop, not an atom, so a second workshop can pass
+ *   its own machine rather than the image workshop's.
  */
 export type ColorPaletteViewProps = {
   readonly slots: PaletteSlot[]
   readonly onToggleLock: (idx: number) => void
   readonly onSetColor: (params: { index: number; color: CPCColor }) => void
-  readonly onClearSlot: (idx: number) => void
+  readonly onClearSlot?: (idx: number) => void
   readonly fullPalette: CPCColor[]
+  readonly hardware: CPCHardware
+  readonly label?: string
 }
 
 export const ColorPaletteView = ({
@@ -51,7 +55,9 @@ export const ColorPaletteView = ({
   onToggleLock,
   onSetColor,
   onClearSlot,
-  fullPalette
+  fullPalette,
+  hardware,
+  label = 'Palette de couleurs'
 }: ColorPaletteViewProps) => {
   // openPopoverIndex: index of slot with open popover, or null
   const [openPopoverIndex, setOpenPopoverIndex] = useState<number | null>(null)
@@ -62,9 +68,7 @@ export const ColorPaletteView = ({
   // colorOptionRefs: refs for color option buttons in popover
   const colorOptionRefs = useRef<HTMLButtonElement[]>([])
 
-  // Get current CPC hardware mode
-  const cpcHardware = useAtomValue(cpcHardwareAtom)
-  const isClassicMode = cpcHardware === 'classic'
+  const isClassicMode = hardware === 'classic'
 
   // Ensure buttonRefs array matches slots length
   useEffect(() => {
@@ -116,7 +120,7 @@ export const ColorPaletteView = ({
   }
 
   return (
-    <section className={styles.container} aria-label='Palette de couleurs'>
+    <section className={styles.container} aria-label={label}>
       <div className={styles.paletteGrid}>
         {slots.map((slot, idx) => {
           const isPopoverOpen = openPopoverIndex === idx
@@ -168,10 +172,13 @@ export const ColorPaletteView = ({
                         handleRgbColorSelect(vector, idx)
                       }
                       onToggleLock={() => onToggleLock(idx)}
-                      onClearSlot={() => {
-                        onClearSlot(idx)
-                        setOpenPopoverIndex(null)
-                      }}
+                      onClearSlot={
+                        onClearSlot &&
+                        (() => {
+                          onClearSlot(idx)
+                          setOpenPopoverIndex(null)
+                        })
+                      }
                       onClose={() => setOpenPopoverIndex(null)}
                     />
                   )}
@@ -195,6 +202,7 @@ export const ColorPaletteView = ({
                   colorOptionRefs={colorOptionRefs}
                   locked={slot.locked}
                   onToggleLock={onToggleLock}
+                  hardware={hardware}
                 />
               )}
             </div>

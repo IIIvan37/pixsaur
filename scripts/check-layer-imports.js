@@ -21,7 +21,8 @@ const FEATURE_DIRS = [
   'src/preview',
   'src/palette',
   'src/raster',
-  'src/editor'
+  'src/editor',
+  'src/tileset'
 ]
 
 // dir prefix -> forbidden import targets.

@@ -1,0 +1,717 @@
+# Architecture review — September 2026 · tileset workshop
+
+**Date**: 2026-09-04 · **Base**: `feat/tileset-workshop` @ `5a1633a` ·
+**Scope**: the tileset workshop — `src/tileset/`, `src/libs/pixsaur-tileset/`,
+`src/app/store/tileset/`, `src/app/components/tileset-workshop/`.
+
+Scope was taken from the commit history: the last 40 commits are almost entirely
+those four directories. The image side was reviewed in
+[`architecture-review-2026-08.md`](./architecture-review-2026-08.md) and its four
+waves are applied — not revisited here.
+
+Vocabulary is the deep-module one, same as the August review: **module**
+(interface + implementation), **interface** (everything a caller must know —
+types, invariants, ordering constraints, error modes), **depth** (leverage per
+unit of interface), **seam**, **adapter**, **leverage**, **locality**. The
+**deletion test**: imagine deleting the module — does complexity vanish
+(pass-through) or reappear across N callers (earning its keep)? And: *one adapter
+means a hypothetical seam, two means a real one.*
+
+The settled decisions of this feature live in
+[`../features/PLAN-tileset-workshop.md`](../features/PLAN-tileset-workshop.md)
+(35 decisions, Q1–Q35, plus seven "conséquences forcées"). This review does not
+re-litigate them, with one exception recorded below.
+
+## Summary
+
+| # | Candidate | Strength |
+| --- | --- | --- |
+| 1 | [Move the palette decisions out of the write functions](#1--move-the-palette-decisions-out-of-the-write-functions) | **Strong** |
+| 2 | ~~[Give the pen tables a module of their own](#2--give-the-pen-tables-a-module-of-their-own--done-09092026)~~ | **Done 09/09/2026** |
+| 3 | [Delete the PNG encoder, draw on a canvas](#3--delete-the-png-encoder-draw-on-a-canvas) | **Strong** — top |
+| 4 | [Route the file exports through the FileSink port](#4--route-the-file-exports-through-the-filesink-port) | **Strong** |
+| 5 | ~~[Name the pen space](#5--name-the-pen-space--done-09092026)~~ | **Done 09/09/2026** |
+| 6 | ~~[Assemble the conversion input once](#6--assemble-the-conversion-input-once--done-09092026)~~ | **Done 09/09/2026** |
+| 7 | ~~[Collapse the grid-suggestion chain](#7--collapse-the-grid-suggestion-chain--done-09092026)~~ | **Done 09/09/2026** |
+| 8 | ~~[Share the workshop chrome, not the state](#8--share-the-workshop-chrome-not-the-state--done-09092026)~~ | **Done 09/09/2026** |
+| 9 | [Declare what a palette strategy owes its caller](#9--declare-what-a-palette-strategy-owes-its-caller) | Worth exploring |
+
+## Decisions already taken during the review
+
+- **Q20 reopened, 2026-09-04 — the PNG goes truecolor.** Recorded in the PLAN
+  (`Où on en est`, the `Sortie` decision, and the v2 backlog). The consumer is
+  `img2cpc`, which snaps every colour to the nearest CPC one, so indexed colour
+  buys nothing it asks for. This turns candidate 3 from a reshaping into a
+  deletion and promotes it to the top. **Decision only — no code deleted yet.**
+- Candidate 9 was added after the fix `d89d2d9`, which is its evidence.
+
+---
+
+## ~~1 · Move the palette decisions out of the write functions~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** Two modules carry what the write functions used to
+decide: `pen-budget.ts` (how many pens the mode holds, how many the sprites were
+promised, which pen the holes take, whether a given pen is the user's to pin) and
+`tileset-options.ts` (the six decisions, as functions of the options and of what
+the conversion produced). What follows is the review as written; the outcome is
+recorded at the end of the section.
+
+**Strength**: Strong · **Dependency category**: in-process
+
+**Files**: `src/app/store/tileset/palette.ts:28-30, :38-54, :67-93, :96-118` ·
+`src/app/store/tileset/conversion.ts:42-55` ·
+`src/app/store/tileset/edits.ts:125-141` ·
+`src/app/store/tileset/config.ts:53-59` ·
+`src/tileset/application/convert-tileset.ts:414-431, :482-487` ·
+`src/app/components/tileset-workshop/tileset-palette-panel.tsx:46, :121, :141`
+
+**Problem**. Three business rules each have two or three implementations, and
+none of them lives in a module:
+
+| Rule | Implementations |
+| --- | --- |
+| Pen budget (`nColors − reservedPens`) | `palette.ts:28-30` and `convert-tileset.ts:482-487` |
+| Lock / reserved / hole validity | `palette.ts:51-53` and `checkLockedPens` at `convert-tileset.ts:414-431` |
+| Transparency default (`pen` in mode 0, else `flatten`) | `convert-tileset.ts:99-103` and `tileset-palette-panel.tsx:46, :121` |
+
+Six decisions live in Jotai write functions: `setTilesetPen` (a three-branch
+decision with a budget guard), `toggleTilesetPenLock`, `freezeTilesetPalette` /
+`thawTilesetPalette`, `setTileDither` (the Q18 fan-out to every instance of a
+deduped tile), `tilesetPaletteSlots`, and the mode-change invalidation at
+`config.ts:53-59`.
+
+The store copy of `penBudget` exists only so the panel can refuse an edit the
+use-case would refuse anyway (comment at `palette.ts:72-74`) — the two can drift
+and nothing compares them.
+
+**Solution**. Extract the six as pure functions in `src/tileset/application/`;
+the atoms keep only the read and the write. This is the shape ADR-001 already
+asks for, and the `extract-use-case` skill is the recipe.
+
+**Wins**. Locality: one pen budget, not three. The interface becomes the test
+surface. Roughly 60 % of `palette.spec.ts` and `edits.spec.ts` stop running a
+real `convertTileset` plus a real PNG encode through `storeWithSheet()` /
+`painted()` to assert a pure decision. Leverage: the use-case and the store share
+one implementation.
+
+The genuinely store-shaped assertions worth keeping as store tests are the
+edit-layer invalidation edges (`edits.spec.ts:110-140`) and the capture/restore
+round-trip (`project.spec.ts:127-133`) — those are about wiring.
+
+**Landed 09/09/2026.** The three duplicated rules have one implementation each,
+in `src/tileset/application/pen-budget.ts`: `penBudget`, `pinnablePen` (the lock
+/ reserved / hole rule the conversion's `checkLockedPens` now calls too),
+`transparencyOf` and `hasPensToSpare` — the panel asks rather than writing
+`mode === 0` a third time. `convert-tileset.ts` dropped its private `penBudget`
+and `spendsPenOnHoles`, and its `TRANSPARENT_PEN` became the shared `HOLE_PEN`.
+
+The six decisions are pure functions in
+`src/tileset/application/tileset-options.ts`: `tilesetPaletteSlots`, `dropPen`,
+`togglePenLock`, `freezePalette`, `thawPalette` and `setTileDither`. **A refusal
+returns the options unchanged, by reference** — so the atom has nothing left to
+decide, Jotai skips a write of the same reference, and the store copy of
+`penBudget` that existed only to pre-empt the use-case is gone. The mode-change
+invalidation at `config.ts` turned out to be `thawPalette` under another name and
+now calls it.
+
+42 pure tests replaced what used to need a real `convertTileset` through
+`storeWithSheet()`: `palette.spec.ts` went from 15 assertions to 5 (the wiring —
+the conversion feeds the slots, a write reaches the options, a refusal leaves
+them identical), `edits.spec.ts` kept one of the two dither tests, the one that
+proves the atom hands the use-case the conversion's `instanceOf`.
+
+---
+
+## ~~2 · Give the pen tables a module of their own~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** `penTables` computes the four lookups in one pass, in the
+lib, with the metric supplied by the caller; `hardware-colours.ts` holds the
+CPC-aware half. What follows is the review as written; the outcome is recorded
+at the end of the section.
+
+**Strength**: Strong · **Dependency category**: in-process
+
+**Files**: `src/tileset/application/convert-tileset.ts` — `nearestPens:528-549` ·
+`penDistances:556-569` · `penMix:634-660` · `ratioBetween:663-672` ·
+`diffusionColours:675-700` · `snapToHardware:345-374` · `blender:707-724`
+
+**Problem**. `convert-tileset.ts` is 724 lines: 112 of orchestration, 151 of type
+declarations, and 405 of private helpers. Most of those 405 are not glue — they
+are ~268 lines of pure, tile-shaped colour maths that exist to satisfy the
+`PenMix` and `DiffusionColours` interfaces of `ordered-dither.ts` and
+`diffuse-tile.ts`. None of it is reachable from a test except through
+`convertTileset(input)`.
+
+Inside that block, the argmin-over-`chosen` loop is written out three times,
+structurally identical (`:535-546`, `:647-654`, `:689-697`), and the four-line
+snap-to-hardware twice (`:364-369`, `:718-722`).
+
+What that costs in coverage: `penMix` / `ratioBetween` are reached only via
+`dither: 'ordered'` on one fixture and asserted as "uses 2 pens", never as "mixes
+at ratio r"; `blender` only via `antiAlias: true` on the staircase fixture,
+asserted as "pen 2 appears"; `penDistances` only through
+`collisions[0].error > 0`.
+
+**Solution**. Lift the pen lookup tables into
+`src/libs/pixsaur-tileset/src/pen-tables.ts`, next to the ditherers they serve.
+Keep `snapToHardware` and `blender` in the application layer — `src/libs/**` must
+not know CPC hardware — but as one module rather than two functions 350 lines
+apart.
+
+**Wins**. The mix ratio becomes assertable. One argmin, not three. The use-case
+drops to orchestration. Locality: the colour maths sits in one file.
+
+Pairs naturally with candidate 5 — do them in one pass.
+
+### Outcome — 09/09/2026
+
+- `src/libs/pixsaur-tileset/src/pen-tables.ts` — `penTables({ wanted, chosen,
+  distance, space })` returns `{ error, mix, diffusion }`. One `twoNearest`
+  helper replaces the three argmin loops: the primary pen, the runner-up and the
+  distance all come out of a single pass over the colours a pixel can ask for.
+  The lib knows no more about the CPC than before — the metric and the colours
+  are parameters, and `PenColour` is `readonly number[]`.
+- **The mix ratio is assertable now.** `pen-tables.spec.ts` is 14 tests, one
+  assertion each: the halfway split, the quarter, the clamp outside the segment,
+  two pens painting the same colour, the lone pen mixed with itself, the tie kept
+  in strategy order, and the three diffusion lookups. It used to be one
+  `dither: 'ordered'` fixture asserting "uses 2 pens".
+- `src/tileset/application/hardware-colours.ts` — `hardwareColours(hardware)`
+  returns `{ palette, snap, blend }`. `snapToHardware` and `blender` lived 350
+  lines apart and each rebuilt the key-to-index map; it is built once, and the
+  two `invariant` calls share one `indexOf`. `SnappedTile` and `HOLE` moved with
+  them — the out-of-range marker is a hardware fact.
+- `convert-tileset.ts` went from 699 to 500 lines and no longer imports
+  `colorToKey`, `getPaletteForHardware`, `quantizeColorForHardware` or
+  `invariant`.
+- No behaviour change: the 43 conversion tests pass untouched.
+
+---
+
+## 3 · Delete the PNG encoder, draw on a canvas
+
+**DONE — 09/09/2026.** `pixsaur-png` is gone; `renderTilesetSheet` returns RGBA
+pixels, `saveTilesetSheet` writes the file through `CanvasFactory` + `FileSink`,
+and `renderedTilesetSheetAtom` feeds the canvas the panel draws. What follows is
+the review as written.
+
+**Strength**: Strong · **Dependency category**: ports & adapters ·
+**Reopens Q20** (already recorded in the PLAN)
+
+**Files**: `src/libs/pixsaur-png/**` (238 lines, deleted) ·
+`src/tileset/application/render-tileset-png.ts` ·
+`src/tileset/application/convert-tileset.ts:195-205, :311-316` ·
+`src/app/store/tileset/edits.ts:39-61` ·
+`src/app/components/tileset-workshop/tileset-result-panel.tsx:29-47` ·
+`src/export/application/ports.ts:54` (the `CanvasFactory` port, already exists) ·
+`src/components/image-preview/image-preview.tsx:98-107` (the shape to copy)
+
+**Problem**. A hand-written indexed-PNG encoder produces a colour type nobody
+downstream asked for, and its output doubles as the on-screen preview.
+
+The deletion test, applied to `pixsaur-png`:
+
+| | |
+| --- | --- |
+| What it claimed to buy | Pen indices in `PLTE`, a hole in `tRNS`, and determinism — "la garantie sur laquelle repose toute la tranche" |
+| What it actually buys | Nothing reads a PNG back — there is no decoder in the repo. Dedup runs on tile indices at `convert-tileset.ts:286`, upstream of any encoding, so the encoder carries no part of that guarantee. RGBA alpha 0 replaces `tRNS`. |
+| What deleting it costs | Complexity vanishes, it does not move: 238 lines gone, the "real deflate" v2 debt closed, output drops from ~66 KB of stored zlib blocks to a browser-deflated PNG |
+
+The preview is the duplicated part. The image workshop draws with `putImageData`
+and encodes nothing to look at the screen (`image-preview.tsx:98-107`); the
+tileset workshop routes its preview through a blob URL (`usePngUrl`), so every
+painted pixel encodes the sheet **twice** — once inside `convertTileset` at
+`:311`, once in `editedTilesetAtom` at `edits.ts:54`, the first discarded.
+
+**Solution**. Delete `pixsaur-png`. Draw the sheet into a canvas for the view;
+call `toBlob` through the existing `CanvasFactory` port on export.
+`convertTileset` returns `ConvertedTileset` alone.
+
+**Wins**. A module deleted, not moved. Zero encoding per stroke. The spec stops
+decoding PNG headers at byte 16 to assert that gutters survived
+(`convert-tileset.spec.ts:188, :229, :370`). Two adapters make the `CanvasFactory`
+seam real.
+
+**No caveat**: `img2cpc` snaps to the nearest CPC colour and every pen is already
+an exact hardware colour out of `snapToHardware`, so the round-trip is the
+identity. Q9 (pre-stretch) and Q10 (source grid preserved) are unchanged.
+
+---
+
+## 4 · Route the file exports through the FileSink port
+
+**Strength**: Strong · **Dependency category**: ports & adapters
+
+**Files**: `src/app/components/tileset-workshop/tileset-result-panel.tsx:103-116` ·
+`src/app/components/tileset-workshop/tileset-project-actions.tsx:18-22, :39-50, :57-69` ·
+`src/components/export-panel/use-export-actions.ts:145-148` (the shape to copy)
+
+**Problem**. Two components resolve the `FileSink` adapter inside an `onClick`.
+The PNG export — blob construction, the filename `'tileset.png'`,
+`resolveFileSink()`, the error logging — lives entirely in JSX. So do the project
+file's refusal map, its parse-then-restore decision, and its serialize-then-save.
+There is no `export-tileset-png` use-case in `src/tileset/application/`.
+
+Consequence for tests: those decisions can only be exercised by rendering a panel
+and `vi.mock`-ing the file-sink module (`tileset-result-panel.spec.tsx:18`,
+`tileset-project-actions.spec.tsx:21`).
+
+The image workshop already does this correctly:
+`exportImageToZip({…}, { canvasFactory, fileSink: resolveFileSink() })`.
+
+**Solution**. Add `exportTilesetPng`, `exportTilesetProjectFile` and
+`importTilesetProjectFile` to `src/tileset/application/`, taking the port as a
+dependency.
+
+**Wins**. Two adapters make the seam real. No `vi.mock` needed to test a
+decision. The panels go back to rendering. Leverage: web and Tauri on one path.
+
+Lands on the same port work as candidate 3 — sequence them together.
+
+---
+
+## ~~5 · Name the pen space~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** `penSpace` is a value in the lib, the offset is gone from
+six signatures, and `HOLE_PEN` has one declaration. What follows is the review as
+written; the outcome is recorded at the end of the section.
+
+**Strength**: Worth exploring · **Dependency category**: in-process
+
+**Files**: `src/tileset/application/convert-tileset.ts:152, :158, :161, :163-167,
+:218, :244, :380-382, :390-406` ·
+`src/libs/pixsaur-tileset/src/diffuse-tile.ts:29-30` ·
+`src/libs/pixsaur-tileset/src/ordered-dither.ts:34-35` ·
+`src/tileset/application/render-tileset-png.ts:60, :69-83`
+
+**Problem**. One concept — "pen index 0 is the hole when transparency spends a
+pen, and every other index shifts by one" — is spelled out in eleven places
+across three files and two layers. `holePen = 0` is declared independently in two
+lib modules and nothing enforces that they agree.
+
+The offset travels as a bare `offset: number` through six signatures:
+`nearestPens`, `penDistances`, `penMix`, `diffusionColours`,
+`lockedByChosenIndex`, `checkLockedPens`. It is a single bit moving as a number.
+
+Related: `{ ignore: HOLE }` is threaded through six call sites and typed as
+`ignore?: number` in six different option interfaces (`AntiAliasOptions`,
+`EdgeMaskOptions`, `DiffuseOptions`, `OrderedDitherOptions`, `HistogramOptions`,
+`CollisionOptions`) — six identical two-line interfaces carrying the same doc
+comment.
+
+**Solution**. One `PenSpace` value holding `{ holePen, toChosen(i), toPalette(i),
+isHole(i) }`. Callers ask it questions instead of doing arithmetic.
+
+**Wins**. Six parameters disappear. The hole default stops being copied.
+Locality: one place to get it wrong.
+
+Do it in the same pass as candidate 2.
+
+### Outcome — 09/09/2026
+
+- `src/libs/pixsaur-tileset/src/pen-space.ts` — `penSpace(holePen: number |
+  null)` returns `{ holePen, toChosen, toPalette, isHole }`. It is built from the
+  hole pen itself rather than a boolean, so the bit never has to be
+  reconstructed. `pen-budget.ts` exposes `penSpaceOf(spending)`, which is where
+  the mode's default transparency is already known.
+- The `offset: number` parameter is gone from every signature. `nearestPens`,
+  `penDistances`, `penMix` and `diffusionColours` no longer exist;
+  `checkLockedPens` lost both its arithmetic parameters to the new
+  `chosenPens(spending)` in `pen-budget.ts`; `lockedByChosenIndex` and
+  `pinnablePen` ask the space.
+- `HOLE_PEN` has **one** declaration, in the lib, and both ditherers default to
+  it instead of writing `holePen = 0` each. `convert-tileset.ts` stopped passing
+  it at either call site.
+- `HoleMarking` (`ignore?`) and `HoleWriting` (`ignore?` + `holePen?`) replace
+  the six copies of the same option interface: `AntiAliasOptions`,
+  `EdgeMaskOptions`, `HistogramOptions` and `CollisionOptions` extend the first,
+  `OrderedDitherOptions` and `DiffuseOptions` the second.
+- `pen-space.spec.ts` is 9 tests, one assertion each, over both branches.
+
+---
+
+## ~~6 · Assemble the conversion input once~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** `tilesetConversionSubjectAtom` reads the five fields off
+the leaf atoms once; the conversion, the render and the captured project all
+descend from it. The twins are gone: `TilesetSheet` and `TileSize` were deleted
+and every caller now names the lib's `Sheet` and `TileGrid`. What follows is the
+review as written; the outcome is recorded at the end of the section.
+
+**Strength**: Worth exploring · **Dependency category**: in-process
+
+**Files**: `src/app/store/tileset/conversion.ts:25-32` ·
+`src/app/store/tileset/edits.ts:54-59` · `src/app/store/tileset/project.ts:26-36` ·
+`src/tileset/application/convert-tileset.ts:56-66` vs
+`src/libs/pixsaur-tileset/src/slice-sheet.ts:10-20`
+
+**Problem**. The tuple `(source, target, mode, background)` is spelled out in
+three unrelated files. There is no `tilesetConversionInputAtom` that the
+conversion, the encode and the capture could all read.
+
+Two concepts also carry two names: `TilesetSheet`
+(`convert-tileset.ts:56-60`) is a field-for-field copy of `Sheet`
+(`slice-sheet.ts:10-14`), and `TileSize` (`:63-66`) of `TileGrid` (`:17-20`).
+They type-check against each other only because TypeScript is structural, and
+both names are live in the same call chain: `geometry.ts:25` declares
+`tilesetTargetAtom = atom<TileGrid>(...)` from the lib, `conversion.ts:28` feeds
+it into `target: TileSize` from the application layer. A new field on one would
+warn nobody.
+
+Note also that the store imports from both `@/tileset` and
+`@/libs/pixsaur-tileset` (`geometry.ts:9-18`), and that `SheetGrid` — an internal
+lib type — is part of the persisted project file format
+(`tileset-project.ts:177, :218`). The lib is a second public API of the feature.
+
+**Solution**. One derived `tilesetConversionInputAtom`; drop the structural twins
+in favour of the lib's `Sheet` and `TileGrid`.
+
+**Wins**. A new field is added once. The twins stop drifting silently. Locality:
+one assembly site.
+
+Cheap once candidate 3 has removed the second assembly at `edits.ts:54`.
+
+### Outcome — 09/09/2026
+
+- `TilesetConversionSubject` (`convert-tileset.ts`) names the five fields the
+  conversion and the document share. `ConvertTilesetInput` extends it with the
+  tuning; `TilesetProject` extends it with the version, the source platform, the
+  options and the edit layer. `RenderTilesetSheetInput` is a `Pick` of it, so a
+  field renamed on the subject stops the render compiling instead of drifting.
+- `tilesetConversionSubjectAtom` and `tilesetConversionInputAtom`
+  (`store/tileset/conversion.ts`) are the single assembly. `convertedTilesetAtom`
+  passes the input straight through; `renderedTilesetSheetAtom` reads the same
+  object instead of re-reading four leaf atoms; `captureTilesetProjectAtom`
+  spreads the subject. The restore side keeps writing the leaf atoms — a
+  document put back must bypass the setters, as its own comment says.
+- The twins are deleted, not aliased: `TilesetSheet` and `TileSize` no longer
+  exist, and `@/tileset` stops exporting them. 23 files — mostly specs — name
+  `Sheet` and `TileGrid` from `@/libs/pixsaur-tileset` directly, which the
+  layering guard allows and which makes the lib's ownership visible.
+- No behaviour change and no new test: the 338 tileset tests passed before and
+  after. `quality-gate` green, knip and jscpd at baseline.
+
+---
+
+## ~~7 · Collapse the grid-suggestion chain~~ — done 09/09/2026
+
+**DONE — 09/09/2026.** Nine exports left the barrel, not six: the grid chain
+collapsed to one hop, and the geometry formulas folded into one
+`measureTileGeometry`. What follows is the review as written; the outcome is
+recorded at the end of the section.
+
+**Strength**: Worth exploring · **Dependency category**: in-process
+
+**Files**: `src/tileset/application/suggest-tile-grid.ts:21, :31-39` ·
+`src/libs/pixsaur-tileset/src/tile-geometry.ts:14-17, :29-52` ·
+`src/libs/pixsaur-tileset/src/tile-dedup.ts:67-69` ·
+`src/libs/pixsaur-tileset/index.ts:22`
+
+**Problem**. Four shallow exports:
+
+- `suggestTileGrid` — 4 statements. It supplies one default
+  (`PLAUSIBLE_TILE_SIZES`) and does `sizes.map((size) => ({ ...blanks, ...size }))`.
+  Its `GridBlanks` type is an `Omit` of a lib type. The chain
+  `rankTileGrids ← suggestTileGrid ← tilesetGridSuggestionsAtom` is three modules
+  for one sort, and `rankTileGrids` has exactly one caller.
+- `idealTileHeight`, `idealTileWidth`, `aspectDistortion` — one expression each
+  (`tile-geometry.ts:34, :43, :51`), built on a `TileShape` wrapper type that
+  exists only to bundle two others, all three called back-to-back by the same
+  single caller (`suggest-tile-geometry.ts:51, :55, :56`).
+- `duplicateRate` — three lines, exported through the barrel, called only from
+  `rank-grids.ts:76` inside the same lib.
+- `bayerThresholds` — real code, exported from the barrel, **zero callers**
+  outside its own module and spec. Invisible to knip because `knip.json` sets
+  `ignoreExportsUsedInFile: true`; the ratchet will not catch this family.
+
+**Solution**. Fold the default into `rankTileGrids`, inline the three formulas
+into `suggestTileGeometry` (whose whole body is 12 lines), drop `duplicateRate`
+and `bayerThresholds` from the barrel.
+
+**Wins**. The barrel shrinks by six exports. One hop, not three. `TileShape`
+deleted. Deletion test: complexity shrinks.
+
+**Keep**: `candidateTileSizes` (36 lines with a real sort and tie-break) earns
+its export.
+
+### Outcome — 09/09/2026
+
+Nine exports left, not six, and the geometry half was solved differently from
+what the review proposed.
+
+- **The grid chain is one hop.** `rankTileGrids({ sheet, blanks, sizes })` puts
+  its own `PLAUSIBLE_TILE_SIZES` default in and spreads the blanks over each
+  size; `suggest-tile-grid.ts` and its spec are deleted, and
+  `tilesetGridSuggestionsAtom` calls the lib directly. `GridBlanks` moved next
+  to `SheetGrid`, where it always belonged. The Q29 offset case is now two
+  calls comparing duplicate rates — a more direct assertion of Q29 than the
+  old "the aligned grid sorts first" was.
+- **The geometry formulas fold into `measureTileGeometry`, not into the
+  use-case.** The review said to inline the three expressions into
+  `suggestTileGeometry`. That would have moved `physicalAspect` arithmetic into
+  `src/tileset/application/`, which ADR-001's decision tree sends to `libs`.
+  One lib function returning `{ distortion, idealHeight, idealWidth,
+  candidates }` gets the same barrel shrink, keeps the maths where the ADR puts
+  it, and leaves `suggestTileGeometry` with its real job: turning a CPC mode
+  into a pixel aspect. `TileShape`, `aspectDistortion` and `candidateTileSizes`
+  are module-internal now — `candidateTileSizes` earns its keep inside the
+  module, as the review said, just not on the barrel.
+- The two specs stopped overlapping: `tile-geometry.spec.ts` tests the maths
+  against explicit pixel aspects, `suggest-tile-geometry.spec.ts` tests only
+  what the use-case adds.
+
+---
+
+## ~~8 · Share the workshop chrome, not the state~~ — done 09/09/2026
+
+**DONE — 09/09/2026,** in three of its six pieces. What follows is the review as
+written; the outcome, and what was deliberately left alone, is recorded at the
+end of the section.
+
+**Strength**: Speculative · **Dependency category**: in-process
+
+**Files**: `src/app/store/tileset/use-tileset-persistence.ts:12, :34-54` ↔
+`src/app/store/session/use-session-persistence.ts:11, :24-40` ·
+`src/app/store/tileset/project.ts:22-59` ↔ `src/app/store/session/session.ts:46-125` ·
+`src/app/components/tileset-workshop/tileset-workshop.tsx:27-52` ↔
+`src/app/components/main-content/main-content.tsx:9-35` ·
+`tileset-info-bar.tsx` ↔ `src/components/info-bar/info-bar.tsx` ·
+`src/app/store/tileset/edits.ts:31` ↔ `src/app/store/editor/editor-actions.ts:69`
+
+**Problem**. Eleven pieces of workshop machinery were copied from the image side
+rather than shared. The clearest:
+
+- Two independent implementations of the same debounced-persistence algorithm,
+  both declaring `PERSIST_DEBOUNCE_MS = 800`. The tileset one is the better
+  version — it takes the store as a port parameter and tracks hydration in state.
+- `const systemClock: Clock = { now: () => Date.now() }` written twice, both
+  importing `Clock` from the same `@/editor/application/ports`.
+- The same workshop layout skeleton with two stylesheets
+  (`.actions/.workspace/.column` against
+  `.settingsButtonContainer/.flexRow/.flexColumnGrow`).
+- Two info bars with two CSS blocks for the same markup idiom.
+- The `<div class=field><span class=label/><Select/></div>` triad appears **7
+  times** across `tileset-palette-panel.tsx`, `tileset-render-panel.tsx` and
+  `tileset-geometry-panel.tsx`; the candidate-list block twice
+  (`tileset-grid-panel.tsx:59-90` ↔ `tileset-geometry-panel.tsx:99-121`).
+
+Properly reused already: `SettingsDock`, `ColorPaletteView`, the `PaletteSlot`
+type.
+
+**Solution**. Share the mechanism, not the state: a
+`useDebouncedPersistence(capture, restore, store)` hook, a `WorkshopLayout`, one
+`InfoBar`, one `systemClock`, a `LabelledSelect`, a `CandidateList`.
+
+**Does not reopen Q6 · Q32 · Q34.** That decision is about *state* — two open
+documents, two atom spaces. Sharing the layout, the debounce and the clock leaves
+it intact; merging `cpcMode` or the capture atoms would not.
+
+**Wins**. One debounce, two workshops. Two CSS blocks become one. Leverage across
+both workshops. Lowest risk, lowest payoff of the nine.
+
+### Outcome — 09/09/2026
+
+Three of the six pieces landed; three were judged not worth the regression risk
+they carry.
+
+**Shared.**
+
+- `useDebouncedPersistence` (`store/workshop/`) is the algorithm that was
+  written twice. The two halves differed more than the review suggested — the
+  session's storage is synchronous `localStorage`, the tileset's asynchronous
+  IndexedDB — so the hook takes a `WorkshopStorage<T>` whose either half may
+  answer synchronously. One optional predicate, `hasContent`, carries the whole
+  difference in behaviour: absent, whatever was saved is put back and every
+  change is written; present, what is on screen is never overwritten. Getting
+  that default backwards would have stopped the image session restoring at all,
+  which nothing tested — the hook now has its own spec covering both readings.
+- `systemClock` is an adapter next to its port (`editor/adapters/`).
+- `LabelledSelect` and `TileSuggestions` (both in the tileset workshop, on its
+  own stylesheet) replace the seven-times triad and the two hand-drawn
+  candidate lists. The triad wrote its label twice per field, once for the eye
+  and once for `aria-label`; it is written once now.
+
+**Left alone, deliberately.**
+
+- **`WorkshopLayout` and one `InfoBar`.** The two info bars are not one
+  component with two data sources: the image one reads eight atoms inline, uses
+  separators and two value variants and a `Suspense` boundary; the tileset one
+  is three label-value pairs. Only the markup idiom is shared, and merging two
+  workshops' chrome CSS buys a shell in exchange for a visual regression risk
+  across both workshops that no test would catch. The review's own verdict on
+  candidate 8 — lowest payoff of the nine — argues against spending it here.
+- **The `.field` / `.label` rules stay in `tileset-workshop.module.css`.**
+  Non-select fields (the edit panel) use them too, so lifting them to a shared
+  module would have duplicated the CSS rather than removed it.
+
+---
+
+## ~~9 · Declare what a palette strategy owes its caller~~ — done 09/09/2026
+
+**Strength**: Worth exploring · **Dependency category**: in-process
+
+**Files**: `src/libs/pixsaur-color/src/quant/palette-strategies-v2.ts:122-127`
+(the interface) · `:1412-1418` (`combinatorialCap`), `:1494`, `:1684`, `:1888` ·
+`…spec.ts:2336-2344` (the sweep) ·
+`src/tileset/application/convert-tileset.ts:517-520` (the consumer)
+
+**Problem**. The fix `d89d2d9` is the evidence for this card. Three combinatorial
+strategies capped their candidates at 12–16 to bound the search; a mode 0 tileset
+asks for 15 pens, so `kCombinationsV2(n, k)` with `k > n` produced nothing, the
+strategy returned an empty palette, and `convertTileset` dereferenced it.
+
+`PaletteStrategyFunction` takes `targetColors` and says nothing about what comes
+back. Fifteen implementations each decide; roughly twenty files consume the
+result. The consumer at `convert-tileset.ts:517-520` slices and trusts.
+
+**Already landed in `d89d2d9`**: `combinatorialCap` at the three offending sites,
+plus a sweep over `AVAILABLE_STRATEGIES` asserting that no strategy returns an
+empty palette. That is the half that protects.
+
+**Solution**. State the postcondition on `PaletteStrategyFunction` — the
+interface is more than the type signature, and this fact belongs in it — and
+strengthen the sweep from "not empty" to the declared length, presumably
+`min(targetColors, candidates.length)`. Whether all fifteen already honour it is
+what the sweep would tell you.
+
+**Wins**. Leverage: fifteen implementations, one contract. A sixteenth strategy
+inherits the guard. ~20 consumers stop guessing. Locality: the cap rule has one
+home.
+
+**Landed 09/09/2026 (`78905c2`)**. The postcondition is written on
+`PaletteStrategyFunction`: the returned palette holds
+`min(targetColors, candidates.length)` indices, never fewer, never empty. The
+sweep asserts that length instead of "not empty", over three shapes — candidates
+above the ask, candidates below it, and a third the strategies would be tempted
+to collapse: twenty-six candidates carrying three distinct colours still fill
+fifteen pens. **All fifteen strategies already honoured it** — probed across
+`n = 0..20`, `k = 0..16`, with duplicates and with preselected pens, zero
+violations — so the wave wrote the contract and the proof, not a fix.
+`convert-tileset.ts` dropped its `.slice(0, maxPens)`: the contract bounds the
+length, so the cut was a guess the caller no longer makes.
+
+---
+
+## Found in passing
+
+Not deepening opportunities. Cheap, and each is a green signal covering code that
+never ran.
+
+- **`convert-tileset.ts:224`** — `grid-mismatch` is one of five documented error
+  modes and the only one with no test.
+- **`convert-tileset.ts:464, :475-479`** — `placeLockedPens` never fires its
+  cursor-fill loop, so the behaviour documented at `:448-453` ("a position the
+  sheet left unfilled below a pin is painted the background") is unverified.
+  Reaching it needs a pin high in the budget over a sheet poorer in colours than
+  the pin index — e.g. mode 0, `lockedPens: { 15: WHITE }`, a two-colour sheet.
+  The four existing locked-pen tests (`spec:427-490`) all pin at index 1 or 3
+  with 3–4 colour sheets, which never leaves a gap.
+- **`convert-tileset.ts:329`** — the `sheetEdges` majority tie-break
+  (`* 2 >= verdicts.length`) is never asserted; every fixture is decisively wrap
+  or clamp.
+- ~~**No `src/tileset/application/README.md`.**~~ **Seeded with wave 2
+  (09/09/2026)** — ports, use-cases, and what a panel may still do. Every other
+  feature has one (`export`, `preview`, `palette`, `raster`, `editor`); the
+  tileset registry used to exist only inside the PLAN.
+- **The `TilesetProjectStore` port has one adapter and two independently written
+  inline fakes** (`persist-tileset-project.spec.ts:27-34`,
+  `use-tileset-persistence.spec.tsx:41-42`). A shared fake would make the second
+  adapter real.
+
+## Checked and healthy — leave alone
+
+- **`resize-scheme.ts`** — 184 lines behind a 4-argument call, with the
+  exhaustive/greedy/grown decision and the 200 000-candidate budget fully hidden.
+  The deepest module in the feature. Its `greedy` and `grown` branches are
+  covered at the lib level, which is an argument *for* the lib seam.
+- **`convert-tileset.spec.ts`** — 564 lines, 43 tests, every one through the
+  exported interface, no internal import, no `vi.mock`. Measured coverage of the
+  use-case from this spec alone: 98.89 % statements, 95.83 % branch.
+- **`tilesetOptionsAtom` as one bag** typed
+  `Pick<ConvertTilesetInput, …>` — the panels, the use-case and the saved file
+  cannot drift apart.
+- **`edge-mask.ts`, `edge-condition.ts`, `resize-tile.ts`** — small, but each
+  names a decision inlining would lose (tile-local sampling origin,
+  seam-vs-internal-texture comparison, holes take no side). Shallow by size, deep
+  by consequence.
+- **`dedupeTiles`** — four call sites, the only real hub in the lib.
+
+## Top recommendation
+
+~~**[Candidate 3 — delete the PNG encoder, draw on a canvas](#3--delete-the-png-encoder-draw-on-a-canvas).**~~
+**Done 09/09/2026.** It was the only candidate that *deleted* a module rather
+than reshaping one, and the product question that held it back was answered:
+`img2cpc` wants the palette and a truecolor PNG. 238 lines went, the per-stroke
+encoding went with them, and the export landed on the `CanvasFactory` port that
+already existed.
+
+~~**[Candidate 4 — route the file exports through the `FileSink` port](#4--route-the-file-exports-through-the-filesink-port).**~~
+**Done 09/09/2026.** `exportTilesetProjectFile` and `importTilesetProjectFile`
+joined `saveTilesetSheet`; the panels keep one `useCallback` each.
+`src/tileset/application/README.md`, missing since T1, was seeded with it.
+
+~~**[Candidate 9 — declare what a palette strategy owes its caller](#9--declare-what-a-palette-strategy-owes-its-caller--done-09092026).**~~
+**Done 09/09/2026.** The contract is on the type and the sweep proves the
+fifteen honour it.
+
+~~**[Candidate 1 — move the palette decisions out of the write functions](#1--move-the-palette-decisions-out-of-the-write-functions--done-09092026).**~~
+**Done 09/09/2026.** The pen budget, the lock rule and the transparency default
+each have one implementation now, in `pen-budget.ts`; the six decisions are pure
+functions in `tileset-options.ts`. **No correctness risk is left open in this
+review** — what remains is depth and locality.
+
+~~**[Candidate 6 — assemble the conversion input once](#6--assemble-the-conversion-input-once--done-09092026).**~~
+**Done 09/09/2026.** One subject atom feeds the conversion, the render and the
+document; the structural twins were deleted rather than aliased.
+
+~~**[Candidates 2 and 5 — the pen tables and the pen space](#2--give-the-pen-tables-a-module-of-their-own--done-09092026).**~~
+**Done 09/09/2026,** in one pass, as the review asked: they were the same subject
+seen twice. The use-case dropped to orchestration, the colour maths is testable
+on its own, and the offset stopped being a number.
+
+~~**[Candidates 7 and 8 — the barrel trim and the workshop
+chrome](#7--collapse-the-grid-suggestion-chain--done-09092026).**~~
+**Done 09/09/2026,** and with them the review is spent. Candidate 7 shed nine
+exports rather than six, folding the geometry maths into one lib function
+instead of inlining it into the use-case as proposed — ADR-001 puts that maths
+in `libs`. Candidate 8 landed in three of its six pieces: the shared
+persistence, the shared clock and the two repeated bits of panel markup. The
+layout and info-bar merge was left alone; each candidate's Outcome section says
+why.
+
+**Nothing is left of this review.** A fresh session picks the feature up from
+the PLAN, not from here.
+
+## Suggested sequencing
+
+| Wave | Candidates | Note |
+| --- | --- | --- |
+| ~~1~~ | ~~3~~ | **Done 09/09/2026** — `pixsaur-png` deleted, double encode gone, `CanvasFactory` port landed |
+| ~~2~~ | ~~4~~ | **Done 09/09/2026** — project file in and out are use-cases, both filenames left the JSX |
+| ~~3~~ | ~~9~~ | **Done 09/09/2026** — postcondition on the type, sweep asserts the length, the consumer's slice went |
+| ~~4~~ | ~~1~~ | **Done 09/09/2026** — one pen budget, one lock rule, six decisions out of the atoms |
+| ~~5~~ | ~~6~~ | **Done 09/09/2026** — one subject atom, and the structural twins deleted |
+| ~~6~~ | ~~2 + 5~~ | **Done 09/09/2026** — one argmin, the offset gone from six signatures, `HOLE_PEN` declared once |
+| ~~7~~ | ~~7, 8~~ | **Done 09/09/2026** — nine exports off the barrel, one debounce and one clock for both workshops |
+
+Close every slice with `quality-gate`.
+
+## How to resume this on another machine
+
+Everything needed is in the repo. The review was produced as an HTML report in
+the OS temp directory — that file is machine-local and disposable; this document
+is the record.
+
+1. Read this file, then
+   [`../features/PLAN-tileset-workshop.md`](../features/PLAN-tileset-workshop.md)
+   — it is the canonical resume point for the feature, and its "Où on en est"
+   section carries the Q20 reversal.
+2. Read [`ADR-001-file-layout.md`](./ADR-001-file-layout.md) for the layering
+   rules any of these changes must respect.
+3. Pick a candidate from the sequencing table. Slices touching the pure core
+   (`src/libs/**`, `src/domain/**`) go through `tdd-cycle`; slices carving an
+   existing atom or component into a use-case go through `extract-use-case`.
+4. All seven waves landed on 09/09/2026 and **nothing of this review is left to
+   do**. Read it for what was decided and, in each candidate's Outcome section,
+   for where the delivered shape departs from the proposed one. The feature's
+   resume point is the PLAN.

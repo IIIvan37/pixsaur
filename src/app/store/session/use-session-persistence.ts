@@ -1,5 +1,4 @@
-import { useAtomValue, useSetAtom } from 'jotai'
-import { useEffect, useRef } from 'react'
+import { useDebouncedPersistence } from '@/app/store/workshop/use-debounced-persistence'
 import {
   captureSessionAtom,
   loadSnapshot,
@@ -7,8 +6,7 @@ import {
   restoreSessionAtom
 } from './session'
 
-/** Debounce window before a changed session is written back to storage. */
-const PERSIST_DEBOUNCE_MS = 800
+const storage = { load: loadSnapshot, save: persistSnapshot }
 
 /**
  * Auto-restores the previous working session on mount and auto-saves it
@@ -16,26 +14,9 @@ const PERSIST_DEBOUNCE_MS = 800
  * user's image, settings and manual edits.
  */
 export function useSessionPersistence() {
-  const snapshot = useAtomValue(captureSessionAtom)
-  const restore = useSetAtom(restoreSessionAtom)
-  const hydratedRef = useRef(false)
-
-  // Restore once, before we start saving.
-  useEffect(() => {
-    if (hydratedRef.current) return
-    hydratedRef.current = true
-    const saved = loadSnapshot()
-    if (saved) restore(saved)
-  }, [restore])
-
-  // Persist on change, debounced. Skipped until the initial restore has run so
-  // we never overwrite a saved session with the empty default state.
-  useEffect(() => {
-    if (!hydratedRef.current) return
-    const handle = setTimeout(
-      () => persistSnapshot(snapshot),
-      PERSIST_DEBOUNCE_MS
-    )
-    return () => clearTimeout(handle)
-  }, [snapshot])
+  useDebouncedPersistence({
+    capture: captureSessionAtom,
+    restore: restoreSessionAtom,
+    storage
+  })
 }

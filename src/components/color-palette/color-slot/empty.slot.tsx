@@ -1,11 +1,9 @@
-import { useAtomValue } from 'jotai'
-import { cpcHardwareAtom } from '@/app/store/config/config'
 import type { PaletteSlot } from '@/app/store/palette/types'
 import { ColorPickerPopup } from '@/components/ui/color-picker-popup'
 import Icon from '@/components/ui/icon'
 import PixsaurPopover from '@/components/ui/popover'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { CPCColor } from '@/libs/types'
+import type { CPCColor, CPCHardware } from '@/libs/types'
 import { ColorGrid } from '../color-grid'
 import styles from './color-slot.module.css'
 
@@ -22,6 +20,9 @@ export type EmptySlotButtonProps = {
   readonly colorOptionRefs: React.RefObject<(HTMLButtonElement | null)[]>
   readonly locked: boolean
   readonly onToggleLock: (idx: number) => void
+  /** Which CPC picks the colour — passed down, not read from an atom, so the
+      slot follows the workshop that renders it. */
+  readonly hardware: CPCHardware
 }
 
 export function EmptySlotButton({
@@ -36,10 +37,10 @@ export function EmptySlotButton({
   onRgbColorSelect,
   colorOptionRefs,
   locked,
-  onToggleLock
+  onToggleLock,
+  hardware
 }: EmptySlotButtonProps) {
-  const cpcHardware = useAtomValue(cpcHardwareAtom)
-  const isPlus = cpcHardware === 'plus'
+  const isPlus = hardware === 'plus'
 
   const handleRgbChange = (color: Vector) => {
     if (onRgbColorSelect) {

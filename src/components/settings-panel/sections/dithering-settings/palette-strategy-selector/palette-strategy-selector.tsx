@@ -15,7 +15,11 @@ import {
   PaletteStrategySelectorView
 } from './palette-strategy-selector-view'
 
-const getPaletteStrategies = (
+/**
+ * The 12 strategies, labelled once. Exported because the tileset workshop
+ * offers the same list (Q33) and a second transcription would drift.
+ */
+export const getPaletteStrategies = (
   _: (message: { id: string; message?: string }) => string
 ): readonly PaletteStrategyOption[] =>
   [
