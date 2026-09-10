@@ -8,8 +8,8 @@
  */
 
 import { atom } from 'jotai'
-import type { Sheet } from '@/libs/pixsaur-tileset'
-import { EMPTY_EDIT_LAYER } from '@/tileset'
+import { downscaleSheet, type Sheet } from '@/libs/pixsaur-tileset'
+import { EMPTY_EDIT_LAYER, inspectSheet, type SheetInspection } from '@/tileset'
 import { tilesetEditLayerAtom } from './edit-layer'
 
 /** The imported sheet, RGBA. `null` until the user drops a file. */
@@ -23,3 +23,23 @@ export const setTilesetSheetAtom = atom(
     set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
   }
 )
+
+/** What the workshop checks in the source before cutting it (M-Q19). */
+export const tilesetSheetInspectionAtom = atom<SheetInspection | null>(
+  (get) => {
+    const sheet = get(tilesetSheetAtom)
+    return sheet ? inspectSheet(sheet) : null
+  }
+)
+
+/**
+ * Undoes the whole factor the inspection found. The reduced image is another
+ * sheet, so it goes through the same setter as an import.
+ */
+export const reduceTilesetSheetAtom = atom(null, (get, set) => {
+  const sheet = get(tilesetSheetAtom)
+  const scale = get(tilesetSheetInspectionAtom)?.scale
+  if (!sheet || !scale) return
+
+  set(setTilesetSheetAtom, downscaleSheet(sheet, scale))
+})

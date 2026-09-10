@@ -9,8 +9,10 @@ import {
   tilesetGridAtom,
   tilesetGridSuggestionsAtom,
   tilesetLayoutAtom,
-  tilesetMapOptionsAtom
+  tilesetMapOptionsAtom,
+  tilesetOffsetSuggestionAtom
 } from '@/app/store/tileset/tileset'
+import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
@@ -36,6 +38,7 @@ export function TilesetGridPanel() {
   const setLayout = useSetAtom(setTilesetLayoutAtom)
   const mapOptions = useAtomValue(tilesetMapOptionsAtom)
   const setMapOptions = useSetAtom(setTilesetMapOptionsAtom)
+  const offset = useAtomValue(tilesetOffsetSuggestionAtom)
 
   const number = (key: keyof typeof grid) => ({
     type: 'number',
@@ -88,6 +91,26 @@ export function TilesetGridPanel() {
           />
         )}
       </div>
+
+      {offset && (
+        <section className={styles.suggestions}>
+          <h2 className={styles.subtitle}>
+            <Trans>Décalage suggéré</Trans>
+          </h2>
+          <p className={styles.note}>
+            {`${offset.offsetX}, ${offset.offsetY} — ${offset.uniqueTiles} `}
+            <Trans>tuiles uniques</Trans>
+          </p>
+          <Button
+            variant='secondary'
+            onClick={() =>
+              setGrid({ offsetX: offset.offsetX, offsetY: offset.offsetY })
+            }
+          >
+            <Trans>Appliquer ce décalage</Trans>
+          </Button>
+        </section>
+      )}
 
       {suggestions.length > 0 && (
         <TileSuggestions

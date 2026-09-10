@@ -4,13 +4,18 @@
  */
 
 import { atom, type Getter } from 'jotai'
-import { cropSheet, type Sheet } from '@/libs/pixsaur-tileset'
+import {
+  cropSheet,
+  type OffsetCandidate,
+  type Sheet
+} from '@/libs/pixsaur-tileset'
 import {
   type ConvertedTileset,
   DEFAULT_TILESET_MAP_OPTIONS,
   mapAtlasColumns,
   mapTileset,
   renderTileAtlas,
+  suggestMapOffset,
   type TilesetLayout,
   type TilesetMap,
   type TilesetMapOptions
@@ -48,6 +53,20 @@ export const setTilesetMapOptionsAtom = atom(
   null,
   (get, set, payload: Partial<TilesetMapOptions>) => {
     set(tilesetMapOptionsAtom, { ...get(tilesetMapOptionsAtom), ...payload })
+  }
+)
+
+/**
+ * The offset the map's grid should rather start at, or `null` when it sits on
+ * the tiles already — or when the source is a sheet, whose margin and spacing
+ * the user declares (M-Q4).
+ */
+export const tilesetOffsetSuggestionAtom = atom<OffsetCandidate | null>(
+  (get) => {
+    if (get(tilesetLayoutAtom) !== 'map') return null
+
+    const sheet = get(tilesetSheetAtom)
+    return sheet ? suggestMapOffset(sheet, get(tilesetGridAtom)) : null
   }
 )
 

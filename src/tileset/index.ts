@@ -16,6 +16,11 @@ export {
   TILED_ARCHIVE_FILENAME
 } from './application/export-tileset-tiled'
 export {
+  FILTERED_COLOURS,
+  inspectSheet,
+  type SheetInspection
+} from './application/inspect-sheet'
+export {
   applyTilesetEdits,
   EMPTY_EDIT_LAYER,
   type PaintTilesetInput,
@@ -45,6 +50,7 @@ export {
   saveTilesetSheet,
   TILESET_SHEET_FILENAME
 } from './application/save-tileset-sheet'
+export { suggestMapOffset } from './application/suggest-map-offset'
 export {
   DEFAULT_TILESET_MAP_OPTIONS,
   mapAtlasColumns,

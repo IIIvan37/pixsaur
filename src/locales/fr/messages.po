@@ -32,7 +32,7 @@ msgstr "{0} image(s) prête(s) à exporter"
 
 #. placeholder {0}: candidate.uniqueTiles
 #. placeholder {1}: percent(candidate.duplicateRate)
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:101
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:124
 msgid "{0} tuiles uniques, {1} de doublons"
 msgstr "{0} tuiles uniques, {1} de doublons"
 
@@ -194,6 +194,10 @@ msgstr "Applique un lissage horizontal pour réduire les artefacts de pixels. D�
 msgid "Appliquer"
 msgstr "Appliquer"
 
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:110
+msgid "Appliquer ce décalage"
+msgstr "Appliquer ce décalage"
+
 #: src/components/preview-editor/help-button/help-button.tsx:57
 msgid "Appliquer les modifications"
 msgstr "Appliquer les modifications"
@@ -279,7 +283,7 @@ msgstr "Bonus de continuité"
 msgid "Box"
 msgstr "Box"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:81
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:84
 msgid "Budget de tuiles"
 msgstr "Budget de tuiles"
 
@@ -287,11 +291,11 @@ msgstr "Budget de tuiles"
 msgid "Canaux RGB"
 msgstr "Canaux RGB"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:129
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:131
 msgid "Case survolée"
 msgstr "Case survolée"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:137
 msgid "cases"
 msgstr "cases"
 
@@ -335,7 +339,7 @@ msgstr "Changements Raster"
 msgid "Changer d'image"
 msgstr "Changer d'image"
 
-#: src/app/components/tileset-workshop/tileset-source-panel.tsx:35
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:40
 msgid "Changer de planche"
 msgstr "Changer de planche"
 
@@ -499,11 +503,15 @@ msgstr "Débruitage qui préserve les contours (0 = off, 1-3 = force)"
 #~ msgid "Début"
 #~ msgstr "Début"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:76
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:98
+msgid "Décalage suggéré"
+msgstr "Décalage suggéré"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:79
 msgid "Décalage X"
 msgstr "Décalage X"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:77
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:80
 msgid "Décalage Y"
 msgstr "Décalage Y"
 
@@ -533,6 +541,10 @@ msgstr "Désactivé quand le mapping distinct est actif pour préserver les coul
 msgid "Détecte automatiquement les images avec peu de couleurs (C64, ZX Spectrum, etc.) et préserve toutes les couleurs distinctes."
 msgstr "Détecte automatiquement les images avec peu de couleurs (C64, ZX Spectrum, etc.) et préserve toutes les couleurs distinctes."
 
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:57
+msgid "détectée."
+msgstr "détectée."
+
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:255
 msgid "Détection des contours (0 = off, 1 = contours uniquement)"
 msgstr "Détection des contours (0 = off, 1 = contours uniquement)"
@@ -555,7 +567,7 @@ msgstr "Diffusion d'erreur"
 msgid "Dimension Preset"
 msgstr "Dimension Preset"
 
-#: src/app/components/tileset-workshop/tileset-source-panel.tsx:40
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:46
 #: src/components/info-bar/info-bar.tsx:113
 #: src/components/settings-panel/sections/hardware-settings/hardware-settings-view.tsx:183
 msgid "Dimensions"
@@ -704,7 +716,7 @@ msgstr "Enregistrer le PNG"
 #~ msgid "Error reading file: {0}"
 #~ msgstr "Erreur de lecture du fichier : {0}"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:75
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:78
 msgid "Espacement"
 msgstr "Espacement"
 
@@ -874,7 +886,7 @@ msgstr "Grille"
 msgid "Grille (H)"
 msgstr "Grille (H)"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:50
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:53
 msgid "Grille source"
 msgstr "Grille source"
 
@@ -898,7 +910,7 @@ msgstr "Hauteur"
 msgid "Hauteur cible"
 msgstr "Hauteur cible"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:71
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:74
 msgid "Hauteur de tuile"
 msgstr "Hauteur de tuile"
 
@@ -917,6 +929,10 @@ msgstr "High Res Lines"
 #: src/app/components/workshop-tabs/workshop-tabs.tsx:37
 msgid "Image"
 msgstr "Image"
+
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:55
+msgid "Image agrandie"
+msgstr "Image agrandie"
 
 #: src/app/components/source-section.tsx:72
 msgid "Image source"
@@ -971,6 +987,10 @@ msgstr "Intensité des couleurs (0 = noir et blanc, 2 = très saturé)"
 msgid "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
 msgstr "L'application a rencontré un problème. Vous pouvez réessayer ; si le problème persiste, rechargez la page."
 
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:66
+msgid "L'image porte trop de couleurs : elle semble filtrée ou compressée. L'extraction exacte des tuiles peut échouer."
+msgstr "L'image porte trop de couleurs : elle semble filtrée ou compressée. L'extraction exacte des tuiles peut échouer."
+
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:134
 msgid "La map garde plus de tuiles que son budget."
 msgstr "La map garde plus de tuiles que son budget."
@@ -1007,7 +1027,7 @@ msgstr "Largeur"
 msgid "Largeur cible"
 msgstr "Largeur cible"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:66
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:69
 msgid "Largeur de tuile"
 msgstr "Largeur de tuile"
 
@@ -1102,7 +1122,7 @@ msgstr "Machine CPC"
 msgid "Machine source"
 msgstr "Machine source"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:57
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:60
 #: src/app/components/tileset-workshop/tileset-map-view.tsx:93
 msgid "Map"
 msgstr "Map"
@@ -1112,7 +1132,7 @@ msgid "Map convertie"
 msgstr "Map convertie"
 
 #: src/app/components/tileset-workshop/tileset-map-view.tsx:114
-#: src/app/components/tileset-workshop/tileset-source-panel.tsx:30
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:35
 msgid "Map source"
 msgstr "Map source"
 
@@ -1120,7 +1140,7 @@ msgstr "Map source"
 msgid "Mapping distinct automatique"
 msgstr "Mapping distinct automatique"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:74
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:77
 msgid "Marge"
 msgstr "Marge"
 
@@ -1443,7 +1463,7 @@ msgstr "Pixel"
 msgid "Pixel Mode"
 msgstr "Mode pixel"
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:56
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:59
 msgid "Planche"
 msgstr "Planche"
 
@@ -1455,7 +1475,7 @@ msgstr "Planche convertie"
 #~ msgid "Planche de {0} x {1} pixels"
 #~ msgstr "Planche de {0} x {1} pixels"
 
-#: src/app/components/tileset-workshop/tileset-source-panel.tsx:32
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:37
 msgid "Planche source"
 msgstr "Planche source"
 
@@ -1603,6 +1623,10 @@ msgstr "Recherche exhaustive : toutes les combinaisons de lignes ont été éval
 #: src/app/components/tileset-workshop/tileset-render-panel.tsx:41
 msgid "Réduction"
 msgstr "Réduction"
+
+#: src/app/components/tileset-workshop/tileset-source-panel.tsx:60
+msgid "Réduire à la taille d'origine"
+msgstr "Réduire à la taille d'origine"
 
 #: src/components/settings-panel/sections/image-adjustments/image-adjustments-view.tsx:209
 msgid "Réduit le nombre de niveaux de couleur pour un effet d'affiche"
@@ -1788,11 +1812,11 @@ msgstr "Supporte les formats CPC Classic et CPC Plus. Le loader détecte automat
 msgid "Supprimer le changement"
 msgstr "Supprimer le changement"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:127
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:129
 msgid "Survolez une case pour voir où sa tuile revient."
 msgstr "Survolez une case pour voir où sa tuile revient."
 
-#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:94
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:117
 msgid "Tailles de tuile, la moins coûteuse en tête"
 msgstr "Tailles de tuile, la moins coûteuse en tête"
 
@@ -1826,7 +1850,7 @@ msgstr "Teste toutes les combinaisons, maximise le contraste (meilleure qualité
 msgid "Tileset"
 msgstr "Tileset"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:146
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
 msgid "Tileset de la map"
 msgstr "Tileset de la map"
 
@@ -1855,7 +1879,7 @@ msgid "Trous aplatis sur le fond"
 msgstr "Trous aplatis sur le fond"
 
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:93
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:133
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:135
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:164
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:35
 msgid "Tuile"
@@ -1873,6 +1897,10 @@ msgstr "Tuiles de la map"
 #: src/app/components/tileset-workshop/tileset-result-panel.tsx:149
 msgid "Tuiles les plus malmenées par la palette"
 msgstr "Tuiles les plus malmenées par la palette"
+
+#: src/app/components/tileset-workshop/tileset-grid-panel.tsx:102
+msgid "tuiles uniques"
+msgstr "tuiles uniques"
 
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:35
 #: src/app/components/tileset-workshop/tileset-info-bar.tsx:41

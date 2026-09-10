@@ -29,7 +29,13 @@
   Tileset. Le survol marque les cases de la même tuile sur un canvas d'un
   pixel par case. Un clic vise la tuile pour la retouche. La comparaison
   montre la source rognée à la grille (`cropSheet`).
-- **Prochaine action** : M4.
+- **M4 livrée** : le calage automatique. `rankTileOffsets` et
+  `suggestMapOffset` proposent l'offset dans le panneau de grille, en
+  disposition map. `detectIntegerScale` et `downscaleSheet` proposent la
+  réduction dans le panneau source, dans les deux dispositions.
+  `inspectSheet` soupçonne un filtre au-delà de 512 couleurs
+  (`FILTERED_COLOURS`) et le dit sous forme de doute.
+- **Prochaine action** : M5.
 
 ## Constat de départ
 

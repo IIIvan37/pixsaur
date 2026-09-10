@@ -23,6 +23,27 @@ function sheetOfAlternatingTiles(size: number): Sheet {
   return { width: size, height: size, data }
 }
 
+/**
+ * A map of 8 x 8 tiles, two patterns in a checkerboard of 4 x 2 cells, laid
+ * `shift` pixels from the left edge of the image. Each pixel of a pattern has
+ * its own colour, so only the right offset makes the cells repeat.
+ */
+function mapShiftedBy(shift: number): Sheet {
+  const width = shift + 4 * 8
+  const data = new Uint8ClampedArray(width * 16 * 4)
+  for (let y = 0; y < 16; y++) {
+    for (let x = 0; x < width; x++) {
+      const at = (y * width + x) * 4
+      const cell = Math.floor((x - shift) / 8) + Math.floor(y / 8)
+      data[at] =
+        x < shift ? 0 : (cell % 2) * 128 + ((x - shift) % 8) * 8 + (y % 8)
+      data[at + 2] = x < shift ? 255 : 0
+      data[at + 3] = 255
+    }
+  }
+  return { width, height: 16, data }
+}
+
 /** A store already holding an imported sheet. */
 function storeWithSheet() {
   const store = createStore()
@@ -91,6 +112,30 @@ describe('TilesetGridPanel', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Map' }))
 
     expect(screen.getByLabelText(/Budget de tuiles/i)).toHaveValue(256)
+  })
+
+  // M-Q4: a capture rarely starts on the grid of its tiles.
+  it('moves the grid onto the tiles of the map when the user takes the suggestion', async () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, mapShiftedBy(3))
+    renderWithProviders(<TilesetGridPanel />, { store })
+    await userEvent.click(screen.getByRole('button', { name: 'Map' }))
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Appliquer ce décalage/i })
+    )
+
+    expect(screen.getByLabelText(/Décalage X/i)).toHaveValue(3)
+  })
+
+  it('suggests no offset while the source is a sheet', () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, mapShiftedBy(3))
+    renderWithProviders(<TilesetGridPanel />, { store })
+
+    expect(
+      screen.queryByRole('button', { name: /Appliquer ce décalage/i })
+    ).toBeNull()
   })
 
   it('cuts at a shortlisted size when it is picked', async () => {

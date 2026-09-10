@@ -6,6 +6,7 @@ export {
   type SheetGutters,
   scaleSheetGutters
 } from './src/assemble-sheet'
+export { countColours } from './src/count-colours'
 export { cropSheet, type SheetRegion } from './src/crop-sheet'
 export {
   type DiffuseOptions,
@@ -18,6 +19,11 @@ export {
   type TileEdges
 } from './src/edge-condition'
 export { type EdgeMaskOptions, tileEdgeMask } from './src/edge-mask'
+export {
+  detectIntegerScale,
+  downscaleSheet,
+  type IntegerScale
+} from './src/integer-scale'
 export {
   type BayerSize,
   type OrderedDitherOptions,
@@ -50,6 +56,11 @@ export {
   type GridSearch,
   rankTileGrids
 } from './src/rank-grids'
+export {
+  type OffsetCandidate,
+  type OffsetSearch,
+  rankTileOffsets
+} from './src/rank-tile-offsets'
 export {
   type AxisSearch,
   chooseResizeScheme,

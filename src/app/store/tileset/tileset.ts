@@ -52,7 +52,8 @@ export {
   tilesetLayoutAtom,
   tilesetMapAtom,
   tilesetMapOptionsAtom,
-  tilesetMapSourceAtom
+  tilesetMapSourceAtom,
+  tilesetOffsetSuggestionAtom
 } from './map'
 export {
   type SetTilesetPenPayload,
@@ -64,5 +65,10 @@ export {
   captureTilesetProjectAtom,
   restoreTilesetProjectAtom
 } from './project'
-export { setTilesetSheetAtom, tilesetSheetAtom } from './sheet'
+export {
+  reduceTilesetSheetAtom,
+  setTilesetSheetAtom,
+  tilesetSheetAtom,
+  tilesetSheetInspectionAtom
+} from './sheet'
 export { tilesetSettingsOpenAtom } from './ui'
