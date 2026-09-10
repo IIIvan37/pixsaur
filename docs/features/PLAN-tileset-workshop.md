@@ -1,6 +1,9 @@
 # PLAN — Atelier Tileset (conversion de tilesets vers CPC)
 
-**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-6 closes · **Branche**: `feat/tileset-workshop`
+**Date**: 2026-08-28 · **Statut**: T1→T9 livrées, découpe close ; revue d'archi vagues 1-7 closes · **Branche**: `feat/tileset-workshop`, mergée dans `main` (PR #348)
+>
+> **Suite** : la map et l'export Tiled sont cadrés dans
+> [`PLAN-tileset-map.md`](PLAN-tileset-map.md).
 
 > Relevé de conception d'une **nouvelle feature** : un atelier convertissant une
 > planche de tuiles d'une autre machine (NES, Master System, SNES…) vers les
@@ -18,8 +21,8 @@
 > Point de reprise canonique de cette feature. `docs/refactor/STATUS.md` est
 > archivé et concerne un autre effort — ne pas l'utiliser ici.
 
-- **Branche** : `feat/tileset-workshop` — poussée sur `origin`, pas encore de PR.
-  Renommée depuis `docs/tileset-workshop-plan`, dont le nom disait `docs/` alors
+- **Branche** : `feat/tileset-workshop` — mergée dans `main` par la PR #348
+  (`b1f99ff`). Renommée depuis `docs/tileset-workshop-plan`, dont le nom disait `docs/` alors
   qu'elle portait 60 commits de code.
 - **Revue d'architecture (04/09/2026)** —
   [`../refactor/architecture-review-2026-09-tileset.md`](../refactor/architecture-review-2026-09-tileset.md) :
@@ -367,8 +370,8 @@
      `quantizeColorForHardware` ; erreur `palette-overflow` au-delà du budget.
   4. `pixsaur-png` — encodeur PNG indexé, plus l'assemblage sur la grille source
      (Q10) et le pré-étirement (Q9).
-- **Prochaine action** : vague 7 de la revue d'architecture — candidats 7 et 8,
-  l'élagage du barrel puis le chrome partagé entre les deux ateliers.
+- **Prochaine action** : aucune dans ce plan. La vague 7 est close et la
+  feature continue dans [`PLAN-tileset-map.md`](PLAN-tileset-map.md).
 - **~~Dette de T6 (réglage par position)~~ — fermée en T8** : le panneau de
   retouche expose `ditherByTile` pour la tuile visée et écrit le réglage sur
   toutes ses instances.
