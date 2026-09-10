@@ -9,6 +9,18 @@ export {
   type TilesetConversionSubject
 } from './application/convert-tileset'
 export {
+  type ExportTilesetTiledDeps,
+  type ExportTilesetTiledInput,
+  type ExportTilesetTiledResult,
+  exportTilesetTiled,
+  TILED_ARCHIVE_FILENAME
+} from './application/export-tileset-tiled'
+export {
+  FILTERED_COLOURS,
+  inspectSheet,
+  type SheetInspection
+} from './application/inspect-sheet'
+export {
   applyTilesetEdits,
   EMPTY_EDIT_LAYER,
   type PaintTilesetInput,
@@ -26,7 +38,9 @@ export {
 } from './application/persist-tileset-project'
 export type { TilesetProjectStore } from './application/ports'
 export {
+  type RenderTileAtlasInput,
   type RenderTilesetSheetInput,
+  renderTileAtlas,
   renderTilesetSheet
 } from './application/render-tileset-sheet'
 export {
@@ -36,6 +50,18 @@ export {
   saveTilesetSheet,
   TILESET_SHEET_FILENAME
 } from './application/save-tileset-sheet'
+export { suggestMapOffset } from './application/suggest-map-offset'
+export {
+  DEFAULT_TILESET_MAP_OPTIONS,
+  EMPTY_CELL,
+  type EmptyTileChoice,
+  mapAtlasColumns,
+  mapTileset,
+  type TilesetLayout,
+  type TilesetMap,
+  type TilesetMapOptions,
+  type TilesetMerge
+} from './application/tileset-map'
 export {
   type ConvertedPalette,
   dropPen,

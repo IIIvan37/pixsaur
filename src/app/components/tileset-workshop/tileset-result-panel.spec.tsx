@@ -1,9 +1,11 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
   selectedTileAtom,
   setTilesetGridAtom,
+  setTilesetLayoutAtom,
+  setTilesetMapOptionsAtom,
   setTilesetModeAtom,
   setTilesetOptionsAtom,
   setTilesetSheetAtom
@@ -93,6 +95,49 @@ describe('TilesetResultPanel', () => {
     )
 
     expect(sink.save).toHaveBeenCalledWith(expect.any(Blob), 'tileset.png')
+  })
+
+  it('hands one Tiled archive to the file sink when the user exports', async () => {
+    renderWithProviders(<TilesetResultPanel />, { store: storeWithSheet() })
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Exporter pour Tiled/i })
+    )
+
+    // The archive is zipped asynchronously, after the click has settled.
+    await waitFor(() =>
+      expect(sink.save).toHaveBeenCalledWith(
+        expect.any(Blob),
+        'tileset-tiled.zip'
+      )
+    )
+  })
+
+  it('counts the tiles the map keeps against its budget', () => {
+    const store = storeWithSheet()
+    store.set(setTilesetLayoutAtom, 'map')
+
+    renderWithProviders(<TilesetResultPanel />, { store })
+
+    expect(screen.getByLabelText(/Tuiles de la map/i)).toHaveTextContent(
+      '2 / 256'
+    )
+  })
+
+  it('warns when the map keeps more tiles than its budget', () => {
+    const store = storeWithSheet()
+    store.set(setTilesetLayoutAtom, 'map')
+    store.set(setTilesetMapOptionsAtom, { budget: 1 })
+
+    renderWithProviders(<TilesetResultPanel />, { store })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/budget/i)
+  })
+
+  it('counts no map while the source is a sheet', () => {
+    renderWithProviders(<TilesetResultPanel />, { store: storeWithSheet() })
+
+    expect(screen.queryByLabelText(/Tuiles de la map/i)).toBeNull()
   })
 
   it('says so when the grid fits no whole tile', () => {

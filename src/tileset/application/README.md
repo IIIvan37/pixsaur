@@ -37,7 +37,12 @@ a second consumer here:
 | `suggestTileGeometry` | source platform, mode, asked-for tile size | candidate tile sizes ranked by aspect distortion | none |
 | `paintTileset` / `undoTilesetEdits` / `redoTilesetEdits` / `applyTilesetEdits` | edit layer + the pixels a stroke names | a new edit layer, or the converted tiles replayed | none |
 | `renderTilesetSheet` | converted tileset + the source grid | RGBA pixels in the shape of a source sheet | none |
+| `renderTileAtlas` | the pens, the tiles, a column count, target, mode | RGBA pixels, tiles edge to edge — what Tiled reads (M-Q20) | none |
 | `saveTilesetSheet` | `{ sheet, filename? }` — defaults to `TILESET_SHEET_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` | `CanvasFactory`, `FileSink` |
+| `exportTilesetTiled` | edited tileset, target, mode, hardware, `map?`, `filename?` — defaults to `TILED_ARCHIVE_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` — one ZIP holding the TSX and its PNG, plus the TMX when a map is given | `CanvasFactory`, `FileSink` |
+| `mapTileset` | edited tileset, map options (budget, `emptyTile`, `mergeThreshold`, `mergeExclusions`) | the cells (`EMPTY_CELL` for the empty tile), the distinct tiles in order of first appearance, the grid, `overBudget`, `emptyTile`, `merges` (M-Q7 · M-Q13 · M-Q15 · M-Q18) | none |
+| `inspectSheet` | the source sheet | `{ scale, filtered }` — the whole factor to undo, and whether the image carries more than `FILTERED_COLOURS` colours (M-Q19) | none |
+| `suggestMapOffset` | the source sheet, the grid | the offset with the smallest share of unique tiles, or `null` when the grid already sits on it (M-Q4) | none |
 | `loadTilesetProject` / `saveTilesetProject` | the store, the project | the project or `null` · `true` / `false` | `TilesetProjectStore` |
 | `exportTilesetProjectFile` | `{ project, filename? }` — defaults to `TILESET_PROJECT_FILENAME` | `{ ok } \| { ok:false, error:'save-failed' }` | `FileSink` |
 | `importTilesetProjectFile` | `{ file }` (the picked `Blob`) | `ParseTilesetProjectResult` + `'unreadable-file'` | none — a `Blob` is a value, a fake is one line |
@@ -48,6 +53,17 @@ how many pens the mode holds, how many the sprites were promised, which pen the
 holes take, and whether a given pen is the user's to pin. `convertTileset`, the
 palette panel and `tileset-options.ts` all ask it rather than each doing the sum:
 two answers disagreeing is a pin the panel accepts and the conversion refuses.
+
+`encode-sheet-png.ts` is the one place a sheet becomes PNG bytes, through the
+canvas. The two exports that carry a PNG share it. The ZIP comes from
+`@/export/exports/zip-files`: `FileSink` saves one blob per call, and the files
+of a Tiled export name each other by relative path.
+
+`mapTileset` runs in a fixed order (M-Q18): exact deduplication of the tiles
+as they are shown, edit layer included; then the empty tile; then the merges
+of `mergeNearTiles`. A merge changes no pixel. It points the cells of the
+absorbed tile at the tile that stays. A click on a merged cell in the map view
+therefore aims the retouching at the tile that stays.
 
 `tileset-options.ts` is where the palette panel's decisions live. A refusal
 comes back as the very object that was passed in, so the atom that calls one has
@@ -62,8 +78,9 @@ takes the metric as a parameter and so knows nothing of the hardware.
 `tileset-project.ts` is not a use-case: it is the document itself (Q31) — one
 shape, two carriers. IndexedDB keeps the object as it is (the structured clone
 carries the bytes); the exported file carries the same fields as JSON with the
-bytes in base64. `parseTilesetProject` **names** what failed and a project from
-another version is dropped, never migrated blind.
+bytes in base64. `parseTilesetProject` **names** what failed. A version 2
+project is migrated to version 3 as a sheet, because that is its only reading
+(M-Q21). A project from any other version is dropped, never migrated blind.
 
 ## What the panels may still do
 

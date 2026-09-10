@@ -2,11 +2,14 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback } from 'react'
 import {
   editedTilesetAtom,
   renderedTilesetSheetAtom,
-  selectedTileAtom
+  selectedTileAtom,
+  tilesetConversionInputAtom,
+  tilesetMapAtom,
+  tilesetMapOptionsAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { Header } from '@/components/ui/layout/header/header'
@@ -14,9 +17,10 @@ import { Panel } from '@/components/ui/layout/panel/panel'
 import { logger } from '@/core'
 import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
 import { resolveFileSink } from '@/export/application/file-sink'
-import type { Sheet } from '@/libs/pixsaur-tileset'
-import { saveTilesetSheet } from '@/tileset'
+import { exportTilesetTiled, saveTilesetSheet } from '@/tileset'
+import { TilesetMapView } from './tileset-map-view'
 import styles from './tileset-workshop.module.css'
+import { useSheetCanvas } from './use-sheet-canvas'
 
 /** How many collisions are worth reading before the list stops informing. */
 const WORST_SHOWN = 8
@@ -30,27 +34,6 @@ const FAILURES = {
 }
 
 /**
- * Draws the sheet on the canvas, as the image workshop does — no encoding is
- * needed to look at pixels (Q20).
- */
-function useSheetCanvas(sheet: Sheet | null) {
-  const ref = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = ref.current
-    if (!canvas || !sheet) return
-
-    canvas.width = sheet.width
-    canvas.height = sheet.height
-    canvas
-      .getContext('2d')
-      ?.putImageData(new ImageData(sheet.data, sheet.width, sheet.height), 0, 0)
-  }, [sheet])
-
-  return ref
-}
-
-/**
  * What the conversion produced: the sheet itself, and the tiles the shared
  * palette pushed furthest from the colours they asked for (Q20 · Q22).
  *
@@ -61,6 +44,9 @@ export function TilesetResultPanel() {
   const { _ } = useLingui()
   const result = useAtomValue(editedTilesetAtom)
   const sheet = useAtomValue(renderedTilesetSheetAtom)
+  const input = useAtomValue(tilesetConversionInputAtom)
+  const map = useAtomValue(tilesetMapAtom)
+  const { budget } = useAtomValue(tilesetMapOptionsAtom)
   const select = useSetAtom(selectedTileAtom)
   const canvas = useSheetCanvas(sheet)
 
@@ -75,6 +61,18 @@ export function TilesetResultPanel() {
       logger.error('[TILESET] Failed to save the sheet:', saved.error)
     }
   }, [sheet])
+
+  const handleExportTiled = useCallback(async () => {
+    if (!result?.ok || !input) return
+
+    const exported = await exportTilesetTiled(
+      { ...input, tileset: result.tileset, map: map ?? undefined },
+      { canvasFactory: domCanvasFactory, fileSink: resolveFileSink() }
+    )
+    if (!exported.ok) {
+      logger.error('[TILESET] Failed to export for Tiled:', exported.error)
+    }
+  }, [result, input, map])
 
   if (!result) return null
 
@@ -97,13 +95,17 @@ export function TilesetResultPanel() {
     <Panel>
       <Header title={<Trans>Résultat</Trans>} />
 
-      {sheet && (
-        <canvas
-          ref={canvas}
-          className={styles.preview}
-          role='img'
-          aria-label={_(msg`Planche convertie`)}
-        />
+      {map ? (
+        <TilesetMapView />
+      ) : (
+        sheet && (
+          <canvas
+            ref={canvas}
+            className={styles.preview}
+            role='img'
+            aria-label={_(msg`Planche convertie`)}
+          />
+        )
       )}
 
       <p>
@@ -118,9 +120,29 @@ export function TilesetResultPanel() {
         <output aria-label={_(msg`Pens`)}>{tileset.palette.length}</output>
       </p>
 
-      <Button disabled={!sheet} onClick={() => void handleSave()}>
-        <Trans>Enregistrer le PNG</Trans>
-      </Button>
+      {map && (
+        <p>
+          <Trans>Tuiles de la map</Trans>
+          {' : '}
+          <output aria-label={_(msg`Tuiles de la map`)}>
+            {`${map.tiles.length} / ${budget}`}
+          </output>
+        </p>
+      )}
+      {map?.overBudget && (
+        <p role='alert'>
+          <Trans>La map garde plus de tuiles que son budget.</Trans>
+        </p>
+      )}
+
+      <div className={styles.buttons}>
+        <Button disabled={!sheet} onClick={() => void handleSave()}>
+          <Trans>Enregistrer le PNG</Trans>
+        </Button>
+        <Button onClick={() => void handleExportTiled()}>
+          <Trans>Exporter pour Tiled</Trans>
+        </Button>
+      </div>
 
       <section className={styles.suggestions}>
         <h2 className={styles.subtitle}>

@@ -6,6 +6,8 @@ export {
   type SheetGutters,
   scaleSheetGutters
 } from './src/assemble-sheet'
+export { countColours } from './src/count-colours'
+export { cropSheet, type SheetRegion } from './src/crop-sheet'
 export {
   type DiffuseOptions,
   type DiffusionColours,
@@ -17,6 +19,16 @@ export {
   type TileEdges
 } from './src/edge-condition'
 export { type EdgeMaskOptions, tileEdgeMask } from './src/edge-mask'
+export {
+  detectIntegerScale,
+  downscaleSheet,
+  type IntegerScale
+} from './src/integer-scale'
+export {
+  type MergeNearTilesInput,
+  mergeNearTiles,
+  type TileMerge
+} from './src/merge-near-tiles'
 export {
   type BayerSize,
   type OrderedDitherOptions,
@@ -50,6 +62,11 @@ export {
   rankTileGrids
 } from './src/rank-grids'
 export {
+  type OffsetCandidate,
+  type OffsetSearch,
+  rankTileOffsets
+} from './src/rank-tile-offsets'
+export {
   type AxisSearch,
   chooseResizeScheme,
   type ResizeScheme,
@@ -76,3 +93,12 @@ export {
   type TileGeometryQuery,
   type TileSizeCandidate
 } from './src/tile-geometry'
+export { buildTileMap, type TileMap } from './src/tile-map'
+export {
+  type TiledImage,
+  type TiledMapDocument,
+  type TiledProperty,
+  type TiledTilesetDocument,
+  writeTiledMap,
+  writeTiledTileset
+} from './src/tiled-xml'

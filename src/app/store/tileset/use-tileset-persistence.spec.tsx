@@ -33,7 +33,9 @@ function savedProject(): TilesetProject {
     hardware: 'classic',
     sourcePlatform: 'nes-ntsc',
     options: { resize: 'columns' },
-    edits: { strokes: [], at: -1 }
+    edits: { strokes: [], at: -1 },
+    layout: 'sheet',
+    map: { budget: 256 }
   }
 }
 

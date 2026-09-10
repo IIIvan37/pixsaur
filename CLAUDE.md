@@ -7,12 +7,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > the baseline — see `docs/refactor/ADR-001-file-layout.md` and the layering rules
 > below. History is archived in `docs/refactor/STATUS.md`.
 
-> **🧩 Feature under construction — Tileset workshop.** Converting tilesets from
-> other machines to CPC constraints. 35 design decisions are settled and sliced
-> into 9 PRs (T1→T9); the canonical plan is
-> `docs/features/PLAN-tileset-workshop.md` — read it before touching
-> `src/tileset/`. Build outside-in with the `new-feature-hexa` skill, pure core
-> under `tdd-cycle`, and close every slice with `quality-gate` + `/session-report`.
+> **🧩 Feature under construction — Tileset map & Tiled export.** The Tileset
+> workshop (T1→T9, `docs/features/PLAN-tileset-workshop.md`) is merged. Its
+> follow-up reads a map image, extracts its tileset and exports both to Tiled;
+> the canonical plan is `docs/features/PLAN-tileset-map.md` (slices M1→M6) —
+> read both before touching `src/tileset/`. Build outside-in with the
+> `new-feature-hexa` skill, pure core under `tdd-cycle`, and close every slice
+> with `quality-gate`.
 
 ## Project
 

@@ -17,7 +17,8 @@ export {
 export {
   convertedTilesetAtom,
   freezeTilesetPaletteAtom,
-  thawTilesetPaletteAtom
+  thawTilesetPaletteAtom,
+  tilesetConversionInputAtom
 } from './conversion'
 export { tilesetEditLayerAtom } from './edit-layer'
 export {
@@ -44,6 +45,18 @@ export {
   tilesetGridSuggestionsAtom
 } from './grid'
 export {
+  excludeTilesetMergeAtom,
+  renderedTilesetAtlasAtom,
+  renderedTilesetMapAtom,
+  setTilesetLayoutAtom,
+  setTilesetMapOptionsAtom,
+  tilesetLayoutAtom,
+  tilesetMapAtom,
+  tilesetMapOptionsAtom,
+  tilesetMapSourceAtom,
+  tilesetOffsetSuggestionAtom
+} from './map'
+export {
   type SetTilesetPenPayload,
   setTilesetPenAtom,
   tilesetPaletteSlotsAtom,
@@ -53,5 +66,10 @@ export {
   captureTilesetProjectAtom,
   restoreTilesetProjectAtom
 } from './project'
-export { setTilesetSheetAtom, tilesetSheetAtom } from './sheet'
+export {
+  reduceTilesetSheetAtom,
+  setTilesetSheetAtom,
+  tilesetSheetAtom,
+  tilesetSheetInspectionAtom
+} from './sheet'
 export { tilesetSettingsOpenAtom } from './ui'

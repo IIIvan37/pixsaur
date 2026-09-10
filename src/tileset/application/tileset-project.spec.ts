@@ -21,9 +21,65 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
     sourcePlatform: 'nes-ntsc',
     options: { resize: 'columns', antiAlias: true },
     edits: { strokes: [], at: -1 },
+    layout: 'sheet',
+    map: { budget: 256 },
     ...overrides
   }
 }
+
+/** The same project as version 2 wrote it: no layout, no map options. */
+function version2Of(project: TilesetProject): Record<string, unknown> {
+  const { layout: _layout, map: _map, ...rest } = project
+  return { ...rest, version: 2 }
+}
+
+describe('version 3', () => {
+  it('brings the layout back through the file', () => {
+    const parsed = parseTilesetProject(
+      serializeTilesetProject(projectOf({ layout: 'map' }))
+    )
+
+    expect(parsed.ok && parsed.project.layout).toBe('map')
+  })
+
+  it('brings the map options back through the file', () => {
+    const parsed = parseTilesetProject(
+      serializeTilesetProject(projectOf({ map: { budget: 64 } }))
+    )
+
+    expect(parsed.ok && parsed.project.map).toEqual({ budget: 64 })
+  })
+
+  it('reads a version 2 file as a sheet', () => {
+    const written = version2Of(JSON.parse(serializeTilesetProject(projectOf())))
+
+    const parsed = parseTilesetProject(JSON.stringify(written))
+
+    expect(parsed.ok && parsed.project.layout).toBe('sheet')
+  })
+
+  it('gives a version 2 file the default map options', () => {
+    const written = version2Of(JSON.parse(serializeTilesetProject(projectOf())))
+
+    const parsed = parseTilesetProject(JSON.stringify(written))
+
+    expect(parsed.ok && parsed.project.map).toEqual({ budget: 256 })
+  })
+
+  it('stamps the migrated project with the current version', () => {
+    const written = version2Of(JSON.parse(serializeTilesetProject(projectOf())))
+
+    const parsed = parseTilesetProject(JSON.stringify(written))
+
+    expect(parsed.ok && parsed.project.version).toBe(TILESET_PROJECT_VERSION)
+  })
+
+  it('takes back a version 2 project the store kept, as a sheet', () => {
+    expect(readStoredTilesetProject(version2Of(projectOf()))?.layout).toBe(
+      'sheet'
+    )
+  })
+})
 
 describe('serializeTilesetProject', () => {
   it('brings the sheet bytes back through the file', () => {

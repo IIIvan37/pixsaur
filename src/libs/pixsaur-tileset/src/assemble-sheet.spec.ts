@@ -17,6 +17,22 @@ const tilesOf = (count: number, size: number) =>
     new Uint8Array(size * size).fill(at + 1)
   )
 
+describe('assembleSheet, missing tiles', () => {
+  // An empty cell of a map is drawn as nothing: the fill shows through.
+  it('leaves the place of a missing tile to the fill', () => {
+    const { indices } = assembleSheet([new Uint8Array(1).fill(1), null], {
+      columns: 2,
+      rows: 1,
+      tile: { tileWidth: 1, tileHeight: 1 },
+      gutters: NONE,
+      stretch: FLAT,
+      fill: 9
+    })
+
+    expect(Array.from(indices)).toEqual([1, 9])
+  })
+})
+
 describe('scaleSheetGutters', () => {
   const source = { tileWidth: 16, tileHeight: 16, margin: 4, spacing: 2 }
 
