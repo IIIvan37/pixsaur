@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
@@ -93,6 +93,22 @@ describe('TilesetResultPanel', () => {
     )
 
     expect(sink.save).toHaveBeenCalledWith(expect.any(Blob), 'tileset.png')
+  })
+
+  it('hands one Tiled archive to the file sink when the user exports', async () => {
+    renderWithProviders(<TilesetResultPanel />, { store: storeWithSheet() })
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Exporter pour Tiled/i })
+    )
+
+    // The archive is zipped asynchronously, after the click has settled.
+    await waitFor(() =>
+      expect(sink.save).toHaveBeenCalledWith(
+        expect.any(Blob),
+        'tileset-tiled.zip'
+      )
+    )
   })
 
   it('says so when the grid fits no whole tile', () => {

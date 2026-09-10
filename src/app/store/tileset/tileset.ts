@@ -17,7 +17,8 @@ export {
 export {
   convertedTilesetAtom,
   freezeTilesetPaletteAtom,
-  thawTilesetPaletteAtom
+  thawTilesetPaletteAtom,
+  tilesetConversionInputAtom
 } from './conversion'
 export { tilesetEditLayerAtom } from './edit-layer'
 export {

@@ -37,7 +37,9 @@ a second consumer here:
 | `suggestTileGeometry` | source platform, mode, asked-for tile size | candidate tile sizes ranked by aspect distortion | none |
 | `paintTileset` / `undoTilesetEdits` / `redoTilesetEdits` / `applyTilesetEdits` | edit layer + the pixels a stroke names | a new edit layer, or the converted tiles replayed | none |
 | `renderTilesetSheet` | converted tileset + the source grid | RGBA pixels in the shape of a source sheet | none |
+| `renderTileAtlas` | the pens, the tiles, a column count, target, mode | RGBA pixels, tiles edge to edge — what Tiled reads (M-Q20) | none |
 | `saveTilesetSheet` | `{ sheet, filename? }` — defaults to `TILESET_SHEET_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` | `CanvasFactory`, `FileSink` |
+| `exportTilesetTiled` | edited tileset, target, mode, hardware, `filename?` — defaults to `TILED_ARCHIVE_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` — one ZIP holding the TSX and its PNG | `CanvasFactory`, `FileSink` |
 | `loadTilesetProject` / `saveTilesetProject` | the store, the project | the project or `null` · `true` / `false` | `TilesetProjectStore` |
 | `exportTilesetProjectFile` | `{ project, filename? }` — defaults to `TILESET_PROJECT_FILENAME` | `{ ok } \| { ok:false, error:'save-failed' }` | `FileSink` |
 | `importTilesetProjectFile` | `{ file }` (the picked `Blob`) | `ParseTilesetProjectResult` + `'unreadable-file'` | none — a `Blob` is a value, a fake is one line |
@@ -48,6 +50,11 @@ how many pens the mode holds, how many the sprites were promised, which pen the
 holes take, and whether a given pen is the user's to pin. `convertTileset`, the
 palette panel and `tileset-options.ts` all ask it rather than each doing the sum:
 two answers disagreeing is a pin the panel accepts and the conversion refuses.
+
+`encode-sheet-png.ts` is the one place a sheet becomes PNG bytes, through the
+canvas. The two exports that carry a PNG share it. The ZIP comes from
+`@/export/exports/zip-files`: `FileSink` saves one blob per call, and the files
+of a Tiled export name each other by relative path.
 
 `tileset-options.ts` is where the palette panel's decisions live. A refusal
 comes back as the very object that was passed in, so the atom that calls one has

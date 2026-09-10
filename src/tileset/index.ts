@@ -9,6 +9,13 @@ export {
   type TilesetConversionSubject
 } from './application/convert-tileset'
 export {
+  type ExportTilesetTiledDeps,
+  type ExportTilesetTiledInput,
+  type ExportTilesetTiledResult,
+  exportTilesetTiled,
+  TILED_ARCHIVE_FILENAME
+} from './application/export-tileset-tiled'
+export {
   applyTilesetEdits,
   EMPTY_EDIT_LAYER,
   type PaintTilesetInput,

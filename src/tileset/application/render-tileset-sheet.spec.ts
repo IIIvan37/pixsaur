@@ -1,5 +1,5 @@
 import type { ConvertedTileset } from './convert-tileset'
-import { renderTilesetSheet } from './render-tileset-sheet'
+import { renderTileAtlas, renderTilesetSheet } from './render-tileset-sheet'
 
 const RED: [number, number, number] = [255, 0, 0]
 const BLUE: [number, number, number] = [0, 0, 255]
@@ -81,5 +81,31 @@ describe('renderTilesetSheet', () => {
     const sheet = render(tilesetOfTwoTiles(null), 2, 2)
 
     expect(pixelAt(sheet, 0, 0)).toEqual([0, 0, 0, 255])
+  })
+})
+
+const atlas = (tileset: ConvertedTileset, columns: number) =>
+  renderTileAtlas(tileset, {
+    tiles: tileset.tiles.map((tile) => tile.indices),
+    columns,
+    target: { tileWidth: 2, tileHeight: 2 },
+    mode: 0
+  })
+
+describe('renderTileAtlas', () => {
+  it('lays the tiles on the column count asked for', () => {
+    expect(atlas(tilesetOfTwoTiles(), 1).height).toBe(4)
+  })
+
+  it('pre-stretches mode 0 pixels like the sheet does', () => {
+    expect(atlas(tilesetOfTwoTiles(), 1).width).toBe(4)
+  })
+
+  // Tiled has one margin for both axes: an atlas with no gutter at all is the
+  // only layout it always describes exactly.
+  it('leaves no gutter between two tiles', () => {
+    expect(pixelAt(atlas(tilesetOfTwoTiles(), 2), 4, 0)).toEqual([
+      0, 0, 255, 255
+    ])
   })
 })

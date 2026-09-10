@@ -76,3 +76,9 @@ export {
   type TileGeometryQuery,
   type TileSizeCandidate
 } from './src/tile-geometry'
+export {
+  type TiledImage,
+  type TiledProperty,
+  type TiledTilesetDocument,
+  writeTiledTileset
+} from './src/tiled-xml'

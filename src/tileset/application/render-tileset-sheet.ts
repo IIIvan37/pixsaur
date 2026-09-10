@@ -18,8 +18,10 @@ import {
 } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
 import {
+  type AssembledSheet,
   assembleSheet,
   type Sheet,
+  type SheetGutters,
   scaleSheetGutters
 } from '@/libs/pixsaur-tileset'
 import type {
@@ -27,6 +29,9 @@ import type {
   TilesetConversionSubject
 } from './convert-tileset'
 import { BLACK, type Pen } from './pens'
+
+/** What turns a pen into a colour: the palette, and which pen is the hole. */
+type TilesetPens = Pick<ConvertedTileset, 'palette' | 'transparentPen'>
 
 /**
  * The slice of the conversion the render needs — taken from the subject, so a
@@ -51,19 +56,77 @@ export function renderTilesetSheet(
   tileset: ConvertedTileset,
   input: RenderTilesetSheetInput
 ): Sheet {
-  const { scaleX, scaleY } = CPC_MODE_CONFIG[`${input.mode}` as CpcModeKey]
-  const { width, height, indices } = assembleSheet(
-    tileset.tiles.map((tile) => tile.indices),
-    {
-      columns: tileset.columns,
-      rows: tileset.rows,
-      tile: input.target,
-      gutters: scaleSheetGutters(input.source, input.target),
-      stretch: { x: scaleX, y: scaleY },
-      fill: gutterPen(tileset, input.background ?? BLACK)
-    }
+  return paint(
+    assembleSheet(
+      tileset.tiles.map((tile) => tile.indices),
+      {
+        columns: tileset.columns,
+        rows: tileset.rows,
+        tile: input.target,
+        gutters: scaleSheetGutters(input.source, input.target),
+        stretch: stretchOf(input.mode),
+        fill: gutterPen(tileset, input.background ?? BLACK)
+      }
+    ),
+    tileset
   )
+}
 
+export type RenderTileAtlasInput = Pick<
+  TilesetConversionSubject,
+  'target' | 'mode'
+> & {
+  /** The tiles to lay out, in reading order. */
+  tiles: readonly Uint8Array[]
+  columns: number
+  /** What a hole was composited over; defaults to black (Q16). */
+  background?: Pen
+}
+
+/** An atlas has no blank anywhere — the source grid is not its layout. */
+const NO_GUTTERS: SheetGutters = {
+  leadingX: 0,
+  leadingY: 0,
+  trailingX: 0,
+  trailingY: 0,
+  gapX: 0,
+  gapY: 0
+}
+
+/**
+ * Lays the given tiles out edge to edge, pre-stretched like the sheet.
+ *
+ * What the Tiled export draws (M-Q11 · M-Q20): Tiled has one margin for both
+ * axes, so a sheet whose two offsets differ has no exact description there,
+ * and an atlas without gutters always has one.
+ */
+export function renderTileAtlas(
+  tileset: TilesetPens,
+  input: RenderTileAtlasInput
+): Sheet {
+  return paint(
+    assembleSheet(input.tiles, {
+      columns: input.columns,
+      rows: Math.ceil(input.tiles.length / input.columns),
+      tile: input.target,
+      gutters: NO_GUTTERS,
+      stretch: stretchOf(input.mode),
+      fill: gutterPen(tileset, input.background ?? BLACK)
+    }),
+    tileset
+  )
+}
+
+function stretchOf(mode: RenderTileAtlasInput['mode']) {
+  const { scaleX, scaleY } = CPC_MODE_CONFIG[`${mode}` as CpcModeKey]
+  return { x: scaleX, y: scaleY }
+}
+
+/** Pens to RGBA, with the hole left fully transparent. */
+function paint(
+  { width, height, indices }: AssembledSheet,
+  tileset: TilesetPens
+): Sheet {
   const data = new Uint8ClampedArray(width * height * 4)
   indices.forEach((pen, at) => {
     const [red, green, blue] = tileset.palette[pen]
@@ -82,7 +145,7 @@ export function renderTilesetSheet(
  * mode spends one, and otherwise the pen nearest the background — which is
  * what flattening a hole means in modes 1 and 2 (Q16).
  */
-function gutterPen(tileset: ConvertedTileset, background: Pen): number {
+function gutterPen(tileset: TilesetPens, background: Pen): number {
   if (tileset.transparentPen !== null) return tileset.transparentPen
 
   let best = 0

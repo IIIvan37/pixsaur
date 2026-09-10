@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef } from 'react'
 import {
   editedTilesetAtom,
   renderedTilesetSheetAtom,
-  selectedTileAtom
+  selectedTileAtom,
+  tilesetConversionInputAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { Header } from '@/components/ui/layout/header/header'
@@ -15,7 +16,7 @@ import { logger } from '@/core'
 import { domCanvasFactory } from '@/export/application/adapters/dom-canvas-factory'
 import { resolveFileSink } from '@/export/application/file-sink'
 import type { Sheet } from '@/libs/pixsaur-tileset'
-import { saveTilesetSheet } from '@/tileset'
+import { exportTilesetTiled, saveTilesetSheet } from '@/tileset'
 import styles from './tileset-workshop.module.css'
 
 /** How many collisions are worth reading before the list stops informing. */
@@ -61,6 +62,7 @@ export function TilesetResultPanel() {
   const { _ } = useLingui()
   const result = useAtomValue(editedTilesetAtom)
   const sheet = useAtomValue(renderedTilesetSheetAtom)
+  const input = useAtomValue(tilesetConversionInputAtom)
   const select = useSetAtom(selectedTileAtom)
   const canvas = useSheetCanvas(sheet)
 
@@ -75,6 +77,18 @@ export function TilesetResultPanel() {
       logger.error('[TILESET] Failed to save the sheet:', saved.error)
     }
   }, [sheet])
+
+  const handleExportTiled = useCallback(async () => {
+    if (!result?.ok || !input) return
+
+    const exported = await exportTilesetTiled(
+      { ...input, tileset: result.tileset },
+      { canvasFactory: domCanvasFactory, fileSink: resolveFileSink() }
+    )
+    if (!exported.ok) {
+      logger.error('[TILESET] Failed to export for Tiled:', exported.error)
+    }
+  }, [result, input])
 
   if (!result) return null
 
@@ -118,9 +132,14 @@ export function TilesetResultPanel() {
         <output aria-label={_(msg`Pens`)}>{tileset.palette.length}</output>
       </p>
 
-      <Button disabled={!sheet} onClick={() => void handleSave()}>
-        <Trans>Enregistrer le PNG</Trans>
-      </Button>
+      <div className={styles.actions}>
+        <Button disabled={!sheet} onClick={() => void handleSave()}>
+          <Trans>Enregistrer le PNG</Trans>
+        </Button>
+        <Button onClick={() => void handleExportTiled()}>
+          <Trans>Exporter pour Tiled</Trans>
+        </Button>
+      </div>
 
       <section className={styles.suggestions}>
         <h2 className={styles.subtitle}>
