@@ -258,15 +258,27 @@ then ignored, the script exiting 0 on its final echo — the call is now
 (`staged` / `baseline`) and refuses a result whose scope is not the one asked
 for.
 
-**Two vacuous tests found in `resize-to-mode.spec.ts`** (2026-08-27, not yet
-fixed). Its `classic` and `auto` cases claim to exercise the legacy canvas path,
-but happy-dom returns `null` from `getContext('2d')`, so `resizeToMode` exits at
-`if (!ctx) return cropped` and the ~9 lines of that branch never run. The tests
-pass without asserting anything about the path they name. Fixing it means either
-a fake 2D context or injecting the canvas through a port like `domCanvasFactory`
-— a real change, tracked here rather than done in passing. **Third instance of
+**Two vacuous tests found in `resize-to-mode.spec.ts`** (2026-08-27, fixed
+2026-10-09). Its `classic` and `auto` cases claimed to exercise the legacy canvas
+path, but `getContext('2d')` returned `null`, so `resizeToMode` exited at
+`if (!ctx) return cropped` and the ~9 lines of that branch never ran. The tests
+passed without asserting anything about the path they named. **Third instance of
 the same family** on this branch, after `pnpm typecheck` and the react-doctor
 base: a green signal produced by code that never ran.
+
+The cause was not happy-dom, as first recorded: `vitest.setup.tsx` already gives
+every canvas a fake 2D context. The spec's own helper forced `null`. No port was
+needed — the fix stays in the spec. The two cases now run the canvas path
+(`classic` × `origin` / `cover` reach the target size, `auto` returns a new image
+of the crop size), the `null`-context fallback and the `catch` arm each have
+their own test, and every line of `resize-to-mode.ts` is covered. A second trap
+surfaced on the way: `vi.spyOn(canvas, 'getContext')` reaches the **shared
+prototype mock** from the setup file, so `mockReturnValue(null)` left every later
+canvas in the file without a context, and `vi.restoreAllMocks()` did not undo it.
+The helper now overrides `getContext` as an own property of each element.
+`image-resize.spec.ts:20` uses the same `spyOn` pattern; it is harmless there
+(each spec file reloads the setup, and every test in it wants the same fake
+context) and was left alone.
 
 **The react-doctor gate had no base to diff against** (found 2026-08-27, when it
 blocked PR #346). `check-react-doctor.js` ran `--scope changed` and let
