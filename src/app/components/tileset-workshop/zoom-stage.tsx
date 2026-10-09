@@ -157,9 +157,11 @@ export function ZoomStage({
 
   // The factor stays outside the message: the Lingui macro drops the values
   // of an interpolated one.
-  const factor = `${new Intl.NumberFormat(locale, {
-    maximumFractionDigits: 2
-  }).format(zoom)}×`
+  const numbers = useMemo(
+    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+    [locale]
+  )
+  const factor = `${numbers.format(zoom)}×`
 
   return (
     <div className={styles.zoomStage}>
