@@ -1024,17 +1024,21 @@ msgstr "The image carries too many colours: it looks filtered or compressed. The
 msgid "La map garde plus de tuiles que son budget."
 msgstr "The map keeps more tiles than its budget."
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:21
+#: src/app/components/tileset-workshop/tileset-stage.tsx:22
 msgid "La palette gelée dépasse ce que le mode peut tenir."
 msgstr "The frozen palette is wider than the mode can hold."
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:22
+#: src/app/components/tileset-workshop/tileset-stage.tsx:23
 msgid "La palette gelée ne commence pas par le pen de transparence."
 msgstr "The frozen palette does not lead with the transparency pen."
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:20
+#: src/app/components/tileset-workshop/tileset-stage.tsx:21
 msgid "La réservation ne laisse aucun pen au tileset."
 msgstr "The reservation leaves the tileset no pen at all."
+
+#: src/app/components/tileset-workshop/tileset-stage.tsx:20
+msgid "La tuile de destination doit mesurer au moins un pixel de côté."
+msgstr "The destination tile must be at least one pixel on each side."
 
 #: src/components/export-panel/export-config-dialog.tsx:199
 msgid "Label de la palette"
@@ -1492,7 +1496,7 @@ msgstr "Pixel Mode"
 msgid "Planche"
 msgstr "Sheet"
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:77
+#: src/app/components/tileset-workshop/tileset-stage.tsx:78
 msgid "Planche convertie"
 msgstr "Converted sheet"
 
@@ -1758,7 +1762,7 @@ msgstr "Saturation"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:44
+#: src/app/components/tileset-workshop/tileset-stage.tsx:45
 msgid "Scène"
 msgstr "Stage"
 
@@ -1934,7 +1938,7 @@ msgstr "Unique tiles"
 msgid "Un pen dépensé pour les trous"
 msgstr "One pen spent on holes"
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:23
+#: src/app/components/tileset-workshop/tileset-stage.tsx:24
 msgid "Un pen épinglé n'a pas de place dans ce mode."
 msgstr "A pinned pen has no room in this mode."
 

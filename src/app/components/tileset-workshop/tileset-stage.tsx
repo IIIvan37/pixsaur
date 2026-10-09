@@ -17,6 +17,7 @@ import { useSheetCanvas } from './use-sheet-canvas'
 
 const FAILURES = {
   'grid-mismatch': msg`Aucune tuile entière n'entre dans la grille déclarée.`,
+  'empty-target': msg`La tuile de destination doit mesurer au moins un pixel de côté.`,
   'no-pens-left': msg`La réservation ne laisse aucun pen au tileset.`,
   'palette-too-wide': msg`La palette gelée dépasse ce que le mode peut tenir.`,
   'palette-missing-hole': msg`La palette gelée ne commence pas par le pen de transparence.`,

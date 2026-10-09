@@ -1025,17 +1025,21 @@ msgstr "La imagen tiene demasiados colores: parece filtrada o comprimida. La ext
 msgid "La map garde plus de tuiles que son budget."
 msgstr "El mapa conserva más teselas que su presupuesto."
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:21
+#: src/app/components/tileset-workshop/tileset-stage.tsx:22
 msgid "La palette gelée dépasse ce que le mode peut tenir."
 msgstr "La paleta congelada supera lo que el modo puede contener."
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:22
+#: src/app/components/tileset-workshop/tileset-stage.tsx:23
 msgid "La palette gelée ne commence pas par le pen de transparence."
 msgstr "La paleta congelada no empieza por la pluma de transparencia."
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:20
+#: src/app/components/tileset-workshop/tileset-stage.tsx:21
 msgid "La réservation ne laisse aucun pen au tileset."
 msgstr "La reserva no deja ninguna pluma al tileset."
+
+#: src/app/components/tileset-workshop/tileset-stage.tsx:20
+msgid "La tuile de destination doit mesurer au moins un pixel de côté."
+msgstr "La tesela de destino debe medir al menos un píxel de lado."
 
 #: src/components/export-panel/export-config-dialog.tsx:199
 msgid "Label de la palette"
@@ -1493,7 +1497,7 @@ msgstr "Modo de píxel"
 msgid "Planche"
 msgstr "Lámina"
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:77
+#: src/app/components/tileset-workshop/tileset-stage.tsx:78
 msgid "Planche convertie"
 msgstr "Lámina convertida"
 
@@ -1759,7 +1763,7 @@ msgstr "Saturación"
 msgid "Saturation intelligente qui booste les couleurs ternes sans sur-saturer"
 msgstr "Saturación inteligente que realza colores apagados sin sobresaturar"
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:44
+#: src/app/components/tileset-workshop/tileset-stage.tsx:45
 msgid "Scène"
 msgstr "Escena"
 
@@ -1935,7 +1939,7 @@ msgstr "Teselas únicas"
 msgid "Un pen dépensé pour les trous"
 msgstr "Una pluma gastada en los huecos"
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:23
+#: src/app/components/tileset-workshop/tileset-stage.tsx:24
 msgid "Un pen épinglé n'a pas de place dans ce mode."
 msgstr "Un pen fijado no cabe en este modo."
 

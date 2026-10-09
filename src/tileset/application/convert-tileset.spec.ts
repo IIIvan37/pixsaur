@@ -290,6 +290,34 @@ describe('convertTileset', () => {
     expect(result.ok && result.tileset.palette.length).toBe(12)
   })
 
+  // An emptied field reads 0: a tile of no pixel has nothing to convert.
+  it('refuses a destination tile of no width', () => {
+    const result = convertTileset({
+      ...input,
+      target: { tileWidth: 0, tileHeight: 8 }
+    })
+
+    expect(result.ok === false && result.error).toBe('empty-target')
+  })
+
+  it('refuses a destination tile of no height', () => {
+    const result = convertTileset({
+      ...input,
+      target: { tileWidth: 4, tileHeight: 0 }
+    })
+
+    expect(result.ok === false && result.error).toBe('empty-target')
+  })
+
+  it('refuses a source grid of negative width', () => {
+    const result = convertTileset({
+      ...input,
+      source: { tileWidth: -8, tileHeight: 8 }
+    })
+
+    expect(result.ok === false && result.error).toBe('grid-mismatch')
+  })
+
   it('refuses a reservation that leaves the tileset no pen at all', () => {
     const result = convertTileset({ ...input, mode: 1, reservedPens: 4 })
 

@@ -167,6 +167,7 @@ export type ConvertTilesetResult =
       ok: false
       error:
         | 'grid-mismatch'
+        | 'empty-target'
         | 'no-pens-left'
         | 'palette-too-wide'
         | 'palette-missing-hole'
@@ -191,6 +192,12 @@ export function convertTileset(
 
   const sliced = sliceSheet(input.sheet, input.source)
   if (!sliced) return { ok: false, error: 'grid-mismatch' }
+
+  // An emptied size field reads 0, and NaN fails the comparison too.
+  const { tileWidth, tileHeight } = input.target
+  if (!(tileWidth >= 1 && tileHeight >= 1)) {
+    return { ok: false, error: 'empty-target' }
+  }
 
   const { columns, rows, tiles } = sliced
   const scheme =

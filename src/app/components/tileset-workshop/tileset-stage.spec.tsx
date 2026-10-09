@@ -4,7 +4,8 @@ import {
   setTilesetGridAtom,
   setTilesetModeAtom,
   setTilesetOptionsAtom,
-  setTilesetSheetAtom
+  setTilesetSheetAtom,
+  setTilesetTargetAtom
 } from '@/app/store/tileset/tileset'
 import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
@@ -39,6 +40,15 @@ describe('TilesetStage', () => {
     renderWithProviders(<TilesetStage />, { store })
 
     expect(screen.getByRole('alert')).toHaveTextContent(/grille déclarée/i)
+  })
+
+  it('says so when the destination tile is emptied', () => {
+    const store = storeWithSheet()
+    store.set(setTilesetTargetAtom, { tileWidth: 0 })
+
+    renderWithProviders(<TilesetStage />, { store })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/au moins un pixel/i)
   })
 
   it('says so when the frozen palette is wider than the mode', () => {
