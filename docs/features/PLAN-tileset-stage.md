@@ -82,7 +82,9 @@ c'est la mise en page.
   Le select du tramage par tuile en est l'exemple visible, mais tout select du
   Tileset peut déborder.
 - **Un dock transparent sous 1024 px** (trouvé pendant S1, dans les deux
-  ateliers). Sous 1024 px, `SettingsDock` devient un tiroir fixe, mais :
+  ateliers ; corrigé par `b89e9ab` : fond `--color-background`,
+  `align-self: stretch`, barre d'onglets à `z-index: 1`). Sous 1024 px,
+  `SettingsDock` devient un tiroir fixe, mais :
   - son fond lit `--color-panel-background`, que le thème ne définit pas : le
     contenu de la page transparaît dessous. `--color-text-primary`,
     `--color-text-secondary` et `--color-panel-hover` manquent aussi ;
