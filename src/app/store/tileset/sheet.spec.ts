@@ -4,7 +4,8 @@ import {
   reduceTilesetSheetAtom,
   selectedTileAtom,
   setTilesetSheetAtom,
-  tilesetSheetNameAtom
+  tilesetSheetNameAtom,
+  tilesetStageZoomAtom
 } from './tileset'
 
 const SHEET: Sheet = {
@@ -50,6 +51,15 @@ describe('setTilesetSheetAtom', () => {
     store.set(setTilesetSheetAtom, SHEET)
 
     expect(store.get(selectedTileAtom)).toBeNull()
+  })
+
+  it('fits a new sheet to the stage', () => {
+    const store = createStore()
+    store.set(tilesetStageZoomAtom, 4)
+
+    store.set(setTilesetSheetAtom, SHEET)
+
+    expect(store.get(tilesetStageZoomAtom)).toBe('fit')
   })
 })
 

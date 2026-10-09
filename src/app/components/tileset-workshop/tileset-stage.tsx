@@ -13,7 +13,7 @@ import { ImageUpload } from '@/components/image-upload/image-upload'
 import { sheetFromImage } from './sheet-from-image'
 import { TilesetMapView } from './tileset-map-view'
 import styles from './tileset-workshop.module.css'
-import { useSheetCanvas } from './use-sheet-canvas'
+import { ZoomStage } from './zoom-stage'
 
 const FAILURES = {
   'grid-mismatch': msg`Aucune tuile entière n'entre dans la grille déclarée.`,
@@ -27,7 +27,7 @@ const FAILURES = {
 /**
  * The centre of the workshop (S-Q8 · S-Q10): the drop zone while no image is
  * open, then what the conversion made of it — the map, or the converted
- * sheet. The zoom and the views come with S3 and S4.
+ * sheet, zoomed (S3). The views come with S4.
  */
 export function TilesetStage() {
   const { _ } = useLingui()
@@ -59,7 +59,6 @@ function TilesetStageView() {
   const result = useAtomValue(editedTilesetAtom)
   const rendered = useAtomValue(renderedTilesetSheetAtom)
   const map = useAtomValue(tilesetMapAtom)
-  const canvas = useSheetCanvas(rendered)
 
   if (!result) return null
 
@@ -70,13 +69,6 @@ function TilesetStageView() {
   if (map) return <TilesetMapView />
 
   return (
-    rendered && (
-      <canvas
-        ref={canvas}
-        className={styles.preview}
-        role='img'
-        aria-label={_(msg`Planche convertie`)}
-      />
-    )
+    rendered && <ZoomStage image={rendered} label={_(msg`Planche convertie`)} />
   )
 }

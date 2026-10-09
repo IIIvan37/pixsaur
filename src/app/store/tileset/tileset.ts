@@ -69,4 +69,4 @@ export {
   tilesetSheetInspectionAtom,
   tilesetSheetNameAtom
 } from './sheet'
-export { tilesetSettingsOpenAtom } from './ui'
+export { tilesetSettingsOpenAtom, tilesetStageZoomAtom } from './ui'

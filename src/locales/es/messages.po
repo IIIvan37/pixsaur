@@ -149,6 +149,10 @@ msgstr "Ajusta solo las zonas claras de la imagen"
 msgid "Ajuste uniquement les zones sombres de l'image"
 msgstr "Ajusta solo las zonas oscuras de la imagen"
 
+#: src/app/components/tileset-workshop/zoom-stage.tsx:180
+msgid "Ajuster"
+msgstr "Ajustar"
+
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:96
 msgid "Ajustez l'équilibre entre fidélité aux couleurs fréquentes et variété des teintes (CPC Plus Mode 0)."
 msgstr "Ajusta el equilibrio entre fidelidad a colores frecuentes y variedad de tonos (CPC Plus Mode 0)."
@@ -229,7 +233,7 @@ msgstr "Ninguna imagen procesada"
 msgid "Aucune tuile entière n'entre dans la grille déclarée."
 msgstr "Ninguna tesela entera cabe en la rejilla declarada."
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:188
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:186
 msgid "Aucune tuile vide"
 msgstr "Ninguna tesela vacía"
 
@@ -289,15 +293,15 @@ msgstr "Presupuesto de teselas"
 msgid "Canaux RGB"
 msgstr "Canales RGB"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:148
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:146
 msgid "Case survolée"
 msgstr "Celda señalada"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:153
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:151
 msgid "Case vide"
 msgstr "Celda vacía"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:161
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:159
 msgid "cases"
 msgstr "celdas"
 
@@ -424,7 +428,7 @@ msgstr "Color {index}: {color}"
 msgid "Combined"
 msgstr "Combinado"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:123
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:122
 msgid "Comparer avec la source"
 msgstr "Comparar con el origen"
 
@@ -791,6 +795,10 @@ msgstr "Exposición & Tonalidad"
 msgid "Extraction palette de base"
 msgstr "Extracción de paleta base"
 
+#: src/app/components/tileset-workshop/zoom-stage.tsx:190
+msgid "Facteur de zoom"
+msgstr "Factor de zoom"
+
 #: src/components/export-panel/export-panel.tsx:272
 #~ msgid "Failed to open EGX in CPC Playground: {0}"
 #~ msgstr "Error al abrir EGX en CPC Playground: {0}"
@@ -970,6 +978,10 @@ msgstr "Imagen demasiado grande (máximo {MAX_IMAGE_DIMENSION}×{MAX_IMAGE_DIMEN
 #: src/components/toaster/toaster.tsx:34
 msgid "Image trop volumineuse (maximum {MAX_FILE_SIZE_MB} Mo). Veuillez choisir un fichier plus petit."
 msgstr "Imagen demasiado pesada (máximo {MAX_FILE_SIZE_MB} MB). Elija un archivo más pequeño."
+
+#: src/app/components/tileset-workshop/zoom-stage.tsx:195
+msgid "Image zoomable"
+msgstr "Imagen ampliable"
 
 #: src/components/settings-panel/sections/dithering-settings/dithering-settings-view.tsx:166
 msgid "Images retro (low-color)"
@@ -1157,16 +1169,16 @@ msgid "Machine source"
 msgstr "Máquina de origen"
 
 #: src/app/components/tileset-workshop/tileset-grid-panel.tsx:63
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:110
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:109
 #: src/app/components/tileset-workshop/tileset-workshop-bar.tsx:34
 msgid "Map"
 msgstr "Mapa"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:131
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:128
 msgid "Map convertie"
 msgstr "Mapa convertido"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:131
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:128
 msgid "Map source"
 msgstr "Mapa de origen"
 
@@ -1497,7 +1509,7 @@ msgstr "Modo de píxel"
 msgid "Planche"
 msgstr "Lámina"
 
-#: src/app/components/tileset-workshop/tileset-stage.tsx:78
+#: src/app/components/tileset-workshop/tileset-stage.tsx:72
 msgid "Planche convertie"
 msgstr "Lámina convertida"
 
@@ -1800,7 +1812,7 @@ msgstr "Selecciona colores que se mezclan bien en tramado"
 msgid "Settings"
 msgstr "Configuración"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:197
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:195
 msgid "Seuil de fusion"
 msgstr "Umbral de fusión"
 
@@ -1845,7 +1857,7 @@ msgstr "Soporta los formatos CPC Classic y CPC Plus. El cargador detecta automá
 msgid "Supprimer le changement"
 msgstr "Eliminar cambio"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:146
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:144
 msgid "Survolez une case pour voir où sa tuile revient."
 msgstr "Pase sobre una celda para ver dónde vuelve su tesela."
 
@@ -1878,12 +1890,12 @@ msgstr "Tent"
 msgid "palette.strategy.exhaustive-contrast.desc"
 msgstr "Prueba todas las combinaciones, maximiza contraste (mejor calidad)"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:113
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:112
 #: src/app/components/workshop-tabs/workshop-tabs.tsx:40
 msgid "Tileset"
 msgstr "Tileset"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:213
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:207
 msgid "Tileset de la map"
 msgstr "Tileset del mapa"
 
@@ -1908,7 +1920,7 @@ msgid "Trous aplatis sur le fond"
 msgstr "Huecos aplanados sobre el fondo"
 
 #: src/app/components/tileset-workshop/tileset-edit-panel.tsx:52
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:156
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:154
 #: src/app/components/tileset-workshop/tileset-settings-dock.tsx:36
 msgid "Tuile"
 msgstr "Tesela"
@@ -1917,7 +1929,7 @@ msgstr "Tesela"
 msgid "Tuile de destination"
 msgstr "Tesela de destino"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:181
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:179
 msgid "Tuile vide automatique"
 msgstr "Tesela vacía automática"
 
@@ -2010,11 +2022,11 @@ msgstr "Intensidad"
 msgid "Vider"
 msgstr "Vaciar"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:174
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:172
 msgid "Vider la tuile de la case sélectionnée"
 msgstr "Vaciar la tesela de la celda seleccionada"
 
-#: src/app/components/tileset-workshop/tileset-map-view.tsx:108
+#: src/app/components/tileset-workshop/tileset-map-view.tsx:107
 msgid "Vues de la map"
 msgstr "Vistas del mapa"
 
@@ -2026,14 +2038,17 @@ msgstr "Área de selección"
 msgid "Zone de sélection interactive"
 msgstr "Zona de selección interactiva"
 
+#: src/app/components/tileset-workshop/zoom-stage.tsx:166
 #: src/components/preview-editor/editor-toolbar/editor-toolbar-view.tsx:67
 msgid "Zoom"
 msgstr "Zoom"
 
+#: src/app/components/tileset-workshop/zoom-stage.tsx:169
 #: src/components/preview-editor/help-button/help-button.tsx:26
 msgid "Zoom arrière"
 msgstr "Alejar"
 
+#: src/app/components/tileset-workshop/zoom-stage.tsx:184
 #: src/components/preview-editor/help-button/help-button.tsx:25
 msgid "Zoom avant"
 msgstr "Acercar"

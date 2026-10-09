@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EMPTY_CELL, type TilesetMap } from '@/tileset'
 import { cellAt } from './map-cell-at'
 import styles from './tileset-workshop.module.css'
-import { useSheetCanvas } from './use-sheet-canvas'
+import { ZoomStage } from './zoom-stage'
 
 /** See-through, so the tile under the mark stays readable. */
 const HIGHLIGHT = 'rgba(255, 196, 0, 0.5)'
@@ -90,8 +90,7 @@ export function TilesetMapView() {
     [map, tile]
   )
 
-  const mapCanvas = useSheetCanvas(comparing ? source : result)
-  const atlasCanvas = useSheetCanvas(atlas)
+  const shown = comparing ? source : result
   const marks = useCellMarks(map, sharing)
 
   if (!map) return null
@@ -104,7 +103,7 @@ export function TilesetMapView() {
     )
 
   return (
-    <Tabs defaultValue='map'>
+    <Tabs defaultValue='map' className={styles.mapView}>
       <TabsList aria-label={_(msg`Vues de la map`)} className={styles.viewTabs}>
         <TabsTrigger value='map' className={styles.viewTab}>
           <Trans>Map</Trans>
@@ -114,7 +113,7 @@ export function TilesetMapView() {
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value='map'>
+      <TabsContent value='map' className={styles.mapViewPanel}>
         <Button
           variant='secondary'
           aria-pressed={comparing}
@@ -123,23 +122,22 @@ export function TilesetMapView() {
           <Trans>Comparer avec la source</Trans>
         </Button>
 
-        <div className={styles.mapStage}>
-          <canvas
-            ref={mapCanvas}
-            className={styles.preview}
-            role='img'
-            aria-label={comparing ? _(msg`Map source`) : _(msg`Map convertie`)}
+        {shown && (
+          <ZoomStage
+            image={shown}
+            label={comparing ? _(msg`Map source`) : _(msg`Map convertie`)}
             onMouseMove={(event) => setHovered(cellUnder(event))}
             onMouseLeave={() => setHovered(null)}
             onClick={(event) => {
               const cell = cellUnder(event)
               if (cell !== null) select(tileCellOf(map, cell))
             }}
-          />
-          {/* Decoration with no fallback content, so assistive technology
-              skips it: what it marks is said in words just below. */}
-          <canvas ref={marks} className={styles.mapMarks} />
-        </div>
+          >
+            {/* Decoration with no fallback content, so assistive technology
+                skips it: what it marks is said in words just below. */}
+            <canvas ref={marks} className={styles.mapMarks} />
+          </ZoomStage>
+        )}
 
         <p className={styles.note}>
           {tile === null ? (
@@ -205,13 +203,8 @@ export function TilesetMapView() {
         </div>
       </TabsContent>
 
-      <TabsContent value='tileset'>
-        <canvas
-          ref={atlasCanvas}
-          className={styles.preview}
-          role='img'
-          aria-label={_(msg`Tileset de la map`)}
-        />
+      <TabsContent value='tileset' className={styles.mapViewPanel}>
+        {atlas && <ZoomStage image={atlas} label={_(msg`Tileset de la map`)} />}
       </TabsContent>
     </Tabs>
   )

@@ -11,6 +11,7 @@ import { atom } from 'jotai'
 import { downscaleSheet, type Sheet } from '@/libs/pixsaur-tileset'
 import { EMPTY_EDIT_LAYER, inspectSheet, type SheetInspection } from '@/tileset'
 import { selectedTileAtom, tilesetEditLayerAtom } from './edit-layer'
+import { tilesetStageZoomAtom } from './ui'
 
 /** The imported sheet, RGBA. `null` until the user drops a file. */
 export const tilesetSheetAtom = atom<Sheet | null>(null)
@@ -23,7 +24,7 @@ export const tilesetSheetNameAtom = atom<string | null>(null)
 
 /**
  * Another sheet is another document: nothing painted on the last one holds,
- * and no tile of it is picked.
+ * no tile of it is picked, and the stage fits it anew.
  */
 export const setTilesetSheetAtom = atom(
   null,
@@ -32,6 +33,7 @@ export const setTilesetSheetAtom = atom(
     set(tilesetSheetNameAtom, payload ? name : null)
     set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
     set(selectedTileAtom, null)
+    set(tilesetStageZoomAtom, 'fit')
   }
 )
 
