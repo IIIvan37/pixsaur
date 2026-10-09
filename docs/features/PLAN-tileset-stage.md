@@ -25,7 +25,23 @@
   questions : 29 décisions, S-Q1 à S-Q29. Aucun point ouvert.
 - **Branche** : `feat/tileset-stage`, créée depuis `main` après le merge de la
   PR #349. Elle porte ce plan puis le code (S-Q29).
-- **Aucune tranche livrée.** Prochaine action : S1.
+- **S1 livrée (09/10/2026).**
+  - Le calque de retouche est la table de surcharges de S-Q6
+    (`TilesetEditLayer`, `paintTileset`, `applyTilesetEdits`). Un test garde
+    la première retouche après 150 traits.
+  - Annuler / rétablir, le tramage par tuile, la liste des tuiles malmenées,
+    `rankTileCollisions` et la table `PenTables.error` sont retirés, code
+    compris.
+  - Le projet passe en version 4. La migration enchaîne v2 → v3 → v4 ; le
+    message de S-Q7 vit dans `tilesetProjectNoticeAtom` et s'affiche dans la
+    barre d'actions (`<output>`, bouton « Compris »).
+  - Les selects du Tileset prennent la largeur de leur champ
+    (`.field [role='combobox']`).
+  - Catalogues : les 4 messages retirés quittent les quatre langues ; les 69
+    obsolètes plus anciens restent, hors périmètre.
+  - Captures Playwright : rien ne dépasse à 1400 px. Sous 1024 px, voir le
+    constat sur le dock ci-dessous.
+- **Prochaine action** : S2.
 
 ## Constat de départ
 
@@ -65,6 +81,15 @@ c'est la mise en page.
   colonnes de champs du Tileset descendent à `minmax(8rem, 1fr)`, soit 128 px.
   Le select du tramage par tuile en est l'exemple visible, mais tout select du
   Tileset peut déborder.
+- **Un dock transparent sous 1024 px** (trouvé pendant S1, dans les deux
+  ateliers). Sous 1024 px, `SettingsDock` devient un tiroir fixe, mais :
+  - son fond lit `--color-panel-background`, que le thème ne définit pas : le
+    contenu de la page transparaît dessous. `--color-text-primary`,
+    `--color-text-secondary` et `--color-panel-hover` manquent aussi ;
+  - il reste enfermé dans le contexte d'empilement de la carte de l'atelier
+    (`z-index: 10`) : les onglets Image | Tileset passent devant lui et
+    captent les clics ;
+  - il ne prend pas toute la hauteur de la fenêtre (346 px mesurés).
 
 ## Décisions
 
