@@ -67,7 +67,28 @@
   `convertTileset` la refuse (`empty-target`, `c998a65`). Le plantage signalé
   avec une grille source vide n'a pas été reproduit.
 - **PR draft S1-S2 ouverte (09/10/2026)** : #351.
-- **Prochaine action** : S3.
+- **S3 livrée (09/10/2026).**
+  - `ZoomStage` (`zoom-stage.tsx`) sert la planche, la map et l'atlas. Il
+    garde le canvas natif en mémoire et le recopie par `drawImage`, lissage
+    coupé. La page fait défiler la copie : barres de défilement, gestes
+    tactiles et bornes restent ceux du navigateur.
+  - Les calculs sont purs et testés dans `stage-zoom.ts` : `fitZoom`,
+    `zoomIn`, `zoomOut`, `anchorScroll`. `zoomIn` refuse un canvas de plus
+    de 8192 px de côté.
+  - Le zoom vit dans `tilesetStageZoomAtom`, commun à toutes les vues et
+    jamais enregistré. `setTilesetSheetAtom` le remet à « Ajuster ».
+  - Ctrl + molette passe par un écouteur natif non passif : celui de React
+    ne peut pas empêcher le zoom de la page. Le glisser ne vaut que pour la
+    souris, au-delà de 3 px, et avale le clic qui le termine. Clavier : `+`,
+    `=`, `−`, `0` et les flèches.
+  - Captures aux trois largeurs, dock ouvert et fermé : rien ne déborde. Le
+    point sous le curseur tient en X ; en Y, l'image reste centrée tant
+    qu'elle est moins haute que la scène.
+  - Constats laissés aux tranches suivantes : la comparaison avec la source
+    saute encore (S4) ; les réglages restés sous la map prennent de la
+    hauteur à la scène (S6, S8). À 1400 px, la map de test s'ajuste à 1× :
+    512 px n'entrent pas deux fois dans 718 px.
+- **Prochaine action** : S4.
 
 ## Constat de départ
 
