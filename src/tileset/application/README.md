@@ -35,7 +35,7 @@ a second consumer here:
 |----------|-----------------|--------|------------|
 | `convertTileset` | sheet, source grid, target tile, mode, hardware, render options | `{ ok, tileset } \| { ok:false, error }` (5 named refusals) | none — pure, sync, total |
 | `suggestTileGeometry` | source platform, mode, asked-for tile size | candidate tile sizes ranked by aspect distortion | none |
-| `paintTileset` / `undoTilesetEdits` / `redoTilesetEdits` / `applyTilesetEdits` | edit layer + the pixels a stroke names | a new edit layer, or the converted tiles replayed | none |
+| `paintTileset` / `applyTilesetEdits` | edit layer (the pens painted over each position, S-Q6) + the pixels a stroke names | a new edit layer, or the converted tiles with the pens laid over them | none |
 | `renderTilesetSheet` | converted tileset + the source grid | RGBA pixels in the shape of a source sheet | none |
 | `renderTileAtlas` | the pens, the tiles, a column count, target, mode | RGBA pixels, tiles edge to edge — what Tiled reads (M-Q20) | none |
 | `saveTilesetSheet` | `{ sheet, filename? }` — defaults to `TILESET_SHEET_FILENAME` | `{ ok } \| { ok:false, error:'no-canvas-context' \| 'encode-failed' }` | `CanvasFactory`, `FileSink` |
@@ -46,7 +46,7 @@ a second consumer here:
 | `loadTilesetProject` / `saveTilesetProject` | the store, the project | the project or `null` · `true` / `false` | `TilesetProjectStore` |
 | `exportTilesetProjectFile` | `{ project, filename? }` — defaults to `TILESET_PROJECT_FILENAME` | `{ ok } \| { ok:false, error:'save-failed' }` | `FileSink` |
 | `importTilesetProjectFile` | `{ file }` (the picked `Blob`) | `ParseTilesetProjectResult` + `'unreadable-file'` | none — a `Blob` is a value, a fake is one line |
-| `tilesetPaletteSlots` / `dropPen` / `togglePenLock` / `freezePalette` / `thawPalette` / `setTileDither` (`tileset-options.ts`) | the mode, the options, and what the conversion produced | the options the panel should write — **unchanged, by reference, when the edit is refused** | none |
+| `tilesetPaletteSlots` / `dropPen` / `togglePenLock` / `freezePalette` / `thawPalette` (`tileset-options.ts`) | the mode, the options, and what the conversion produced | the options the panel should write — **unchanged, by reference, when the edit is refused** | none |
 
 `pen-budget.ts` is not a use-case either: it is the arithmetic of Q16 · Q23 —
 how many pens the mode holds, how many the sprites were promised, which pen the
@@ -78,9 +78,12 @@ takes the metric as a parameter and so knows nothing of the hardware.
 `tileset-project.ts` is not a use-case: it is the document itself (Q31) — one
 shape, two carriers. IndexedDB keeps the object as it is (the structured clone
 carries the bytes); the exported file carries the same fields as JSON with the
-bytes in base64. `parseTilesetProject` **names** what failed. A version 2
-project is migrated to version 3 as a sheet, because that is its only reading
-(M-Q21). A project from any other version is dropped, never migrated blind.
+bytes in base64. `parseTilesetProject` **names** what failed. Older projects
+are migrated one version at a time: version 2 becomes version 3 as a sheet,
+because that is its only reading (M-Q21); version 3 becomes version 4 by laying
+its strokes down up to the undo cursor and dropping the per-tile dithering,
+with a `notice` when that changes the rendering (S-Q7). A project from any
+other version is dropped, never migrated blind.
 
 ## What the panels may still do
 

@@ -1,5 +1,5 @@
 /**
- * The four lookups every pixel of a tile is painted through.
+ * The three lookups every pixel of a tile is painted through.
  *
  * All of them answer the same question — which pen stands closest to a colour —
  * so they are computed in one pass over the colours the tiles can ask for,
@@ -26,12 +26,6 @@ export interface PenTablesInput {
 }
 
 export interface PenTables {
-  /**
-   * How far each wanted colour had to travel to reach the pen it was given.
-   * Same shape as the tiles' own indices, so the collision report of Q22 costs
-   * one lookup per pixel.
-   */
-  error: Float64Array
   mix: PenMix
   diffusion: DiffusionColours
 }
@@ -45,18 +39,15 @@ export function penTables({
   const primary = new Uint8Array(wanted.length)
   const secondary = new Uint8Array(wanted.length)
   const mix = new Float64Array(wanted.length)
-  const error = new Float64Array(wanted.length)
 
   wanted.forEach((colour, index) => {
     const [first, second] = twoNearest(colour, chosen, distance)
     primary[index] = space.toPalette(first)
     secondary[index] = space.toPalette(second)
     mix[index] = ratioBetween(colour, chosen[first], chosen[second])
-    error[index] = distance(colour, chosen[first])
   })
 
   return {
-    error,
     mix: { primary, secondary, mix },
     diffusion: {
       wanted: (index) => wanted[index],

@@ -25,7 +25,6 @@ function tilesetOfTwo(palette = [BLACK, WHITE]): ConvertedTileset {
     instanceOf: [0, 1],
     unique: [0, 1],
     transparentPen: null,
-    collisions: [],
     resizeSearch: null
   }
 }
@@ -177,7 +176,6 @@ function tilesetOfPens(pens: number[]): ConvertedTileset {
     instanceOf: pens.map((_, at) => at),
     unique: pens.map((_, at) => at),
     transparentPen: null,
-    collisions: [],
     resizeSearch: null
   }
 }

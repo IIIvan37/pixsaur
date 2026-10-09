@@ -372,33 +372,6 @@ describe('convertTileset', () => {
     expect(result.ok && result.tileset.tiles[1].indices[0]).not.toBe(0)
   })
 
-  it('blames no tile when every colour got a pen of its own', () => {
-    const result = convertTileset(input)
-
-    expect(result.ok && result.tileset.collisions.map((c) => c.error)).toEqual([
-      0, 0
-    ])
-  })
-
-  it('blames the tiles a short palette hurt', () => {
-    const result = convertTileset({
-      ...input,
-      sheet: sheetOfSolidTiles(8, [RED, BLUE, [0, 255, 0]]),
-      mode: 2
-    })
-
-    expect(result.ok && result.tileset.collisions[0].error).toBeGreaterThan(0)
-  })
-
-  it('ranks only the distinct tiles, since editing one reaches them all', () => {
-    const result = convertTileset({
-      ...input,
-      sheet: sheetOfSolidTiles(8, [RED, BLUE, RED])
-    })
-
-    expect(result.ok && result.tileset.collisions.length).toBe(2)
-  })
-
   it('uses the frozen palette it was handed instead of choosing one', () => {
     const result = convertTileset({
       ...input,
@@ -527,16 +500,6 @@ describe('convertTileset', () => {
     expect(
       pensUsed(convertTileset({ ...halfway, dither: 'diffusion' }), 2)
     ).toHaveLength(2)
-  })
-
-  it('lets one tile refuse the dithering the sheet asked for', () => {
-    const result = convertTileset({
-      ...halfway,
-      dither: 'ordered',
-      ditherByTile: { 2: 'none' }
-    })
-
-    expect(pensUsed(result, 2)).toHaveLength(1)
   })
 
   it('dithers two copies of a tile the same way, wherever they sit', () => {

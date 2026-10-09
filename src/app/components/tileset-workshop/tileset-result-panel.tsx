@@ -1,12 +1,11 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import { useCallback } from 'react'
 import {
   editedTilesetAtom,
   renderedTilesetSheetAtom,
-  selectedTileAtom,
   tilesetConversionInputAtom,
   tilesetMapAtom,
   tilesetMapOptionsAtom
@@ -22,9 +21,6 @@ import { TilesetMapView } from './tileset-map-view'
 import styles from './tileset-workshop.module.css'
 import { useSheetCanvas } from './use-sheet-canvas'
 
-/** How many collisions are worth reading before the list stops informing. */
-const WORST_SHOWN = 8
-
 const FAILURES = {
   'grid-mismatch': msg`Aucune tuile entière n'entre dans la grille déclarée.`,
   'no-pens-left': msg`La réservation ne laisse aucun pen au tileset.`,
@@ -33,13 +29,7 @@ const FAILURES = {
   'locked-pen-out-of-range': msg`Un pen épinglé n'a pas de place dans ce mode.`
 }
 
-/**
- * What the conversion produced: the sheet itself, and the tiles the shared
- * palette pushed furthest from the colours they asked for (Q20 · Q22).
- *
- * The collision report is what directs the manual retouching, and the whole
- * tool rests on it: a NES sheet carries ~25 colours, a mode 0 offers 16.
- */
+/** What the conversion produced: the sheet itself, and how to save it (Q20). */
 export function TilesetResultPanel() {
   const { _ } = useLingui()
   const result = useAtomValue(editedTilesetAtom)
@@ -47,7 +37,6 @@ export function TilesetResultPanel() {
   const input = useAtomValue(tilesetConversionInputAtom)
   const map = useAtomValue(tilesetMapAtom)
   const { budget } = useAtomValue(tilesetMapOptionsAtom)
-  const select = useSetAtom(selectedTileAtom)
   const canvas = useSheetCanvas(sheet)
 
   const handleSave = useCallback(async () => {
@@ -86,10 +75,6 @@ export function TilesetResultPanel() {
   }
 
   const { tileset } = result
-  // A tile that lost nothing is not a collision, however it ranks.
-  const worst = tileset.collisions
-    .filter((collision) => collision.error > 0)
-    .slice(0, WORST_SHOWN)
 
   return (
     <Panel>
@@ -143,32 +128,6 @@ export function TilesetResultPanel() {
           <Trans>Exporter pour Tiled</Trans>
         </Button>
       </div>
-
-      <section className={styles.suggestions}>
-        <h2 className={styles.subtitle}>
-          <Trans>Tuiles les plus malmenées par la palette</Trans>
-        </h2>
-        {worst.length === 0 ? (
-          <p className={styles.note}>
-            <Trans>Aucune tuile ne perd de couleur.</Trans>
-          </p>
-        ) : (
-          <ul className={styles.candidates}>
-            {worst.map((collision) => (
-              <li key={collision.tile}>
-                {/* The report is what directs the retouching: reading it must
-                    be enough to aim the brush. */}
-                <Button onClick={() => select(collision.tile)}>
-                  {/* The number stays outside the message: the Lingui macro
-                      drops the values of an interpolated one here. */}
-                  <Trans>Tuile</Trans>
-                  {` ${collision.tile} — ${collision.error.toFixed(1)}`}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </Panel>
   )
 }

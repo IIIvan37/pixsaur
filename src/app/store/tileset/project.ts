@@ -7,7 +7,11 @@
  */
 
 import { atom } from 'jotai'
-import { TILESET_PROJECT_VERSION, type TilesetProject } from '@/tileset'
+import {
+  TILESET_PROJECT_VERSION,
+  type TilesetProject,
+  type TilesetProjectNotice
+} from '@/tileset'
 import {
   tilesetHardwareAtom,
   tilesetModeAtom,
@@ -19,6 +23,12 @@ import { sourcePlatformAtom, tilesetTargetAtom } from './geometry'
 import { tilesetGridAtom } from './grid'
 import { tilesetLayoutAtom, tilesetMapOptionsAtom } from './map'
 import { tilesetSheetAtom } from './sheet'
+
+/**
+ * What the migration of the last project read has to tell the user (S-Q7).
+ * Never captured: the next save has nothing left to say, so it shows once.
+ */
+export const tilesetProjectNoticeAtom = atom<TilesetProjectNotice | null>(null)
 
 /** `null` until a sheet is imported: there is no document to save before. */
 export const captureTilesetProjectAtom = atom<TilesetProject | null>((get) => {
@@ -58,5 +68,6 @@ export const restoreTilesetProjectAtom = atom(
     set(tilesetLayoutAtom, project.layout)
     set(tilesetMapOptionsAtom, project.map)
     set(tilesetEditLayerAtom, project.edits)
+    set(tilesetProjectNoticeAtom, project.notice ?? null)
   }
 )

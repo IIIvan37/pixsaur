@@ -25,10 +25,7 @@ export {
   EMPTY_EDIT_LAYER,
   type PaintTilesetInput,
   paintTileset,
-  redoTilesetEdits,
-  type TileStroke,
-  type TilesetEditLayer,
-  undoTilesetEdits
+  type TilesetEditLayer
 } from './application/paint-tileset'
 export { hasPensToSpare, transparencyOf } from './application/pen-budget'
 export { BLACK, type Pen } from './application/pens'
@@ -66,7 +63,6 @@ export {
   type ConvertedPalette,
   dropPen,
   freezePalette,
-  setTileDither,
   thawPalette,
   tilesetPaletteSlots,
   togglePenLock
@@ -78,6 +74,7 @@ export {
   serializeTilesetProject,
   TILESET_PROJECT_VERSION,
   type TilesetProject,
+  type TilesetProjectNotice,
   type TilesetProjectOptions
 } from './application/tileset-project'
 export {

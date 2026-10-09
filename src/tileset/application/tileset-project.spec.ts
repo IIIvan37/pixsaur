@@ -20,7 +20,7 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
     hardware: 'classic',
     sourcePlatform: 'nes-ntsc',
     options: { resize: 'columns', antiAlias: true },
-    edits: { strokes: [], at: -1 },
+    edits: {},
     layout: 'sheet',
     map: { budget: 256 },
     ...overrides
@@ -30,8 +30,106 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
 /** The same project as version 2 wrote it: no layout, no map options. */
 function version2Of(project: TilesetProject): Record<string, unknown> {
   const { layout: _layout, map: _map, ...rest } = project
-  return { ...rest, version: 2 }
+  return { ...rest, edits: { strokes: [], at: -1 }, version: 2 }
 }
+
+/** A stroke as version 3 recorded it: the positions, then the pixels. */
+function strokeOf(tiles: number[], x: number, pen: number) {
+  return {
+    tiles,
+    edits: [{ x, y: 0, previousInkIndex: 0, newInkIndex: pen }],
+    timestamp: 0
+  }
+}
+
+/** A version 3 project, 2 px wide tiles, with its strokes and undo cursor. */
+function version3Of(
+  edits: { strokes: unknown[]; at: number },
+  options: Record<string, unknown> = { resize: 'columns' }
+): Record<string, unknown> {
+  return {
+    ...projectOf({ target: { tileWidth: 2, tileHeight: 1 } }),
+    version: 3,
+    edits,
+    options
+  }
+}
+
+/** Version 3, through the file. */
+function parsedVersion3(...args: Parameters<typeof version3Of>) {
+  const written = JSON.parse(serializeTilesetProject(projectOf()))
+  const { sheet: _sheet, ...v3 } = version3Of(...args)
+  const parsed = parseTilesetProject(
+    JSON.stringify({ ...v3, sheet: written.sheet })
+  )
+  if (!parsed.ok) throw new Error(parsed.error)
+  return parsed.project
+}
+
+describe('version 4', () => {
+  it('lays the strokes of a version 3 project into the table', () => {
+    const project = parsedVersion3({ strokes: [strokeOf([0, 2], 1, 3)], at: 0 })
+
+    expect(project.edits).toEqual({ 0: { 1: 3 }, 2: { 1: 3 } })
+  })
+
+  it('lets the later of two strokes win on a pixel', () => {
+    const project = parsedVersion3({
+      strokes: [strokeOf([0], 1, 3), strokeOf([0], 1, 4)],
+      at: 1
+    })
+
+    expect(project.edits).toEqual({ 0: { 1: 4 } })
+  })
+
+  it('drops the strokes a version 3 project had undone', () => {
+    const project = parsedVersion3({
+      strokes: [strokeOf([0], 0, 3), strokeOf([0], 1, 4)],
+      at: 0
+    })
+
+    expect(project.edits).toEqual({ 0: { 0: 3 } })
+  })
+
+  it('drops the per-tile dithering of a version 3 project', () => {
+    const project = parsedVersion3(
+      { strokes: [], at: -1 },
+      { resize: 'columns', ditherByTile: { 2: 'none' } }
+    )
+
+    expect(project.options).toEqual({ resize: 'columns' })
+  })
+
+  it('says so when a version 3 project dithered tiles of its own', () => {
+    const project = parsedVersion3(
+      { strokes: [], at: -1 },
+      { resize: 'columns', ditherByTile: { 2: 'none' } }
+    )
+
+    expect(project.notice).toBe('tile-dither-dropped')
+  })
+
+  it('stays silent when a version 3 project dithered the sheet as one', () => {
+    const project = parsedVersion3({ strokes: [], at: -1 })
+
+    expect(project.notice).toBeUndefined()
+  })
+
+  it('migrates a version 3 project the store kept', () => {
+    const stored = version3Of({ strokes: [strokeOf([1], 0, 2)], at: 0 })
+
+    expect(readStoredTilesetProject(stored)?.edits).toEqual({ 1: { 0: 2 } })
+  })
+
+  it('refuses a version 3 project whose strokes do not read', () => {
+    const written = JSON.parse(serializeTilesetProject(projectOf()))
+    const { sheet: _sheet, ...v3 } = version3Of({ strokes: [{}], at: 0 })
+
+    expect(
+      parseTilesetProject(JSON.stringify({ ...v3, sheet: written.sheet }))
+    ).toEqual({ ok: false, error: 'malformed' })
+  })
+})
 
 describe('version 3', () => {
   it('brings the layout back through the file', () => {
@@ -101,16 +199,7 @@ describe('serializeTilesetProject', () => {
   })
 
   it('brings the edit layer back through the file', () => {
-    const edits = {
-      strokes: [
-        {
-          tiles: [0, 2],
-          edits: [{ x: 0, y: 0, previousInkIndex: 0, newInkIndex: 3 }],
-          timestamp: 12
-        }
-      ],
-      at: 0
-    }
+    const edits = { 0: { 1: 3 }, 2: { 1: 3 } }
 
     const parsed = parseTilesetProject(
       serializeTilesetProject(projectOf({ edits }))
@@ -132,6 +221,14 @@ describe('serializeTilesetProject', () => {
     )
 
     expect(parsed.ok && parsed.project.options.palette).toEqual(palette)
+  })
+
+  it('never writes the migration notice into the file', () => {
+    const written = JSON.parse(
+      serializeTilesetProject(projectOf({ notice: 'tile-dither-dropped' }))
+    )
+
+    expect(written.notice).toBeUndefined()
   })
 
   it('survives a sheet larger than one call stack', () => {
@@ -203,6 +300,12 @@ describe('readStoredTilesetProject', () => {
       readStoredTilesetProject(
         projectOf({ version: TILESET_PROJECT_VERSION + 1 })
       )
+    ).toBeNull()
+  })
+
+  it('drops a project whose edit layer does not read', () => {
+    expect(
+      readStoredTilesetProject({ ...projectOf(), edits: { 0: 'red' } })
     ).toBeNull()
   })
 

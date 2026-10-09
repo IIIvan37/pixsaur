@@ -1,11 +1,12 @@
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useCallback, useId, useState } from 'react'
 import {
   captureTilesetProjectAtom,
-  restoreTilesetProjectAtom
+  restoreTilesetProjectAtom,
+  tilesetProjectNoticeAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
 import { logger } from '@/core'
@@ -20,6 +21,10 @@ const REFUSALS = {
   malformed: msg`Ce projet est incomplet : la planche ne se relit pas.`
 }
 
+const NOTICES = {
+  'tile-dither-dropped': msg`Ce projet réglait le tramage tuile par tuile. Ce réglage n'existe plus : toute la planche suit le tramage de la section Rendu.`
+}
+
 /**
  * The project as a file the user owns (Q31), in the action bar.
  *
@@ -29,13 +34,15 @@ const REFUSALS = {
  * rather than in a panel of its own: it is opened twice a session, not tuned.
  *
  * Both directions are `@/tileset` use-cases; this panel assembles the input,
- * injects the sink of the day, and says what a refusal was.
+ * injects the sink of the day, and says what a refusal was — or what the
+ * migration of an older project changed, whichever carrier it came from.
  */
 export function TilesetProjectActions() {
   const { _ } = useLingui()
   const project = useAtomValue(captureTilesetProjectAtom)
   const restore = useSetAtom(restoreTilesetProjectAtom)
   const [refusal, setRefusal] = useState<string | null>(null)
+  const [notice, setNotice] = useAtom(tilesetProjectNoticeAtom)
   const importId = useId()
 
   const handleExport = useCallback(async () => {
@@ -97,6 +104,15 @@ export function TilesetProjectActions() {
         <p className={styles.refusal} role='alert'>
           {refusal}
         </p>
+      )}
+
+      {notice && (
+        <output className={styles.notice}>
+          <p>{_(NOTICES[notice])}</p>
+          <Button variant='secondary' onClick={() => setNotice(null)}>
+            <Trans>Compris</Trans>
+          </Button>
+        </output>
       )}
     </>
   )

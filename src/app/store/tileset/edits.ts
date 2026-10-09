@@ -1,26 +1,20 @@
 /**
- * Painting pens over the converted sheet (Q11 · Q19 · Q31).
+ * Painting pens over the converted sheet (Q11 · Q19 · S-Q6).
  *
  * The workshop shows `editedTilesetAtom`, never the raw conversion: the layer
- * is replayed over the tiles every time anything upstream changes, which is
+ * is laid over the tiles every time anything upstream changes, which is
  * what lets a setting be reconsidered without losing the retouching.
  */
 
 import { atom } from 'jotai'
-import { systemClock } from '@/editor/adapters/system-clock'
 import type { Point } from '@/editor/application/paint-pixels'
 import type { Sheet } from '@/libs/pixsaur-tileset'
 import {
   applyTilesetEdits,
   type ConvertTilesetResult,
   paintTileset,
-  redoTilesetEdits,
-  renderTilesetSheet,
-  setTileDither,
-  type TileDither,
-  undoTilesetEdits
+  renderTilesetSheet
 } from '@/tileset'
-import { tilesetOptionsAtom } from './config'
 import { convertedTilesetAtom, tilesetConversionInputAtom } from './conversion'
 import { tilesetEditLayerAtom } from './edit-layer'
 import { tilesetTargetAtom } from './geometry'
@@ -30,11 +24,7 @@ export const editedTilesetAtom = atom<ConvertTilesetResult | null>((get) => {
   const result = get(convertedTilesetAtom)
   if (!result?.ok) return result
 
-  const tileset = applyTilesetEdits(
-    result.tileset,
-    get(tilesetEditLayerAtom),
-    get(tilesetTargetAtom)
-  )
+  const tileset = applyTilesetEdits(result.tileset, get(tilesetEditLayerAtom))
   if (tileset === result.tileset) return result
 
   return { ok: true, tileset }
@@ -71,62 +61,23 @@ export const paintTilesetAtom = atom(
 
     set(
       tilesetEditLayerAtom,
-      paintTileset(
-        {
-          tileset: result.tileset,
-          shape: get(tilesetTargetAtom),
-          layer: get(tilesetEditLayerAtom),
-          ...payload
-        },
-        { clock: systemClock }
-      )
+      paintTileset({
+        tileset: result.tileset,
+        shape: get(tilesetTargetAtom),
+        layer: get(tilesetEditLayerAtom),
+        ...payload
+      })
     )
   }
 )
 
-export const undoTilesetEditAtom = atom(null, (get, set) => {
-  set(tilesetEditLayerAtom, undoTilesetEdits(get(tilesetEditLayerAtom)))
-})
-
-export const redoTilesetEditAtom = atom(null, (get, set) => {
-  set(tilesetEditLayerAtom, redoTilesetEdits(get(tilesetEditLayerAtom)))
-})
-
 /**
  * The tile the retouching panel is aimed at, by position in the sheet.
  *
- * A position and not a unique tile: the collision report of Q22 names
- * positions, and it is what points the user at the tile worth retouching.
+ * A position and not a unique tile: a click on the map or the sheet names a
+ * position, and the retouch reaches every position of the same tile.
  */
 export const selectedTileAtom = atom(0)
 
 /** The pen the brush lays down — an index into the frozen palette (Q19). */
 export const selectedPenAtom = atom(0)
-
-export interface TileDitherPayload {
-  tile: number
-  /** `null` hands the tile back to the sheet-wide setting. */
-  dither: TileDither | null
-}
-
-/**
- * The per-tile overrule of Q18 — the fan-out to every instance of the tile is
- * decided in `@/tileset`; the atom only hands it the conversion.
- */
-export const setTileDitherAtom = atom(
-  null,
-  (get, set, { tile, dither }: TileDitherPayload) => {
-    const result = get(convertedTilesetAtom)
-    if (!result?.ok) return
-
-    set(
-      tilesetOptionsAtom,
-      setTileDither({
-        options: get(tilesetOptionsAtom),
-        instanceOf: result.tileset.instanceOf,
-        tile,
-        dither
-      })
-    )
-  }
-)

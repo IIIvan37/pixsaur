@@ -32,11 +32,18 @@ import {
  *
  * 3 — the layout and the map options (M-Q21). A version 2 project still reads:
  * it was a sheet, with no map to speak of.
+ *
+ * 4 — the edit layer became a table of the pens painted over each position
+ * (S-Q6), and the per-tile dithering left (S-Q3). A version 3 project still
+ * reads: its strokes are laid down up to the undo cursor, the last one winning.
  */
-export const TILESET_PROJECT_VERSION = 3
+export const TILESET_PROJECT_VERSION = 4
 
-/** The one older version whose projects are migrated rather than dropped. */
-const MIGRATED_VERSION = 2
+/**
+ * What a migration has to tell the user, once: a version 3 project that
+ * dithered some tiles apart now renders them as the rest of the sheet.
+ */
+export type TilesetProjectNotice = 'tile-dither-dropped'
 
 /**
  * What the conversion is asked to do, beyond the sheet and the two grids.
@@ -48,7 +55,6 @@ export type TilesetProjectOptions = Pick<
   | 'antiAlias'
   | 'background'
   | 'dither'
-  | 'ditherByTile'
   | 'ditherSize'
   | 'lockedPens'
   | 'palette'
@@ -66,22 +72,107 @@ export interface TilesetProject extends TilesetConversionSubject {
   edits: TilesetEditLayer
   layout: TilesetLayout
   map: TilesetMapOptions
+  /**
+   * Set by the migration that read the project, never written back: the next
+   * save is a version 4 project with nothing left to say (S-Q7).
+   */
+  notice?: TilesetProjectNotice
 }
 
 /**
- * Brings a version 2 project up to the current shape. Every field it lacks
- * has one reading only — a version 2 project was a sheet — so the migration
- * guesses nothing. Any other version passes through untouched, to be refused.
+ * Version 2 to 3. Every field version 2 lacks has one reading only — a
+ * version 2 project was a sheet — so the step guesses nothing.
  */
-function migrate(value: Record<string, unknown>): Record<string, unknown> {
-  if (value.version !== MIGRATED_VERSION) return value
-
+function fromVersion2(value: Record<string, unknown>): Record<string, unknown> {
   return {
     ...value,
-    version: TILESET_PROJECT_VERSION,
+    version: 3,
     layout: 'sheet',
     map: DEFAULT_TILESET_MAP_OPTIONS
   }
+}
+
+/**
+ * The strokes of version 3 laid down as the table of version 4: up to the
+ * undo cursor, in order, the last stroke winning on a pixel. `null` when they
+ * do not read, which leaves the project to be refused as malformed.
+ */
+function layerFromStrokes(
+  edits: unknown,
+  target: unknown
+): TilesetEditLayer | null {
+  if (!isRecord(edits) || !Array.isArray(edits.strokes)) return null
+  if (typeof edits.at !== 'number' || !isSize(target)) return null
+
+  const width = (target as { tileWidth: number }).tileWidth
+  const layer: Record<number, Record<number, number>> = {}
+  for (const stroke of edits.strokes.slice(0, edits.at + 1)) {
+    if (!isRecord(stroke) || !Array.isArray(stroke.tiles)) return null
+    if (!Array.isArray(stroke.edits)) return null
+    for (const tile of stroke.tiles) {
+      for (const edit of stroke.edits) {
+        if (typeof tile !== 'number' || !isPixelEdit(edit)) return null
+        layer[tile] = {
+          ...layer[tile],
+          [edit.y * width + edit.x]: edit.newInkIndex
+        }
+      }
+    }
+  }
+  return layer
+}
+
+function isPixelEdit(
+  value: unknown
+): value is { x: number; y: number; newInkIndex: number } {
+  return (
+    isRecord(value) &&
+    typeof value.x === 'number' &&
+    typeof value.y === 'number' &&
+    typeof value.newInkIndex === 'number'
+  )
+}
+
+/**
+ * Version 3 to 4: the strokes become the table, and the per-tile dithering
+ * goes. A project that held some says so, since its tiles now render as the
+ * rest of the sheet.
+ */
+function fromVersion3(value: Record<string, unknown>): Record<string, unknown> {
+  const { ditherByTile, ...options } = isRecord(value.options)
+    ? value.options
+    : { ditherByTile: undefined }
+  const dithered =
+    isRecord(ditherByTile) && Object.keys(ditherByTile).length > 0
+
+  return {
+    ...value,
+    version: 4,
+    edits: layerFromStrokes(value.edits, value.target),
+    options: isRecord(value.options) ? options : value.options,
+    ...(dithered ? { notice: 'tile-dither-dropped' } : {})
+  }
+}
+
+/** One step per older version still read, chained up to the current one. */
+const STEPS: Record<
+  number,
+  (value: Record<string, unknown>) => Record<string, unknown>
+> = {
+  2: fromVersion2,
+  3: fromVersion3
+}
+
+/**
+ * Brings an older project up to the current shape, one version at a time.
+ * Any version without a step passes through untouched, to be refused.
+ */
+function migrate(value: Record<string, unknown>): Record<string, unknown> {
+  let current = value
+  while (typeof current.version === 'number' && STEPS[current.version]) {
+    current = STEPS[current.version](current)
+  }
+  return current
 }
 
 export type ParseTilesetProjectResult =
@@ -108,7 +199,7 @@ function fromBase64(text: string): Uint8ClampedArray {
 
 /** Serialize a project as the JSON file the user exports and re-imports. */
 export function serializeTilesetProject(project: TilesetProject): string {
-  const { sheet, ...rest } = project
+  const { sheet, notice: _notice, ...rest } = project
   return JSON.stringify({
     ...rest,
     version: TILESET_PROJECT_VERSION,
@@ -132,6 +223,18 @@ function isSize(value: unknown): boolean {
   )
 }
 
+/** For each position, pens keyed by pixel — what `TilesetEditLayer` holds. */
+function isEditLayer(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.values(value).every(
+      (pens) =>
+        isRecord(pens) &&
+        Object.values(pens).every((pen) => typeof pen === 'number')
+    )
+  )
+}
+
 /** The fields both carriers share — everything but how the bytes travel. */
 function hasProjectShape(value: unknown): value is Record<string, unknown> {
   return (
@@ -145,9 +248,7 @@ function hasProjectShape(value: unknown): value is Record<string, unknown> {
     typeof value.hardware === 'string' &&
     typeof value.sourcePlatform === 'string' &&
     isRecord(value.options) &&
-    isRecord(value.edits) &&
-    Array.isArray(value.edits.strokes) &&
-    typeof value.edits.at === 'number' &&
+    isEditLayer(value.edits) &&
     (value.layout === 'sheet' || value.layout === 'map') &&
     isRecord(value.map) &&
     typeof value.map.budget === 'number'
@@ -195,7 +296,7 @@ export function parseTilesetProject(text: string): ParseTilesetProjectResult {
 /**
  * Read back what the browser store handed over. The bytes came through the
  * structured clone as they were, so only the shape and the version are in
- * question. A version 2 project is migrated; one of any other version is
+ * question. A version 2 or 3 project is migrated; one of any other version is
  * dropped, never migrated blind.
  */
 export function readStoredTilesetProject(

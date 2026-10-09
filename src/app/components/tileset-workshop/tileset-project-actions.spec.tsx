@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
+  restoreTilesetProjectAtom,
   setTilesetSheetAtom,
   tilesetGridAtom,
   tilesetSheetAtom
@@ -40,7 +41,7 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
     hardware: 'classic',
     sourcePlatform: 'nes-ntsc',
     options: { resize: 'columns' },
-    edits: { strokes: [], at: -1 },
+    edits: {},
     layout: 'sheet',
     map: { budget: 256 },
     ...overrides
@@ -104,5 +105,30 @@ describe('TilesetProjectActions', () => {
 
     await screen.findByRole('alert')
     expect(store.get(tilesetSheetAtom)).toBeNull()
+  })
+
+  it('says once that the per-tile dithering is gone', () => {
+    const store = createStore()
+    store.set(
+      restoreTilesetProjectAtom,
+      projectOf({ notice: 'tile-dither-dropped' })
+    )
+
+    renderWithProviders(<TilesetProjectActions />, { store })
+
+    expect(screen.getByRole('status')).toHaveTextContent(/tuile par tuile/)
+  })
+
+  it('puts the notice away once read', async () => {
+    const store = createStore()
+    store.set(
+      restoreTilesetProjectAtom,
+      projectOf({ notice: 'tile-dither-dropped' })
+    )
+    renderWithProviders(<TilesetProjectActions />, { store })
+
+    await userEvent.click(screen.getByRole('button', { name: /Compris/ }))
+
+    expect(screen.queryByRole('status')).toBeNull()
   })
 })

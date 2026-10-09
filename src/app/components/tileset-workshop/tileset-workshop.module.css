@@ -139,6 +139,22 @@
   color: var(--color-warning, #f59e0b);
 }
 
+/* Ce qu'une migration a changé : dit une fois, rangé d'un clic. */
+.notice {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.notice p {
+  flex: 1 1 20rem;
+  min-width: 0;
+  margin: 0;
+}
+
 /* Une grille de champs. Chaque libellé est posé au-dessus de son contrôle et
    forme une case avec lui : alignés par le bas comme des frères de rang, ils se
    lisaient sur une même ligne sans dire à quoi ils se rapportaient. */
@@ -155,6 +171,23 @@
   flex-direction: column;
   gap: var(--spacing-xs);
   min-width: 0;
+}
+
+/* Le déclencheur partagé de `Select` impose 160 px, plus large qu'une colonne
+   de 8 rem : ici, il prend la largeur de son champ et coupe sa valeur d'une
+   ellipse (S-Q9). Visé par son rôle, puisque sa classe est hachée dans un
+   autre module ; l'atelier Image garde le comportement par défaut (S-Q1). */
+.field [role="combobox"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.field [role="combobox"] > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Une rangée de boutons n'est pas une grille de champs : ils gardent leur

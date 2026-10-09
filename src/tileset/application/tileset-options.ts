@@ -1,6 +1,6 @@
 /**
  * What the workshop's options become when the user asks for something
- * (Q15 · Q16 · Q18 · Q23 · Q26 · Q28).
+ * (Q15 · Q16 · Q23 · Q26 · Q28).
  *
  * The palette panel and the retouching panel used to decide this inside Jotai
  * write functions, where the only way to test a rule was to run a whole
@@ -14,7 +14,6 @@
 
 import type { PaletteSlot, PixelMode } from '@/domain/cpc'
 import type { Vector } from '@/libs/pixsaur-color/src/type'
-import type { TileDither } from './convert-tileset'
 import {
   holePen,
   type PenSpending,
@@ -162,40 +161,4 @@ export function thawPalette(
 ): TilesetProjectOptions {
   const { palette: _thawed, ...kept } = options
   return kept
-}
-
-export interface SetTileDitherInput {
-  options: TilesetProjectOptions
-  /** For each tile, the tile it is an instance of — the edit link of Q11. */
-  instanceOf: readonly number[]
-  /** Position of the tile in the sheet. */
-  tile: number
-  /** `null` hands the tile back to the sheet-wide setting. */
-  dither: TileDither | null
-}
-
-/**
- * The per-tile overrule of Q18: a sprite wants none of the dithering a
- * gradient sky wants.
- *
- * The setting is written on every instance of the tile — otherwise two copies
- * of one tile would render differently and the deduplication that carries the
- * edits would break.
- */
-export function setTileDither({
-  options,
-  instanceOf,
-  tile,
-  dither
-}: SetTileDitherInput): TilesetProjectOptions {
-  const group = instanceOf[tile]
-  const byTile = { ...(options.ditherByTile ?? {}) }
-
-  instanceOf.forEach((of, at) => {
-    if (of !== group) return
-    if (dither === null) delete byTile[at]
-    else byTile[at] = dither
-  })
-
-  return { ...options, ditherByTile: byTile }
 }

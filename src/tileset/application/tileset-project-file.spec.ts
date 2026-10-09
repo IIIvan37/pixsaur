@@ -21,7 +21,7 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
     hardware: 'classic',
     sourcePlatform: 'nes-ntsc',
     options: { resize: 'columns' },
-    edits: { strokes: [], at: -1 },
+    edits: {},
     layout: 'sheet',
     map: { budget: 256 },
     ...overrides

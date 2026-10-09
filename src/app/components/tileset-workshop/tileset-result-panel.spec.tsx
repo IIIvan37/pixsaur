@@ -2,7 +2,6 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
-  selectedTileAtom,
   setTilesetGridAtom,
   setTilesetLayoutAtom,
   setTilesetMapOptionsAtom,
@@ -33,29 +32,6 @@ function sheetOfTwoTiles(): Sheet {
     }
   }
   return { width: 16, height: 8, data }
-}
-
-/** Four solid 8 x 8 tiles, one per colour — more than mode 2 can hold. */
-function sheetOfFourColours(): Sheet {
-  const colours = [
-    [0, 0, 0],
-    [255, 255, 255],
-    [255, 0, 0],
-    [0, 255, 0]
-  ]
-  const width = 4 * 8
-  const data = new Uint8ClampedArray(width * 8 * 4)
-  for (let y = 0; y < 8; y++) {
-    for (let x = 0; x < width; x++) {
-      const at = (y * width + x) * 4
-      const colour = colours[Math.floor(x / 8)]
-      data[at] = colour[0]
-      data[at + 1] = colour[1]
-      data[at + 2] = colour[2]
-      data[at + 3] = 255
-    }
-  }
-  return { width, height: 8, data }
 }
 
 function storeWithSheet() {
@@ -164,24 +140,5 @@ describe('TilesetResultPanel', () => {
     renderWithProviders(<TilesetResultPanel />, { store })
 
     expect(screen.getByRole('alert')).toHaveTextContent(/palette gelée/i)
-  })
-
-  it('reports no collision on a sheet the palette says exactly', () => {
-    renderWithProviders(<TilesetResultPanel />, { store: storeWithSheet() })
-
-    expect(screen.getByText(/Aucune tuile ne perd de couleur/i)).toBeVisible()
-  })
-
-  it('aims the retouching at the tile a collision names', async () => {
-    const store = createStore()
-    store.set(setTilesetSheetAtom, sheetOfFourColours())
-    store.set(setTilesetModeAtom, 2)
-    renderWithProviders(<TilesetResultPanel />, { store })
-    const worst = screen.getAllByRole('button', { name: /^Tuile \d/ })[0]
-    const named = Number(worst.textContent?.match(/\d+/)?.[0])
-
-    await userEvent.click(worst)
-
-    expect(store.get(selectedTileAtom)).toBe(named)
   })
 })

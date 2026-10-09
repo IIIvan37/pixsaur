@@ -25,13 +25,9 @@ export {
   editedTilesetAtom,
   type PaintTilesetPayload,
   paintTilesetAtom,
-  redoTilesetEditAtom,
   renderedTilesetSheetAtom,
   selectedPenAtom,
-  selectedTileAtom,
-  setTileDitherAtom,
-  type TileDitherPayload,
-  undoTilesetEditAtom
+  selectedTileAtom
 } from './edits'
 export {
   setTilesetTargetAtom,
@@ -64,7 +60,8 @@ export {
 } from './palette'
 export {
   captureTilesetProjectAtom,
-  restoreTilesetProjectAtom
+  restoreTilesetProjectAtom,
+  tilesetProjectNoticeAtom
 } from './project'
 export {
   reduceTilesetSheetAtom,

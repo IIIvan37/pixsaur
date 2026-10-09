@@ -20,7 +20,6 @@ function tilesetOf(
     instanceOf: pens.map((_, at) => at),
     unique: pens.map((_, at) => at),
     transparentPen,
-    collisions: [],
     resizeSearch: null
   }
 }
