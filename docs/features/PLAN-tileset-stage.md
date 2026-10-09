@@ -41,7 +41,29 @@
     obsolètes plus anciens restent, hors périmètre.
   - Captures Playwright : rien ne dépasse à 1400 px. Sous 1024 px, voir le
     constat sur le dock ci-dessous.
-- **Prochaine action** : S2.
+- **S2 livrée (09/10/2026, `1e60b6c`).**
+  - L'atelier tient en une barre et trois colonnes (256 px, scène, 304 px ;
+    272 px sous 1180 px ; une colonne sous 860 px). Il descend jusqu'au bas
+    de la fenêtre : `useFillWindow` mesure son haut.
+  - `SettingsDock` gagne l'option facultative `stayDocked` : le dock reste
+    dans sa colonne à toute largeur. L'atelier Image ne la passe pas (S-Q1).
+  - La barre montre le nom du fichier, la taille et la disposition, puis
+    « Projet ▾ » (exporter, importer, changer d'image), « Enregistrer le
+    PNG » et « Exporter pour Tiled ». `ImageUpload` passe le `File` en
+    second argument ; `tilesetSheetNameAtom` garde le nom, et le projet le
+    porte dans un champ facultatif `sheetName`.
+  - Le panneau source disparaît : la scène vide est la zone de dépôt, la
+    réduction ×N et l'alerte « image filtrée » vont dans Grille source
+    (`TilesetSourceChecks`). Le relevé de la barre d'action part.
+  - L'inspecteur reçoit les compteurs, la retouche et la liste des fusions.
+    `selectedTileAtom` vaut `null` tant qu'aucune tuile n'est choisie : la
+    retouche invite à cliquer une case (Map) ou à donner un numéro (Planche,
+    qui ne prend pas encore de clic).
+  - Restent sous la map jusqu'à S6 et S8 : « Vider la tuile », la tuile vide
+    et le seuil de fusion.
+  - Captures Playwright aux trois largeurs, dock ouvert et fermé : rien ne
+    déborde.
+- **Prochaine action** : S3.
 
 ## Constat de départ
 
