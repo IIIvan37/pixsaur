@@ -9,7 +9,7 @@
   position: sticky;
   top: 0.5rem;
   max-height: calc(100vh - 1rem);
-  background: var(--color-panel-background);
+  background: var(--color-background);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md, 0.5rem);
   overflow: hidden;
@@ -63,13 +63,16 @@
 }
 
 /* Below the lg breakpoint the docked column would squeeze the workspace, so
-   the panel becomes a full-height overlay anchored to the left edge. */
+   the panel becomes a full-height overlay anchored to the left edge.
+   `align-self` applies to a fixed box too: left at `flex-start`, it would
+   shrink the overlay to its content instead of spanning top to bottom. */
 @media (max-width: 1024px) {
   .panel {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
+    align-self: stretch;
     width: min(420px, 92vw);
     max-height: 100vh;
     border-radius: 0;
@@ -93,7 +96,7 @@
   gap: 0.25rem;
   padding: 0.5rem;
   padding-top: 0.75rem;
-  background: var(--color-panel-background);
+  background: var(--color-background);
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
