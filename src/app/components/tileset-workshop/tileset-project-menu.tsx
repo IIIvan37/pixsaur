@@ -2,13 +2,17 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useCallback, useId, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   captureTilesetProjectAtom,
   restoreTilesetProjectAtom,
-  tilesetProjectNoticeAtom
+  setTilesetSheetAtom,
+  tilesetProjectNoticeAtom,
+  tilesetSheetAtom
 } from '@/app/store/tileset/tileset'
 import Button from '@/components/ui/button'
+import Icon from '@/components/ui/icon'
+import Popover from '@/components/ui/popover'
 import { logger } from '@/core'
 import { resolveFileSink } from '@/export/application/file-sink'
 import { exportTilesetProjectFile, importTilesetProjectFile } from '@/tileset'
@@ -26,26 +30,30 @@ const NOTICES = {
 }
 
 /**
- * The project as a file the user owns (Q31), in the action bar.
+ * « Projet ▾ » in the workshop bar (Q31 · S-Q8 · S-Q10): the project as a
+ * file the user owns, and the way back to another image.
  *
- * The workshop already remembers itself in the browser; this is the copy that
- * survives a cleared cache, another machine, or a hand-off — and the only one
- * the user can put somewhere they trust. It sits with the other rare actions
- * rather than in a panel of its own: it is opened twice a session, not tuned.
+ * The workshop already remembers itself in the browser; the project file is
+ * the copy that survives a cleared cache, another machine, or a hand-off. All
+ * three actions are taken a few times a session, so they fold into one menu.
  *
- * Both directions are `@/tileset` use-cases; this panel assembles the input,
+ * Both directions are `@/tileset` use-cases; this menu assembles the input,
  * injects the sink of the day, and says what a refusal was — or what the
  * migration of an older project changed, whichever carrier it came from.
  */
-export function TilesetProjectActions() {
+export function TilesetProjectMenu() {
   const { _ } = useLingui()
   const project = useAtomValue(captureTilesetProjectAtom)
+  const sheet = useAtomValue(tilesetSheetAtom)
   const restore = useSetAtom(restoreTilesetProjectAtom)
+  const setSheet = useSetAtom(setTilesetSheetAtom)
+  const [open, setOpen] = useState(false)
   const [refusal, setRefusal] = useState<string | null>(null)
   const [notice, setNotice] = useAtom(tilesetProjectNoticeAtom)
-  const importId = useId()
+  const importInput = useRef<HTMLInputElement>(null)
 
   const handleExport = useCallback(async () => {
+    setOpen(false)
     if (!project) return
 
     const saved = await exportTilesetProjectFile(
@@ -72,26 +80,59 @@ export function TilesetProjectActions() {
 
   return (
     <>
-      <Button
-        variant='secondary'
-        disabled={!project}
-        onClick={() => void handleExport()}
+      <Popover
+        open={open}
+        onOpenChange={setOpen}
+        side='bottom'
+        align='end'
+        trigger={
+          <Button variant='secondary'>
+            <span>
+              <Trans>Projet</Trans>
+            </span>
+            <Icon name='ChevronDownIcon' />
+          </Button>
+        }
       >
-        <Trans>Exporter le projet</Trans>
-      </Button>
+        <div className={styles.menu}>
+          <Button
+            variant='secondary'
+            disabled={!project}
+            onClick={() => void handleExport()}
+          >
+            <Trans>Exporter le projet</Trans>
+          </Button>
+          <Button
+            variant='secondary'
+            onClick={() => {
+              setOpen(false)
+              importInput.current?.click()
+            }}
+          >
+            <Trans>Importer un projet</Trans>
+          </Button>
+          <Button
+            variant='secondary'
+            disabled={!sheet}
+            onClick={() => {
+              setOpen(false)
+              setSheet(null)
+            }}
+          >
+            <Trans>Changer d'image</Trans>
+          </Button>
+        </div>
+      </Popover>
 
-      {/* A plain file input rather than a drop zone: a project is picked once,
-          and the same control serves the keyboard. The input is hidden, not
-          removed — the label is its only affordance, and both are one control
-          to a screen reader. */}
-      <label className={styles.fileButton} htmlFor={importId}>
-        <Trans>Importer un projet</Trans>
-      </label>
+      {/* Outside the menu, which unmounts as it closes: the input has to
+          outlive it to hear the file the picker hands back. */}
       <input
-        id={importId}
+        ref={importInput}
         className={styles.fileInput}
         type='file'
         accept='application/json,.json'
+        aria-label={_(msg`Importer un projet`)}
+        tabIndex={-1}
         onChange={(event) => {
           const file = event.target.files?.[0]
           if (file) void handleImport(file)

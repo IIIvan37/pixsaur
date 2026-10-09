@@ -12,7 +12,8 @@ import {
 } from './validate-image-file'
 
 export type ImageUploadProps = {
-  onImageLoaded: (img: HTMLImageElement) => void
+  /** The file comes second, for a caller that names what it loaded. */
+  onImageLoaded: (img: HTMLImageElement, file: File) => void
 }
 
 /**
@@ -41,7 +42,7 @@ export const ImageUpload = memo(
           return
         }
 
-        onImageLoaded(img)
+        onImageLoaded(img, file)
       },
       [onImageLoaded, pushToast]
     )

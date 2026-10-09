@@ -67,7 +67,7 @@
    `align-self` applies to a fixed box too: left at `flex-start`, it would
    shrink the overlay to its content instead of spanning top to bottom. */
 @media (max-width: 1024px) {
-  .panel {
+  .panel:not(.inFlow) {
     position: fixed;
     top: 0;
     left: 0;
@@ -78,6 +78,16 @@
     border-radius: 0;
     z-index: 900;
   }
+}
+
+/* `stayDocked`: the host owns the size and the place, at every width. */
+.inFlow {
+  position: static;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  align-self: stretch;
+  box-shadow: none;
 }
 
 .container {

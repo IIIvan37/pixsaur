@@ -19,7 +19,8 @@ import {
   tilesetMapOptionsAtom,
   tilesetModeAtom,
   tilesetOptionsAtom,
-  tilesetSheetAtom
+  tilesetSheetAtom,
+  tilesetSheetNameAtom
 } from './tileset'
 
 const SHEET: Sheet = {
@@ -121,6 +122,33 @@ describe('captureTilesetProjectAtom', () => {
     store.set(tilesetEditLayerAtom, EDITS)
 
     expect(store.get(captureTilesetProjectAtom)?.edits).toEqual(EDITS)
+  })
+})
+
+describe('sheet name', () => {
+  it('carries the name of the file the sheet came from', () => {
+    const store = createStore()
+
+    store.set(setTilesetSheetAtom, SHEET, 'forest.png')
+
+    expect(store.get(captureTilesetProjectAtom)?.sheetName).toBe('forest.png')
+  })
+
+  it('puts the name back', () => {
+    const store = createStore()
+
+    store.set(restoreTilesetProjectAtom, projectOf({ sheetName: 'forest.png' }))
+
+    expect(store.get(tilesetSheetNameAtom)).toBe('forest.png')
+  })
+
+  it('drops the last name for a project that holds none', () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, SHEET, 'forest.png')
+
+    store.set(restoreTilesetProjectAtom, projectOf())
+
+    expect(store.get(tilesetSheetNameAtom)).toBeNull()
   })
 })
 

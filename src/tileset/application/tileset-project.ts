@@ -73,6 +73,12 @@ export interface TilesetProject extends TilesetConversionSubject {
   layout: TilesetLayout
   map: TilesetMapOptions
   /**
+   * The name of the file the sheet came from, shown in the workshop bar.
+   * Optional: a project written before it, or from a sheet nothing named,
+   * reads without one.
+   */
+  sheetName?: string
+  /**
    * Set by the migration that read the project, never written back: the next
    * save is a version 4 project with nothing left to say (S-Q7).
    */

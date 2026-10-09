@@ -18,3 +18,13 @@ import { EMPTY_EDIT_LAYER, type TilesetEditLayer } from '@/tileset'
  * the settings that do NOT move it.
  */
 export const tilesetEditLayerAtom = atom<TilesetEditLayer>(EMPTY_EDIT_LAYER)
+
+/**
+ * The tile the retouching panel is aimed at, by position in the sheet, or
+ * `null` while the user has not picked one (S-Q11).
+ *
+ * A position and not a unique tile: a click on the map or the sheet names a
+ * position, and the retouch reaches every position of the same tile. Here,
+ * beside the layer, because a new sheet drops both.
+ */
+export const selectedTileAtom = atom<number | null>(null)

@@ -4,7 +4,6 @@ import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useMemo, useState } from 'react'
 import {
-  excludeTilesetMergeAtom,
   renderedTilesetAtlasAtom,
   renderedTilesetMapAtom,
   selectedTileAtom,
@@ -23,9 +22,6 @@ import { useSheetCanvas } from './use-sheet-canvas'
 
 /** See-through, so the tile under the mark stays readable. */
 const HIGHLIGHT = 'rgba(255, 196, 0, 0.5)'
-
-/** How many merges are worth reading before the list stops informing. */
-const MERGES_SHOWN = 12
 
 /**
  * The cell whose tile a click aims the retouching at: the first cell of the
@@ -82,7 +78,6 @@ export function TilesetMapView() {
     tilesetMapOptionsAtom
   )
   const setMapOptions = useSetAtom(setTilesetMapOptionsAtom)
-  const exclude = useSetAtom(excludeTilesetMergeAtom)
   const [comparing, setComparing] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
 
@@ -173,6 +168,7 @@ export function TilesetMapView() {
         <div className={styles.buttons}>
           <Button
             variant='secondary'
+            disabled={selected === null}
             onClick={() => setMapOptions({ emptyTile: selected })}
           >
             <Trans>Vider la tuile de la case sélectionnée</Trans>
@@ -207,31 +203,6 @@ export function TilesetMapView() {
             }
           />
         </div>
-        {map.merges.length > 0 && (
-          <section className={styles.suggestions}>
-            <h2 className={styles.subtitle}>
-              <Trans>Fusions, les plus lointaines en tête</Trans>
-            </h2>
-            <ul className={styles.candidates}>
-              {[...map.merges]
-                .sort((a, b) => b.distance - a.distance)
-                .slice(0, MERGES_SHOWN)
-                .map((merge) => (
-                  <li key={`${merge.absorbed}:${merge.survivor}`}>
-                    {/* Cells numbered from 1, like the map's GIDs. */}
-                    <span>
-                      {`#${merge.absorbed + 1} → #${merge.survivor + 1} · `}
-                      <Trans>écart</Trans>
-                      {` ${Math.round(merge.distance)}`}
-                    </span>
-                    <Button variant='secondary' onClick={() => exclude(merge)}>
-                      <Trans>Garder à part</Trans>
-                    </Button>
-                  </li>
-                ))}
-            </ul>
-          </section>
-        )}
       </TabsContent>
 
       <TabsContent value='tileset'>

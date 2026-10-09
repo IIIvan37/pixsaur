@@ -1,50 +1,47 @@
 /**
- * The tileset workshop (Q6 · Q32 · Q34).
+ * The tileset workshop (Q6 · Q32 · Q34), laid out around a stage (S-Q8).
  *
  * Its own panels over its own atom space; it shares the CPC hardware notion
  * and the palette strategies with the image workshop, and nothing else — no
  * rasters, no Mode R, no EGX, no screen dimensions, no crop.
- * See `docs/features/PLAN-tileset-workshop.md`.
+ * See `docs/features/PLAN-tileset-workshop.md` and
+ * `docs/features/PLAN-tileset-stage.md`.
  *
- * The layout is the image workshop's, deliberately: one card over the CRT
- * veil, an action bar of rare actions and a live readout, then the workspace —
- * the settings docked on the left, the sheet and the result in two columns
- * that grow. Settings never share the flow with what they act on, which is
- * what made the panels look thrown about when they all wrapped together.
+ * One card over the CRT veil, the height of the window: a bar of what is open
+ * and what can be done with it, then three columns — the settings on the
+ * left, the stage in the middle, the inspector on the right — each scrolling
+ * on its own. Below 860 px they stack and the page scrolls.
  */
 
-import { TilesetEditPanel } from './tileset-edit-panel'
-import { TilesetInfoBar } from './tileset-info-bar'
-import { TilesetProjectActions } from './tileset-project-actions'
-import { TilesetResultPanel } from './tileset-result-panel'
-import {
-  TilesetSettingsButton,
-  TilesetSettingsDock
-} from './tileset-settings-dock'
-import { TilesetSourcePanel } from './tileset-source-panel'
+import { useAtomValue } from 'jotai'
+import { tilesetSettingsOpenAtom } from '@/app/store/tileset/tileset'
+import { TilesetInspector } from './tileset-inspector'
+import { TilesetSettingsDock } from './tileset-settings-dock'
+import { TilesetStage } from './tileset-stage'
 import styles from './tileset-workshop.module.css'
+import { TilesetWorkshopBar } from './tileset-workshop-bar'
+import { useFillWindow } from './use-fill-window'
 
 export default function TilesetWorkshop() {
+  const settingsOpen = useAtomValue(tilesetSettingsOpenAtom)
+  const fillWindow = useFillWindow()
+
   return (
     <div className={styles.workshop}>
-      <div className={styles.card}>
-        <div className={styles.actions}>
-          <TilesetSettingsButton />
-          <TilesetProjectActions />
-          <TilesetInfoBar />
-        </div>
+      <div ref={fillWindow} className={styles.card}>
+        <TilesetWorkshopBar />
 
-        <div className={styles.workspace}>
-          <TilesetSettingsDock />
-
-          <div className={styles.column}>
-            <TilesetSourcePanel />
-          </div>
-
-          <div className={styles.column}>
-            <TilesetResultPanel />
-            <TilesetEditPanel />
-          </div>
+        <div
+          className={styles.workspace}
+          data-settings={settingsOpen ? 'open' : 'closed'}
+        >
+          {settingsOpen && (
+            <div className={styles.settings}>
+              <TilesetSettingsDock />
+            </div>
+          )}
+          <TilesetStage />
+          <TilesetInspector />
         </div>
       </div>
     </div>

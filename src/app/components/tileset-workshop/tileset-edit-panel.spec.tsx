@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
   editedTilesetAtom,
+  selectedTileAtom,
   setTilesetSheetAtom
 } from '@/app/store/tileset/tileset'
 import type { Sheet } from '@/libs/pixsaur-tileset'
@@ -33,10 +34,11 @@ function sheetOfRepeatedColours(): Sheet {
   return { width, height: 8, data }
 }
 
-/** A store holding the sheet the panel needs to show anything. */
+/** A store holding the sheet the panel needs, and its first tile picked. */
 function storeWithSheet() {
   const store = createStore()
   store.set(setTilesetSheetAtom, sheetOfRepeatedColours())
+  store.set(selectedTileAtom, 0)
   return store
 }
 
@@ -52,6 +54,24 @@ describe('TilesetEditPanel', () => {
     renderWithProviders(<TilesetEditPanel />)
 
     expect(screen.queryByRole('heading', { name: /Retouche/i })).toBeNull()
+  })
+
+  it('asks for a tile while none is picked', () => {
+    const store = storeWithSheet()
+    store.set(selectedTileAtom, null)
+
+    renderWithProviders(<TilesetEditPanel />, { store })
+
+    expect(screen.getByText(/numéro de la tuile à retoucher/i)).toBeVisible()
+  })
+
+  it('shows no pixel to paint while no tile is picked', () => {
+    const store = storeWithSheet()
+    store.set(selectedTileAtom, null)
+
+    renderWithProviders(<TilesetEditPanel />, { store })
+
+    expect(screen.queryByRole('button', { name: /Pixel 0, 0/i })).toBeNull()
   })
 
   it('paints the chosen pen into the clicked pixel', async () => {

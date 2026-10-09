@@ -7,6 +7,7 @@ import {
   paintTilesetAtom,
   selectedPenAtom,
   selectedTileAtom,
+  tilesetLayoutAtom,
   tilesetTargetAtom
 } from '@/app/store/tileset/tileset'
 import Input from '@/components/ui/input/input'
@@ -34,12 +35,53 @@ export function TilesetEditPanel() {
   const [selected, setSelected] = useAtom(selectedTileAtom)
   const [pen, setPen] = useAtom(selectedPenAtom)
   const paint = useSetAtom(paintTilesetAtom)
+  const layout = useAtomValue(tilesetLayoutAtom)
 
   if (!result?.ok) return null
 
   const { tileset } = result
-  // The selection outlives the sheet it was made on; a shorter one clamps it.
-  const tile = Math.min(Math.max(selected, 0), tileset.tiles.length - 1)
+  // The selection outlives the grid it was made on; a shorter one clamps it.
+  const tile =
+    selected === null
+      ? null
+      : Math.min(Math.max(selected, 0), tileset.tiles.length - 1)
+
+  const numberField = (
+    <Input
+      compact
+      label={_(msg`Tuile`)}
+      type='number'
+      min={0}
+      max={tileset.tiles.length - 1}
+      value={tile === null ? '' : String(tile)}
+      onChange={(event) =>
+        setSelected(
+          event.target.value === '' ? null : Number(event.target.value)
+        )
+      }
+    />
+  )
+
+  // S-Q11: nothing picked yet, so the panel says how to pick. Only the map
+  // takes a click for now; the sheet does from S7 on.
+  if (tile === null) {
+    return (
+      <Panel>
+        <Header title={<Trans>Retouche</Trans>} />
+        <p className={styles.note}>
+          {layout === 'map' ? (
+            <Trans>
+              Cliquez une case de la map pour choisir la tuile à retoucher.
+            </Trans>
+          ) : (
+            <Trans>Donnez le numéro de la tuile à retoucher.</Trans>
+          )}
+        </p>
+        <div className={styles.fields}>{numberField}</div>
+      </Panel>
+    )
+  }
+
   const indices = tileset.tiles[tile].indices
   const instances = tileset.instanceOf.filter(
     (of) => of === tileset.instanceOf[tile]
@@ -50,15 +92,7 @@ export function TilesetEditPanel() {
       <Header title={<Trans>Retouche</Trans>} />
 
       <div className={styles.fields}>
-        <Input
-          compact
-          label={_(msg`Tuile`)}
-          type='number'
-          min={0}
-          max={tileset.tiles.length - 1}
-          value={String(tile)}
-          onChange={(event) => setSelected(Number(event.target.value))}
-        />
+        {numberField}
 
         <div className={styles.field}>
           <span className={styles.label}>

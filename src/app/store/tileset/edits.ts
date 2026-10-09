@@ -71,13 +71,5 @@ export const paintTilesetAtom = atom(
   }
 )
 
-/**
- * The tile the retouching panel is aimed at, by position in the sheet.
- *
- * A position and not a unique tile: a click on the map or the sheet names a
- * position, and the retouch reaches every position of the same tile.
- */
-export const selectedTileAtom = atom(0)
-
 /** The pen the brush lays down — an index into the frozen palette (Q19). */
 export const selectedPenAtom = atom(0)

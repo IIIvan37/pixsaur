@@ -20,14 +20,13 @@ export {
   thawTilesetPaletteAtom,
   tilesetConversionInputAtom
 } from './conversion'
-export { tilesetEditLayerAtom } from './edit-layer'
+export { selectedTileAtom, tilesetEditLayerAtom } from './edit-layer'
 export {
   editedTilesetAtom,
   type PaintTilesetPayload,
   paintTilesetAtom,
   renderedTilesetSheetAtom,
-  selectedPenAtom,
-  selectedTileAtom
+  selectedPenAtom
 } from './edits'
 export {
   setTilesetTargetAtom,
@@ -67,6 +66,7 @@ export {
   reduceTilesetSheetAtom,
   setTilesetSheetAtom,
   tilesetSheetAtom,
-  tilesetSheetInspectionAtom
+  tilesetSheetInspectionAtom,
+  tilesetSheetNameAtom
 } from './sheet'
 export { tilesetSettingsOpenAtom } from './ui'

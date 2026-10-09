@@ -3,63 +3,145 @@
 }
 
 /* La carte de l'atelier image, aux mêmes valeurs : c'est elle qui pose les
-   panneaux sur une surface et les tient au-dessus du voile CRT. */
+   colonnes sur une surface et les tient au-dessus du voile CRT. Elle descend
+   jusqu'au bas de la fenêtre (S-Q8) ; `--fill-top` vient de `useFillWindow`. */
 .card {
   position: relative;
   z-index: 10;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 1rem;
+  height: max(36rem, calc(100dvh - var(--fill-top, 0px) - var(--spacing-lg)));
   background-color: rgba(0, 0, 0, 0.6);
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
 
-/* Barre d'action : les gestes rares à gauche, le relevé chiffré à droite. */
-.actions {
+/* Barre de l'atelier : ce qui est ouvert à gauche, les actions à droite. Les
+   messages du projet passent sur leur propre ligne (`flex-basis: 100%`). */
+.bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.75rem 1rem;
-  padding: 0.5rem 0;
-  flex-shrink: 0;
+  gap: 0.5rem 0.75rem;
 }
 
-.workspace {
+.identity {
   display: flex;
-  flex: 1;
-  gap: 1rem;
-  width: 100%;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--font-size-sm);
 }
 
-.column {
-  flex: 1;
+.fileName {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--color-foreground);
+}
+
+.layout {
+  color: var(--color-accentHover);
+}
+
+/* Les entrées de « Projet ▾ », l'une sous l'autre. */
+.menu {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+/* Trois colonnes : réglages 256 px, scène, inspecteur 304 px (S-Q8). */
+.workspace {
+  display: grid;
+  grid-template-columns: 256px minmax(0, 1fr) 304px;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.workspace[data-settings="closed"] {
+  grid-template-columns: minmax(0, 1fr) 304px;
+}
+
+.settings,
+.stage,
+.inspector {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Le dock défile lui-même, sous son en-tête et ses onglets. */
+.settings {
+  overflow: hidden;
+}
+
+.stage {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  overflow: auto;
+  padding: var(--spacing-md);
+  background-color: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-@media (max-width: 1200px) {
+/* La scène vide est la zone de dépôt (S-Q10). */
+.dropZone {
+  flex: 1;
+  display: grid;
+  place-items: center;
+}
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: auto;
+}
+
+@media (max-width: 1180px) {
   .workspace {
-    flex-wrap: wrap;
+    grid-template-columns: 256px minmax(0, 1fr) 272px;
   }
 
-  /* La colonne du résultat passe pleine largeur sous le dock et la planche. */
-  .workspace > .column:last-child {
-    flex-basis: 100%;
-    order: 3;
+  .workspace[data-settings="closed"] {
+    grid-template-columns: minmax(0, 1fr) 272px;
   }
 }
 
-@media (max-width: 768px) {
-  .workspace {
-    flex-direction: column;
-  }
-
+/* Une seule colonne qui défile avec la page : réglages en tête, 240 px au
+   plus, scène de 560 px, inspecteur dessous. */
+@media (max-width: 860px) {
   .card {
+    grid-template-rows: auto;
+    height: auto;
     padding: var(--spacing-sm);
+  }
+
+  .workspace,
+  .workspace[data-settings="closed"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings {
+    max-height: 240px;
+    overflow: auto;
+  }
+
+  .stage {
+    height: 560px;
+  }
+
+  .inspector {
+    overflow: visible;
   }
 }
 
@@ -74,52 +156,8 @@
   width: 100%;
 }
 
-.infoBar {
-  /* Poussé à droite de la barre d'action, comme le relevé de l'atelier image. */
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
-  background-color: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-}
-
-.infoItem {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.infoLabel {
-  color: var(--color-accentHover);
-  font-weight: 500;
-}
-
-.infoValue {
-  color: var(--color-foreground);
-  font-variant-numeric: tabular-nums;
-}
-
-/* L'entrée fichier reste dans le DOM — le libellé est sa seule prise, et les
-   deux ne font qu'un contrôle pour un lecteur d'écran. */
-.fileButton {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--spacing-xs) var(--spacing-md);
-  border: 1px solid var(--color-accentActive);
-  border-radius: var(--radius-md);
-  color: var(--color-accent);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.fileButton:hover {
-  color: var(--color-foreground);
-}
-
+/* L'entrée fichier de l'import reste dans le DOM, hors de vue : « Projet ▾ »
+   l'ouvre, et elle doit survivre au menu pour recevoir le fichier. */
 .fileInput {
   position: absolute;
   width: 1px;

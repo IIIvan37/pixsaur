@@ -10,17 +10,28 @@
 import { atom } from 'jotai'
 import { downscaleSheet, type Sheet } from '@/libs/pixsaur-tileset'
 import { EMPTY_EDIT_LAYER, inspectSheet, type SheetInspection } from '@/tileset'
-import { tilesetEditLayerAtom } from './edit-layer'
+import { selectedTileAtom, tilesetEditLayerAtom } from './edit-layer'
 
 /** The imported sheet, RGBA. `null` until the user drops a file. */
 export const tilesetSheetAtom = atom<Sheet | null>(null)
 
-/** Another sheet is another document: nothing painted on the last one holds. */
+/**
+ * The name of the file the sheet came from, for the workshop bar (S-Q8).
+ * `null` when nothing names it — no sheet yet, or a project saved without one.
+ */
+export const tilesetSheetNameAtom = atom<string | null>(null)
+
+/**
+ * Another sheet is another document: nothing painted on the last one holds,
+ * and no tile of it is picked.
+ */
 export const setTilesetSheetAtom = atom(
   null,
-  (_get, set, payload: Sheet | null) => {
+  (_get, set, payload: Sheet | null, name: string | null = null) => {
     set(tilesetSheetAtom, payload)
+    set(tilesetSheetNameAtom, payload ? name : null)
     set(tilesetEditLayerAtom, EMPTY_EDIT_LAYER)
+    set(selectedTileAtom, null)
   }
 )
 
@@ -34,12 +45,17 @@ export const tilesetSheetInspectionAtom = atom<SheetInspection | null>(
 
 /**
  * Undoes the whole factor the inspection found. The reduced image is another
- * sheet, so it goes through the same setter as an import.
+ * sheet, so it goes through the same setter as an import — under the same
+ * name: it is the same file, read at its own size.
  */
 export const reduceTilesetSheetAtom = atom(null, (get, set) => {
   const sheet = get(tilesetSheetAtom)
   const scale = get(tilesetSheetInspectionAtom)?.scale
   if (!sheet || !scale) return
 
-  set(setTilesetSheetAtom, downscaleSheet(sheet, scale))
+  set(
+    setTilesetSheetAtom,
+    downscaleSheet(sheet, scale),
+    get(tilesetSheetNameAtom)
+  )
 })
