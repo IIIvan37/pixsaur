@@ -63,7 +63,10 @@
     et le seuil de fusion.
   - Captures Playwright aux trois largeurs, dock ouvert et fermé : rien ne
     déborde.
-- **Prochaine action** : S3.
+- **Après S2** : une tuile de destination à 0 pixel plantait l'atelier ;
+  `convertTileset` la refuse (`empty-target`, `c998a65`). Le plantage signalé
+  avec une grille source vide n'a pas été reproduit.
+- **Prochaine action** : ouvrir la PR draft S1-S2, puis S3.
 
 ## Constat de départ
 
