@@ -1,8 +1,9 @@
 /**
  * The workshop's four settings, poured into the shared dock.
  *
- * Same shell as the image workshop's — 408 px, sticky, an overlay below the lg
- * breakpoint — so the converted sheet stays in view while the settings change.
+ * Same shell as the image workshop's, kept in its column at every width
+ * (`stayDocked`, S-Q8): the workshop sizes it, and never lays it over the
+ * stage.
  * The tabs follow the order the work takes: where the tiles are, how big they
  * become, which colours they get, how they are drawn.
  */
@@ -63,11 +64,12 @@ export function TilesetSettingsDock() {
       tabsLabel={_(msg`Onglets de réglages du tileset`)}
       closeLabel={_(msg`Fermer les réglages`)}
       tabs={tabs}
+      stayDocked
     />
   )
 }
 
-/** Reopens the dock — the counterpart of its close button, in the action bar. */
+/** Reopens the dock — the counterpart of its close button, in the workshop bar. */
 export function TilesetSettingsButton() {
   const [open, setOpen] = useAtom(tilesetSettingsOpenAtom)
 

@@ -7,7 +7,11 @@
  */
 
 import { atom } from 'jotai'
-import { TILESET_PROJECT_VERSION, type TilesetProject } from '@/tileset'
+import {
+  TILESET_PROJECT_VERSION,
+  type TilesetProject,
+  type TilesetProjectNotice
+} from '@/tileset'
 import {
   tilesetHardwareAtom,
   tilesetModeAtom,
@@ -18,7 +22,13 @@ import { tilesetEditLayerAtom } from './edit-layer'
 import { sourcePlatformAtom, tilesetTargetAtom } from './geometry'
 import { tilesetGridAtom } from './grid'
 import { tilesetLayoutAtom, tilesetMapOptionsAtom } from './map'
-import { tilesetSheetAtom } from './sheet'
+import { tilesetSheetAtom, tilesetSheetNameAtom } from './sheet'
+
+/**
+ * What the migration of the last project read has to tell the user (S-Q7).
+ * Never captured: the next save has nothing left to say, so it shows once.
+ */
+export const tilesetProjectNoticeAtom = atom<TilesetProjectNotice | null>(null)
 
 /** `null` until a sheet is imported: there is no document to save before. */
 export const captureTilesetProjectAtom = atom<TilesetProject | null>((get) => {
@@ -32,7 +42,8 @@ export const captureTilesetProjectAtom = atom<TilesetProject | null>((get) => {
     options: get(tilesetOptionsAtom),
     edits: get(tilesetEditLayerAtom),
     layout: get(tilesetLayoutAtom),
-    map: get(tilesetMapOptionsAtom)
+    map: get(tilesetMapOptionsAtom),
+    sheetName: get(tilesetSheetNameAtom) ?? undefined
   }
 })
 
@@ -49,6 +60,10 @@ export const restoreTilesetProjectAtom = atom(
   null,
   (_get, set, project: TilesetProject) => {
     set(tilesetSheetAtom, project.sheet)
+    set(
+      tilesetSheetNameAtom,
+      typeof project.sheetName === 'string' ? project.sheetName : null
+    )
     set(tilesetGridAtom, project.source)
     set(tilesetTargetAtom, project.target)
     set(tilesetModeAtom, project.mode)
@@ -58,5 +73,6 @@ export const restoreTilesetProjectAtom = atom(
     set(tilesetLayoutAtom, project.layout)
     set(tilesetMapOptionsAtom, project.map)
     set(tilesetEditLayerAtom, project.edits)
+    set(tilesetProjectNoticeAtom, project.notice ?? null)
   }
 )

@@ -2,59 +2,28 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { useEffect } from 'react'
 import {
   editedTilesetAtom,
   paintTilesetAtom,
-  redoTilesetEditAtom,
   selectedPenAtom,
   selectedTileAtom,
-  setTileDitherAtom,
-  tilesetEditLayerAtom,
-  tilesetOptionsAtom,
-  tilesetTargetAtom,
-  undoTilesetEditAtom
+  tilesetLayoutAtom,
+  tilesetTargetAtom
 } from '@/app/store/tileset/tileset'
-import Button from '@/components/ui/button'
 import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
 import { Panel } from '@/components/ui/layout/panel/panel'
-import { SelectItem } from '@/components/ui/select'
-import type { Pen, TileDither } from '@/tileset'
-import { LabelledSelect } from './tileset-labelled-select'
+import type { Pen } from '@/tileset'
 import styles from './tileset-workshop.module.css'
 
 const swatch = ([r, g, b]: Pen) => `rgb(${r} ${g} ${b})`
 
 /**
- * Ctrl+Z and Ctrl+Y, the shortcuts the buttons promise. The undo is linear and
- * global (Q31): one step back is one action, whichever tile carried it.
- */
-function useUndoShortcuts(undo: () => void, redo: () => void): void {
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!event.ctrlKey && !event.metaKey) return
-
-      const key = event.key.toLowerCase()
-      if (key === 'z' && !event.shiftKey) undo()
-      else if (key === 'y' || (key === 'z' && event.shiftKey)) redo()
-      else return
-
-      event.preventDefault()
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [undo, redo])
-}
-
-/**
- * The retouching of Q11 · Q19 · Q31.
+ * The retouching of Q11 · Q19.
  *
  * A pen is painted, never a colour: the palette is frozen and an edit is an
  * index into it, which is what lets the sheet be reconverted without losing
- * the work. Painting one tile reaches every instance the deduplication found,
- * and one Ctrl+Z steps back one action wherever it was made.
+ * the work. Painting one tile reaches every instance the deduplication found.
  *
  * One button per pixel: a 32 x 32 tile is 1024 of them, which the browser
  * takes in its stride and which keeps every pixel reachable at the keyboard.
@@ -63,21 +32,56 @@ export function TilesetEditPanel() {
   const { _ } = useLingui()
   const result = useAtomValue(editedTilesetAtom)
   const { tileWidth, tileHeight } = useAtomValue(tilesetTargetAtom)
-  const layer = useAtomValue(tilesetEditLayerAtom)
-  const options = useAtomValue(tilesetOptionsAtom)
-  const setTileDither = useSetAtom(setTileDitherAtom)
   const [selected, setSelected] = useAtom(selectedTileAtom)
   const [pen, setPen] = useAtom(selectedPenAtom)
   const paint = useSetAtom(paintTilesetAtom)
-  const undo = useSetAtom(undoTilesetEditAtom)
-  const redo = useSetAtom(redoTilesetEditAtom)
-  useUndoShortcuts(undo, redo)
+  const layout = useAtomValue(tilesetLayoutAtom)
 
   if (!result?.ok) return null
 
   const { tileset } = result
-  // The selection outlives the sheet it was made on; a shorter one clamps it.
-  const tile = Math.min(Math.max(selected, 0), tileset.tiles.length - 1)
+  // The selection outlives the grid it was made on; a shorter one clamps it.
+  const tile =
+    selected === null
+      ? null
+      : Math.min(Math.max(selected, 0), tileset.tiles.length - 1)
+
+  const numberField = (
+    <Input
+      compact
+      label={_(msg`Tuile`)}
+      type='number'
+      min={0}
+      max={tileset.tiles.length - 1}
+      value={tile === null ? '' : String(tile)}
+      onChange={(event) =>
+        setSelected(
+          event.target.value === '' ? null : Number(event.target.value)
+        )
+      }
+    />
+  )
+
+  // S-Q11: nothing picked yet, so the panel says how to pick. Only the map
+  // takes a click for now; the sheet does from S7 on.
+  if (tile === null) {
+    return (
+      <Panel>
+        <Header title={<Trans>Retouche</Trans>} />
+        <p className={styles.note}>
+          {layout === 'map' ? (
+            <Trans>
+              Cliquez une case de la map pour choisir la tuile à retoucher.
+            </Trans>
+          ) : (
+            <Trans>Donnez le numéro de la tuile à retoucher.</Trans>
+          )}
+        </p>
+        <div className={styles.fields}>{numberField}</div>
+      </Panel>
+    )
+  }
+
   const indices = tileset.tiles[tile].indices
   const instances = tileset.instanceOf.filter(
     (of) => of === tileset.instanceOf[tile]
@@ -88,15 +92,7 @@ export function TilesetEditPanel() {
       <Header title={<Trans>Retouche</Trans>} />
 
       <div className={styles.fields}>
-        <Input
-          compact
-          label={_(msg`Tuile`)}
-          type='number'
-          min={0}
-          max={tileset.tiles.length - 1}
-          value={String(tile)}
-          onChange={(event) => setSelected(Number(event.target.value))}
-        />
+        {numberField}
 
         <div className={styles.field}>
           <span className={styles.label}>
@@ -106,24 +102,6 @@ export function TilesetEditPanel() {
             {instances}
           </output>
         </div>
-
-        <LabelledSelect
-          label={_(msg`Tramage de la tuile`)}
-          value={options.ditherByTile?.[tile] ?? 'sheet'}
-          onValueChange={(value) =>
-            setTileDither({
-              tile,
-              dither: value === 'sheet' ? null : (value as TileDither)
-            })
-          }
-        >
-          <SelectItem value='sheet'>{_(msg`Comme la planche`)}</SelectItem>
-          <SelectItem value='none'>{_(msg`Aucun`)}</SelectItem>
-          <SelectItem value='ordered'>{_(msg`Ordonné (Bayer)`)}</SelectItem>
-          <SelectItem value='diffusion'>
-            {_(msg`Diffusion d'erreur`)}
-          </SelectItem>
-        </LabelledSelect>
       </div>
 
       <div className={styles.pens}>
@@ -167,18 +145,6 @@ export function TilesetEditPanel() {
             )
           })}
         </div>
-      </div>
-
-      <div className={styles.buttons}>
-        <Button disabled={layer.at < 0} onClick={() => undo()}>
-          <Trans>Annuler (Ctrl+Z)</Trans>
-        </Button>
-        <Button
-          disabled={layer.at >= layer.strokes.length - 1}
-          onClick={() => redo()}
-        >
-          <Trans>Refaire (Ctrl+Y)</Trans>
-        </Button>
       </div>
 
       <p className={styles.note}>

@@ -30,18 +30,6 @@ describe('penTables', () => {
     expect(mix.primary[0]).toBe(0)
   })
 
-  it('reports how far a colour had to travel to reach its pen', () => {
-    const { error } = tablesOf([[10]], [[0]])
-
-    expect([...error]).toEqual([10])
-  })
-
-  it('charges a colour a pen carries exactly nothing', () => {
-    const { error } = tablesOf([[10]], [[10], [0]])
-
-    expect(error[0]).toBe(0)
-  })
-
   it('names the second nearest pen as the other half of the mixture', () => {
     const { mix } = tablesOf([[10]], [[0], [100], [12]])
 

@@ -24,7 +24,6 @@ function tilesetOfTwoTiles(
     instanceOf: [0, 1],
     unique: [0, 1],
     transparentPen,
-    collisions: [],
     resizeSearch: null
   }
 }

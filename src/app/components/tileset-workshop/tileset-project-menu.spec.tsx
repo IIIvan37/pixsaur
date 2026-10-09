@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
+  restoreTilesetProjectAtom,
   setTilesetSheetAtom,
   tilesetGridAtom,
   tilesetSheetAtom
@@ -13,7 +14,7 @@ import {
   TILESET_PROJECT_VERSION,
   type TilesetProject
 } from '@/tileset'
-import { TilesetProjectActions } from './tileset-project-actions'
+import { TilesetProjectMenu } from './tileset-project-menu'
 
 const sink = vi.hoisted(() => ({ save: vi.fn(async () => true) }))
 
@@ -40,12 +41,15 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
     hardware: 'classic',
     sourcePlatform: 'nes-ntsc',
     options: { resize: 'columns' },
-    edits: { strokes: [], at: -1 },
+    edits: {},
     layout: 'sheet',
     map: { budget: 256 },
     ...overrides
   }
 }
+
+const openMenu = () =>
+  userEvent.click(screen.getByRole('button', { name: /Projet/ }))
 
 function fileOf(content: string): File {
   return new File([content], 'project.json', { type: 'application/json' })
@@ -55,9 +59,11 @@ beforeEach(() => {
   sink.save.mockClear()
 })
 
-describe('TilesetProjectActions', () => {
-  it('has nothing to export before a sheet is imported', () => {
-    renderWithProviders(<TilesetProjectActions />, { store: createStore() })
+describe('TilesetProjectMenu', () => {
+  it('has nothing to export before a sheet is imported', async () => {
+    renderWithProviders(<TilesetProjectMenu />, { store: createStore() })
+
+    await openMenu()
 
     expect(screen.getByRole('button', { name: /Exporter/ })).toBeDisabled()
   })
@@ -65,7 +71,8 @@ describe('TilesetProjectActions', () => {
   it('exports the project as a file', async () => {
     const store = createStore()
     store.set(setTilesetSheetAtom, sheetOfOneTile())
-    renderWithProviders(<TilesetProjectActions />, { store })
+    renderWithProviders(<TilesetProjectMenu />, { store })
+    await openMenu()
 
     await userEvent.click(screen.getByRole('button', { name: /Exporter/ }))
 
@@ -77,7 +84,7 @@ describe('TilesetProjectActions', () => {
 
   it('puts an imported project back in the workshop', async () => {
     const store = createStore()
-    renderWithProviders(<TilesetProjectActions />, { store })
+    renderWithProviders(<TilesetProjectMenu />, { store })
 
     await userEvent.upload(
       screen.getByLabelText(/Importer/),
@@ -89,7 +96,7 @@ describe('TilesetProjectActions', () => {
 
   it('says so when the file is not a project', async () => {
     const store = createStore()
-    renderWithProviders(<TilesetProjectActions />, { store })
+    renderWithProviders(<TilesetProjectMenu />, { store })
 
     await userEvent.upload(screen.getByLabelText(/Importer/), fileOf('nope'))
 
@@ -98,11 +105,59 @@ describe('TilesetProjectActions', () => {
 
   it('leaves the workshop untouched when the file is refused', async () => {
     const store = createStore()
-    renderWithProviders(<TilesetProjectActions />, { store })
+    renderWithProviders(<TilesetProjectMenu />, { store })
 
     await userEvent.upload(screen.getByLabelText(/Importer/), fileOf('nope'))
 
     await screen.findByRole('alert')
     expect(store.get(tilesetSheetAtom)).toBeNull()
+  })
+
+  it('has no image to change before a sheet is imported', async () => {
+    renderWithProviders(<TilesetProjectMenu />, { store: createStore() })
+
+    await openMenu()
+
+    expect(
+      screen.getByRole('button', { name: /Changer d'image/ })
+    ).toBeDisabled()
+  })
+
+  it('takes the workshop back to the drop zone on another image', async () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, sheetOfOneTile())
+    renderWithProviders(<TilesetProjectMenu />, { store })
+    await openMenu()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /Changer d'image/ })
+    )
+
+    expect(store.get(tilesetSheetAtom)).toBeNull()
+  })
+
+  it('says once that the per-tile dithering is gone', () => {
+    const store = createStore()
+    store.set(
+      restoreTilesetProjectAtom,
+      projectOf({ notice: 'tile-dither-dropped' })
+    )
+
+    renderWithProviders(<TilesetProjectMenu />, { store })
+
+    expect(screen.getByRole('status')).toHaveTextContent(/tuile par tuile/)
+  })
+
+  it('puts the notice away once read', async () => {
+    const store = createStore()
+    store.set(
+      restoreTilesetProjectAtom,
+      projectOf({ notice: 'tile-dither-dropped' })
+    )
+    renderWithProviders(<TilesetProjectMenu />, { store })
+
+    await userEvent.click(screen.getByRole('button', { name: /Compris/ }))
+
+    expect(screen.queryByRole('status')).toBeNull()
   })
 })

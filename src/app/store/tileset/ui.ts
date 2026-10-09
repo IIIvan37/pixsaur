@@ -6,9 +6,17 @@
  * the first step, not an afterthought.
  */
 
+import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
 export const tilesetSettingsOpenAtom = atomWithStorage(
   'tileset-settings-open',
   true
 )
+
+/**
+ * The stage's zoom (S-Q13): « Ajuster », or a factor the user picked. One
+ * zoom for every view of the stage. Not remembered: a new image starts
+ * fitted.
+ */
+export const tilesetStageZoomAtom = atom<'fit' | number>('fit')

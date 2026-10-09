@@ -3,16 +3,12 @@ import type { Sheet } from '@/libs/pixsaur-tileset'
 import {
   editedTilesetAtom,
   paintTilesetAtom,
-  redoTilesetEditAtom,
   renderedTilesetSheetAtom,
-  setTileDitherAtom,
   setTilesetGridAtom,
   setTilesetModeAtom,
   setTilesetSheetAtom,
   setTilesetTargetAtom,
-  tilesetEditLayerAtom,
-  tilesetOptionsAtom,
-  undoTilesetEditAtom
+  tilesetEditLayerAtom
 } from './tileset'
 
 /** Four colours over eight solid 8 x 8 tiles: every tile has a twin. */
@@ -67,7 +63,7 @@ describe('tileset edit layer atoms', () => {
 
     store.set(paintTilesetAtom, { tile: 0, pixels: [{ x: 0, y: 0 }], pen: 3 })
 
-    expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
+    expect(store.get(tilesetEditLayerAtom)).toEqual({})
   })
 
   it('shows the painted pen in the converted sheet', () => {
@@ -83,29 +79,13 @@ describe('tileset edit layer atoms', () => {
   })
 
   it('redraws the sheet so it carries the stroke', () => {
-    const store = painted()
-    const edited = pixelsOf(store)
+    const store = createStore()
+    store.set(setTilesetSheetAtom, sheetOfRepeatedColours())
+    const before = pixelsOf(store)
 
-    store.set(undoTilesetEditAtom)
+    store.set(paintTilesetAtom, { tile: 0, pixels: [{ x: 0, y: 0 }], pen: 3 })
 
-    expect(edited).not.toEqual(pixelsOf(store))
-  })
-
-  it('undoes the last stroke', () => {
-    const store = painted()
-
-    store.set(undoTilesetEditAtom)
-
-    expect(penAt(store, 0)).not.toBe(3)
-  })
-
-  it('redoes the undone stroke', () => {
-    const store = painted()
-
-    store.set(undoTilesetEditAtom)
-    store.set(redoTilesetEditAtom)
-
-    expect(penAt(store, 0)).toBe(3)
+    expect(pixelsOf(store)).not.toEqual(before)
   })
 
   it('forgets the edits when the cutting grid moves', () => {
@@ -113,7 +93,7 @@ describe('tileset edit layer atoms', () => {
 
     store.set(setTilesetGridAtom, { margin: 1 })
 
-    expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
+    expect(store.get(tilesetEditLayerAtom)).toEqual({})
   })
 
   it('forgets the edits when the destination tile changes', () => {
@@ -121,7 +101,7 @@ describe('tileset edit layer atoms', () => {
 
     store.set(setTilesetTargetAtom, { tileWidth: 4 })
 
-    expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
+    expect(store.get(tilesetEditLayerAtom)).toEqual({})
   })
 
   it('forgets the edits when another sheet is imported', () => {
@@ -129,7 +109,7 @@ describe('tileset edit layer atoms', () => {
 
     store.set(setTilesetSheetAtom, sheetOfRepeatedColours())
 
-    expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
+    expect(store.get(tilesetEditLayerAtom)).toEqual({})
   })
 
   it('forgets the edits when the mode changes', () => {
@@ -137,19 +117,6 @@ describe('tileset edit layer atoms', () => {
 
     store.set(setTilesetModeAtom, 1)
 
-    expect(store.get(tilesetEditLayerAtom).strokes).toHaveLength(0)
-  })
-
-  // The fan-out itself is tested on the use-case; what this asserts is that
-  // the atom hands it the `instanceOf` the conversion produced.
-  it('overrules the dithering on every instance of the tile', () => {
-    const store = painted()
-
-    store.set(setTileDitherAtom, { tile: 0, dither: 'ordered' })
-
-    expect(store.get(tilesetOptionsAtom).ditherByTile).toEqual({
-      0: 'ordered',
-      [COLOURS.length]: 'ordered'
-    })
+    expect(store.get(tilesetEditLayerAtom)).toEqual({})
   })
 })

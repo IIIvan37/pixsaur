@@ -290,6 +290,34 @@ describe('convertTileset', () => {
     expect(result.ok && result.tileset.palette.length).toBe(12)
   })
 
+  // An emptied field reads 0: a tile of no pixel has nothing to convert.
+  it('refuses a destination tile of no width', () => {
+    const result = convertTileset({
+      ...input,
+      target: { tileWidth: 0, tileHeight: 8 }
+    })
+
+    expect(result.ok === false && result.error).toBe('empty-target')
+  })
+
+  it('refuses a destination tile of no height', () => {
+    const result = convertTileset({
+      ...input,
+      target: { tileWidth: 4, tileHeight: 0 }
+    })
+
+    expect(result.ok === false && result.error).toBe('empty-target')
+  })
+
+  it('refuses a source grid of negative width', () => {
+    const result = convertTileset({
+      ...input,
+      source: { tileWidth: -8, tileHeight: 8 }
+    })
+
+    expect(result.ok === false && result.error).toBe('grid-mismatch')
+  })
+
   it('refuses a reservation that leaves the tileset no pen at all', () => {
     const result = convertTileset({ ...input, mode: 1, reservedPens: 4 })
 
@@ -370,33 +398,6 @@ describe('convertTileset', () => {
     const result = convertTileset({ ...input, sheet: sheetWithHole() })
 
     expect(result.ok && result.tileset.tiles[1].indices[0]).not.toBe(0)
-  })
-
-  it('blames no tile when every colour got a pen of its own', () => {
-    const result = convertTileset(input)
-
-    expect(result.ok && result.tileset.collisions.map((c) => c.error)).toEqual([
-      0, 0
-    ])
-  })
-
-  it('blames the tiles a short palette hurt', () => {
-    const result = convertTileset({
-      ...input,
-      sheet: sheetOfSolidTiles(8, [RED, BLUE, [0, 255, 0]]),
-      mode: 2
-    })
-
-    expect(result.ok && result.tileset.collisions[0].error).toBeGreaterThan(0)
-  })
-
-  it('ranks only the distinct tiles, since editing one reaches them all', () => {
-    const result = convertTileset({
-      ...input,
-      sheet: sheetOfSolidTiles(8, [RED, BLUE, RED])
-    })
-
-    expect(result.ok && result.tileset.collisions.length).toBe(2)
   })
 
   it('uses the frozen palette it was handed instead of choosing one', () => {
@@ -527,16 +528,6 @@ describe('convertTileset', () => {
     expect(
       pensUsed(convertTileset({ ...halfway, dither: 'diffusion' }), 2)
     ).toHaveLength(2)
-  })
-
-  it('lets one tile refuse the dithering the sheet asked for', () => {
-    const result = convertTileset({
-      ...halfway,
-      dither: 'ordered',
-      ditherByTile: { 2: 'none' }
-    })
-
-    expect(pensUsed(result, 2)).toHaveLength(1)
   })
 
   it('dithers two copies of a tile the same way, wherever they sit', () => {

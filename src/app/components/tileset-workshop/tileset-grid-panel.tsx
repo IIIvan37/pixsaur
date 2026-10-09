@@ -17,6 +17,7 @@ import Input from '@/components/ui/input/input'
 import { Header } from '@/components/ui/layout/header/header'
 import { ToggleButtonGroup } from '@/components/ui/toggle-button-group'
 import type { TilesetLayout } from '@/tileset'
+import { TilesetSourceChecks } from './tileset-source-checks'
 import { TileSuggestions } from './tileset-suggestions'
 import styles from './tileset-workshop.module.css'
 
@@ -51,6 +52,8 @@ export function TilesetGridPanel() {
   return (
     <section className={styles.tab}>
       <Header title={<Trans>Grille source</Trans>} />
+
+      <TilesetSourceChecks />
 
       {/* A sheet keeps every tile where it sits; a map keeps each distinct
           tile once and remembers which cell shows it (M-Q1). */}
