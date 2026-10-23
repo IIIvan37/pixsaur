@@ -1,135 +1,91 @@
 /**
- * The edit layer of Q11 · Q19 · Q31: painting pens over a converted tileset.
+ * The edit layer of Q11 · Q19 · S-Q6: painting pens over a converted tileset.
  *
  * Pure, synchronous, total. Nothing is written into the converted tiles — the
- * edits are kept apart and replayed over them, because the palette is global
- * and the next requantization would otherwise throw the work away. Painting
- * one tile reaches every instance the deduplication found.
- * See `docs/features/PLAN-tileset-workshop.md`.
+ * edits are kept apart and laid over them, because the palette is global and
+ * the next requantization would otherwise throw the work away. Painting one
+ * tile reaches every instance the deduplication found.
+ * See `docs/features/PLAN-tileset-stage.md`.
  */
 
-import { type Point, paintPixels } from '@/editor/application/paint-pixels'
-import type { Clock } from '@/editor/application/ports'
-import { MAX_HISTORY_SIZE, type PixelEdit } from '@/editor/application/types'
+import type { Point } from '@/editor/application/paint-pixels'
 import type { TileGrid } from '@/libs/pixsaur-tileset'
 import type { ConvertedTileset } from './convert-tileset'
 
 /**
- * One undoable action: the pixels it painted, and every tile position it
- * reached. The edits are listed once rather than per tile — the instances of a
- * group hold the same pixels, so the same strokes land identically on each.
+ * The pens painted over the sheet: for each tile position, the pen each
+ * painted pixel holds, keyed by `y * tileWidth + x`.
+ *
+ * A table of what the pixels hold, not a list of what the brush did (S-Q6):
+ * its size is bounded by the sheet, never by the number of strokes, so no
+ * retouch is ever dropped to make room for a later one. Plain objects, so the
+ * project writes it as JSON as it stands.
  */
-export interface TileStroke {
-  /** Positions the stroke reached: an instance group of Q11, in sheet order. */
-  tiles: number[]
-  edits: PixelEdit[]
-  timestamp: number
-}
+export type TilesetEditLayer = Readonly<
+  Record<number, Readonly<Record<number, number>>>
+>
 
-/**
- * The edits, in the order they were made, plus how far along the undo cursor
- * stands (Q31). Linear and global: one Ctrl+Z steps back one action, whichever
- * tile it touched.
- */
-export interface TilesetEditLayer {
-  strokes: TileStroke[]
-  /** Index of the last stroke applied; -1 when nothing is. */
-  at: number
-}
-
-export const EMPTY_EDIT_LAYER: TilesetEditLayer = { strokes: [], at: -1 }
+export const EMPTY_EDIT_LAYER: TilesetEditLayer = {}
 
 export interface PaintTilesetInput {
-  /** The tileset as it is shown — the layer already replayed over it. */
+  /** The tileset as it is shown — the layer already laid over it. */
   tileset: ConvertedTileset
   shape: TileGrid
   layer: TilesetEditLayer
   /** Position of the tile being painted, in the sheet. */
   tile: number
-  /** Target pixels, in tile coordinates. */
   pixels: Point[]
-  /** The pen to paint. An index into the frozen palette, never an RGB (Q19). */
+  /** Index into the frozen palette. */
   pen: number
 }
 
-export interface PaintTilesetDeps {
-  clock: Clock
-}
-
-/** The positions holding the same tile as `tile`, itself included. */
+/** The positions sharing the tile's group, the tile itself included. */
 function instancesOf(tileset: ConvertedTileset, tile: number): number[] {
   const group = tileset.instanceOf[tile]
   return tileset.instanceOf.flatMap((of, at) => (of === group ? [at] : []))
 }
 
-export function paintTileset(
-  input: PaintTilesetInput,
-  deps: PaintTilesetDeps
-): TilesetEditLayer {
-  const { tileset, shape, layer, tile, pixels, pen } = input
-  // The palette is frozen and an edit is a pen INDEX: a pen the palette has
-  // not got would repaint itself the next time the sheet is converted.
-  if (pen < 0 || pen >= tileset.palette.length) return layer
-
-  const { changed, edits } = paintPixels(
-    {
-      buffer: tileset.tiles[tile].indices,
-      width: shape.tileWidth,
-      height: shape.tileHeight,
-      selectedInk: pen,
-      egxConfig: null,
-      pixels,
-      entryType: 'region',
-      expandLowResGroups: false,
-      history: [],
-      historyIndex: -1
-    },
-    deps
-  )
-
-  if (!changed) return layer
-
-  const stroke: TileStroke = {
-    tiles: instancesOf(tileset, tile),
-    edits,
-    timestamp: deps.clock.now()
-  }
-
-  return push(layer, stroke)
-}
-
 /**
- * Appends a stroke, dropping whatever the undo cursor had left behind: once a
- * new action is taken, the redone future is gone. Same cap as the image
- * editor, so the two workshops forget at the same depth.
+ * Writes `pen` over `pixels` on every instance of `tile`. The positions are
+ * the ones the deduplication grouped at the moment of painting.
+ *
+ * Returns `layer` itself when nothing would change: a pen the palette has not
+ * got, pixels outside the tile, or pixels that already hold the pen.
  */
-function push(layer: TilesetEditLayer, stroke: TileStroke): TilesetEditLayer {
-  const strokes = [...layer.strokes.slice(0, layer.at + 1), stroke]
-  if (strokes.length > MAX_HISTORY_SIZE) strokes.shift()
+export function paintTileset({
+  tileset,
+  shape,
+  layer,
+  tile,
+  pixels,
+  pen
+}: PaintTilesetInput): TilesetEditLayer {
+  const indices = tileset.tiles[tile]?.indices
+  if (!indices || pen < 0 || pen >= tileset.palette.length) return layer
 
-  return { strokes, at: strokes.length - 1 }
-}
+  const painted = pixels
+    .filter(
+      ({ x, y }) =>
+        x >= 0 && x < shape.tileWidth && y >= 0 && y < shape.tileHeight
+    )
+    .map(({ x, y }) => y * shape.tileWidth + x)
+    .filter((at) => indices[at] !== pen)
+  if (painted.length === 0) return layer
 
-/** Steps the cursor back one action, whichever tile it had touched (Q31). */
-export function undoTilesetEdits(layer: TilesetEditLayer): TilesetEditLayer {
-  if (layer.at < 0) return layer
-
-  return { ...layer, at: layer.at - 1 }
-}
-
-/** Steps the cursor forward, up to the last action taken. */
-export function redoTilesetEdits(layer: TilesetEditLayer): TilesetEditLayer {
-  if (layer.at >= layer.strokes.length - 1) return layer
-
-  return { ...layer, at: layer.at + 1 }
+  const next: Record<number, Readonly<Record<number, number>>> = { ...layer }
+  for (const position of instancesOf(tileset, tile)) {
+    const pens = { ...next[position] }
+    for (const at of painted) pens[at] = pen
+    next[position] = pens
+  }
+  return next
 }
 
 /**
- * Replays the layer over the converted tiles (Q19).
+ * Lays the layer over the converted tiles (Q19).
  *
  * The conversion output is never mutated: the edits are laid over a copy, so
- * changing a setting reconverts from the source and the work survives. Only
- * the strokes up to the undo cursor are laid down.
+ * changing a setting reconverts from the source and the work survives.
  *
  * `instanceOf` is kept as the conversion found it, not recomputed on the
  * edited tiles: the edit link says "these were the same tile", and letting it
@@ -137,24 +93,19 @@ export function redoTilesetEdits(layer: TilesetEditLayer): TilesetEditLayer {
  */
 export function applyTilesetEdits(
   tileset: ConvertedTileset,
-  layer: TilesetEditLayer,
-  shape: TileGrid
+  layer: TilesetEditLayer
 ): ConvertedTileset {
-  const strokes = layer.strokes.slice(0, layer.at + 1)
-  if (strokes.length === 0) return tileset
+  const positions = Object.keys(layer)
+  if (positions.length === 0) return tileset
 
   const tiles = tileset.tiles.map(({ indices }) => ({
     indices: new Uint8Array(indices)
   }))
-
-  for (const stroke of strokes) {
-    for (const tile of stroke.tiles) {
-      const target = tiles[tile]
-      if (!target) continue
-      for (const edit of stroke.edits) {
-        const at = edit.y * shape.tileWidth + edit.x
-        if (at < target.indices.length) target.indices[at] = edit.newInkIndex
-      }
+  for (const position of positions) {
+    const target = tiles[Number(position)]
+    if (!target) continue
+    for (const [at, pen] of Object.entries(layer[Number(position)])) {
+      if (Number(at) < target.indices.length) target.indices[Number(at)] = pen
     }
   }
 

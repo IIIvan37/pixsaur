@@ -8,9 +8,10 @@
   /* Au-dessus du voile CRT : posé en `fixed; inset: 0; z-index: 0` par
      l'atelier image, il couvre toute la fenêtre, onglets compris. Sans
      contexte d'empilement, la barre passerait dessous et se lirait comme
-     inactive. */
+     inactive. Mais sous les cartes des ateliers (`z-index: 10`) : le tiroir
+     des réglages vit dans la carte, et sous 1024 px il recouvre la barre. */
   position: relative;
-  z-index: 20;
+  z-index: 1;
   display: flex;
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);

@@ -3,9 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { createStore } from 'jotai'
 import {
   editedTilesetAtom,
-  setTileDitherAtom,
-  setTilesetSheetAtom,
-  tilesetEditLayerAtom
+  selectedTileAtom,
+  setTilesetSheetAtom
 } from '@/app/store/tileset/tileset'
 import type { Sheet } from '@/libs/pixsaur-tileset'
 import { renderWithProviders } from '@/test-utils'
@@ -35,10 +34,11 @@ function sheetOfRepeatedColours(): Sheet {
   return { width, height: 8, data }
 }
 
-/** A store holding the sheet the panel needs to show anything. */
+/** A store holding the sheet the panel needs, and its first tile picked. */
 function storeWithSheet() {
   const store = createStore()
   store.set(setTilesetSheetAtom, sheetOfRepeatedColours())
+  store.set(selectedTileAtom, 0)
   return store
 }
 
@@ -54,6 +54,24 @@ describe('TilesetEditPanel', () => {
     renderWithProviders(<TilesetEditPanel />)
 
     expect(screen.queryByRole('heading', { name: /Retouche/i })).toBeNull()
+  })
+
+  it('asks for a tile while none is picked', () => {
+    const store = storeWithSheet()
+    store.set(selectedTileAtom, null)
+
+    renderWithProviders(<TilesetEditPanel />, { store })
+
+    expect(screen.getByText(/numéro de la tuile à retoucher/i)).toBeVisible()
+  })
+
+  it('shows no pixel to paint while no tile is picked', () => {
+    const store = storeWithSheet()
+    store.set(selectedTileAtom, null)
+
+    renderWithProviders(<TilesetEditPanel />, { store })
+
+    expect(screen.queryByRole('button', { name: /Pixel 0, 0/i })).toBeNull()
   })
 
   it('paints the chosen pen into the clicked pixel', async () => {
@@ -72,62 +90,5 @@ describe('TilesetEditPanel', () => {
     renderWithProviders(<TilesetEditPanel />, { store })
 
     expect(screen.getByLabelText(/Instances/i)).toHaveTextContent('2')
-  })
-
-  it('undoes the last stroke', async () => {
-    const store = storeWithSheet()
-    renderWithProviders(<TilesetEditPanel />, { store })
-
-    await userEvent.click(screen.getByRole('button', { name: /^Pen 3$/i }))
-    await userEvent.click(screen.getByRole('button', { name: /Pixel 0, 0/i }))
-    await userEvent.click(
-      screen.getByRole('button', { name: /Annuler \(Ctrl\+Z\)/i })
-    )
-
-    expect(store.get(tilesetEditLayerAtom).at).toBe(-1)
-  })
-
-  it('closes the undo while nothing is painted', () => {
-    renderWithProviders(<TilesetEditPanel />, { store: storeWithSheet() })
-
-    expect(
-      screen.getByRole('button', { name: /Annuler \(Ctrl\+Z\)/i })
-    ).toBeDisabled()
-  })
-
-  it('redoes the undone stroke', async () => {
-    const store = storeWithSheet()
-    renderWithProviders(<TilesetEditPanel />, { store })
-
-    await userEvent.click(screen.getByRole('button', { name: /^Pen 3$/i }))
-    await userEvent.click(screen.getByRole('button', { name: /Pixel 0, 0/i }))
-    await userEvent.click(
-      screen.getByRole('button', { name: /Annuler \(Ctrl\+Z\)/i })
-    )
-    await userEvent.click(screen.getByRole('button', { name: /Refaire/i }))
-
-    expect(firstPen(store)).toBe(3)
-  })
-
-  it('undoes at the keyboard, as the button promises', async () => {
-    const store = storeWithSheet()
-    renderWithProviders(<TilesetEditPanel />, { store })
-
-    await userEvent.click(screen.getByRole('button', { name: /^Pen 3$/i }))
-    await userEvent.click(screen.getByRole('button', { name: /Pixel 0, 0/i }))
-    await userEvent.keyboard('{Control>}z{/Control}')
-
-    expect(store.get(tilesetEditLayerAtom).at).toBe(-1)
-  })
-
-  it('shows the dithering the tile was given', () => {
-    const store = storeWithSheet()
-    store.set(setTileDitherAtom, { tile: 0, dither: 'ordered' })
-
-    renderWithProviders(<TilesetEditPanel />, { store })
-
-    expect(
-      screen.getByRole('combobox', { name: /Tramage de la tuile/i })
-    ).toHaveTextContent(/Ordonné/i)
   })
 })

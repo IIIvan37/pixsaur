@@ -126,6 +126,14 @@ describe('TilesetMapView', () => {
     )
   })
 
+  it('has no tile to empty while no cell is picked', () => {
+    renderWithProviders(<TilesetMapView />, { store: storeWithMap() })
+
+    expect(
+      screen.getByRole('button', { name: /Vider la tuile de la case/i })
+    ).toBeDisabled()
+  })
+
   it('leaves every cell a tile when the user asks for no empty tile', async () => {
     const store = storeWithMap()
     store.set(setTilesetMapOptionsAtom, { emptyTile: 1 })
@@ -146,18 +154,6 @@ describe('TilesetMapView', () => {
     await userEvent.type(screen.getByLabelText(/Seuil de fusion/i), '9999999')
 
     expect(store.get(tilesetMapAtom)?.cells).toEqual([0, 0, 0])
-  })
-
-  it('keeps a merge apart when the user excludes it', async () => {
-    const store = storeWithMap()
-    store.set(setTilesetMapOptionsAtom, { mergeThreshold: 9999999 })
-    renderWithProviders(<TilesetMapView />, { store })
-
-    await userEvent.click(
-      screen.getByRole('button', { name: /Garder à part/i })
-    )
-
-    expect(store.get(tilesetMapAtom)?.cells).toEqual([0, 1, 0])
   })
 
   // M-Q18: a stroke on a merged cell changes the tile that stays.

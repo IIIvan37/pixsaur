@@ -29,14 +29,12 @@ import {
   type PenMix,
   type PenSpace,
   penTables,
-  rankTileCollisions,
   resizeTileByScheme,
   resizeTileNearest,
   type Sheet,
   type SheetGrid,
   type SourceTile,
   sliceSheet,
-  type TileCollision,
   type TileEdges,
   type TileGrid,
   tileEdgeMask,
@@ -117,11 +115,6 @@ export interface ConvertTilesetInput extends TilesetConversionSubject {
   /** Side of the Bayer matrix used by `ordered`: 2, 4 or 8. Defaults to 4. */
   ditherSize?: BayerSize
   /**
-   * Tiles that overrule the sheet-wide setting (Q18) — a sprite wants none of
-   * the dithering a gradient sky wants. Keyed by position in the sheet.
-   */
-  ditherByTile?: Record<number, TileDither>
-  /**
    * Whether the steps of a staircase get the pen halfway between the two sides
    * (Q17). On by default; the contours it owns are kept out of the dithering,
    * so no pixel ever goes through both passes (Q27).
@@ -161,12 +154,6 @@ export interface ConvertedTileset {
   /** The pen standing for a hole, or `null` when alpha was flattened (Q16). */
   transparentPen: number | null
   /**
-   * The tiles the source held apart, worst first, by how far the shared palette
-   * pushed them from the colours they asked for (Q22). What the manual
-   * retouching reads.
-   */
-  collisions: TileCollision[]
-  /**
    * Which search each axis of the resize ran, or `null` when the tiles were
    * resampled by nearest neighbour. Reported so an approximation past the
    * budget never reads as an exhaustive answer.
@@ -180,6 +167,7 @@ export type ConvertTilesetResult =
       ok: false
       error:
         | 'grid-mismatch'
+        | 'empty-target'
         | 'no-pens-left'
         | 'palette-too-wide'
         | 'palette-missing-hole'
@@ -204,6 +192,12 @@ export function convertTileset(
 
   const sliced = sliceSheet(input.sheet, input.source)
   if (!sliced) return { ok: false, error: 'grid-mismatch' }
+
+  // An emptied size field reads 0, and NaN fails the comparison too.
+  const { tileWidth, tileHeight } = input.target
+  if (!(tileWidth >= 1 && tileHeight >= 1)) {
+    return { ok: false, error: 'empty-target' }
+  }
 
   const { columns, rows, tiles } = sliced
   const scheme =
@@ -259,9 +253,9 @@ export function convertTileset(
     blend: colours.blend,
     shape: input.target
   }
-  const converted: ConvertedTile[] = snapped.map((tile, at) => ({
+  const converted: ConvertedTile[] = snapped.map((tile) => ({
     indices: renderTile(tile, render, {
-      dither: input.ditherByTile?.[at] ?? input.dither ?? 'none',
+      dither: input.dither ?? 'none',
       size: input.ditherSize,
       antiAlias: input.antiAlias ?? true
     })
@@ -280,16 +274,7 @@ export function convertTileset(
     instanceOf,
     unique,
     transparentPen: space.holePen,
-    resizeSearch: scheme?.search ?? null,
-    collisions: rankTileCollisions(
-      snapped,
-      // Deduplicated BEFORE the palette, not after: two source tiles that the
-      // shared palette collapsed into one are exactly the collision the report
-      // exists to surface, and the converted `unique` no longer holds both.
-      dedupeTiles(snapped).unique,
-      tables.error,
-      { ignore: HOLE }
-    )
+    resizeSearch: scheme?.search ?? null
   }
 
   return { ok: true, tileset }

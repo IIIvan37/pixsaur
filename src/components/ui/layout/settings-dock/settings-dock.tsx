@@ -32,6 +32,11 @@ export interface SettingsDockProps {
   readonly tabsLabel: string
   readonly closeLabel: string
   readonly tabs: readonly DockTab[]
+  /**
+   * Keeps the panel in the host's layout at every width: it fills the cell the
+   * host gives it and never turns into the overlay below the lg breakpoint.
+   */
+  readonly stayDocked?: boolean
 }
 
 export function SettingsDock({
@@ -42,7 +47,8 @@ export function SettingsDock({
   label,
   tabsLabel,
   closeLabel,
-  tabs
+  tabs,
+  stayDocked = false
 }: SettingsDockProps) {
   const firstTabRef = useRef<HTMLButtonElement>(null)
 
@@ -66,7 +72,10 @@ export function SettingsDock({
   if (!open || tabs.length === 0) return null
 
   return (
-    <aside className={styles.panel} aria-label={label}>
+    <aside
+      className={stayDocked ? `${styles.panel} ${styles.inFlow}` : styles.panel}
+      aria-label={label}
+    >
       <div className={styles.panelHeader}>
         <span className={styles.panelTitle}>
           <Icon name={icon} /> {title}

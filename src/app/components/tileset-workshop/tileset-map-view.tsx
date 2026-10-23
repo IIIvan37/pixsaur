@@ -4,7 +4,6 @@ import { Trans } from '@lingui/react/macro'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useEffect, useMemo, useState } from 'react'
 import {
-  excludeTilesetMergeAtom,
   renderedTilesetAtlasAtom,
   renderedTilesetMapAtom,
   selectedTileAtom,
@@ -19,13 +18,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EMPTY_CELL, type TilesetMap } from '@/tileset'
 import { cellAt } from './map-cell-at'
 import styles from './tileset-workshop.module.css'
-import { useSheetCanvas } from './use-sheet-canvas'
+import { ZoomStage } from './zoom-stage'
 
 /** See-through, so the tile under the mark stays readable. */
 const HIGHLIGHT = 'rgba(255, 196, 0, 0.5)'
-
-/** How many merges are worth reading before the list stops informing. */
-const MERGES_SHOWN = 12
 
 /**
  * The cell whose tile a click aims the retouching at: the first cell of the
@@ -82,7 +78,6 @@ export function TilesetMapView() {
     tilesetMapOptionsAtom
   )
   const setMapOptions = useSetAtom(setTilesetMapOptionsAtom)
-  const exclude = useSetAtom(excludeTilesetMergeAtom)
   const [comparing, setComparing] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
 
@@ -95,8 +90,7 @@ export function TilesetMapView() {
     [map, tile]
   )
 
-  const mapCanvas = useSheetCanvas(comparing ? source : result)
-  const atlasCanvas = useSheetCanvas(atlas)
+  const shown = comparing ? source : result
   const marks = useCellMarks(map, sharing)
 
   if (!map) return null
@@ -109,7 +103,7 @@ export function TilesetMapView() {
     )
 
   return (
-    <Tabs defaultValue='map'>
+    <Tabs defaultValue='map' className={styles.mapView}>
       <TabsList aria-label={_(msg`Vues de la map`)} className={styles.viewTabs}>
         <TabsTrigger value='map' className={styles.viewTab}>
           <Trans>Map</Trans>
@@ -119,7 +113,7 @@ export function TilesetMapView() {
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value='map'>
+      <TabsContent value='map' className={styles.mapViewPanel}>
         <Button
           variant='secondary'
           aria-pressed={comparing}
@@ -128,23 +122,22 @@ export function TilesetMapView() {
           <Trans>Comparer avec la source</Trans>
         </Button>
 
-        <div className={styles.mapStage}>
-          <canvas
-            ref={mapCanvas}
-            className={styles.preview}
-            role='img'
-            aria-label={comparing ? _(msg`Map source`) : _(msg`Map convertie`)}
+        {shown && (
+          <ZoomStage
+            image={shown}
+            label={comparing ? _(msg`Map source`) : _(msg`Map convertie`)}
             onMouseMove={(event) => setHovered(cellUnder(event))}
             onMouseLeave={() => setHovered(null)}
             onClick={(event) => {
               const cell = cellUnder(event)
               if (cell !== null) select(tileCellOf(map, cell))
             }}
-          />
-          {/* Decoration with no fallback content, so assistive technology
-              skips it: what it marks is said in words just below. */}
-          <canvas ref={marks} className={styles.mapMarks} />
-        </div>
+          >
+            {/* Decoration with no fallback content, so assistive technology
+                skips it: what it marks is said in words just below. */}
+            <canvas ref={marks} className={styles.mapMarks} />
+          </ZoomStage>
+        )}
 
         <p className={styles.note}>
           {tile === null ? (
@@ -173,6 +166,7 @@ export function TilesetMapView() {
         <div className={styles.buttons}>
           <Button
             variant='secondary'
+            disabled={selected === null}
             onClick={() => setMapOptions({ emptyTile: selected })}
           >
             <Trans>Vider la tuile de la case sélectionnée</Trans>
@@ -207,40 +201,10 @@ export function TilesetMapView() {
             }
           />
         </div>
-        {map.merges.length > 0 && (
-          <section className={styles.suggestions}>
-            <h2 className={styles.subtitle}>
-              <Trans>Fusions, les plus lointaines en tête</Trans>
-            </h2>
-            <ul className={styles.candidates}>
-              {[...map.merges]
-                .sort((a, b) => b.distance - a.distance)
-                .slice(0, MERGES_SHOWN)
-                .map((merge) => (
-                  <li key={`${merge.absorbed}:${merge.survivor}`}>
-                    {/* Cells numbered from 1, like the map's GIDs. */}
-                    <span>
-                      {`#${merge.absorbed + 1} → #${merge.survivor + 1} · `}
-                      <Trans>écart</Trans>
-                      {` ${Math.round(merge.distance)}`}
-                    </span>
-                    <Button variant='secondary' onClick={() => exclude(merge)}>
-                      <Trans>Garder à part</Trans>
-                    </Button>
-                  </li>
-                ))}
-            </ul>
-          </section>
-        )}
       </TabsContent>
 
-      <TabsContent value='tileset'>
-        <canvas
-          ref={atlasCanvas}
-          className={styles.preview}
-          role='img'
-          aria-label={_(msg`Tileset de la map`)}
-        />
+      <TabsContent value='tileset' className={styles.mapViewPanel}>
+        {atlas && <ZoomStage image={atlas} label={_(msg`Tileset de la map`)} />}
       </TabsContent>
     </Tabs>
   )

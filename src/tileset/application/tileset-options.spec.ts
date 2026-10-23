@@ -3,7 +3,6 @@ import {
   type ConvertedPalette,
   dropPen,
   freezePalette,
-  setTileDither,
   thawPalette,
   tilesetPaletteSlots,
   togglePenLock
@@ -191,50 +190,5 @@ describe('thawPalette', () => {
     expect(
       thawPalette({ palette: [BLACK], reservedPens: 4 }).reservedPens
     ).toBe(4)
-  })
-})
-
-describe('setTileDither', () => {
-  /** Four tiles, the third a copy of the first. */
-  const instanceOf = [0, 1, 0, 3]
-
-  it('overrules the dithering on every instance of the tile', () => {
-    const options = setTileDither({
-      options: NOTHING,
-      instanceOf,
-      tile: 0,
-      dither: 'ordered'
-    })
-
-    expect(options.ditherByTile).toEqual({ 0: 'ordered', 2: 'ordered' })
-  })
-
-  it('leaves the other tiles to the setting of the sheet', () => {
-    const options = setTileDither({
-      options: NOTHING,
-      instanceOf,
-      tile: 0,
-      dither: 'ordered'
-    })
-
-    expect(options.ditherByTile?.[1]).toBeUndefined()
-  })
-
-  it('hands the tile back to the dithering of the sheet', () => {
-    const overruled = setTileDither({
-      options: NOTHING,
-      instanceOf,
-      tile: 0,
-      dither: 'ordered'
-    })
-
-    const options = setTileDither({
-      options: overruled,
-      instanceOf,
-      tile: 2,
-      dither: null
-    })
-
-    expect(options.ditherByTile).toEqual({})
   })
 })

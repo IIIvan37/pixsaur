@@ -2,7 +2,11 @@ import { createStore } from 'jotai'
 import type { Sheet } from '@/libs/pixsaur-tileset'
 import type { TilesetProject } from '@/tileset'
 import { TILESET_PROJECT_VERSION } from '@/tileset'
-import { captureTilesetProjectAtom, restoreTilesetProjectAtom } from './project'
+import {
+  captureTilesetProjectAtom,
+  restoreTilesetProjectAtom,
+  tilesetProjectNoticeAtom
+} from './project'
 import {
   setTilesetGridAtom,
   setTilesetLayoutAtom,
@@ -15,7 +19,8 @@ import {
   tilesetMapOptionsAtom,
   tilesetModeAtom,
   tilesetOptionsAtom,
-  tilesetSheetAtom
+  tilesetSheetAtom,
+  tilesetSheetNameAtom
 } from './tileset'
 
 const SHEET: Sheet = {
@@ -24,11 +29,7 @@ const SHEET: Sheet = {
   data: Uint8ClampedArray.from([9, 9, 9, 255])
 }
 
-const STROKE = {
-  tiles: [0],
-  edits: [{ x: 0, y: 0, previousInkIndex: 0, newInkIndex: 2 }],
-  timestamp: 7
-}
+const EDITS = { 0: { 0: 2 } }
 
 function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
   return {
@@ -40,7 +41,7 @@ function projectOf(overrides: Partial<TilesetProject> = {}): TilesetProject {
     hardware: 'plus',
     sourcePlatform: 'snes',
     options: { resize: 'nearest', palette: [[0, 0, 0]] },
-    edits: { strokes: [STROKE], at: 0 },
+    edits: EDITS,
     layout: 'map',
     map: { budget: 64 },
     ...overrides
@@ -114,15 +115,40 @@ describe('captureTilesetProjectAtom', () => {
     expect(store.get(captureTilesetProjectAtom)?.options.reservedPens).toBe(2)
   })
 
-  it('carries the strokes painted so far', () => {
+  it('carries the pens painted so far', () => {
     const store = createStore()
     store.set(setTilesetSheetAtom, SHEET)
 
-    store.set(tilesetEditLayerAtom, { strokes: [STROKE], at: 0 })
+    store.set(tilesetEditLayerAtom, EDITS)
 
-    expect(store.get(captureTilesetProjectAtom)?.edits.strokes).toEqual([
-      STROKE
-    ])
+    expect(store.get(captureTilesetProjectAtom)?.edits).toEqual(EDITS)
+  })
+})
+
+describe('sheet name', () => {
+  it('carries the name of the file the sheet came from', () => {
+    const store = createStore()
+
+    store.set(setTilesetSheetAtom, SHEET, 'forest.png')
+
+    expect(store.get(captureTilesetProjectAtom)?.sheetName).toBe('forest.png')
+  })
+
+  it('puts the name back', () => {
+    const store = createStore()
+
+    store.set(restoreTilesetProjectAtom, projectOf({ sheetName: 'forest.png' }))
+
+    expect(store.get(tilesetSheetNameAtom)).toBe('forest.png')
+  })
+
+  it('drops the last name for a project that holds none', () => {
+    const store = createStore()
+    store.set(setTilesetSheetAtom, SHEET, 'forest.png')
+
+    store.set(restoreTilesetProjectAtom, projectOf())
+
+    expect(store.get(tilesetSheetNameAtom)).toBeNull()
   })
 })
 
@@ -143,12 +169,12 @@ describe('restoreTilesetProjectAtom', () => {
     expect(store.get(tilesetGridAtom).margin).toBe(1)
   })
 
-  it('keeps the strokes the sheet and the grid would have dropped', () => {
+  it('keeps the pens the sheet and the grid would have dropped', () => {
     const store = createStore()
 
     store.set(restoreTilesetProjectAtom, projectOf())
 
-    expect(store.get(tilesetEditLayerAtom).strokes).toEqual([STROKE])
+    expect(store.get(tilesetEditLayerAtom)).toEqual(EDITS)
   })
 
   it('keeps the frozen palette the mode change would have dropped', () => {
@@ -174,5 +200,39 @@ describe('restoreTilesetProjectAtom', () => {
     store.set(restoreTilesetProjectAtom, project)
 
     expect(store.get(captureTilesetProjectAtom)).toEqual(project)
+  })
+
+  it('hands on the notice the migration left', () => {
+    const store = createStore()
+
+    store.set(
+      restoreTilesetProjectAtom,
+      projectOf({ notice: 'tile-dither-dropped' })
+    )
+
+    expect(store.get(tilesetProjectNoticeAtom)).toBe('tile-dither-dropped')
+  })
+
+  it('clears a notice an earlier project left', () => {
+    const store = createStore()
+    store.set(
+      restoreTilesetProjectAtom,
+      projectOf({ notice: 'tile-dither-dropped' })
+    )
+
+    store.set(restoreTilesetProjectAtom, projectOf())
+
+    expect(store.get(tilesetProjectNoticeAtom)).toBeNull()
+  })
+
+  it('never saves the notice again', () => {
+    const store = createStore()
+
+    store.set(
+      restoreTilesetProjectAtom,
+      projectOf({ notice: 'tile-dither-dropped' })
+    )
+
+    expect(store.get(captureTilesetProjectAtom)?.notice).toBeUndefined()
   })
 })
